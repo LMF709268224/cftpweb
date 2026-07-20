@@ -197,7 +197,7 @@ async function handleLogout() {
       </div>
 
       <nav class="flex-1 space-y-1 px-4 py-4 text-[14px] text-sidebar-foreground">
-        <div class="px-1 pb-2 pt-1 text-xs font-medium text-[#5878ad]">Menu</div>
+        <div class="px-1 pb-2 pt-1 text-xs font-medium text-[#5878ad]">{{ t.sidebar.menu }}</div>
         <div
           v-for="(item, index) in navItems"
           :key="item.href"
@@ -276,7 +276,7 @@ async function handleLogout() {
     </RouterLink>
 
     <nav :class="['flex-1 space-y-1 text-[14px] text-sidebar-foreground', isSidebarCollapsed ? 'px-0 py-0' : 'px-4 py-3']">
-      <div v-if="!isSidebarCollapsed" class="px-1 pb-2 text-xs font-medium text-[#5878ad]">Menu</div>
+      <div v-if="!isSidebarCollapsed" class="px-1 pb-2 text-xs font-medium text-[#5878ad]">{{ t.sidebar.menu }}</div>
       <div
         v-for="(item, index) in navItems"
         :key="item.href"

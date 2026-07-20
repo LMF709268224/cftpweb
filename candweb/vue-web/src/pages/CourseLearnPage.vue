@@ -222,7 +222,7 @@ const supplementaryMaterials = computed<SupplementaryMaterial[]>(() => {
   return normalizeSupplementaryMaterials(raw)
 })
 const supplementaryMaterialItems = computed<SupplementaryMaterialItem[]>(() =>
-  parseSupplementaryMaterialItems(supplementaryMaterials.value, t.value.learning.chapters),
+  parseSupplementaryMaterialItems(supplementaryMaterials.value, t.value.learning.supplementaryChapterHeader),
 )
 const totalMaterialCount = computed(() => materials.value.length + supplementaryMaterialItems.value.length)
 const courseQuizzes = computed<any[]>(() => completeCourse.value?.quizzes || [])
@@ -1085,10 +1085,10 @@ function supplementaryChapterLabel(item: SupplementaryMaterialItem, index: numbe
 
 function supplementaryTypeLabel(type: string) {
   const normalized = type.trim().toLowerCase()
-  if (normalized === "article") return "Article"
-  if (normalized === "video") return "Video"
-  if (normalized === "pdf") return "PDF"
-  if (normalized === "link") return "Link"
+  if (normalized === "article") return t.value.learning.supplementaryTypeArticle
+  if (normalized === "video") return t.value.learning.supplementaryTypeVideo
+  if (normalized === "pdf") return t.value.learning.supplementaryTypePdf
+  if (normalized === "link") return t.value.learning.supplementaryTypeLink
   return type || t.value.learning.materialTypeUnknown
 }
 
@@ -1110,7 +1110,7 @@ function openSupplementaryPreview(item: SupplementaryMaterialItem) {
     return
   }
 
-  openExternalPdfPreview(item.url, item.title || "Supplementary Material")
+  openExternalPdfPreview(item.url, item.title || t.value.learning.supplementaryDefaultTitle)
 }
 
 async function loadCourse(showLoading = true) {
@@ -2042,17 +2042,17 @@ watch(selectedMaterial, () => {
               <div class="border-b border-slate-100 pb-3">
                 <div class="flex items-center gap-2 text-sm font-semibold text-foreground">
                   <BookOpen class="h-4 w-4 text-primary" />
-                  <span>Supplementary Materials</span>
+                  <span>{{ t.learning.supplementaryMaterialsTitle }}</span>
                   <span class="badge border-slate-200 bg-white text-slate-700">{{ supplementaryMaterialItems.length }} {{ t.learning.materialsCountSuffix }}</span>
                 </div>
-                <p class="mt-1 text-xs text-muted-foreground">Additional learning resources organized by chapter</p>
+                <p class="mt-1 text-xs text-muted-foreground">{{ t.learning.supplementaryMaterialsDesc }}</p>
               </div>
 
               <div class="hidden grid-cols-[minmax(160px,0.9fr)_120px_minmax(260px,1.4fr)_180px] border-b border-slate-100 px-3 py-3 text-sm font-medium text-muted-foreground md:grid">
-                <div>Chapter</div>
-                <div>Type</div>
-                <div>Title & Description</div>
-                <div>Resource Link</div>
+                <div>{{ t.learning.supplementaryChapterHeader }}</div>
+                <div>{{ t.learning.supplementaryTypeHeader }}</div>
+                <div>{{ t.learning.supplementaryTitleDescHeader }}</div>
+                <div>{{ t.learning.supplementaryResourceLinkHeader }}</div>
               </div>
 
               <div class="divide-y divide-slate-100">
@@ -2062,7 +2062,7 @@ watch(selectedMaterial, () => {
                   class="grid gap-3 px-3 py-4 text-sm md:grid-cols-[minmax(160px,0.9fr)_120px_minmax(260px,1.4fr)_180px]"
                 >
                   <div class="font-medium text-foreground">
-                    <span class="md:hidden text-xs text-muted-foreground">Chapter: </span>
+                    <span class="md:hidden text-xs text-muted-foreground">{{ t.learning.supplementaryChapterPrefix }} </span>
                     {{ supplementaryChapterLabel(item, index) }}
                   </div>
                   <div>
@@ -2085,7 +2085,7 @@ watch(selectedMaterial, () => {
                       <ExternalLink class="h-3.5 w-3.5 shrink-0" />
                       <span class="truncate">{{ item.url }}</span>
                     </button>
-                    <span v-else class="text-xs text-muted-foreground">No resource_link</span>
+                    <span v-else class="text-xs text-muted-foreground">{{ t.learning.supplementaryNoResourceLink }}</span>
                   </div>
                 </div>
               </div>

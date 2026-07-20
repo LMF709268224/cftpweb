@@ -213,7 +213,7 @@ async function loadAttemptDetail() {
       showDetail.value = true
     }
   } catch (err) {
-    toast.error("加载批改结果失败")
+    toast.error(t.value.learning?.quizDetailLoadFailed || t.value.common.error)
   }
 }
 
@@ -277,13 +277,13 @@ onBeforeRouteLeave(() => {
         </div>
         <div class="flex flex-col gap-3 justify-center sm:flex-row">
           <button class="btn btn-outline cursor-pointer px-6" @click="router.back()"><ChevronLeft class="h-4 w-4" /> {{ t.learning?.quizReturn }}</button>
-          <button v-if="!showDetail" class="btn btn-primary cursor-pointer px-6" @click="loadAttemptDetail">查看详细批改结果</button>
+          <button v-if="!showDetail" class="btn btn-primary cursor-pointer px-6" @click="loadAttemptDetail">{{ t.learning?.quizDetailButton }}</button>
         </div>
       </div>
 
-      <!-- 详细批改结果区块 -->
+      <!-- Detailed grading result block -->
       <div v-if="showDetail" class="mt-8 space-y-6 text-left">
-        <h2 class="text-xl font-bold">详细批改结果</h2>
+        <h2 class="text-xl font-bold">{{ t.learning?.quizDetailTitle }}</h2>
         <div v-for="(question, index) in questions" :key="question.question_id" class="overflow-hidden rounded-md bg-white shadow-sm border border-border">
           <div class="flex items-center justify-between border-b bg-muted/30 px-6 py-3 text-sm font-medium text-muted-foreground">
             <span>{{ formatQuizQuestionCount(Number(index) + 1, questions.length) }}</span>
@@ -314,15 +314,15 @@ onBeforeRouteLeave(() => {
                   <span :class="['text-sm', getAnswerDetail(question.question_id)?.correct_option_ids?.includes(option.option_id) ? 'font-medium text-emerald-800' : (getAnswerDetail(question.question_id)?.selected_option_ids?.includes(option.option_id) ? 'font-medium text-rose-800' : 'text-muted-foreground')]">
                     {{ option.option_text }}
                   </span>
-                  <span v-if="getAnswerDetail(question.question_id)?.correct_option_ids?.includes(option.option_id)" class="text-xs text-emerald-600 mt-1">正确答案</span>
-                  <span v-else-if="getAnswerDetail(question.question_id)?.selected_option_ids?.includes(option.option_id)" class="text-xs text-rose-600 mt-1">你的选择 (错误)</span>
+                  <span v-if="getAnswerDetail(question.question_id)?.correct_option_ids?.includes(option.option_id)" class="text-xs text-emerald-600 mt-1">{{ t.learning?.quizCorrectAnswer }}</span>
+                  <span v-else-if="getAnswerDetail(question.question_id)?.selected_option_ids?.includes(option.option_id)" class="text-xs text-rose-600 mt-1">{{ t.learning?.quizYourWrongChoice }}</span>
                 </div>
               </div>
             </div>
             <div v-if="question.explanation || getAnswerDetail(question.question_id)?.explanation" class="mt-6 rounded-md bg-blue-50 p-4 border border-blue-100">
               <div class="flex items-center gap-2 text-blue-800 font-semibold mb-2">
                 <AlertCircle class="h-4 w-4" />
-                <span>解答说明</span>
+                <span>{{ t.learning?.quizExplanation }}</span>
               </div>
               <p class="text-sm text-blue-900 leading-relaxed whitespace-pre-wrap">{{ question.explanation || getAnswerDetail(question.question_id)?.explanation }}</p>
             </div>
