@@ -11,6 +11,12 @@ const route = useRoute()
 const router = useRouter()
 const { t } = useTranslation()
 const attemptId = computed(() => String(route.query.attemptId || ""))
+const returnTo = computed(() => {
+  const raw = route.query.returnTo
+  const value = Array.isArray(raw) ? String(raw[0] || "").trim() : String(raw || "").trim()
+  if (!value || !value.startsWith("/") || value.startsWith("//")) return ""
+  return value
+})
 const loading = ref(true)
 const submitting = ref(false)
 const paper = ref<any>(null)
@@ -221,6 +227,14 @@ function getAnswerDetail(questionId: string) {
   return detailedAnswers.value.find((a: any) => a.question_id === questionId || a.questionUlid === questionId)
 }
 
+function goBackToLearning() {
+  if (returnTo.value) {
+    router.push(returnTo.value)
+    return
+  }
+  router.back()
+}
+
 onMounted(() => {
   window.addEventListener("beforeunload", handleBeforeUnload)
   void loadPaper()
@@ -255,7 +269,7 @@ onBeforeRouteLeave(() => {
     <div v-else-if="!paper" class="flex min-h-[60vh] flex-col items-center justify-center gap-4">
       <AlertCircle class="h-12 w-12 text-destructive" />
       <h2 class="text-lg font-semibold text-foreground">{{ t.learning?.quizNotFound }}</h2>
-      <button class="btn btn-primary cursor-pointer" @click="router.back()"><ChevronLeft class="h-4 w-4" /> {{ t.common.back }}</button>
+      <button class="btn btn-primary cursor-pointer" @click="goBackToLearning"><ChevronLeft class="h-4 w-4" /> {{ t.common.back }}</button>
     </div>
 
     <div v-else-if="result" class="mx-auto max-w-2xl py-12">
@@ -276,7 +290,7 @@ onBeforeRouteLeave(() => {
           </div>
         </div>
         <div class="flex flex-col gap-3 justify-center sm:flex-row">
-          <button class="btn btn-outline cursor-pointer px-6" @click="router.back()"><ChevronLeft class="h-4 w-4" /> {{ t.learning?.quizReturn }}</button>
+          <button class="btn btn-outline cursor-pointer px-6" @click="goBackToLearning"><ChevronLeft class="h-4 w-4" /> {{ t.learning?.quizReturn }}</button>
           <button v-if="!showDetail" class="btn btn-primary cursor-pointer px-6" @click="loadAttemptDetail">{{ t.learning?.quizDetailButton }}</button>
         </div>
       </div>
@@ -333,7 +347,7 @@ onBeforeRouteLeave(() => {
 
     <div v-else class="mx-auto max-w-3xl space-y-8">
       <div class="rounded-md bg-white p-6 sm:p-8">
-        <button class="btn btn-ghost -ml-2 mb-4 cursor-pointer text-muted-foreground" @click="router.back()"><ChevronLeft class="h-4 w-4" /> {{ t.learning?.quizReturn }}</button>
+        <button class="btn btn-ghost -ml-2 mb-4 cursor-pointer text-muted-foreground" @click="goBackToLearning"><ChevronLeft class="h-4 w-4" /> {{ t.learning?.quizReturn }}</button>
         <div class="flex items-start justify-between gap-4">
           <div>
             <h1 class="text-2xl font-bold text-foreground sm:text-3xl">{{ paper.title || t.learning?.quizPrefix }}</h1>

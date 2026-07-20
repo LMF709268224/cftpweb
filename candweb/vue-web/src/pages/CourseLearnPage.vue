@@ -1230,7 +1230,15 @@ async function startQuiz(quizId: string) {
   startingQuizId.value = quizId
   try {
     const res = await apiClient(`/api/quizzes/${quizId}/take`, { method: "POST" })
-    if (res?.attempt_id) await router.push(`/quizzes?attemptId=${encodeURIComponent(res.attempt_id)}`)
+    if (res?.attempt_id) {
+      await router.push({
+        path: "/quizzes",
+        query: {
+          attemptId: res.attempt_id,
+          returnTo: route.fullPath,
+        },
+      })
+    }
     else toast.error(t.value.common.error)
   } catch {
     toast.error(t.value.common.error)
