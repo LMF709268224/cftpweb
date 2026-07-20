@@ -193,7 +193,7 @@ function handleProvinceChange() {
   refreshCityOptions()
 }
 
-function handlePhoneInput(field: "home_phone" | "work_phone", event: Event) {
+function handlePhoneInput(field: "work_phone", event: Event) {
   const target = event.target as HTMLInputElement
   formData[field] = normalizeInternationalPhone(target.value)
 }
