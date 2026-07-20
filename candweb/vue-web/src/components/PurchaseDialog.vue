@@ -855,6 +855,7 @@ function initiatePayment() {
 
   // Redirect to orders page for existing orders (avoids nested payment session state issues)
   if (!orderCreatedInSession.value) {
+    toast.info(copy.value.inProgressPurchaseDesc)
     close()
     router.push({ path: "/orders" })
     return

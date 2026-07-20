@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue"
 import { RouterLink, useRouter } from "vue-router"
+import { toast } from "vue-sonner"
 import { AlertCircle, BookOpen, CheckCircle2, Clock, Lock, ShoppingCart, Users } from "lucide-vue-next"
 import { CANDIDATE_PIPELINE_STATUS_LABELS, statusLabel } from "@/lib/status-labels"
 import { useTranslation } from "@/lib/language"
@@ -143,6 +144,7 @@ async function handleCardClick() {
   await refreshBundleState()
   if (effectivePurchased.value) return
   if (hasInProgressOrder.value) {
+    toast.info(t.value.purchaseDialog?.inProgressPurchaseDesc || cardCopy.value.inProgressPurchase)
     router.push({ path: "/orders" })
     return
   }
