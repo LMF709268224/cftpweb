@@ -160,7 +160,7 @@ function syncLocationSelectionFromForm() {
   if (allCountries.length === 0) return
   const countryText = normalizeLocationText(formData.country)
   const zhRegionNames = new Intl.DisplayNames(["zh-CN"], { type: "region" })
-  const matchedCountry = allCountries.find((country) =>
+  const matchedCountry = allCountries.find((country: any) =>
     [country.name, country.isoCode, country.phonecode].some((value) => normalizeLocationText(value) === countryText) ||
     normalizeLocationText(zhRegionNames.of(country.isoCode)) === countryText,
   )
@@ -304,7 +304,7 @@ onMounted(() => {
       refreshCountryOptions()
       syncLocationSelectionFromForm()
     })
-    .catch((err) => console.error("Failed to load location data", err))
+    .catch((err: any) => console.error("Failed to load location data", err))
 })
 
 watch(lang, () => {
