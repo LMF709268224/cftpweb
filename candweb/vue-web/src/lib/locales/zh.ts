@@ -763,6 +763,7 @@ export const zh = {
     submitFailed: "提交失败",
     submitting: "提交中...",
     availableQualifications: "可申请资格",
+    availableQualificationsDesc: "可在此查看已满足前置条件的资格列表。部分资格可能需要您补充提交相应的证明材料。",
     description: "描述",
     required: "必填",
     optional: "选填",

@@ -765,6 +765,7 @@ export const en: AppTranslations = {
     submitFailed: "Submit failed",
     submitting: "Submitting...",
     availableQualifications: "Available Qualifications",
+    availableQualificationsDesc: "View the list of qualifications you have met the prerequisites for. Some qualifications may require you to submit supporting materials.",
     description: "Description",
     required: "Required",
     optional: "Optional",
