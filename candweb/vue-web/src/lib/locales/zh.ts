@@ -40,7 +40,7 @@ export const zh = {
   },
   app: {
     htmlLang: "zh-CN",
-    titleSuffix: "Portal",
+    titleSuffix: "门户",
     defaultPageTitle: "CFtP 培训系统",
     pageErrorMessage: "页面加载失败，请重试或返回首页。",
     pageErrorTitle: "页面暂时无法显示",
