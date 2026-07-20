@@ -32,9 +32,8 @@ const navRouteGroups: Record<string, string[]> = {
   "/certifications": [
     "/certifications",
     "/courses",
-    "/pdf-preview/lessons",
   ],
-  "/my-certifications": ["/my-certifications"],
+  "/my-certifications": ["/my-certifications", "/pdf-preview/lessons"],
   "/exams": ["/exams"],
   "/resource-packs": [
     "/resource-packs",
@@ -55,6 +54,10 @@ function badgeCountLabel(count: number) {
 
 function isNavItemActive(href: string) {
   const currentPath = route.path
+  
+  if (href === "/certifications" && currentPath.includes("/learn")) return false
+  if (href === "/my-certifications" && currentPath.startsWith("/certifications/") && currentPath.includes("/learn")) return true
+
   const groups = navRouteGroups[href] || [href]
 
   return groups.some((group) => {
