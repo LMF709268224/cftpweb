@@ -290,10 +290,7 @@ watch(lang, () => {
 
 async function handleUpdateProfile() {
   sanitizeProfileForm()
-  if (!isValidInternationalPhone(profile.homePhone)) {
-    toast.error(t.value.settings.validationInvalidPhone.replace("{{field}}", t.value.settings.homePhone))
-    return
-  }
+
   if (!isValidInternationalPhone(profile.workPhone)) {
     toast.error(t.value.settings.validationInvalidPhone.replace("{{field}}", t.value.settings.workPhone))
     return
@@ -413,19 +410,7 @@ async function handleUpdatePassword() {
               </select>
             </label>
             <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.birthday }}</span><input v-model="profile.birthday" class="input" type="date" /></label>
-            <label class="space-y-2">
-              <span class="text-sm font-medium">{{ t.settings.homePhone }}</span>
-              <input
-                v-model="profile.homePhone"
-                class="input"
-                type="tel"
-                inputmode="tel"
-                maxlength="16"
-                pattern="\+?\d{7,15}"
-                :placeholder="t.settings.homePhonePlaceholder"
-                @input="handlePhoneInput('homePhone', $event)"
-              />
-            </label>
+
             <label class="space-y-2">
               <span class="text-sm font-medium">{{ t.settings.workPhone }}</span>
               <input

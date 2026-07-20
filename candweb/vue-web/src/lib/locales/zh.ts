@@ -784,7 +784,7 @@ export const zh = {
     birthday: "生日",
     homePhone: "家庭电话/手机号",
     homePhonePlaceholder: "用于考试报名的联系电话",
-    workPhone: "工作电话",
+    workPhone: "联系电话",
     workPhonePlaceholder: "选填",
     country: "国家",
     countryPlaceholder: "国家",
