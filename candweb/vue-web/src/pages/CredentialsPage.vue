@@ -426,9 +426,9 @@ onMounted(fetchData)
           <div class="space-y-4 border-t border-border pt-4">
             <h4 class="text-sm font-semibold">{{ t.credentialsPage.uploadMaterials }}</h4>
             <div v-for="constraint in selectedDef?.file_constraints || []" :key="constraint.name" class="space-y-2 rounded-lg bg-muted p-3">
-              <div class="flex justify-between">
+              <div class="flex items-center gap-1">
+                <span v-if="constraint.is_required" class="text-sm font-bold text-destructive">*</span>
                 <span class="font-medium">{{ constraint.name }}</span>
-                <span :class="['badge border-transparent', constraint.is_required ? 'bg-destructive text-destructive-foreground' : 'bg-secondary text-secondary-foreground']">{{ constraint.is_required ? t.credentialsPage.required : t.credentialsPage.optional }}</span>
               </div>
               <div class="mt-2 flex items-center gap-2">
                 <button type="button" class="btn btn-outline cursor-pointer rounded-lg px-3 py-1.5 text-xs hover:border-primary/25 hover:bg-primary/10 hover:text-primary" :disabled="Boolean(uploadingConstraintName)" @click="triggerFileInput(constraint.name)">
