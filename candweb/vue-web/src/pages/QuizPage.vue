@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue"
-import { useRoute, useRouter } from "vue-router"
+import { computed, onBeforeUnmount, onMounted, ref } from "vue"
+import { onBeforeRouteLeave, useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
 import { AlertCircle, CheckCircle2, ChevronLeft, Clock, FileText, Loader2 } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
@@ -18,8 +18,11 @@ const answers = ref<Record<string, string[]>>({})
 const result = ref<any>(null)
 const detailedAnswers = ref<any[]>([])
 const showDetail = ref(false)
+const QUIZ_DRAFT_STORAGE_PREFIX = "cftp:quiz-draft:"
+const QUIZ_DRAFT_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 7
 
 const questions = computed(() => paper.value?.questions || [])
+const answeredCount = computed(() => questions.value.filter((q: any) => (answers.value[questionIdOf(q)]?.length || 0) > 0).length)
 const allAnswered = computed(() => questions.value.every((q: any) => (answers.value[questionIdOf(q)]?.length || 0) > 0))
 const quizPassed = computed(() => {
   if (Number(result.value?.pass_status) === 1) return true
@@ -62,6 +65,100 @@ function formatQuizAnsweredCount(current: number, total: number) {
     .replace("{{total}}", String(total))
 }
 
+function quizDraftStorageKey() {
+  return attemptId.value ? `${QUIZ_DRAFT_STORAGE_PREFIX}${attemptId.value}` : ""
+}
+
+function hasAnswerValues(value: Record<string, string[]>) {
+  return Object.values(value).some((ids) => Array.isArray(ids) && ids.length > 0)
+}
+
+function sanitizeAnswersForCurrentPaper(value: unknown) {
+  if (!value || typeof value !== "object") return {}
+  const source = value as Record<string, unknown>
+  const sanitized: Record<string, string[]> = {}
+
+  questions.value.forEach((question: any) => {
+    const questionId = questionIdOf(question)
+    if (!questionId) return
+    const optionIds = new Set((Array.isArray(question.options) ? question.options : []).map(optionIdOf).filter(Boolean))
+    const selected = Array.isArray(source[questionId]) ? (source[questionId] as unknown[]) : []
+    const uniqueSelected = Array.from(new Set(selected.map((id) => firstString(id)).filter(Boolean)))
+      .filter((id) => optionIds.size === 0 || optionIds.has(id))
+    const normalizedSelected = Number(question.question_type) === 2 ? uniqueSelected : uniqueSelected.slice(-1)
+    if (normalizedSelected.length > 0) sanitized[questionId] = normalizedSelected
+  })
+
+  return sanitized
+}
+
+function clearQuizDraft() {
+  const key = quizDraftStorageKey()
+  if (!key) return
+  try {
+    window.localStorage.removeItem(key)
+  } catch (err) {
+    console.warn("Failed to clear quiz draft", err)
+  }
+}
+
+function persistQuizDraft(nextAnswers = answers.value) {
+  const key = quizDraftStorageKey()
+  if (!key) return
+  const sanitized = sanitizeAnswersForCurrentPaper(nextAnswers)
+  if (!hasAnswerValues(sanitized)) {
+    clearQuizDraft()
+    return
+  }
+  try {
+    window.localStorage.setItem(key, JSON.stringify({ attemptId: attemptId.value, answers: sanitized, updatedAt: Date.now() }))
+  } catch (err) {
+    console.warn("Failed to save quiz draft", err)
+  }
+}
+
+function restoreQuizDraft() {
+  const key = quizDraftStorageKey()
+  if (!key) return
+  try {
+    const raw = window.localStorage.getItem(key)
+    if (!raw) return
+    const payload = JSON.parse(raw) as { attemptId?: string; answers?: Record<string, string[]>; updatedAt?: number }
+    if (payload.attemptId && payload.attemptId !== attemptId.value) {
+      window.localStorage.removeItem(key)
+      return
+    }
+    if (payload.updatedAt && Date.now() - payload.updatedAt > QUIZ_DRAFT_MAX_AGE_MS) {
+      window.localStorage.removeItem(key)
+      return
+    }
+    const restoredAnswers = sanitizeAnswersForCurrentPaper(payload.answers)
+    if (!hasAnswerValues(restoredAnswers)) {
+      window.localStorage.removeItem(key)
+      return
+    }
+    answers.value = restoredAnswers
+    toast.info(t.value.learning?.quizDraftRestored || "")
+  } catch (err) {
+    console.warn("Failed to restore quiz draft", err)
+    clearQuizDraft()
+  }
+}
+
+function quizLeaveConfirmMessage() {
+  return t.value.learning?.quizLeaveConfirm || "You have unsubmitted answers. Leave this quiz?"
+}
+
+function shouldConfirmLeavingQuiz() {
+  return !result.value && answeredCount.value > 0
+}
+
+function handleBeforeUnload(event: BeforeUnloadEvent) {
+  if (!shouldConfirmLeavingQuiz()) return
+  event.preventDefault()
+  event.returnValue = quizLeaveConfirmMessage()
+}
+
 async function loadPaper() {
   if (!attemptId.value) {
     loading.value = false
@@ -74,6 +171,7 @@ async function loadPaper() {
       ...res,
       questions: Array.isArray(res?.questions) ? res.questions.map(normalizeQuestion) : [],
     }
+    restoreQuizDraft()
   } finally {
     loading.value = false
   }
@@ -83,20 +181,24 @@ function handleSelectOption(questionId: string, optionId: string, isMultipleChoi
   const current = answers.value[questionId] || []
   if (!isMultipleChoice) {
     answers.value = { ...answers.value, [questionId]: [optionId] }
+    persistQuizDraft()
     return
   }
   answers.value = {
     ...answers.value,
     [questionId]: current.includes(optionId) ? current.filter((id) => id !== optionId) : [...current, optionId],
   }
+  persistQuizDraft()
 }
 
 async function submitQuiz() {
   if (!paper.value?.questions) return
-  const submissions = Object.entries(answers.value).map(([questionId, selectedOptionIds]) => ({ question_id: questionId, selected_option_ids: selectedOptionIds }))
+  const sanitizedAnswers = sanitizeAnswersForCurrentPaper(answers.value)
+  const submissions = Object.entries(sanitizedAnswers).map(([questionId, selectedOptionIds]) => ({ question_id: questionId, selected_option_ids: selectedOptionIds }))
   submitting.value = true
   try {
     result.value = await apiClient(`/api/quizzes/attempts/${attemptId.value}/submit`, { method: "POST", body: JSON.stringify({ submissions }) })
+    clearQuizDraft()
     toast.success(t.value.learning?.quizSubmittedDesc || t.value.common.success)
   } finally {
     submitting.value = false
@@ -119,7 +221,19 @@ function getAnswerDetail(questionId: string) {
   return detailedAnswers.value.find((a: any) => a.question_id === questionId || a.questionUlid === questionId)
 }
 
-onMounted(loadPaper)
+onMounted(() => {
+  window.addEventListener("beforeunload", handleBeforeUnload)
+  void loadPaper()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener("beforeunload", handleBeforeUnload)
+})
+
+onBeforeRouteLeave(() => {
+  if (!shouldConfirmLeavingQuiz()) return true
+  return window.confirm(quizLeaveConfirmMessage())
+})
 </script>
 
 <template>
@@ -266,7 +380,7 @@ onMounted(loadPaper)
       </div>
 
       <div class="sticky bottom-4 flex flex-col items-center justify-between gap-4 rounded-md bg-white/95 p-4 shadow-sm backdrop-blur-md sm:flex-row sm:p-6">
-        <div class="text-sm text-muted-foreground">{{ formatQuizAnsweredCount(Object.keys(answers).length, questions.length) }}</div>
+        <div class="text-sm text-muted-foreground">{{ formatQuizAnsweredCount(answeredCount, questions.length) }}</div>
         <button class="btn btn-primary w-full cursor-pointer px-8 disabled:cursor-not-allowed sm:w-auto" :disabled="submitting || !allAnswered" @click="submitQuiz">
           <span v-if="submitting" class="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-r-transparent" />
           <FileText v-else class="h-4 w-4" />

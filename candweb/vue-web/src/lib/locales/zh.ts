@@ -414,6 +414,8 @@ export const zh = {
     quizPts: "分",
     quizAnsweredCount: "已答: {{current}} / {{total}}",
     quizSubmit: "提交答卷",
+    quizDraftRestored: "已恢复上次未提交的答案。",
+    quizLeaveConfirm: "当前测验还有未提交的答案，确定要离开吗？",
     materialsTitle: "课程资料",
     materialsDesc: "这里展示当前课程下的教材、课件和参考资料。",
     materialsCountSuffix: "条资料",

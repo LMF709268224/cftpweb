@@ -416,6 +416,8 @@ export const en: AppTranslations = {
     quizPts: "pts",
     quizAnsweredCount: "Answered: {{current}} / {{total}}",
     quizSubmit: "Submit Quiz",
+    quizDraftRestored: "Your unsubmitted answers have been restored.",
+    quizLeaveConfirm: "This quiz has unsubmitted answers. Are you sure you want to leave?",
     materialsTitle: "Course Materials",
     materialsDesc: "This area shows the textbooks, slides, and reference materials for the current course.",
     materialsCountSuffix: "materials",
