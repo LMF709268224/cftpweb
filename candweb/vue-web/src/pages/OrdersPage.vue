@@ -375,13 +375,13 @@ function orderTypeLabel(bizType?: string) {
   const zh = lang.value === "zh"
   switch (normalized) {
     case "PIPELINE_PAYMENT":
-      return zh ? "\u7ba1\u7ebf\u8ba2\u5355" : "Pipeline Order"
+      return zh ? "\u8ba4\u8bc1\u8ba2\u5355" : "Certification Order"
     case "STAGE_PAYMENT":
       return zh ? "\u9636\u6bb5\u8ba2\u5355" : "Stage Order"
     case "COURSE_RETAKE_PAYMENT":
       return zh ? "\u91cd\u8003\u8ba2\u5355" : "Retake Order"
     case "PIPELINE_UNLOCK":
-      return zh ? "\u7ba1\u7ebf\u89e3\u9501\u8ba2\u5355" : "Pipeline Unlock Order"
+      return zh ? "\u8ba4\u8bc1\u89e3\u9501\u8ba2\u5355" : "Certification Unlock Order"
     case "CREDENTIAL_APPLICATION":
       return zh ? "\u8d44\u683c\u7533\u8bf7\u8ba2\u5355" : "Credential Application Order"
     case "BUNDLE_PURCHASE":
@@ -396,7 +396,7 @@ function orderStatusFilterLabel(status?: string) {
   const zh = lang.value === "zh"
   switch (normalized) {
     case "WAIT_PIPELINE_PAYMENT":
-      return zh ? "\u7ba1\u7ebf\u5f85\u652f\u4ed8" : "Pipeline Payment Pending"
+      return zh ? "\u8ba4\u8bc1\u5f85\u652f\u4ed8" : "Certification Payment Pending"
     case "WAIT_STAGE_PAYMENT":
       return zh ? "\u9636\u6bb5\u5f85\u652f\u4ed8" : "Stage Payment Pending"
     case "WAIT_RETAKE_PAYMENT":

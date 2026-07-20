@@ -42,6 +42,58 @@ async function loadTimeline() {
   }
 }
 
+function learningLabel(key: string, fallback: string) {
+  const learning = t.value.learning as Record<string, string>
+  return learning?.[key] || fallback
+}
+
+function normalizeEnumValue(value?: string) {
+  return String(value || "").trim().toUpperCase()
+}
+
+function timelineEntityLabel(entityType?: string) {
+  switch (normalizeEnumValue(entityType)) {
+    case "PIPELINE":
+      return learningLabel("timelineEntityPipeline", "Certification Flow")
+    case "STAGE":
+      return learningLabel("timelineEntityStage", "Stage")
+    case "COURSE_UNIT":
+      return learningLabel("timelineEntityCourseUnit", "Course Unit")
+    default:
+      return entityType || t.value.common.unknown
+  }
+}
+
+function timelineEventLabel(eventType?: string) {
+  switch (normalizeEnumValue(eventType)) {
+    case "STAGE_ADVANCED":
+      return learningLabel("timelineEventStageAdvanced", "Stage advanced")
+    case "STATUS_CHANGED":
+    case "STATUS_CHANGE":
+      return learningLabel("timelineEventStatusChanged", "Status changed")
+    case "CREATED":
+      return learningLabel("timelineEventCreated", "Created")
+    case "UPDATED":
+      return learningLabel("timelineEventUpdated", "Updated")
+    default:
+      return eventType || t.value.common.unknown
+  }
+}
+
+function timelineSourceLabel(source?: string) {
+  switch (normalizeEnumValue(source)) {
+    case "SYSTEM":
+      return learningLabel("timelineSourceSystem", "System update")
+    case "ADMIN":
+      return learningLabel("timelineSourceAdmin", "Admin action")
+    case "CANDIDATE":
+    case "USER":
+      return learningLabel("timelineSourceCandidate", "Candidate action")
+    default:
+      return source || t.value.common.unknown
+  }
+}
+
 onMounted(loadTimeline)
 </script>
 
@@ -74,8 +126,8 @@ onMounted(loadTimeline)
       <div v-else class="space-y-4">
         <div v-for="log in logs" :key="log.transition_ulid || `${log.entity_type}-${log.created_at}`" class="rounded-lg bg-background p-4 shadow-sm">
           <div class="mb-2 flex flex-wrap items-center gap-2">
-            <span class="badge">{{ log.entity_type || t.common.unknown }}</span>
-            <span class="badge border-0 bg-primary/10 text-primary">{{ log.event_type || t.common.unknown }}</span>
+            <span class="badge">{{ timelineEntityLabel(log.entity_type) }}</span>
+            <span class="badge border-0 bg-primary/10 text-primary">{{ timelineEventLabel(log.event_type) }}</span>
             <span class="text-sm text-muted-foreground">{{ formatBackendDate(log.created_at) || t.common.unknown }}</span>
           </div>
           <div class="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
@@ -84,7 +136,7 @@ onMounted(loadTimeline)
             <span>{{ timelineStatusLabel(t, log.entity_type, log.to_status) }}</span>
           </div>
           <div class="mt-2 text-sm text-muted-foreground">{{ log.reason_message || log.reason_code || t.common.unknown }}</div>
-          <div class="mt-2 text-xs text-muted-foreground">{{ log.trigger_source || t.common.unknown }}</div>
+          <div class="mt-2 text-xs text-muted-foreground">{{ timelineSourceLabel(log.trigger_source) }}</div>
         </div>
       </div>
     </div>

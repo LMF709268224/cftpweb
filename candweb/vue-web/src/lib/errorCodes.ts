@@ -59,8 +59,8 @@ export const ErrorMessages: Record<string, { zh: string; en: string }> = {
     en: "Failed to update profile. Please check your input.",
   },
   PIPELINE_NOT_FOUND: {
-    zh: "未找到对应管线",
-    en: "Pipeline not found.",
+    zh: "未找到对应认证流程",
+    en: "Certification flow not found.",
   },
   ALREADY_PURCHASED: {
     zh: "您已购买该项目",
@@ -71,8 +71,8 @@ export const ErrorMessages: Record<string, { zh: string; en: string }> = {
     en: "You have an in-progress order. Please complete or cancel the existing order first.",
   },
   INVALID_PIPELINE: {
-    zh: "管线信息无效",
-    en: "Invalid pipeline.",
+    zh: "认证流程信息无效",
+    en: "Invalid certification flow.",
   },
   EXAM_NOT_FOUND: {
     zh: "未找到对应考试",
@@ -161,7 +161,7 @@ const FieldLabels: Record<string, { zh: string; en: string }> = {
   object_key: { zh: "Object Key", en: "object key" },
   option_id: { zh: "选项 ID", en: "option ID" },
   option_text: { zh: "选项内容", en: "option text" },
-  pipeline_id: { zh: "管线 ID", en: "pipeline ID" },
+  pipeline_id: { zh: "认证流程 ID", en: "certification flow ID" },
   question_id: { zh: "题目 ID", en: "question ID" },
   question_text: { zh: "题目内容", en: "question text" },
   question_type: { zh: "题目类型", en: "question type" },
