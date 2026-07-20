@@ -821,7 +821,7 @@ export const zh = {
     sourceSystem: "系统颁发",
     celebrationModalTitle: "恭喜！",
     celebrationModalHeadline: "恭喜您获得新证书",
-    celebrationModalDesc: "您的学习成果已经正式转化为专业证书。现在可以下载您的荣誉证书，或一键分享这一值得庆祝的成就。",
+    celebrationModalDesc: "您的学习成果已经正式转化为专业证书。现在可以下载您的荣誉证书。",
     celebrationModalDownload: "下载您的荣誉证书",
     celebrationModalShare: "一键分享",
     celebrationModalDismiss: "稍后再说",

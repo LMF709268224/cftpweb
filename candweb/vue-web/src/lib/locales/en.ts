@@ -823,8 +823,7 @@ export const en: AppTranslations = {
     sourceSystem: "System Issued",
     celebrationModalTitle: "Congratulations!",
     celebrationModalHeadline: "You have earned your CFtP professional certificate",
-    celebrationModalDesc:
-      "Your learning achievement has officially become a professional certificate. You can now download your honor certificate or share this milestone in one click.",
+    celebrationModalDesc: "Your learning achievement has officially become a professional certificate. You can now download your honor certificate.",
     celebrationModalDownload: "Download Your Honor Certificate",
     celebrationModalShare: "Share in One Click",
     celebrationModalDismiss: "Maybe later",
