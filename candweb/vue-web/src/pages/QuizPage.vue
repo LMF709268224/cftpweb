@@ -155,6 +155,10 @@ function quizLeaveConfirmMessage() {
   return t.value.learning?.quizLeaveConfirm || "You have unsubmitted answers. Leave this quiz?"
 }
 
+function quizSubmitConfirmMessage() {
+  return t.value.learning?.quizSubmitConfirm || "Submit this quiz now? You cannot change your answers after submitting."
+}
+
 function shouldConfirmLeavingQuiz() {
   return !result.value && answeredCount.value > 0
 }
@@ -199,6 +203,7 @@ function handleSelectOption(questionId: string, optionId: string, isMultipleChoi
 
 async function submitQuiz() {
   if (!paper.value?.questions) return
+  if (!window.confirm(quizSubmitConfirmMessage())) return
   const sanitizedAnswers = sanitizeAnswersForCurrentPaper(answers.value)
   const submissions = Object.entries(sanitizedAnswers).map(([questionId, selectedOptionIds]) => ({ question_id: questionId, selected_option_ids: selectedOptionIds }))
   submitting.value = true

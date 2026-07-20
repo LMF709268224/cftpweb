@@ -480,6 +480,7 @@ export const zh = {
     quizSubmit: "提交答卷",
     quizDraftRestored: "已恢复上次未提交的答案。",
     quizLeaveConfirm: "当前测验还有未提交的答案，确定要离开吗？",
+    quizSubmitConfirm: "确定要提交本次测验吗？提交后将无法修改答案。",
     quizDetailButton: "查看详细批改结果",
     quizDetailTitle: "详细批改结果",
     quizCorrectAnswer: "正确答案",

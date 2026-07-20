@@ -482,6 +482,7 @@ export const en: AppTranslations = {
     quizSubmit: "Submit Quiz",
     quizDraftRestored: "Your unsubmitted answers have been restored.",
     quizLeaveConfirm: "This quiz has unsubmitted answers. Are you sure you want to leave?",
+    quizSubmitConfirm: "Submit this quiz now? You cannot change your answers after submitting.",
     quizDetailButton: "View Detailed Grading Results",
     quizDetailTitle: "Detailed Grading Results",
     quizCorrectAnswer: "Correct answer",
