@@ -808,6 +808,7 @@ export const en: AppTranslations = {
     bioPlaceholder: "Introduce yourself briefly...",
     updatePassword: "Update Password",
     updatePasswordDesc: "It is recommended to change your password regularly for security.",
+    validationRequired: "Please fill in required field: {{field}}",
     validationInvalidPhone: "{{field}} is invalid. Use 7-15 digits, optionally starting with +",
     validationInvalidPostalCode: "Postal code is invalid. Use 2-16 letters, digits, spaces, or hyphens",
     currentPassword: "Current Password",

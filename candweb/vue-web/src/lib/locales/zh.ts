@@ -806,6 +806,7 @@ export const zh = {
     bioPlaceholder: "简单介绍一下自己...",
     updatePassword: "修改密码",
     updatePasswordDesc: "建议您定期更换密码以保障账号安全。",
+    validationRequired: "请填写必填字段: {{field}}",
     validationInvalidPhone: "{{field}} 格式不正确，请填写 7-15 位数字，可带国家区号 +",
     validationInvalidPostalCode: "邮政编码格式不正确，请使用 2-16 位字母、数字、空格或连字符",
     currentPassword: "当前密码",

@@ -291,11 +291,29 @@ watch(lang, () => {
 async function handleUpdateProfile() {
   sanitizeProfileForm()
 
+  const requiredFields = [
+    [profile.email, t.value.settings.email],
+    [profile.firstName, t.value.settings.firstName],
+    [profile.lastName, t.value.settings.lastName],
+    [profile.gender, t.value.settings.gender],
+    [profile.birthday, t.value.settings.birthday],
+    [profile.country, t.value.settings.country],
+    [profile.province, t.value.settings.province],
+    [profile.city, t.value.settings.city],
+    [profile.address, t.value.settings.address],
+    [profile.postalCode, t.value.settings.postalCode],
+  ] as const
+  for (const [value, label] of requiredFields) {
+    if (!String(value).trim()) {
+      toast.error(t.value.settings.validationRequired.replace("{{field}}", label))
+      return
+    }
+  }
   if (!isValidInternationalPhone(profile.workPhone)) {
     toast.error(t.value.settings.validationInvalidPhone.replace("{{field}}", t.value.settings.workPhone))
     return
   }
-  if (!isValidPostalCode(profile.postalCode)) {
+  if (!isValidPostalCode(profile.postalCode, true)) {
     toast.error(t.value.settings.validationInvalidPostalCode)
     return
   }
@@ -397,19 +415,19 @@ async function handleUpdatePassword() {
         <form class="max-w-2xl space-y-4" @submit.prevent="handleUpdateProfile">
           <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.loginId }}</span><input v-model="profile.name" class="input bg-muted" disabled /></label>
-            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.email }}</span><input v-model="profile.email" class="input bg-muted" disabled /></label>
+            <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.email }}</span><input v-model="profile.email" class="input bg-muted" disabled required /></label>
             <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.displayName }}</span><input v-model="profile.displayName" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" :placeholder="t.settings.displayNamePlaceholder" /></label>
             <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.realName }}</span><input v-model="profile.realName" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" :placeholder="t.settings.realNamePlaceholder" /></label>
-            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.firstName }}</span><input v-model="profile.firstName" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" :placeholder="t.settings.firstNamePlaceholder" /></label>
-            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.lastName }}</span><input v-model="profile.lastName" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" :placeholder="t.settings.lastNamePlaceholder" /></label>
+            <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.firstName }}</span><input v-model="profile.firstName" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" :placeholder="t.settings.firstNamePlaceholder" required /></label>
+            <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.lastName }}</span><input v-model="profile.lastName" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" :placeholder="t.settings.lastNamePlaceholder" required /></label>
             <label class="space-y-2">
-              <span class="text-sm font-medium">{{ t.settings.gender }}</span>
-              <select v-model="profile.gender" class="input cursor-pointer">
+              <span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.gender }}</span>
+              <select v-model="profile.gender" class="input cursor-pointer" required>
                 <option value="">{{ t.settings.genderPlaceholder }}</option>
                 <option v-for="option in genderOptions" :key="option" :value="option">{{ t.common.genderOptions[option] }}</option>
               </select>
             </label>
-            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.birthday }}</span><input v-model="profile.birthday" class="input" type="date" /></label>
+            <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.birthday }}</span><input v-model="profile.birthday" class="input" type="date" required /></label>
 
             <label class="space-y-2">
               <span class="text-sm font-medium">{{ t.settings.workPhone }}</span>
@@ -425,30 +443,30 @@ async function handleUpdatePassword() {
               />
             </label>
             <label class="space-y-2">
-              <span class="text-sm font-medium">{{ t.settings.country }}</span>
-              <select v-model="selectedCountryCode" class="input cursor-pointer" @change="handleCountryChange">
+              <span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.country }}</span>
+              <select v-model="selectedCountryCode" class="input cursor-pointer" required @change="handleCountryChange">
                 <option value="">{{ t.settings.countryPlaceholder }}</option>
                 <option v-for="country in countryOptions" :key="country.code" :value="country.code">{{ country.name }}</option>
               </select>
             </label>
             <label class="space-y-2">
-              <span class="text-sm font-medium">{{ t.settings.province }}</span>
-              <select v-if="provinceOptions.length > 0" v-model="selectedProvinceCode" class="input cursor-pointer" @change="handleProvinceChange">
+              <span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.province }}</span>
+              <select v-if="provinceOptions.length > 0" v-model="selectedProvinceCode" class="input cursor-pointer" required @change="handleProvinceChange">
                 <option value="">{{ t.settings.provincePlaceholder }}</option>
                 <option v-for="province in provinceOptions" :key="province.isoCode" :value="province.isoCode">{{ localizedProvinceName(province) }}</option>
               </select>
-              <input v-else v-model="profile.province" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" :placeholder="t.settings.provincePlaceholder" />
+              <input v-else v-model="profile.province" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" :placeholder="t.settings.provincePlaceholder" required />
             </label>
             <label class="space-y-2">
-              <span class="text-sm font-medium">{{ t.settings.city }}</span>
-              <select v-if="cityOptions.length > 0" v-model="profile.city" class="input cursor-pointer">
+              <span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.city }}</span>
+              <select v-if="cityOptions.length > 0" v-model="profile.city" class="input cursor-pointer" required>
                 <option value="">{{ t.settings.cityPlaceholder }}</option>
                 <option v-for="city in cityOptions" :key="`${city.name}-${city.latitude}-${city.longitude}`" :value="localizedCityName(city)">{{ localizedCityName(city) }}</option>
               </select>
-              <input v-else v-model="profile.city" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" :placeholder="t.settings.cityPlaceholder" />
+              <input v-else v-model="profile.city" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" :placeholder="t.settings.cityPlaceholder" required />
             </label>
-            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.postalCode }}</span><input v-model="profile.postalCode" class="input" :maxlength="PROFILE_TEXT_LIMITS.postalCode" pattern="[A-Za-z0-9][A-Za-z0-9 -]*[A-Za-z0-9]" :placeholder="t.settings.postalCodePlaceholder" @blur="profile.postalCode = normalizePostalCode(profile.postalCode)" /></label>
-            <label class="space-y-2 md:col-span-2"><span class="text-sm font-medium">{{ t.settings.address }}</span><input v-model="profile.address" class="input" :maxlength="PROFILE_TEXT_LIMITS.address" :placeholder="t.settings.addressPlaceholder" /></label>
+            <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.postalCode }}</span><input v-model="profile.postalCode" class="input" :maxlength="PROFILE_TEXT_LIMITS.postalCode" pattern="[A-Za-z0-9][A-Za-z0-9 -]*[A-Za-z0-9]" :placeholder="t.settings.postalCodePlaceholder" required @blur="profile.postalCode = normalizePostalCode(profile.postalCode)" /></label>
+            <label class="space-y-2 md:col-span-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.address }}</span><input v-model="profile.address" class="input" :maxlength="PROFILE_TEXT_LIMITS.address" :placeholder="t.settings.addressPlaceholder" required /></label>
             <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.affiliation }}</span><input v-model="profile.affiliation" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" :placeholder="t.settings.affiliationPlaceholder" /></label>
             <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.jobTitle }}</span><input v-model="profile.title" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" :placeholder="t.settings.jobTitlePlaceholder" /></label>
             <label class="space-y-2 md:col-span-2"><span class="text-sm font-medium">{{ t.settings.education }}</span><input v-model="profile.education" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" :placeholder="t.settings.educationPlaceholder" /></label>

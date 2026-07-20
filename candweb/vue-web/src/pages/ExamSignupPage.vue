@@ -417,31 +417,31 @@ async function handleSubmit() {
         <div class="max-w-2xl rounded-[16px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <form class="space-y-6" @submit.prevent="handleSubmit">
         <div class="grid gap-4 sm:grid-cols-2">
-          <label class="space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formFirstName }} <span class="text-red-500">*</span></span><input v-model="formData.first_name" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" required /></label>
-          <label class="space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formLastName }} <span class="text-red-500">*</span></span><input v-model="formData.last_name" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" required /></label>
+          <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formFirstName }}</span><input v-model="formData.first_name" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" required /></label>
+          <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formLastName }}</span><input v-model="formData.last_name" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" required /></label>
         </div>
         <label class="block space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formMiddleName }}</span><input v-model="formData.middle_name" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" /></label>
         <div class="grid gap-4 sm:grid-cols-2">
-          <label class="space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formEmail }} <span class="text-red-500">*</span></span><input v-model="formData.email" class="input" type="email" :maxlength="PROFILE_TEXT_LIMITS.short" required /></label>
+          <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formEmail }}</span><input v-model="formData.email" class="input" type="email" :maxlength="PROFILE_TEXT_LIMITS.short" required /></label>
           <label class="space-y-2">
-            <span class="text-sm font-medium">{{ t.examSignup.formGender }} <span class="text-red-500">*</span></span>
+            <span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formGender }}</span>
             <select v-model="formData.gender" class="input cursor-pointer" required>
               <option value="" disabled>{{ t.examSignup.formGender }}</option>
               <option v-for="option in genderOptions" :key="option" :value="option">{{ t.common.genderOptions[option] }}</option>
             </select>
           </label>
         </div>
-        <label class="block space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formBirthdate }} <span class="text-red-500">*</span></span><input v-model="formData.birthdate" class="input" type="date" required /></label>
+        <label class="block space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formBirthdate }}</span><input v-model="formData.birthdate" class="input" type="date" required /></label>
         <div class="grid gap-4 sm:grid-cols-3">
           <label class="space-y-2">
-            <span class="text-sm font-medium">{{ t.examSignup.formCountry }} <span class="text-red-500">*</span></span>
+            <span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formCountry }}</span>
             <select v-model="selectedCountryCode" class="input cursor-pointer" required @change="handleCountryChange">
               <option value="" disabled>{{ t.examSignup.formCountry }}</option>
               <option v-for="country in countryOptions" :key="country.code" :value="country.code">{{ country.name }}</option>
             </select>
           </label>
           <label class="space-y-2">
-            <span class="text-sm font-medium">{{ t.examSignup.formProvince }} <span class="text-red-500">*</span></span>
+            <span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formProvince }}</span>
             <select v-if="provinceOptions.length > 0" v-model="selectedProvinceCode" class="input cursor-pointer" required @change="handleProvinceChange">
               <option value="" disabled>{{ t.examSignup.formProvince }}</option>
               <option v-for="province in provinceOptions" :key="province.isoCode" :value="province.isoCode">{{ localizedProvinceName(province) }}</option>
@@ -449,7 +449,7 @@ async function handleSubmit() {
             <input v-else v-model="formData.province" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" required />
           </label>
           <label class="space-y-2">
-            <span class="text-sm font-medium">{{ t.examSignup.formCity }} <span class="text-red-500">*</span></span>
+            <span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formCity }}</span>
             <select v-if="cityOptions.length > 0" v-model="formData.city" class="input cursor-pointer" required>
               <option value="" disabled>{{ t.examSignup.formCity }}</option>
               <option v-for="city in cityOptions" :key="`${city.name}-${city.latitude}-${city.longitude}`" :value="localizedCityName(city)">{{ localizedCityName(city) }}</option>
@@ -457,8 +457,8 @@ async function handleSubmit() {
             <input v-else v-model="formData.city" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" required />
           </label>
         </div>
-        <label class="block space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formAddress }} <span class="text-red-500">*</span></span><input v-model="formData.address" class="input" :maxlength="PROFILE_TEXT_LIMITS.address" required /></label>
-        <label class="block space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formPostalCode }} <span class="text-red-500">*</span></span><input v-model="formData.postal_code" class="input" :maxlength="PROFILE_TEXT_LIMITS.postalCode" pattern="[A-Za-z0-9][A-Za-z0-9 -]*[A-Za-z0-9]" required @blur="formData.postal_code = normalizePostalCode(formData.postal_code)" /></label>
+        <label class="block space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formAddress }}</span><input v-model="formData.address" class="input" :maxlength="PROFILE_TEXT_LIMITS.address" required /></label>
+        <label class="block space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formPostalCode }}</span><input v-model="formData.postal_code" class="input" :maxlength="PROFILE_TEXT_LIMITS.postalCode" pattern="[A-Za-z0-9][A-Za-z0-9 -]*[A-Za-z0-9]" required @blur="formData.postal_code = normalizePostalCode(formData.postal_code)" /></label>
         <div class="grid gap-4 sm:grid-cols-1">
           <label class="space-y-2">
             <span class="text-sm font-medium">{{ t.examSignup.formWorkPhone }}</span>
