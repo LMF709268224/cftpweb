@@ -198,7 +198,7 @@ func normalizeAndValidateSignupExamInput(input *SignupExamInput) error {
 	input.Address = trimProfileText(input.Address, profileAddressMax)
 	input.PostalCode = normalizeProfilePostalCode(input.PostalCode)
 
-	if !validProfilePhone(input.HomePhone, true) {
+	if !validProfilePhone(input.HomePhone, false) {
 		return fmt.Errorf("home_phone is invalid")
 	}
 	if !validProfilePhone(input.WorkPhone, false) {
