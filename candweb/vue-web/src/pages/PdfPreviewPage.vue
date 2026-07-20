@@ -291,10 +291,8 @@ onErrorCaptured((err) => {
 
   <div v-else class="flex h-screen flex-col bg-[#eef8f7]">
     <header class="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 shadow-sm">
-      <button class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100" @click="goBack">
-        <ArrowLeft class="h-4 w-4" />
-        {{ t.preview.backToCourse }}
-      </button>
+      <!-- The back button is removed because the page opens in a new window -->
+      <div class="w-[88px]"></div>
       <div class="min-w-0 flex-1 px-4 text-center">
         <div class="inline-flex max-w-full items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-slate-900">
           <FileText class="h-4 w-4 shrink-0 text-emerald-500" />
