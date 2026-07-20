@@ -1369,7 +1369,7 @@ async function openLessonPdf() {
     toast.error(t.value.common.error)
     return
   }
-  sessionStorage.setItem(`lesson-pdf-preview-title:${lessonId}`, lesson.value?.title || "PDF Preview")
+  sessionStorage.setItem(`lesson-pdf-preview-title:${lessonId}`, lesson.value?.title || t.value.preview.pdfTitle)
   openPreviewTab(`/pdf-preview/lessons/${encodeURIComponent(lessonId)}`)
 }
 
