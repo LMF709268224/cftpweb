@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import { RouterLink } from "vue-router"
+import { toast } from "vue-sonner"
 import { BookOpen, Clock, Eye } from "lucide-vue-next"
 import { CANDIDATE_PIPELINE_STATUS_LABELS, statusLabel, timelineStatusBadgeClassForStatus } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
@@ -60,7 +61,34 @@ async function refreshMyCourses() {
   }
 }
 
+function handlePaymentReturn() {
+  const url = new URL(window.location.href)
+  const paymentStatus = url.searchParams.get("payment_status")
+  if (!paymentStatus) return
+
+  const paymentAction = url.searchParams.get("payment_action")
+  const isUnlock = paymentAction === "unlock"
+  const copy = t.value.paymentReturnHandler || {}
+
+  if (paymentStatus === "success") {
+    toast.success(isUnlock ? copy.unlockSuccess : copy.purchaseSuccess)
+  } else if (paymentStatus === "cancelled") {
+    toast.warning(copy.cancelled)
+  } else if (paymentStatus === "failed") {
+    toast.error(copy.failed)
+  }
+
+  localStorage.removeItem("pending_mall_payment")
+  url.searchParams.delete("payment_status")
+  url.searchParams.delete("payment_action")
+  url.searchParams.delete("order_id")
+  url.searchParams.delete("pipeline_id")
+  url.searchParams.delete("bundle_id")
+  window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`)
+}
+
 onMounted(() => {
+  handlePaymentReturn()
   void refreshMyCourses()
 })
 </script>

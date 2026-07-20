@@ -729,7 +729,7 @@ async function createUnlockOrder() {
         bizRefUlid: orderId,
         orderId,
         source: "unlock",
-        returnPath: "/certifications",
+        returnPath: "/my-certifications",
         extraReturnParams: {
           pipeline_id: props.pipelineId,
           bundle_id: resolvedBundleId.value,
@@ -868,18 +868,18 @@ function initiatePayment() {
   paymentLoading.value = true
   try {
     rememberPendingMallPayment()
-  activePaymentSession.value = {
-    bizType,
-    bizRefUlid: activeOrder.value.orderId,
-    orderId: activeOrder.value.orderId,
-    source: activeOrder.value.action,
-      returnPath: "/certifications",
+    activePaymentSession.value = {
+      bizType,
+      bizRefUlid: activeOrder.value.orderId,
+      orderId: activeOrder.value.orderId,
+      source: activeOrder.value.action,
+      returnPath: "/my-certifications",
       extraReturnParams: {
         pipeline_id: props.pipelineId,
-      bundle_id: resolvedBundleId.value,
-    },
-    couponCodes: activeOrder.value.action === "purchase" ? activeCouponCodes.value : [],
-  }
+        bundle_id: resolvedBundleId.value,
+      },
+      couponCodes: activeOrder.value.action === "purchase" ? activeCouponCodes.value : [],
+    }
     paymentLoading.value = false
   } catch (error) {
     console.error(error)
