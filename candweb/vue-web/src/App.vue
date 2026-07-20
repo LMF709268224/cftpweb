@@ -12,6 +12,22 @@ const route = useRoute()
 const router = useRouter()
 const appError = ref("")
 
+function pageTitle() {
+  const titleKey = String(route.meta.titleKey || "home")
+  const pageTitles = t.value.pageTitles as Record<string, string>
+  const title = pageTitles[titleKey] || t.value.app.defaultPageTitle
+  return `${title} - ${t.value.app.titleSuffix}`
+}
+
+watch(
+  () => [route.fullPath, t.value] as const,
+  () => {
+    document.title = pageTitle()
+    document.documentElement.lang = t.value.app.htmlLang
+  },
+  { immediate: true },
+)
+
 function shouldFetchUser() {
   return Boolean(getAccessToken()) && route.path !== "/login" && route.path !== "/callback"
 }
