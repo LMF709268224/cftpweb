@@ -559,7 +559,7 @@ export const zh = {
     formCity: "城市",
     formAddress: "详细地址",
     formPostalCode: "邮政编码",
-    formWorkPhone: "工作电话",
+    formWorkPhone: "联系电话",
     formHomePhone: "家庭电话",
     syncToProfile: "同步到个人信息",
     syncingToProfile: "同步中...",

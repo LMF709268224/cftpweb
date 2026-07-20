@@ -561,7 +561,7 @@ export const en: AppTranslations = {
     formCity: "City",
     formAddress: "Detailed Address",
     formPostalCode: "Postal Code",
-    formWorkPhone: "Work Phone",
+    formWorkPhone: "Contact Phone",
     formHomePhone: "Home Phone",
     syncToProfile: "Sync to Profile",
     syncingToProfile: "Syncing...",
