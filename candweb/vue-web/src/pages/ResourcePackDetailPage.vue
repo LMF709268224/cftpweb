@@ -86,10 +86,11 @@ function normalizedType(type?: number | string) {
 
 function fileTypeLabel(type?: number | string) {
   const normalized = normalizedType(type)
-  if (normalized === 1) return "Webinar"
-  if (normalized === 2) return "PDF"
-  if (normalized === 3) return "ZIP"
-  return "File"
+  const page = t.value.resourcePackDetailPage
+  if (normalized === 1) return page.fileTypeWebinar
+  if (normalized === 2) return page.fileTypePdf
+  if (normalized === 3) return page.fileTypeZip
+  return page.fileTypeFile
 }
 
 function fallbackCoverClass(type?: number | string) {
@@ -106,11 +107,22 @@ function formatSize(size?: number) {
   return `${(size / 1024 / 1024).toFixed(1)} MB`
 }
 
+function formatMinuteDuration(minutes: number) {
+  if (!Number.isFinite(minutes) || minutes <= 0) return ""
+  return `${Math.floor(minutes)} ${t.value.common.minuteUnit}`
+}
+
 function formatDuration(file: ResourcePackFile) {
   const rawDuration = file.duration ?? file.duration_seconds
   if (typeof rawDuration === "string" && rawDuration.trim()) {
-    const numeric = Number(rawDuration)
-    if (!Number.isFinite(numeric)) return rawDuration.trim()
+    const trimmed = rawDuration.trim()
+    const numeric = Number(trimmed)
+    if (!Number.isFinite(numeric)) {
+      const minuteMatch = trimmed.match(/^(\d+(?:\.\d+)?)\s*(min|mins|minute|minutes)$/i)
+      if (minuteMatch) return formatMinuteDuration(Number(minuteMatch[1]))
+      if (trimmed.toLowerCase() === "unknown") return t.value.common.unknown
+      return trimmed
+    }
   }
 
   const seconds = Number(rawDuration || 0)
@@ -123,9 +135,9 @@ function formatDuration(file: ResourcePackFile) {
   }
 
   const minutes = Number(file.duration_min || 0)
-  if (Number.isFinite(minutes) && minutes > 0) return `${Math.floor(minutes)} min`
+  if (Number.isFinite(minutes) && minutes > 0) return formatMinuteDuration(minutes)
 
-  return "Unknown"
+  return t.value.common.unknown
 }
 
 function thumbnailFor(file: ResourcePackFile) {
@@ -319,7 +331,7 @@ onMounted(() => {
               <div v-else :class="['flex h-full w-full flex-col justify-between bg-gradient-to-br p-6 text-white', fallbackCoverClass(file.file_type)]">
                 <div />
                 <div>
-                  <div class="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-white/70">Global Fintech Institute</div>
+                  <div class="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-white/70">{{ t.common.instituteName }}</div>
                   <h2 class="line-clamp-3 text-2xl font-black leading-tight">{{ file.title || file.file_name || file.file_id }}</h2>
                 </div>
                 <div />

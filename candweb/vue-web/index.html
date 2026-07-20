@@ -47,9 +47,23 @@
       <div class="app-bootstrap-loading">
         <div class="app-bootstrap-card">
           <div class="app-bootstrap-spinner"></div>
-          <div>Loading preview...</div>
+          <div id="app-bootstrap-loading-text" data-loading-zh="加载中..." data-loading-en="Loading...">加载中...</div>
         </div>
       </div>
+      <script>
+        ;(() => {
+          const loadingText = document.getElementById("app-bootstrap-loading-text")
+          if (!loadingText) return
+
+          try {
+            const lang = window.localStorage.getItem("app_lang") === "en" ? "en" : "zh"
+            document.documentElement.lang = lang === "en" ? "en" : "zh-CN"
+            loadingText.textContent = lang === "en" ? loadingText.dataset.loadingEn : loadingText.dataset.loadingZh
+          } catch {
+            loadingText.textContent = loadingText.dataset.loadingZh
+          }
+        })()
+      </script>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>

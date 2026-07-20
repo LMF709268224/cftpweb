@@ -4,21 +4,23 @@ import { useRoute, useRouter } from "vue-router"
 import { PDFViewer } from "@embedpdf/vue-pdf-viewer"
 import { AlertTriangle, ArrowLeft, Calendar, FileText, Loader2, RotateCw } from "lucide-vue-next"
 import { apiClient } from "@/lib/apiClient"
+import { useTranslation } from "@/lib/language"
 
 const SLOW_PREVIEW_NOTICE_MS =  60 * 1000
 
 const route = useRoute()
 const router = useRouter()
-import { useTranslation } from "@/lib/language"
 const { t } = useTranslation()
 const viewerSrc = ref("")
 const loading = ref(false)
 const viewerReady = ref(false)
 const viewerFailed = ref(false)
 const slowPreview = ref(false)
-const errorMessage = ref("")
+type PdfPreviewErrorKey = "pdfNoResource" | "pdfFailed"
+const errorMessageKey = ref<PdfPreviewErrorKey | "">("")
 const previewTitle = ref("")
 const previewExpiresAt = ref("")
+const pdfViewerRegistry = ref<any>(null)
 let slowPreviewTimer: number | undefined
 
 const routeFileId = computed(() => String(route.params.fileId || ""))
@@ -33,10 +35,12 @@ const storedLessonTitle = computed(() =>
 const storedExternalTitle = computed(() =>
   routeResourceKey.value ? sessionStorage.getItem(`external-pdf-preview-title:${routeResourceKey.value}`) || "" : "",
 )
-const title = computed(() => String(route.query.title || storedResourceTitle.value || storedLessonTitle.value || storedExternalTitle.value || t.value.common.pdfPreview))
+const title = computed(() => String(route.query.title || storedResourceTitle.value || storedLessonTitle.value || storedExternalTitle.value || t.value.preview.pdfTitle))
 const isResourcePackPreview = computed(() => Boolean(routeFileId.value))
 const resourceDetailTitle = computed(() => previewTitle.value || title.value)
 const resourceDetailDate = computed(() => formatPreviewDate(previewExpiresAt.value))
+const errorMessage = computed(() => (errorMessageKey.value ? t.value.preview[errorMessageKey.value] : ""))
+const viewerLocale = computed(() => (t.value.app.htmlLang === "zh-CN" ? "zh-CN" : "en"))
 const source = computed(() => {
   const fileId = routeFileId.value
   if (fileId) return `/api/resource-pack-files/${encodeURIComponent(fileId)}/preview-url`
@@ -58,6 +62,10 @@ const source = computed(() => {
 
 const viewerConfig = computed(() => ({
   src: viewerSrc.value,
+  i18n: {
+    defaultLocale: viewerLocale.value,
+    fallbackLocale: "en",
+  },
   theme: {
     preference: "light",
     light: {
@@ -82,6 +90,11 @@ function startSlowPreviewTimer() {
   slowPreviewTimer = window.setTimeout(() => {
     slowPreview.value = true
   }, SLOW_PREVIEW_NOTICE_MS)
+}
+
+function syncViewerLocale() {
+  const i18n = pdfViewerRegistry.value?.getPlugin?.("i18n")?.provides?.()
+  i18n?.setLocale?.(viewerLocale.value)
 }
 
 function padDatePart(value: number) {
@@ -113,12 +126,12 @@ async function loadPdf() {
   viewerReady.value = false
   viewerFailed.value = false
   slowPreview.value = false
-  errorMessage.value = ""
+  errorMessageKey.value = ""
   previewTitle.value = ""
   previewExpiresAt.value = ""
 
   if (!source.value) {
-    errorMessage.value = "No PDF resource found for preview."
+    errorMessageKey.value = "pdfNoResource"
     return
   }
 
@@ -126,7 +139,7 @@ async function loadPdf() {
   try {
     const res = await apiClient(source.value, { timeoutMs: 60000 })
     if (!res?.url) {
-      errorMessage.value = "No PDF resource found for preview."
+      errorMessageKey.value = "pdfNoResource"
       return
     }
     previewTitle.value = String(res.title || "")
@@ -134,34 +147,39 @@ async function loadPdf() {
     viewerSrc.value = res.url
     startSlowPreviewTimer()
   } catch (err) {
-    errorMessage.value = "PDF preview failed. Please check your network and try again."
+    errorMessageKey.value = "pdfFailed"
   } finally {
     loading.value = false
   }
 }
 
-function handleViewerReady(registry: any) {
+function handleViewerReady(registry?: any) {
   viewerReady.value = true
-  if (registry && typeof registry.getPlugin === 'function') {
-    const scrollPlugin = registry.getPlugin('scroll')
-    if (scrollPlugin && scrollPlugin.capability) {
-      const cap = scrollPlugin.capability
-      const storageKey = `pdf-bookmark:${routeFileId.value || routeLessonId.value || routeResourceKey.value}`
-      const savedPage = localStorage.getItem(storageKey)
-      
-      if (savedPage) {
-        cap.onLayoutReady((e: any) => {
-          if (e.isInitial) {
-            setTimeout(() => {
-              cap.scrollToPage({ pageNumber: parseInt(savedPage, 10) })
-            }, 100)
-          }
+  if (registry) {
+    pdfViewerRegistry.value = registry
+    syncViewerLocale()
+
+    if (typeof registry.getPlugin === 'function') {
+      const scrollPlugin = registry.getPlugin('scroll')
+      if (scrollPlugin && scrollPlugin.capability) {
+        const cap = scrollPlugin.capability
+        const storageKey = `pdf-bookmark:${routeFileId.value || routeLessonId.value || routeResourceKey.value}`
+        const savedPage = localStorage.getItem(storageKey)
+        
+        if (savedPage) {
+          cap.onLayoutReady((e: any) => {
+            if (e.isInitial) {
+              setTimeout(() => {
+                cap.scrollToPage({ pageNumber: parseInt(savedPage, 10) })
+              }, 100)
+            }
+          })
+        }
+        
+        cap.onPageChange((e: any) => {
+          localStorage.setItem(storageKey, e.pageNumber.toString())
         })
       }
-      
-      cap.onPageChange((e: any) => {
-        localStorage.setItem(storageKey, e.pageNumber.toString())
-      })
     }
   }
 }
@@ -187,6 +205,7 @@ function goBackFromResourcePack() {
 }
 
 watch(source, loadPdf, { immediate: true })
+watch(viewerLocale, syncViewerLocale)
 onBeforeUnmount(clearSlowPreviewTimer)
 
 onErrorCaptured((err) => {
@@ -203,7 +222,7 @@ onErrorCaptured((err) => {
     <header class="shrink-0 px-4 pb-8 pt-4 sm:px-8 sm:pb-16 sm:pt-8">
       <button class="inline-flex h-10 items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm transition-colors hover:bg-slate-100" @click="goBackFromResourcePack">
         <ArrowLeft class="h-4 w-4" />
-        Back to Insights
+        {{ t.preview.backToInsights }}
       </button>
     </header>
 
@@ -220,21 +239,21 @@ onErrorCaptured((err) => {
             v-else
             :src="viewerSrc"
             class="h-full w-full border-0"
-            title="PDF preview fallback"
+            :title="t.preview.pdfFallbackTitle"
           />
           <div v-if="!viewerReady && !viewerFailed" class="absolute inset-0 z-10 flex items-center justify-center bg-white/90 text-sm text-slate-600 backdrop-blur-[1px]">
             <div class="flex max-w-sm flex-col items-center gap-4 rounded-2xl border border-slate-200 bg-white px-6 py-5 text-center shadow-[0_16px_40px_rgba(15,74,82,0.12)]">
               <Loader2 class="h-5 w-5 animate-spin text-blue-500" />
               <div class="space-y-1">
-                <div class="font-semibold text-slate-900">Loading PDF viewer...</div>
+                <div class="font-semibold text-slate-900">{{ t.preview.pdfViewerLoading }}</div>
                 <p v-if="slowPreview" class="text-xs leading-5 text-slate-500">
-                  This PDF is still loading. Large files may take longer on slow networks.
+                  {{ t.preview.pdfSlowNotice }}
                 </p>
               </div>
               <div class="flex flex-wrap justify-center gap-2">
                 <button class="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50" @click="loadPdf">
                   <RotateCw class="h-3.5 w-3.5" />
-                  Reload
+                  {{ t.preview.reload }}
                 </button>
               </div>
             </div>
@@ -243,16 +262,16 @@ onErrorCaptured((err) => {
         <div v-else class="flex h-full items-center justify-center text-sm text-slate-500">
           <div v-if="loading" class="flex items-center gap-2">
             <Loader2 class="h-5 w-5 animate-spin text-blue-500" />
-            Loading PDF preview...
+            {{ t.preview.pdfPreviewLoading }}
           </div>
           <div v-else class="flex max-w-md flex-col items-center gap-3 px-6 text-center">
             <div class="rounded-full bg-rose-50 p-4 text-rose-500">
               <AlertTriangle class="h-8 w-8" />
             </div>
-            <div class="text-base font-semibold text-slate-900">PDF preview failed</div>
-            <p>{{ errorMessage || "No PDF resource found for preview." }}</p>
+            <div class="text-base font-semibold text-slate-900">{{ t.preview.pdfFailedTitle }}</div>
+            <p>{{ errorMessage || t.preview.pdfNoResource }}</p>
             <button class="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-600" @click="loadPdf">
-              Reload
+              {{ t.preview.reload }}
             </button>
           </div>
         </div>
@@ -274,7 +293,7 @@ onErrorCaptured((err) => {
     <header class="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 shadow-sm">
       <button class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100" @click="goBack">
         <ArrowLeft class="h-4 w-4" />
-        {{ t.pdfPreview?.backToCourse || 'Back to Course' }}
+        {{ t.preview.backToCourse }}
       </button>
       <div class="min-w-0 flex-1 px-4 text-center">
         <div class="inline-flex max-w-full items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-slate-900">
@@ -297,21 +316,21 @@ onErrorCaptured((err) => {
           v-else
           :src="viewerSrc"
           class="h-full w-full border-0"
-          title="PDF preview fallback"
+          :title="t.preview.pdfFallbackTitle"
         />
         <div v-if="!viewerReady && !viewerFailed" class="absolute inset-0 z-10 flex items-center justify-center bg-white/90 text-sm text-slate-600 backdrop-blur-[1px]">
           <div class="flex max-w-sm flex-col items-center gap-4 rounded-2xl border border-slate-200 bg-white px-6 py-5 text-center shadow-[0_16px_40px_rgba(15,74,82,0.12)]">
             <Loader2 class="h-5 w-5 animate-spin text-emerald-500" />
             <div class="space-y-1">
-              <div class="font-semibold text-slate-900">Loading PDF viewer...</div>
+              <div class="font-semibold text-slate-900">{{ t.preview.pdfViewerLoading }}</div>
               <p v-if="slowPreview" class="text-xs leading-5 text-slate-500">
-                This PDF is still loading. Large files may take longer on slow networks.
+                {{ t.preview.pdfSlowNotice }}
               </p>
             </div>
             <div class="flex flex-wrap justify-center gap-2">
               <button class="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50" @click="loadPdf">
                 <RotateCw class="h-3.5 w-3.5" />
-                Reload
+                {{ t.preview.reload }}
               </button>
             </div>
           </div>
@@ -320,16 +339,16 @@ onErrorCaptured((err) => {
       <div v-else class="flex h-full items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white text-sm text-slate-500">
         <div v-if="loading" class="flex items-center gap-2">
           <Loader2 class="h-5 w-5 animate-spin text-emerald-500" />
-          Loading PDF preview...
+          {{ t.preview.pdfPreviewLoading }}
         </div>
         <div v-else class="flex max-w-md flex-col items-center gap-3 text-center">
           <div class="rounded-full bg-rose-50 p-4 text-rose-500">
             <AlertTriangle class="h-8 w-8" />
           </div>
-          <div class="text-base font-semibold text-slate-900">PDF preview failed</div>
-          <p>{{ errorMessage || "No PDF resource found for preview." }}</p>
+          <div class="text-base font-semibold text-slate-900">{{ t.preview.pdfFailedTitle }}</div>
+          <p>{{ errorMessage || t.preview.pdfNoResource }}</p>
           <button class="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-600" @click="loadPdf">
-            Reload
+            {{ t.preview.reload }}
           </button>
         </div>
       </div>
