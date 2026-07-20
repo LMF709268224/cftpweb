@@ -76,6 +76,14 @@ export const en: AppTranslations = {
     quiz: "Quiz",
     invoiceRedirect: "Invoice Redirect",
     paymentBridge: "Payment Redirect",
+    notFound: "Page Not Found",
+  },
+  notFound: {
+    code: "404",
+    title: "Page not found",
+    desc: "This address does not match an available page. The link may be expired or the path may be incorrect.",
+    back: "Go back",
+    home: "Back home",
   },
   preview: {
     reload: "Reload",

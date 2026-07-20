@@ -74,6 +74,14 @@ export const zh = {
     quiz: "测验",
     invoiceRedirect: "发票跳转",
     paymentBridge: "支付跳转",
+    notFound: "页面不存在",
+  },
+  notFound: {
+    code: "404",
+    title: "页面不存在",
+    desc: "当前地址没有对应页面，可能是链接已失效或路径输入有误。",
+    back: "返回上一页",
+    home: "返回首页",
   },
   preview: {
     reload: "重新加载",

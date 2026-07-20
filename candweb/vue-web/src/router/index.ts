@@ -28,6 +28,7 @@ const PdfPreviewPage = () => import("@/pages/PdfPreviewPage.vue")
 const VideoPreviewPage = () => import("@/pages/VideoPreviewPage.vue")
 const InvoiceRedirectPage = () => import("@/pages/InvoiceRedirectPage.vue")
 const PaymentBridgePage = () => import("@/pages/PaymentBridgePage.vue")
+const NotFoundPage = () => import("@/pages/NotFoundPage.vue")
 
 function firstRouteValue(value: unknown) {
   if (Array.isArray(value)) return String(value[0] || "")
@@ -113,6 +114,7 @@ export const router = createRouter({
     { path: "/pdf-preview", component: PdfPreviewPage, meta: { titleKey: "pdfPreview" } },
     { path: "/invoice-redirect", component: InvoiceRedirectPage, meta: { titleKey: "invoiceRedirect" } },
     { path: "/payment-bridge", component: PaymentBridgePage, meta: { titleKey: "paymentBridge" } },
+    { path: "/:pathMatch(.*)*", component: NotFoundPage, meta: { titleKey: "notFound" } },
   ],
 })
 
