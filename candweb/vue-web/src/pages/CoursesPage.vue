@@ -170,6 +170,20 @@ function handlePaymentReturn() {
         course.id === targetId || course.pipelineId === purchasedPipelineId ? { ...course, eligibilityRefreshKey: Date.now() } : course,
       )
     }
+
+    // Start a short polling loop to wait for the Stripe webhook to update the backend order status
+    let attempts = 0
+    const pollInterval = setInterval(() => {
+      attempts++
+      void fetchData().then(() => {
+        const targetCourse = allCourses.value.find((c) => c.id === targetId || c.pipelineId === purchasedPipelineId)
+        // If the active order has cleared, the webhook has finished processing
+        if (targetCourse && !targetCourse.activeOrder) {
+          clearInterval(pollInterval)
+        }
+      })
+      if (attempts >= 6) clearInterval(pollInterval)
+    }, 2500)
   } else if (paymentStatus === "cancelled") {
     toast.warning(copy.cancelled)
   } else if (paymentStatus === "failed") {
