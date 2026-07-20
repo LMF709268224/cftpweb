@@ -12,8 +12,10 @@ export const en: AppTranslations = {
     error: "Error",
     certifiedMember: "Certified Member",
     user: "User",
+    instituteName: "Global Fintech Institute",
     unknownCourse: "Unknown Course",
     unknown: "Unknown",
+    minuteUnit: "min",
     na: "N/A",
     purchaseDialogTitle: "Purchase",
     purchaseDialogCourse: "Product Name",
@@ -376,7 +378,11 @@ export const en: AppTranslations = {
     loading: "Loading...",
     loadingPreview: "Opening preview...",
     loadMore: "Load more",
-    noViewUrl: "Unable to open the preview right now. Please try again later."
+    noViewUrl: "Unable to open the preview right now. Please try again later.",
+    fileTypeWebinar: "Webinar",
+    fileTypePdf: "PDF",
+    fileTypeZip: "ZIP",
+    fileTypeFile: "File"
   },
   learning: {
     title: "Learning Center",

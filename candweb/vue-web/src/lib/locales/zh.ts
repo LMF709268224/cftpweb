@@ -10,8 +10,10 @@ export const zh = {
     error: "操作失败",
     certifiedMember: "持证会员",
     user: "用户",
+    instituteName: "全球金融科技学院",
     unknownCourse: "未知课程",
     unknown: "未知",
+    minuteUnit: "分钟",
     na: "暂无",
     purchaseDialogTitle: "购买",
     purchaseDialogCourse: "商品名称",
@@ -374,7 +376,11 @@ export const zh = {
     loading: "加载中...",
     loadingPreview: "正在打开预览...",
     loadMore: "加载更多",
-    noViewUrl: "暂时无法打开预览，请稍后再试。"
+    noViewUrl: "暂时无法打开预览，请稍后再试。",
+    fileTypeWebinar: "网络研讨会",
+    fileTypePdf: "PDF",
+    fileTypeZip: "ZIP",
+    fileTypeFile: "文件"
   },
   learning: {
     title: "学习中心",

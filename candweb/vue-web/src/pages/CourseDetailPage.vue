@@ -137,6 +137,12 @@ const finalQualificationPaymentSession = ref<{
   extraReturnParams?: Record<string, string>
 } | null>(null)
 
+function formatCourseDuration(minutes?: number) {
+  const normalized = Number(minutes || 0)
+  if (!Number.isFinite(normalized) || normalized <= 0) return ""
+  return `${Math.floor(normalized)} ${t.value.common.minuteUnit}`
+}
+
 const pipelineId = computed(() => String(route.params.pipelineId || route.query.id || ""))
 const pipeline = computed(() => detail.value?.config)
 const stages = computed<StageConfig[]>(() => pipeline.value?.stages || [])
@@ -911,7 +917,7 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
                     {{
                       [
                         courseSummaries[unit.glms_course_id]?.category_tips,
-                        courseSummaries[unit.glms_course_id]?.duration_min ? `${courseSummaries[unit.glms_course_id]?.duration_min} min` : "",
+                        formatCourseDuration(courseSummaries[unit.glms_course_id]?.duration_min),
                       ]
                         .filter(Boolean)
                         .join(" · ")

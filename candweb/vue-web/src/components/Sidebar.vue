@@ -166,8 +166,8 @@ async function handleLogout() {
       </button>
 
       <RouterLink to="/" class="flex items-center gap-3">
-        <img :src="brandLogo" alt="Global Fintech Institute" class="h-8 w-8 rounded-lg object-contain" />
-        <span class="text-[14px] font-semibold text-[#003A70]">Global Fintech Institute</span>
+        <img :src="brandLogo" :alt="t.common.instituteName" class="h-8 w-8 rounded-lg object-contain" />
+        <span class="text-[14px] font-semibold text-[#003A70]">{{ t.common.instituteName }}</span>
       </RouterLink>
 
       <button
@@ -187,9 +187,9 @@ async function handleLogout() {
       <div class="flex h-20 items-center justify-between px-5">
         <RouterLink to="/" class="flex items-center gap-3" @click="mobileMenuOpen = false">
           <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white shadow-sm">
-            <img :src="brandLogo" alt="Global Fintech Institute" class="h-7 w-7 rounded-md object-contain" />
+            <img :src="brandLogo" :alt="t.common.instituteName" class="h-7 w-7 rounded-md object-contain" />
           </span>
-          <span class="text-[14px] font-semibold text-[#003A70]">Global Fintech Institute</span>
+          <span class="text-[14px] font-semibold text-[#003A70]">{{ t.common.instituteName }}</span>
         </RouterLink>
         <button class="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-sidebar-accent hover:text-primary" @click="mobileMenuOpen = false">
           <X class="h-5 w-5" />
@@ -265,13 +265,13 @@ async function handleLogout() {
         isSidebarCollapsed ? 'h-14' : 'h-20',
         isSidebarCollapsed ? 'justify-center px-0' : 'gap-4 px-8',
       ]"
-      :title="isSidebarCollapsed ? 'Global Fintech Institute' : undefined"
+      :title="isSidebarCollapsed ? t.common.instituteName : undefined"
     >
       <span :class="['flex shrink-0 items-center justify-center rounded-lg bg-white shadow-sm', isSidebarCollapsed ? 'h-8 w-8' : 'h-9 w-9']">
-        <img :src="brandLogo" alt="Global Fintech Institute" :class="['rounded-md object-contain', isSidebarCollapsed ? 'h-7 w-7' : 'h-7 w-7']" />
+        <img :src="brandLogo" :alt="t.common.instituteName" :class="['rounded-md object-contain', isSidebarCollapsed ? 'h-7 w-7' : 'h-7 w-7']" />
       </span>
       <div v-if="!isSidebarCollapsed" class="min-w-0 flex-1 whitespace-nowrap text-[14px] font-semibold leading-5 text-[#003A70]">
-        Global Fintech Institute
+        {{ t.common.instituteName }}
       </div>
     </RouterLink>
 
