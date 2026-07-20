@@ -935,7 +935,7 @@ export const zh = {
     loadingTitle: "加载中",
     loadingDesc: "正在建立安全会话，请不要关闭此页面...",
     successTitle: "认证成功",
-    successDesc: "正在为您跳转到仪表盘...",
+    successDesc: "正在为您跳转，请稍候...",
     errorTitle: "认证遇到问题",
     redirectLoginHint: "3 秒后将返回登录页"
   },

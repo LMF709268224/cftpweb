@@ -937,7 +937,7 @@ export const en: AppTranslations = {
     loadingTitle: "Loading",
     loadingDesc: "Establishing a secure session. Please do not close this page...",
     successTitle: "Authentication successful",
-    successDesc: "Redirecting you to the dashboard...",
+    successDesc: "Redirecting you. Please wait...",
     errorTitle: "Authentication issue",
     redirectLoginHint: "Returning to the login page in 3 seconds"
   },

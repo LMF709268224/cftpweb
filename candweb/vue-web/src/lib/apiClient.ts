@@ -1,5 +1,5 @@
 import { toast } from "vue-sonner"
-import { clearAccessToken, getAccessToken } from "./authStorage"
+import { clearAccessToken, getAccessToken, rememberPostLoginRedirect } from "./authStorage"
 import { getErrorMessage, localizeApiErrorMessage } from "./errorCodes"
 import { telemetry } from "./telemetry"
 
@@ -81,6 +81,7 @@ export async function apiClient(endpoint: string, options: ApiClientOptions = {}
   }
 
   if (res.status === 401) {
+    rememberPostLoginRedirect(window.location.pathname + window.location.search + window.location.hash)
     clearAccessToken()
     localStorage.removeItem("is_authenticated")
     localStorage.removeItem("user_name")
