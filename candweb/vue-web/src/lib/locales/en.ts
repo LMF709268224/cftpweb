@@ -471,7 +471,7 @@ export const en: AppTranslations = {
     certificationDefaultDesc: "Complete the materials, take the practice quiz, then proceed to the final exam.",
     certificationCurrentStep: "Current Step",
     certificationProgress: "Certification Progress",
-    certificationLessonLabel: "Textbook",
+    certificationLessonLabel: "Courseware",
     certificationQuizLabel: "Quiz",
     certificationExamLabel: "Exam",
     certificationCertificateLabel: "Certificate",

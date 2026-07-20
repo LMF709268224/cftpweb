@@ -469,7 +469,7 @@ export const zh = {
     certificationDefaultDesc: "完成教材学习后，先通过练习测验，再进入正式考试。",
     certificationCurrentStep: "当前步骤",
     certificationProgress: "认证进度",
-    certificationLessonLabel: "教材书",
+    certificationLessonLabel: "教材",
     certificationQuizLabel: "测验",
     certificationExamLabel: "考试",
     certificationCertificateLabel: "证书",
