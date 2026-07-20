@@ -55,8 +55,9 @@ function badgeCountLabel(count: number) {
 function isNavItemActive(href: string) {
   const currentPath = route.path
   
-  if (href === "/certifications" && currentPath.includes("/learn")) return false
-  if (href === "/my-certifications" && currentPath.startsWith("/certifications/") && currentPath.includes("/learn")) return true
+  const inDetail = currentPath.startsWith("/certifications/") || currentPath.startsWith("/courses/")
+  if (href === "/certifications" && inDetail) return false
+  if (href === "/my-certifications" && inDetail) return true
 
   const groups = navRouteGroups[href] || [href]
 
@@ -123,10 +124,10 @@ onMounted(async () => {
   window.addEventListener("open-mobile-sidebar", openMobileSidebar)
   window.addEventListener("storage", updateName)
   window.addEventListener("pointerdown", handlePointerDown)
-  stopUnreadCountListener = onUnreadCountChanged((value) => {
+  stopUnreadCountListener = onUnreadCountChanged((value: number) => {
     unreadCount.value = value
   })
-  stopActionableCredentialListener = onActionableCredentialCountChanged((value) => {
+  stopActionableCredentialListener = onActionableCredentialCountChanged((value: number) => {
     actionableCredentialCount.value = value
   })
   try {
