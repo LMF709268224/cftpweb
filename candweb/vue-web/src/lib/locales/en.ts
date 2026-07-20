@@ -153,7 +153,7 @@ export const en: AppTranslations = {
     view: "View",
   },
   membership: {
-    title: "Membership Center",
+    title: "Membership",
     subtitle: "Manage your membership qualifications and benefits",
     currentMember: "Current Member",
     charterholder: "Charterholder",
@@ -295,7 +295,7 @@ export const en: AppTranslations = {
     openLearning: "Open Learning",
     pipelineContent: "Pipeline Content",
     stageListTitle: "Stage List",
-    stageListDesc: "Stages are flattened here. The current stage is highlighted; previous and upcoming stages only indicate configured order, not inferred runtime status.",
+    stageListDesc: "Stages are flattened here. The current stage is highlighted; previous and upcoming stages only indicate configured order.",
     noStagesTitle: "No stages yet",
     noStagesDesc: "This certification does not have stages or course units configured yet. Please check back later.",
     stagePositionLabel: "Stage position",
@@ -351,7 +351,6 @@ export const en: AppTranslations = {
     path: "Access path",
     updated: "Updated",
     count: "packs",
-    packBadge: "Resource Pack",
     loading: "Loading...",
     loadMore: "Load more"
   },
@@ -385,7 +384,7 @@ export const en: AppTranslations = {
     fileTypeFile: "File"
   },
   learning: {
-    title: "Learning Center",
+    title: "Learning",
     subtitle: "Continue learning the courses you purchased",
     backToCourse: "Back to course details",
     courseUnavailableTitle: "Course unavailable",
@@ -693,7 +692,7 @@ export const en: AppTranslations = {
     recordsTab: "Records",
   },
   orders: {
-    title: "Order Center",
+    title: "Orders",
     subtitle: "View all your purchase records and order details",
     totalOrders: "Total Orders",
     completed: "Completed",
@@ -804,7 +803,7 @@ export const en: AppTranslations = {
     passwordMismatch: "Passwords do not match",
   },
   messagesPage: {
-    title: "Message Center",
+    title: "Messages",
     unreadCount: "You have {{count}} unread messages",
     markAllAsRead: "Mark all as read",
     markReadSuccess: "Marked as read",
@@ -860,7 +859,7 @@ export const en: AppTranslations = {
     submittedAt: "Submitted",
   },
   certificatesPage: {
-    title: "Certificate Center",
+    title: "Certificates",
     subtitle: "View and manage all professional certificates you have earned.",
     active: "Active",
     issueDate: "Issue Date",
@@ -890,7 +889,7 @@ export const en: AppTranslations = {
     noPendingTasks: "No pending tasks"
   },
   recordsPage: {
-    title: "Records Center",
+    title: "Records",
     subtitle: "Manage your education, certification, and work experience records",
     uploadNew: "Upload New Record",
     myRecords: "My Records",

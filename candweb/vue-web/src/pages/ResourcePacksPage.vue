@@ -94,9 +94,6 @@ onMounted(() => {
         <span class="resource-pack-orb pointer-events-none absolute -right-12 -top-12 z-10 h-36 w-36 rounded-full opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
         <div class="relative flex h-24 items-end overflow-hidden px-4 pb-3 text-white bg-[linear-gradient(135deg,rgb(11,31,69)_0%,rgb(27,69,141)_55%,rgb(58,111,192)_100%)]">
           <div class="absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.24),transparent_30%)] opacity-70" />
-          <span class="relative z-10 inline-flex items-center rounded-full bg-white/95 px-3 py-1 text-xs font-semibold text-primary shadow-sm">
-            {{ copy.packBadge }}
-          </span>
           <div class="absolute right-4 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/15 transition-transform duration-300 group-hover:scale-105">
             <PackageOpen class="h-7 w-7 text-white/70" />
           </div>
