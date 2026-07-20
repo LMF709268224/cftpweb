@@ -828,9 +828,10 @@ export const en: AppTranslations = {
     celebrationModalShare: "Share in One Click",
     celebrationModalDismiss: "Maybe later",
     shareText: "I have earned my CFtP professional certification. Take a look at my achievement.",
-  }
-  ,
-
+  },
+  pdfPreview: {
+    backToCourse: "Back to Course",
+  },
   todoList: {
     items: "Items",
     noPendingTasks: "No pending tasks"

@@ -9,6 +9,8 @@ const SLOW_PREVIEW_NOTICE_MS =  60 * 1000
 
 const route = useRoute()
 const router = useRouter()
+import { useTranslation } from "@/lib/language"
+const { t } = useTranslation()
 const viewerSrc = ref("")
 const loading = ref(false)
 const viewerReady = ref(false)
@@ -31,7 +33,7 @@ const storedLessonTitle = computed(() =>
 const storedExternalTitle = computed(() =>
   routeResourceKey.value ? sessionStorage.getItem(`external-pdf-preview-title:${routeResourceKey.value}`) || "" : "",
 )
-const title = computed(() => String(route.query.title || storedResourceTitle.value || storedLessonTitle.value || storedExternalTitle.value || "PDF Preview"))
+const title = computed(() => String(route.query.title || storedResourceTitle.value || storedLessonTitle.value || storedExternalTitle.value || t.value.common.pdfPreview))
 const isResourcePackPreview = computed(() => Boolean(routeFileId.value))
 const resourceDetailTitle = computed(() => previewTitle.value || title.value)
 const resourceDetailDate = computed(() => formatPreviewDate(previewExpiresAt.value))
@@ -138,18 +140,50 @@ async function loadPdf() {
   }
 }
 
-function handleViewerReady() {
+function handleViewerReady(registry: any) {
   viewerReady.value = true
+  if (registry && typeof registry.getPlugin === 'function') {
+    const scrollPlugin = registry.getPlugin('scroll')
+    if (scrollPlugin && scrollPlugin.capability) {
+      const cap = scrollPlugin.capability
+      const storageKey = `pdf-bookmark:${routeFileId.value || routeLessonId.value || routeResourceKey.value}`
+      const savedPage = localStorage.getItem(storageKey)
+      
+      if (savedPage) {
+        cap.onLayoutReady((e: any) => {
+          if (e.isInitial) {
+            setTimeout(() => {
+              cap.scrollToPage({ pageNumber: parseInt(savedPage, 10) })
+            }, 100)
+          }
+        })
+      }
+      
+      cap.onPageChange((e: any) => {
+        localStorage.setItem(storageKey, e.pageNumber.toString())
+      })
+    }
+  }
 }
 
 function goBack() {
-  if (window.history.length > 1) router.back()
-  else router.push("/certifications")
+  if (window.opener) {
+    window.close()
+  } else if (window.history.length > 1) {
+    router.back()
+  } else {
+    router.push("/my-certifications")
+  }
 }
 
 function goBackFromResourcePack() {
-  if (window.history.length > 1) router.back()
-  else router.push("/resource-packs")
+  if (window.opener) {
+    window.close()
+  } else if (window.history.length > 1) {
+    router.back()
+  } else {
+    router.push("/resource-packs")
+  }
 }
 
 watch(source, loadPdf, { immediate: true })
@@ -240,7 +274,7 @@ onErrorCaptured((err) => {
     <header class="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 shadow-sm">
       <button class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100" @click="goBack">
         <ArrowLeft class="h-4 w-4" />
-        Back to Course
+        {{ t.pdfPreview?.backToCourse || 'Back to Course' }}
       </button>
       <div class="min-w-0 flex-1 px-4 text-center">
         <div class="inline-flex max-w-full items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-slate-900">

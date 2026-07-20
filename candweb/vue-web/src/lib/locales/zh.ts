@@ -826,9 +826,10 @@ export const zh = {
     celebrationModalShare: "一键分享",
     celebrationModalDismiss: "稍后再说",
     shareText: "我已获得 CFtP 专业认证，欢迎查看我的学习成果。",
-  }
-  ,
-
+  },
+  pdfPreview: {
+    backToCourse: "返回课程",
+  },
   todoList: {
     items: "项",
     noPendingTasks: "暂无待处理事项"
