@@ -73,6 +73,11 @@ function redirectResourcePackDetail(to: any) {
 
 export const router = createRouter({
   history: createWebHistory(),
+  scrollBehavior(to, _from, savedPosition) {
+    if (savedPosition) return savedPosition
+    if (to.hash) return { el: to.hash }
+    return { left: 0, top: 0 }
+  },
   routes: [
     { path: "/", component: HomePage, meta: { titleKey: "home" } },
     { path: "/login", component: LoginPage, meta: { titleKey: "login" } },
