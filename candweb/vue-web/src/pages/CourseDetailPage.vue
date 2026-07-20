@@ -661,7 +661,7 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
       </header>
 
       <main class="px-5 py-8 md:px-8 lg:px-10">
-        <RouterLink to="/certifications" class="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
+        <RouterLink :to="purchased ? '/my-certifications' : '/certifications'" class="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
           <ArrowLeft class="h-4 w-4" />
           {{ t.courses.backToPipelines }}
         </RouterLink>
@@ -673,7 +673,7 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
           <h2 class="text-lg font-semibold text-foreground">{{ t.learning.courseUnavailableTitle }}</h2>
           <p class="mt-2 text-sm">{{ t.learning.courseUnavailableDesc }}</p>
         </div>
-        <RouterLink to="/certifications" class="btn btn-primary mx-auto w-fit rounded-lg">
+        <RouterLink :to="purchased ? '/my-certifications' : '/certifications'" class="btn btn-primary mx-auto w-fit rounded-lg">
           {{ t.courses.backToPipelines }}
         </RouterLink>
       </div>
@@ -847,7 +847,7 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
               <h3 class="text-base font-semibold text-foreground">{{ t.courses.noStagesTitle }}</h3>
               <p class="mt-2 text-sm">{{ t.courses.noStagesDesc }}</p>
             </div>
-            <RouterLink to="/certifications" class="btn btn-primary mx-auto w-fit rounded-lg">
+            <RouterLink :to="purchased ? '/my-certifications' : '/certifications'" class="btn btn-primary mx-auto w-fit rounded-lg">
               {{ t.courses.backToPipelines }}
             </RouterLink>
           </div>

@@ -98,7 +98,7 @@ const portalCards = computed<PortalCard[]>(() => {
     .map((card) => {
       switch (card.key) {
         case "certifications":
-          return { ...card, title: t.value.home.purchasedCertifications, action: t.value.home.viewCertifications }
+          return { ...card, title: t.value.home.purchasedCertifications, action: t.value.home.viewCertifications, href: "/my-certifications" }
         case "exams":
           return { ...card, title: t.value.home.examCount, action: t.value.home.viewExams }
         case "resourcePacks":
