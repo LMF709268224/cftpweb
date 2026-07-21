@@ -394,6 +394,8 @@ async function handleSendEmailCode() {
         clearInterval(emailCodeInterval)
       }
     }, 1000)
+  } catch (e) {
+    // Error is handled by apiClient toast
   } finally {
     isEmailCodeSending.value = false
   }
@@ -418,6 +420,8 @@ async function handleUpdateEmail() {
     await fetchUser() // fetch latest profile to update global user
     const payload = await apiClient("/api/user/me")
     if (payload && payload.email) profile.email = payload.email
+  } catch (e) {
+    // Error is handled by apiClient toast
   } finally {
     isEmailUpdating.value = false
   }

@@ -235,6 +235,10 @@ export function localizeApiErrorMessage(
       : `Published course ${match[1]} cannot be modified. Please create a new version or edit a draft version.`
   }
 
+  if (message) {
+    return message
+  }
+
   if (errorCode && ErrorMessages[errorCode]) {
     return getErrorMessage(errorCode, lang)
   }
