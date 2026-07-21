@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
@@ -101,7 +100,7 @@ func (h *Handler) AdminTriggerProgNextStage(w http.ResponseWriter, r *http.Reque
 	var input struct {
 		ReasonMessage string `json:"reason_message"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+	if err := ReadJSON(r, &input); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
@@ -145,9 +144,9 @@ func (h *Handler) ListProgStatusTransitionLogs(w http.ResponseWriter, r *http.Re
 
 	total, err := countCursorAll(r.Context(), func(ctx context.Context, cursor string, limit uint32) (uint32, string, error) {
 		resp, err := h.Gprog.GetStatusTransitionLogCount(ctx, &gprogpb.GetStatusTransitionLogCountRequest{
-			Filters:   req.Filters,
-			Limit:     int32(limit),
-			Cursor:    cursor,
+			Filters: req.Filters,
+			Limit:   int32(limit),
+			Cursor:  cursor,
 		})
 		if err != nil {
 			return 0, "", err
@@ -242,7 +241,7 @@ func (h *Handler) AdminTerminatePipeline(w http.ResponseWriter, r *http.Request)
 	var input struct {
 		ReasonMessage string `json:"reason_message"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+	if err := ReadJSON(r, &input); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
@@ -295,8 +294,8 @@ func (h *Handler) ListProgCertificateTasks(w http.ResponseWriter, r *http.Reques
 			CandidateUlid: candidateULID,
 			PipelineUlid:  strings.TrimSpace(r.URL.Query().Get("pipeline_ulid")),
 		},
-		Cursor:   page.Cursor,
-		PageSize: int32(page.PageSize),
+		Cursor:    page.Cursor,
+		PageSize:  int32(page.PageSize),
 		SortOrder: gprogpb.SortOrder(page.Sort),
 	}
 
@@ -382,7 +381,7 @@ func (h *Handler) AdminForceCourseCompleted(w http.ResponseWriter, r *http.Reque
 	var input struct {
 		ReasonMessage string `json:"reason_message"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+	if err := ReadJSON(r, &input); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
@@ -413,7 +412,7 @@ func (h *Handler) AdminForceCourseSignupExam(w http.ResponseWriter, r *http.Requ
 	var input struct {
 		ReasonMessage string `json:"reason_message"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+	if err := ReadJSON(r, &input); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}

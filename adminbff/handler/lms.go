@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -32,7 +31,7 @@ func readVersionParam(r *http.Request) (uint32, error) {
 	}
 
 	var body versionOnlyReq
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+	if err := ReadJSON(r, &body); err != nil {
 		if errors.Is(err, io.EOF) {
 			return 0, nil
 		}
@@ -198,13 +197,13 @@ func (h *Handler) CreateLmsCourse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req := input.CreateCourseDraftRequest
+	req := &input.CreateCourseDraftRequest
 	req.CourseUlid = newLmsID()
 	if !requireRequestField(w, req.Title, "title") {
 		return
 	}
 
-	resp, err := h.Lms.CreateCourseDraftAdmin(r.Context(), &req)
+	resp, err := h.Lms.CreateCourseDraftAdmin(r.Context(), req)
 	if err != nil {
 		writeLmsError(w, err)
 		return

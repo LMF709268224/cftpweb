@@ -19,8 +19,7 @@ type AuthURLRsp struct {
 }
 
 type LoginRsp struct {
-	Token string   `json:"token"`
-	User  UserInfo `json:"user"`
+	User UserInfo `json:"user"`
 }
 
 type UserInfo struct {
@@ -506,7 +505,6 @@ type CertificateItem struct {
 type ListCertificatesRsp struct {
 	Certificates []CertificateItem `json:"certificates"`
 }
-
 
 type SystemRedDotsRsp struct {
 	Applications uint32 `json:"applications"`

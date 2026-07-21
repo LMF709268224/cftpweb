@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"log/slog"
 	"net/http"
 
@@ -38,7 +37,7 @@ func (h *Handler) UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
 	name := AdminName(r)
 
 	var input UserProfileInput
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+	if err := ReadJSON(r, &input); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
@@ -74,7 +73,7 @@ func (h *Handler) UpdateUserPassword(w http.ResponseWriter, r *http.Request) {
 	name := AdminName(r)
 
 	var input UserPasswordInput
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+	if err := ReadJSON(r, &input); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}

@@ -125,7 +125,7 @@ async function saveProfile() {
         education: profile.value.education.trim(),
       }),
     })
-    setAuthSession("", profile.value.display_name.trim() || profile.value.name || "Admin")
+    setAuthSession(profile.value.display_name.trim() || profile.value.name || "Admin")
     window.dispatchEvent(new Event("storage"))
     toast.success(copy.value.toasts.profileSaved)
     await loadProfile()
