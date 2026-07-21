@@ -467,6 +467,12 @@ const nonCourseQuizTasks = computed(() => quizTasks.value.filter((task) => task.
 const activeLessonQuizTasks = computed(() => (activeLessonId.value ? lessonQuizTasksByLessonId.value.get(activeLessonId.value) || [] : []))
 const currentLessonCompleted = computed(() => currentLessonRawCompleted.value && activeLessonQuizTasks.value.every((task) => task.completed))
 const completedQuizTaskCount = computed(() => quizTasks.value.filter((task) => task.completed).length)
+const remainingQuizTaskCount = computed(() => Math.max(quizTasks.value.length - completedQuizTaskCount.value, 0))
+const examPendingStatusText = computed(() =>
+  remainingQuizTaskCount.value > 0
+    ? t.value.learning.certificationExamOpenAfterQuizCountTag.replace("{{count}}", String(remainingQuizTaskCount.value))
+    : t.value.learning.certificationExamOpenAfterQuizTag,
+)
 const shouldShowQuizPreparationCard = computed(() => !quizChoicesExpanded.value && !quizStepDone.value && completedQuizTaskCount.value === 0)
 const learnContentTabs = computed(() => [
   {
@@ -558,7 +564,7 @@ const certificationFlowSteps = computed(() => {
       id: "exam",
       label: t.value.learning.certificationExamLabel,
       description: t.value.learning.certificationExamDesc,
-      statusText: examStepDone.value ? t.value.learning.certificationExamPassedTag : currentId === "exam" ? t.value.learning.certificationCurrentStepTag : t.value.learning.certificationExamOpenAfterQuizTag,
+      statusText: examStepDone.value ? t.value.learning.certificationExamPassedTag : currentId === "exam" ? t.value.learning.certificationCurrentStepTag : examPendingStatusText.value,
       status: examStepDone.value ? "done" : currentId === "exam" ? "current" : hasExamTab.value ? "available" : "locked",
       icon: CalendarClock,
       count: courseExamTabCount.value,

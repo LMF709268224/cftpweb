@@ -583,6 +583,7 @@ export const en: AppTranslations = {
     certificationPendingTag: "Pending",
     certificationNoQuizTag: "No Quiz",
     certificationExamOpenAfterQuizTag: "Opens after quiz completion",
+    certificationExamOpenAfterQuizCountTag: "Complete remaining quizzes ({{count}}) to unlock",
     certificationExamPassedTag: "Passed",
     certificationCertificateAvailableTag: "Available",
     certificationCertificateIssuingTag: "Issuing",

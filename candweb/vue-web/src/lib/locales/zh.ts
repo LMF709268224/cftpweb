@@ -581,6 +581,7 @@ export const zh = {
     certificationPendingTag: "待完成",
     certificationNoQuizTag: "暂无测验",
     certificationExamOpenAfterQuizTag: "完成测验后开放",
+    certificationExamOpenAfterQuizCountTag: "还需完成 {{count}} 个测验后开放",
     certificationExamPassedTag: "已通过",
     certificationCertificateAvailableTag: "可查看",
     certificationCertificateIssuingTag: "签发中",
