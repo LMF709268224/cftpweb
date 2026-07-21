@@ -6,13 +6,12 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	cfgservepb "github.com/afnandelfin620-star/cftptest/cftp/cfgserver"
-	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
+	cfgservepb "github.com/afnandelfin620-star/cftptest/cftp/cfgserver"
 	"github.com/afnandelfin620-star/cftptest/cftp/util"
 
 	"google.golang.org/grpc"
@@ -39,34 +38,36 @@ type Config struct {
 
 // GetNamespace (Removed, use util.GetNamespace instead if needed)
 
-func getCfgServerTransportCreds() credentials.TransportCredentials {
+func LoadTransportCredentials() (credentials.TransportCredentials, error) {
 	tlsDir := strings.TrimSpace(os.Getenv(EnvTLSDir))
 	if tlsDir == "" {
-		return insecure.NewCredentials()
+		return insecure.NewCredentials(), nil
 	}
 
-	tlsConfig := &tls.Config{MinVersion: tls.VersionTLS12}
 	caFile := filepath.Join(tlsDir, "ca.crt")
-	if caPEM, err := os.ReadFile(caFile); err == nil {
-		pool := x509.NewCertPool()
-		if ok := pool.AppendCertsFromPEM(caPEM); !ok {
-			slog.Warn("gRPC: failed to append CA cert", "ca_file", caFile)
-			return insecure.NewCredentials()
-		}
-
-		tlsConfig.RootCAs = pool
-	} else {
-		slog.Warn("gRPC: load ca failed", "ca_file", caFile, "error", err)
-		return insecure.NewCredentials()
+	caPEM, err := os.ReadFile(caFile)
+	if err != nil {
+		return nil, fmt.Errorf("read gRPC CA certificate %q: %w", caFile, err)
 	}
 
-	return credentials.NewTLS(tlsConfig)
+	pool := x509.NewCertPool()
+	if ok := pool.AppendCertsFromPEM(caPEM); !ok {
+		return nil, fmt.Errorf("parse gRPC CA certificate %q: no valid certificates found", caFile)
+	}
+
+	return credentials.NewTLS(&tls.Config{
+		MinVersion: tls.VersionTLS12,
+		RootCAs:    pool,
+	}), nil
 }
 
 func LoadConfig() (*Config, error) {
 	address := util.GetEndpointAddress(EnvCfgServerAddr, "cfgserver", "50051")
 
-	transportCreds := getCfgServerTransportCreds()
+	transportCreds, err := LoadTransportCredentials()
+	if err != nil {
+		return nil, fmt.Errorf("load cfgserver transport credentials: %w", err)
+	}
 
 	conn, err := grpc.NewClient(address, grpc.WithTransportCredentials(transportCreds))
 	if err != nil {

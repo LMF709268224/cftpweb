@@ -11,6 +11,7 @@ class TelemetryClient {
   private publicEndpoint = "/api/public/telemetry"
   private flushTimer: number | null = null
   private flushInterval = 5000 // 5 seconds
+  private maxBatchSize = 100
   private isFlushing = false
 
   constructor() {
@@ -47,8 +48,7 @@ class TelemetryClient {
       this.flushTimer = null
     }
 
-    const events = [...this.queue]
-    this.queue = []
+    const events = this.queue.splice(0, this.maxBatchSize)
 
     try {
       // If token is missing, we could fallback to public endpoint, but let's try authenticated first
@@ -56,7 +56,7 @@ class TelemetryClient {
       const token = localStorage.getItem("token")
       const targetEndpoint = token ? this.endpoint : this.publicEndpoint
 
-      await fetch(targetEndpoint, {
+      const response = await fetch(targetEndpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -64,6 +64,13 @@ class TelemetryClient {
         },
         body: JSON.stringify({ events }),
       })
+      if (!response.ok) {
+        if (response.status === 400 || response.status === 413) {
+          console.warn(`Telemetry batch was rejected with HTTP ${response.status}`)
+          return
+        }
+        throw new Error(`Telemetry endpoint returned HTTP ${response.status}`)
+      }
     } catch (err) {
       console.error("Telemetry flush failed", err)
       // Put events back at the start of the queue if failed
@@ -80,16 +87,14 @@ class TelemetryClient {
 
   private flushSync() {
     if (this.queue.length === 0) return
-    const events = [...this.queue]
-    this.queue = []
     const token = localStorage.getItem("token")
     const targetEndpoint = token ? this.endpoint : this.publicEndpoint
-    const blob = new Blob([JSON.stringify({ events })], { type: "application/json" })
-    
-    // Attempt sendBeacon, fallback to keepalive fetch
-    if (navigator.sendBeacon) {
-      // sendBeacon doesn't support custom headers easily, so if it needs auth, we might lose token unless stored in cookie
-      // But we try our best. fetch keepalive is preferred if supported.
+
+    while (this.queue.length > 0) {
+      const events = this.queue.splice(0, this.maxBatchSize)
+      const body = JSON.stringify({ events })
+      const blob = new Blob([body], { type: "application/json" })
+
       try {
         fetch(targetEndpoint, {
           method: "POST",
@@ -97,10 +102,10 @@ class TelemetryClient {
             "Content-Type": "application/json",
             ...(token ? { "Authorization": `Bearer ${token}` } : {}),
           },
-          body: JSON.stringify({ events }),
+          body,
           keepalive: true,
         }).catch(() => {
-          // ignore
+          // The page is unloading, so there is no reliable retry path.
         })
       } catch {
         navigator.sendBeacon(targetEndpoint, blob)

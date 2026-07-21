@@ -735,6 +735,7 @@ type MessageListRsp struct {
 	Messages   []MessageItem `json:"messages"`
 	HasMore    bool          `json:"has_more"`
 	NextCursor string        `json:"next_cursor,omitempty"`
+	PrevCursor string        `json:"prev_cursor,omitempty"`
 }
 
 type MessageUnreadCountRsp struct {

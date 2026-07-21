@@ -291,7 +291,7 @@ async function loadExams(tab: TabId = activeTab.value, keyword = search.value, s
     }
     
     if (cursor) params.set("cursor", cursor)
-    if (tab === "history") params.set("result_status", "DONE")
+    if (tab === "history") params.set("status", "DONE")
     if (keyword.trim()) params.set("confirmation_number", keyword.trim())
     const res = await apiClient(`/api/exams?${params.toString()}`, { suppressErrorToast })
     const nextExams = res?.exams || []

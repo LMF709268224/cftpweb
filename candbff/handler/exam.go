@@ -457,9 +457,9 @@ func (h *Handler) ListExams(w http.ResponseWriter, r *http.Request) {
 	page := parseCursorPage(r, 20)
 
 	req := &gexampb.ListExamsRequest{
-		Filters:  &gexampb.ExamFilters{},
-		Cursor:   page.Cursor,
-		PageSize: page.PageSize,
+		Filters:   &gexampb.ExamFilters{},
+		Cursor:    page.Cursor,
+		PageSize:  page.PageSize,
 		SortOrder: gexampb.SortOrder(page.Sort),
 	}
 	if status != "" {
@@ -563,7 +563,9 @@ func (h *Handler) ListExams(w http.ResponseWriter, r *http.Request) {
 					}
 				}
 
-				if unit.GetStatus() == gprog.CourseUnitStatus_COURSE_UNIT_STATUS_EXAM_FAILED && unit.GetCourseUnitCcUlid() != "" {
+				if unit.GetStatus() == gprog.CourseUnitStatus_COURSE_UNIT_STATUS_EXAM_FAILED &&
+					isCurrentCourseUnitExam(item.ExamUlid, unit.GetExamUlid()) &&
+					unit.GetCourseUnitCcUlid() != "" {
 					eligibility, err := h.Gprog.ValidateRetakeEligibility(r.Context(), &gprog.ValidateRetakeEligibilityReq{
 						CandidateUlid:    candidateID,
 						CourseUnitUlid:   unit.GetCourseUnitUlid(),
@@ -583,67 +585,13 @@ func (h *Handler) ListExams(w http.ResponseWriter, r *http.Request) {
 
 		out.Exams = append(out.Exams, item)
 	}
-	suppressSupersededRetakeActions(out.Exams)
 
 	WriteJSON(w, http.StatusOK, out)
 }
 
-func suppressSupersededRetakeActions(exams []ExamListItem) {
-	latestByCourseUnit := make(map[string]int)
-	for i := range exams {
-		courseUnitUlid := strings.TrimSpace(exams[i].CourseUnitUlid)
-		if courseUnitUlid == "" {
-			continue
-		}
-		if !isRetakeRelevantExam(exams[i]) {
-			continue
-		}
-		current, ok := latestByCourseUnit[courseUnitUlid]
-		if !ok || compareExamRecency(exams[i], exams[current]) > 0 {
-			latestByCourseUnit[courseUnitUlid] = i
-		}
-	}
-	for i := range exams {
-		courseUnitUlid := strings.TrimSpace(exams[i].CourseUnitUlid)
-		latest, ok := latestByCourseUnit[courseUnitUlid]
-		if courseUnitUlid == "" || !ok || latest == i {
-			continue
-		}
-		exams[i].RetakeEligible = false
-		if exams[i].Retake != nil {
-			exams[i].Retake.Eligible = false
-			exams[i].Retake.Action = retakeActionNone
-		}
-	}
-}
-
-func compareExamRecency(left ExamListItem, right ExamListItem) int {
-	for _, pair := range [][2]string{
-		{left.AppointmentStartTime, right.AppointmentStartTime},
-		{left.AppointmentEndTime, right.AppointmentEndTime},
-		{left.LastTermurlTimestamp, right.LastTermurlTimestamp},
-	} {
-		leftValue := strings.TrimSpace(pair[0])
-		rightValue := strings.TrimSpace(pair[1])
-		if leftValue == "" || rightValue == "" || leftValue == rightValue {
-			continue
-		}
-		return strings.Compare(leftValue, rightValue)
-	}
-	return strings.Compare(strings.TrimSpace(left.ExamUlid), strings.TrimSpace(right.ExamUlid))
-}
-
-func isRetakeRelevantExam(item ExamListItem) bool {
-	return isPendingExamAttempt(item) || isFinalFailedExamResult(item)
-}
-
-func isPendingExamAttempt(item ExamListItem) bool {
-	examStatus := strings.ToUpper(strings.TrimSpace(item.ExamStatus))
-	resultStatus := strings.ToUpper(strings.TrimSpace(item.ResultStatus))
-	if examStatus != "DONE" {
-		return true
-	}
-	return resultStatus == "" || resultStatus == "NONE"
+func isCurrentCourseUnitExam(examUlid, currentExamUlid string) bool {
+	examUlid = strings.TrimSpace(examUlid)
+	return examUlid != "" && examUlid == strings.TrimSpace(currentExamUlid)
 }
 
 func isFinalFailedExamResult(item ExamListItem) bool {
@@ -721,7 +669,7 @@ func (h *Handler) retakePaymentSnapshot(ctx context.Context, candidateID, course
 		if status.Code(err) == codes.NotFound {
 			out.message = "course retake payment not found"
 		} else {
-			slog.Warn("retake payment snapshot status check failed", "candidate_id", candidateID, "course_unit_ulid", courseUnitUlid, "course_unit_cc_ulid", courseUnitCcUlid, "error", err)
+			return out, err
 		}
 	} else if statusResp != nil {
 		out.found = statusResp.GetFound()
@@ -739,8 +687,7 @@ func (h *Handler) retakePaymentSnapshot(ctx context.Context, candidateID, course
 		PageSize: 20,
 	})
 	if err != nil {
-		slog.Warn("retake payment snapshot list orders failed", "candidate_id", candidateID, "course_unit_ulid", courseUnitUlid, "course_unit_cc_ulid", courseUnitCcUlid, "error", err)
-		return out, nil
+		return out, err
 	}
 	latestCreatedAt := ""
 	for _, order := range orders.GetItems() {
@@ -839,12 +786,16 @@ func shouldShowWaitingExamConfirmation(exam *gexampb.ExamInfo) bool {
 
 // ListExamHistory GET /api/exams/history
 func (h *Handler) ListExamHistory(w http.ResponseWriter, r *http.Request) {
+	applyExamHistoryDefaults(r)
+	h.ListExams(w, r)
+}
+
+func applyExamHistoryDefaults(r *http.Request) {
 	query := r.URL.Query()
-	if query.Get("result_status") == "" {
-		query.Set("result_status", "DONE")
+	if strings.TrimSpace(query.Get("status")) == "" {
+		query.Set("status", "DONE")
 	}
 	r.URL.RawQuery = query.Encode()
-	h.ListExams(w, r)
 }
 
 func parseExamURLType(w http.ResponseWriter, raw string) (gprog.ExamURLType, bool) {
