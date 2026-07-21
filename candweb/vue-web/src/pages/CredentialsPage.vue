@@ -180,6 +180,7 @@ async function handleSubmitApplication() {
     } else {
       await apiClient("/api/credentials/submit", { method: "POST", body: JSON.stringify({ cred_def_ulid: credentialDefinitionId(selectedDef.value), files: evidenceFiles }) })
     }
+    toast.success(t.value.credentialsPage.submitSuccess)
     isApplyOpen.value = false
     applicationPage.value = 1
     await fetchData()

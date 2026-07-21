@@ -100,7 +100,10 @@ async function loginWithGfi() {
 
   try {
     const callbackUrl = encodeURIComponent(`${window.location.origin}/callback`)
-    const resData = await apiClient(`/api/auth/login-url?callback=${callbackUrl}`)
+    const resData = await apiClient(`/api/auth/login-url?callback=${callbackUrl}`, {
+      timeoutMs: 10000,
+      suppressErrorToast: true,
+    })
     if (!resData?.url) throw new Error("AUTH_LOGIN_URL_MISSING")
     window.location.assign(resData.url)
   } catch (error) {
