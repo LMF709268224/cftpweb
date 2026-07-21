@@ -567,7 +567,6 @@ onMounted(() => {
       <div v-else-if="orders.length === 0" class="flex flex-col items-center justify-center px-4 py-14 text-center">
         <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10"><Package class="h-8 w-8 text-primary" /></div>
         <h3 class="mb-2 text-lg font-semibold text-foreground">{{ t.orders.noOrders }}</h3>
-        <p class="max-w-md text-sm text-muted-foreground">{{ t.orders.noOrdersDesc }}</p>
       </div>
       <div v-else>
         <div v-for="order in orders" :key="order.id" @click="openOrderDetail(order)" class="order-row group flex cursor-pointer flex-col gap-3 border-b border-slate-100 px-4 py-4 transition-all duration-200 hover:bg-primary/10 md:flex-row md:items-center md:justify-between">

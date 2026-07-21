@@ -750,7 +750,6 @@ export const zh = {
     viewInvoice: "查看发票",
     free: "免费",
     noOrders: "暂无订单记录",
-    noOrdersDesc: "订单接口接入后，这里会展示真实的购买记录和支付状态。",
     detailTitle: "订单详情",
     detailSubtitle: "正在加载订单详情",
     detailClose: "关闭",
