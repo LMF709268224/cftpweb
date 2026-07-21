@@ -3,6 +3,7 @@ type LocationApi = typeof import("country-state-city")
 export type CountryOption = {
   code: string
   name: string
+  displayName: string
 }
 
 let locationApi: LocationApi | null = null
@@ -46,7 +47,17 @@ export function getCountryOptions(locale: string) {
 
   const displayNames = new Intl.DisplayNames([locale], { type: "region" })
   const options = allCountriesCache
-    .map((country) => ({ code: country.isoCode, name: displayNames.of(country.isoCode) || country.name }))
+    .map((country) => {
+      const localizedName = displayNames.of(country.isoCode) || country.name
+      const shouldShowEnglishName = locale.toLowerCase().startsWith("zh")
+        && country.isoCode !== "CN"
+        && localizedName !== country.name
+      return {
+        code: country.isoCode,
+        name: localizedName,
+        displayName: shouldShowEnglishName ? `${localizedName} / ${country.name}` : localizedName,
+      }
+    })
     .sort((a, b) => a.name.localeCompare(b.name, locale))
 
   countryOptionsCache.set(locale, options)

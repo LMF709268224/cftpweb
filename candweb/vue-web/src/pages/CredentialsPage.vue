@@ -7,6 +7,7 @@ import { CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, CANDIDATE_APPLICATION_STATUS_L
 import AppPagination from "@/components/AppPagination.vue"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
+import { useBodyScrollLock } from "@/lib/bodyScrollLock"
 import { formatBackendDateOnly } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
 import { toast } from "vue-sonner"
@@ -31,6 +32,7 @@ const applicationsLoading = ref(false)
 const selectedDef = ref<any>(null)
 const resubmitAppId = ref("")
 const isApplyOpen = ref(false)
+useBodyScrollLock(() => isApplyOpen.value)
 const uploadedFiles = ref<Record<string, { name: string; url: string; ext: string; hash: string; size: number }>>({})
 const isSubmitting = ref(false)
 const uploadingConstraintName = ref("")

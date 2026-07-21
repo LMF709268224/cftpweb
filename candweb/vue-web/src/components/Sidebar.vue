@@ -8,6 +8,7 @@ import { fetchUnreadCount, getCachedUnreadCount, onUnreadCountChanged } from "@/
 import { fetchActionableCredentialCount, getCachedActionableCredentialCount, onActionableCredentialCountChanged } from "@/lib/actionableCredentialCountCache"
 import { useTranslation } from "@/lib/language"
 import { initializeSidebarCollapse, useSidebarCollapse } from "@/lib/sidebar"
+import { useBodyScrollLock } from "@/lib/bodyScrollLock"
 import { useUser } from "@/lib/user"
 import { usePolling } from "@/lib/polling"
 import brandLogo from "@/assets/favicon.png"
@@ -22,6 +23,7 @@ const unreadCount = ref(0)
 const actionableCredentialCount = ref(0)
 const menuOpen = ref(false)
 const mobileMenuOpen = ref(false)
+useBodyScrollLock(() => mobileMenuOpen.value)
 const logoutLoading = ref(false)
 const menuContainer = ref<HTMLElement | null>(null)
 let stopUnreadCountListener: (() => void) | null = null

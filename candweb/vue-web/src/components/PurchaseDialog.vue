@@ -7,6 +7,7 @@ import { timelineStatusLabelWithDiagnostics, timelineStatusBadgeClassForStatus }
 import PaymentSessionPanel from "@/components/PaymentSessionPanel.vue"
 import CouponInputBlock from "@/components/CouponInputBlock.vue"
 import { ApiClientError, apiClient } from "@/lib/apiClient"
+import { useBodyScrollLock } from "@/lib/bodyScrollLock"
 import { useTranslation } from "@/lib/language"
 
 type PaymentMethod = "stripe" | "bank"
@@ -124,6 +125,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{ "update:open": [value: boolean]; cancelled: [] }>()
 const { t } = useTranslation()
+useBodyScrollLock(() => props.open)
 const paymentMethod = ref<PaymentMethod>("stripe")
 const eligibilityLoading = ref(false)
 const dialogStateLoading = ref(false)

@@ -9,6 +9,7 @@ import AppPagination from "@/components/AppPagination.vue"
 import PaymentSessionDialog from "@/components/PaymentSessionDialog.vue"
 import CouponInputBlock from "@/components/CouponInputBlock.vue"
 import { apiClient } from "@/lib/apiClient"
+import { useBodyScrollLock } from "@/lib/bodyScrollLock"
 import { formatBackendDateMinute } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
 import { usePolling } from "@/lib/polling"
@@ -102,6 +103,7 @@ const detailLoadingOrderId = ref<string | null>(null)
 const detailError = ref("")
 const selectedOrderDetail = ref<OrderDetail | null>(null)
 const selectedOrderItem = ref<OrderItem | null>(null)
+useBodyScrollLock(() => detailLoading.value || Boolean(detailError.value) || Boolean(selectedOrderDetail.value))
 const detailPaymentPreview = ref<any>(null)
 const orderPaymentDialogOpen = ref(false)
 const orderPaymentSession = ref<{

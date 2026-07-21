@@ -4,6 +4,7 @@ import { toast } from "vue-sonner"
 import { Bell, CheckCheck, ChevronRight, Circle, CreditCard, FileText, Gift, Loader2, Megaphone, MessageSquare, MoreHorizontal, Trash2, X } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
+import { useBodyScrollLock } from "@/lib/bodyScrollLock"
 import { formatBackendDate } from "@/lib/utils"
 import { fetchUnreadCount } from "@/lib/unreadCountCache"
 import { useTranslation } from "@/lib/language"
@@ -15,6 +16,7 @@ type MessageStatusFilter = "unread" | "read"
 const { t, lang } = useTranslation()
 const selectedStatus = ref<MessageStatusFilter | null>(null)
 const detailModalOpen = ref(false)
+useBodyScrollLock(() => detailModalOpen.value)
 const selectedMessageDetail = ref<any>(null)
 const messageList = ref<Message[]>([])
 const openMenuId = ref<string | null>(null)
