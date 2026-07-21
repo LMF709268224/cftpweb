@@ -349,6 +349,8 @@ async function handleUpdateProfile() {
       localStorage.setItem("user_name", profile.displayName)
       window.dispatchEvent(new Event("storage"))
     }
+  } catch (e) {
+    // Error is handled by apiClient toast
   } finally {
     isProfileLoading.value = false
   }
@@ -370,6 +372,8 @@ async function handleUpdatePassword() {
     localStorage.removeItem("is_authenticated")
     localStorage.removeItem("user_name")
     setTimeout(() => { window.location.href = "/login" }, 1500)
+  } catch (e) {
+    // Error is handled by apiClient toast
   } finally {
     isPasswordLoading.value = false
   }
