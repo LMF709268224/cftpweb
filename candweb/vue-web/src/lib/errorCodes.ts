@@ -113,8 +113,8 @@ export const ErrorMessages: Record<string, { zh: string; en: string }> = {
 
   // 兜底未知错误
   UNKNOWN_ERROR: {
-    zh: "发生未知错误，请联系客服",
-    en: "An unknown error occurred. Please contact support.",
+    zh: "发生未知错误，请稍后重试",
+    en: "An unknown error occurred. Please try again later.",
   },
   REQUEST_TIMEOUT: {
     zh: "请求超时，请稍后重试",
