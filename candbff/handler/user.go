@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	gmailpb "github.com/afnandelfin620-star/cftptest/cftp/gmail"
+	"github.com/afnandelfin620-star/cftptest/cftp/util"
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 )
 
@@ -253,7 +255,14 @@ func (h *Handler) SendEmailCode(w http.ResponseWriter, r *http.Request) {
 		content = fmt.Sprintf("您的验证码是：%s。该验证码将在5分钟后过期。", code)
 	}
 
-	err = casdoorsdk.SendEmail("Verification Code", content, "", input.Email)
+	_, err = h.Gmail.CreateMailRaw(r.Context(), &gmailpb.CreateMailRawRequest{
+		MailUlid:     util.NewULID(),
+		BusinessUnit: "candbff",
+		ToEmail:      input.Email,
+		ToName:       fullUser.DisplayName,
+		Subject:      "Verification Code",
+		HtmlBody:     content,
+	})
 	if err != nil {
 		slog.Error("Failed to send verification code", "error", err)
 		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to send email")
