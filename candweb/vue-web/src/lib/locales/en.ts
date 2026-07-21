@@ -864,6 +864,7 @@ export const en: AppTranslations = {
     uploadMaterials: "Upload Materials",
     submitApplication: "Submit Application",
     uploading: "Uploading...",
+    uploadSuccess: "{{fileName}} uploaded",
     uploadFailed: "Upload failed",
     submitFailed: "Submit failed",
     submitting: "Submitting...",

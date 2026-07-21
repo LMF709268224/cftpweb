@@ -862,6 +862,7 @@ export const zh = {
     uploadMaterials: "上传证明材料",
     submitApplication: "提交申请",
     uploading: "上传中...",
+    uploadSuccess: "{{fileName}} 上传成功",
     uploadFailed: "上传失败",
     submitFailed: "提交失败",
     submitting: "提交中...",

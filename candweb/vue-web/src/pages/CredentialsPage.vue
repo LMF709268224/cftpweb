@@ -134,6 +134,10 @@ function onConstraintFileChange(event: Event, constraintName: string) {
   if (file) void handleFileUpload(constraintName, file)
 }
 
+function uploadSuccessText(fileName: string) {
+  return t.value.credentialsPage.uploadSuccess.replace("{{fileName}}", fileName)
+}
+
 function triggerFileInput(constraintName: string) {
   document.getElementById(`file-${constraintName}`)?.click()
 }
@@ -389,7 +393,7 @@ onMounted(fetchData)
                 {{ statusLabel(t, CANDIDATE_APPLICATION_STATUS_LABELS, app.status, 'credentialsPage.appStatusUnknown') }}
               </span>
               <div class="col-span-2 min-w-0 rounded-lg bg-slate-50 px-3 py-2 text-sm leading-5 text-muted-foreground md:col-span-2 md:bg-transparent md:px-0 md:py-0 md:truncate lg:col-span-1" :title="app.audit_remark ? `${t.credentialsPage.auditRemark}: ${app.audit_remark}` : t.common.na">{{ app.audit_remark ? `${t.credentialsPage.auditRemark}: ${app.audit_remark}` : t.common.na }}</div>
-              <button v-if="canResubmit(app.status)" class="btn btn-primary col-span-2 h-9 w-full cursor-pointer rounded-lg py-1 text-sm shadow-sm shadow-primary/20 md:col-span-1 md:w-auto md:justify-self-end" @click="handleApplyClick(definitionForApplication(app), applicationId(app))">{{ t.credentialsPage.appStatusResubmit }}</button>
+              <button v-if="!canResubmit(app.status)" class="btn btn-primary col-span-2 h-9 w-full cursor-pointer rounded-lg py-1 text-sm shadow-sm shadow-primary/20 md:col-span-1 md:w-auto md:justify-self-end" @click="handleApplyClick(definitionForApplication(app), applicationId(app))">{{ t.credentialsPage.appStatusResubmit }}</button>
               <span v-else class="col-span-2 justify-self-start whitespace-nowrap text-sm text-muted-foreground md:col-span-1 md:justify-self-end">{{ formatBackendDateOnly(app.created_at) || t.common.na }}</span>
             </div>
           </div>
@@ -440,7 +444,7 @@ onMounted(fetchData)
                 </span>
                 <input :id="`file-${constraint.name}`" type="file" class="hidden" @change="onConstraintFileChange($event, constraint.name)" />
               </div>
-              <p v-if="uploadedFiles[constraint.name]" class="flex items-center gap-1 text-xs text-green-600"><CheckCircle class="h-3 w-3" /> {{ uploadedFiles[constraint.name].name }} uploaded</p>
+              <p v-if="uploadedFiles[constraint.name]" class="flex items-center gap-1 text-xs text-green-600"><CheckCircle class="h-3 w-3" /> {{ uploadSuccessText(uploadedFiles[constraint.name].name) }}</p>
             </div>
           </div>
         </div>
