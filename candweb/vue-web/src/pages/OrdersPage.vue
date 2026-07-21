@@ -2,13 +2,14 @@
 import { computed, onMounted, ref } from "vue"
 import { useRoute } from "vue-router"
 import { toast } from "vue-sonner"
-import { ChevronRight, CreditCard, FileText, Loader2, Package, Receipt, X, XCircle } from "lucide-vue-next"
+import { ChevronRight, CreditCard, Loader2, Package, Receipt, X, XCircle } from "lucide-vue-next"
 import { timelineStatusBadgeClassForStatus, timelineStatusLabelWithDiagnostics } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
 import AppPagination from "@/components/AppPagination.vue"
 import PaymentSessionDialog from "@/components/PaymentSessionDialog.vue"
 import CouponInputBlock from "@/components/CouponInputBlock.vue"
 import { apiClient } from "@/lib/apiClient"
+import { useBodyScrollLock } from "@/lib/bodyScrollLock"
 import { formatBackendDateMinute } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
 import { usePolling } from "@/lib/polling"
@@ -102,6 +103,7 @@ const detailLoadingOrderId = ref<string | null>(null)
 const detailError = ref("")
 const selectedOrderDetail = ref<OrderDetail | null>(null)
 const selectedOrderItem = ref<OrderItem | null>(null)
+useBodyScrollLock(() => detailLoading.value || Boolean(detailError.value) || Boolean(selectedOrderDetail.value))
 const detailPaymentPreview = ref<any>(null)
 const orderPaymentDialogOpen = ref(false)
 const orderPaymentSession = ref<{
@@ -580,7 +582,7 @@ onMounted(() => {
               <p class="text-sm text-muted-foreground">{{ order.date }}</p>
             </div>
           </div>
-          <div class="grid w-full grid-cols-[1fr_auto_auto_auto_auto] items-center gap-x-3 gap-y-3 pl-16 md:w-auto md:shrink-0 md:grid-cols-[130px_140px_36px_36px_24px] md:gap-x-5 md:pl-0">
+          <div class="grid w-full grid-cols-[1fr_auto_auto_auto_auto] items-center gap-x-3 gap-y-3 pl-16 md:w-auto md:shrink-0 md:grid-cols-[130px_140px_36px_72px_24px] md:gap-x-5 md:pl-0">
             <div class="flex justify-start md:justify-center">
               <span class="badge text-xs" :class="orderStatusBadgeClass(order)">
                 {{ timelineStatusLabelWithDiagnostics(t, 'MALL_ORDER', order.order_status) }}
@@ -598,12 +600,11 @@ onMounted(() => {
               <span class="sr-only">{{ t.orders.cancelOrder }}</span>
             </button>
             <span v-else class="h-9 w-9" />
-            <button v-if="order.canViewInvoice" @click.stop="viewInvoice(order.invoiceOrderId)" class="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary" :title="t.orders.viewInvoice">
-              <Loader2 v-if="invoiceLoading === order.invoiceOrderId" class="h-4 w-4 animate-spin text-primary" />
-              <FileText v-else class="h-4 w-4" />
-              <span class="sr-only">{{ invoiceOpeningLabel }}</span>
+            <button v-if="order.canViewInvoice" @click.stop="viewInvoice(order.invoiceOrderId)" class="inline-flex h-9 min-w-[72px] items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-primary/10 px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/20">
+              <Loader2 v-if="invoiceLoading === order.invoiceOrderId" class="h-4 w-4 animate-spin" />
+              {{ t.orders.viewInvoice }}
             </button>
-            <span v-else class="h-9 w-9" />
+            <span v-else class="h-9 w-[72px]" />
 
             <Loader2 v-if="detailLoadingOrderId === order.id" class="h-5 w-5 animate-spin text-muted-foreground" />
             <ChevronRight v-else class="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1" />

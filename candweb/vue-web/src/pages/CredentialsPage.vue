@@ -7,6 +7,7 @@ import { CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, CANDIDATE_APPLICATION_STATUS_L
 import AppPagination from "@/components/AppPagination.vue"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
+import { useBodyScrollLock } from "@/lib/bodyScrollLock"
 import { formatBackendDateOnly } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
 import { toast } from "vue-sonner"
@@ -31,6 +32,7 @@ const applicationsLoading = ref(false)
 const selectedDef = ref<any>(null)
 const resubmitAppId = ref("")
 const isApplyOpen = ref(false)
+useBodyScrollLock(() => isApplyOpen.value)
 const uploadedFiles = ref<Record<string, { name: string; url: string; ext: string; hash: string; size: number }>>({})
 const isSubmitting = ref(false)
 const uploadingConstraintName = ref("")
@@ -185,6 +187,23 @@ async function handleFileUpload(constraint: any, file: File) {
 }
 
 async function handleSubmitApplication() {
+  const constraints = selectedDef.value?.file_constraints
+  if (!Array.isArray(constraints)) {
+    toast.error(t.value.credentialsPage.materialRequirementsUnavailable)
+    return
+  }
+
+  if (Object.keys(uploadedFiles.value).length === 0) {
+    toast.error(t.value.credentialsPage.requiredMaterialsMissing)
+    return
+  }
+
+  const hasMissingRequiredMaterial = constraints.some((constraint: any) => constraint.is_required && !uploadedFiles.value[constraint.name])
+  if (hasMissingRequiredMaterial) {
+    toast.error(t.value.credentialsPage.requiredMaterialsMissing)
+    return
+  }
+
   isSubmitting.value = true
   const evidenceFiles = Object.keys(uploadedFiles.value).map((k) => ({
     file_name: uploadedFiles.value[k].name,
@@ -193,7 +212,7 @@ async function handleSubmitApplication() {
     file_ext: uploadedFiles.value[k].ext,
     file_size: uploadedFiles.value[k].size,
     file_usage: k,
-    file_type: selectedDef.value.file_constraints.find((c: any) => c.name === k)?.type || 1,
+    file_type: constraints.find((c: any) => c.name === k)?.type || 1,
   }))
   try {
     if (resubmitAppId.value) {
@@ -475,7 +494,7 @@ onMounted(fetchData)
         </div>
         <div class="flex justify-end gap-3">
           <button class="btn btn-outline cursor-pointer rounded-lg" @click="isApplyOpen = false">{{ t.common.cancel }}</button>
-          <button class="btn btn-primary cursor-pointer rounded-lg shadow-sm shadow-primary/20 disabled:cursor-not-allowed" :disabled="isSubmitting || !(selectedDef?.file_constraints?.every((c: any) => !c.is_required || uploadedFiles[c.name]) && selectedDef?.file_constraints?.length > 0)" @click="handleSubmitApplication">
+          <button class="btn btn-primary cursor-pointer rounded-lg shadow-sm shadow-primary/20 disabled:cursor-not-allowed" :disabled="isSubmitting || Boolean(uploadingConstraintName)" @click="handleSubmitApplication">
             <Loader2 v-if="isSubmitting" class="h-4 w-4 animate-spin" />
             {{ isSubmitting ? t.credentialsPage.submitting : t.credentialsPage.submitApplication }}
           </button>

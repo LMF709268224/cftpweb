@@ -2,6 +2,7 @@
 import { computed } from "vue"
 import { CreditCard, X } from "lucide-vue-next"
 import PaymentSessionPanel from "@/components/PaymentSessionPanel.vue"
+import { useBodyScrollLock } from "@/lib/bodyScrollLock"
 import { useTranslation } from "@/lib/language"
 
 const props = defineProps<{
@@ -21,6 +22,8 @@ const props = defineProps<{
 const emit = defineEmits<{ "update:open": [value: boolean] }>()
 const { t } = useTranslation()
 const copy = computed(() => t.value.paymentSession)
+
+useBodyScrollLock(() => props.open)
 
 function close() {
   emit("update:open", false)

@@ -7,7 +7,7 @@ import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
 import { useUser } from "@/lib/user"
-import { getCachedCountries, getCountryCityOptions, getCountryOptions, getProvinceOptions, getStateCityOptions, loadLocationData } from "@/lib/locationOptions"
+import { getCachedCountries, getCountryCityOptions, getCountryOptions, getProvinceOptions, getStateCityOptions, loadLocationData, type CountryOption } from "@/lib/locationOptions"
 import { GENDER_OPTIONS, PROFILE_TEXT_LIMITS, isValidInternationalPhone, isValidPostalCode, normalizeGender, normalizeInternationalPhone, normalizePostalCode, trimToMax } from "@/lib/profileFormValidation"
 
 const route = useRoute()
@@ -20,7 +20,7 @@ const courseId = String(route.query.courseId || "")
 const loading = ref(false)
 const selectedCountryCode = ref("")
 const selectedProvinceCode = ref("")
-const countryOptions = ref<Array<{ code: string; name: string }>>([])
+const countryOptions = ref<CountryOption[]>([])
 const provinceOptions = ref<any[]>([])
 const cityOptions = ref<any[]>([])
 const genderOptions = GENDER_OPTIONS
@@ -435,7 +435,7 @@ async function handleSubmit() {
             <span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formCountry }}</span>
             <select v-model="selectedCountryCode" class="input cursor-pointer" required @change="handleCountryChange">
               <option value="" disabled>{{ t.examSignup.formCountry }}</option>
-              <option v-for="country in countryOptions" :key="country.code" :value="country.code">{{ country.name }}</option>
+              <option v-for="country in countryOptions" :key="country.code" :value="country.code">{{ country.displayName }}</option>
             </select>
           </label>
           <label class="space-y-2">

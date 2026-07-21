@@ -5,6 +5,7 @@ import { Award, Calendar, CheckCircle2, ClipboardCheck, Download, Eye, Loader2, 
 import AppShell from "@/components/AppShell.vue"
 import rewGif from "@/assets/rew.gif"
 import { apiClient } from "@/lib/apiClient"
+import { useBodyScrollLock } from "@/lib/bodyScrollLock"
 import { formatBackendDateOnly } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
 import { usePolling } from "@/lib/polling"
@@ -17,6 +18,7 @@ const CERTIFICATE_PREVIEW_TIMEOUT_MS = 20000
 const CERTIFICATE_CELEBRATED_IDS_KEY = "cftp-certificates-celebrated-ids"
 
 const featuredCertificate = computed(() => certificates.value[0] ?? null)
+useBodyScrollLock(() => celebrationVisible.value && Boolean(featuredCertificate.value))
 
 function openCertificate(url?: string) {
   if (url) window.open(url, "_blank")
