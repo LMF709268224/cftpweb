@@ -235,6 +235,12 @@ export function localizeApiErrorMessage(
       : `Published course ${match[1]} cannot be modified. Please create a new version or edit a draft version.`
   }
 
+  const isGenericMessage = /^(Bad Request|Unauthorized|Forbidden|Not Found|Method Not Allowed|Internal Server Error|Bad Gateway|Service Unavailable|Error)$/i.test(message || "")
+
+  if (errorCode && ErrorMessages[errorCode] && (!message || isGenericMessage)) {
+    return getErrorMessage(errorCode, lang)
+  }
+
   if (message) {
     return message
   }
