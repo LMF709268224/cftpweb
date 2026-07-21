@@ -39,8 +39,13 @@ const profile = reactive({
   education: "",
 })
 const password = reactive({ oldPassword: "", newPassword: "", confirmPassword: "" })
+const emailUpdate = reactive({ newEmail: "", verificationCode: "" })
 const isProfileLoading = ref(false)
 const isPasswordLoading = ref(false)
+const isEmailUpdating = ref(false)
+const isEmailCodeSending = ref(false)
+const emailCodeCountdown = ref(0)
+let emailCodeInterval: number | undefined
 const selectedCountryCode = ref("")
 const selectedProvinceCode = ref("")
 const countryOptions = ref<Array<{ code: string; name: string }>>([])
@@ -77,7 +82,7 @@ const CN_CITY_OPTIONS_BY_STATE: Record<string, string[]> = {
   LN: ["沈阳", "大连", "鞍山", "抚顺", "本溪", "丹东", "锦州", "营口", "阜新", "辽阳", "盘锦", "铁岭", "朝阳", "葫芦岛"],
   NX: ["银川", "石嘴山", "吴忠", "固原", "中卫"],
   QH: ["西宁", "海东", "海北", "黄南", "海南", "果洛", "玉树", "海西"],
-  SN: ["西安", "铜川", "宝鸡", "咸阳", "渭南", "延安", "汉中", "榆林", "安康", "商洛"],
+  SN: ["西安", "铜川", "宝江", "咸阳", "渭南", "延安", "汉中", "榆林", "安康", "商洛"],
   SD: ["济南", "青岛", "淄博", "枣庄", "东营", "烟台", "潍坊", "济宁", "泰安", "威海", "日照", "临沂", "德州", "聊城", "滨州", "菏泽"],
   SH: ["上海", "黄浦", "徐汇", "长宁", "静安", "普陀", "虹口", "杨浦", "闵行", "宝山", "嘉定", "浦东", "金山", "松江", "青浦", "奉贤", "崇明"],
   SX: ["太原", "大同", "阳泉", "长治", "晋城", "朔州", "晋中", "运城", "忻州", "临汾", "吕梁"],
@@ -368,6 +373,54 @@ async function handleUpdatePassword() {
     isPasswordLoading.value = false
   }
 }
+
+async function handleSendEmailCode() {
+  if (!emailUpdate.newEmail) {
+    toast.error(t.value.settings.validationRequired.replace("{{field}}", t.value.settings.newEmail))
+    return
+  }
+  isEmailCodeSending.value = true
+  try {
+    await apiClient("/api/user/profile/email/send-code", {
+      method: "POST",
+      body: JSON.stringify({ email: emailUpdate.newEmail, lang: lang.value }),
+    })
+    toast.success(t.value.settings.codeSent)
+    emailCodeCountdown.value = 60
+    emailCodeInterval = window.setInterval(() => {
+      emailCodeCountdown.value--
+      if (emailCodeCountdown.value <= 0) {
+        clearInterval(emailCodeInterval)
+      }
+    }, 1000)
+  } finally {
+    isEmailCodeSending.value = false
+  }
+}
+
+async function handleUpdateEmail() {
+  if (!emailUpdate.newEmail || !emailUpdate.verificationCode) {
+    toast.error(t.value.settings.validationRequired.replace("{{field}}", !emailUpdate.newEmail ? t.value.settings.newEmail : t.value.settings.verificationCode))
+    return
+  }
+  isEmailUpdating.value = true
+  try {
+    await apiClient("/api/user/profile/email", {
+      method: "PUT",
+      body: JSON.stringify({ email: emailUpdate.newEmail, verification_code: emailUpdate.verificationCode }),
+    })
+    toast.success(t.value.settings.updateEmailSuccess)
+    emailUpdate.newEmail = ""
+    emailUpdate.verificationCode = ""
+    clearInterval(emailCodeInterval)
+    emailCodeCountdown.value = 0
+    await fetchUser() // fetch latest profile to update global user
+    const payload = await apiClient("/api/user/me")
+    if (payload && payload.email) profile.email = payload.email
+  } finally {
+    isEmailUpdating.value = false
+  }
+}
 </script>
 
 <template>
@@ -481,8 +534,28 @@ async function handleUpdatePassword() {
           <label class="block space-y-2"><span class="text-sm font-medium">{{ t.settings.currentPassword }}</span><input v-model="password.oldPassword" class="input" type="password" required /></label>
           <label class="block space-y-2"><span class="text-sm font-medium">{{ t.settings.newPassword }}</span><input v-model="password.newPassword" class="input" type="password" required /></label>
           <label class="block space-y-2"><span class="text-sm font-medium">{{ t.settings.confirmNewPassword }}</span><input v-model="password.confirmPassword" class="input" type="password" required /></label>
-          <button class="btn btn-primary" :disabled="isPasswordLoading"><Loader2 v-if="isPasswordLoading" class="h-4 w-4 animate-spin" /> {{ t.settings.updatePasswordBtn }}</button>
+          <button class="btn btn-primary" :disabled="isPasswordLoading"><Loader2 v-if="isPasswordLoading" class="h-4 w-4 animate-spin mr-2" /> {{ t.settings.updatePasswordBtn }}</button>
         </form>
+        </div>
+
+        <div class="flex flex-col space-y-1.5 p-6 mt-6 border-t border-border">
+          <h2 class="text-xl font-semibold leading-none tracking-tight">{{ t.settings.updateEmail }}</h2>
+          <p class="text-sm text-muted-foreground">{{ t.settings.updateEmailDesc }}</p>
+        </div>
+        <div class="p-6 pt-0">
+          <form class="max-w-xl space-y-4" @submit.prevent="handleUpdateEmail">
+            <label class="block space-y-2"><span class="text-sm font-medium">{{ t.settings.newEmail }}</span><input v-model="emailUpdate.newEmail" class="input" type="email" required /></label>
+            <label class="block space-y-2"><span class="text-sm font-medium">{{ t.settings.verificationCode }}</span>
+              <div class="flex gap-2">
+                <input v-model="emailUpdate.verificationCode" class="input flex-1" type="text" required />
+                <button type="button" class="btn btn-outline" :disabled="isEmailCodeSending || emailCodeCountdown > 0" @click="handleSendEmailCode">
+                  <Loader2 v-if="isEmailCodeSending" class="h-4 w-4 animate-spin mr-2" />
+                  {{ emailCodeCountdown > 0 ? t.settings.resendCode.replace('{{seconds}}', String(emailCodeCountdown)) : t.settings.sendCode }}
+                </button>
+              </div>
+            </label>
+            <button class="btn btn-primary" :disabled="isEmailUpdating"><Loader2 v-if="isEmailUpdating" class="h-4 w-4 animate-spin mr-2" /> {{ t.settings.updateEmailBtn }}</button>
+          </form>
         </div>
       </div>
     </div>
