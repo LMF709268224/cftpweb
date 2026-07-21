@@ -772,10 +772,11 @@ export const en: AppTranslations = {
   settings: {
     title: "Settings",
     profileTab: "Profile",
-    accountTab: "Account",
+    accountTab: "Security Settings",
     profileDesc: "Manage your basic information, contact details, and resume.",
     loginId: "Login ID",
-    email: "email",
+    email: "Email",
+    emailChangeHint: "To change your email, please go to the Security Settings page.",
     displayName: "Display Name (Nickname)",
     displayNamePlaceholder: "e.g., John Doe",
     realName: "Real Name",

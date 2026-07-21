@@ -774,6 +774,7 @@ export const zh = {
     profileDesc: "管理您的基本信息、联系方式和履历。",
     loginId: "登录账号",
     email: "邮箱",
+    emailChangeHint: "如需修改邮箱，请前往“安全设置”页面",
     displayName: "显示名称 (昵称)",
     displayNamePlaceholder: "例如：张三",
     realName: "真实姓名",

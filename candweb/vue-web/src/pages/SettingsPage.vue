@@ -468,7 +468,11 @@ async function handleUpdateEmail() {
         <form class="max-w-2xl space-y-4" @submit.prevent="handleUpdateProfile">
           <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.loginId }}</span><input v-model="profile.name" class="input bg-muted" disabled /></label>
-            <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.email }}</span><input v-model="profile.email" class="input bg-muted" disabled required /></label>
+            <label class="space-y-2">
+              <span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.email }}</span>
+              <input v-model="profile.email" class="input bg-muted" disabled required />
+              <p class="text-xs text-muted-foreground">{{ t.settings.emailChangeHint }}</p>
+            </label>
             <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.displayName }}</span><input v-model="profile.displayName" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" :placeholder="t.settings.displayNamePlaceholder" /></label>
             <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.realName }}</span><input v-model="profile.realName" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" :placeholder="t.settings.realNamePlaceholder" /></label>
             <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.firstName }}</span><input v-model="profile.firstName" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" :placeholder="t.settings.firstNamePlaceholder" required /></label>
