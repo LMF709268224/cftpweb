@@ -134,6 +134,10 @@ function onConstraintFileChange(event: Event, constraintName: string) {
   if (file) void handleFileUpload(constraintName, file)
 }
 
+function uploadSuccessText(fileName: string) {
+  return t.value.credentialsPage.uploadSuccess.replace("{{fileName}}", fileName)
+}
+
 function triggerFileInput(constraintName: string) {
   document.getElementById(`file-${constraintName}`)?.click()
 }
@@ -440,7 +444,7 @@ onMounted(fetchData)
                 </span>
                 <input :id="`file-${constraint.name}`" type="file" class="hidden" @change="onConstraintFileChange($event, constraint.name)" />
               </div>
-              <p v-if="uploadedFiles[constraint.name]" class="flex items-center gap-1 text-xs text-green-600"><CheckCircle class="h-3 w-3" /> {{ uploadedFiles[constraint.name].name }} uploaded</p>
+              <p v-if="uploadedFiles[constraint.name]" class="flex items-center gap-1 text-xs text-green-600"><CheckCircle class="h-3 w-3" /> {{ uploadSuccessText(uploadedFiles[constraint.name].name) }}</p>
             </div>
           </div>
         </div>

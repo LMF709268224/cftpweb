@@ -208,11 +208,6 @@ function handleProvinceChange() {
   refreshCityOptions()
 }
 
-function handlePhoneInput(field: "work_phone", event: Event) {
-  const target = event.target as HTMLInputElement
-  formData[field] = normalizeInternationalPhone(target.value)
-}
-
 function sanitizeSignupForm() {
   formData.first_name = trimToMax(formData.first_name, PROFILE_TEXT_LIMITS.name)
   formData.middle_name = trimToMax(formData.middle_name, PROFILE_TEXT_LIMITS.name)
@@ -463,13 +458,14 @@ async function handleSubmit() {
           <label class="space-y-2">
             <span class="text-sm font-medium">{{ t.examSignup.formWorkPhone }}</span>
             <input
+              id="exam-signup-work-phone"
               v-model="formData.work_phone"
               class="input"
               type="tel"
               inputmode="tel"
-              maxlength="16"
-              pattern="\+?\d{7,15}"
-              @input="handlePhoneInput('work_phone', $event)"
+              autocomplete="tel"
+              maxlength="24"
+              :placeholder="t.examSignup.formWorkPhonePlaceholder"
             />
           </label>
         </div>

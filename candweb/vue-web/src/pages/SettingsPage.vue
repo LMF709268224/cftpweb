@@ -203,11 +203,6 @@ function handleProvinceChange() {
   refreshCityOptions()
 }
 
-function handlePhoneInput(field: "homePhone" | "workPhone", event: Event) {
-  const target = event.target as HTMLInputElement
-  profile[field] = normalizeInternationalPhone(target.value)
-}
-
 function sanitizeProfileForm() {
   profile.displayName = trimToMax(profile.displayName, PROFILE_TEXT_LIMITS.name)
   profile.realName = trimToMax(profile.realName, PROFILE_TEXT_LIMITS.name)
@@ -432,14 +427,14 @@ async function handleUpdatePassword() {
             <label class="space-y-2">
               <span class="text-sm font-medium">{{ t.settings.workPhone }}</span>
               <input
+                id="settings-work-phone"
                 v-model="profile.workPhone"
                 class="input"
                 type="tel"
                 inputmode="tel"
-                maxlength="16"
-                pattern="\+?\d{7,15}"
+                autocomplete="tel"
+                maxlength="24"
                 :placeholder="t.settings.workPhonePlaceholder"
-                @input="handlePhoneInput('workPhone', $event)"
               />
             </label>
             <label class="space-y-2">
