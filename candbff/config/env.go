@@ -60,6 +60,8 @@ const (
 	EnvGpayGrpcAddr = "GPAY_GRPC_ADDR"
 	// GMBR_GRPC_ADDR gmbr 会员服务地址
 	EnvGmbrGrpcAddr = "GMBR_GRPC_ADDR"
+	// GMAIL_GRPC_ADDR gmail 邮件服务地址
+	EnvGmailGrpcAddr = "GMAIL_GRPC_ADDR"
 
 	// ── CORS ──
 	// CORS_ALLOWED_ORIGINS  允许的跨域来源，逗号分隔，默认 "*" 允许所有

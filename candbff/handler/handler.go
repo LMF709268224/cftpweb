@@ -10,6 +10,7 @@ import (
 	lmspb "github.com/afnandelfin620-star/cftptest/cftp/glms"
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
 	gmbrpb "github.com/afnandelfin620-star/cftptest/cftp/gmbr"
+	gmailpb "github.com/afnandelfin620-star/cftptest/cftp/gmail"
 	gmidpb "github.com/afnandelfin620-star/cftptest/cftp/gmid"
 	gmsgpb "github.com/afnandelfin620-star/cftptest/cftp/gmsg"
 	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
@@ -40,6 +41,7 @@ type Handler struct {
 	Gmid                gmidpb.MidServiceClient
 	Gpay                gpaypb.PayServiceClient
 	Gmbr                gmbrpb.GmbrServiceClient
+	Gmail               gmailpb.MailServiceClient
 	CasdoorEndpoint     string
 	CasdoorClientId     string
 	CasdoorClientSecret string
@@ -57,6 +59,7 @@ func New(
 	gmid gmidpb.MidServiceClient,
 	gpay gpaypb.PayServiceClient,
 	gmbr gmbrpb.GmbrServiceClient,
+	gmail gmailpb.MailServiceClient,
 	casdoorEndpoint string,
 	casdoorClientId string,
 	casdoorClientSecret string,
@@ -73,6 +76,7 @@ func New(
 		Gmid:                gmid,
 		Gpay:                gpay,
 		Gmbr:                gmbr,
+		Gmail:               gmail,
 		CasdoorEndpoint:     casdoorEndpoint,
 		CasdoorClientId:     casdoorClientId,
 		CasdoorClientSecret: casdoorClientSecret,
