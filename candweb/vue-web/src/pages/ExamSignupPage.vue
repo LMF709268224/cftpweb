@@ -385,7 +385,10 @@ async function handleSubmit() {
   try {
     await syncSignupToProfile()
     await apiClient(`/api/exams/units/${encodeURIComponent(unitId)}/signup`, { method: "POST", body: JSON.stringify(formData) })
-    toast.success(t.value.examSignup.success)
+    toast.success(t.value.examSignup.success, {
+      description: t.value.examSignup.successDescription,
+      duration: 6000,
+    })
     router.push("/exams")
   } finally {
     loading.value = false
