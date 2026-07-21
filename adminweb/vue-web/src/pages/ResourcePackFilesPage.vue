@@ -4,6 +4,8 @@ import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
+import { fetchAllCursorRecords } from "@/lib/cursorPagination"
+import { isVideoFile, MAX_BASIC_VIDEO_UPLOAD_BYTES, sha256Hex, uploadToDirectURL } from "@/lib/directUpload"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 
@@ -174,20 +176,19 @@ async function loadFileDetail(file: JsonRecord | null) {
 }
 
 async function loadPacks() {
-  const data = await apiClient<JsonRecord>("/api/lms/resource-packs?page_size=100")
-    total.value = Number(data.total) || 0
-  packs.value = asRecordList(data.packs || data.items)
+  packs.value = await fetchAllCursorRecords("/api/lms/resource-packs", "packs")
 }
 
 async function loadFiles() {
   const url = new URL("/api/lms/resource-pack-files", window.location.origin)
   url.searchParams.set("page_size", String(pageSize))
   if (packFilter.value) url.searchParams.set("pack_id", packFilter.value)
-  if (pageToken.value) url.searchParams.set("page_token", pageToken.value)
+  if (pageToken.value) url.searchParams.set(packFilter.value ? "cursor" : "page_token", pageToken.value)
 
   const data = await apiClient<JsonRecord>(`${url.pathname}${url.search}`)
   files.value = asRecordList(data.files || data.items)
-  nextPageToken.value = String(data.next_page_token || "")
+  total.value = packFilter.value ? Number(data.total) || 0 : 0
+  nextPageToken.value = String(packFilter.value ? data.next_cursor || "" : data.next_page_token || "")
   const nextSelected = files.value.find((file) => fileId(file) === form.value.file_id) || files.value[0] || null
   selectFile(nextSelected)
 }
@@ -277,17 +278,18 @@ async function saveFile() {
 
   saving.value = true
   try {
+    const isVideo = form.value.file_type === 1
     const body: JsonRecord = {
       title: form.value.title.trim(),
       description: form.value.description,
       thumbnail_object_key: form.value.thumbnail_object_key,
       thumbnail_file_hash: form.value.thumbnail_file_hash,
       file_type: form.value.file_type,
-      file_name: form.value.file_name,
-      file_size: Number(form.value.file_size || 0),
-      file_hash: form.value.file_hash,
-      file_object_key: form.value.file_object_key,
-      video_stream_uid: form.value.video_stream_uid,
+      file_name: isVideo ? "" : form.value.file_name,
+      file_size: isVideo ? 0 : Number(form.value.file_size || 0),
+      file_hash: isVideo ? "" : form.value.file_hash,
+      file_object_key: isVideo ? "" : form.value.file_object_key,
+      video_stream_uid: isVideo ? form.value.video_stream_uid.trim() : "",
       sort_order: Number(form.value.sort_order || 0),
     }
 
@@ -363,13 +365,21 @@ async function handleFileUpload(event: Event) {
     toast.error(copy.value.toasts.fileSaveFirst)
     return
   }
+  const isVideo = form.value.file_type === 1
+  if (isVideo !== isVideoFile(file)) {
+    toast.error(isVideo ? copy.value.videoFileRequired : copy.value.nonVideoFileRequired)
+    input.value = ""
+    return
+  }
+  if (isVideo && file.size > MAX_BASIC_VIDEO_UPLOAD_BYTES) {
+    toast.error(copy.value.videoUploadLimit)
+    input.value = ""
+    return
+  }
 
   uploadingFile.value = true
   try {
-    const arrayBuffer = await file.arrayBuffer()
-    const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer)
-    const hashArray = Array.from(new Uint8Array(hashBuffer))
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+    const hashHex = await sha256Hex(file)
 
     const uploadUrlReq = {
       upload_type: 6,
@@ -380,21 +390,21 @@ async function handleFileUpload(event: Event) {
       file_hash: hashHex
     }
     const uploadRes = await apiClient<JsonRecord>("/api/lms/upload-url", { method: "POST", body: JSON.stringify(uploadUrlReq) })
-    
-    if (!uploadRes.upload_url) throw new Error("Missing upload URL")
-    const uploadResponse = await fetch(String(uploadRes.upload_url), {
-      method: "PUT",
-      body: file,
-      headers: uploadRes.signed_headers as Record<string, string> || {}
-    })
-    if (!uploadResponse.ok) {
-      throw new Error(`Upload failed: ${uploadResponse.status}`)
-    }
+    await uploadToDirectURL(file, uploadRes)
 
-    form.value.file_object_key = String(uploadRes.object_key)
-    form.value.file_hash = hashHex
-    form.value.file_name = file.name
-    form.value.file_size = file.size
+    if (isVideo) {
+      form.value.video_stream_uid = String(uploadRes.object_key || "")
+      form.value.file_object_key = ""
+      form.value.file_hash = ""
+      form.value.file_name = ""
+      form.value.file_size = 0
+    } else {
+      form.value.file_object_key = String(uploadRes.object_key || "")
+      form.value.file_hash = hashHex
+      form.value.file_name = file.name
+      form.value.file_size = file.size
+      form.value.video_stream_uid = ""
+    }
     toast.success(copy.value.toasts.fileUploadSuccess)
   } catch (err: any) {
     toast.error(copy.value.toasts.fileUploadFailed(err.message || String(err)))
@@ -562,7 +572,7 @@ onMounted(load)
         </div>
 
         <div class="flex flex-col items-stretch justify-end gap-3 border-t border-slate-200 px-4 py-4 sm:flex-row sm:items-center md:px-5">
-          <span class="text-center text-sm font-bold text-slate-500 sm:mr-auto sm:text-left">{{ `${currentPage} / ${Math.max(1, Math.ceil(total / pageSize))}` }}</span>
+          <span class="text-center text-sm font-bold text-slate-500 sm:mr-auto sm:text-left">{{ total > 0 ? `${currentPage} / ${Math.max(1, Math.ceil(total / pageSize))}` : copy.pageText(currentPage) }}</span>
           <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrevious || loading" @click="previousPage">{{ copy.prev }}</button>
           <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext || loading" @click="nextPage">{{ copy.next }}</button>
         </div>
@@ -626,7 +636,8 @@ onMounted(load)
 
           <div class="mb-3 mt-5 border-t border-slate-100 pt-5 text-sm font-black text-slate-700">{{ copy.sections.fileThumbnail }}</div>
           <div class="grid gap-3 md:grid-cols-2">
-          <label class="text-sm font-bold">
+          <input type="file" ref="fileInput" class="hidden" :accept="form.file_type === 1 ? 'video/*' : undefined" @change="handleFileUpload" />
+          <label v-if="form.file_type !== 1" class="text-sm font-bold">
             {{ copy.fields.fileName }}
             <div v-if="mode === 'detail'" class="readonly-field">{{ displayValue(form.file_name) }}</div>
             <input v-else v-model="form.file_name" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.fileName" />
@@ -640,7 +651,6 @@ onMounted(load)
             {{ copy.fields.fileObjectKey }}
             <div v-if="mode === 'detail'" class="readonly-field readonly-field--long">{{ displayValue(form.file_object_key) }}</div>
             <div v-else class="mt-2 flex flex-col gap-3 sm:flex-row">
-              <input type="file" ref="fileInput" class="hidden" @change="handleFileUpload" />
               <input v-model="form.file_object_key" class="w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.fileObjectKey" />
               <button type="button" class="flex items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 py-2 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50 sm:shrink-0" :disabled="uploadingFile || !form.file_id" :title="!form.file_id ? 'Please save to get an ID first' : ''" @click="fileInput?.click()">
                 <Loader2 v-if="uploadingFile" class="h-4 w-4 animate-spin" />
@@ -679,7 +689,15 @@ onMounted(load)
           <label class="text-sm font-bold" v-if="form.file_type === 1">
             {{ copy.fields.videoStreamUid }}
             <div v-if="mode === 'detail'" class="readonly-field readonly-field--compact">{{ displayValue(form.video_stream_uid) }}</div>
-            <input v-else v-model="form.video_stream_uid" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.videoStreamUid" />
+            <div v-else class="mt-2 flex flex-col gap-3 sm:flex-row">
+              <input v-model="form.video_stream_uid" class="h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.videoStreamUid" />
+              <button type="button" class="flex items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 py-2 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50 sm:shrink-0" :disabled="uploadingFile || !form.file_id" :title="!form.file_id ? copy.toasts.fileSaveFirst : copy.videoUploadLimitHint" @click="fileInput?.click()">
+                <Loader2 v-if="uploadingFile" class="h-4 w-4 animate-spin" />
+                <UploadCloud v-else class="h-4 w-4" />
+                {{ uploadingFile ? copy.uploading : copy.uploadFile }}
+              </button>
+            </div>
+            <span v-if="mode !== 'detail'" class="mt-2 block text-xs font-semibold text-slate-500">{{ copy.videoUploadLimitHint }}</span>
           </label>
           <label class="text-sm font-bold">
             {{ copy.fields.sort }}

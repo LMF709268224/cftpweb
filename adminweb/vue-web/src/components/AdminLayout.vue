@@ -149,6 +149,7 @@ async function logout() {
 }
 
 let redDotsTimer: ReturnType<typeof setInterval>
+let removeAfterEach: (() => void) | undefined
 
 onMounted(() => {
   window.addEventListener("storage", refreshUserName)
@@ -156,7 +157,7 @@ onMounted(() => {
   
   fetchRedDots()
   redDotsTimer = setInterval(fetchRedDots, 5 * 60 * 1000)
-  router.afterEach(() => {
+  removeAfterEach = router.afterEach(() => {
     fetchRedDots()
   })
 })
@@ -165,6 +166,7 @@ onUnmounted(() => {
   window.removeEventListener("storage", refreshUserName)
   document.removeEventListener("pointerdown", closeUserMenuOnOutsideClick)
   if (redDotsTimer) clearInterval(redDotsTimer)
+  removeAfterEach?.()
 })
 </script>
 

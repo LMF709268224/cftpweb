@@ -6,6 +6,7 @@ import { toast } from "vue-sonner"
 import PricingEditor from "@/components/PricingEditor.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
+import { fetchAllCursorRecords } from "@/lib/cursorPagination"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 import { badgeClass, pickFirst } from "@/lib/status"
@@ -713,21 +714,12 @@ function nextPage() {
   offset.value += limit
 }
 
-function recordList(value: unknown) {
-  return Array.isArray(value) ? value.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item)) : []
-}
-
 async function loadCreateTargetOptions() {
   targetOptionsLoading.value = true
   const failures: string[] = []
-  const loadRecords = async (label: string, request: Promise<JsonRecord>, keys: string[]) => {
+  const loadRecords = async (label: string, endpoint: string, itemKey: string) => {
     try {
-      const data = await request
-      for (const key of keys) {
-        const list = recordList(data[key])
-        if (list.length) return list
-      }
-      return []
+      return await fetchAllCursorRecords(endpoint, itemKey)
     } catch (err) {
       console.error(err)
       failures.push(label)
@@ -736,8 +728,8 @@ async function loadCreateTargetOptions() {
   }
   try {
     const [pipelines, memberships] = await Promise.all([
-      loadRecords("pipelines", apiClient<JsonRecord>("/api/pipelines?page_size=100&only_current=true"), ["pipelines", "items"]),
-      loadRecords("memberships", apiClient<JsonRecord>("/api/memberships?page=1&page_size=100"), ["memberships", "membership_configs", "items"]),
+      loadRecords("pipelines", "/api/pipelines?only_current=true", "pipelines"),
+      loadRecords("memberships", "/api/memberships", "memberships"),
     ])
     pipelineOptions.value = pipelines.filter(targetUsable)
     membershipOptions.value = memberships.filter(targetUsable)

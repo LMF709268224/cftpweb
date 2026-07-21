@@ -5,6 +5,7 @@ import { toast } from "vue-sonner"
 import JsonPreview from "@/components/JsonPreview.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
+import { fetchAllCursorRecords } from "@/lib/cursorPagination"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 import { badgeClass, pickFirst } from "@/lib/status"
@@ -43,7 +44,6 @@ const certificateTasks = ref<JsonRecord[]>([])
 const selectedCertificateTask = ref<JsonRecord | null>(null)
 const certificateTaskDetail = ref<JsonRecord | null>(null)
 
-const total = ref(0)
 const loading = ref(false)
 const detailLoading = ref(false)
 const logsLoading = ref(false)
@@ -331,9 +331,7 @@ function ensureSelections() {
 
 async function loadPipelineCatalog() {
   try {
-    const data = await apiClient<JsonRecord>("/api/pipelines?page_size=100")
-    total.value = Number(data.total) || 0
-    const list = Array.isArray(data.pipelines) ? data.pipelines : []
+    const list = await fetchAllCursorRecords("/api/pipelines", "pipelines")
     const next: Record<string, string> = {}
     for (const item of list) {
       if (!item || typeof item !== "object" || Array.isArray(item)) continue

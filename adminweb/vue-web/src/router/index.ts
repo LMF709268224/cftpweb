@@ -1,29 +1,30 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from "vue-router"
-import AdminLayout from "@/components/AdminLayout.vue"
 import { isAuthenticated } from "@/lib/authStorage"
-import AdminOpsPage from "@/pages/AdminOpsPage.vue"
-import AuditLogsPage from "@/pages/AuditLogsPage.vue"
-import ApplicationsPage from "@/pages/ApplicationsPage.vue"
-import BundlesPage from "@/pages/BundlesPage.vue"
-import CallbackPage from "@/pages/CallbackPage.vue"
-import CredentialsPage from "@/pages/CredentialsPage.vue"
-import DashboardPage from "@/pages/DashboardPage.vue"
-import ExamsPage from "@/pages/ExamsPage.vue"
-import InvoicesPage from "@/pages/InvoicesPage.vue"
-import LmsPage from "@/pages/LmsPage.vue"
-import LoginPage from "@/pages/LoginPage.vue"
-import MailsPage from "@/pages/MailsPage.vue"
-import MessagesPage from "@/pages/MessagesPage.vue"
-import OrdersPage from "@/pages/OrdersPage.vue"
-import PdfRequestsPage from "@/pages/PdfRequestsPage.vue"
-import PdfTemplatesPage from "@/pages/PdfTemplatesPage.vue"
-import PermissionsPage from "@/pages/PermissionsPage.vue"
-import PipelinesPage from "@/pages/PipelinesPage.vue"
-import ProgPage from "@/pages/ProgPage.vue"
-import ResourcePackFilesPage from "@/pages/ResourcePackFilesPage.vue"
-import ResourcePacksPage from "@/pages/ResourcePacksPage.vue"
-import SettingsPage from "@/pages/SettingsPage.vue"
-import WebhookAuditPage from "@/pages/WebhookAuditPage.vue"
+
+const AdminLayout = () => import("@/components/AdminLayout.vue")
+const AdminOpsPage = () => import("@/pages/AdminOpsPage.vue")
+const AuditLogsPage = () => import("@/pages/AuditLogsPage.vue")
+const ApplicationsPage = () => import("@/pages/ApplicationsPage.vue")
+const BundlesPage = () => import("@/pages/BundlesPage.vue")
+const CallbackPage = () => import("@/pages/CallbackPage.vue")
+const CredentialsPage = () => import("@/pages/CredentialsPage.vue")
+const DashboardPage = () => import("@/pages/DashboardPage.vue")
+const ExamsPage = () => import("@/pages/ExamsPage.vue")
+const InvoicesPage = () => import("@/pages/InvoicesPage.vue")
+const LmsPage = () => import("@/pages/LmsPage.vue")
+const LoginPage = () => import("@/pages/LoginPage.vue")
+const MailsPage = () => import("@/pages/MailsPage.vue")
+const MessagesPage = () => import("@/pages/MessagesPage.vue")
+const OrdersPage = () => import("@/pages/OrdersPage.vue")
+const PdfRequestsPage = () => import("@/pages/PdfRequestsPage.vue")
+const PdfTemplatesPage = () => import("@/pages/PdfTemplatesPage.vue")
+const PermissionsPage = () => import("@/pages/PermissionsPage.vue")
+const PipelinesPage = () => import("@/pages/PipelinesPage.vue")
+const ProgPage = () => import("@/pages/ProgPage.vue")
+const ResourcePackFilesPage = () => import("@/pages/ResourcePackFilesPage.vue")
+const ResourcePacksPage = () => import("@/pages/ResourcePacksPage.vue")
+const SettingsPage = () => import("@/pages/SettingsPage.vue")
+const WebhookAuditPage = () => import("@/pages/WebhookAuditPage.vue")
 
 export type ResourceRouteMeta = {
   copyKey: ResourceRouteKey
