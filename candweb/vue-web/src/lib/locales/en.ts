@@ -752,7 +752,6 @@ export const en: AppTranslations = {
     viewInvoice: "View Invoice",
     free: "Free",
     noOrders: "No orders yet",
-    noOrdersDesc: "Order records and payment status will appear here after the order API is connected.",
     detailTitle: "Order Details",
     detailSubtitle: "Loading order details",
     detailClose: "Close",
