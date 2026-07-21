@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref, watch } from "vue"
+import { computed, onMounted, reactive, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
 import { Loader2, Settings } from "lucide-vue-next"
@@ -45,6 +45,7 @@ const isPasswordLoading = ref(false)
 const isEmailUpdating = ref(false)
 const isEmailCodeSending = ref(false)
 const emailCodeCountdown = ref(0)
+const resendCodeText = computed(() => t.value.settings.resendCode.replace('{{seconds}}', String(emailCodeCountdown.value)))
 let emailCodeInterval: number | undefined
 const selectedCountryCode = ref("")
 const selectedProvinceCode = ref("")
@@ -550,7 +551,7 @@ async function handleUpdateEmail() {
                 <input v-model="emailUpdate.verificationCode" class="input flex-1" type="text" required />
                 <button type="button" class="btn btn-outline" :disabled="isEmailCodeSending || emailCodeCountdown > 0" @click="handleSendEmailCode">
                   <Loader2 v-if="isEmailCodeSending" class="h-4 w-4 animate-spin mr-2" />
-                  {{ emailCodeCountdown > 0 ? t.settings.resendCode.replace('{{seconds}}', String(emailCodeCountdown)) : t.settings.sendCode }}
+                  {{ emailCodeCountdown > 0 ? resendCodeText : t.settings.sendCode }}
                 </button>
               </div>
             </label>
