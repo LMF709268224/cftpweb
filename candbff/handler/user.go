@@ -1,4 +1,4 @@
-﻿package handler
+package handler
 
 import (
 	"fmt"
@@ -218,6 +218,32 @@ func (h *Handler) SendEmailCode(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "email required")
 		return
 	}
+	input.Email = strings.TrimSpace(input.Email)
+
+	fullUser, err := casdoorsdk.GetUser(name)
+	if err != nil {
+		slog.Error("Failed to get full user", "error", err)
+		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to get user info")
+		return
+	}
+	if input.Email == fullUser.Email {
+		msg := "This is already your current email"
+		if input.Lang == "zh" {
+			msg = "这已经是你当前的邮箱了"
+		}
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, msg)
+		return
+	}
+
+	existingUser, _ := casdoorsdk.GetUserByEmail(input.Email)
+	if existingUser != nil {
+		msg := "This email is already registered by another user"
+		if input.Lang == "zh" {
+			msg = "该邮箱已被其他用户注册"
+		}
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, msg)
+		return
+	}
 
 	code := fmt.Sprintf("%06d", rand.Intn(1000000))
 	emailVerificationCodes.Store(name, codeCacheItem{email: input.Email, code: code, expireTime: time.Now().Add(5 * time.Minute)})
@@ -227,7 +253,7 @@ func (h *Handler) SendEmailCode(w http.ResponseWriter, r *http.Request) {
 		content = fmt.Sprintf("您的验证码是：%s。该验证码将在5分钟后过期。", code)
 	}
 
-	err := casdoorsdk.SendEmail("Verification Code", content, "", input.Email)
+	err = casdoorsdk.SendEmail("Verification Code", content, "", input.Email)
 	if err != nil {
 		slog.Error("Failed to send verification code", "error", err)
 		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to send email")
