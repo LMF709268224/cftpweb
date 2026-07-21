@@ -457,9 +457,9 @@ func (h *Handler) ListExams(w http.ResponseWriter, r *http.Request) {
 	page := parseCursorPage(r, 20)
 
 	req := &gexampb.ListExamsRequest{
-		Filters:  &gexampb.ExamFilters{},
-		Cursor:   page.Cursor,
-		PageSize: page.PageSize,
+		Filters:   &gexampb.ExamFilters{},
+		Cursor:    page.Cursor,
+		PageSize:  page.PageSize,
 		SortOrder: gexampb.SortOrder(page.Sort),
 	}
 	if status != "" {
@@ -721,7 +721,7 @@ func (h *Handler) retakePaymentSnapshot(ctx context.Context, candidateID, course
 		if status.Code(err) == codes.NotFound {
 			out.message = "course retake payment not found"
 		} else {
-			slog.Warn("retake payment snapshot status check failed", "candidate_id", candidateID, "course_unit_ulid", courseUnitUlid, "course_unit_cc_ulid", courseUnitCcUlid, "error", err)
+			return out, err
 		}
 	} else if statusResp != nil {
 		out.found = statusResp.GetFound()
@@ -739,8 +739,7 @@ func (h *Handler) retakePaymentSnapshot(ctx context.Context, candidateID, course
 		PageSize: 20,
 	})
 	if err != nil {
-		slog.Warn("retake payment snapshot list orders failed", "candidate_id", candidateID, "course_unit_ulid", courseUnitUlid, "course_unit_cc_ulid", courseUnitCcUlid, "error", err)
-		return out, nil
+		return out, err
 	}
 	latestCreatedAt := ""
 	for _, order := range orders.GetItems() {
@@ -839,12 +838,16 @@ func shouldShowWaitingExamConfirmation(exam *gexampb.ExamInfo) bool {
 
 // ListExamHistory GET /api/exams/history
 func (h *Handler) ListExamHistory(w http.ResponseWriter, r *http.Request) {
+	applyExamHistoryDefaults(r)
+	h.ListExams(w, r)
+}
+
+func applyExamHistoryDefaults(r *http.Request) {
 	query := r.URL.Query()
-	if query.Get("result_status") == "" {
-		query.Set("result_status", "DONE")
+	if strings.TrimSpace(query.Get("status")) == "" {
+		query.Set("status", "DONE")
 	}
 	r.URL.RawQuery = query.Encode()
-	h.ListExams(w, r)
 }
 
 func parseExamURLType(w http.ResponseWriter, raw string) (gprog.ExamURLType, bool) {

@@ -31,7 +31,7 @@ func (h *Handler) ListMessages(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	messages, nextCursor, hasMore, err := h.listMessagesPage(r.Context(), candidateID, status, page)
+	messages, nextCursor, prevCursor, hasMore, err := h.listMessagesPage(r.Context(), candidateID, status, page)
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
@@ -41,28 +41,29 @@ func (h *Handler) ListMessages(w http.ResponseWriter, r *http.Request) {
 		Messages:   messages,
 		HasMore:    hasMore,
 		NextCursor: nextCursor,
+		PrevCursor: prevCursor,
 	})
 }
 
-func (h *Handler) listMessagesPage(ctx context.Context, candidateID string, status *gmsgpb.MessageStatus, page cursorPage) ([]MessageItem, string, bool, error) {
+func (h *Handler) listMessagesPage(ctx context.Context, candidateID string, status *gmsgpb.MessageStatus, page cursorPage) ([]MessageItem, string, string, bool, error) {
 	rsp, err := h.Gmsg.ListMessages(ctx, &gmsgpb.ListMessagesRequest{
 		Filters: &gmsgpb.MessageFilters{
 			UserUlid: candidateID,
 			Status:   status,
 		},
-		Cursor:   page.Cursor,
-		PageSize: page.PageSize,
+		Cursor:    page.Cursor,
+		PageSize:  page.PageSize,
 		SortOrder: gmsgpb.SortOrder(page.Sort),
 	})
 	if err != nil {
-		return nil, "", false, err
+		return nil, "", "", false, err
 	}
 
 	messages := make([]MessageItem, 0, len(rsp.GetMessages()))
 	for _, msg := range rsp.GetMessages() {
 		messages = append(messages, h.messageItem(ctx, msg))
 	}
-	return messages, rsp.GetNextCursor(), rsp.GetHasMore(), nil
+	return messages, rsp.GetNextCursor(), rsp.GetPrevCursor(), rsp.GetHasMore(), nil
 }
 
 func (h *Handler) messageItem(ctx context.Context, msg *gmsgpb.MessageItem) MessageItem {

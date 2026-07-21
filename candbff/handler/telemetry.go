@@ -2,8 +2,20 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
+	"unicode/utf8"
+)
+
+const (
+	maxTelemetryEvents          = 100
+	maxTelemetryEventNameRunes  = 128
+	maxTelemetryTimestampRunes  = 128
+	maxTelemetryURLRunes        = 2048
+	maxTelemetryPayloadJSONSize = 16 << 10
 )
 
 // TelemetryEvent represents a single telemetry event sent from the frontend.
@@ -22,8 +34,17 @@ type TelemetryBatch struct {
 // ReportTelemetry processes incoming telemetry events from the frontend.
 func (h *Handler) ReportTelemetry(w http.ResponseWriter, r *http.Request) {
 	var batch TelemetryBatch
-	if err := json.NewDecoder(r.Body).Decode(&batch); err != nil {
-		WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json body"})
+	if err := ReadJSON(r, &batch); err != nil {
+		var maxBytesErr *http.MaxBytesError
+		if errors.As(err, &maxBytesErr) {
+			WriteError(w, http.StatusRequestEntityTooLarge, ErrInvalidRequest, "telemetry request body is too large")
+			return
+		}
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid telemetry request body")
+		return
+	}
+	if err := validateTelemetryBatch(&batch); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, err.Error())
 		return
 	}
 
@@ -33,10 +54,10 @@ func (h *Handler) ReportTelemetry(w http.ResponseWriter, r *http.Request) {
 		candidateID = id
 	}
 
-	userAgent := r.UserAgent()
-	clientIP := r.RemoteAddr
+	userAgent := truncateForLog(r.UserAgent(), 512)
+	clientIP := truncateForLog(r.RemoteAddr, 256)
 	if forwarded := r.Header.Get("X-Forwarded-For"); forwarded != "" {
-		clientIP = forwarded
+		clientIP = truncateForLog(forwarded, 256)
 	}
 
 	for _, event := range batch.Events {
@@ -71,4 +92,44 @@ func (h *Handler) ReportTelemetry(w http.ResponseWriter, r *http.Request) {
 
 	// Acknowledge receipt
 	WriteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+}
+
+func validateTelemetryBatch(batch *TelemetryBatch) error {
+	if batch == nil {
+		return fmt.Errorf("telemetry batch is required")
+	}
+	if len(batch.Events) > maxTelemetryEvents {
+		return fmt.Errorf("telemetry batch cannot contain more than %d events", maxTelemetryEvents)
+	}
+
+	for i := range batch.Events {
+		event := &batch.Events[i]
+		event.EventName = strings.TrimSpace(event.EventName)
+		event.Timestamp = strings.TrimSpace(event.Timestamp)
+		event.URL = strings.TrimSpace(event.URL)
+
+		if event.EventName == "" {
+			return fmt.Errorf("events[%d].event_name is required", i)
+		}
+		if utf8.RuneCountInString(event.EventName) > maxTelemetryEventNameRunes {
+			return fmt.Errorf("events[%d].event_name is too long", i)
+		}
+		if utf8.RuneCountInString(event.Timestamp) > maxTelemetryTimestampRunes {
+			return fmt.Errorf("events[%d].timestamp is too long", i)
+		}
+		if utf8.RuneCountInString(event.URL) > maxTelemetryURLRunes {
+			return fmt.Errorf("events[%d].url is too long", i)
+		}
+		if len(event.Payload) == 0 {
+			continue
+		}
+		payloadJSON, err := json.Marshal(event.Payload)
+		if err != nil {
+			return fmt.Errorf("events[%d].payload is invalid", i)
+		}
+		if len(payloadJSON) > maxTelemetryPayloadJSONSize {
+			return fmt.Errorf("events[%d].payload is too large", i)
+		}
+	}
+	return nil
 }
