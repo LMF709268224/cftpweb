@@ -2,6 +2,7 @@
 import { onMounted, ref } from "vue"
 import { useRoute } from "vue-router"
 import { AlertCircle, Award, CheckCircle, Clock, FileText, Loader2, X, XCircle } from "lucide-vue-next"
+import { getFileConstraintInfo } from "../lib/fileConstraints"
 import { CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, CANDIDATE_APPLICATION_STATUS_LABELS, statusEnumNameForStatus, statusLabel } from "@/lib/status-labels"
 import AppPagination from "@/components/AppPagination.vue"
 import AppShell from "@/components/AppShell.vue"
@@ -128,10 +129,10 @@ function handleApplyClick(def: any, appId = "") {
   isApplyOpen.value = true
 }
 
-function onConstraintFileChange(event: Event, constraintName: string) {
+function onConstraintFileChange(event: Event, constraint: any) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
-  if (file) void handleFileUpload(constraintName, file)
+  if (file) void handleFileUpload(constraint, file)
 }
 
 function uploadSuccessText(fileName: string) {
@@ -142,10 +143,24 @@ function triggerFileInput(constraintName: string) {
   document.getElementById(`file-${constraintName}`)?.click()
 }
 
-async function handleFileUpload(constraintName: string, file: File) {
+async function handleFileUpload(constraint: any, file: File) {
   if (uploadingConstraintName.value) return
+  const constraintName = constraint.name
+  
+  const info = getFileConstraintInfo(constraint.type)
+  const fileExt = file.name.includes(".") ? "." + file.name.split(".").pop()?.toLowerCase() : ""
+  
+  if (info.maxSize && file.size > info.maxSize) {
+    toast.error(t.value.credentialsPage.fileSizeLimitError.replace("{{limit}}", info.maxLabel))
+    return
+  }
+  
+  if (info.exts.length > 0 && !info.exts.includes(fileExt || "")) {
+    toast.error(t.value.credentialsPage.fileTypeError.replace("{{exts}}", info.extLabel))
+    return
+  }
+
   uploadingConstraintName.value = constraintName
-  const fileExt = file.name.includes(".") ? "." + file.name.split(".").pop() : ""
   try {
     const fileHash = await sha256Hex(file)
     const contentType = file.type || "application/octet-stream"
@@ -154,10 +169,10 @@ async function handleFileUpload(constraintName: string, file: File) {
       body: JSON.stringify({ cred_def_ulid: credentialDefinitionId(selectedDef.value), file_name: file.name, file_ext: fileExt, file_hash: fileHash, content_type: contentType, file_usage: constraintName }),
     })
     const uploadRes = await uploadWithTimeout(res.upload_url, { method: "PUT", headers: new Headers(res.signed_headers || {}), body: file })
-    if (!uploadRes.ok) throw new Error("S3 upload failed")
+    if (!uploadRes.ok) throw new Error(`S3 upload failed: ${uploadRes.status} ${uploadRes.statusText}`)
     uploadedFiles.value = { ...uploadedFiles.value, [constraintName]: { name: file.name, url: res.file_key, ext: fileExt, hash: fileHash, size: file.size } }
-  } catch {
-    toast.error(t.value.credentialsPage.uploadFailed)
+  } catch (err: any) {
+    toast.error(`${t.value.credentialsPage.uploadFailed}: ${err?.message || err}`)
   } finally {
     uploadingConstraintName.value = ""
   }
@@ -443,8 +458,11 @@ onMounted(fetchData)
                 <span class="max-w-[200px] truncate text-sm text-muted-foreground" :title="uploadedFiles[constraint.name] ? uploadedFiles[constraint.name].name : t.credentialsPage.noFileChosen">
                   {{ uploadedFiles[constraint.name] ? uploadedFiles[constraint.name].name : t.credentialsPage.noFileChosen }}
                 </span>
-                <input :id="`file-${constraint.name}`" type="file" class="hidden" @change="onConstraintFileChange($event, constraint.name)" />
+                <input :id="`file-${constraint.name}`" type="file" class="hidden" :accept="getFileConstraintInfo(constraint.type).acceptStr" @change="onConstraintFileChange($event, constraint)" />
               </div>
+              <p class="text-xs text-muted-foreground">
+                {{ t.credentialsPage.supportedFormats.replace("{{exts}}", getFileConstraintInfo(constraint.type).extLabel === "Any" ? t.common.any : getFileConstraintInfo(constraint.type).extLabel).replace("{{limit}}", getFileConstraintInfo(constraint.type).maxLabel) }}
+              </p>
               <p v-if="uploadedFiles[constraint.name]" class="flex items-center gap-1 text-xs text-green-600"><CheckCircle class="h-3 w-3" /> {{ uploadSuccessText(uploadedFiles[constraint.name].name) }}</p>
             </div>
           </div>
