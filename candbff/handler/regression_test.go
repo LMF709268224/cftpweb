@@ -91,6 +91,29 @@ func TestRetakePaymentSnapshotPropagatesLookupErrors(t *testing.T) {
 	})
 }
 
+func TestIsCurrentCourseUnitExam(t *testing.T) {
+	tests := []struct {
+		name            string
+		examUlid        string
+		currentExamUlid string
+		want            bool
+	}{
+		{name: "current exam", examUlid: "exam-current", currentExamUlid: "exam-current", want: true},
+		{name: "trims identifiers", examUlid: " exam-current ", currentExamUlid: "exam-current", want: true},
+		{name: "superseded exam", examUlid: "exam-old", currentExamUlid: "exam-current", want: false},
+		{name: "missing list exam", currentExamUlid: "exam-current", want: false},
+		{name: "missing current exam", examUlid: "exam-current", want: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isCurrentCourseUnitExam(tt.examUlid, tt.currentExamUlid); got != tt.want {
+				t.Fatalf("isCurrentCourseUnitExam(%q, %q) = %t, want %t", tt.examUlid, tt.currentExamUlid, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestValidateTelemetryBatch(t *testing.T) {
 	t.Run("accepts valid batch and trims fields", func(t *testing.T) {
 		batch := TelemetryBatch{Events: []TelemetryEvent{{

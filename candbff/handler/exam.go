@@ -563,7 +563,9 @@ func (h *Handler) ListExams(w http.ResponseWriter, r *http.Request) {
 					}
 				}
 
-				if unit.GetStatus() == gprog.CourseUnitStatus_COURSE_UNIT_STATUS_EXAM_FAILED && unit.GetCourseUnitCcUlid() != "" {
+				if unit.GetStatus() == gprog.CourseUnitStatus_COURSE_UNIT_STATUS_EXAM_FAILED &&
+					isCurrentCourseUnitExam(item.ExamUlid, unit.GetExamUlid()) &&
+					unit.GetCourseUnitCcUlid() != "" {
 					eligibility, err := h.Gprog.ValidateRetakeEligibility(r.Context(), &gprog.ValidateRetakeEligibilityReq{
 						CandidateUlid:    candidateID,
 						CourseUnitUlid:   unit.GetCourseUnitUlid(),
@@ -583,67 +585,13 @@ func (h *Handler) ListExams(w http.ResponseWriter, r *http.Request) {
 
 		out.Exams = append(out.Exams, item)
 	}
-	suppressSupersededRetakeActions(out.Exams)
 
 	WriteJSON(w, http.StatusOK, out)
 }
 
-func suppressSupersededRetakeActions(exams []ExamListItem) {
-	latestByCourseUnit := make(map[string]int)
-	for i := range exams {
-		courseUnitUlid := strings.TrimSpace(exams[i].CourseUnitUlid)
-		if courseUnitUlid == "" {
-			continue
-		}
-		if !isRetakeRelevantExam(exams[i]) {
-			continue
-		}
-		current, ok := latestByCourseUnit[courseUnitUlid]
-		if !ok || compareExamRecency(exams[i], exams[current]) > 0 {
-			latestByCourseUnit[courseUnitUlid] = i
-		}
-	}
-	for i := range exams {
-		courseUnitUlid := strings.TrimSpace(exams[i].CourseUnitUlid)
-		latest, ok := latestByCourseUnit[courseUnitUlid]
-		if courseUnitUlid == "" || !ok || latest == i {
-			continue
-		}
-		exams[i].RetakeEligible = false
-		if exams[i].Retake != nil {
-			exams[i].Retake.Eligible = false
-			exams[i].Retake.Action = retakeActionNone
-		}
-	}
-}
-
-func compareExamRecency(left ExamListItem, right ExamListItem) int {
-	for _, pair := range [][2]string{
-		{left.AppointmentStartTime, right.AppointmentStartTime},
-		{left.AppointmentEndTime, right.AppointmentEndTime},
-		{left.LastTermurlTimestamp, right.LastTermurlTimestamp},
-	} {
-		leftValue := strings.TrimSpace(pair[0])
-		rightValue := strings.TrimSpace(pair[1])
-		if leftValue == "" || rightValue == "" || leftValue == rightValue {
-			continue
-		}
-		return strings.Compare(leftValue, rightValue)
-	}
-	return strings.Compare(strings.TrimSpace(left.ExamUlid), strings.TrimSpace(right.ExamUlid))
-}
-
-func isRetakeRelevantExam(item ExamListItem) bool {
-	return isPendingExamAttempt(item) || isFinalFailedExamResult(item)
-}
-
-func isPendingExamAttempt(item ExamListItem) bool {
-	examStatus := strings.ToUpper(strings.TrimSpace(item.ExamStatus))
-	resultStatus := strings.ToUpper(strings.TrimSpace(item.ResultStatus))
-	if examStatus != "DONE" {
-		return true
-	}
-	return resultStatus == "" || resultStatus == "NONE"
+func isCurrentCourseUnitExam(examUlid, currentExamUlid string) bool {
+	examUlid = strings.TrimSpace(examUlid)
+	return examUlid != "" && examUlid == strings.TrimSpace(currentExamUlid)
 }
 
 func isFinalFailedExamResult(item ExamListItem) bool {
