@@ -1,9 +1,13 @@
-package handler
+ï»¿package handler
 
 import (
+	"fmt"
 	"log/slog"
+	"math/rand"
 	"net/http"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 )
@@ -220,7 +224,7 @@ func (h *Handler) SendEmailCode(w http.ResponseWriter, r *http.Request) {
 
 	content := fmt.Sprintf("Your verification code is: %s. It will expire in 5 minutes.", code)
 	if input.Lang == "zh" {
-		content = fmt.Sprintf("ÄúµÄÑéÖ¤ÂëÊÇ£º%s¡£¸ÃÑéÖ¤Âë½«ÔÚ5·ÖÖÓºó¹ıÆÚ¡£", code)
+		content = fmt.Sprintf("æ‚¨çš„éªŒè¯ç æ˜¯ï¼š%sã€‚è¯¥éªŒè¯ç å°†åœ¨5åˆ†é’Ÿåè¿‡æœŸã€‚", code)
 	}
 
 	err := casdoorsdk.SendEmail("Verification Code", content, "", input.Email)
@@ -278,3 +282,4 @@ func (h *Handler) UpdateUserEmail(w http.ResponseWriter, r *http.Request) {
 	emailVerificationCodes.Delete(name)
 	WriteJSON(w, http.StatusOK, BaseRsp{Code: 0, Msg: "success"})
 }
+
