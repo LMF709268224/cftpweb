@@ -8,7 +8,7 @@ import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
 import { useUser } from "@/lib/user"
 import { getCachedCountries, getCountryCityOptions, getCountryOptions, getProvinceOptions, getStateCityOptions, loadLocationData, type CountryOption } from "@/lib/locationOptions"
-import { GENDER_OPTIONS, PROFILE_TEXT_LIMITS, isValidInternationalPhone, isValidPostalCode, normalizeGender, normalizeInternationalPhone, normalizePostalCode, trimToMax } from "@/lib/profileFormValidation"
+import { GENDER_OPTIONS, PROFILE_TEXT_LIMITS, isValidEmail, isValidInternationalPhone, isValidPostalCode, normalizeGender, normalizeInternationalPhone, normalizePostalCode, trimToMax } from "@/lib/profileFormValidation"
 
 const route = useRoute()
 const router = useRouter()
@@ -373,6 +373,10 @@ async function handleSubmit() {
       return
     }
   }
+  if (!isValidEmail(formData.email)) {
+    toast.error(t.value.examSignup.validationInvalidEmail)
+    return
+  }
   if (!isValidInternationalPhone(formData.work_phone)) {
     toast.error(t.value.examSignup.validationInvalidPhone.replace("{{field}}", t.value.examSignup.formWorkPhone))
     return
@@ -413,7 +417,7 @@ async function handleSubmit() {
           <p class="mt-2 text-muted-foreground">{{ t.examSignup.subtitle }}</p>
         </div>
         <div class="max-w-2xl rounded-[16px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-      <form class="space-y-6" @submit.prevent="handleSubmit">
+      <form class="space-y-6" novalidate @submit.prevent="handleSubmit">
         <div class="grid gap-4 sm:grid-cols-2">
           <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formFirstName }}</span><input v-model="formData.first_name" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" required /></label>
           <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formLastName }}</span><input v-model="formData.last_name" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" required /></label>
