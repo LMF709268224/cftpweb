@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
+	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -16,30 +17,43 @@ import (
 
 type retakeMallClientStub struct {
 	mallpb.MallServiceClient
-	statusErr error
-	listErr   error
+	statusResp    *mallpb.GetCourseUnitRetakePaymentStatusResponse
+	statusErr     error
+	lastStatusReq *mallpb.GetCourseUnitRetakePaymentStatusRequest
 }
 
 func (s *retakeMallClientStub) GetCourseUnitRetakePaymentStatus(
-	context.Context,
-	*mallpb.GetCourseUnitRetakePaymentStatusRequest,
-	...grpc.CallOption,
+	_ context.Context,
+	req *mallpb.GetCourseUnitRetakePaymentStatusRequest,
+	_ ...grpc.CallOption,
 ) (*mallpb.GetCourseUnitRetakePaymentStatusResponse, error) {
+	s.lastStatusReq = req
 	if s.statusErr != nil {
 		return nil, s.statusErr
+	}
+	if s.statusResp != nil {
+		return s.statusResp, nil
 	}
 	return &mallpb.GetCourseUnitRetakePaymentStatusResponse{}, nil
 }
 
-func (s *retakeMallClientStub) ListCourseRetakeOrders(
-	context.Context,
-	*mallpb.ListCourseRetakeOrdersRequest,
-	...grpc.CallOption,
-) (*mallpb.ListCourseRetakeOrdersResponse, error) {
-	if s.listErr != nil {
-		return nil, s.listErr
+type retakeProgClientStub struct {
+	gprogpb.ProgServiceClient
+	detailResp    *gprogpb.GetCourseUnitDetailRsp
+	detailErr     error
+	lastDetailReq *gprogpb.GetCourseUnitDetailReq
+}
+
+func (s *retakeProgClientStub) GetCourseUnitDetail(
+	_ context.Context,
+	req *gprogpb.GetCourseUnitDetailReq,
+	_ ...grpc.CallOption,
+) (*gprogpb.GetCourseUnitDetailRsp, error) {
+	s.lastDetailReq = req
+	if s.detailErr != nil {
+		return nil, s.detailErr
 	}
-	return &mallpb.ListCourseRetakeOrdersResponse{}, nil
+	return s.detailResp, nil
 }
 
 func TestApplyExamHistoryDefaults(t *testing.T) {
@@ -67,28 +81,115 @@ func TestApplyExamHistoryDefaultsPreservesExplicitStatus(t *testing.T) {
 }
 
 func TestRetakePaymentSnapshotPropagatesLookupErrors(t *testing.T) {
-	t.Run("status lookup unavailable", func(t *testing.T) {
-		wantErr := status.Error(codes.Unavailable, "gmall unavailable")
-		h := &Handler{Mall: &retakeMallClientStub{statusErr: wantErr}}
+	wantErr := status.Error(codes.Unavailable, "gmall unavailable")
+	h := &Handler{Mall: &retakeMallClientStub{statusErr: wantErr}}
 
-		_, err := h.retakePaymentSnapshot(context.Background(), "candidate", "unit", "unit-config", "bundle-order", 1)
-		if !errors.Is(err, wantErr) {
-			t.Fatalf("retakePaymentSnapshot() error = %v, want %v", err, wantErr)
-		}
-	})
+	_, err := h.retakePaymentSnapshot(context.Background(), "unit", "unit-config", "bundle-order", "pipeline", 1)
+	if !errors.Is(err, wantErr) {
+		t.Fatalf("retakePaymentSnapshot() error = %v, want %v", err, wantErr)
+	}
+}
 
-	t.Run("order list unavailable after status not found", func(t *testing.T) {
-		wantErr := status.Error(codes.Unavailable, "order list unavailable")
-		h := &Handler{Mall: &retakeMallClientStub{
-			statusErr: status.Error(codes.NotFound, "payment status not found"),
-			listErr:   wantErr,
-		}}
+func TestRetakePaymentSnapshotUsesExactStatusResponse(t *testing.T) {
+	mall := &retakeMallClientStub{statusResp: &mallpb.GetCourseUnitRetakePaymentStatusResponse{
+		Found:                 true,
+		Paid:                  false,
+		IsFree:                false,
+		Message:               "payment required",
+		CourseRetakeOrderUlid: "retake-order",
+		OrderStatus:           "WAIT_RETAKE_PAYMENT",
+		PayOrderUlid:          "pay-order",
+	}}
+	h := &Handler{Mall: mall}
 
-		_, err := h.retakePaymentSnapshot(context.Background(), "candidate", "unit", "unit-config", "bundle-order", 1)
-		if !errors.Is(err, wantErr) {
-			t.Fatalf("retakePaymentSnapshot() error = %v, want %v", err, wantErr)
-		}
-	})
+	got, err := h.retakePaymentSnapshot(context.Background(), "unit", "unit-config", "bundle-order", "pipeline", 2)
+	if err != nil {
+		t.Fatalf("retakePaymentSnapshot() error = %v", err)
+	}
+	if mall.lastStatusReq.GetCourseUnitUlid() != "unit" ||
+		mall.lastStatusReq.GetCourseUnitCcUlid() != "unit-config" ||
+		mall.lastStatusReq.GetBundleOrderUlid() != "bundle-order" ||
+		mall.lastStatusReq.GetPipelineUlid() != "pipeline" ||
+		mall.lastStatusReq.GetRetriedCount() != 2 {
+		t.Fatalf("status request = %+v, want exact retake lookup fields", mall.lastStatusReq)
+	}
+	if !got.found || got.paid || got.isFree {
+		t.Fatalf("payment flags = found:%t paid:%t free:%t", got.found, got.paid, got.isFree)
+	}
+	if got.message != "payment required" {
+		t.Fatalf("payment message = %q, want payment required", got.message)
+	}
+	if got.courseRetakeOrderUlid != "retake-order" || got.orderStatus != "WAIT_RETAKE_PAYMENT" || got.payOrderUlid != "pay-order" {
+		t.Fatalf("payment order snapshot = %+v", got)
+	}
+}
+
+func TestRetakePipelineUlidUsesCourseUnitDetail(t *testing.T) {
+	prog := &retakeProgClientStub{detailResp: &gprogpb.GetCourseUnitDetailRsp{
+		CourseUnitUlid:   "unit",
+		CourseUnitCcUlid: "unit-config",
+		PipelineUlid:     "pipeline",
+	}}
+	h := &Handler{Gprog: prog}
+
+	got, err := h.retakePipelineUlid(context.Background(), "unit", "unit-config")
+	if err != nil {
+		t.Fatalf("retakePipelineUlid() error = %v", err)
+	}
+	if got != "pipeline" {
+		t.Fatalf("retakePipelineUlid() = %q, want pipeline", got)
+	}
+	if prog.lastDetailReq.GetCourseUnitUlid() != "unit" {
+		t.Fatalf("course unit detail request = %+v", prog.lastDetailReq)
+	}
+}
+
+func TestRetakePipelineUlidRejectsMismatchedCourseUnitConfig(t *testing.T) {
+	h := &Handler{Gprog: &retakeProgClientStub{detailResp: &gprogpb.GetCourseUnitDetailRsp{
+		CourseUnitUlid:   "unit",
+		CourseUnitCcUlid: "actual-config",
+		PipelineUlid:     "pipeline",
+	}}}
+
+	_, err := h.retakePipelineUlid(context.Background(), "unit", "requested-config")
+	if status.Code(err) != codes.InvalidArgument {
+		t.Fatalf("retakePipelineUlid() error = %v, want InvalidArgument", err)
+	}
+}
+
+func TestRetakePipelineUlidRejectsMissingPipeline(t *testing.T) {
+	h := &Handler{Gprog: &retakeProgClientStub{detailResp: &gprogpb.GetCourseUnitDetailRsp{
+		CourseUnitUlid:   "unit",
+		CourseUnitCcUlid: "unit-config",
+	}}}
+
+	_, err := h.retakePipelineUlid(context.Background(), "unit", "unit-config")
+	if status.Code(err) != codes.FailedPrecondition {
+		t.Fatalf("retakePipelineUlid() error = %v, want FailedPrecondition", err)
+	}
+}
+
+func TestRetakeActionForPayment(t *testing.T) {
+	tests := []struct {
+		name    string
+		payment retakePaymentSnapshot
+		want    string
+	}{
+		{name: "free without order", payment: retakePaymentSnapshot{isFree: true}, want: retakeActionCreateRetakeOrder},
+		{name: "free completed order", payment: retakePaymentSnapshot{isFree: true, found: true, orderStatus: "COMPLETED"}, want: retakeActionApplyRetake},
+		{name: "free incomplete order", payment: retakePaymentSnapshot{isFree: true, found: true, orderStatus: "FAILED"}, want: retakeActionNone},
+		{name: "paid order", payment: retakePaymentSnapshot{found: true, paid: true}, want: retakeActionApplyRetake},
+		{name: "unpaid existing order", payment: retakePaymentSnapshot{found: true}, want: retakeActionContinuePayment},
+		{name: "paid order missing", payment: retakePaymentSnapshot{}, want: retakeActionCreateRetakeOrder},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := retakeActionForPayment(tt.payment); got != tt.want {
+				t.Fatalf("retakeActionForPayment() = %q, want %q", got, tt.want)
+			}
+		})
+	}
 }
 
 func TestIsCurrentCourseUnitExam(t *testing.T) {
