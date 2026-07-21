@@ -24,14 +24,20 @@ func (h *Handler) ListCredentialDefinitions(w http.ResponseWriter, r *http.Reque
 				HandleGrpcError(w, err)
 				return
 			}
+			latestApplication, err := h.latestCredentialApplication(r.Context(), candidateID, qualID)
+			if err != nil {
+				HandleGrpcError(w, err)
+				return
+			}
 			details = append(details, map[string]interface{}{
-				"cred_def_ulid":    def.GetCredDefUlid(),
-				"cred_def_id":      def.GetCredDefUlid(),
-				"name":             def.GetName(),
-				"description":      def.GetDescription(),
-				"file_constraints": def.GetFileConstraints(),
-				"category":         def.GetCategory(),
-				"respath":          def.GetRespath(),
+				"cred_def_ulid":      def.GetCredDefUlid(),
+				"cred_def_id":        def.GetCredDefUlid(),
+				"name":               def.GetName(),
+				"description":        def.GetDescription(),
+				"file_constraints":   def.GetFileConstraints(),
+				"category":           def.GetCategory(),
+				"respath":            def.GetRespath(),
+				"latest_application": latestApplication,
 			})
 		}
 		WriteJSON(w, http.StatusOK, map[string]interface{}{
@@ -52,28 +58,35 @@ func (h *Handler) ListCredentialDefinitions(w http.ResponseWriter, r *http.Reque
 
 	details := make([]map[string]interface{}, 0, len(res.GetDefinitions()))
 	for _, def := range res.GetDefinitions() {
+		latestApplication, err := h.latestCredentialApplication(r.Context(), candidateID, def.GetCredDefUlid())
+		if err != nil {
+			HandleGrpcError(w, err)
+			return
+		}
 		detailReq := &gcredspb.GetCredentialDefinitionDetailRequest{
 			CredDefUlid: def.GetCredDefUlid(),
 		}
 		detailRes, err := h.Creds.GetCredentialDefinitionDetail(r.Context(), detailReq)
 		if err == nil && detailRes != nil {
 			details = append(details, map[string]interface{}{
-				"cred_def_ulid":    detailRes.GetCredDefUlid(),
-				"cred_def_id":      detailRes.GetCredDefUlid(),
-				"name":             detailRes.GetName(),
-				"description":      detailRes.GetDescription(),
-				"file_constraints": detailRes.GetFileConstraints(),
-				"category":         detailRes.GetCategory(),
-				"respath":          detailRes.GetRespath(),
+				"cred_def_ulid":      detailRes.GetCredDefUlid(),
+				"cred_def_id":        detailRes.GetCredDefUlid(),
+				"name":               detailRes.GetName(),
+				"description":        detailRes.GetDescription(),
+				"file_constraints":   detailRes.GetFileConstraints(),
+				"category":           detailRes.GetCategory(),
+				"respath":            detailRes.GetRespath(),
+				"latest_application": latestApplication,
 			})
 			continue
 		}
 		details = append(details, map[string]interface{}{
-			"cred_def_ulid": def.GetCredDefUlid(),
-			"cred_def_id":   def.GetCredDefUlid(),
-			"name":          def.GetName(),
-			"description":   def.GetDescription(),
-			"category":      def.GetCategory(),
+			"cred_def_ulid":      def.GetCredDefUlid(),
+			"cred_def_id":        def.GetCredDefUlid(),
+			"name":               def.GetName(),
+			"description":        def.GetDescription(),
+			"category":           def.GetCategory(),
+			"latest_application": latestApplication,
 		})
 	}
 
@@ -168,7 +181,7 @@ func (h *Handler) ListCandidateApplications(w http.ResponseWriter, r *http.Reque
 		SortOrder: gcredspb.SortOrder(page.Sort),
 	}
 
-	res, err := h.Creds.ListApplications(r.Context(), req)
+	res, err := h.Creds.ListCandidateApplications(r.Context(), req)
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
@@ -214,6 +227,25 @@ func (h *Handler) ListCandidateApplications(w http.ResponseWriter, r *http.Reque
 		"prev_cursor":  res.GetPrevCursor(),
 		"has_more":     res.GetHasMore(),
 	})
+}
+
+func (h *Handler) latestCredentialApplication(ctx context.Context, candidateID, credDefID string) (map[string]interface{}, error) {
+	res, err := h.Creds.ListCandidateApplications(ctx, &gcredspb.ListApplicationsRequest{
+		Filters: &gcredspb.ApplicationFilters{
+			CandidateUlid: candidateID,
+			CredDefUlid:   credDefID,
+		},
+		PageSize:  1,
+		SortOrder: gcredspb.SortOrder_SORT_ORDER_DESC,
+	})
+	if err != nil {
+		return nil, err
+	}
+	applications := res.GetApplications()
+	if len(applications) == 0 || applications[0] == nil {
+		return nil, nil
+	}
+	return credentialApplicationPayload(applications[0]), nil
 }
 
 func (h *Handler) credentialDefinitionSummary(ctx context.Context, credDefULID string, cache map[string]map[string]interface{}) map[string]interface{} {
@@ -485,7 +517,7 @@ func (h *Handler) GetActionableCredentialCount(w http.ResponseWriter, r *http.Re
 	actionableCount := 0
 	for _, def := range defs {
 		credDefUlid := def.GetCredDefUlid()
-		
+
 		// 1. Check if they have ANY application for this def
 		countRes, err := h.Creds.GetApplicationCount(ctx, &gcredspb.GetApplicationCountRequest{
 			Filters: &gcredspb.ApplicationFilters{

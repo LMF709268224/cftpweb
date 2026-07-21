@@ -93,7 +93,7 @@ func (h *Handler) UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
 
 	// We no longer update email through this general profile endpoint.
 	// Email updates have a dedicated endpoint with verification.
-	
+
 	fullUser.DisplayName = input.DisplayName
 	fullUser.FirstName = input.FirstName
 	fullUser.LastName = input.LastName
@@ -149,6 +149,7 @@ func (h *Handler) UpdateUserPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	clearTokenCookies(w)
 	WriteJSON(w, http.StatusOK, BaseRsp{Code: 0, Msg: "success"})
 }
 
@@ -317,4 +318,3 @@ func (h *Handler) UpdateUserEmail(w http.ResponseWriter, r *http.Request) {
 	emailVerificationCodes.Delete(name)
 	WriteJSON(w, http.StatusOK, BaseRsp{Code: 0, Msg: "success"})
 }
-

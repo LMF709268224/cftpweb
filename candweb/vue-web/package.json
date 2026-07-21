@@ -24,6 +24,7 @@
     "clsx": "^2.1.1",
     "country-state-city": "^3.2.1",
     "dayjs": "^1.11.21",
+    "dompurify": "3.4.12",
     "lucide-vue-next": "^0.564.0",
     "tailwind-merge": "^3.6.0",
     "vue": "^3.5.38",

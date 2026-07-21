@@ -1,5 +1,5 @@
 import { toast } from "vue-sonner"
-import { clearAccessToken, getAccessToken, rememberPostLoginRedirect } from "./authStorage"
+import { clearAccessToken, getAccessToken, rememberPostLoginRedirect, setAccessToken } from "./authStorage"
 import { getErrorMessage, localizeApiErrorMessage } from "./errorCodes"
 import { telemetry } from "./telemetry"
 
@@ -9,8 +9,13 @@ type ApiClientOptions = RequestInit & {
 }
 
 const DEFAULT_API_TIMEOUT_MS = 60000
+const REFRESH_TIMEOUT_MS = 15000
+const REFRESH_ENDPOINT = "/api/auth/refresh"
+const LOGOUT_ENDPOINT = "/api/auth/logout"
 const UNAUTHORIZED_TOAST_ID = "candidate-session-expired"
 const isSilentResourceEndpoint = (endpoint: string) => /\/thumbnail-url(?:[/?#]|$)/.test(endpoint)
+let refreshPromise: Promise<boolean> | null = null
+let loginRedirectScheduled = false
 
 type ApiClientErrorMeta = {
   errorCode?: string
@@ -32,7 +37,72 @@ export class ApiClientError extends Error {
   }
 }
 
+function shouldAttemptRefresh(endpoint: string) {
+  try {
+    const url = new URL(endpoint, window.location.origin)
+    return url.origin === window.location.origin
+      && url.pathname.startsWith("/api/")
+      && !url.pathname.startsWith("/api/auth/")
+      && !url.pathname.startsWith("/api/public/")
+  } catch {
+    return false
+  }
+}
+
+async function performSessionRefresh() {
+  const controller = new AbortController()
+  const timeoutId = window.setTimeout(() => controller.abort(), REFRESH_TIMEOUT_MS)
+  try {
+    const response = await fetch(REFRESH_ENDPOINT, {
+      method: "POST",
+      credentials: "include",
+      signal: controller.signal,
+    })
+    if (!response.ok) return false
+
+    const payload = await response.json().catch(() => null)
+    if (!payload || (payload.code !== 200 && payload.code !== 201)) return false
+
+    const token = String(payload.data?.token || "").trim()
+    if (token) setAccessToken(token)
+    localStorage.setItem("is_authenticated", "true")
+    return true
+  } catch {
+    return false
+  } finally {
+    window.clearTimeout(timeoutId)
+  }
+}
+
+function refreshSession() {
+  if (!refreshPromise) {
+    refreshPromise = performSessionRefresh().finally(() => {
+      refreshPromise = null
+    })
+  }
+  return refreshPromise
+}
+
+function clearSessionAndRedirect(showErrorToast: (message: string, id?: string) => void, currentLang: "zh" | "en") {
+  if (loginRedirectScheduled) return
+  loginRedirectScheduled = true
+
+  rememberPostLoginRedirect(window.location.pathname + window.location.search + window.location.hash)
+  clearAccessToken()
+  localStorage.removeItem("is_authenticated")
+  localStorage.removeItem("user_name")
+  void fetch(LOGOUT_ENDPOINT, { method: "POST", credentials: "include", keepalive: true }).catch(() => undefined)
+  showErrorToast(getErrorMessage("UNAUTHORIZED", currentLang), UNAUTHORIZED_TOAST_ID)
+  window.setTimeout(() => {
+    window.location.href = "/login"
+  }, 1500)
+}
+
 export async function apiClient(endpoint: string, options: ApiClientOptions = {}) {
+  return requestApi(endpoint, options, true)
+}
+
+async function requestApi(endpoint: string, options: ApiClientOptions, allowRefresh: boolean): Promise<any> {
   const {
     timeoutMs = DEFAULT_API_TIMEOUT_MS,
     suppressErrorToast = isSilentResourceEndpoint(endpoint),
@@ -81,14 +151,11 @@ export async function apiClient(endpoint: string, options: ApiClientOptions = {}
   }
 
   if (res.status === 401) {
-    rememberPostLoginRedirect(window.location.pathname + window.location.search + window.location.hash)
-    clearAccessToken()
-    localStorage.removeItem("is_authenticated")
-    localStorage.removeItem("user_name")
-    showErrorToast(getErrorMessage("UNAUTHORIZED", currentLang), UNAUTHORIZED_TOAST_ID)
-    setTimeout(() => {
-      window.location.href = "/login"
-    }, 1500)
+    if (allowRefresh && shouldAttemptRefresh(endpoint) && await refreshSession()) {
+      return requestApi(endpoint, options, false)
+    }
+
+    clearSessionAndRedirect(showErrorToast, currentLang)
     telemetry.track("api_error", { url: endpoint, error_code: "UNAUTHORIZED", status: res.status })
     throw new ApiClientError(getErrorMessage("UNAUTHORIZED", currentLang), { errorCode: "UNAUTHORIZED", status: res.status })
   }

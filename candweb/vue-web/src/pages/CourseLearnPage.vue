@@ -39,6 +39,7 @@ import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
 import { formatBackendDate } from "@/lib/utils"
 import { usePolling } from "@/lib/polling"
+import { sanitizeCourseContent, sanitizeVideoEmbed } from "@/lib/sanitizeHtml"
 import {
   normalizeSupplementaryMaterials,
   parseSupplementaryMaterialItems,
@@ -272,6 +273,8 @@ const lessons = computed<LessonDetail[]>(() =>
 
 const activeLesson = computed(() => lessons.value.find((item) => lessonIdOf(item.lesson) === activeLessonId.value) || lessons.value[0])
 const lesson = computed(() => activeLesson.value?.lesson)
+const sanitizedLessonBody = computed(() => sanitizeCourseContent(lesson.value?.body))
+const sanitizedVideoEmbedCode = computed(() => sanitizeVideoEmbed(lesson.value?.video_embed_code))
 const completedLessonIds = computed(() =>
   new Set(progressRecords.value.map(progressLessonIdOf).filter((value): value is string => Boolean(value))),
 )
@@ -2028,10 +2031,10 @@ watch(selectedMaterial, () => {
               </button>
 
               <div v-if="lessonContentExpanded" class="mt-3">
-                <div v-if="lesson?.video_embed_code" class="overflow-hidden rounded-md bg-muted" v-html="lesson.video_embed_code" />
+                <div v-if="sanitizedVideoEmbedCode" class="overflow-hidden rounded-md bg-muted" v-html="sanitizedVideoEmbedCode" />
                 <div v-else-if="lesson?.lesson_type === 3" class="space-y-4">
                   <div class="rounded-md bg-slate-50 p-4 text-sm text-muted-foreground">
-                    <div v-if="lesson?.body" class="prose max-w-none text-sm text-foreground" v-html="lesson.body" />
+                    <div v-if="sanitizedLessonBody" class="prose max-w-none text-sm text-foreground" v-html="sanitizedLessonBody" />
                     <p v-else>{{ t.learning.lessonPdfHint }}</p>
                   </div>
                   <button class="btn btn-primary max-w-full flex-wrap rounded-lg text-left leading-snug" @click="openLessonPdf">
@@ -2041,7 +2044,7 @@ watch(selectedMaterial, () => {
                 </div>
                 <div v-else-if="lesson?.external_url" class="space-y-4">
                   <div class="rounded-md bg-slate-50 p-4 text-sm text-muted-foreground">
-                    <div v-if="lesson?.body" class="prose max-w-none text-sm text-foreground" v-html="lesson.body" />
+                    <div v-if="sanitizedLessonBody" class="prose max-w-none text-sm text-foreground" v-html="sanitizedLessonBody" />
                     <p v-else>{{ t.learning.noLessonBody }}</p>
                   </div>
                   <button class="btn btn-primary max-w-full flex-wrap rounded-lg text-left leading-snug" @click="openExternalLesson">
@@ -2050,7 +2053,7 @@ watch(selectedMaterial, () => {
                   </button>
                 </div>
                 <div v-else class="prose max-w-none text-sm text-foreground">
-                  <div v-if="lesson?.body" v-html="lesson.body" />
+                  <div v-if="sanitizedLessonBody" v-html="sanitizedLessonBody" />
                   <div v-else class="rounded-md bg-slate-50 p-4 text-muted-foreground">{{ t.learning.noLessonBody }}</div>
                 </div>
               </div>

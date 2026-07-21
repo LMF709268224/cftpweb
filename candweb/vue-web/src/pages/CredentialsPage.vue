@@ -319,8 +319,8 @@ function applicationMeta(app: any) {
 
 function latestApplicationForDef(credDefId: string) {
   const normalizedCredDefId = String(credDefId || "").trim()
-  const matches = applications.value.filter((app) => applicationCredentialDefinitionId(app) === normalizedCredDefId)
-  return matches[0] || null
+  const definition = definitions.value.find((def) => credentialDefinitionId(def) === normalizedCredDefId)
+  return definition?.latest_application || null
 }
 
 function applicationActionLabel(def: any) {
