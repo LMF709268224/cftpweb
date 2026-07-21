@@ -440,11 +440,6 @@ onBeforeUnmount(() => {
             <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.examsPage.title }}</h1>
             <p class="hidden mt-2 text-muted-foreground">{{ t.examsPage.subtitle }}</p>
           </div>
-          <div class="flex justify-end">
-        <RouterLink to="/certifications" class="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white shadow-sm shadow-primary/20 transition-colors hover:bg-primary/90">
-          {{ t.courses.browseCoursesBtn }} <ExternalLink class="h-4 w-4" />
-        </RouterLink>
-          </div>
         </div>
 
     <div class="mb-4 hidden flex-col gap-3 rounded-[14px] bg-white p-3 shadow-[0_10px_24px_rgba(15,74,82,0.05)] sm:flex-row sm:items-center sm:justify-between md:p-4">
@@ -483,6 +478,9 @@ onBeforeUnmount(() => {
         </div>
         <h3 class="mb-2 text-lg font-semibold text-foreground">{{ emptyCopy[activeTab].title }}</h3>
         <p class="max-w-md text-muted-foreground">{{ emptyCopy[activeTab].description }}</p>
+        <RouterLink to="/certifications" class="btn btn-primary mt-5 rounded-lg shadow-sm shadow-primary/20">
+          {{ t.courses.browseCoursesBtn }}
+        </RouterLink>
       </div>
       <div v-else class="space-y-4">
         <div class="hidden items-center justify-between text-sm text-muted-foreground">

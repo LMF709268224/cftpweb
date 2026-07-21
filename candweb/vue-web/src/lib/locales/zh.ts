@@ -888,7 +888,7 @@ export const zh = {
     certificateGenerating: "证书生成中",
     keepLearningTitle: "继续学习，获得更多认证",
     keepLearningDesc: "完成更多课程模块以获得额外的专业认证",
-    browseCourses: "浏览商城",
+    browseCourses: "去商城看看",
     sourceApplication: "手动申请",
     sourceSystem: "系统颁发",
     celebrationModalTitle: "恭喜！",

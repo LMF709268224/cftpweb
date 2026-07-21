@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import { RouterLink } from "vue-router"
-import { Award, Calendar, CheckCircle2, ClipboardCheck, Download, ExternalLink, Eye, Loader2, ShieldCheck, Sparkles, X } from "lucide-vue-next"
+import { Award, Calendar, CheckCircle2, ClipboardCheck, Download, Eye, Loader2, ShieldCheck, Sparkles, X } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import rewGif from "@/assets/rew.gif"
 import { apiClient } from "@/lib/apiClient"
@@ -310,7 +310,6 @@ onMounted(async () => {
       <h3 class="mb-2 text-lg font-semibold text-foreground">{{ t.certificatesPage.keepLearningTitle }}</h3>
       <p class="mb-5 max-w-md text-sm leading-6 text-muted-foreground">{{ t.certificatesPage.keepLearningDesc }}</p>
       <RouterLink to="/certifications" class="btn btn-primary rounded-lg shadow-sm shadow-primary/20">
-        <ExternalLink class="h-4 w-4" />
         {{ t.certificatesPage.browseCourses }}
       </RouterLink>
     </div>
