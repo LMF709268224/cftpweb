@@ -5,6 +5,7 @@ import { toast } from "vue-sonner"
 import JsonPreview from "@/components/JsonPreview.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
+import { fetchAllCursorRecords } from "@/lib/cursorPagination"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 import { badgeClass, pickFirst } from "@/lib/status"
@@ -648,10 +649,7 @@ async function load() {
 async function loadCourseOptions() {
   courseOptionsLoading.value = true
   try {
-    const data = await apiClient<JsonRecord>("/api/lms/courses?page_size=100")
-    const list = Array.isArray(data.courses) ? data.courses : []
-    courseOptions.value = list
-      .filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
+    courseOptions.value = (await fetchAllCursorRecords("/api/lms/courses", "courses"))
       .filter(courseCanBeConfigured)
   } catch (err) {
     console.error(err)

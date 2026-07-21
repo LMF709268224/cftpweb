@@ -1,9 +1,13 @@
-package handler
+﻿package handler
 
 import (
+	"fmt"
 	"log/slog"
+	"math/rand"
 	"net/http"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 )
@@ -15,6 +19,14 @@ const (
 	userPropRealName   = "realName"
 	userPropRealNameV2 = "real_name"
 )
+
+type codeCacheItem struct {
+	email      string
+	code       string
+	expireTime time.Time
+}
+
+var emailVerificationCodes sync.Map
 
 // GetUserMe GET /api/user/me
 func (h *Handler) GetUserMe(w http.ResponseWriter, r *http.Request) {
@@ -77,9 +89,9 @@ func (h *Handler) UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if strings.TrimSpace(fullUser.Email) == "" {
-		fullUser.Email = strings.TrimSpace(input.Email)
-	}
+	// We no longer update email through this general profile endpoint.
+	// Email updates have a dedicated endpoint with verification.
+	
 	fullUser.DisplayName = input.DisplayName
 	fullUser.FirstName = input.FirstName
 	fullUser.LastName = input.LastName
@@ -192,3 +204,82 @@ func addressLine(address []string, index int) string {
 	}
 	return strings.TrimSpace(address[index])
 }
+
+// SendEmailCode POST /api/user/profile/email/send-code
+func (h *Handler) SendEmailCode(w http.ResponseWriter, r *http.Request) {
+	name := CandidateName(r)
+
+	var input EmailSendCodeInput
+	if err := ReadJSON(r, &input); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
+		return
+	}
+	if input.Email == "" {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "email required")
+		return
+	}
+
+	code := fmt.Sprintf("%06d", rand.Intn(1000000))
+	emailVerificationCodes.Store(name, codeCacheItem{email: input.Email, code: code, expireTime: time.Now().Add(5 * time.Minute)})
+
+	content := fmt.Sprintf("Your verification code is: %s. It will expire in 5 minutes.", code)
+	if input.Lang == "zh" {
+		content = fmt.Sprintf("您的验证码是：%s。该验证码将在5分钟后过期。", code)
+	}
+
+	err := casdoorsdk.SendEmail("Verification Code", content, "", input.Email)
+	if err != nil {
+		slog.Error("Failed to send verification code", "error", err)
+		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to send email")
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, BaseRsp{Code: 0, Msg: "success"})
+}
+
+// UpdateUserEmail PUT /api/user/profile/email
+func (h *Handler) UpdateUserEmail(w http.ResponseWriter, r *http.Request) {
+	name := CandidateName(r)
+
+	var input EmailUpdateInput
+	if err := ReadJSON(r, &input); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
+		return
+	}
+	if input.Email == "" || input.VerificationCode == "" {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "email and verification code are required")
+		return
+	}
+
+	item, ok := emailVerificationCodes.Load(name)
+	if !ok {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "verification code required")
+		return
+	}
+
+	cacheItem := item.(codeCacheItem)
+	if cacheItem.email != input.Email || cacheItem.code != input.VerificationCode || time.Now().After(cacheItem.expireTime) {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid or expired verification code")
+		return
+	}
+
+	fullUser, err := casdoorsdk.GetUser(name)
+	if err != nil {
+		slog.Error("Failed to get full user", "error", err)
+		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to get user info")
+		return
+	}
+
+	fullUser.Email = strings.TrimSpace(input.Email)
+
+	_, err = casdoorsdk.UpdateUser(fullUser)
+	if err != nil {
+		slog.Error("Failed to update user email", "error", err)
+		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to update user email")
+		return
+	}
+
+	emailVerificationCodes.Delete(name)
+	WriteJSON(w, http.StatusOK, BaseRsp{Code: 0, Msg: "success"})
+}
+

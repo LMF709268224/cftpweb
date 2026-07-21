@@ -6,6 +6,7 @@ import ReadonlyField from "@/components/ReadonlyField.vue"
 import LmsPrerequisitesTab from "@/components/LmsPrerequisitesTab.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
+import { isVideoFile, MAX_BASIC_VIDEO_UPLOAD_BYTES, sha256Hex, uploadToDirectURL } from "@/lib/directUpload"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 import { badgeClass, pickFirst } from "@/lib/status"
@@ -35,6 +36,7 @@ type LessonForm = {
   body: string
   asset_object_key: string
   asset_file_hash: string
+  video_stream_uid: string
 }
 
 type QuizScope = "course" | "chapter" | "lesson"
@@ -435,6 +437,7 @@ function emptyLessonForm(): LessonForm {
     body: "",
     asset_object_key: "",
     asset_file_hash: "",
+    video_stream_uid: "",
   }
 }
 
@@ -591,6 +594,7 @@ function isChapterEmpty(chapter: JsonRecord | null | undefined) {
 function isLessonEmpty(lesson: JsonRecord | null | undefined) {
   if (!lesson) return false
   const type = String(lesson.lesson_type || "")
+  if (type === "1") return !lesson.video_stream_uid
   if (type === "2") return !lesson.body
   if (type === "7") return !lesson.external_url && !lesson.asset_object_key
   return !lesson.asset_object_key && !lesson.media_object_key && !lesson.media_file_hash
@@ -1088,12 +1092,12 @@ async function loadCourses(pageToken = "") {
     const params = new URLSearchParams({ page_size: String(pageSize) })
     if (categoryFilter.value.trim()) params.set("category_tips", categoryFilter.value.trim())
     if (publishedOnly.value) params.set("published_only", "true")
-    if (pageToken) params.set("page_token", pageToken)
+    if (pageToken) params.set("cursor", pageToken)
     const data = await apiClient<JsonRecord>(`/api/lms/courses?${params}`)
     const list = Array.isArray(data.courses) ? data.courses : []
     const next = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     courses.value = pageToken ? [...courses.value, ...next] : next
-    nextPageToken.value = String(data.next_page_token || "")
+    nextPageToken.value = String(data.next_cursor || "")
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.courseListLoadFailed))
@@ -1491,6 +1495,7 @@ function editLesson(lesson: JsonRecord, openDialog = true) {
     body: String(lesson.body || ""),
     asset_object_key: String(lesson.media_object_key || lesson.asset_object_key || lesson.file_object_key || ""),
     asset_file_hash: String(lesson.media_file_hash || lesson.asset_file_hash || lesson.file_hash || ""),
+    video_stream_uid: String(lesson.video_stream_uid || ""),
   }
   if (quizForm.value.scope === "lesson") {
     newQuiz("lesson")
@@ -1543,13 +1548,21 @@ async function handleLessonFileUpload(event: Event) {
   const file = input.files?.[0]
   if (!file) return
   if (!selectedCourseId.value || !lessonForm.value.chapter_id || !editingLessonId.value) return
+  const isVideoLesson = lessonForm.value.lesson_type === "1"
+  if (isVideoLesson !== isVideoFile(file)) {
+    toast.error(isVideoLesson ? copy.value.videoFileRequired : copy.value.nonVideoFileRequired)
+    input.value = ""
+    return
+  }
+  if (isVideoLesson && file.size > MAX_BASIC_VIDEO_UPLOAD_BYTES) {
+    toast.error(copy.value.videoUploadLimit)
+    input.value = ""
+    return
+  }
 
   uploadingLesson.value = true
   try {
-    const arrayBuffer = await file.arrayBuffer()
-    const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer)
-    const hashArray = Array.from(new Uint8Array(hashBuffer))
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+    const hashHex = await sha256Hex(file)
 
     const uploadUrlReq = {
       upload_type: 3,
@@ -1561,22 +1574,21 @@ async function handleLessonFileUpload(event: Event) {
       file_hash: hashHex
     }
     const uploadRes = await apiClient<JsonRecord>("/api/lms/upload-url", { method: "POST", body: JSON.stringify(uploadUrlReq) })
-    
-    if (!uploadRes.upload_url) throw new Error("Missing upload URL")
-    const uploadResponse = await fetch(String(uploadRes.upload_url), {
-      method: "PUT",
-      body: file,
-      headers: uploadRes.signed_headers as Record<string, string> || {}
-    })
-    if (!uploadResponse.ok) {
-      throw new Error(`Upload failed: ${uploadResponse.status}`)
-    }
+    await uploadToDirectURL(file, uploadRes)
 
-    lessonForm.value.asset_object_key = String(uploadRes.object_key)
-    lessonForm.value.asset_file_hash = hashHex
+    if (isVideoLesson) {
+      lessonForm.value.video_stream_uid = String(uploadRes.object_key || "")
+      lessonForm.value.asset_object_key = ""
+      lessonForm.value.asset_file_hash = ""
+    } else {
+      lessonForm.value.asset_object_key = String(uploadRes.object_key || "")
+      lessonForm.value.asset_file_hash = hashHex
+      lessonForm.value.video_stream_uid = ""
+    }
     
-    await saveLesson()
-    toast.success((copy.value.toasts as any)?.uploadSuccess || "课时资产直传并配置成功")
+    if (await saveLesson()) {
+      toast.success((copy.value.toasts as any)?.uploadSuccess || "课时资产直传并配置成功")
+    }
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, (copy.value.toasts as any)?.uploadFailed || "上传失败"))
@@ -1586,27 +1598,27 @@ async function handleLessonFileUpload(event: Event) {
   }
 }
 
-async function saveLesson() {
+async function saveLesson(): Promise<boolean> {
   const targetChapterId = lessonForm.value.chapter_id
   const type = Number(lessonForm.value.lesson_type || 2)
   if (!targetChapterId || !lessonForm.value.title.trim()) {
     toast.error(copy.value.toasts.lessonRequired)
-    return
+    return false
   }
   if (type === 2 && !lessonForm.value.body.trim()) {
     toast.error(copy.value.toasts.lessonBodyRequired)
-    return
+    return false
   }
   if (lessonForm.value.lesson_type === '7' && !lessonForm.value.asset_object_key.trim()) {
     toast.error((copy.value.toasts as any)?.externalUrlRequired || "外部链接不能为空 (External URL required)")
-    return
+    return false
   }
 
   const targetSort = Number(lessonForm.value.sort_order || 1)
   const isConflict = allLessonItems.value.some(item => chapterId(item.chapter) === targetChapterId && Number(item.lesson.sort_order || 0) === targetSort && lessonId(item.lesson) !== editingLessonId.value)
   if (isConflict) {
     toast.error((copy.value.toasts as any)?.duplicateLessonSort || "该章节下已有相同排序的课时，请更换")
-    return
+    return false
   }
 
   savingLesson.value = true
@@ -1617,9 +1629,11 @@ async function saveLesson() {
       sort_order: Number(lessonForm.value.sort_order || 1),
       lesson_type: type,
       body: lessonForm.value.body,
-      media_object_key: (type === 7 || type === 2) ? "" : lessonForm.value.asset_object_key.trim(),
-      media_file_hash: (type === 7 || type === 2) ? "" : lessonForm.value.asset_file_hash.trim(),
+      media_object_key: [1, 2, 7].includes(type) ? "" : lessonForm.value.asset_object_key.trim(),
+      media_file_hash: [1, 2, 7].includes(type) ? "" : lessonForm.value.asset_file_hash.trim(),
       external_url: type === 7 ? lessonForm.value.asset_object_key.trim() : "",
+      video_provider: type === 1 && lessonForm.value.video_stream_uid.trim() ? "cloudflare" : "",
+      video_stream_uid: type === 1 ? lessonForm.value.video_stream_uid.trim() : "",
       version: selectedLessonRecord.value?.version || 0,
     })
     if (editingLessonId.value) {
@@ -1641,9 +1655,11 @@ async function saveLesson() {
         closeLessonDialog()
       }
     }
+    return true
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.lessonSaveFailed))
+    return false
   } finally {
     savingLesson.value = false
   }
@@ -3378,6 +3394,15 @@ onMounted(() => {
                   <label class="block">
                     <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ (copy as any).externalUrl }}</span>
                     <input v-model="lessonForm.asset_object_key" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" placeholder="https://" />
+                  </label>
+                </template>
+                <template v-else-if="lessonForm.lesson_type === '1'">
+                  <label class="block">
+                    <span class="text-sm font-bold">{{ copy.lessonFieldLabels.video_stream_uid }}</span>
+                    <input v-model="lessonForm.video_stream_uid" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" placeholder="Cloudflare Stream UID" />
+                    <span class="mt-2 block text-xs font-semibold text-slate-500">
+                      {{ editingLessonId ? copy.videoUploadLimitHint : copy.uploadAfterSaveHint }}
+                    </span>
                   </label>
                 </template>
                 <template v-else-if="lessonForm.lesson_type !== '2'">

@@ -829,3 +829,14 @@ type Appointment struct {
 	ConfirmationNumber string `xml:"ConfirmationNumber"`
 	StartDateTime      string `xml:"StartDateTime"`
 }
+
+
+type EmailSendCodeInput struct {
+	Email string `json:"email"`
+	Lang  string `json:"lang"`
+}
+
+type EmailUpdateInput struct {
+	Email            string `json:"email"`
+	VerificationCode string `json:"verification_code"`
+}

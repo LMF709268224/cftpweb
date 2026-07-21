@@ -156,12 +156,12 @@ async function load() {
   try {
     const url = new URL("/api/lms/resource-packs", window.location.origin)
     url.searchParams.set("page_size", String(pageSize))
-    if (pageToken.value) url.searchParams.set("page_token", pageToken.value)
+    if (pageToken.value) url.searchParams.set("cursor", pageToken.value)
 
     const data = await apiClient<JsonRecord>(`${url.pathname}${url.search}`)
     total.value = Number(data.total) || 0
     packs.value = asRecordList(data.packs || data.items)
-    nextPageToken.value = String(data.next_page_token || "")
+    nextPageToken.value = String(data.next_cursor || "")
     const nextSelected = packs.value.find((pack) => packId(pack) === form.value.pack_id) || packs.value[0] || null
     selectPack(nextSelected)
   } catch (err) {
