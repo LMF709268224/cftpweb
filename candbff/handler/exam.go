@@ -33,6 +33,7 @@ const (
 type retakePaymentSnapshot struct {
 	found                 bool
 	paid                  bool
+	isFree                bool
 	message               string
 	courseRetakeOrderUlid string
 	orderStatus           string
@@ -137,12 +138,45 @@ func (h *Handler) PrepareRetakePayment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	payment, err := h.retakePaymentSnapshot(r.Context(), candidateID, courseUnitUlid, input.CourseUnitCcULID, input.BundleOrderUlid, input.RetriedCount)
+	pipelineUlid, err := h.retakePipelineUlid(r.Context(), courseUnitUlid, input.CourseUnitCcULID)
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
 	}
-	if payment.paid {
+
+	payment, err := h.retakePaymentSnapshot(r.Context(), courseUnitUlid, input.CourseUnitCcULID, input.BundleOrderUlid, pipelineUlid, input.RetriedCount)
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	reusedExisting := payment.found
+	if !payment.found {
+		orderResp, err := h.Mall.CreateCourseRetakeOrder(r.Context(), &mallpb.CreateCourseRetakeOrderRequest{
+			CourseUnitUlid:   courseUnitUlid,
+			CourseUnitCcUlid: input.CourseUnitCcULID,
+			CandidateUlid:    candidateID,
+			RetriedCount:     input.RetriedCount,
+			BundleOrderUlid:  input.BundleOrderUlid,
+		})
+		if err != nil {
+			HandleGrpcError(w, err)
+			return
+		}
+		payment.found = true
+		payment.courseRetakeOrderUlid = orderResp.GetCourseRetakeOrderUlid()
+		payment.orderStatus = orderResp.GetOrderStatus()
+		payment.payOrderUlid = orderResp.GetPayOrderUlid()
+		payment.message = firstNonEmpty(orderResp.GetMessage(), payment.message)
+		reusedExisting = orderResp.GetReusedExisting()
+	}
+
+	if payment.isFree && !isOrderCompleted(payment.orderStatus) {
+		WriteError(w, http.StatusBadGateway, ErrServiceUnavailable, "free retake order was not completed")
+		return
+	}
+
+	if payment.isFree || payment.paid {
 		retakeResp, err := h.applyRetake(r.Context(), candidateID, courseUnitUlid)
 		if err != nil {
 			HandleGrpcError(w, err)
@@ -152,8 +186,9 @@ func (h *Handler) PrepareRetakePayment(w http.ResponseWriter, r *http.Request) {
 			CourseRetakeOrderUlid: payment.courseRetakeOrderUlid,
 			OrderStatus:           payment.orderStatus,
 			PayOrderUlid:          payment.payOrderUlid,
-			PaymentRequired:       !isFreeRetakeMessage(payment.message),
+			PaymentRequired:       !payment.isFree,
 			Paid:                  true,
+			ReusedExisting:        reusedExisting,
 			Message:               payment.message,
 		}
 		if retakeResp != nil {
@@ -167,47 +202,54 @@ func (h *Handler) PrepareRetakePayment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	orderResp, err := h.Mall.CreateCourseRetakeOrder(r.Context(), &mallpb.CreateCourseRetakeOrderRequest{
-		CourseUnitUlid:   courseUnitUlid,
-		CourseUnitCcUlid: input.CourseUnitCcULID,
-		CandidateUlid:    candidateID,
-		RetriedCount:     input.RetriedCount,
-		BundleOrderUlid:  input.BundleOrderUlid,
+	if payment.courseRetakeOrderUlid == "" {
+		WriteError(w, http.StatusBadGateway, ErrServiceUnavailable, "retake payment status did not include an order ID")
+		return
+	}
+
+	initResp, err := h.Mall.InitiatePayment(r.Context(), &mallpb.InitiatePaymentRequest{
+		BizType:    orderBizCourseRetakePayment,
+		BizRefUlid: payment.courseRetakeOrderUlid,
+		SuccessUrl: input.SuccessURL,
+		CancelUrl:  input.CancelURL,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
 	}
-
-	paymentKey := formatPaymentKey(orderResp.GetPaymentKey())
-	payOrderUlid := orderResp.GetPayOrderUlid()
-	if paymentKey == "" && orderResp.GetCourseRetakeOrderUlid() != "" {
-		initResp, err := h.Mall.InitiatePayment(r.Context(), &mallpb.InitiatePaymentRequest{
-			BizType:    orderBizCourseRetakePayment,
-			BizRefUlid: orderResp.GetCourseRetakeOrderUlid(),
-			SuccessUrl: input.SuccessURL,
-			CancelUrl:  input.CancelURL,
-		})
-		if err != nil {
-			HandleGrpcError(w, err)
-			return
-		}
-		paymentKey = formatPaymentKey(initResp.GetPaymentKey())
-		if initResp.GetPayOrderUlid() != "" {
-			payOrderUlid = initResp.GetPayOrderUlid()
-		}
+	paymentKey := formatPaymentKey(initResp.GetPaymentKey())
+	if initResp.GetPayOrderUlid() != "" {
+		payment.payOrderUlid = initResp.GetPayOrderUlid()
 	}
 
 	WriteJSON(w, http.StatusOK, PrepareRetakePaymentRsp{
-		CourseRetakeOrderUlid: orderResp.GetCourseRetakeOrderUlid(),
-		OrderStatus:           orderResp.GetOrderStatus(),
-		PayOrderUlid:          payOrderUlid,
+		CourseRetakeOrderUlid: payment.courseRetakeOrderUlid,
+		OrderStatus:           payment.orderStatus,
+		PayOrderUlid:          payment.payOrderUlid,
 		PaymentKey:            paymentKey,
 		PaymentRequired:       true,
 		Paid:                  false,
-		ReusedExisting:        orderResp.GetReusedExisting(),
-		Message:               orderResp.GetMessage(),
+		ReusedExisting:        reusedExisting,
+		Message:               payment.message,
 	})
+}
+
+func (h *Handler) retakePipelineUlid(ctx context.Context, courseUnitUlid, expectedCourseUnitCcUlid string) (string, error) {
+	unit, err := h.Gprog.GetCourseUnitDetail(ctx, &gprog.GetCourseUnitDetailReq{CourseUnitUlid: courseUnitUlid})
+	if err != nil {
+		return "", err
+	}
+	if unit == nil {
+		return "", status.Error(codes.NotFound, "course unit not found")
+	}
+	if actual := strings.TrimSpace(unit.GetCourseUnitCcUlid()); actual == "" || actual != expectedCourseUnitCcUlid {
+		return "", status.Error(codes.InvalidArgument, "course_unit_cc_ulid does not match the course unit")
+	}
+	pipelineUlid := strings.TrimSpace(unit.GetPipelineUlid())
+	if pipelineUlid == "" {
+		return "", status.Error(codes.FailedPrecondition, "course unit does not have an associated pipeline")
+	}
+	return pipelineUlid, nil
 }
 
 // GetScheduleURL GET /api/exams/{examId}/schedule-url
@@ -630,88 +672,77 @@ func (h *Handler) buildExamRetakeState(r *http.Request, candidateID string, item
 		}
 		return state
 	}
+	if strings.TrimSpace(item.PipelineUlid) == "" {
+		state.Message = "missing course unit pipeline"
+		return state
+	}
 	state.Action = retakeActionCreateRetakeOrder
 	retriedCount := item.NextRetriedCount
 	if retriedCount == 0 {
 		retriedCount = item.RetriedCount
 	}
-	payment, err := h.retakePaymentSnapshot(r.Context(), candidateID, item.CourseUnitUlid, item.CourseUnitCcUlid, item.BundleOrderUlid, retriedCount)
+	payment, err := h.retakePaymentSnapshot(r.Context(), item.CourseUnitUlid, item.CourseUnitCcUlid, item.BundleOrderUlid, item.PipelineUlid, retriedCount)
 	if err != nil {
 		slog.Warn("ListExams build retake state failed", "exam_id", item.ExamUlid, "course_unit_ulid", item.CourseUnitUlid, "error", err)
+		state.Action = retakeActionNone
+		state.Message = "retake payment status is unavailable"
 		return state
 	}
 	state.Message = firstNonEmpty(payment.message, state.Message)
-	state.RequiresPayment = !isFreeRetakeMessage(payment.message)
+	state.RequiresPayment = !payment.isFree
 	state.PaymentFound = payment.found
 	state.PaymentPaid = payment.paid
 	state.CourseRetakeOrderUlid = payment.courseRetakeOrderUlid
 	state.OrderStatus = payment.orderStatus
 	state.PayOrderUlid = payment.payOrderUlid
-	switch {
-	case !state.RequiresPayment || payment.paid:
-		state.Action = retakeActionApplyRetake
-	case payment.found:
-		state.Action = retakeActionContinuePayment
-	default:
-		state.Action = retakeActionCreateRetakeOrder
+	state.Action = retakeActionForPayment(payment)
+	if payment.isFree && payment.found && !isOrderCompleted(payment.orderStatus) {
+		state.Message = "free retake order is not completed"
 	}
 	return state
 }
 
-func (h *Handler) retakePaymentSnapshot(ctx context.Context, candidateID, courseUnitUlid, courseUnitCcUlid, bundleOrderUlid string, retriedCount uint32) (retakePaymentSnapshot, error) {
-	out := retakePaymentSnapshot{}
+func retakeActionForPayment(payment retakePaymentSnapshot) string {
+	switch {
+	case payment.isFree && !payment.found:
+		return retakeActionCreateRetakeOrder
+	case payment.isFree && isOrderCompleted(payment.orderStatus):
+		return retakeActionApplyRetake
+	case payment.isFree:
+		return retakeActionNone
+	case payment.paid:
+		return retakeActionApplyRetake
+	case payment.found:
+		return retakeActionContinuePayment
+	default:
+		return retakeActionCreateRetakeOrder
+	}
+}
+
+func (h *Handler) retakePaymentSnapshot(ctx context.Context, courseUnitUlid, courseUnitCcUlid, bundleOrderUlid, pipelineUlid string, retriedCount uint32) (retakePaymentSnapshot, error) {
 	statusResp, err := h.Mall.GetCourseUnitRetakePaymentStatus(ctx, &mallpb.GetCourseUnitRetakePaymentStatusRequest{
 		BundleOrderUlid:  bundleOrderUlid,
 		CourseUnitCcUlid: courseUnitCcUlid,
 		RetriedCount:     retriedCount,
+		PipelineUlid:     pipelineUlid,
+		CourseUnitUlid:   courseUnitUlid,
 	})
 	if err != nil {
-		if status.Code(err) == codes.NotFound {
-			out.message = "course retake payment not found"
-		} else {
-			return out, err
-		}
-	} else if statusResp != nil {
-		out.found = statusResp.GetFound()
-		out.paid = statusResp.GetPaid()
-		out.message = statusResp.GetMessage()
+		return retakePaymentSnapshot{}, err
+	}
+	if statusResp == nil {
+		return retakePaymentSnapshot{}, status.Error(codes.Internal, "empty retake payment status response")
 	}
 
-	orders, err := h.Mall.ListCourseRetakeOrders(ctx, &mallpb.ListCourseRetakeOrdersRequest{
-		Filters: &mallpb.CourseRetakeOrderFilters{
-			CandidateUlid:    candidateID,
-			CourseUnitUlid:   courseUnitUlid,
-			CourseUnitCcUlid: courseUnitCcUlid,
-			BundleOrderUlid:  bundleOrderUlid,
-		},
-		PageSize: 20,
-	})
-	if err != nil {
-		return out, err
-	}
-	latestCreatedAt := ""
-	for _, order := range orders.GetItems() {
-		if order == nil || order.GetRetriedCount() != retriedCount {
-			continue
-		}
-		if out.courseRetakeOrderUlid != "" && strings.Compare(order.GetCreatedAt(), latestCreatedAt) <= 0 {
-			continue
-		}
-		out.found = true
-		out.courseRetakeOrderUlid = order.GetCourseRetakeOrderUlid()
-		out.orderStatus = order.GetOrderStatus()
-		out.payOrderUlid = order.GetPayOrderUlid()
-		latestCreatedAt = order.GetCreatedAt()
-		if isOrderCompleted(order.GetOrderStatus()) {
-			out.paid = true
-		}
-	}
-	return out, nil
-}
-
-func isFreeRetakeMessage(message string) bool {
-	normalized := strings.ToLower(strings.TrimSpace(message))
-	return strings.Contains(normalized, "free") || strings.Contains(normalized, "免费")
+	return retakePaymentSnapshot{
+		found:                 statusResp.GetFound(),
+		paid:                  statusResp.GetPaid(),
+		isFree:                statusResp.GetIsFree(),
+		message:               statusResp.GetMessage(),
+		courseRetakeOrderUlid: statusResp.GetCourseRetakeOrderUlid(),
+		orderStatus:           statusResp.GetOrderStatus(),
+		payOrderUlid:          statusResp.GetPayOrderUlid(),
+	}, nil
 }
 
 func (h *Handler) completedBundleOrdersByPipeline(r *http.Request, candidateID string) map[string]string {
