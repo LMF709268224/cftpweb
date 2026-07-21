@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"strings"
 
@@ -130,8 +129,8 @@ func (h *Handler) ListWebhookMessages(w http.ResponseWriter, r *http.Request) {
 		Filters: &gexampb.WebhookFilters{
 			ProcessedStatus: statusPtr,
 		},
-		Cursor:   page.Cursor,
-		PageSize: page.PageSize,
+		Cursor:    page.Cursor,
+		PageSize:  page.PageSize,
 		SortOrder: gexampb.SortOrder(page.Sort),
 	})
 	if err != nil {
@@ -161,7 +160,7 @@ func (h *Handler) ReprocessWebhookMessage(w http.ResponseWriter, r *http.Request
 	var input struct {
 		WebhookMsgId int64 `json:"webhook_msg_id"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+	if err := ReadJSON(r, &input); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}

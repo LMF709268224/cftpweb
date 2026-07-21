@@ -40,15 +40,12 @@ onMounted(async () => {
   }
 
   try {
-    const payload = await apiClient<{ token?: string; user?: { name?: string } }>("/api/auth/login", {
+    const payload = await apiClient<{ user?: { name?: string } }>("/api/auth/login", {
       method: "POST",
       body: JSON.stringify({ code, state }),
     })
-    if (!payload.token) {
-      throw new Error("missing token")
-    }
 
-    setAuthSession(payload.token, payload.user?.name)
+    setAuthSession(payload.user?.name)
     status.value = "success"
     setTimeout(() => router.push("/lms"), 800)
   } catch (err) {

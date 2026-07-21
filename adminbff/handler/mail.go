@@ -77,7 +77,7 @@ func normalizeParameterSchema(value string) (string, error) {
 
 func (h *Handler) SendMail(w http.ResponseWriter, r *http.Request) {
 	var input SendMailInput
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+	if err := ReadJSON(r, &input); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
@@ -226,7 +226,7 @@ func (h *Handler) CancelMail(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		MailId string `json:"mail_id"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := ReadJSON(r, &req); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
@@ -244,7 +244,7 @@ func (h *Handler) CancelMail(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) CreateMailTemplate(w http.ResponseWriter, r *http.Request) {
 	var input mailTemplateInput
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+	if err := ReadJSON(r, &input); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
@@ -292,7 +292,7 @@ func (h *Handler) CreateMailTemplate(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) UpdateMailTemplate(w http.ResponseWriter, r *http.Request) {
 	var input mailTemplateInput
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+	if err := ReadJSON(r, &input); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
@@ -396,7 +396,7 @@ func (h *Handler) GetMailTemplate(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) RenderMailTemplate(w http.ResponseWriter, r *http.Request) {
 	var req gmailpb.RenderTemplateRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := ReadJSON(r, &req); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}

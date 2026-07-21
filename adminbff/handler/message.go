@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -22,7 +21,7 @@ type SendMessageInput struct {
 
 func (h *Handler) SendMessage(w http.ResponseWriter, r *http.Request) {
 	var input SendMessageInput
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+	if err := ReadJSON(r, &input); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
@@ -106,7 +105,7 @@ func (h *Handler) ListSentMessages(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) CreateTemplate(w http.ResponseWriter, r *http.Request) {
 	var req gmsgpb.CreateTemplateRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := ReadJSON(r, &req); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
@@ -183,7 +182,7 @@ func (h *Handler) GetMessageTemplate(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) UpdateTemplate(w http.ResponseWriter, r *http.Request) {
 	var req gmsgpb.UpdateTemplateRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := ReadJSON(r, &req); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}

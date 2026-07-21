@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"strings"
 
@@ -228,7 +227,7 @@ func (h *Handler) adminBusinessOrderDetail(ctx context.Context, bizType, bizRefU
 func (h *Handler) AdminSyncOrderMeta(w http.ResponseWriter, r *http.Request) {
 	var req mallpb.AdminSyncOrderMetaRequest
 	if r.Body != nil && r.ContentLength != 0 {
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		if err := ReadJSON(r, &req); err != nil {
 			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 			return
 		}

@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from "vue-router"
 import AdminLayout from "@/components/AdminLayout.vue"
-import { getAccessToken } from "@/lib/authStorage"
+import { isAuthenticated } from "@/lib/authStorage"
 import AdminOpsPage from "@/pages/AdminOpsPage.vue"
 import AuditLogsPage from "@/pages/AuditLogsPage.vue"
 import ApplicationsPage from "@/pages/ApplicationsPage.vue"
@@ -294,7 +294,7 @@ router.beforeEach((to) => {
     return true
   }
 
-  if (!getAccessToken()) {
+  if (!isAuthenticated()) {
     return { name: "login" }
   }
 

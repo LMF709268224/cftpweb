@@ -139,6 +139,12 @@ function uploadSuccessText(fileName: string) {
   return t.value.credentialsPage.uploadSuccess.replace("{{fileName}}", fileName)
 }
 
+function getFormatHint(constraint: any) {
+  const info = getFileConstraintInfo(constraint.type)
+  const extText = info.extLabel === "Any" ? (lang.value === 'zh' ? '不限' : 'Any') : info.extLabel
+  return t.value.credentialsPage.supportedFormats.replace("{{exts}}", extText).replace("{{limit}}", info.maxLabel)
+}
+
 function triggerFileInput(constraintName: string) {
   document.getElementById(`file-${constraintName}`)?.click()
 }
@@ -461,7 +467,7 @@ onMounted(fetchData)
                 <input :id="`file-${constraint.name}`" type="file" class="hidden" :accept="getFileConstraintInfo(constraint.type).acceptStr" @change="onConstraintFileChange($event, constraint)" />
               </div>
               <p class="text-xs text-muted-foreground">
-                {{ t.credentialsPage.supportedFormats.replace("{{exts}}", getFileConstraintInfo(constraint.type).extLabel === "Any" ? t.common.any : getFileConstraintInfo(constraint.type).extLabel).replace("{{limit}}", getFileConstraintInfo(constraint.type).maxLabel) }}
+                {{ getFormatHint(constraint) }}
               </p>
               <p v-if="uploadedFiles[constraint.name]" class="flex items-center gap-1 text-xs text-green-600"><CheckCircle class="h-3 w-3" /> {{ uploadSuccessText(uploadedFiles[constraint.name].name) }}</p>
             </div>

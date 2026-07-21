@@ -1,4 +1,4 @@
-import { clearAuthSession, getAccessToken } from "./authStorage"
+import { clearAuthSession } from "./authStorage"
 
 export class ApiError extends Error {
   status: number
@@ -13,18 +13,14 @@ export class ApiError extends Error {
 }
 
 export async function apiClient<T = unknown>(input: string, init: RequestInit = {}): Promise<T> {
-  const token = getAccessToken()
   const headers = new Headers(init.headers)
 
   if (!headers.has("Content-Type") && init.body) {
     headers.set("Content-Type", "application/json")
   }
-  if (token) {
-    headers.set("Authorization", `Bearer ${token}`)
-  }
-
   const response = await fetch(input, {
     ...init,
+    credentials: init.credentials ?? "same-origin",
     headers,
   })
 

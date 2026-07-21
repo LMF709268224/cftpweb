@@ -46,7 +46,7 @@ func (h *Handler) CreatePipelineDraft(w http.ResponseWriter, r *http.Request) {
 		ThumbnailObjectKey string `json:"thumbnail_object_key"`
 		ThumbnailFileHash  string `json:"thumbnail_file_hash"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+	if err := ReadJSON(r, &input); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
@@ -85,7 +85,7 @@ func (h *Handler) DuplicatePipelineDraft(w http.ResponseWriter, r *http.Request)
 	var input struct {
 		Name string `json:"name"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+	if err := ReadJSON(r, &input); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
@@ -118,7 +118,7 @@ func (h *Handler) UpdatePipelineStructure(w http.ResponseWriter, r *http.Request
 		return
 	}
 	var raw map[string]any
-	if err := json.NewDecoder(r.Body).Decode(&raw); err != nil {
+	if err := ReadJSON(r, &raw); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
@@ -231,7 +231,7 @@ func (h *Handler) PublishPipeline(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var req gccpb.PublishPipelineRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := ReadJSON(r, &req); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
@@ -289,7 +289,7 @@ func (h *Handler) UpdatePipelineMetadata(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	var req gccpb.UpdateMetadataRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := ReadJSON(r, &req); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
