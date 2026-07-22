@@ -10,6 +10,10 @@ export const GENDER_OPTIONS = ["Male", "Female"] as const
 
 export type GenderOption = (typeof GENDER_OPTIONS)[number]
 
+export function isValidEmail(value: unknown) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim())
+}
+
 const genderAliases: Record<string, GenderOption> = {
   male: "Male",
   m: "Male",

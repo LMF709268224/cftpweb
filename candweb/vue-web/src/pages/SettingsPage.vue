@@ -9,7 +9,7 @@ import { clearAccessToken } from "@/lib/authStorage"
 import { getMessage } from "@/lib/messages"
 import { useTranslation } from "@/lib/language"
 import { getCachedCountries, getCountryCityOptions, getCountryOptions, getProvinceOptions, getStateCityOptions, loadLocationData, type CountryOption } from "@/lib/locationOptions"
-import { GENDER_OPTIONS, PROFILE_TEXT_LIMITS, isValidInternationalPhone, isValidPostalCode, normalizeGender, normalizeInternationalPhone, normalizePostalCode, trimToMax } from "@/lib/profileFormValidation"
+import { GENDER_OPTIONS, PROFILE_TEXT_LIMITS, isValidEmail, isValidInternationalPhone, isValidPostalCode, normalizeGender, normalizeInternationalPhone, normalizePostalCode, trimToMax } from "@/lib/profileFormValidation"
 import { useUser } from "@/lib/user"
 
 const route = useRoute()
@@ -357,6 +357,17 @@ async function handleUpdateProfile() {
 }
 
 async function handleUpdatePassword() {
+  const requiredFields = [
+    [password.oldPassword, t.value.settings.currentPassword],
+    [password.newPassword, t.value.settings.newPassword],
+    [password.confirmPassword, t.value.settings.confirmNewPassword],
+  ] as const
+  for (const [value, label] of requiredFields) {
+    if (!value) {
+      toast.error(t.value.settings.validationRequired.replace("{{field}}", label))
+      return
+    }
+  }
   if (password.newPassword !== password.confirmPassword) {
     toast.error(getMessage("PASSWORD_MISMATCH", lang.value))
     return
@@ -384,6 +395,10 @@ async function handleSendEmailCode() {
     toast.error(t.value.settings.validationRequired.replace("{{field}}", t.value.settings.newEmail))
     return
   }
+  if (!isValidEmail(emailUpdate.newEmail)) {
+    toast.error(t.value.settings.validationInvalidEmail)
+    return
+  }
   isEmailCodeSending.value = true
   try {
     await apiClient("/api/user/profile/email/send-code", {
@@ -408,6 +423,10 @@ async function handleSendEmailCode() {
 async function handleUpdateEmail() {
   if (!emailUpdate.newEmail || !emailUpdate.verificationCode) {
     toast.error(t.value.settings.validationRequired.replace("{{field}}", !emailUpdate.newEmail ? t.value.settings.newEmail : t.value.settings.verificationCode))
+    return
+  }
+  if (!isValidEmail(emailUpdate.newEmail)) {
+    toast.error(t.value.settings.validationInvalidEmail)
     return
   }
   isEmailUpdating.value = true
@@ -469,7 +488,7 @@ async function handleUpdateEmail() {
           <p class="text-sm text-muted-foreground">{{ t.settings.profileDesc }}</p>
         </div>
         <div class="p-6 pt-0">
-        <form class="max-w-2xl space-y-4" @submit.prevent="handleUpdateProfile">
+        <form class="max-w-2xl space-y-4" novalidate @submit.prevent="handleUpdateProfile">
           <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.loginId }}</span><input v-model="profile.name" class="input bg-muted" disabled /></label>
             <label class="space-y-2">
@@ -543,10 +562,10 @@ async function handleUpdateEmail() {
           <p class="text-sm text-muted-foreground">{{ t.settings.updatePasswordDesc }}</p>
         </div>
         <div class="p-6 pt-0">
-        <form class="max-w-xl space-y-4" @submit.prevent="handleUpdatePassword">
-          <label class="block space-y-2"><span class="text-sm font-medium">{{ t.settings.currentPassword }}</span><input v-model="password.oldPassword" class="input" type="password" required /></label>
-          <label class="block space-y-2"><span class="text-sm font-medium">{{ t.settings.newPassword }}</span><input v-model="password.newPassword" class="input" type="password" required /></label>
-          <label class="block space-y-2"><span class="text-sm font-medium">{{ t.settings.confirmNewPassword }}</span><input v-model="password.confirmPassword" class="input" type="password" required /></label>
+        <form class="max-w-xl space-y-4" novalidate @submit.prevent="handleUpdatePassword">
+          <label class="block space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.currentPassword }}</span><input v-model="password.oldPassword" class="input" type="password" required /></label>
+          <label class="block space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.newPassword }}</span><input v-model="password.newPassword" class="input" type="password" required /></label>
+          <label class="block space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.confirmNewPassword }}</span><input v-model="password.confirmPassword" class="input" type="password" required /></label>
           <button class="btn btn-primary" :disabled="isPasswordLoading"><Loader2 v-if="isPasswordLoading" class="h-4 w-4 animate-spin mr-2" /> {{ t.settings.updatePasswordBtn }}</button>
         </form>
         </div>
@@ -556,9 +575,9 @@ async function handleUpdateEmail() {
           <p class="text-sm text-muted-foreground">{{ t.settings.updateEmailDesc }}</p>
         </div>
         <div class="p-6 pt-0">
-          <form class="max-w-xl space-y-4" @submit.prevent="handleUpdateEmail">
-            <label class="block space-y-2"><span class="text-sm font-medium">{{ t.settings.newEmail }}</span><input v-model="emailUpdate.newEmail" class="input" type="email" required /></label>
-            <label class="block space-y-2"><span class="text-sm font-medium">{{ t.settings.verificationCode }}</span>
+          <form class="max-w-xl space-y-4" novalidate @submit.prevent="handleUpdateEmail">
+            <label class="block space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.newEmail }}</span><input v-model="emailUpdate.newEmail" class="input" type="email" required /></label>
+            <label class="block space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.verificationCode }}</span>
               <div class="flex gap-2">
                 <input v-model="emailUpdate.verificationCode" class="input flex-1" type="text" required />
                 <button type="button" class="btn btn-outline" :disabled="isEmailCodeSending || emailCodeCountdown > 0" @click="handleSendEmailCode">
