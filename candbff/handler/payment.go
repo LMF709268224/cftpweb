@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"strings"
-	"time"
 
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
 	"github.com/go-chi/chi/v5"
@@ -113,7 +112,7 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 			BizRefUlid:           item.GetBizRefUlid(),
 			OrderStatus:          rawStatus,
 			PaymentStatus:        strings.TrimSpace(item.GetPaymentStatus()),
-			CreatedAt:            formatOrderCreatedAt(item.GetCreatedAt()),
+			CreatedAt:            item.GetCreatedAt(),
 			Amount:               amount,
 			Currency:             currency,
 			PayOrderUlid:         payOrderID,
@@ -288,17 +287,17 @@ func (h *Handler) orderDetailResponse(resp *mallpb.GetOrderDetailResponse) Order
 			AmountMinor:   summary.GetAmountMinor(),
 			OrderStatus:   rawStatus,
 			PaymentStatus: strings.TrimSpace(summary.GetPaymentStatus()),
-			CreatedAt:     formatOrderCreatedAt(summary.GetCreatedAt()),
+			CreatedAt:     summary.GetCreatedAt(),
 		},
 		GpayOrderUlid:       strings.TrimSpace(detail.GetGpayOrderUlid()),
 		HasPaymentKey:       strings.TrimSpace(detail.GetPaymentKey()) != "",
-		PaidAt:              formatOrderCreatedAt(detail.GetPaidAt()),
-		ClosedAt:            formatOrderCreatedAt(detail.GetClosedAt()),
-		LastReconciledAt:    formatOrderCreatedAt(detail.GetLastReconciledAt()),
+		PaidAt:              detail.GetPaidAt(),
+		ClosedAt:            detail.GetClosedAt(),
+		LastReconciledAt:    detail.GetLastReconciledAt(),
 		Version:             detail.GetVersion(),
-		UpdatedAt:           formatOrderCreatedAt(detail.GetUpdatedAt()),
-		OrderStatusAt:       formatOrderCreatedAt(detail.GetOrderStatusAt()),
-		PaymentStatusAt:     formatOrderCreatedAt(detail.GetPaymentStatusAt()),
+		UpdatedAt:           detail.GetUpdatedAt(),
+		OrderStatusAt:       detail.GetOrderStatusAt(),
+		PaymentStatusAt:     detail.GetPaymentStatusAt(),
 		DiscountUnsupported: true,
 	}
 	if meta != nil {
@@ -565,14 +564,6 @@ func (h *Handler) businessOrderDetail(ctx context.Context, bizType, bizRefULID s
 	default:
 		return nil, NewError(http.StatusBadRequest, ErrInvalidRequest, "unsupported biz_type")
 	}
-}
-
-func formatOrderCreatedAt(createdAt string) string {
-	createdAt = strings.TrimSpace(createdAt)
-	if t, err := time.Parse(time.RFC3339, createdAt); err == nil {
-		return t.Format(time.RFC3339)
-	}
-	return createdAt
 }
 
 func orderBizTypeLabel(bizType string) string {
