@@ -115,7 +115,7 @@ async function requestApi(endpoint: string, options: ApiClientOptions, allowRefr
   const controller = new AbortController()
   const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs)
   const showErrorToast = (message: string, id?: string) => {
-    if (!suppressErrorToast) toast.error(message, id ? { id } : undefined)
+    if (!suppressErrorToast) toast.error(message, { id: id || `api-error:${message}` })
   }
 
   if (signal) {

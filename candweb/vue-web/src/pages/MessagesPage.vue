@@ -91,7 +91,11 @@ function configFor(type: string) {
 }
 
 function unreadCountText() {
-  return t.value.messagesPage.unreadCount.replace("{{count}}", String(totalUnreadCount.value))
+  return t.value.messagesPage.unreadCount.replace("{{count}}", unreadCountBadgeLabel())
+}
+
+function unreadCountBadgeLabel() {
+  return totalUnreadCount.value >= 99 ? "99+" : String(totalUnreadCount.value)
 }
 
 function countBadgeClass(active: boolean) {
@@ -427,7 +431,7 @@ onMounted(() => {
           >
             <component :is="tab.icon" class="h-4 w-4" />
             {{ tab.label }}
-            <span v-if="tab.value === 'unread'" :class="['rounded-full px-2 py-0.5 text-xs font-bold', countBadgeClass(selectedStatus === tab.value)]">{{ totalUnreadCount }}</span>
+            <span v-if="tab.value === 'unread'" :class="['rounded-full px-2 py-0.5 text-xs font-bold', countBadgeClass(selectedStatus === tab.value)]">{{ unreadCountBadgeLabel() }}</span>
             <span v-if="selectedStatus === tab.value" class="absolute bottom-[-1px] left-0 hidden h-0.5 w-full rounded-full bg-primary md:block" />
           </button>
         </div>
