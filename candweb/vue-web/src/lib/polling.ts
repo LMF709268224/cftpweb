@@ -24,9 +24,7 @@ export function usePolling(task: () => void | Promise<void>, options: PollingOpt
   function schedule() {
     clearTimer()
     if (stopped) return
-    timerId = window.setTimeout(() => {
-      void run()
-    }, intervalMs)
+    timerId = window.setTimeout(runInBackground, intervalMs)
   }
 
   async function run() {
@@ -48,9 +46,15 @@ export function usePolling(task: () => void | Promise<void>, options: PollingOpt
     }
   }
 
+  function runInBackground() {
+    void run().catch(() => {
+      // Polling is best-effort; callers that need the error can await run() directly.
+    })
+  }
+
   function start() {
     stopped = false
-    if (options.immediate) void run()
+    if (options.immediate) runInBackground()
     else schedule()
   }
 
