@@ -241,13 +241,12 @@ export function localizeApiErrorMessage(
     return getErrorMessage(errorCode, lang)
   }
 
-  if (message) {
-    return message
-  }
-
-  if (errorCode && ErrorMessages[errorCode]) {
+  const isUntranslatedEnglish = lang === "zh"
+    && /[A-Za-z]/.test(message)
+    && !/[\u3400-\u9fff]/.test(message)
+  if (isUntranslatedEnglish) {
     return getErrorMessage(errorCode, lang)
   }
 
-  return getErrorMessage("UNKNOWN_ERROR", lang)
+  return message
 }
