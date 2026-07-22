@@ -876,7 +876,7 @@ function initiatePayment() {
       bizRefUlid: activeOrder.value.orderId,
       orderId: activeOrder.value.orderId,
       source: activeOrder.value.action,
-      returnPath: "/my-certifications",
+      returnPath: activeOrder.value.action === "purchase" ? "/certifications" : "/my-certifications",
       extraReturnParams: {
         pipeline_id: props.pipelineId,
         bundle_id: resolvedBundleId.value,

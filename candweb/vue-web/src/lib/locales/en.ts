@@ -966,7 +966,7 @@ export const en: AppTranslations = {
   },
   paymentReturnHandler: {
     title: "Payment Result",
-    purchaseSuccess: "Purchase successful. The certification list has been refreshed.",
+    purchaseSuccess: "Purchase successful",
     unlockSuccess: "Unlock successful. The certification list has been refreshed.",
     cancelled: "Payment cancelled. You can continue the order later.",
     failed: "Payment failed. Please try again later.",
