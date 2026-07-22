@@ -964,7 +964,7 @@ export const zh = {
   },
   paymentReturnHandler: {
     title: "支付结果",
-    purchaseSuccess: "购买成功，认证列表已刷新。",
+    purchaseSuccess: "购买成功",
     unlockSuccess: "解锁成功，认证列表已刷新。",
     cancelled: "支付已取消，你可以稍后继续处理订单。",
     failed: "支付失败，请稍后重试。",
