@@ -242,10 +242,6 @@ onMounted(() => {
           </RouterLink>
           <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
-              <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                <FileArchive class="h-3.5 w-3.5" />
-                {{ packId || copy.missing }}
-              </div>
               <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ copy.title }}</h1>
               <p class="mt-2 max-w-2xl text-muted-foreground">{{ copy.subtitle }}</p>
             </div>
