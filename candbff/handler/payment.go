@@ -570,7 +570,7 @@ func (h *Handler) businessOrderDetail(ctx context.Context, bizType, bizRefULID s
 func formatOrderCreatedAt(createdAt string) string {
 	createdAt = strings.TrimSpace(createdAt)
 	if t, err := time.Parse(time.RFC3339, createdAt); err == nil {
-		return t.Format("2006-01-02 15:04")
+		return t.Format(time.RFC3339)
 	}
 	return createdAt
 }
