@@ -23,6 +23,7 @@ const selectedProvinceCode = ref("")
 const countryOptions = ref<CountryOption[]>([])
 const provinceOptions = ref<any[]>([])
 const cityOptions = ref<any[]>([])
+const orgPhonePrefixes = ref<{ code: string, dialCode: string, name: string }[]>([])
 const genderOptions = GENDER_OPTIONS
 const formData = reactive({
   first_name: "",
@@ -310,12 +311,35 @@ async function loadProfile() {
   }
 }
 
+async function fetchOrgConfig() {
+  try {
+    const configRes = await apiClient("/api/public/config/organization")
+    if (configRes && configRes.country_codes) {
+      const allCountries = getCachedCountries()
+      orgPhonePrefixes.value = configRes.country_codes.map((code: string) => {
+        const country = allCountries.find((c) => c.isoCode === code)
+        return {
+          code,
+          dialCode: country ? `+${country.phonecode}` : code,
+          name: country ? country.name : code,
+        }
+      })
+      if (!formData.phone_country_code && orgPhonePrefixes.value.length > 0) {
+        formData.phone_country_code = orgPhonePrefixes.value[0].code
+      }
+    }
+  } catch (err) {
+    console.error("Failed to load organization config", err)
+  }
+}
+
 onMounted(() => {
   void loadProfile()
   void loadLocationData()
     .then(() => {
       refreshCountryOptions()
       syncLocationSelectionFromForm()
+      void fetchOrgConfig()
     })
     .catch((err: any) => console.error("Failed to load location data", err))
 })
@@ -467,16 +491,21 @@ async function handleSubmit() {
         <div class="grid gap-4 sm:grid-cols-1">
           <label class="space-y-2">
             <span class="text-sm font-medium">{{ t.examSignup.formWorkPhone }}</span>
-            <input
-              id="exam-signup-work-phone"
-              v-model="formData.phone"
-              class="input"
-              type="tel"
-              inputmode="tel"
-              autocomplete="tel"
-              maxlength="24"
-              :placeholder="t.examSignup.formWorkPhonePlaceholder"
-            />
+            <div class="flex gap-2">
+              <select v-if="orgPhonePrefixes.length > 0" v-model="formData.phone_country_code" class="input cursor-pointer w-28 shrink-0">
+                <option v-for="prefix in orgPhonePrefixes" :key="prefix.code" :value="prefix.code">{{ prefix.dialCode }}</option>
+              </select>
+              <input
+                id="exam-signup-work-phone"
+                v-model="formData.phone"
+                class="input flex-1"
+                type="tel"
+                inputmode="tel"
+                autocomplete="tel"
+                maxlength="24"
+                :placeholder="t.examSignup.formWorkPhonePlaceholder"
+              />
+            </div>
           </label>
         </div>
         <div class="flex justify-end pt-2">
