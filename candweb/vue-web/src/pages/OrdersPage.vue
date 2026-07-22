@@ -515,6 +515,7 @@ function handlePaginationChange() {
     resetCursorPagination()
   }
   void fetchOrders()
+  window.scrollTo({ top: 0, behavior: "smooth" })
 }
 
 // Polling removed for testing

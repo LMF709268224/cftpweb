@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router"
-import { getAccessToken } from "@/lib/authStorage"
+import { getAccessToken, rememberPostLoginRedirect } from "@/lib/authStorage"
 import { useUser } from "@/lib/user"
 
 const HomePage = () => import("@/pages/HomePage.vue")
@@ -79,51 +79,56 @@ export const router = createRouter({
     return { left: 0, top: 0 }
   },
   routes: [
-    { path: "/", component: HomePage, meta: { titleKey: "home" } },
+    { path: "/", component: HomePage, meta: { titleKey: "home", requiresAuth: true } },
     { path: "/login", component: LoginPage, meta: { titleKey: "login" } },
     { path: "/callback", component: CallbackPage, meta: { titleKey: "callback" } },
-    { path: "/certifications", component: CoursesPage, meta: { titleKey: "marketplace" } },
-    { path: "/my-certifications", component: MyCertificationsPage, meta: { titleKey: "myCertifications" } },
+    { path: "/certifications", component: CoursesPage, meta: { titleKey: "marketplace", requiresAuth: true } },
+    { path: "/my-certifications", component: MyCertificationsPage, meta: { titleKey: "myCertifications", requiresAuth: true } },
     { path: "/certifications/detail", redirect: redirectCertificationDetail },
     { path: "/certifications/learn", redirect: redirectCertificationLearn },
     { path: "/certifications/supplementary", redirect: redirectCertificationSupplementary },
     { path: "/certifications/timeline", redirect: redirectCertificationTimeline },
-    { path: "/certifications/:pipelineId", component: CourseDetailPage, meta: { titleKey: "certificationDetail" } },
-    { path: "/certifications/:pipelineId/learn/:courseId", component: CourseLearnPage, meta: { titleKey: "courseLearning" } },
-    { path: "/certifications/:pipelineId/learn/:courseId/lessons/:lessonId", component: CourseLearnPage, meta: { titleKey: "courseLearning" } },
-    { path: "/certifications/:pipelineId/supplementary/:courseId", component: CourseSupplementaryPage, meta: { titleKey: "supplementaryMaterials" } },
-    { path: "/certifications/:pipelineId/timeline", component: CourseTimelinePage, meta: { titleKey: "timeline" } },
+    { path: "/certifications/:pipelineId", component: CourseDetailPage, meta: { titleKey: "certificationDetail", requiresAuth: true } },
+    { path: "/certifications/:pipelineId/learn/:courseId", component: CourseLearnPage, meta: { titleKey: "courseLearning", requiresAuth: true } },
+    { path: "/certifications/:pipelineId/learn/:courseId/lessons/:lessonId", component: CourseLearnPage, meta: { titleKey: "courseLearning", requiresAuth: true } },
+    { path: "/certifications/:pipelineId/supplementary/:courseId", component: CourseSupplementaryPage, meta: { titleKey: "supplementaryMaterials", requiresAuth: true } },
+    { path: "/certifications/:pipelineId/timeline", component: CourseTimelinePage, meta: { titleKey: "timeline", requiresAuth: true } },
     { path: "/courses", redirect: redirectToCertifications },
     { path: "/courses/detail", redirect: redirectCertificationDetail },
     { path: "/courses/learn", redirect: redirectCertificationLearn },
     { path: "/courses/supplementary", redirect: redirectCertificationSupplementary },
     { path: "/courses/timeline", redirect: redirectCertificationTimeline },
-    { path: "/membership", component: MembershipPage, meta: { titleKey: "membership" } },
-    { path: "/exams", component: ExamsPage, meta: { titleKey: "exams" } },
-    { path: "/exams/result", component: ExamResultPage, meta: { titleKey: "examResult" } },
-    { path: "/exams/signup", component: ExamSignupPage, meta: { titleKey: "examSignup" } },
-    { path: "/records", component: RecordsPage, meta: { titleKey: "records" } },
-    { path: "/resource-packs", component: ResourcePacksPage, meta: { titleKey: "resourcePacks" } },
+    { path: "/membership", component: MembershipPage, meta: { titleKey: "membership", requiresAuth: true } },
+    { path: "/exams", component: ExamsPage, meta: { titleKey: "exams", requiresAuth: true } },
+    { path: "/exams/result", component: ExamResultPage, meta: { titleKey: "examResult", requiresAuth: true } },
+    { path: "/exams/signup", component: ExamSignupPage, meta: { titleKey: "examSignup", requiresAuth: true } },
+    { path: "/records", component: RecordsPage, meta: { titleKey: "records", requiresAuth: true } },
+    { path: "/resource-packs", component: ResourcePacksPage, meta: { titleKey: "resourcePacks", requiresAuth: true } },
     { path: "/resource-packs/detail", redirect: redirectResourcePackDetail },
-    { path: "/resource-packs/:packId", component: ResourcePackDetailPage, meta: { titleKey: "resourcePackDetail" } },
-    { path: "/resource-pack-files/:fileId/preview", component: PdfPreviewPage, meta: { titleKey: "pdfPreview" } },
-    { path: "/video-preview/resource-pack-files/:fileId", component: VideoPreviewPage, meta: { titleKey: "videoPreview" } },
-    { path: "/credentials", component: CredentialsPage, meta: { titleKey: "credentials" } },
-    { path: "/certificates", component: CertificatesPage, meta: { titleKey: "certificates" } },
-    { path: "/orders", component: OrdersPage, meta: { titleKey: "orders" } },
-    { path: "/messages", component: MessagesPage, meta: { titleKey: "messages" } },
-    { path: "/settings", component: SettingsPage, meta: { titleKey: "settings" } },
-    { path: "/quizzes", component: QuizPage, meta: { titleKey: "quiz" } },
-    { path: "/pdf-preview/lessons/:lessonId", component: PdfPreviewPage, meta: { titleKey: "pdfPreview" } },
-    { path: "/pdf-preview/resources/:resourceKey", component: PdfPreviewPage, meta: { titleKey: "pdfPreview" } },
-    { path: "/pdf-preview", component: PdfPreviewPage, meta: { titleKey: "pdfPreview" } },
-    { path: "/invoice-redirect", component: InvoiceRedirectPage, meta: { titleKey: "invoiceRedirect" } },
-    { path: "/payment-bridge", component: PaymentBridgePage, meta: { titleKey: "paymentBridge" } },
+    { path: "/resource-packs/:packId", component: ResourcePackDetailPage, meta: { titleKey: "resourcePackDetail", requiresAuth: true } },
+    { path: "/resource-pack-files/:fileId/preview", component: PdfPreviewPage, meta: { titleKey: "pdfPreview", requiresAuth: true } },
+    { path: "/video-preview/resource-pack-files/:fileId", component: VideoPreviewPage, meta: { titleKey: "videoPreview", requiresAuth: true } },
+    { path: "/credentials", component: CredentialsPage, meta: { titleKey: "credentials", requiresAuth: true } },
+    { path: "/certificates", component: CertificatesPage, meta: { titleKey: "certificates", requiresAuth: true } },
+    { path: "/orders", component: OrdersPage, meta: { titleKey: "orders", requiresAuth: true } },
+    { path: "/messages", component: MessagesPage, meta: { titleKey: "messages", requiresAuth: true } },
+    { path: "/settings", component: SettingsPage, meta: { titleKey: "settings", requiresAuth: true } },
+    { path: "/quizzes", component: QuizPage, meta: { titleKey: "quiz", requiresAuth: true } },
+    { path: "/pdf-preview/lessons/:lessonId", component: PdfPreviewPage, meta: { titleKey: "pdfPreview", requiresAuth: true } },
+    { path: "/pdf-preview/resources/:resourceKey", component: PdfPreviewPage, meta: { titleKey: "pdfPreview", requiresAuth: true } },
+    { path: "/pdf-preview", component: PdfPreviewPage, meta: { titleKey: "pdfPreview", requiresAuth: true } },
+    { path: "/invoice-redirect", component: InvoiceRedirectPage, meta: { titleKey: "invoiceRedirect", requiresAuth: true } },
+    { path: "/payment-bridge", component: PaymentBridgePage, meta: { titleKey: "paymentBridge", requiresAuth: true } },
     { path: "/:pathMatch(.*)*", component: NotFoundPage, meta: { titleKey: "notFound" } },
   ],
 })
 
 router.beforeEach((to) => {
+  if (to.meta.requiresAuth && !getAccessToken()) {
+    rememberPostLoginRedirect(to.fullPath)
+    return { path: "/login", replace: true }
+  }
+
   if (to.path === "/exams/signup" && getAccessToken()) {
     void useUser().fetchUser()
   }

@@ -413,7 +413,7 @@ export const zh = {
     currentStageNameLabel: "当前阶段名称",
     currentStageStatusLabel: "阶段状态",
     stageOrderLabel: "阶段",
-    unitStatusLabel: "当前课时单元",
+    unitStatusLabel: "当前课程单元",
     nextStepUnitStatusLabel: "下一步单元状态",
     nextStepActionLabel: "建议动作",
     phaseLearning: "学习",
@@ -863,7 +863,7 @@ export const zh = {
   },
   credentialsPage: {
     title: "资格申请",
-    subtitle: "浏览可用的认证资格并提交申请。",
+    subtitle: "查看可申请项目并提交资格申请。",
     myApplications: "我的申请",
     noApplications: "暂无申请",
     appStatusPending: "待审核",
