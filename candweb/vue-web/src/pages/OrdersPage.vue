@@ -582,8 +582,8 @@ onMounted(() => {
               <p class="text-sm text-muted-foreground">{{ order.date }}</p>
             </div>
           </div>
-          <div class="grid w-full grid-cols-[1fr_auto_auto_auto_auto] items-center gap-x-3 gap-y-3 pl-16 md:w-auto md:shrink-0 md:grid-cols-[130px_140px_36px_72px_24px] md:gap-x-5 md:pl-0">
-            <div class="flex justify-start md:justify-center">
+          <div class="flex w-full flex-wrap items-center justify-end gap-x-3 gap-y-3 pl-16 md:grid md:w-auto md:shrink-0 md:grid-cols-[130px_140px_36px_112px_24px] md:gap-x-5 md:pl-0">
+            <div class="mr-auto flex justify-start md:mr-0 md:justify-center">
               <span class="badge text-xs" :class="orderStatusBadgeClass(order)">
                 {{ timelineStatusLabelWithDiagnostics(t, 'MALL_ORDER', order.order_status) }}
               </span>
@@ -600,11 +600,11 @@ onMounted(() => {
               <span class="sr-only">{{ t.orders.cancelOrder }}</span>
             </button>
             <span v-else class="h-9 w-9" />
-            <button v-if="order.canViewInvoice" @click.stop="viewInvoice(order.invoiceOrderId)" class="inline-flex h-9 min-w-[72px] items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-primary/10 px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/20">
+            <button v-if="order.canViewInvoice" @click.stop="viewInvoice(order.invoiceOrderId)" class="inline-flex h-9 w-[112px] items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-primary/10 px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/20">
               <Loader2 v-if="invoiceLoading === order.invoiceOrderId" class="h-4 w-4 animate-spin" />
               {{ t.orders.viewInvoice }}
             </button>
-            <span v-else class="h-9 w-[72px]" />
+            <span v-else class="h-9 w-[112px]" />
 
             <Loader2 v-if="detailLoadingOrderId === order.id" class="h-5 w-5 animate-spin text-muted-foreground" />
             <ChevronRight v-else class="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1" />

@@ -750,7 +750,7 @@ export const en: AppTranslations = {
     orderType: "Order type",
     orderStatus: "Order status",
     continuePayment: "Continue payment",
-    viewInvoice: "Request Invoice",
+    viewInvoice: "View Invoice",
     free: "Free",
     noOrders: "No orders yet",
     detailTitle: "Order Details",

@@ -748,7 +748,7 @@ export const zh = {
     orderType: "订单类型",
     orderStatus: "订单状态",
     continuePayment: "继续支付",
-    viewInvoice: "去开票",
+    viewInvoice: "查看发票",
     free: "免费",
     noOrders: "暂无订单记录",
     detailTitle: "订单详情",
