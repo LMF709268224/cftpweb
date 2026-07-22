@@ -39,16 +39,16 @@ export function normalizeGender(value: unknown) {
 
 export function normalizeInternationalPhone(value: unknown) {
   const trimmed = String(value || "").trim()
+  if (!/^\+?[\d\s()-]*$/.test(trimmed)) return trimmed
   const hasLeadingPlus = trimmed.startsWith("+")
-  const digits = trimmed.replace(/\D/g, "").slice(0, 15)
+  const digits = trimmed.replace(/\D/g, "")
   return `${hasLeadingPlus ? "+" : ""}${digits}`
 }
 
 export function isValidInternationalPhone(value: unknown, required = false) {
   const normalized = normalizeInternationalPhone(value)
   if (!normalized) return !required
-  const digits = normalized.replace(/\D/g, "")
-  return digits.length >= 7 && digits.length <= 15 && /^\+?\d+$/.test(normalized)
+  return /^\+[1-9]\d{6,14}$/.test(normalized)
 }
 
 export function normalizePostalCode(value: unknown) {
