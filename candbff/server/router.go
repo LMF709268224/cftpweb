@@ -48,6 +48,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 	})
 
 	r.With(normalTimeout).Get("/api/public/config", h.GetPublicConfig)
+	r.With(normalTimeout).Get("/api/public/config/organization", h.GetOrganizationConfig)
 
 	r.Route("/api/auth", func(r chi.Router) {
 		r.Use(normalTimeout)

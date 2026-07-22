@@ -70,7 +70,7 @@ func (h *Handler) SignupExam(w http.ResponseWriter, r *http.Request) {
 		CandidateLastName:   input.LastName,
 		CandidateEmail:      input.Email,
 		CandidateHomePhone:  input.HomePhone,
-		CandidateWorkPhone:  input.WorkPhone,
+		CandidateWorkPhone:  input.Phone,
 		CandidateGender:     input.Gender,
 		CandidateBirthdate:  input.Birthdate,
 		CandidateCountry:    input.Country,

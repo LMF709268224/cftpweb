@@ -8,9 +8,9 @@ import (
 	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
 	gexampb "github.com/afnandelfin620-star/cftptest/cftp/gexam"
 	lmspb "github.com/afnandelfin620-star/cftptest/cftp/glms"
+	gmailpb "github.com/afnandelfin620-star/cftptest/cftp/gmail"
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
 	gmbrpb "github.com/afnandelfin620-star/cftptest/cftp/gmbr"
-	gmailpb "github.com/afnandelfin620-star/cftptest/cftp/gmail"
 	gmidpb "github.com/afnandelfin620-star/cftptest/cftp/gmid"
 	gmsgpb "github.com/afnandelfin620-star/cftptest/cftp/gmsg"
 	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
@@ -46,6 +46,7 @@ type Handler struct {
 	CasdoorClientId     string
 	CasdoorClientSecret string
 	CasdoorAppName      string
+	CasdoorOrgName      string
 }
 
 func New(
@@ -64,6 +65,7 @@ func New(
 	casdoorClientId string,
 	casdoorClientSecret string,
 	casdoorAppName string,
+	casdoorOrgName string,
 ) *Handler {
 	return &Handler{
 		Lms:                 lms,
@@ -81,6 +83,7 @@ func New(
 		CasdoorClientId:     casdoorClientId,
 		CasdoorClientSecret: casdoorClientSecret,
 		CasdoorAppName:      casdoorAppName,
+		CasdoorOrgName:      casdoorOrgName,
 	}
 }
 

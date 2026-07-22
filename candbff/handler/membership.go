@@ -12,9 +12,9 @@ func (h *Handler) ListMembershipPlans(w http.ResponseWriter, r *http.Request) {
 	page := parseCursorPage(r, 20)
 
 	resp, err := h.Gmbr.ListMemberships(r.Context(), &gmbrpb.ListMembershipsRequest{
-		PageSize: page.PageSize,
+		PageSize:  page.PageSize,
 		SortOrder: gmbrpb.SortOrder(page.Sort),
-		Cursor:   page.Cursor,
+		Cursor:    page.Cursor,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -88,8 +88,8 @@ func (h *Handler) ListUserMemberships(w http.ResponseWriter, r *http.Request) {
 		Filters: &gmbrpb.UserMembershipFilters{
 			CandidateUlid: candidateID,
 		},
-		Cursor:   page.Cursor,
-		PageSize: page.PageSize,
+		Cursor:    page.Cursor,
+		PageSize:  page.PageSize,
 		SortOrder: gmbrpb.SortOrder(page.Sort),
 	})
 	if err != nil {
@@ -120,8 +120,8 @@ func (h *Handler) ListMembershipBillings(w http.ResponseWriter, r *http.Request)
 			CandidateUlid:        candidateID,
 			MembershipRecordUlid: membershipRecordULID,
 		},
-		Cursor:   page.Cursor,
-		PageSize: page.PageSize,
+		Cursor:    page.Cursor,
+		PageSize:  page.PageSize,
 		SortOrder: gmbrpb.SortOrder(page.Sort),
 	})
 	if err != nil {

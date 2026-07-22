@@ -59,6 +59,7 @@ func (s *Server) Run(ctx context.Context) error {
 		s.config.SecretConfig.Casdoor.ClientID,
 		s.config.SecretConfig.Casdoor.ClientSecret,
 		s.config.SecretConfig.Casdoor.AppName,
+		s.config.SecretConfig.Casdoor.OrgName,
 	)
 	serverErr := s.serveHTTP(s.buildRouter(h))
 

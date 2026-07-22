@@ -131,8 +131,8 @@ func normalizeAndValidateUserProfileInput(input *UserProfileInput) error {
 	input.FirstName = trimProfileText(input.FirstName, profileNameTextMax)
 	input.LastName = trimProfileText(input.LastName, profileNameTextMax)
 	input.Phone = normalizeProfilePhone(input.Phone)
+	input.Phone = normalizeProfilePhone(input.Phone)
 	input.HomePhone = normalizeProfilePhone(input.HomePhone)
-	input.WorkPhone = normalizeProfilePhone(input.WorkPhone)
 	input.Country = trimProfileText(input.Country, profileShortTextMax)
 	input.Province = trimProfileText(input.Province, profileShortTextMax)
 	input.City = trimProfileText(input.City, profileShortTextMax)
@@ -152,8 +152,8 @@ func normalizeAndValidateUserProfileInput(input *UserProfileInput) error {
 	if !validProfilePhone(input.HomePhone, false) {
 		return fmt.Errorf("home_phone is invalid")
 	}
-	if !validProfilePhone(input.WorkPhone, false) {
-		return fmt.Errorf("work_phone is invalid")
+	if !validProfilePhone(input.Phone, false) {
+		return fmt.Errorf("phone is invalid")
 	}
 	if !validProfilePostalCode(input.PostalCode, false) {
 		return fmt.Errorf("postal_code is invalid")
@@ -189,7 +189,7 @@ func normalizeAndValidateSignupExamInput(input *SignupExamInput) error {
 	input.LastName = trimProfileText(input.LastName, profileNameTextMax)
 	input.Email = trimProfileText(input.Email, profileShortTextMax)
 	input.HomePhone = normalizeProfilePhone(input.HomePhone)
-	input.WorkPhone = normalizeProfilePhone(input.WorkPhone)
+	input.Phone = normalizeProfilePhone(input.Phone)
 	rawGender := strings.TrimSpace(input.Gender)
 	input.Gender = normalizeProfileGender(input.Gender)
 	input.Country = trimProfileText(input.Country, profileShortTextMax)
@@ -201,8 +201,8 @@ func normalizeAndValidateSignupExamInput(input *SignupExamInput) error {
 	if !validProfilePhone(input.HomePhone, false) {
 		return fmt.Errorf("home_phone is invalid")
 	}
-	if !validProfilePhone(input.WorkPhone, false) {
-		return fmt.Errorf("work_phone is invalid")
+	if !validProfilePhone(input.Phone, false) {
+		return fmt.Errorf("phone is invalid")
 	}
 	if rawGender == "" || input.Gender == "" {
 		return fmt.Errorf("gender is invalid")
