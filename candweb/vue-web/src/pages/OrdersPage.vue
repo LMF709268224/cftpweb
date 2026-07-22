@@ -583,14 +583,14 @@ onMounted(() => {
               <p class="text-sm text-muted-foreground">{{ order.date }}</p>
             </div>
           </div>
-          <div class="flex w-full flex-wrap items-center justify-end gap-x-3 gap-y-3 pl-16 md:grid md:w-auto md:shrink-0 md:grid-cols-[130px_140px_36px_112px_24px] md:gap-x-5 md:pl-0">
+          <div class="flex w-full flex-wrap items-center justify-end gap-x-3 gap-y-3 pl-16 md:grid md:w-auto md:shrink-0 md:grid-cols-[130px_148px_36px_112px_24px] md:gap-x-5 md:pl-0">
             <div class="mr-auto flex justify-start md:mr-0 md:justify-center">
               <span class="badge text-xs" :class="orderStatusBadgeClass(order)">
                 {{ timelineStatusLabelWithDiagnostics(t, 'MALL_ORDER', order.order_status) }}
               </span>
             </div>
             <div class="text-right">
-              <button v-if="canContinuePayment(order)" @click.stop="openOrderDetail(order)" class="inline-flex h-8 items-center justify-center rounded-lg bg-primary/10 px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/20">
+              <button v-if="canContinuePayment(order)" @click.stop="openOrderDetail(order)" class="inline-flex h-8 min-w-[148px] items-center justify-center whitespace-nowrap rounded-lg bg-primary/10 px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/20 md:w-full">
                 {{ t.orders.continuePayment }}
               </button>
               <p v-else class="text-lg font-semibold text-card-foreground">{{ order.amount }}</p>
