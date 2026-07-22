@@ -252,6 +252,7 @@ export const zh = {
     duration: "时长",
     months: "个月",
     courseDiscountCode: "专属课程折扣码：",
+    purchaseOrUpgrade: "购买或升级",
     noPlans: "暂无可展示的会员等级。",
     noHistory: "暂无数据",
     noBillings: "暂无数据",

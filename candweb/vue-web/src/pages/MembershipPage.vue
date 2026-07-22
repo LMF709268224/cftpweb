@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
-import { AlertCircle, Check, ChevronDown, Crown, Loader2, Percent, RefreshCw, Shield, Star, XCircle } from "lucide-vue-next"
+import { RouterLink } from "vue-router"
+import { AlertCircle, Check, ChevronDown, Crown, Loader2, Percent, RefreshCw, Shield, ShoppingBag, Star, XCircle } from "lucide-vue-next"
 import { toast } from "vue-sonner"
 import AppShell from "@/components/AppShell.vue"
 import AppPagination from "@/components/AppPagination.vue"
@@ -482,20 +483,20 @@ onMounted(() => {
               </div>
               <button
                 v-if="hasActiveMembership && currentRecord.membership_record_ulid"
-                class="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 px-5 py-3 font-bold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                class="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-300 bg-red-50 px-5 py-3 font-bold text-red-700 shadow-sm transition-colors hover:border-red-400 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 disabled:shadow-none"
                 :disabled="cancelling || !canCancelMembership"
                 type="button"
                 @click="cancelMembership"
               >
                 <Loader2 v-if="cancelling" class="h-4 w-4 animate-spin" />
-                <XCircle v-else class="h-4 w-4" />
+                <XCircle v-else class="h-5 w-5 shrink-0" :stroke-width="2.5" />
                 {{ cancelMembershipButtonLabel }}
               </button>
             </div>
           </section>
 
           <section v-if="activeTab === 'levels'" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            <div v-for="plan in plans" :key="plan.membership_ulid || plan.membership_gpath" class="relative overflow-hidden rounded-[18px] bg-white p-5 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:shadow-md">
+            <div v-for="plan in plans" :key="plan.membership_ulid || plan.membership_gpath" class="relative flex h-full flex-col overflow-hidden rounded-[18px] bg-white p-5 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:shadow-md">
               <div class="absolute left-0 top-0 h-full w-1" :class="Number(plan.tier_level || 0) >= 3 ? 'bg-amber-500' : Number(plan.tier_level || 0) >= 2 ? 'bg-primary' : 'bg-slate-300'" />
               <div class="mb-4 flex items-start justify-between gap-3">
                 <div>
@@ -521,12 +522,16 @@ onMounted(() => {
                 <Percent class="h-4 w-4" />
                 <span>{{ t.membership.courseDiscountCode }}{{ plan.course_discount_coupon }}</span>
               </div>
-              <ul class="space-y-2">
+              <ul class="flex-1 space-y-2">
                 <li v-for="feature in parseFeatures(plan)" :key="feature" class="flex items-center gap-2 text-sm">
                   <Check class="h-4 w-4 shrink-0 text-emerald-500" />
                   <span class="text-card-foreground">{{ feature }}</span>
                 </li>
               </ul>
+              <RouterLink to="/certifications" class="btn btn-primary mt-5 w-full rounded-xl">
+                <ShoppingBag class="h-4 w-4" />
+                {{ t.membership.purchaseOrUpgrade }}
+              </RouterLink>
             </div>
             <div v-if="!plans.length" class="rounded-[16px] bg-white p-8 text-center text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)] md:col-span-2 xl:col-span-3">
               {{ t.membership.noPlans }}

@@ -254,6 +254,7 @@ export const en: AppTranslations = {
     duration: "Duration",
     months: "months",
     courseDiscountCode: "Course Discount Code: ",
+    purchaseOrUpgrade: "Purchase or Upgrade",
     noPlans: "No membership plans are available.",
     noHistory: "No data",
     noBillings: "No data",
