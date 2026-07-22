@@ -1066,7 +1066,7 @@ func (h *Handler) activeBundleOrder(ctx context.Context, candidateID string, bun
 				}
 
 				// Return nil for preview so UI only shows Cancel, not Pay for another bundle
-				return active, nil 
+				return active, nil
 			}
 		}
 
@@ -1908,6 +1908,12 @@ func (h *Handler) InitiatePayment(w http.ResponseWriter, r *http.Request) {
 	if !requireRequestField(w, req.BizType, "biz_type") || !requireRequestField(w, req.BizRefUlid, "biz_ref_ulid") {
 		return
 	}
+	req.SuccessUrl = strings.TrimSpace(req.SuccessUrl)
+	req.CancelUrl = strings.TrimSpace(req.CancelUrl)
+	if err := validatePaymentReturnURLs(r, req.SuccessUrl, req.CancelUrl); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, err.Error())
+		return
+	}
 	if err := h.verifyCandidatePaymentBizRef(r.Context(), candidateID, req.BizType, req.BizRefUlid); err != nil {
 		writeCandidateAccessError(w, err)
 		return
@@ -1916,8 +1922,8 @@ func (h *Handler) InitiatePayment(w http.ResponseWriter, r *http.Request) {
 	resp, err := h.Mall.InitiatePayment(r.Context(), &mallpb.InitiatePaymentRequest{
 		BizType:    req.BizType,
 		BizRefUlid: req.BizRefUlid,
-		SuccessUrl: strings.TrimSpace(req.SuccessUrl),
-		CancelUrl:  strings.TrimSpace(req.CancelUrl),
+		SuccessUrl: req.SuccessUrl,
+		CancelUrl:  req.CancelUrl,
 		PromoCodes: compactPromoCodes(req.PromoCodes, req.CouponCodes),
 	})
 	if err != nil {

@@ -9,9 +9,33 @@ export type PendingPaymentSession = {
 
 export const PENDING_PAYMENT_SESSION_KEY = "pending_payment_session"
 
+const PAYMENT_RETURN_VALIDATION_ORIGIN = "https://payment-return.invalid"
+
+function internalPaymentReturnPath(value: unknown) {
+  if (typeof value !== "string") return ""
+  const candidate = value.trim()
+  if (!candidate.startsWith("/") || candidate.startsWith("//")) return ""
+
+  try {
+    const parsed = new URL(candidate, PAYMENT_RETURN_VALIDATION_ORIGIN)
+    if (parsed.origin !== PAYMENT_RETURN_VALIDATION_ORIGIN) return ""
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`
+  } catch {
+    return ""
+  }
+}
+
+export function sanitizePaymentReturnPath(value: unknown, fallback = "") {
+  return internalPaymentReturnPath(value) || internalPaymentReturnPath(fallback)
+}
+
 export function storePendingPaymentSession(session: PendingPaymentSession) {
   if (typeof window === "undefined") return
-  window.localStorage.setItem(PENDING_PAYMENT_SESSION_KEY, JSON.stringify(session))
+  const normalized = { ...session }
+  if (normalized.returnPath !== undefined) {
+    normalized.returnPath = sanitizePaymentReturnPath(normalized.returnPath)
+  }
+  window.localStorage.setItem(PENDING_PAYMENT_SESSION_KEY, JSON.stringify(normalized))
 }
 
 export function readPendingPaymentSession(): PendingPaymentSession | null {
@@ -22,7 +46,11 @@ export function readPendingPaymentSession(): PendingPaymentSession | null {
     const parsed = JSON.parse(raw) as PendingPaymentSession
     if (!parsed) return null
     if (parsed.paymentKey !== undefined && typeof parsed.paymentKey !== "string") return null
-    return parsed
+    if (parsed.returnPath !== undefined && typeof parsed.returnPath !== "string") return null
+    return {
+      ...parsed,
+      returnPath: sanitizePaymentReturnPath(parsed.returnPath),
+    }
   } catch {
     return null
   }

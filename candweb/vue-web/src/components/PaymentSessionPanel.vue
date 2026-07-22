@@ -2,7 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { AlertTriangle, ExternalLink, Loader2 } from "lucide-vue-next"
 import { apiClient } from "@/lib/apiClient"
-import { stripeCheckoutUrl, stripeEmbeddedClientSecret } from "@/lib/payment"
+import { sanitizePaymentReturnPath, stripeCheckoutUrl, stripeEmbeddedClientSecret } from "@/lib/payment"
 import { useTranslation } from "@/lib/language"
 
 declare global {
@@ -77,7 +77,8 @@ function destroyStripeCheckout(clearSecret = false) {
 }
 
 function paymentReturnUrl(paymentStatus: "success" | "cancelled") {
-  const returnUrl = new URL(props.returnPath || "/orders", window.location.origin)
+  const returnPath = sanitizePaymentReturnPath(props.returnPath, "/orders") || "/orders"
+  const returnUrl = new URL(returnPath, window.location.origin)
   returnUrl.searchParams.set("payment_status", paymentStatus)
   returnUrl.searchParams.set("payment_action", props.source || "payment")
   returnUrl.searchParams.set("order_id", props.orderId || props.bizRefUlid || "")

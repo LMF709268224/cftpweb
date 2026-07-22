@@ -30,6 +30,9 @@ const (
 
 	// STRIPE_PUBLISHABLE_KEY  Stripe publishable key，可安全暴露给浏览器用于初始化 Stripe.js
 	EnvStripePublishableKey = "STRIPE_PUBLISHABLE_KEY"
+	// PAYMENT_RETURN_ALLOWED_ORIGINS 支付成功/取消回跳允许的 origin，逗号分隔。
+	// 未设置时只允许当前请求的 origin。
+	EnvPaymentReturnAllowedOrigins = "PAYMENT_RETURN_ALLOWED_ORIGINS"
 
 	// ROLE_STUDENT_BASIC 学生基础角色名，默认为 "role_student_basic"
 	EnvRoleStudentBasic = "ROLE_STUDENT_BASIC"

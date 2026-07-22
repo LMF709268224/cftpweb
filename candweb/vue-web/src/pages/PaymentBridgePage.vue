@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { ArrowLeft, Wallet } from "lucide-vue-next"
 import PaymentSessionPanel from "@/components/PaymentSessionPanel.vue"
-import { clearPendingPaymentSession, readPendingPaymentSession, type PendingPaymentSession } from "@/lib/payment"
+import { clearPendingPaymentSession, readPendingPaymentSession, sanitizePaymentReturnPath, type PendingPaymentSession } from "@/lib/payment"
 import { useTranslation } from "@/lib/language"
 
 const route = useRoute()
@@ -19,13 +19,14 @@ const orderLabel = computed(() => session.value.orderId || session.value.bizRefU
 function hydrateSession() {
   const stored = readPendingPaymentSession()
   clearPendingPaymentSession()
+  const returnPath = sanitizePaymentReturnPath(route.query.returnPath) || sanitizePaymentReturnPath(stored?.returnPath)
   session.value = {
     paymentKey: String(route.query.paymentKey || stored?.paymentKey || "").trim(),
     bizType: String(route.query.bizType || stored?.bizType || "").trim(),
     bizRefUlid: String(route.query.bizRefUlid || stored?.bizRefUlid || "").trim(),
     orderId: String(route.query.orderId || stored?.orderId || stored?.bizRefUlid || "").trim(),
     source: String(route.query.source || stored?.source || "").trim(),
-    returnPath: String(route.query.returnPath || stored?.returnPath || "").trim(),
+    returnPath,
   }
   ready.value = true
 }
