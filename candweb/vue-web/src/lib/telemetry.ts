@@ -1,3 +1,5 @@
+import { getAccessToken } from "./authStorage"
+
 export type TelemetryEvent = {
   event_name: string
   payload?: Record<string, unknown>
@@ -51,19 +53,31 @@ class TelemetryClient {
     const events = this.queue.splice(0, this.maxBatchSize)
 
     try {
-      // If token is missing, we could fallback to public endpoint, but let's try authenticated first
-      // Assuming api client handles auth headers automatically if we use fetch
-      const token = localStorage.getItem("token")
+      const token = getAccessToken()
       const targetEndpoint = token ? this.endpoint : this.publicEndpoint
 
-      const response = await fetch(targetEndpoint, {
+      let response = await fetch(targetEndpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ events }),
+        credentials: "include",
       })
+
+      // An expired login must not keep the telemetry batch in an endless retry loop.
+      if (token && (response.status === 401 || response.status === 403)) {
+        response = await fetch(this.publicEndpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ events }),
+          credentials: "include",
+        })
+      }
+
       if (!response.ok) {
         if (response.status === 400 || response.status === 413) {
           console.warn(`Telemetry batch was rejected with HTTP ${response.status}`)
@@ -87,7 +101,7 @@ class TelemetryClient {
 
   private flushSync() {
     if (this.queue.length === 0) return
-    const token = localStorage.getItem("token")
+    const token = getAccessToken()
     const targetEndpoint = token ? this.endpoint : this.publicEndpoint
 
     while (this.queue.length > 0) {
@@ -100,10 +114,11 @@ class TelemetryClient {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body,
           keepalive: true,
+          credentials: "include",
         }).catch(() => {
           // The page is unloading, so there is no reliable retry path.
         })
