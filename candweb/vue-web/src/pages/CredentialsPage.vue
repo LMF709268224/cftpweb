@@ -119,6 +119,7 @@ async function handleApplicationPageChange() {
     applicationHasMore.value = false
   }
   await fetchApplications({ showLoading: true })
+  window.scrollTo({ top: 0, behavior: "smooth" })
 }
 
 function handleApplyClick(def: any, appId = "") {

@@ -351,6 +351,7 @@ function handleHistoryPaginationChange() {
     resetHistoryPagination()
   }
   void loadMembershipHistory()
+  window.scrollTo({ top: 0, behavior: "smooth" })
 }
 
 function handleBillingPaginationChange() {
@@ -360,6 +361,7 @@ function handleBillingPaginationChange() {
     resetBillingPagination()
   }
   void loadMembershipBillings()
+  window.scrollTo({ top: 0, behavior: "smooth" })
 }
 
 onMounted(() => {
