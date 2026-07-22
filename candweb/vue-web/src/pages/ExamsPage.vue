@@ -405,6 +405,7 @@ function handlePaginationChange() {
     resetCursorPagination()
   }
   void loadExams(activeTab.value, search.value)
+  window.scrollTo({ top: 0, behavior: "smooth" })
 }
 
 const examsPolling = usePolling(
