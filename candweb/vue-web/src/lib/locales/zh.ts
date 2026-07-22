@@ -211,6 +211,7 @@ export const zh = {
     tabsOverview: "当前会员",
     tabsHistory: "会员历史",
     tabsBillings: "账单记录",
+    tabsAriaLabel: "会员内容标签页",
     membershipRecord: "会员记录",
     autoRenewCancelled: "已取消续费",
     autoRenewEnabled: "已开启",

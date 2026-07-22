@@ -436,7 +436,7 @@ onMounted(() => {
               <select
                 v-model="activeTab"
                 class="input h-11 cursor-pointer appearance-none rounded-xl border-slate-200 bg-slate-50 pr-10 font-semibold text-foreground shadow-sm shadow-slate-100/70 focus:bg-white"
-                aria-label="Membership tabs"
+                :aria-label="t.membership.tabsAriaLabel"
               >
                 <option v-for="tab in tabs" :key="tab.id" :value="tab.id">
                   {{ tab.label }}

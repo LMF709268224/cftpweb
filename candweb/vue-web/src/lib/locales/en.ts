@@ -213,6 +213,7 @@ export const en: AppTranslations = {
     tabsOverview: "Current",
     tabsHistory: "History",
     tabsBillings: "Billings",
+    tabsAriaLabel: "Membership tabs",
     membershipRecord: "Membership record",
     autoRenewCancelled: "Auto-renew cancelled",
     autoRenewEnabled: "Enabled",
