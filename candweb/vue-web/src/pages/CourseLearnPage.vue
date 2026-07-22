@@ -1675,7 +1675,7 @@ watch(selectedMaterial, () => {
               {{ t.learning.currentStageStatusLabel }}: {{ stageStatusLabel(currentStageStatus) }}
             </span>
             <span
-              v-if="!isPipelineTerminal && currentUnitStatus !== undefined && currentUnitStatus !== ''"
+              v-if="!isPipelineTerminal && currentUnitStatus !== undefined"
               :class="['badge', timelineStatusBadgeClassForStatus('COURSE_UNIT', currentUnitStatus)]"
             >
               {{ t.learning.unitStatusLabel }}: {{ courseUnitStatusLabel(currentUnitStatus) }}

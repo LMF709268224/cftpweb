@@ -322,6 +322,8 @@ export const ADMIN_PIPELINE_STATUS_ENUM_NAMES: StatusEnumNameMap = {
 }
 
 export const STAGE_STATUS_LABELS: StatusLabelMap = {
+  "": "learning.statusWaitCandidate",
+  "0": "learning.statusWaitCandidate",
   "1": "learning.statusWaitCandidate",
   "2": "learning.statusRunning",
   "3": "learning.statusCompleted",
@@ -331,13 +333,16 @@ export const STAGE_STATUS_LABELS: StatusLabelMap = {
 }
 
 export const STAGE_STATUS_ENUM_NAMES: StatusEnumNameMap = {
-  "0": "STAGE_STATUS_UNSPECIFIED",
+  "": "STAGE_STATUS_WAIT_CANDIDATE",
+  "0": "STAGE_STATUS_WAIT_CANDIDATE",
   "1": "STAGE_STATUS_WAIT_CANDIDATE",
   "2": "STAGE_STATUS_RUNNING",
   "3": "STAGE_STATUS_COMPLETED",
 }
 
 export const COURSE_UNIT_STATUS_LABELS: StatusLabelMap = {
+  "": "learning.statusWaitingStudy",
+  "0": "learning.statusWaitingStudy",
   "1": "learning.statusWaitingStudy",
   "2": "learning.statusWaitingSignupExam",
   "3": "learning.statusExamOpen",
@@ -353,7 +358,8 @@ export const COURSE_UNIT_STATUS_LABELS: StatusLabelMap = {
 }
 
 export const COURSE_UNIT_STATUS_ENUM_NAMES: StatusEnumNameMap = {
-  "0": "COURSE_UNIT_STATUS_UNSPECIFIED",
+  "": "COURSE_UNIT_STATUS_WAITING_STUDY",
+  "0": "COURSE_UNIT_STATUS_WAITING_STUDY",
   "1": "COURSE_UNIT_STATUS_WAITING_STUDY",
   "2": "COURSE_UNIT_STATUS_WAITING_SIGNUP_EXAM",
   "3": "COURSE_UNIT_STATUS_EXAM_OPEN",
