@@ -15,7 +15,6 @@ import (
 )
 
 const (
-	userPropWorkPhone  = "work_phone"
 	userPropProvince   = "province"
 	userPropPostalCode = "postal_code"
 	userPropRealName   = "realName"
@@ -44,29 +43,29 @@ func (h *Handler) GetUserMe(w http.ResponseWriter, r *http.Request) {
 	province := firstNonEmpty(addressLine(fullUser.Address, 1), getUserProperty(fullUser, userPropProvince))
 
 	WriteJSON(w, http.StatusOK, UserMeRsp{
-		Name:        fullUser.Name,
-		Email:       fullUser.Email,
-		DisplayName: fullUser.DisplayName,
-		FirstName:   fullUser.FirstName,
-		LastName:    fullUser.LastName,
-		Phone:       fullUser.Phone,
-		HomePhone:   getUserProperty(fullUser, "home_phone"),
-		WorkPhone:   getUserProperty(fullUser, userPropWorkPhone),
-		Country:     fullUser.Region,
-		Province:    province,
-		City:        fullUser.Location,
-		Region:      fullUser.Region,
-		Location:    fullUser.Location,
-		Address:     fullUser.Address,
-		AddressText: addressText,
-		PostalCode:  getUserProperty(fullUser, userPropPostalCode),
-		Affiliation: fullUser.Affiliation,
-		Title:       fullUser.Title,
-		RealName:    userRealName(fullUser),
-		Bio:         fullUser.Bio,
-		Gender:      fullUser.Gender,
-		Birthday:    fullUser.Birthday,
-		Education:   fullUser.Education,
+		Name:             fullUser.Name,
+		Email:            fullUser.Email,
+		DisplayName:      fullUser.DisplayName,
+		FirstName:        fullUser.FirstName,
+		LastName:         fullUser.LastName,
+		PhoneCountryCode: fullUser.CountryCode,
+		Phone:            fullUser.Phone,
+		HomePhone:        getUserProperty(fullUser, "home_phone"),
+		Country:          fullUser.Region,
+		Province:         province,
+		City:             fullUser.Location,
+		Region:           fullUser.Region,
+		Location:         fullUser.Location,
+		Address:          fullUser.Address,
+		AddressText:      addressText,
+		PostalCode:       getUserProperty(fullUser, userPropPostalCode),
+		Affiliation:      fullUser.Affiliation,
+		Title:            fullUser.Title,
+		RealName:         userRealName(fullUser),
+		Bio:              fullUser.Bio,
+		Gender:           fullUser.Gender,
+		Birthday:         fullUser.Birthday,
+		Education:        fullUser.Education,
 	})
 }
 
@@ -97,7 +96,8 @@ func (h *Handler) UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
 	fullUser.DisplayName = input.DisplayName
 	fullUser.FirstName = input.FirstName
 	fullUser.LastName = input.LastName
-	fullUser.Phone = firstNonEmpty(input.HomePhone, input.Phone)
+	fullUser.CountryCode = input.PhoneCountryCode
+	fullUser.Phone = input.Phone
 	fullUser.Region = input.Country
 	fullUser.Location = input.City
 	fullUser.Address = addressFromProfile(input.Address, input.Province)
@@ -108,7 +108,7 @@ func (h *Handler) UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
 	fullUser.Gender = input.Gender
 	fullUser.Birthday = input.Birthday
 	fullUser.Education = input.Education
-	setUserProperty(fullUser, userPropWorkPhone, input.WorkPhone)
+
 	setUserProperty(fullUser, userPropProvince, input.Province)
 	setUserProperty(fullUser, userPropPostalCode, input.PostalCode)
 	setUserProperty(fullUser, userPropRealName, input.RealName)

@@ -8,6 +8,8 @@ export interface UserProfile {
   display_name: string
   email: string
   phone: string
+  work_phone_country_code?: string
+  work_phone?: string
   avatar: string
   [key: string]: any
 }

@@ -24,7 +24,8 @@ const profile = reactive({
   firstName: "",
   lastName: "",
   homePhone: "",
-  workPhone: "",
+  phoneCountryCode: "",
+  phone: "",
   gender: "",
   birthday: "",
   country: "",
@@ -49,6 +50,7 @@ const resendCodeText = computed(() => t.value.settings.resendCode.replace('{{sec
 let emailCodeInterval: number | undefined
 const selectedCountryCode = ref("")
 const selectedProvinceCode = ref("")
+const orgPhonePrefixes = ref<{ code: string, dialCode: string, name: string }[]>([])
 const countryOptions = ref<CountryOption[]>([])
 const provinceOptions = ref<any[]>([])
 const cityOptions = ref<any[]>([])
@@ -225,7 +227,7 @@ function sanitizeProfileForm() {
   profile.education = trimToMax(profile.education, PROFILE_TEXT_LIMITS.short)
   profile.bio = trimToMax(profile.bio, PROFILE_TEXT_LIMITS.bio)
   profile.homePhone = normalizeInternationalPhone(profile.homePhone)
-  profile.workPhone = normalizeInternationalPhone(profile.workPhone)
+  profile.phone = normalizeInternationalPhone(profile.phone)
 }
 
 watch(
@@ -257,7 +259,8 @@ onMounted(async () => {
       profile.firstName = payload.first_name || ""
       profile.lastName = payload.last_name || ""
       profile.homePhone = payload.home_phone || payload.phone || ""
-      profile.workPhone = payload.work_phone || ""
+      profile.phoneCountryCode = payload.phone_country_code || ""
+      profile.phone = payload.phone || ""
       profile.gender = normalizeGender(payload.gender)
       profile.birthday = normalizeDate(payload.birthday)
       profile.country = payload.country || payload.region || ""
@@ -272,6 +275,22 @@ onMounted(async () => {
       profile.education = payload.education || ""
       await locationReady
       syncLocationSelectionFromProfile()
+      
+      const configRes = await apiClient("/api/public/config/organization")
+      if (configRes && configRes.country_codes) {
+        const allCountries = getCachedCountries()
+        orgPhonePrefixes.value = configRes.country_codes.map((code: string) => {
+          const country = allCountries.find(c => c.isoCode === code)
+          return {
+            code,
+            dialCode: country ? `+${country.phonecode}` : code,
+            name: country ? country.name : code,
+          }
+        })
+        if (!profile.phoneCountryCode && orgPhonePrefixes.value.length > 0) {
+          profile.phoneCountryCode = orgPhonePrefixes.value[0].code
+        }
+      }
     }
   } catch {
     // apiClient handles toast.
@@ -310,7 +329,7 @@ async function handleUpdateProfile() {
       return
     }
   }
-  if (!isValidInternationalPhone(profile.workPhone)) {
+  if (!isValidInternationalPhone(profile.phone)) {
     toast.error(t.value.settings.validationInvalidPhone.replace("{{field}}", t.value.settings.workPhone))
     return
   }
@@ -328,7 +347,8 @@ async function handleUpdateProfile() {
         first_name: profile.firstName,
         last_name: profile.lastName,
         home_phone: profile.homePhone,
-        work_phone: profile.workPhone,
+        phone_country_code: profile.phoneCountryCode,
+        phone: profile.phone,
         gender: profile.gender,
         birthday: profile.birthday,
         country: profile.country,
@@ -511,16 +531,21 @@ async function handleUpdateEmail() {
 
             <label class="space-y-2">
               <span class="text-sm font-medium">{{ t.settings.workPhone }}</span>
-              <input
-                id="settings-work-phone"
-                v-model="profile.workPhone"
-                class="input"
-                type="tel"
-                inputmode="tel"
-                autocomplete="tel"
-                maxlength="24"
-                :placeholder="t.settings.workPhonePlaceholder"
-              />
+              <div class="flex gap-2">
+                <select v-if="orgPhonePrefixes.length > 0" v-model="profile.phoneCountryCode" class="input cursor-pointer w-28 shrink-0">
+                  <option v-for="prefix in orgPhonePrefixes" :key="prefix.code" :value="prefix.code">{{ prefix.dialCode }}</option>
+                </select>
+                <input
+                  id="settings-work-phone"
+                  v-model="profile.phone"
+                  class="input flex-1"
+                  type="tel"
+                  inputmode="tel"
+                  autocomplete="tel"
+                  maxlength="24"
+                  :placeholder="t.settings.workPhonePlaceholder"
+                />
+              </div>
             </label>
             <label class="space-y-2">
               <span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.country }}</span>

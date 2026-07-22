@@ -36,7 +36,8 @@ const formData = reactive({
   city: "",
   address: "",
   postal_code: "",
-  work_phone: "",
+  phone_country_code: "",
+  phone: "",
 })
 const returnTo = computed(() => {
   const value = route.query.returnTo
@@ -219,7 +220,7 @@ function sanitizeSignupForm() {
   formData.city = trimToMax(formData.city, PROFILE_TEXT_LIMITS.short)
   formData.address = trimToMax(formData.address, PROFILE_TEXT_LIMITS.address)
   formData.postal_code = normalizePostalCode(formData.postal_code)
-  formData.work_phone = normalizeInternationalPhone(formData.work_phone)
+  formData.phone = normalizeInternationalPhone(formData.phone)
 }
 
 function normalizeDate(value: unknown) {
@@ -251,7 +252,8 @@ function applyProfileToForm(profile: any) {
   formData.first_name = profile.first_name || realName.firstName || formData.first_name
   formData.middle_name = profile.middle_name || formData.middle_name
   formData.last_name = profile.last_name || realName.lastName || formData.last_name
-  formData.work_phone = profile.work_phone || formData.work_phone
+  formData.phone_country_code = profile.phone_country_code || formData.phone_country_code
+  formData.phone = profile.phone || formData.phone
   formData.country = profile.country || profile.region || formData.country
   formData.province = profile.province || formData.province
   formData.city = profile.city || profile.location || formData.city
@@ -280,7 +282,8 @@ function buildProfilePayload(current: any) {
     first_name: fillOnlyWhenEmpty(current.first_name, formData.first_name),
     last_name: fillOnlyWhenEmpty(current.last_name, formData.last_name),
     home_phone: current.home_phone || current.phone || "",
-    work_phone: fillOnlyWhenEmpty(current.work_phone, formData.work_phone),
+    phone_country_code: fillOnlyWhenEmpty(current.phone_country_code, formData.phone_country_code),
+    phone: fillOnlyWhenEmpty(current.phone, formData.phone),
     gender: fillOnlyWhenEmpty(current.gender, formData.gender),
     birthday: fillOnlyWhenEmpty(normalizeDate(current.birthday), formData.birthdate),
     country: fillOnlyWhenEmpty(current.country || current.region, formData.country),
@@ -377,7 +380,7 @@ async function handleSubmit() {
     toast.error(t.value.examSignup.validationInvalidEmail)
     return
   }
-  if (!isValidInternationalPhone(formData.work_phone)) {
+  if (!isValidInternationalPhone(formData.phone)) {
     toast.error(t.value.examSignup.validationInvalidPhone.replace("{{field}}", t.value.examSignup.formWorkPhone))
     return
   }
@@ -466,7 +469,7 @@ async function handleSubmit() {
             <span class="text-sm font-medium">{{ t.examSignup.formWorkPhone }}</span>
             <input
               id="exam-signup-work-phone"
-              v-model="formData.work_phone"
+              v-model="formData.phone"
               class="input"
               type="tel"
               inputmode="tel"

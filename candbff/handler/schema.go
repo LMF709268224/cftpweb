@@ -24,51 +24,51 @@ type UserInfo struct {
 }
 
 type UserMeRsp struct {
-	Name        string   `json:"name"`
-	Email       string   `json:"email"`
-	DisplayName string   `json:"display_name"`
-	FirstName   string   `json:"first_name"`
-	LastName    string   `json:"last_name"`
-	Phone       string   `json:"phone"`
-	HomePhone   string   `json:"home_phone"`
-	WorkPhone   string   `json:"work_phone"`
-	Country     string   `json:"country"`
-	Province    string   `json:"province"`
-	City        string   `json:"city"`
-	Region      string   `json:"region"`
-	Location    string   `json:"location"`
-	Address     []string `json:"address"`
-	AddressText string   `json:"address_text"`
-	PostalCode  string   `json:"postal_code"`
-	Affiliation string   `json:"affiliation"`
-	Title       string   `json:"title"`
-	RealName    string   `json:"real_name"`
-	Bio         string   `json:"bio"`
-	Gender      string   `json:"gender"`
-	Birthday    string   `json:"birthday"`
-	Education   string   `json:"education"`
+	Name             string   `json:"name"`
+	Email            string   `json:"email"`
+	DisplayName      string   `json:"display_name"`
+	FirstName        string   `json:"first_name"`
+	LastName         string   `json:"last_name"`
+	PhoneCountryCode string   `json:"phone_country_code"`
+	Phone            string   `json:"phone"`
+	HomePhone        string   `json:"home_phone"`
+	Country          string   `json:"country"`
+	Province         string   `json:"province"`
+	City             string   `json:"city"`
+	Region           string   `json:"region"`
+	Location         string   `json:"location"`
+	Address          []string `json:"address"`
+	AddressText      string   `json:"address_text"`
+	PostalCode       string   `json:"postal_code"`
+	Affiliation      string   `json:"affiliation"`
+	Title            string   `json:"title"`
+	RealName         string   `json:"real_name"`
+	Bio              string   `json:"bio"`
+	Gender           string   `json:"gender"`
+	Birthday         string   `json:"birthday"`
+	Education        string   `json:"education"`
 }
 
 type UserProfileInput struct {
-	Email       string `json:"email"`
-	DisplayName string `json:"display_name"`
-	FirstName   string `json:"first_name"`
-	LastName    string `json:"last_name"`
-	Phone       string `json:"phone"`
-	HomePhone   string `json:"home_phone"`
-	WorkPhone   string `json:"work_phone"`
-	Country     string `json:"country"`
-	Province    string `json:"province"`
-	City        string `json:"city"`
-	Address     string `json:"address"`
-	PostalCode  string `json:"postal_code"`
-	Affiliation string `json:"affiliation"`
-	Title       string `json:"title"`
-	RealName    string `json:"real_name"`
-	Bio         string `json:"bio"`
-	Gender      string `json:"gender"`
-	Birthday    string `json:"birthday"`
-	Education   string `json:"education"`
+	Email            string `json:"email"`
+	DisplayName      string `json:"display_name"`
+	FirstName        string `json:"first_name"`
+	LastName         string `json:"last_name"`
+	PhoneCountryCode string `json:"phone_country_code"`
+	Phone            string `json:"phone"`
+	HomePhone        string `json:"home_phone"`
+	Country          string `json:"country"`
+	Province         string `json:"province"`
+	City             string `json:"city"`
+	Address          string `json:"address"`
+	PostalCode       string `json:"postal_code"`
+	Affiliation      string `json:"affiliation"`
+	Title            string `json:"title"`
+	RealName         string `json:"real_name"`
+	Bio              string `json:"bio"`
+	Gender           string `json:"gender"`
+	Birthday         string `json:"birthday"`
+	Education        string `json:"education"`
 }
 
 type UserPasswordInput struct {
@@ -247,20 +247,21 @@ type GetAccessURLRsp struct {
 }
 
 type SignupExamInput struct {
-	CourseUnitULID string `json:"course_unit_ulid"`
-	FirstName      string `json:"first_name"`
-	MiddleName     string `json:"middle_name"`
-	LastName       string `json:"last_name"`
-	Email          string `json:"email"`
-	HomePhone      string `json:"home_phone"`
-	WorkPhone      string `json:"work_phone"`
-	Gender         string `json:"gender"`
-	Birthdate      string `json:"birthdate"` // YYYY-MM-DD
-	Country        string `json:"country"`
-	Province       string `json:"province"`
-	City           string `json:"city"`
-	Address        string `json:"address"`
-	PostalCode     string `json:"postal_code"`
+	CourseUnitULID   string `json:"course_unit_ulid"`
+	FirstName        string `json:"first_name"`
+	MiddleName       string `json:"middle_name"`
+	LastName         string `json:"last_name"`
+	Email            string `json:"email"`
+	HomePhone        string `json:"home_phone"`
+	PhoneCountryCode string `json:"phone_country_code"`
+	Phone            string `json:"phone"`
+	Gender           string `json:"gender"`
+	Birthdate        string `json:"birthdate"` // YYYY-MM-DD
+	Country          string `json:"country"`
+	Province         string `json:"province"`
+	City             string `json:"city"`
+	Address          string `json:"address"`
+	PostalCode       string `json:"postal_code"`
 }
 
 type ApplyRetakeInput struct {
@@ -829,7 +830,6 @@ type Appointment struct {
 	ConfirmationNumber string `xml:"ConfirmationNumber"`
 	StartDateTime      string `xml:"StartDateTime"`
 }
-
 
 type EmailSendCodeInput struct {
 	Email string `json:"email"`
