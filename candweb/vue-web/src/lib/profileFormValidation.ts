@@ -48,7 +48,7 @@ export function normalizeInternationalPhone(value: unknown) {
 export function isValidInternationalPhone(value: unknown, required = false) {
   const normalized = normalizeInternationalPhone(value)
   if (!normalized) return !required
-  return /^\+[1-9]\d{6,14}$/.test(normalized)
+  return /^\+?\d{7,15}$/.test(normalized)
 }
 
 export function normalizePostalCode(value: unknown) {
