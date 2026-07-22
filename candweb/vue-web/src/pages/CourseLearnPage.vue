@@ -1654,6 +1654,16 @@ watch(selectedMaterial, () => {
           </template>
         </div>
 
+        <div v-if="quizTasks.length === 0" class="mt-4 flex items-start gap-3 rounded-md border border-slate-200 bg-slate-50 px-4 py-3">
+          <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-slate-500 shadow-sm">
+            <Target class="h-4 w-4" />
+          </span>
+          <div class="min-w-0">
+            <p class="text-sm font-semibold text-slate-700">{{ t.learning.certificationNoQuizTag }}</p>
+            <p class="mt-1 text-xs leading-5 text-muted-foreground">{{ t.learning.certificationNoQuizDesc }}</p>
+          </div>
+        </div>
+
         <div v-if="false" class="mt-4 rounded-md bg-slate-50 px-4 py-3">
           <div class="mb-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
             <span>{{ t.learning.progressLabel }}</span>
@@ -1896,8 +1906,12 @@ watch(selectedMaterial, () => {
                 <h3 class="font-semibold text-foreground">{{ t.learning.courseQuizzesTitle }}</h3>
                 <span class="badge shrink-0 border-slate-200 bg-white text-slate-700">{{ courseQuizTasks.filter((task) => task.completed).length }}/{{ courseQuizTasks.length }}</span>
               </div>
-              <div v-if="courseQuizTasks.length === 0" class="rounded-md border border-dashed border-slate-200 bg-white p-4 text-sm text-muted-foreground">
-                {{ t.learning.noCourseQuizzes }}
+              <div v-if="courseQuizTasks.length === 0" class="flex flex-1 flex-col items-center justify-center rounded-md border border-dashed border-slate-200 bg-white px-5 py-6 text-center">
+                <span class="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+                  <Target class="h-4 w-4" />
+                </span>
+                <h4 class="mt-3 text-sm font-semibold text-slate-700">{{ t.learning.noCourseQuizzes }}</h4>
+                <p class="mt-1 max-w-xs text-xs leading-5 text-muted-foreground">{{ t.learning.noCourseQuizzesDesc }}</p>
               </div>
               <div v-else class="flex flex-1 flex-col gap-2">
                 <div v-for="(task, index) in courseQuizTasks" :key="task.key" class="flex min-h-[142px] flex-1 flex-col rounded-md border border-slate-100 bg-white p-3">
@@ -1923,8 +1937,12 @@ watch(selectedMaterial, () => {
                 <h3 class="font-semibold text-foreground">{{ t.learning.chapterQuizzesTitle }}</h3>
                 <span class="badge shrink-0 border-slate-200 bg-white text-slate-700">{{ nonCourseQuizTasks.filter((task) => task.completed).length }}/{{ nonCourseQuizTasks.length }}</span>
               </div>
-              <div v-if="nonCourseQuizTasks.length === 0" class="rounded-md border border-dashed border-slate-200 bg-white p-4 text-sm text-muted-foreground">
-                {{ t.learning.noChapterQuizzes }}
+              <div v-if="nonCourseQuizTasks.length === 0" class="flex flex-1 flex-col items-center justify-center rounded-md border border-dashed border-slate-200 bg-white px-5 py-6 text-center">
+                <span class="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+                  <Target class="h-4 w-4" />
+                </span>
+                <h4 class="mt-3 text-sm font-semibold text-slate-700">{{ t.learning.noChapterQuizzes }}</h4>
+                <p class="mt-1 max-w-xs text-xs leading-5 text-muted-foreground">{{ t.learning.noChapterQuizzesDesc }}</p>
               </div>
               <div v-else class="flex flex-1 flex-col gap-2">
                 <div v-for="(task, index) in nonCourseQuizTasks" :key="task.key" class="flex min-h-[142px] flex-1 flex-col rounded-md border border-slate-100 bg-white p-3">
