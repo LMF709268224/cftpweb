@@ -302,7 +302,7 @@ function hasRuntimeStatus(status?: string | number | null) {
 }
 
 function canShowUnit(unit: UnitConfig) {
-  return purchased.value
+  return purchased.value && hasRuntimeStatus(unit.runtime_status)
 }
 
 function visibleStageUnits(stage: StageConfig) {
