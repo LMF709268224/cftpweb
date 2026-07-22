@@ -15,13 +15,14 @@ const certificates = ref<any[]>([])
 const loading = ref(false)
 const celebrationVisible = ref(false)
 const CERTIFICATE_PREVIEW_TIMEOUT_MS = 20000
+const CERTIFICATE_BLOB_URL_REVOKE_DELAY_MS = 60000
 const CERTIFICATE_CELEBRATED_IDS_KEY = "cftp-certificates-celebrated-ids"
 
 const featuredCertificate = computed(() => certificates.value[0] ?? null)
 useBodyScrollLock(() => celebrationVisible.value && Boolean(featuredCertificate.value))
 
 function openCertificate(url?: string) {
-  if (url) window.open(url, "_blank")
+  if (url) window.open(url, "_blank", "noopener,noreferrer")
 }
 
 function getCelebrationCertificateKey(cert?: { id?: string; credentialId?: string }) {
@@ -34,16 +35,20 @@ async function previewCertificate(url?: string) {
   loading.value = true
   const controller = new AbortController()
   const timeoutId = window.setTimeout(() => controller.abort(), CERTIFICATE_PREVIEW_TIMEOUT_MS)
+  let blobUrl = ""
   try {
     const response = await fetch(url, { signal: controller.signal })
     if (!response.ok) throw new Error("fetch failed")
     const blob = await response.blob()
-    const blobUrl = URL.createObjectURL(blob)
-    window.open(blobUrl, "_blank")
+    blobUrl = URL.createObjectURL(blob)
+    openCertificate(blobUrl)
   } catch (err) {
-    window.open(url, "_blank")
+    openCertificate(url)
   } finally {
     window.clearTimeout(timeoutId)
+    if (blobUrl) {
+      window.setTimeout(() => URL.revokeObjectURL(blobUrl), CERTIFICATE_BLOB_URL_REVOKE_DELAY_MS)
+    }
     loading.value = false
   }
 }
