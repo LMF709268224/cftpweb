@@ -14,10 +14,6 @@ func (h *Handler) ListPipelines(w http.ResponseWriter, r *http.Request) {
 	status := r.URL.Query().Get("status")
 	var statusOpt *string
 	if status != "" {
-		status = strings.ToUpper(status)
-		if !strings.HasPrefix(status, "PIPELINE_STATUS_") {
-			status = "PIPELINE_STATUS_" + status
-		}
 		statusOpt = &status
 	}
 
