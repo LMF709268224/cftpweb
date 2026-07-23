@@ -14,7 +14,7 @@ import (
 func TestClearTokenCookiesExpiresBothAuthCookies(t *testing.T) {
 	recorder := httptest.NewRecorder()
 
-	clearTokenCookies(recorder)
+	clearTokenCookies(recorder, httptest.NewRequest("GET", "https://example.com/", nil))
 
 	cookies := recorder.Result().Cookies()
 	if len(cookies) != 2 {

@@ -28,7 +28,7 @@ const (
 	maxOutstandingOAuthStates = 5
 )
 
-func setTokenCookies(w http.ResponseWriter, accessToken, refreshToken string, expiresAt time.Time) {
+func setTokenCookies(w http.ResponseWriter, r *http.Request, accessToken, refreshToken string, expiresAt time.Time) {
 	if expiresAt.IsZero() || expiresAt.Before(time.Now()) {
 		expiresAt = time.Now().Add(24 * time.Hour)
 	}
@@ -37,7 +37,7 @@ func setTokenCookies(w http.ResponseWriter, accessToken, refreshToken string, ex
 		Value:    accessToken,
 		Expires:  expiresAt,
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   strings.HasPrefix(requestOrigin(r), "https"),
 		SameSite: http.SameSiteStrictMode,
 		Path:     "/",
 	})
@@ -46,7 +46,7 @@ func setTokenCookies(w http.ResponseWriter, accessToken, refreshToken string, ex
 		Value:    refreshToken,
 		Expires:  expiresAt.AddDate(0, 1, 0), // arbitrarily 1 month
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   strings.HasPrefix(requestOrigin(r), "https"),
 		SameSite: http.SameSiteStrictMode,
 		Path:     "/",
 	})
@@ -175,7 +175,7 @@ func (h *Handler) handleTokenExchange(w http.ResponseWriter, r *http.Request, to
 		return
 	}
 
-	setTokenCookies(w, token.AccessToken, refreshTokenForCookie(token, currentRefreshToken), token.Expiry)
+	setTokenCookies(w, r, token.AccessToken, refreshTokenForCookie(token, currentRefreshToken), token.Expiry)
 	WriteJSON(w, http.StatusOK, LoginRsp{
 		User: UserInfo{Name: claims.User.Name},
 	})
@@ -214,13 +214,13 @@ func (h *Handler) resolveCandidateUlid(r *http.Request, casdoorUserUlid string) 
 	return resp.UserUlid, nil
 }
 
-func clearTokenCookies(w http.ResponseWriter) {
+func clearTokenCookies(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     "access_token",
 		Value:    "",
 		Expires:  time.Now().Add(-1 * time.Hour),
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   strings.HasPrefix(requestOrigin(r), "https"),
 		SameSite: http.SameSiteStrictMode,
 		Path:     "/",
 	})
@@ -229,7 +229,7 @@ func clearTokenCookies(w http.ResponseWriter) {
 		Value:    "",
 		Expires:  time.Now().Add(-1 * time.Hour),
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   strings.HasPrefix(requestOrigin(r), "https"),
 		SameSite: http.SameSiteStrictMode,
 		Path:     "/",
 	})
@@ -237,8 +237,8 @@ func clearTokenCookies(w http.ResponseWriter) {
 
 // Logout handles POST /api/auth/logout.
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
-	clearTokenCookies(w)
-	clearOAuthStateCookie(w)
+	clearTokenCookies(w, r)
+	clearOAuthStateCookie(w, r)
 	WriteJSON(w, http.StatusOK, BaseRsp{Code: 200, Msg: "logout success"})
 }
 
@@ -356,7 +356,7 @@ func setOAuthStateCookie(w http.ResponseWriter, r *http.Request, state string) {
 	states := readOAuthStates(r)
 	for _, existing := range states {
 		if sameOAuthState(existing, state) {
-			writeOAuthStateCookie(w, states)
+			writeOAuthStateCookie(w, r, states)
 			return
 		}
 	}
@@ -365,10 +365,10 @@ func setOAuthStateCookie(w http.ResponseWriter, r *http.Request, state string) {
 	if len(states) > maxOutstandingOAuthStates {
 		states = states[len(states)-maxOutstandingOAuthStates:]
 	}
-	writeOAuthStateCookie(w, states)
+	writeOAuthStateCookie(w, r, states)
 }
 
-func writeOAuthStateCookie(w http.ResponseWriter, states []string) {
+func writeOAuthStateCookie(w http.ResponseWriter, r *http.Request, states []string) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     oauthStateCookieName,
 		Value:    strings.Join(states, oauthStateCookieSeparator),
@@ -376,7 +376,7 @@ func writeOAuthStateCookie(w http.ResponseWriter, states []string) {
 		Expires:  time.Now().Add(oauthStateTTL),
 		MaxAge:   int(oauthStateTTL.Seconds()),
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   strings.HasPrefix(requestOrigin(r), "https"),
 		SameSite: http.SameSiteLaxMode,
 	})
 }
@@ -402,7 +402,7 @@ func readOAuthStates(r *http.Request) []string {
 	return states
 }
 
-func clearOAuthStateCookie(w http.ResponseWriter) {
+func clearOAuthStateCookie(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     oauthStateCookieName,
 		Value:    "",
@@ -410,7 +410,7 @@ func clearOAuthStateCookie(w http.ResponseWriter) {
 		Expires:  time.Now().Add(-time.Hour),
 		MaxAge:   -1,
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   strings.HasPrefix(requestOrigin(r), "https"),
 		SameSite: http.SameSiteLaxMode,
 	})
 }
@@ -436,9 +436,9 @@ func consumeOAuthState(w http.ResponseWriter, r *http.Request, provided string) 
 	}
 
 	if len(remaining) == 0 {
-		clearOAuthStateCookie(w)
+		clearOAuthStateCookie(w, r)
 	} else {
-		writeOAuthStateCookie(w, remaining)
+		writeOAuthStateCookie(w, r, remaining)
 	}
 	return true
 }

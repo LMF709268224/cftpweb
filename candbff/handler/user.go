@@ -149,7 +149,7 @@ func (h *Handler) UpdateUserPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	clearTokenCookies(w)
+	clearTokenCookies(w, r)
 	WriteJSON(w, http.StatusOK, BaseRsp{Code: 0, Msg: "success"})
 }
 
