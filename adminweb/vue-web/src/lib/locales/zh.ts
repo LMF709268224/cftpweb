@@ -15,7 +15,7 @@ export const zh = {
             operations: "系统运维",
         },
         nav: {
-            dashboard: "运营看板",
+            dashboard: "工作台",
             lms: "课程配置",
             resourcePacks: "资源包配置",
             resourcePackFiles: "资源文件配置",
@@ -39,13 +39,13 @@ export const zh = {
     },
     dashboard: {
         eyebrow: "Admin Dashboard",
-        title: "运营看板",
+        title: "工作台",
         subtitle: "查看用户概览、角色分布、阶段状态和今日收款。",
         auditLogs: "审计日志",
         emailActivity: "邮件活动",
         refresh: "刷新",
         loading: "加载中",
-        loadFailed: "运营看板加载失败",
+        loadFailed: "工作台加载失败",
         profileCompletion: "资料完整度",
         noRevenue: "暂无收款",
         summary: {
@@ -2163,7 +2163,7 @@ export const zh = {
     },
     resourceAdmin: {
         routes: {
-            dashboard: { title: "运营看板", subtitle: "查看用户概览、角色分布、阶段状态和今日收款" },
+            dashboard: { title: "工作台", subtitle: "查看用户概览、角色分布、阶段状态和今日收款" },
             resourcePacks: { title: "资源包", subtitle: "查看资源包 (Resource Packs)" },
             resourcePackFiles: { title: "资源文件", subtitle: "查看资源包内的所有文件配置" },
             lms: { title: "课程配置", subtitle: "维护 GLMS 课程内容、发布状态和基础资料" },

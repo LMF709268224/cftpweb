@@ -48,7 +48,7 @@ export const zh = {
     reload: "重新加载",
   },
   pageTitles: {
-    home: "仪表盘",
+    home: "首页",
     login: "登录",
     callback: "登录回调",
     marketplace: "商城",
@@ -108,7 +108,7 @@ export const zh = {
     systemBrand: "CFtP",
     systemName: "培训系统",
     menu: "菜单",
-    home: "仪表盘",
+    home: "首页",
     courses: "商城",
     myCertifications: "我的认证",
     membership: "会员",
