@@ -1,6 +1,6 @@
 import { ref } from "vue"
 import { apiClient } from "./apiClient"
-import { getAccessToken } from "./authStorage"
+import { isAuthenticated } from "./authStorage"
 
 export interface UserProfile {
   id: string
@@ -29,7 +29,7 @@ export function useUser() {
       return pendingUserRequest
     }
 
-    if (!getAccessToken()) {
+    if (!isAuthenticated()) {
       currentUser.value = null
       hasLoaded.value = false
       return null

@@ -1,20 +1,29 @@
-const ACCESS_TOKEN_KEY = "access_token"
+const LEGACY_TOKEN_KEY = "access_token"
+const AUTH_KEY = "is_authenticated"
+const USER_NAME_KEY = "user_name"
 const POST_LOGIN_REDIRECT_KEY = "post_login_redirect"
 
-export function getAccessToken() {
-  const token = localStorage.getItem(ACCESS_TOKEN_KEY)
-  if (token) syncAccessTokenCookie(token)
-  return token
+export function isAuthenticated() {
+  const legacyToken = localStorage.getItem(LEGACY_TOKEN_KEY)
+  if (legacyToken && localStorage.getItem(AUTH_KEY) !== "true") {
+    localStorage.setItem(AUTH_KEY, "true")
+  }
+  localStorage.removeItem(LEGACY_TOKEN_KEY)
+  return localStorage.getItem(AUTH_KEY) === "true"
 }
 
-export function setAccessToken(token: string) {
-  localStorage.setItem(ACCESS_TOKEN_KEY, token)
-  syncAccessTokenCookie(token)
+export function setAuthSession(userName?: string) {
+  localStorage.removeItem(LEGACY_TOKEN_KEY)
+  localStorage.setItem(AUTH_KEY, "true")
+  if (userName) {
+    localStorage.setItem(USER_NAME_KEY, userName)
+  }
 }
 
-export function clearAccessToken() {
-  localStorage.removeItem(ACCESS_TOKEN_KEY)
-  document.cookie = `${ACCESS_TOKEN_KEY}=; Path=/; Max-Age=0; SameSite=Lax`
+export function clearAuthSession() {
+  localStorage.removeItem(LEGACY_TOKEN_KEY)
+  localStorage.removeItem(AUTH_KEY)
+  localStorage.removeItem(USER_NAME_KEY)
 }
 
 export function rememberPostLoginRedirect(path: string) {
@@ -34,8 +43,4 @@ function normalizePostLoginRedirect(path: string) {
   if (!normalized || !normalized.startsWith("/") || normalized.startsWith("//")) return ""
   if (normalized === "/login" || normalized.startsWith("/login?") || normalized === "/callback" || normalized.startsWith("/callback?")) return ""
   return normalized
-}
-
-function syncAccessTokenCookie(token: string) {
-  document.cookie = `${ACCESS_TOKEN_KEY}=${encodeURIComponent(token)}; Path=/; SameSite=Lax`
 }

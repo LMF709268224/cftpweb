@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router"
-import { getAccessToken, rememberPostLoginRedirect } from "@/lib/authStorage"
+import { isAuthenticated, rememberPostLoginRedirect } from "@/lib/authStorage"
 import { useUser } from "@/lib/user"
 
 const HomePage = () => import("@/pages/HomePage.vue")
@@ -124,12 +124,12 @@ export const router = createRouter({
 })
 
 router.beforeEach((to) => {
-  if (to.meta.requiresAuth && !getAccessToken()) {
+  if (to.meta.requiresAuth && !isAuthenticated()) {
     rememberPostLoginRedirect(to.fullPath)
     return { path: "/login", replace: true }
   }
 
-  if (to.path === "/exams/signup" && getAccessToken()) {
+  if (to.path === "/exams/signup" && isAuthenticated()) {
     void useUser().fetchUser()
   }
 })

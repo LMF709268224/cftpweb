@@ -1,10 +1,14 @@
 package handler
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
+
+	"golang.org/x/oauth2"
 )
 
 func TestClearTokenCookiesExpiresBothAuthCookies(t *testing.T) {
@@ -42,6 +46,32 @@ func TestClearTokenCookiesExpiresBothAuthCookies(t *testing.T) {
 		if !cookie.Expires.Before(time.Now()) {
 			t.Fatalf("%s expiry = %v, want a past time", name, cookie.Expires)
 		}
+	}
+}
+
+func TestRefreshTokenForCookiePreservesCurrentTokenWhenNotRotated(t *testing.T) {
+	token := &oauth2.Token{AccessToken: "new-access-token"}
+
+	if got := refreshTokenForCookie(token, " current-refresh-token "); got != "current-refresh-token" {
+		t.Fatalf("refreshTokenForCookie() = %q, want current-refresh-token", got)
+	}
+}
+
+func TestRefreshTokenForCookiePrefersRotatedToken(t *testing.T) {
+	token := &oauth2.Token{RefreshToken: " rotated-refresh-token "}
+
+	if got := refreshTokenForCookie(token, "current-refresh-token"); got != "rotated-refresh-token" {
+		t.Fatalf("refreshTokenForCookie() = %q, want rotated-refresh-token", got)
+	}
+}
+
+func TestLoginResponseDoesNotExposeAccessToken(t *testing.T) {
+	payload, err := json.Marshal(LoginRsp{User: UserInfo{Name: "candidate"}})
+	if err != nil {
+		t.Fatalf("json.Marshal() error = %v", err)
+	}
+	if strings.Contains(string(payload), "token") {
+		t.Fatalf("login response exposes token field: %s", payload)
 	}
 }
 

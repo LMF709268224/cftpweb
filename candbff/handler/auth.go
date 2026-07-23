@@ -114,7 +114,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.handleTokenExchange(w, r, token)
+	h.handleTokenExchange(w, r, token, "")
 }
 
 // RefreshToken handles POST /auth/refresh.
@@ -144,12 +144,12 @@ func (h *Handler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.handleTokenExchange(w, r, token)
+	h.handleTokenExchange(w, r, token, refreshToken)
 }
 
 // handleTokenExchange is shared by Login and RefreshToken: parses claims, resolves the candidate
 // ULID, sets auth cookies, and writes the success response.
-func (h *Handler) handleTokenExchange(w http.ResponseWriter, r *http.Request, token *oauth2.Token) {
+func (h *Handler) handleTokenExchange(w http.ResponseWriter, r *http.Request, token *oauth2.Token, currentRefreshToken string) {
 	claims, err := casdoorsdk.ParseJwtToken(token.AccessToken)
 	if err != nil {
 		WriteError(w, http.StatusUnauthorized, ErrInvalidToken, "failed to parse token: "+err.Error())
@@ -172,11 +172,19 @@ func (h *Handler) handleTokenExchange(w http.ResponseWriter, r *http.Request, to
 		return
 	}
 
-	setTokenCookies(w, token.AccessToken, token.RefreshToken, token.Expiry)
+	setTokenCookies(w, token.AccessToken, refreshTokenForCookie(token, currentRefreshToken), token.Expiry)
 	WriteJSON(w, http.StatusOK, LoginRsp{
-		Token: token.AccessToken,
-		User:  UserInfo{Name: claims.User.Name},
+		User: UserInfo{Name: claims.User.Name},
 	})
+}
+
+func refreshTokenForCookie(token *oauth2.Token, currentRefreshToken string) string {
+	if token != nil {
+		if refreshed := strings.TrimSpace(token.RefreshToken); refreshed != "" {
+			return refreshed
+		}
+	}
+	return strings.TrimSpace(currentRefreshToken)
 }
 
 func (h *Handler) resolveCandidateUlid(r *http.Request, casdoorUserUlid string) (string, error) {

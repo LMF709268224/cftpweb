@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from "vue"
 import { RouterLink, useRoute } from "vue-router"
 import { Award, BookOpen, ChevronUp, ClipboardList, Crown, FileCheck2, Home, Languages, LayoutDashboard, Loader2, LogOut, Menu, MessageSquare, Package, Settings, ShoppingBag, Store, X } from "lucide-vue-next"
 import { apiClient } from "@/lib/apiClient"
-import { clearAccessToken } from "@/lib/authStorage"
+import { clearAuthSession } from "@/lib/authStorage"
 import { fetchUnreadCount, getCachedUnreadCount, onUnreadCountChanged } from "@/lib/unreadCountCache"
 import { fetchActionableCredentialCount, getCachedActionableCredentialCount, onActionableCredentialCountChanged } from "@/lib/actionableCredentialCountCache"
 import { useTranslation } from "@/lib/language"
@@ -157,8 +157,7 @@ async function handleLogout() {
   } catch {
     // apiClient already shows localized errors.
   } finally {
-    clearAccessToken()
-    localStorage.removeItem("user_name")
+    clearAuthSession()
     window.location.href = "/login"
   }
 }

@@ -1,5 +1,5 @@
 import { toast } from "vue-sonner"
-import { clearAccessToken, getAccessToken, rememberPostLoginRedirect, setAccessToken } from "./authStorage"
+import { clearAuthSession, rememberPostLoginRedirect, setAuthSession } from "./authStorage"
 import { getErrorMessage, localizeApiErrorMessage } from "./errorCodes"
 import { telemetry } from "./telemetry"
 
@@ -63,9 +63,7 @@ async function performSessionRefresh() {
     const payload = await response.json().catch(() => null)
     if (!payload || (payload.code !== 200 && payload.code !== 201)) return false
 
-    const token = String(payload.data?.token || "").trim()
-    if (token) setAccessToken(token)
-    localStorage.setItem("is_authenticated", "true")
+    setAuthSession()
     return true
   } catch {
     return false
@@ -88,9 +86,7 @@ function clearSessionAndRedirect(showErrorToast: (message: string, id?: string) 
   loginRedirectScheduled = true
 
   rememberPostLoginRedirect(window.location.pathname + window.location.search + window.location.hash)
-  clearAccessToken()
-  localStorage.removeItem("is_authenticated")
-  localStorage.removeItem("user_name")
+  clearAuthSession()
   void fetch(LOGOUT_ENDPOINT, { method: "POST", credentials: "include", keepalive: true }).catch(() => undefined)
   showErrorToast(getErrorMessage("UNAUTHORIZED", currentLang), UNAUTHORIZED_TOAST_ID)
   window.setTimeout(() => {
@@ -111,7 +107,6 @@ async function requestApi(endpoint: string, options: ApiClientOptions, allowRefr
   } = options
   const currentLang = (localStorage.getItem("app_lang") || "zh") as "zh" | "en"
   const headers = new Headers(options.headers)
-  const token = getAccessToken()
   const controller = new AbortController()
   const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs)
   const showErrorToast = (message: string, id?: string) => {
@@ -126,7 +121,6 @@ async function requestApi(endpoint: string, options: ApiClientOptions, allowRefr
     }
   }
 
-  if (token) headers.set("Authorization", `Bearer ${token}`)
   if (options.body && !(options.body instanceof FormData) && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json")
   }

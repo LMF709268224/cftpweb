@@ -4,7 +4,7 @@ import type { Component } from "vue"
 import { Award, BookOpen, CheckCircle2, ClipboardList, PackageOpen, PanelLeft, Receipt } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
-import { getAccessToken } from "@/lib/authStorage"
+import { isAuthenticated } from "@/lib/authStorage"
 import { useTranslation } from "@/lib/language"
 
 const { t, lang } = useTranslation()
@@ -188,8 +188,7 @@ async function countFromRequest(endpoint: string, listKey: string) {
 }
 
 onMounted(async () => {
-  const token = getAccessToken()
-  if (!token) {
+  if (!isAuthenticated()) {
     const localName = localStorage.getItem("user_name")
     if (localName) userName.value = localName
     return

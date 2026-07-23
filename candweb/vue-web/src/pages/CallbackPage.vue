@@ -4,7 +4,7 @@ import { useRoute, useRouter } from "vue-router"
 import { CheckCircle2, Loader2, ShieldAlert } from "lucide-vue-next"
 import { getErrorMessage } from "@/lib/errorCodes"
 import { ApiClientError, apiClient } from "@/lib/apiClient"
-import { consumePostLoginRedirect, setAccessToken } from "@/lib/authStorage"
+import { consumePostLoginRedirect, setAuthSession } from "@/lib/authStorage"
 import { useTranslation } from "@/lib/language"
 
 const route = useRoute()
@@ -30,9 +30,7 @@ onMounted(async () => {
       method: "POST",
       body: JSON.stringify({ code, state }),
     })
-    if (payload.user) localStorage.setItem("user_name", payload.user.name)
-    if (payload.token) setAccessToken(payload.token)
-    localStorage.setItem("is_authenticated", "true")
+    setAuthSession(payload.user?.name)
     status.value = "success"
     setTimeout(() => router.push(consumePostLoginRedirect() || "/"), 1000)
   } catch (err: any) {

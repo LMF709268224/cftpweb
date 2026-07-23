@@ -3,7 +3,7 @@ import { Toaster } from "vue-sonner"
 import { useUser } from "@/lib/user"
 import { onErrorCaptured, onMounted, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
-import { getAccessToken } from "@/lib/authStorage"
+import { isAuthenticated } from "@/lib/authStorage"
 import { useTranslation } from "@/lib/language"
 
 const { fetchUser } = useUser()
@@ -29,7 +29,7 @@ watch(
 )
 
 function shouldFetchUser() {
-  return Boolean(getAccessToken()) && route.path !== "/login" && route.path !== "/callback"
+  return isAuthenticated() && route.path !== "/login" && route.path !== "/callback"
 }
 
 onMounted(() => {

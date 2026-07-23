@@ -1,4 +1,4 @@
-import { getAccessToken } from "./authStorage"
+import { isAuthenticated } from "./authStorage"
 
 export type TelemetryEvent = {
   event_name: string
@@ -53,21 +53,20 @@ class TelemetryClient {
     const events = this.queue.splice(0, this.maxBatchSize)
 
     try {
-      const token = getAccessToken()
-      const targetEndpoint = token ? this.endpoint : this.publicEndpoint
+      const authenticated = isAuthenticated()
+      const targetEndpoint = authenticated ? this.endpoint : this.publicEndpoint
 
       let response = await fetch(targetEndpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ events }),
         credentials: "include",
       })
 
       // An expired login must not keep the telemetry batch in an endless retry loop.
-      if (token && (response.status === 401 || response.status === 403)) {
+      if (authenticated && (response.status === 401 || response.status === 403)) {
         response = await fetch(this.publicEndpoint, {
           method: "POST",
           headers: {
@@ -101,8 +100,7 @@ class TelemetryClient {
 
   private flushSync() {
     if (this.queue.length === 0) return
-    const token = getAccessToken()
-    const targetEndpoint = token ? this.endpoint : this.publicEndpoint
+    const targetEndpoint = isAuthenticated() ? this.endpoint : this.publicEndpoint
 
     while (this.queue.length > 0) {
       const events = this.queue.splice(0, this.maxBatchSize)
@@ -114,7 +112,6 @@ class TelemetryClient {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body,
           keepalive: true,
