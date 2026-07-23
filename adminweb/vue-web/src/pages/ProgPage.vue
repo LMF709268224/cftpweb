@@ -328,8 +328,8 @@ function courseUnitUlid(unit: JsonRecord | null | undefined) {
   return String(unit?.course_unit_ulid || "")
 }
 
-function courseUnitStatus(unit: JsonRecord | null | undefined) {
-  return unit?.status
+function courseUnitStatus(unit: JsonRecord | null | undefined): string {
+  return typeof unit?.status === "string" ? unit.status : ""
 }
 
 function ensureSelections() {

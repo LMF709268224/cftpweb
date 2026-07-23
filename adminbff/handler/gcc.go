@@ -14,6 +14,14 @@ func (h *Handler) ListPipelines(w http.ResponseWriter, r *http.Request) {
 	status := r.URL.Query().Get("status")
 	var statusOpt *string
 	if status != "" {
+		switch strings.ToUpper(status) {
+		case "DRAFT":
+			status = "Draft"
+		case "PUBLISHED", "ACTIVE":
+			status = "Active"
+		case "DEPRECATED":
+			status = "Deprecated"
+		}
 		statusOpt = &status
 	}
 

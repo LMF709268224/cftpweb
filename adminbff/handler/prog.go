@@ -15,7 +15,7 @@ func (h *Handler) ListProgPipelines(w http.ResponseWriter, r *http.Request) {
 	filters := &gprogpb.PipelineFilters{
 		CandidateUlid:  strings.TrimSpace(r.URL.Query().Get("candidate_ulid")),
 		PipelineCcUlid: strings.TrimSpace(r.URL.Query().Get("pipeline_cc_ulid")),
-		Status:         gprogpb.PipelineStatus(parseEnumQuery(r, "status")),
+		Status:         parsePipelineStatusQuery(r, "status"),
 	}
 
 	total, err := countCursorAll(r.Context(), func(ctx context.Context, cursor string, limit uint32) (uint32, string, error) {
@@ -432,4 +432,24 @@ func (h *Handler) AdminForceCourseSignupExam(w http.ResponseWriter, r *http.Requ
 	}
 
 	WriteJSON(w, http.StatusOK, resp)
+}
+
+func parsePipelineStatusQuery(r *http.Request, key string) gprogpb.PipelineStatus {
+	raw := strings.TrimSpace(r.URL.Query().Get(key))
+	if raw == "" {
+		return 0
+	}
+	// Try parsing as string from Protobuf enum value
+	if val, ok := gprogpb.PipelineStatus_value[raw]; ok {
+		return gprogpb.PipelineStatus(val)
+	}
+	if val, ok := gprogpb.PipelineStatus_value["PIPELINE_STATUS_"+raw]; ok {
+		return gprogpb.PipelineStatus(val)
+	}
+	// Fallback to integer parsing
+	value, err := strconv.ParseInt(raw, 10, 32)
+	if err != nil {
+		return 0
+	}
+	return gprogpb.PipelineStatus(value)
 }
