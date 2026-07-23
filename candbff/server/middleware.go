@@ -72,13 +72,13 @@ func isAllowedOrigin(origin, raw string) bool {
 // authMiddleware 验证 Casdoor JWT 并将用户信息注入 context
 func (s *Server) authMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var tokenStr string
-
-		// 优先从 Cookie 读取
-		cookie, err := r.Cookie("access_token")
-		if err == nil && cookie.Value != "" {
-			tokenStr = cookie.Value
-		} else {
+		tokenStr, err := handler.ReadAccessTokenCookie(r)
+		if err != nil {
+			slog.Warn("authMiddleware: invalid access token cookie", "path", r.URL.Path, "error", err)
+			handler.WriteError(w, http.StatusUnauthorized, handler.ErrInvalidToken, "invalid authentication cookie")
+			return
+		}
+		if tokenStr == "" {
 			// 后退策略：从 Header 读取
 			authHeader := r.Header.Get("Authorization")
 			if authHeader != "" {
