@@ -226,6 +226,12 @@ function entityTypeLabel(value: unknown) {
   return labels[normalizedType] || String(value || "-")
 }
 
+function completionReasonLabel(value: unknown) {
+  const raw = String(value || "").trim()
+  const labels = copy.value.completionReasonLabels as Record<string, string>
+  return labels[raw.toUpperCase()] || raw || "-"
+}
+
 function isDateField(key: string) {
   return key.endsWith("_at") || key.endsWith("_time") || key === "created_at" || key === "updated_at"
 }
@@ -256,6 +262,7 @@ function detailFieldValue(group: "overview" | "stage" | "unit" | "log", key: str
   }
   if (key === "from_status" || key === "to_status") return entityStatusLabel(record?.entity_type, value)
   if (key === "entity_type") return entityTypeLabel(value)
+  if (key === "completion_reason" || key === "completed_reason") return completionReasonLabel(value)
   if (isDateField(key)) return formatDate(value) || readableValue(value)
   return readableValue(value)
 }

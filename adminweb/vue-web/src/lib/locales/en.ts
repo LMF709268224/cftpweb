@@ -2477,6 +2477,10 @@ export const en: AdminTranslations = {
             EXAM: "Exam",
             RESULT: "Result",
         },
+        completionReasonLabels: {
+            FINAL_ELIG_MET: "Final eligibility requirements met",
+            "ALL COURSE UNITS COMPLETED": "All course units completed",
+        },
         fieldLabels: {
             candidate_name: "Candidate Name",
             candidate_ulid: "Candidate ID",
@@ -2501,6 +2505,7 @@ export const en: AdminTranslations = {
             from_status: "From Status",
             to_status: "To Status",
             completed_reason: "Completion Reason",
+            completion_reason: "Completion Reason",
             course_progress: "Course Progress",
             exam_ulid: "Exam ID",
             reason_code: "Reason Code",
