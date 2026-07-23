@@ -54,7 +54,7 @@ const credentialOptionsLoading = ref(false)
 const pdfTemplateOptionsLoading = ref(false)
 const saving = ref(false)
 const creating = ref(false)
-const categoryFilter = ref("")
+const statusFilter = ref("")
 const onlyCurrent = ref(false)
 const pageToken = ref("")
 const nextToken = ref("")
@@ -632,7 +632,7 @@ async function load() {
       page_size: String(limit),
     })
     if (pageToken.value) params.set("page_token", pageToken.value)
-    if (categoryFilter.value.trim()) params.set("category_tips", categoryFilter.value.trim())
+    if (statusFilter.value) params.set("status", statusFilter.value)
     if (onlyCurrent.value) params.set("only_current", "true")
     const data = await apiClient<JsonRecord>(`/api/pipelines?${params}`)
     const list = Array.isArray(data.pipelines) ? data.pipelines : []
@@ -924,7 +924,7 @@ async function clonePipeline() {
   }
 }
 
-watch([categoryFilter, onlyCurrent], () => { pageToken.value = ""; load() })
+watch([statusFilter, onlyCurrent], () => { pageToken.value = ""; load() })
 
 watch(() => form.value.name, (newName, oldName) => {
   if (!creating.value) return
@@ -968,7 +968,12 @@ onMounted(() => {
           <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
         </div>
         <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
-          <input v-model="categoryFilter" class="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm sm:w-auto" :placeholder="copy.categoryPlaceholder" />
+          <select v-model="statusFilter" class="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm sm:w-auto bg-white">
+            <option value="">全部状态</option>
+            <option value="DRAFT">{{ copy.status.draft }}</option>
+            <option value="PUBLISHED">{{ copy.status.published }}</option>
+            <option value="DEPRECATED">{{ copy.status.deprecated }}</option>
+          </select>
           <label class="inline-flex h-10 w-full items-center gap-2 rounded-xl border border-slate-200 px-3 text-sm font-bold sm:w-auto">
             <input v-model="onlyCurrent" type="checkbox" />
             {{ copy.onlyCurrent }}
