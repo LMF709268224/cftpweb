@@ -2475,6 +2475,10 @@ export const zh = {
             EXAM: "考试",
             RESULT: "成绩",
         },
+        completionReasonLabels: {
+            FINAL_ELIG_MET: "已满足最终资格要求",
+            "ALL COURSE UNITS COMPLETED": "所有课程单元均已完成",
+        },
         fieldLabels: {
             candidate_name: "考生姓名",
             candidate_ulid: "考生 ID",
@@ -2499,6 +2503,7 @@ export const zh = {
             from_status: "原状态",
             to_status: "新状态",
             completed_reason: "完成原因",
+            completion_reason: "完成原因",
             course_progress: "课程进度",
             exam_ulid: "考试 ID",
             reason_code: "原因代码",
