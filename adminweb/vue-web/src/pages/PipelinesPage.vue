@@ -1052,8 +1052,8 @@ onMounted(() => {
               <Copy class="h-4 w-4" />
               {{ copy.cloneVersion }}
             </button>
-            <button class="rounded-xl border px-4 py-2 font-bold" type="button" @click="publish">{{ copy.publish }}</button>
-            <button class="rounded-xl border px-4 py-2 font-bold disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deprecating" @click="deprecate">{{ copy.deprecate }}</button>
+            <button v-if="!published && !deprecated" class="rounded-xl border px-4 py-2 font-bold" type="button" @click="publish">{{ copy.publish }}</button>
+            <button v-if="!deprecated" class="rounded-xl border px-4 py-2 font-bold disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deprecating" @click="deprecate">{{ copy.deprecate }}</button>
             <button v-if="canDeleteSelectedPipeline" class="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2 font-bold text-white" type="button" @click="removePipeline">
               <Trash2 class="h-4 w-4" />
               {{ copy.delete }}
@@ -1146,7 +1146,7 @@ onMounted(() => {
                   <div class="font-black">{{ copy.stageListTitle }}</div>
                   <div class="text-xs text-slate-500">{{ copy.stageListDescription }}</div>
                 </div>
-                <button class="rounded-xl border px-3 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="addStage">{{ copy.newStage }}</button>
+                <button v-if="!isStructureLocked()" class="rounded-xl border px-3 py-2 text-sm font-bold" type="button" @click="addStage">{{ copy.newStage }}</button>
               </div>
               <button
                 v-for="(stage, index) in stages"
@@ -1169,7 +1169,7 @@ onMounted(() => {
                     <h4 class="text-lg font-black">{{ copy.stageDetailTitle }}</h4>
                     <p class="text-sm text-slate-500">{{ copy.stageDetailDescription }}</p>
                   </div>
-                  <button class="rounded-xl border border-red-200 px-4 py-2 font-bold text-red-600 disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="removeStage()">{{ copy.deleteStage }}</button>
+                  <button v-if="!isStructureLocked()" class="rounded-xl border border-red-200 px-4 py-2 font-bold text-red-600" type="button" @click="removeStage()">{{ copy.deleteStage }}</button>
                 </div>
                 <div class="grid gap-4 md:grid-cols-2">
                   <label class="grid gap-2 text-sm font-bold">
@@ -1242,7 +1242,7 @@ onMounted(() => {
                   <div class="font-black">{{ copy.unitListTitle }}</div>
                   <div class="text-xs text-slate-500">{{ copy.unitListDescription }}</div>
                 </div>
-                <button class="rounded-xl border px-3 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="addUnit()">{{ copy.newUnit }}</button>
+                <button v-if="!isStructureLocked()" class="rounded-xl border px-3 py-2 text-sm font-bold" type="button" @click="addUnit()">{{ copy.newUnit }}</button>
               </div>
               <button
                 v-for="item in units"
@@ -1265,7 +1265,7 @@ onMounted(() => {
                     <h4 class="text-lg font-black">{{ copy.unitDetailTitle }}</h4>
                     <p class="text-sm text-slate-500">{{ copy.unitDetailDescription }}</p>
                   </div>
-                  <button class="rounded-xl border border-red-200 px-4 py-2 font-bold text-red-600 disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="removeSelectedUnit">{{ copy.deleteUnit }}</button>
+                  <button v-if="!isStructureLocked()" class="rounded-xl border border-red-200 px-4 py-2 font-bold text-red-600" type="button" @click="removeSelectedUnit">{{ copy.deleteUnit }}</button>
                 </div>
                 <div class="grid gap-4 md:grid-cols-2">
                   <label class="grid gap-2 text-sm font-bold">
@@ -1368,7 +1368,7 @@ onMounted(() => {
                   <div class="font-black">{{ copy.certListTitle }}</div>
                   <div class="text-xs text-slate-500">{{ copy.certListDescription }}</div>
                 </div>
-                <button class="rounded-xl border px-3 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="addCert">{{ copy.newCert }}</button>
+                <button v-if="!isStructureLocked()" class="rounded-xl border px-3 py-2 text-sm font-bold" type="button" @click="addCert">{{ copy.newCert }}</button>
               </div>
               <button v-for="(cert, index) in certs" :key="index" class="w-full border-b border-slate-100 p-4 text-left hover:bg-sky-50" :class="selectedCertIndex === index ? 'bg-sky-50' : ''" type="button" @click="selectedCertIndex = index">
                 <div class="font-black">{{ itemTitle(cert, copy.certFallback(index + 1)) }}</div>
@@ -1380,7 +1380,7 @@ onMounted(() => {
               <template v-if="selectedCert">
                 <div class="flex items-center justify-between gap-3">
                   <h4 class="text-lg font-black">{{ copy.certDetailTitle }}</h4>
-                  <button class="rounded-xl border border-red-200 px-4 py-2 font-bold text-red-600 disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="removeGenericItem('certs', selectedCertIndex)">{{ copy.deleteCert }}</button>
+                  <button v-if="!isStructureLocked()" class="rounded-xl border border-red-200 px-4 py-2 font-bold text-red-600" type="button" @click="removeGenericItem('certs', selectedCertIndex)">{{ copy.deleteCert }}</button>
                 </div>
                 <div class="grid gap-4">
                   <label class="grid gap-2 text-sm font-bold">
@@ -1416,7 +1416,7 @@ onMounted(() => {
                   <div class="font-black">{{ activeLayer === 'unlock_quals' ? copy.unlockQualListTitle : copy.certQualListTitle }}</div>
                   <div class="text-xs text-slate-500">{{ copy.qualListDescription }}</div>
                 </div>
-                <button class="rounded-xl border px-3 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="activeLayer === 'unlock_quals' ? addUnlockQual() : addCertQual()">{{ copy.add }}</button>
+                <button v-if="!isStructureLocked()" class="rounded-xl border px-3 py-2 text-sm font-bold" type="button" @click="activeLayer === 'unlock_quals' ? addUnlockQual() : addCertQual()">{{ copy.add }}</button>
               </div>
               <template v-if="activeLayer === 'unlock_quals'">
                 <button v-for="(qual, index) in unlockQuals" :key="index" class="w-full border-b border-slate-100 p-4 text-left hover:bg-sky-50" :class="selectedUnlockQualIndex === index ? 'bg-sky-50' : ''" type="button" @click="selectedUnlockQualIndex = index">
@@ -1438,9 +1438,9 @@ onMounted(() => {
                 <div class="flex items-center justify-between gap-3">
                   <h4 class="text-lg font-black">{{ copy.qualDetailTitle }}</h4>
                   <button
-                    class="rounded-xl border border-red-200 px-4 py-2 font-bold text-red-600 disabled:opacity-40"
+                    v-if="!isStructureLocked()"
+                    class="rounded-xl border border-red-200 px-4 py-2 font-bold text-red-600"
                     type="button"
-                    :disabled="isStructureLocked()"
                     @click="activeLayer === 'unlock_quals' ? removeGenericItem('unlock_quals', selectedUnlockQualIndex) : removeGenericItem('certs_quals', selectedCertQualIndex)"
                   >
                     {{ copy.deleteQual }}
@@ -1490,7 +1490,7 @@ onMounted(() => {
             </div>
             <textarea v-model="form.structure_json" :disabled="isStructureLocked()" class="min-h-[560px] w-full rounded-xl border border-slate-200 p-4 font-mono text-xs leading-6 disabled:bg-slate-100 disabled:text-slate-500" />
             <div class="flex flex-col justify-end gap-3 sm:flex-row">
-              <button class="rounded-xl border px-5 py-3 font-bold disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="applyRawStructure">{{ copy.applyRaw }}</button>
+              <button v-if="!isStructureLocked()" class="rounded-xl border px-5 py-3 font-bold" type="button" @click="applyRawStructure">{{ copy.applyRaw }}</button>
               <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed" type="button" :disabled="saving || isStructureLocked()" :title="deprecated ? ((copy as any).deprecatedLockedHint || '此版本已下架归档，无法再进行修改。') : ''" @click="saveStructure">
                 <Send class="h-4 w-4" />
                 {{ copy.saveStructure }}
