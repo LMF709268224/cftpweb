@@ -157,13 +157,17 @@ function isApprovedApplication(app: JsonRecord | null | undefined) {
   return applicationLabel(status(app)) === copy.value.statusOptions.approved
 }
 
+function isRejectedApplication(app: JsonRecord | null | undefined) {
+  return applicationLabel(status(app)) === copy.value.statusOptions.rejected
+}
+
 function isResubmitApplication(app: JsonRecord | null | undefined) {
   const normalized = String(status(app) || "").trim().toUpperCase()
   return normalized.includes("RESUBMIT") || normalized.includes("REUPLOAD") || normalized === "4"
 }
 
 function canAuditApplication(app: JsonRecord | null | undefined) {
-  return !isApprovedApplication(app) && !isResubmitApplication(app)
+  return !isApprovedApplication(app) && !isRejectedApplication(app) && !isResubmitApplication(app)
 }
 
 function fileHash(file: JsonRecord) {
@@ -299,7 +303,7 @@ nextCursor.value = String(data.next_cursor || "")
 }
 
 async function audit(action: "approve" | "reject" | "resubmit") {
-  if (!selected.value) return
+  if (!selected.value || !canAuditSelected.value) return
   if ((action === "reject" || action === "resubmit") && !auditRemark.value.trim()) {
     toast.error(copy.value.toasts.remarkRequired)
     return
