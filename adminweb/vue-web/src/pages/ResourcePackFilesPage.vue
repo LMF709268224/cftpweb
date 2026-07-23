@@ -545,7 +545,7 @@ onMounted(load)
             <div class="mt-1 line-clamp-2 text-sm text-slate-500">{{ file.description || "-" }}</div>
             <div class="mt-2 flex flex-wrap items-center gap-2 text-xs font-bold text-slate-500">
               <span class="max-w-full truncate rounded-full bg-blue-50 px-2 py-1 text-blue-700">{{ copy.ownerPrefix }}{{ ownerText(file) }}</span>
-              <span class="rounded-full bg-slate-100 px-2 py-1">Version: {{ file.version || 0 }}</span>
+              <span class="rounded-full bg-slate-100 px-2 py-1">{{ copy.fields.version }}: {{ file.version || 0 }}</span>
             </div>
           </button>
           <span class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:block md:self-center md:rounded-none md:bg-transparent md:p-0 md:text-center">
