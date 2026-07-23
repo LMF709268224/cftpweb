@@ -31,12 +31,3 @@ export function useAdminLanguage() {
     setAdminLanguage,
   }
 }
-
-export function useAdminTranslation() {
-  const { lang, t, setAdminLanguage } = useAdminLanguage()
-  return {
-    lang,
-    t,
-    changeLanguage: setAdminLanguage,
-  }
-}

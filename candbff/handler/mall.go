@@ -1813,26 +1813,6 @@ func compactPromoCodes(primary []string, legacy []string) []string {
 	return compactStrings(legacy)
 }
 
-// UnlockPipeline POST /api/mall/pipelines/{pipelineId}/unlock
-func (h *Handler) UnlockPipeline(w http.ResponseWriter, r *http.Request) {
-	candidateID := CandidateID(r)
-	pipelineID := strings.TrimSpace(chi.URLParam(r, "pipelineId"))
-	if !requireRequestField(w, pipelineID, "pipeline_id") {
-		return
-	}
-
-	resp, err := h.Mall.CreatePipelineUnlockOrder(r.Context(), &mallpb.CreatePipelineUnlockOrderRequest{
-		CandidateUlid:  candidateID,
-		PipelineCcUlid: pipelineID,
-	})
-	if err != nil {
-		HandleGrpcError(w, err)
-		return
-	}
-	resp.PaymentKey = formatPaymentKey(resp.GetPaymentKey())
-	WriteJSON(w, http.StatusCreated, resp)
-}
-
 // UnlockPipelineInBundle POST /api/mall/bundles/{bundleId}/unlock
 func (h *Handler) UnlockPipelineInBundle(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)

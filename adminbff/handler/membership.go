@@ -21,23 +21,11 @@ func int32Query(r *http.Request, key string, fallback int32) int32 {
 	return int32(v)
 }
 
-func uint32Query(r *http.Request, key string, fallback uint32) uint32 {
-	raw := strings.TrimSpace(r.URL.Query().Get(key))
-	if raw == "" {
-		return fallback
-	}
-	v, err := strconv.Atoi(raw)
-	if err != nil || v < 0 {
-		return fallback
-	}
-	return uint32(v)
-}
-
 func (h *Handler) ListMemberships(w http.ResponseWriter, r *http.Request) {
 	page := parseCursorPage(r, 20)
 	resp, err := h.Gmbr.ListMemberships(r.Context(), &gmbrpb.ListMembershipsRequest{
-		Cursor:   page.Cursor,
-		PageSize: page.PageSize,
+		Cursor:    page.Cursor,
+		PageSize:  page.PageSize,
 		SortOrder: gmbrpb.SortOrder(page.Sort),
 	})
 	if err != nil {
@@ -87,8 +75,8 @@ func (h *Handler) ListUserMemberships(w http.ResponseWriter, r *http.Request) {
 		Filters: &gmbrpb.UserMembershipFilters{
 			CandidateUlid: candidateULID,
 		},
-		Cursor:   page.Cursor,
-		PageSize: page.PageSize,
+		Cursor:    page.Cursor,
+		PageSize:  page.PageSize,
 		SortOrder: gmbrpb.SortOrder(page.Sort),
 	})
 	if err != nil {
@@ -110,8 +98,8 @@ func (h *Handler) ListMembershipBillings(w http.ResponseWriter, r *http.Request)
 			CandidateUlid:        candidateULID,
 			MembershipRecordUlid: membershipRecordULID,
 		},
-		Cursor:   page.Cursor,
-		PageSize: page.PageSize,
+		Cursor:    page.Cursor,
+		PageSize:  page.PageSize,
 		SortOrder: gmbrpb.SortOrder(page.Sort),
 	})
 	if err != nil {
@@ -248,8 +236,8 @@ func (h *Handler) ListMembershipMails(w http.ResponseWriter, r *http.Request) {
 			TaskStatus:       optionalString(strings.TrimSpace(r.URL.Query().Get("task_status"))),
 			NotificationType: optionalString(strings.TrimSpace(r.URL.Query().Get("notification_type"))),
 		},
-		Cursor:   page.Cursor,
-		PageSize: page.PageSize,
+		Cursor:    page.Cursor,
+		PageSize:  page.PageSize,
 		SortOrder: gmbrpb.SortOrder(page.Sort),
 	})
 	if err != nil {

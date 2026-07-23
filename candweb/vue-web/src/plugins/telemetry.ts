@@ -5,7 +5,7 @@ import { telemetry } from "../lib/telemetry"
 export const telemetryPlugin: Plugin = {
   install(app: App, options: { router?: Router } = {}) {
     // 1. Global Error Handling
-    app.config.errorHandler = (err, instance, info) => {
+    app.config.errorHandler = (err, _instance, info) => {
       telemetry.track("js_error", {
         message: err instanceof Error ? err.message : String(err),
         stack: err instanceof Error ? err.stack : undefined,

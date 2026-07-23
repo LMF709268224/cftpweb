@@ -10,7 +10,6 @@ import { fetchUnreadCount } from "@/lib/unreadCountCache"
 import { useTranslation } from "@/lib/language"
 import { usePolling } from "@/lib/polling"
 type Message = { id: string; type: string; rawTitle: string; rawContent: string; time: string; isRead: boolean; isUnread: boolean }
-type MessageTypeKey = "system" | "announcement" | "score" | "payment" | "other"
 type MessageStatusFilter = "unread" | "read"
 
 const { t, lang } = useTranslation()

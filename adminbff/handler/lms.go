@@ -73,31 +73,6 @@ func writeLmsError(w http.ResponseWriter, err error) {
 	HandleGrpcError(w, err)
 }
 
-type lmsLessonPayload interface {
-	GetLessonType() lmspb.LessonType
-	GetBody() string
-	GetMediaObjectKey() string
-	GetExternalUrl() string
-}
-
-func validateLmsLessonPayload(w http.ResponseWriter, req lmsLessonPayload) bool {
-	switch req.GetLessonType() {
-	case lmspb.LessonType_LESSON_TYPE_TEXT:
-		return requireRequestField(w, req.GetBody(), "body")
-	case lmspb.LessonType_LESSON_TYPE_LINK:
-		return requireRequestField(w, req.GetExternalUrl(), "external_url")
-	case lmspb.LessonType_LESSON_TYPE_VIDEO,
-		lmspb.LessonType_LESSON_TYPE_PDF,
-		lmspb.LessonType_LESSON_TYPE_IMAGE,
-		lmspb.LessonType_LESSON_TYPE_AUDIO,
-		lmspb.LessonType_LESSON_TYPE_FILE:
-		return requireRequestField(w, req.GetMediaObjectKey(), "media_object_key")
-	default:
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "lesson_type is invalid")
-		return false
-	}
-}
-
 func validateLmsPrerequisitePayload(
 	w http.ResponseWriter,
 	requiredType lmspb.EntityType,

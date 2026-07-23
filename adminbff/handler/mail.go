@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"regexp"
@@ -49,14 +48,6 @@ func firstNonEmpty(values ...string) string {
 		}
 	}
 	return ""
-}
-
-func (h *Handler) normalizedMailTemplatePath(input mailTemplateInput) string {
-	path := firstNonEmpty(input.Path, input.TemplateId)
-	if path != "" {
-		return path
-	}
-	return fmt.Sprintf("mail_%d", time.Now().Unix())
 }
 
 func normalizeTemplateSyntax(value string) string {

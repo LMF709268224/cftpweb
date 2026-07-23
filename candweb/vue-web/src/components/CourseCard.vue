@@ -44,7 +44,7 @@ const props = defineProps<{
   activeMembership?: Record<string, unknown> | null
 }>()
 
-const { t, lang } = useTranslation()
+const { t } = useTranslation()
 const router = useRouter()
 const showPurchaseDialog = ref(false)
 const freshBundle = ref<any | null>(null)

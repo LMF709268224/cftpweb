@@ -2,7 +2,6 @@ package handler
 
 import (
 	"fmt"
-	"net/http"
 )
 
 // ErrorCode 业务错误码，推荐使用字符串形式，更易读
@@ -65,25 +64,4 @@ func NewError(httpStatus int, code ErrorCode, message string) *AppError {
 		Code:       code,
 		Message:    message,
 	}
-}
-
-// 常用错误快捷创建
-func BadRequest(code ErrorCode, message string) *AppError {
-	return NewError(http.StatusBadRequest, code, message)
-}
-
-func Unauthorized(message string) *AppError {
-	return NewError(http.StatusUnauthorized, ErrUnauthorized, message)
-}
-
-func Forbidden(message string) *AppError {
-	return NewError(http.StatusForbidden, ErrForbidden, message)
-}
-
-func NotFound(code ErrorCode, message string) *AppError {
-	return NewError(http.StatusNotFound, code, message)
-}
-
-func InternalError(message string) *AppError {
-	return NewError(http.StatusInternalServerError, ErrInternal, message)
 }

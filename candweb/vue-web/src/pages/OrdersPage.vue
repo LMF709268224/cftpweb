@@ -12,7 +12,6 @@ import { apiClient } from "@/lib/apiClient"
 import { useBodyScrollLock } from "@/lib/bodyScrollLock"
 import { formatBackendDateMinute } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
-import { usePolling } from "@/lib/polling"
 
 type OrderStatus = keyof typeof statusConfig
 
@@ -125,16 +124,6 @@ const hasInvalidCouponCodes = computed(() => Boolean(detailPaymentPreview.value?
 const cannotPayReason = computed(() => hasInvalidCouponCodes.value ? (t.value.purchaseDialog?.couponInvalidPaymentBlocked || "Invalid coupon. Cannot proceed.") : "")
 
 const invoiceOpeningLabel = computed(() => t.value.orders.invoiceOpening)
-const orderTypeOptions = computed(() => [
-  { value: "", label: t.value.orders.allOrders },
-  { value: "PIPELINE_PAYMENT", label: orderTypeLabel("PIPELINE_PAYMENT") },
-  { value: "STAGE_PAYMENT", label: orderTypeLabel("STAGE_PAYMENT") },
-  { value: "COURSE_RETAKE_PAYMENT", label: orderTypeLabel("COURSE_RETAKE_PAYMENT") },
-  { value: "PIPELINE_UNLOCK", label: orderTypeLabel("PIPELINE_UNLOCK") },
-  { value: "CREDENTIAL_APPLICATION", label: orderTypeLabel("CREDENTIAL_APPLICATION") },
-  { value: "BUNDLE_PURCHASE", label: orderTypeLabel("BUNDLE_PURCHASE") },
-])
-
 const orderStatusOptions = computed(() => [
   { value: "", label: t.value.orders.allStatuses },
   { value: "WAIT_PAYMENT", label: orderStatusFilterLabel("WAIT_PAYMENT") },
@@ -145,21 +134,6 @@ const orderStatusOptions = computed(() => [
 ])
 
 const actionableOrderStatuses = new Set(["WAIT_PAYMENT", "PENDING"])
-
-const detailSummaryFields = computed<DetailField[]>(() => {
-  const detail = selectedOrderDetail.value
-  const summary = detail?.summary
-  if (!summary) return []
-  return [
-    { label: t.value.orders.detailProductName, value: summary.meta?.product_name || "" },
-    { label: t.value.orders.detailOrderId, value: summary.order_id || "" },
-    { label: t.value.orders.detailType, value: orderTypeLabel(summary.biz_type) },
-    { label: t.value.orders.detailAmount, value: orderAmountDisplay(Number(summary.amount || 0), summary.currency || "USD", summary.order_status || "", t.value.orders.free) },
-    { label: t.value.orders.detailPaidAt, value: detail?.paid_at || "" },
-    { label: t.value.orders.detailStatus, value: summary.order_status ? timelineStatusLabelWithDiagnostics(t, "MALL_ORDER", summary.order_status) : "" },
-    { label: t.value.orders.detailCreatedAt, value: summary.created_at || "" },
-  ].filter((field) => field.value !== "")
-})
 
 const detailExtraFields = computed<DetailField[]>(() => {
   const detail = selectedOrderDetail.value
@@ -494,12 +468,6 @@ function resetCursorPagination() {
   nextCursor.value = ""
   prevCursor.value = ""
   hasMore.value = false
-}
-
-function changeOrderType(value: string) {
-  selectedBizType.value = value
-  resetCursorPagination()
-  void fetchOrders()
 }
 
 function changeOrderStatus(value: string) {
