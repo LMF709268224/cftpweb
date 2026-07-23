@@ -116,6 +116,7 @@ const mode = ref<Mode>("detail")
 const showDeleteConfirm = ref(false)
 const replacementPipelineId = ref("")
 const limit = 10
+let detailRequestId = 0
 let nextCreateItemKey = 1
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.bundlesAdmin)
@@ -777,6 +778,7 @@ async function loadPricingTargets() {
 
 async function selectBundle(bundle: JsonRecord, open = true) {
   const id = bundleUlid(bundle)
+  const requestId = ++detailRequestId
   selected.value = bundle
   detailOpen.value = open
   mode.value = "detail"
@@ -787,15 +789,18 @@ async function selectBundle(bundle: JsonRecord, open = true) {
   if (!id) return
   try {
     const detail = await apiClient<JsonRecord>(`/api/mall/bundles/${encodeURIComponent(id)}`)
+    if (requestId !== detailRequestId) return
     const actualBundle = (detail.bundle && typeof detail.bundle === "object" ? detail.bundle : detail) as JsonRecord
     selected.value = actualBundle
     form.value = formFromBundle(actualBundle)
   } catch {
+    if (requestId !== detailRequestId) return
     form.value = formFromBundle(bundle)
   }
 }
 
 function newBundle() {
+  detailRequestId += 1
   selected.value = null
   detailOpen.value = true
   mode.value = "create"
@@ -807,6 +812,7 @@ function newBundle() {
 }
 
 function closeDetail() {
+  detailRequestId += 1
   detailOpen.value = false
   if (mode.value === "create") mode.value = "detail"
 }
