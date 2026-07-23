@@ -291,11 +291,13 @@ function certificateTaskEntries(record: JsonRecord | null | undefined) {
 
 function detailEntries(group: "overview" | "stage" | "unit" | "log", record: JsonRecord | null | undefined) {
   if (!record) return []
-  return Object.entries(record).map(([key, value]) => ({
-    key,
-    label: fieldLabel(group, key),
-    value: detailFieldValue(group, key, value, record),
-  }))
+  return Object.entries(record)
+    .filter(([key]) => group !== "overview" || key !== "course_selection_json")
+    .map(([key, value]) => ({
+      key,
+      label: fieldLabel(group, key),
+      value: detailFieldValue(group, key, value, record),
+    }))
 }
 
 function stageRecord(stage: JsonRecord | null | undefined) {
