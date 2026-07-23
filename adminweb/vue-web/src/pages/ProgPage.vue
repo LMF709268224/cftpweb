@@ -977,6 +977,7 @@ onMounted(async () => {
                     </div>
                     <div class="flex flex-wrap gap-3">
                       <button
+                        v-if="courseUnitStatus(selectedUnit.unit) === 'EXAM_FAILED'"
                         class="w-full rounded-xl border bg-white px-4 py-2 text-sm font-bold disabled:opacity-40 sm:w-auto"
                         type="button"
                         :disabled="!courseUnitUlid(selectedUnit.unit)"
@@ -985,6 +986,7 @@ onMounted(async () => {
                         {{ copy.forceCompleted }}
                       </button>
                       <button
+                        v-if="['EXAM_FAILED', 'EXAM_NO_SHOW', 'FAILED'].includes(courseUnitStatus(selectedUnit.unit))"
                         class="w-full rounded-xl border bg-white px-4 py-2 text-sm font-bold disabled:opacity-40 sm:w-auto"
                         type="button"
                         :disabled="!courseUnitUlid(selectedUnit.unit)"
