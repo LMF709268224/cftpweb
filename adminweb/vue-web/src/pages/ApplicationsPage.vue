@@ -81,13 +81,13 @@ const selectedFields = computed(() => {
     }))
 })
 const selectedFiles = computed(() => files(selected.value || {}))
-const isApprovedSelected = computed(() => isApprovedApplication(selected.value))
+const canAuditSelected = computed(() => canAuditApplication(selected.value))
 const detailTabs = computed(() => {
   const tabs: Array<{ key: DetailTab; title: string; count: number }> = [
     { key: "overview" as const, title: copy.value.tabs.overview, count: selected.value ? 1 : 0 },
     { key: "files" as const, title: copy.value.tabs.files, count: selectedFiles.value.length },
   ]
-  if (!isApprovedSelected.value) {
+  if (canAuditSelected.value) {
     tabs.push({ key: "audit" as const, title: copy.value.tabs.audit, count: 3 })
   }
   return tabs
@@ -157,6 +157,15 @@ function isApprovedApplication(app: JsonRecord | null | undefined) {
   return applicationLabel(status(app)) === copy.value.statusOptions.approved
 }
 
+function isResubmitApplication(app: JsonRecord | null | undefined) {
+  const normalized = String(status(app) || "").trim().toUpperCase()
+  return normalized.includes("RESUBMIT") || normalized.includes("REUPLOAD") || normalized === "4"
+}
+
+function canAuditApplication(app: JsonRecord | null | undefined) {
+  return !isApprovedApplication(app) && !isResubmitApplication(app)
+}
+
 function fileHash(file: JsonRecord) {
   return String(file.file_hash || "")
 }
@@ -191,7 +200,7 @@ function mergeApplicationDetail(appID: string, detail: JsonRecord) {
   }
   if (selected.value && appUlid(selected.value) === appID) {
     selected.value = merged
-    if (isApprovedApplication(merged) && activeTab.value === "audit") {
+    if (!canAuditApplication(merged) && activeTab.value === "audit") {
       activeTab.value = "overview"
     }
   }
