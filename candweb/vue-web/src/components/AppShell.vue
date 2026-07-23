@@ -7,7 +7,7 @@ defineProps<{
   contentClass?: string
 }>()
 
-const { isSidebarCollapsed, toggleSidebarCollapsed } = useSidebarCollapse()
+const { toggleSidebarCollapsed } = useSidebarCollapse()
 
 function handleSidebarToggleEvent(event: Event) {
   const target = event.target as Element | null

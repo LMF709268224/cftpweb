@@ -343,17 +343,3 @@ func (h *Handler) UpdateCatalog(w http.ResponseWriter, r *http.Request) {
 	// TODO: 待微服务团队补充 GCC catalog 管理接口后接入；当前 GCC proto 已移除 ListCatalogs/CreateCatalog/UpdateCatalog。
 	WriteError(w, http.StatusNotImplemented, ErrInvalidRequest, "catalog management API is not available in current GCC proto")
 }
-
-func requirePairedFields(w http.ResponseWriter, left string, leftName string, right string, rightName string) bool {
-	hasLeft := strings.TrimSpace(left) != ""
-	hasRight := strings.TrimSpace(right) != ""
-	if hasLeft == hasRight {
-		return true
-	}
-	if hasLeft {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, rightName+" is required when "+leftName+" is provided")
-		return false
-	}
-	WriteError(w, http.StatusBadRequest, ErrInvalidRequest, leftName+" is required when "+rightName+" is provided")
-	return false
-}

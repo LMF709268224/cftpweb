@@ -21,30 +21,6 @@ func queryText(r *http.Request, key string) string {
 	return strings.TrimSpace(r.URL.Query().Get(key))
 }
 
-func queryLimit(r *http.Request) int32 {
-	limit := parsePositiveIntQuery(r, "limit", 20)
-	if limit > 200 {
-		limit = 200
-	}
-	return int32(limit)
-}
-
-func queryOffset(r *http.Request) int32 {
-	return int32(parseUint32Query(r, "offset"))
-}
-
-func queryPage(r *http.Request) uint32 {
-	return uint32(parsePositiveIntQuery(r, "page", 1))
-}
-
-func queryPageSize(r *http.Request) uint32 {
-	pageSize := parsePositiveIntQuery(r, "page_size", 20)
-	if pageSize > 200 {
-		pageSize = 200
-	}
-	return uint32(pageSize)
-}
-
 func queryInt64(r *http.Request, key string) int64 {
 	value := queryText(r, key)
 	if value == "" {
@@ -123,8 +99,8 @@ func (h *Handler) ListPaySubscriptions(w http.ResponseWriter, r *http.Request) {
 			CustomerUlid: queryText(r, "customer_ulid"),
 			Status:       parsePayOrderStatus(r),
 		},
-		Cursor:   page.Cursor,
-		PageSize: page.PageSize,
+		Cursor:    page.Cursor,
+		PageSize:  page.PageSize,
 		SortOrder: gpaypb.SortOrder(page.Sort),
 	})
 	if err != nil {
@@ -143,8 +119,8 @@ func (h *Handler) ListPayWebhookEvents(w http.ResponseWriter, r *http.Request) {
 			StartTime:       queryInt64(r, "start_time"),
 			EndTime:         queryInt64(r, "end_time"),
 		},
-		Cursor:   page.Cursor,
-		PageSize: page.PageSize,
+		Cursor:    page.Cursor,
+		PageSize:  page.PageSize,
 		SortOrder: gpaypb.SortOrder(page.Sort),
 	})
 	if err != nil {
@@ -241,8 +217,8 @@ func (h *Handler) ListMallMailTasks(w http.ResponseWriter, r *http.Request) {
 			TaskStatus:    queryText(r, "task_status"),
 			MailType:      queryText(r, "mail_type"),
 		},
-		Cursor:   page.Cursor,
-		PageSize: page.PageSize,
+		Cursor:    page.Cursor,
+		PageSize:  page.PageSize,
 		SortOrder: mallpb.SortOrder(page.Sort),
 	})
 	if err != nil {
@@ -326,8 +302,8 @@ func (h *Handler) ListMallNatsMessages(w http.ResponseWriter, r *http.Request) {
 			Subject:       queryText(r, "subject"),
 			MessageType:   queryText(r, "message_type"),
 		},
-		Cursor:   page.Cursor,
-		PageSize: page.PageSize,
+		Cursor:    page.Cursor,
+		PageSize:  page.PageSize,
 		SortOrder: mallpb.SortOrder(page.Sort),
 	})
 	if err != nil {
@@ -374,8 +350,8 @@ func (h *Handler) ListProgMailTasks(w http.ResponseWriter, r *http.Request) {
 			CandidateUlid: candidateULID,
 			PipelineUlid:  queryText(r, "pipeline_ulid"),
 		},
-		Cursor:   page.Cursor,
-		PageSize: int32(page.PageSize),
+		Cursor:    page.Cursor,
+		PageSize:  int32(page.PageSize),
 		SortOrder: gprogpb.SortOrder(page.Sort),
 	})
 	if err != nil {
@@ -443,8 +419,8 @@ func (h *Handler) ListProgStages(w http.ResponseWriter, r *http.Request) {
 		Filters: &gprogpb.StageFilters{
 			PipelineUlid: queryText(r, "pipeline_ulid"),
 		},
-		Cursor:   page.Cursor,
-		PageSize: int32(page.PageSize),
+		Cursor:    page.Cursor,
+		PageSize:  int32(page.PageSize),
 		SortOrder: gprogpb.SortOrder(page.Sort),
 	})
 	if err != nil {
@@ -475,8 +451,8 @@ func (h *Handler) ListProgCourseUnits(w http.ResponseWriter, r *http.Request) {
 			StageUlid:    queryText(r, "stage_ulid"),
 			Status:       parseCourseUnitStatus(r),
 		},
-		Cursor:   page.Cursor,
-		PageSize: int32(page.PageSize),
+		Cursor:    page.Cursor,
+		PageSize:  int32(page.PageSize),
 		SortOrder: gprogpb.SortOrder(page.Sort),
 	})
 	if err != nil {
@@ -508,8 +484,8 @@ func (h *Handler) ListProgDriverEvents(w http.ResponseWriter, r *http.Request) {
 			EventStatus: queryText(r, "event_status"),
 			EventType:   queryText(r, "event_type"),
 		},
-		Cursor:   page.Cursor,
-		PageSize: int32(page.PageSize),
+		Cursor:    page.Cursor,
+		PageSize:  int32(page.PageSize),
 		SortOrder: gprogpb.SortOrder(page.Sort),
 	})
 	if err != nil {
@@ -539,8 +515,8 @@ func (h *Handler) ListProgNatsMessages(w http.ResponseWriter, r *http.Request) {
 			ReceiveStatus: queryText(r, "receive_status"),
 			SourceService: queryText(r, "source_service"),
 		},
-		Cursor:   page.Cursor,
-		PageSize: int32(page.PageSize),
+		Cursor:    page.Cursor,
+		PageSize:  int32(page.PageSize),
 		SortOrder: gprogpb.SortOrder(page.Sort),
 	})
 	if err != nil {
@@ -572,8 +548,8 @@ func (h *Handler) ListExamAuditMessages(w http.ResponseWriter, r *http.Request) 
 			StartTime:       optionalQueryString(r, "start_time"),
 			EndTime:         optionalQueryString(r, "end_time"),
 		},
-		Cursor:   page.Cursor,
-		PageSize: page.PageSize,
+		Cursor:    page.Cursor,
+		PageSize:  page.PageSize,
 		SortOrder: gexampb.SortOrder(page.Sort),
 	})
 	if err != nil {
@@ -603,8 +579,8 @@ func (h *Handler) ListExamStatusTransitions(w http.ResponseWriter, r *http.Reque
 			ExamUlid:   optionalQueryString(r, "exam_ulid"),
 			StatusType: optionalQueryString(r, "status_type"),
 		},
-		Cursor:   page.Cursor,
-		PageSize: page.PageSize,
+		Cursor:    page.Cursor,
+		PageSize:  page.PageSize,
 		SortOrder: gexampb.SortOrder(page.Sort),
 	})
 	if err != nil {
@@ -624,8 +600,8 @@ func (h *Handler) ListExamReminderMails(w http.ResponseWriter, r *http.Request) 
 			CandidateEmail: optionalQueryString(r, "candidate_email"),
 			ReminderType:   optionalQueryString(r, "reminder_type"),
 		},
-		Cursor:   page.Cursor,
-		PageSize: page.PageSize,
+		Cursor:    page.Cursor,
+		PageSize:  page.PageSize,
 		SortOrder: gexampb.SortOrder(page.Sort),
 	})
 	if err != nil {

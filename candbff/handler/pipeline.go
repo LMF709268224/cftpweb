@@ -547,14 +547,6 @@ type pdfPreviewClaims struct {
 	Filename    string
 }
 
-func (h *Handler) signPDFPreviewToken(candidateID string, resourceKind string, resourceID string, sourceURL string, filename string, expiresAt int64) string {
-	payload := strings.Join([]string{candidateID, resourceKind, resourceID, sourceURL, filename, strconv.FormatInt(expiresAt, 10)}, "\n")
-	mac := hmac.New(sha256.New, h.pdfPreviewSigningKey())
-	_, _ = mac.Write([]byte(payload))
-	signature := base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
-	return base64.RawURLEncoding.EncodeToString([]byte(payload + "\n" + signature))
-}
-
 func (h *Handler) verifyPDFPreviewToken(token string, resourceKind string, resourceID string) (pdfPreviewClaims, bool) {
 	decoded, err := base64.RawURLEncoding.DecodeString(token)
 	if err != nil {

@@ -32,14 +32,6 @@ export const paymentStatusOptions: LabelOption[] = [
   { value: "CANCELLED", label: "CANCELLED" },
 ]
 
-export const applicationStatusOptions: LabelOption[] = [
-  { value: "0", label: "ALL" },
-  { value: "1", label: "PENDING" },
-  { value: "2", label: "APPROVED" },
-  { value: "3", label: "REJECTED" },
-  { value: "4", label: "RESUBMIT_REQUIRED" },
-]
-
 export function normalizeStatus(value: unknown) {
   return String(value || "").trim().toUpperCase()
 }
@@ -47,15 +39,6 @@ export function normalizeStatus(value: unknown) {
 export function labelFor(options: LabelOption[], value: unknown) {
   const normalized = normalizeStatus(value)
   return options.find((item) => item.value === normalized)?.label || normalized || "-"
-}
-
-export function applicationStatusLabel(value: unknown) {
-  const status = normalizeStatus(value)
-  if (status.includes("APPROVED") || status === "2") return "APPROVED"
-  if (status.includes("REJECTED") || status === "3") return "REJECTED"
-  if (status.includes("RESUBMIT") || status.includes("REUPLOAD") || status === "4") return "RESUBMIT_REQUIRED"
-  if (status.includes("PENDING") || status === "1") return "PENDING"
-  return status || "-"
 }
 
 export function badgeClass(value: unknown) {

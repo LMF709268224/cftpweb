@@ -188,8 +188,6 @@ const quizChoicesExpanded = ref(false)
 const courseExamsLoading = ref(false)
 const courseExamsLoaded = ref(false)
 const courseExams = ref<any[]>([])
-const finalQualificationLoading = ref(false)
-const resolvedBundleId = ref("")
 const retakePaymentSession = ref<{
   paymentKey?: string
   orderId?: string
@@ -235,10 +233,6 @@ function firstString(...values: unknown[]) {
     if (normalized) return normalized
   }
   return ""
-}
-
-function courseIdOf(value?: Course | Record<string, unknown>) {
-  return firstString(value?.course_id, value?.course_ulid, value?.courseUlid)
 }
 
 function chapterIdOf(value?: ChapterDetail["chapter"] | Record<string, unknown>) {
@@ -291,23 +285,6 @@ const currentUnitStatus = computed(() => runtime.value?.current_unit_status)
 const nextUnitStatus = computed(() => nextStep.value?.status || currentUnitStatus.value)
 const currentLessonId = computed(() => lessonIdOf(lesson.value))
 const currentLessonRawCompleted = computed(() => Boolean(currentLessonId.value && completedLessonIds.value.has(currentLessonId.value)))
-const finalQualifications = computed(() => {
-  const quals = runtime.value?.config?.final_quals || runtime.value?.config?.cert_quals || []
-  return Array.isArray(quals)
-    ? quals
-        .map((qual) => ({
-          qualId: firstString(qual?.qual_id, qual?.qualId, qual?.id),
-          name: firstString(qual?.name_hint, qual?.nameHint, qual?.name),
-        }))
-        .filter((qual) => qual.qualId)
-    : []
-})
-const finalQualificationIds = computed(() => finalQualifications.value.map((qual) => qual.qualId))
-const pipelineWaitsFinalEligibility = computed(() => {
-  const normalized = normalizeEnumValueUpper(pipelineStatus.value)
-  return normalized.includes("WAIT_FINAL_ELIG")
-})
-const finalQualificationRequired = computed(() => !pipelineCancelled.value && pipelineWaitsFinalEligibility.value && finalQualificationIds.value.length > 0)
 const courseRuntimeUnit = computed(() => {
   const stages = runtime.value?.config?.stages || []
   for (const stage of stages) {
@@ -477,30 +454,6 @@ const examPendingStatusText = computed(() =>
     : t.value.learning.certificationExamOpenAfterQuizTag,
 )
 const shouldShowQuizPreparationCard = computed(() => !quizChoicesExpanded.value && !quizStepDone.value && completedQuizTaskCount.value === 0)
-const learnContentTabs = computed(() => [
-  {
-    id: "lesson" as const,
-    label: t.value.learning.lessonContentTitle,
-    icon: BookOpen,
-    count: lessons.value.length,
-  },
-  ...(quizTasks.value.length > 0
-    ? [{
-        id: "quiz" as const,
-        label: t.value.learning.allQuizzesTitle,
-        icon: Target,
-        count: quizTasks.value.length,
-      }]
-    : []),
-  ...(hasExamTab.value
-    ? [{
-        id: "exam" as const,
-        label: t.value.sidebar.exams,
-        icon: CalendarClock,
-        count: courseExamTabCount.value,
-      }]
-    : []),
-])
 const resourceContentTabs = computed(() => [
   {
     id: "materials" as const,
@@ -580,7 +533,6 @@ const currentCertificationStep = computed(() => certificationFlowSteps.value.fin
 const visibleCertificationStepId = computed<CertificationStepKey>(() => (activeContentTab.value === "materials" ? currentCertificationStepId.value : activeContentTab.value))
 const visibleCertificationStep = computed(() => certificationFlowSteps.value.find((step) => step.id === visibleCertificationStepId.value) || currentCertificationStep.value)
 const completedCertificationStepCount = computed(() => certificationFlowSteps.value.filter((step) => step.status === "done").length)
-const primaryQuizTask = computed(() => quizTasks.value.find((task) => !task.completed && task.quizId) || quizTasks.value.find((task) => task.quizId) || quizTasks.value[0])
 const nextLearningLessonId = computed(() => {
   for (const item of lessons.value) {
     const candidate = lessonIdOf(item.lesson)
@@ -594,23 +546,6 @@ const nextStepState = computed(() => {
   if (nextStep.value?.action) return nextStepDisplayFromAction(nextStep.value.action)
   return nextStepDisplay(nextUnitStatus.value, Boolean(nextLearningLessonId.value), Boolean(nextStep.value?.allow_retake), hasPendingQuizzes.value)
 })
-const sidebarNextActions = new Set(["signup_exam", "schedule_exam", "view_exam_schedule", "apply_retake", "view_exam_result", "view_certificate"])
-const showSidebarNextAction = computed(() => !pipelineCancelled.value && sidebarNextActions.has(nextStepState.value.action))
-
-function flowStepButtonClass(step: { status: FlowStepStatus }) {
-  if (step.status === "done") return "border-emerald-200 bg-emerald-50 text-emerald-800"
-  if (step.status === "current") return "border-primary/35 bg-primary/10 text-primary shadow-sm"
-  if (step.status === "locked") return "border-slate-100 bg-slate-50 text-slate-400"
-  return "border-slate-100 bg-white text-slate-700 hover:border-primary/25 hover:bg-primary/5"
-}
-
-function flowStepIconClass(step: { status: FlowStepStatus }) {
-  if (step.status === "done") return "bg-emerald-600 text-white"
-  if (step.status === "current") return "bg-primary text-white"
-  if (step.status === "locked") return "bg-slate-100 text-slate-400"
-  return "bg-slate-50 text-primary"
-}
-
 function flowStepRingClass(step: { id: CertificationStepKey; status: FlowStepStatus }) {
   if (step.status === "done") return "border-emerald-500 bg-emerald-50 text-emerald-700"
   if (step.id === visibleCertificationStepId.value || step.status === "current") return "border-primary bg-blue-50 text-primary shadow-[0_0_0_6px_rgba(37,99,235,0.08)]"
@@ -717,125 +652,6 @@ function nextStepDisplay(status?: string | number | null, hasNextLesson = false,
   return { action: "", label: t.value.common.unknown, desc: t.value.learning.nextStepDesc }
 }
 
-function normalizedStatus(status: unknown) {
-  return String(status || "").trim().toUpperCase()
-}
-
-function isUploadReadyStatus(status: unknown) {
-  return normalizedStatus(status).includes("UPLOAD_READY")
-}
-
-function isCredentialApplicationPaymentStatus(status: unknown) {
-  return normalizedStatus(status).includes("WAIT_REVIEW_FEE_PAYMENT")
-}
-
-function isCredentialApplicationUnderReviewStatus(status: unknown) {
-  return normalizedStatus(status).includes("UNDER_REVIEW")
-}
-
-function isCredentialApplicationResolvedStatus(status: unknown) {
-  const value = normalizedStatus(status)
-  return value.includes("RESOLVED") || value.includes("APPROVED") || value.includes("COMPLETED")
-}
-
-function finalQualificationUploadPath(qualIds = finalQualificationIds.value) {
-  const params = new URLSearchParams()
-  if (qualIds.length > 0) params.set("qual_ulids", qualIds.join(","))
-  return `/credentials${params.toString() ? `?${params.toString()}` : ""}`
-}
-
-async function resolveBundleIdForPipeline() {
-  const existing = firstString(resolvedBundleId.value, runtime.value?.config?.bundle_id, runtime.value?.config?.bundle_ulid)
-  if (existing) {
-    resolvedBundleId.value = existing
-    return existing
-  }
-  if (!pipelineId.value) return ""
-  const res = await apiClient("/api/mall/bundles?page_size=100")
-  const found = (res?.bundles || []).find((bundle: any) => firstString(bundle?.pipeline_id, bundle?.pipeline_cc_ulid) === pipelineId.value)
-  const bundleId = firstString(found?.bundle_id, found?.bundle_ulid)
-  resolvedBundleId.value = bundleId
-  return bundleId
-}
-
-async function missingFinalQualificationIds() {
-  const ids = finalQualificationIds.value
-  if (ids.length === 0) return []
-  const res = await apiClient(`/api/credentials/qualifications?qual_ulids=${encodeURIComponent(ids.join(","))}`)
-  const qualifications = Array.isArray(res?.qualifications) ? res.qualifications : []
-  if (qualifications.length === 0) return ids
-  const eligible = new Set(
-    qualifications
-      .filter((item: any) => Boolean(item?.eligible))
-      .map((item: any) => firstString(item?.qual_id, item?.cred_def_ulid)),
-  )
-  return ids.filter((id) => !eligible.has(id))
-}
-
-async function handleFinalQualificationApplication() {
-  if (finalQualificationLoading.value) return
-  if (!pipelineId.value || finalQualificationIds.value.length === 0) {
-    toast.error(t.value.common.error)
-    return
-  }
-  finalQualificationLoading.value = true
-  try {
-    const missingQualIds = await missingFinalQualificationIds()
-    if (missingQualIds.length === 0) {
-      toast.success(t.value.learning.finalQualificationApproved)
-      await loadRuntime()
-      return
-    }
-    const bundleId = await resolveBundleIdForPipeline()
-    if (!bundleId) {
-      toast.error(t.value.learning.finalQualificationBundleMissing)
-      return
-    }
-    const order = await apiClient("/api/credentials/application-orders", {
-      method: "POST",
-      body: JSON.stringify({
-        pipeline_cc_ulid: pipelineId.value,
-        bundle_ulid: bundleId,
-        qual_ulids: missingQualIds,
-      }),
-    })
-    const orderId = firstString(order?.application_order_ulid, order?.application_order_id)
-    const orderStatus = firstString(order?.order_status, order?.status)
-    if (isUploadReadyStatus(orderStatus)) {
-      toast.info(t.value.learning.finalQualificationUploadReady)
-      window.setTimeout(() => router.push(finalQualificationUploadPath(missingQualIds)), 300)
-      return
-    }
-    if (isCredentialApplicationPaymentStatus(orderStatus) || order?.payment_key) {
-      retakePaymentSession.value = {
-        paymentKey: order?.payment_key,
-        orderId,
-        bizType: "CREDENTIAL_APPLICATION",
-        bizRefUlid: orderId,
-        source: "credential_application",
-        returnPath: "/credentials",
-        extraReturnParams: { qual_ulids: missingQualIds.join(",") },
-      }
-      retakePaymentDialogOpen.value = true
-      return
-    }
-    if (isCredentialApplicationUnderReviewStatus(orderStatus)) {
-      toast.info(t.value.learning.finalQualificationUnderReview)
-      return
-    }
-    if (isCredentialApplicationResolvedStatus(orderStatus)) {
-      toast.success(t.value.learning.finalQualificationApproved)
-      await loadRuntime()
-      return
-    }
-    toast.info(t.value.learning.finalQualificationOrderCreated)
-  } catch (error) {
-    console.error(error)
-  } finally {
-    finalQualificationLoading.value = false
-  }
-}
-
 function formatFileSize(size?: number) {
   if (!size || size <= 0) return ""
   if (size < 1024) return `${size} B`
@@ -929,18 +745,6 @@ function hasAppointmentDetails(exam: any) {
   return hasText(exam?.confirmation_number) || hasText(exam?.site_name) || hasText(exam?.appointment_start_time) || hasText(exam?.appointment_end_time)
 }
 
-function hasAppointmentEnded(exam: any) {
-  if (!hasText(exam?.appointment_end_time)) return false
-  const safeStr = exam.appointment_end_time.endsWith("Z") ? exam.appointment_end_time.slice(0, -1) : exam.appointment_end_time
-  const endTime = new Date(safeStr).getTime()
-  return Number.isFinite(endTime) && endTime <= Date.now()
-}
-
-function shouldShowNoResultBadge(exam: any) {
-  if (hasExamResult(exam)) return false
-  return !isWaitingExamConfirmation(exam) && hasAppointmentDetails(exam) && hasAppointmentEnded(exam)
-}
-
 function isExamCompletedWithoutResult(exam: any) {
   if (hasExamResult(exam)) return false
   const status = normalizedExamStatus(exam?.exam_status)
@@ -1003,14 +807,6 @@ function retakeMessage(exam: any) {
 
 function retakeAttemptCount(exam: any) {
   return exam?.retake?.next_retried_count || exam?.next_retried_count || exam?.retried_count || 0
-}
-
-function noResultLabel() {
-  return (t.value.examsPage as any).statusNoResult || t.value.examsPage.statusPending
-}
-
-function resultPublishedLabel() {
-  return (t.value.examsPage as any).statusResultPublished || t.value.examsPage.statusPending
 }
 
 function scheduleSyncPendingLabel() {
@@ -1256,21 +1052,6 @@ async function startQuiz(quizId: string) {
   }
 }
 
-async function handleScheduleExam() {
-  if (pipelineCancelled.value) return
-  const targetPipelineUlid = runtime.value?.instance?.pipeline_ulid
-  if (!nextStep.value?.exam_id || !targetPipelineUlid) return
-  scheduleLoading.value = true
-  try {
-    const termUrlBase = window.location.origin + "/api/public/webhooks/exams/callback"
-    const res = await apiClient(`/api/exams/${encodeURIComponent(nextStep.value.exam_id)}/schedule-url?pipeline_ulid=${encodeURIComponent(targetPipelineUlid)}&course_ulid=${encodeURIComponent(nextStep.value.course_unit_ulid || "")}&url_type=1&term_url_base=${encodeURIComponent(termUrlBase)}`)
-    if (res?.url) window.open(res.url, "_blank", "noopener,noreferrer")
-    else toast.error(t.value.common.error)
-  } finally {
-    scheduleLoading.value = false
-  }
-}
-
 async function handleInlineScheduleExam(exam: any) {
   if (!canScheduleExam(exam) || scheduleLoading.value) return
   scheduleLoading.value = true
@@ -1479,13 +1260,6 @@ async function selectLesson(lessonId?: string) {
     })
   }
   await refreshProgress(false)
-}
-
-function scrollToBottom() {
-  activeContentTab.value = "quiz"
-  requestAnimationFrame(() => {
-    document.getElementById("course-learn-content")?.scrollIntoView({ behavior: "smooth", block: "start" })
-  })
 }
 
 function nextStepLink() {

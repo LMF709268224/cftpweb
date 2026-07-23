@@ -29,15 +29,6 @@ export function sanitizePaymentReturnPath(value: unknown, fallback = "") {
   return internalPaymentReturnPath(value) || internalPaymentReturnPath(fallback)
 }
 
-export function storePendingPaymentSession(session: PendingPaymentSession) {
-  if (typeof window === "undefined") return
-  const normalized = { ...session }
-  if (normalized.returnPath !== undefined) {
-    normalized.returnPath = sanitizePaymentReturnPath(normalized.returnPath)
-  }
-  window.localStorage.setItem(PENDING_PAYMENT_SESSION_KEY, JSON.stringify(normalized))
-}
-
 export function readPendingPaymentSession(): PendingPaymentSession | null {
   if (typeof window === "undefined") return null
   const raw = window.localStorage.getItem(PENDING_PAYMENT_SESSION_KEY)
@@ -74,16 +65,4 @@ export function stripeEmbeddedClientSecret(paymentKey: unknown) {
   if (typeof paymentKey !== "string") return ""
   const value = paymentKey.trim()
   return value.startsWith("cs_") ? value : ""
-}
-
-export function openPaymentBridge(session: PendingPaymentSession) {
-  if (typeof window === "undefined") return false
-  storePendingPaymentSession(session)
-  const bridgeUrl = "/payment-bridge"
-  const popup = window.open(bridgeUrl, "_blank", "noopener,noreferrer")
-  if (!popup) {
-    window.location.assign(bridgeUrl)
-    return false
-  }
-  return true
 }

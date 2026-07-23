@@ -4,11 +4,9 @@ import { RouterLink, useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
 import {
   ArrowLeft,
-  ArrowRight,
   Award,
   BookOpen,
   Clock,
-  CreditCard,
   ExternalLink,
   Loader2,
   Play,
@@ -123,7 +121,6 @@ const courseSummariesLoading = ref(false)
 const credentialDefinitionsLoading = ref(false)
 const purchaseOpen = ref(false)
 const certificateLoading = ref(false)
-const scheduleLoading = ref(false)
 const finalQualificationLoading = ref(false)
 const resolvedBundleId = ref("")
 const finalQualificationPaymentOpen = ref(false)
@@ -151,7 +148,6 @@ const purchased = computed(() => Boolean(detail.value?.instance && Object.keys(d
 const instancePipelineId = computed(() =>
   typeof detail.value?.instance?.pipeline_ulid === "string" ? detail.value.instance.pipeline_ulid : "",
 )
-const paymentConfigured = computed(() => Boolean(pipeline.value?.unlock_stripe_price_id || pipeline.value?.package_stripe_price_id))
 const nextStep = computed<PipelineNextStep>(() => detail.value?.next_step || {})
 const pipelineStatus = computed(() => detail.value?.pipeline_status)
 const currentStageName = computed(() => detail.value?.current_stage_name || "")
@@ -343,68 +339,6 @@ function learningHref(courseId?: string) {
     : "/certifications"
 }
 
-function nextStepHref() {
-  switch (nextStepAction.value) {
-    case "continue_learning":
-      return nextStep.value?.course_id ? learningHref(nextStep.value.course_id) : learningHref(firstCourseId.value)
-    case "signup_exam":
-      return `/exams/signup?unitId=${encodeURIComponent(nextStep.value?.course_unit_ulid || "")}&pipelineId=${encodeURIComponent(pipelineId.value)}`
-    case "schedule_exam":
-    case "view_exam_schedule":
-    case "apply_retake":
-    case "view_exam_result":
-      return "/exams"
-    case "view_certificate":
-      return instancePipelineId.value ? `/certifications/${encodeURIComponent(pipelineId.value)}` : "/certificates"
-    case "completed":
-      return "/certifications"
-    default:
-      return "/certifications"
-  }
-}
-
-function nextStepLabel() {
-  switch (nextStepAction.value) {
-    case "continue_learning":
-      return t.value.courses.openLearning
-    case "signup_exam":
-      return t.value.learning.goToExams
-    case "schedule_exam":
-      return t.value.learning.actionScheduleExam
-    case "view_exam_schedule":
-      return t.value.learning.actionViewExamSchedule
-    case "apply_retake":
-      return t.value.learning.actionApplyRetake
-    case "view_exam_result":
-      return t.value.learning.actionViewExamResult
-    case "view_certificate":
-      return t.value.courses.viewCertificate
-    case "completed":
-      return t.value.learning.completedTag
-    default:
-      return t.value.courses.viewDetails
-  }
-}
-
-function nextStepDescription() {
-  switch (nextStepAction.value) {
-    case "continue_learning":
-      return t.value.learning.nextStepContinueLearningDesc
-    case "signup_exam":
-    case "schedule_exam":
-    case "view_exam_schedule":
-    case "apply_retake":
-    case "view_exam_result":
-      return t.value.learning.nextStepGoToExamsDesc
-    case "view_certificate":
-      return t.value.learning.nextStepViewCertificateDesc
-    case "completed":
-      return t.value.learning.nextStepDesc
-    default:
-      return t.value.learning.nextStepDesc
-  }
-}
-
 async function loadDetail(showLoading = true, suppressErrorToast = false) {
   if (!pipelineId.value) {
     detail.value = null
@@ -512,19 +446,6 @@ async function openCertificate() {
     toast.error(t.value.learning.certificateUnavailableDesc)
   } finally {
     certificateLoading.value = false
-  }
-}
-
-async function handleScheduleExam() {
-  if (!nextStep.value?.exam_id || !instancePipelineId.value) return
-  scheduleLoading.value = true
-  try {
-    const termUrlBase = window.location.origin + "/api/public/webhooks/exams/callback"
-    const res = await apiClient(`/api/exams/${encodeURIComponent(nextStep.value.exam_id)}/schedule-url?pipeline_ulid=${encodeURIComponent(instancePipelineId.value)}&course_ulid=${encodeURIComponent(nextStep.value.course_unit_ulid || "")}&url_type=1&term_url_base=${encodeURIComponent(termUrlBase)}`)
-    if (res?.url) window.open(res.url, "_blank", "noopener,noreferrer")
-    else toast.error(t.value.common.error)
-  } finally {
-    scheduleLoading.value = false
   }
 }
 

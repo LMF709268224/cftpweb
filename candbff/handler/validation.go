@@ -28,11 +28,6 @@ func requireRequestFields(w http.ResponseWriter, fields ...string) bool {
 	return true
 }
 
-// parsePagination extracts page and page_size query params with a default page size.
-func parsePagination(r *http.Request, defaultSize int) (page, pageSize int) {
-	return parsePositiveIntQuery(r, "page", 1), parsePositiveIntQuery(r, "page_size", defaultSize)
-}
-
 // parsePositiveIntQuery parses a positive integer query param, returning fallback if absent or invalid.
 func parsePositiveIntQuery(r *http.Request, key string, fallback int) int {
 	raw := strings.TrimSpace(r.URL.Query().Get(key))

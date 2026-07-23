@@ -821,57 +821,6 @@
     },
     {
       "method": "GET",
-      "path": "/api/records",
-      "description": "档案列表",
-      "auth_required": true,
-      "request": {
-        "params": [],
-        "query": [],
-        "body": null
-      },
-      "response": {
-        "data": {
-          "certified": { "type": "int", "description": "已认证数" },
-          "reviewing": { "type": "int", "description": "审核中数" },
-          "rejected": { "type": "int", "description": "已驳回数" },
-          "records": {
-            "type": "array",
-            "items": {
-              "id": { "type": "string", "description": "档案ID" },
-              "title": { "type": "string", "description": "档案标题" },
-              "institution": { "type": "string", "description": "颁发机构" },
-              "date": { "type": "string", "description": "日期" },
-              "status": { "type": "string", "description": "״̬: certified / reviewing / rejected" }
-            }
-          }
-        },
-        "note": "需要新建 record 微服务"
-      }
-    },
-    {
-      "method": "POST",
-      "path": "/api/records",
-      "description": "上传新档案",
-      "auth_required": true,
-      "request": {
-        "params": [],
-        "query": [],
-        "body": {
-          "title": { "type": "string", "required": true, "description": "档案标题" },
-          "institution": { "type": "string", "required": false, "description": "颁发机构" },
-          "date": { "type": "string", "required": false, "description": "日期" },
-          "file": { "type": "string", "required": false, "description": "文件（base64或URL）" }
-        }
-      },
-      "response": {
-        "data": {
-          "status": { "type": "string", "description": "ok" }
-        },
-        "note": "需要新建 record 微服务"
-      }
-    },
-    {
-      "method": "GET",
       "path": "/api/certificates",
       "description": "证书列表",
       "auth_required": true,

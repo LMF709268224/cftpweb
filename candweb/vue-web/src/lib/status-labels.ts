@@ -9,8 +9,6 @@ export const normalizeEnumValue = (value?: StatusValue) => {
   return String(value).trim()
 }
 
-export const normalizeEnumValueLower = (value?: StatusValue) => normalizeEnumValue(value).toLowerCase()
-
 export const normalizeEnumValueUpper = (value?: StatusValue) => normalizeEnumValue(value).toUpperCase()
 
 const resolvePath = (object: TranslationTree, path: string) =>
@@ -299,28 +297,6 @@ export const CANDIDATE_PIPELINE_STATUS_ENUM_NAMES: StatusEnumNameMap = {
   "5": "PIPELINE_STATUS_CANCELLED",
 }
 
-export const ADMIN_PIPELINE_STATUS_LABELS: StatusLabelMap = {
-  "1": "progPage.pipelineStatusRunning",
-  "2": "progPage.pipelineStatusWaitFinalElig",
-  "3": "progPage.pipelineStatusCompleted",
-  "4": "progPage.pipelineStatusIssuingCert",
-  "5": "progPage.pipelineStatusCancelled",
-  PIPELINE_STATUS_RUNNING: "progPage.pipelineStatusRunning",
-  PIPELINE_STATUS_WAIT_FINAL_ELIG: "progPage.pipelineStatusWaitFinalElig",
-  PIPELINE_STATUS_COMPLETED: "progPage.pipelineStatusCompleted",
-  PIPELINE_STATUS_ISSUING_CERT: "progPage.pipelineStatusIssuingCert",
-  PIPELINE_STATUS_CANCELLED: "progPage.pipelineStatusCancelled",
-}
-
-export const ADMIN_PIPELINE_STATUS_ENUM_NAMES: StatusEnumNameMap = {
-  "0": "PIPELINE_STATUS_UNSPECIFIED",
-  "1": "PIPELINE_STATUS_RUNNING",
-  "2": "PIPELINE_STATUS_WAIT_FINAL_ELIG",
-  "3": "PIPELINE_STATUS_COMPLETED",
-  "4": "PIPELINE_STATUS_ISSUING_CERT",
-  "5": "PIPELINE_STATUS_CANCELLED",
-}
-
 export const STAGE_STATUS_LABELS: StatusLabelMap = {
   "1": "learning.statusWaitCandidate",
   "2": "learning.statusRunning",
@@ -391,43 +367,6 @@ export const courseUnitNextStepActionFromStatus = (status?: StatusValue, allowRe
   }
 }
 
-export const MESSAGE_STATUS_LABELS: StatusLabelMap = {
-  "0": "messagesPage.statusUnread",
-  "1": "messagesPage.statusRead",
-  "2": "messagesPage.statusDeleted",
-  "3": "messagesPage.statusRevoked",
-  MESSAGE_STATUS_UNREAD: "messagesPage.statusUnread",
-  MESSAGE_STATUS_READ: "messagesPage.statusRead",
-  MESSAGE_STATUS_DELETED: "messagesPage.statusDeleted",
-  MESSAGE_STATUS_REVOKED: "messagesPage.statusRevoked",
-}
-
-export const MESSAGE_STATUS_ENUM_NAMES: StatusEnumNameMap = {
-  "0": "MESSAGE_STATUS_UNREAD",
-  "1": "MESSAGE_STATUS_READ",
-  "2": "MESSAGE_STATUS_DELETED",
-  "3": "MESSAGE_STATUS_REVOKED",
-}
-
-export const ADMIN_APPLICATION_STATUS_LABELS: StatusLabelMap = {
-  "1": "applicationsPage.statusPending",
-  "2": "applicationsPage.statusApproved",
-  "3": "applicationsPage.statusRejected",
-  "4": "applicationsPage.statusResubmit",
-  APPLICATION_STATUS_PENDING: "applicationsPage.statusPending",
-  APPLICATION_STATUS_APPROVED: "applicationsPage.statusApproved",
-  APPLICATION_STATUS_REJECTED: "applicationsPage.statusRejected",
-  APPLICATION_STATUS_RESUBMIT: "applicationsPage.statusResubmit",
-}
-
-export const ADMIN_APPLICATION_STATUS_ENUM_NAMES: StatusEnumNameMap = {
-  "0": "APPLICATION_STATUS_UNSPECIFIED",
-  "1": "APPLICATION_STATUS_PENDING",
-  "2": "APPLICATION_STATUS_APPROVED",
-  "3": "APPLICATION_STATUS_REJECTED",
-  "4": "APPLICATION_STATUS_RESUBMIT",
-}
-
 export const CANDIDATE_APPLICATION_STATUS_LABELS: StatusLabelMap = {
   "1": "credentialsPage.appStatusPending",
   "2": "credentialsPage.appStatusApproved",
@@ -496,37 +435,4 @@ export const EXAM_STATUS_LABELS: StatusLabelMap = {
   PENDING: "examsPage.statusPending",
   EXAM_STATUS_PENDING: "examsPage.statusPending",
   RESULT_STATUS_PENDING: "examsPage.statusPending",
-}
-
-export const LMS_COURSE_STATUS_LABELS: StatusLabelMap = {
-  draft: "lmsCoursesPage.statusDraft",
-  active: "lmsCoursesPage.statusActive",
-  deprecated: "lmsCoursesPage.statusDeprecated",
-}
-
-export const LMS_ENROLLMENT_STATUS_LABELS: StatusLabelMap = {
-  learning: "lmsCoursesPage.statusLearning",
-  testing: "lmsCoursesPage.statusTesting",
-  completed: "lmsCoursesPage.statusCompleted",
-}
-
-export const LMS_LESSON_PROGRESS_STATUS_LABELS: StatusLabelMap = {
-  learning: "lmsCoursesPage.statusLearning",
-  testing: "lmsCoursesPage.statusTesting",
-  completed: "lmsCoursesPage.statusCompleted",
-}
-
-export const LMS_CHAPTER_PROGRESS_STATUS_LABELS: StatusLabelMap = {
-  learning: "lmsCoursesPage.statusLearning",
-  completed: "lmsCoursesPage.statusCompleted",
-}
-
-export const LMS_QUIZ_ATTEMPT_STATUS_LABELS: StatusLabelMap = {
-  completed: "lmsCoursesPage.statusCompleted",
-}
-
-export const LMS_ASSET_STATUS_LABELS: StatusLabelMap = {
-  active: "lmsCoursesPage.assetStatusActive",
-  broken: "lmsCoursesPage.assetStatusBroken",
-  missing: "lmsCoursesPage.assetStatusMissing",
 }

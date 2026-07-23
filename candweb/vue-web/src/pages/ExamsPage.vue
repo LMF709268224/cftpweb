@@ -153,15 +153,6 @@ function hasAppointmentDetails(exam: any) {
   if (!shouldShowStoredExamDetails(exam)) return false
   return hasText(exam.confirmation_number) || hasText(exam.site_name) || hasText(exam.appointment_start_time) || hasText(exam.appointment_end_time)
 }
-function hasAppointmentEnded(exam: any) {
-  if (!hasText(exam.appointment_end_time)) return false
-  const safeStr = exam.appointment_end_time.endsWith("Z") ? exam.appointment_end_time.slice(0, -1) : exam.appointment_end_time
-  const endTime = new Date(safeStr).getTime()
-  return Number.isFinite(endTime) && endTime <= Date.now()
-}
-function shouldShowNoResultBadge(exam: any) {
-  return false
-}
 function isExamCompletedWithoutResult(exam: any) {
   if (hasExamResult(exam)) return false
   const status = normalizedExamStatus(exam.exam_status)
@@ -214,12 +205,6 @@ function retakeMessage(exam: any) {
 }
 function retakeAttemptCount(exam: any) {
   return exam?.retake?.next_retried_count || exam.next_retried_count || exam.retried_count || 0
-}
-function noResultLabel() {
-  return (t.value.examsPage as any).statusNoResult || t.value.examsPage.statusPending
-}
-function resultPublishedLabel() {
-  return (t.value.examsPage as any).statusResultPublished || t.value.examsPage.statusPending
 }
 function scheduleSyncPendingLabel() {
   return (t.value.examsPage as any).statusScheduleSyncPending || t.value.examsPage.statusWaitingExamConfirmation

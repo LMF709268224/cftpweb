@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import { RouterLink } from "vue-router"
-import { AlertCircle, Check, ChevronDown, Crown, Loader2, Percent, RefreshCw, Shield, ShoppingBag, Star, XCircle } from "lucide-vue-next"
+import { AlertCircle, Check, ChevronDown, Crown, Loader2, Percent, RefreshCw, ShoppingBag, Star, XCircle } from "lucide-vue-next"
 import { toast } from "vue-sonner"
 import AppShell from "@/components/AppShell.vue"
 import AppPagination from "@/components/AppPagination.vue"

@@ -184,16 +184,6 @@ function handleViewerReady(registry?: any) {
   }
 }
 
-function goBack() {
-  if (window.opener) {
-    window.close()
-  } else if (window.history.length > 1) {
-    router.back()
-  } else {
-    router.push("/my-certifications")
-  }
-}
-
 function goBackFromResourcePack() {
   if (window.opener) {
     window.close()

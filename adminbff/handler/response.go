@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
-	"strings"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -123,14 +122,4 @@ func ReadJSON(r *http.Request, dest interface{}) error {
 func ReadLargeJSON(r *http.Request, dest interface{}) error {
 	r.Body = http.MaxBytesReader(nil, r.Body, 5<<20)
 	return json.NewDecoder(r.Body).Decode(dest)
-}
-
-func sanitizeFilename(s string) string {
-	s = strings.ReplaceAll(s, `"`, "")
-	s = strings.ReplaceAll(s, `\`, "")
-	s = strings.ReplaceAll(s, "/", "")
-	s = strings.ReplaceAll(s, "\r", "")
-	s = strings.ReplaceAll(s, "\n", "")
-	s = strings.ReplaceAll(s, "\x00", "")
-	return s
 }
