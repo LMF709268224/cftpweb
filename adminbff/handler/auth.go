@@ -278,10 +278,19 @@ func validatedAuthCallback(r *http.Request, raw string) (string, error) {
 	}
 
 	callbackOrigin := (&url.URL{Scheme: callback.Scheme, Host: callback.Host}).String()
-	if sameAuthOrigin(callbackOrigin, requestOrigin(r)) || configuredAuthOrigin(callbackOrigin) {
+	if sameAuthOrigin(callbackOrigin, requestOrigin(r)) || configuredAuthOrigin(callbackOrigin) || isLocalDevOrigin(callbackOrigin) {
 		return callback.String(), nil
 	}
 	return "", fmt.Errorf("callback origin is not allowed")
+}
+
+func isLocalDevOrigin(origin string) bool {
+	parsed, err := url.Parse(origin)
+	if err != nil {
+		return false
+	}
+	hostname := strings.ToLower(parsed.Hostname())
+	return hostname == "localhost" || hostname == "127.0.0.1"
 }
 
 func requestOrigin(r *http.Request) string {
