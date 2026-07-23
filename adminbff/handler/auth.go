@@ -23,6 +23,9 @@ const (
 )
 
 func setTokenCookies(w http.ResponseWriter, accessToken, refreshToken string, expiresAt time.Time) {
+	if expiresAt.IsZero() || expiresAt.Before(time.Now()) {
+		expiresAt = time.Now().Add(24 * time.Hour)
+	}
 	http.SetCookie(w, &http.Cookie{
 		Name:     "access_token",
 		Value:    accessToken,
