@@ -80,9 +80,11 @@ const canNext = computed(() => hasMore.value)
 const inEditor = computed(() => !!selected.value || creating.value)
 const selectedId = computed(() => selected.value ? pipelineUlid(selected.value) : "")
 const published = computed(() => {
-  const status = String(selected.value?.status || "").toLowerCase()
-  return status === "active" || (selected.value?.is_current && status !== "deprecated")
+  const status = pipelineStatusKey(selected.value)
+  return status === "ACTIVE" || status === "PUBLISHED" || Boolean(selected.value?.is_current && status !== "DEPRECATED")
 })
+const canPublishSelectedPipeline = computed(() => !!selectedId.value && pipelineStatusKey(selected.value) === "DRAFT" && !published.value)
+const canDeprecateSelectedPipeline = computed(() => !!selectedId.value && published.value)
 const canDeleteSelectedPipeline = computed(() => !!selectedId.value && pipelineStatusKey(selected.value) !== "DEPRECATED" && !published.value)
 const structureLocked = computed(() => creating.value || published.value || !selectedId.value)
 
@@ -807,7 +809,7 @@ async function saveStructure() {
 }
 
 async function publish() {
-  if (!selectedId.value) return
+  if (!canPublishSelectedPipeline.value) return
   const parsed = parseStructure()
   if (!parsed) return
   if (!validateStructureForSave(parsed)) {
@@ -831,7 +833,7 @@ async function publish() {
 }
 
 function deprecate() {
-  if (!selectedId.value) return
+  if (!canDeprecateSelectedPipeline.value) return
   deprecateConfirmOpen.value = true
 }
 
@@ -1051,8 +1053,8 @@ onMounted(() => {
               <Copy class="h-4 w-4" />
               {{ copy.cloneVersion }}
             </button>
-            <button class="rounded-xl border px-4 py-2 font-bold" type="button" @click="publish">{{ copy.publish }}</button>
-            <button class="rounded-xl border px-4 py-2 font-bold disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deprecating" @click="deprecate">{{ copy.deprecate }}</button>
+            <button v-if="canPublishSelectedPipeline" class="rounded-xl border px-4 py-2 font-bold" type="button" @click="publish">{{ copy.publish }}</button>
+            <button v-if="canDeprecateSelectedPipeline" class="rounded-xl border px-4 py-2 font-bold disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deprecating" @click="deprecate">{{ copy.deprecate }}</button>
             <button v-if="canDeleteSelectedPipeline" class="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2 font-bold text-white" type="button" @click="removePipeline">
               <Trash2 class="h-4 w-4" />
               {{ copy.delete }}
@@ -1070,13 +1072,13 @@ onMounted(() => {
               <ChevronDown class="h-4 w-4 transition-transform group-open:rotate-180" />
             </summary>
             <div class="mt-4 grid gap-4 md:grid-cols-2">
-              <label class="grid gap-2 text-sm font-bold">
+              <label class="grid content-start gap-2 text-sm font-bold">
                 <span><span v-if="creating" class="mr-1 text-red-500">*</span>{{ copy.fields.categoryTips }}</span>
-                <input v-model="form.category_tips" :disabled="!creating" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" />
+                <input v-model="form.category_tips" :disabled="!creating" class="h-12 w-full rounded-xl border border-slate-200 px-4 disabled:bg-slate-100 disabled:text-slate-500" />
               </label>
-              <label class="grid gap-2 text-sm font-bold">
+              <label class="grid content-start gap-2 text-sm font-bold">
                 <span><span v-if="creating" class="mr-1 text-red-500">*</span>{{ copy.fields.respath }}</span>
-                <input v-model="form.pipeline_gpath" :disabled="!creating" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" />
+                <input v-model="form.pipeline_gpath" :disabled="!creating" class="h-12 w-full rounded-xl border border-slate-200 px-4 disabled:bg-slate-100 disabled:text-slate-500" />
                 <p v-if="creating" class="text-xs font-semibold text-slate-500">{{ copy.respathHint }}</p>
               </label>
             </div>
