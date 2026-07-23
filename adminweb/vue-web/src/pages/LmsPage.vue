@@ -1200,6 +1200,10 @@ async function loadCompleteCourse() {
 }
 
 async function saveCourse() {
+  if (courseStatusKey(selectedCourse.value) === "deprecated") {
+    toast.error("已弃用的课程不能修改保存")
+    return
+  }
   if (!courseForm.value.title.trim()) {
     toast.error(copy.value.toasts.courseTitleRequired)
     return
@@ -2878,7 +2882,7 @@ onMounted(() => {
               <button v-if="canPublishSelectedCourse" class="h-10 w-full rounded-xl border px-4 font-bold disabled:opacity-40 sm:w-auto" :disabled="!selectedCourseId || publishing" type="button" @click="publishCourse">
                 {{ publishing ? copy.publishing : copy.publishCourse }}
               </button>
-              <button class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50 sm:w-auto" :disabled="savingCourse" type="submit">
+              <button class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50 sm:w-auto" :disabled="savingCourse || courseStatusKey(selectedCourse) === 'deprecated'" type="submit">
                 <Loader2 v-if="savingCourse" class="h-4 w-4 animate-spin" />
                 <Save v-else class="h-4 w-4" />
                 {{ savingCourse ? copy.saving : copy.saveCourse }}
@@ -3082,7 +3086,7 @@ onMounted(() => {
               <input v-model="courseForm.thumbnail_file_hash" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" />
             </label>
             <div class="flex flex-col gap-3 sm:flex-row lg:col-span-2">
-              <button class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50 sm:w-auto" :disabled="savingCourse" type="submit">
+              <button class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50 sm:w-auto" :disabled="savingCourse || courseStatusKey(selectedCourse) === 'deprecated'" type="submit">
                 <Loader2 v-if="savingCourse" class="h-4 w-4 animate-spin" />
                 <Save v-else class="h-4 w-4" />
                 {{ savingCourse ? copy.saving : copy.saveCourse }}
