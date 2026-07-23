@@ -19,6 +19,8 @@ const prerequisites = ref<JsonRecord[]>([])
 const adding = ref(false)
 const formRequiredEntity = ref("")
 const formRequiredResult = ref<number>(1)
+const pendingDeletePrerequisite = ref<JsonRecord | null>(null)
+const deleting = ref(false)
 
 // Flatten all available entities from the course tree
 const availableEntities = computed(() => {
@@ -96,8 +98,20 @@ const availableEntities = computed(() => {
     }
   })
   
-  return entities
+  return Array.from(
+    new Map(entities.map((entity) => [`${entity.type}:${entity.id}`, entity])).values(),
+  )
 })
+
+const selectedPrerequisiteEntityIds = computed(() => new Set(
+  prerequisites.value
+    .map((item) => String(item.required_entity_ulid || item.required_entity_id || "").trim())
+    .filter(Boolean),
+))
+
+function isPrerequisiteSelected(entityId: string) {
+  return selectedPrerequisiteEntityIds.value.has(entityId)
+}
 
 const selectedEntityType = computed(() => {
   const entity = availableEntities.value.find(e => e.id === formRequiredEntity.value)
@@ -122,7 +136,7 @@ async function loadPrerequisites() {
     prerequisites.value = res?.prerequisites || []
   } catch (err) {
     console.error(err)
-    toast.error(apiErrorMessage(err, props.copy.loadFailed || 'Load failed'))
+    toast.error(apiErrorMessage(err, props.copy.toasts.prerequisiteLoadFailed))
   } finally {
     loading.value = false
   }
@@ -133,6 +147,11 @@ async function addPrerequisite() {
   
   const entity = availableEntities.value.find(e => e.id === formRequiredEntity.value)
   if (!entity) return
+  if (isPrerequisiteSelected(entity.id)) {
+    toast.error(props.copy.toasts.prerequisiteAlreadyExists)
+    formRequiredEntity.value = ""
+    return
+  }
   
   adding.value = true
   try {
@@ -146,29 +165,43 @@ async function addPrerequisite() {
         target_entity_ulid: props.targetEntityId
       })
     })
-    toast.success(props.copy.addSuccess || 'Added successfully')
+    toast.success(props.copy.toasts.prerequisiteAdded)
     formRequiredEntity.value = ""
     await loadPrerequisites()
   } catch (err) {
     console.error(err)
-    toast.error(apiErrorMessage(err, props.copy.addFailed || 'Add failed'))
+    toast.error(apiErrorMessage(err, props.copy.toasts.prerequisiteAddFailed))
   } finally {
     adding.value = false
   }
 }
 
-async function deletePrerequisite(prerequisite: JsonRecord) {
-  if (!confirm(props.copy.deleteConfirm || 'Are you sure?')) return
-  
+function requestDeletePrerequisite(prerequisite: JsonRecord) {
+  pendingDeletePrerequisite.value = prerequisite
+}
+
+function closeDeleteConfirm() {
+  if (deleting.value) return
+  pendingDeletePrerequisite.value = null
+}
+
+async function confirmDeletePrerequisite() {
+  const prerequisite = pendingDeletePrerequisite.value
+  if (!prerequisite) return
+
+  deleting.value = true
   try {
     const pId = prerequisite.prerequisite_id || prerequisite.prerequisite_ulid
     const version = prerequisite.version || 1
     await apiClient(`/api/lms/prerequisites/${pId}?version=${version}`, { method: "DELETE" })
-    toast.success(props.copy.deleteSuccess || 'Deleted successfully')
+    toast.success(props.copy.toasts.prerequisiteDeleted)
+    pendingDeletePrerequisite.value = null
     await loadPrerequisites()
   } catch (err) {
     console.error(err)
-    toast.error(apiErrorMessage(err, props.copy.deleteFailed || 'Delete failed'))
+    toast.error(apiErrorMessage(err, props.copy.toasts.prerequisiteDeleteFailed))
+  } finally {
+    deleting.value = false
   }
 }
 
@@ -212,7 +245,7 @@ onMounted(() => {
               {{ item.required_result === 2 || item.required_result === 'PREREQUISITE_RESULT_PASSED' ? (copy.mustPass || '必须通过') : (copy.mustComplete || '必须完成') }}
             </div>
           </div>
-          <button class="shrink-0 rounded-full p-2 text-slate-400 transition hover:bg-slate-200 hover:text-red-500" :aria-label="copy.delete" @click="deletePrerequisite(item)">
+          <button class="shrink-0 rounded-full p-2 text-slate-400 transition hover:bg-slate-200 hover:text-red-500" type="button" :aria-label="copy.delete" @click="requestDeletePrerequisite(item)">
             <Trash2 class="h-4 w-4" />
           </button>
         </div>
@@ -224,8 +257,8 @@ onMounted(() => {
         <span>{{ copy.requireEntity || '要求完成项' }}</span>
         <select v-model="formRequiredEntity" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 font-semibold outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" required>
           <option value="" disabled>{{ copy.selectRequireEntity || '请选择一个课时/章节/测验' }}</option>
-          <option v-for="entity in availableEntities" :key="entity.id" :value="entity.id">
-            {{ entity.title }}
+          <option v-for="entity in availableEntities" :key="`${entity.type}:${entity.id}`" :value="entity.id" :disabled="isPrerequisiteSelected(entity.id)">
+            {{ entity.title }}{{ isPrerequisiteSelected(entity.id) ? ` (${copy.prerequisiteAlreadyAdded})` : "" }}
           </option>
         </select>
       </label>
@@ -243,4 +276,34 @@ onMounted(() => {
       </button>
     </form>
   </div>
+
+  <Teleport to="body">
+    <div
+      v-if="pendingDeletePrerequisite"
+      class="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/50 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="prerequisite-delete-title"
+      @click.self="closeDeleteConfirm"
+    >
+      <section class="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl md:p-6">
+        <h3 id="prerequisite-delete-title" class="text-xl font-black text-slate-950 md:text-2xl">{{ copy.prerequisiteDeleteConfirmTitle }}</h3>
+        <p class="mt-3 text-sm font-semibold leading-6 text-slate-500">{{ copy.prerequisiteDeleteConfirmDescription }}</p>
+        <div class="mt-5 rounded-xl bg-slate-50 px-4 py-3">
+          <div class="break-words font-black text-slate-900">
+            {{ entityName(String(pendingDeletePrerequisite.required_entity_id || pendingDeletePrerequisite.required_entity_ulid)) }}
+          </div>
+        </div>
+        <div class="mt-6 flex justify-end gap-3">
+          <button class="h-11 min-w-24 rounded-xl border border-slate-900 px-5 font-bold text-slate-950 disabled:opacity-50" type="button" :disabled="deleting" @click="closeDeleteConfirm">
+            {{ copy.prerequisiteDeleteCancel }}
+          </button>
+          <button class="inline-flex h-11 min-w-28 items-center justify-center gap-2 rounded-xl bg-red-600 px-5 font-bold text-white disabled:opacity-50" type="button" :disabled="deleting" @click="confirmDeletePrerequisite">
+            <Loader2 v-if="deleting" class="h-4 w-4 animate-spin" />
+            {{ copy.prerequisiteDeleteAction }}
+          </button>
+        </div>
+      </section>
+    </div>
+  </Teleport>
 </template>

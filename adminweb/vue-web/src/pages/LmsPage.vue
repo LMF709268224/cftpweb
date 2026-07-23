@@ -1390,6 +1390,7 @@ function editChapter(chapter: JsonRecord) {
 
 function newChapter() {
   resetChapterState()
+  chapterActiveTab.value = "basic"
   chapterDialogMode.value = "create"
   const maxSort = chapters.value.reduce((max, c) => Math.max(max, Number(c.sort_order) || 0), 0)
   chapterForm.value.sort_order = String(maxSort + 1)
