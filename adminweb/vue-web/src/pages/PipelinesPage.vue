@@ -83,8 +83,9 @@ const published = computed(() => {
   const status = String(selected.value?.status || "").toLowerCase()
   return status === "active" || (selected.value?.is_current && status !== "deprecated")
 })
-const canDeleteSelectedPipeline = computed(() => !!selectedId.value && pipelineStatusKey(selected.value) !== "DEPRECATED" && !published.value)
-const structureLocked = computed(() => creating.value || published.value || !selectedId.value)
+const deprecated = computed(() => pipelineStatusKey(selected.value) === "DEPRECATED")
+const canDeleteSelectedPipeline = computed(() => !!selectedId.value && !deprecated.value && !published.value)
+const structureLocked = computed(() => creating.value || published.value || deprecated.value || !selectedId.value)
 
 const stages = computed(() => asArray(structure.value.stages))
 const certs = computed(() => asArray(structure.value.certs))
@@ -1106,7 +1107,7 @@ onMounted(() => {
         </div>
 
         <div v-if="structureLocked" class="border-b border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-900">
-            {{ copy.structureLockedHint }}
+            {{ deprecated ? ((copy as any).deprecatedLockedHint || '此版本已下架归档，无法再进行修改。') : copy.structureLockedHint }}
           </div>
 
         <main class="h-full min-h-0 max-h-none min-w-0 overflow-y-auto md:h-[60vh] md:min-h-[360px] md:max-h-[620px]">
@@ -1490,7 +1491,7 @@ onMounted(() => {
             <textarea v-model="form.structure_json" :disabled="isStructureLocked()" class="min-h-[560px] w-full rounded-xl border border-slate-200 p-4 font-mono text-xs leading-6 disabled:bg-slate-100 disabled:text-slate-500" />
             <div class="flex flex-col justify-end gap-3 sm:flex-row">
               <button class="rounded-xl border px-5 py-3 font-bold disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="applyRawStructure">{{ copy.applyRaw }}</button>
-              <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving || isStructureLocked()" @click="saveStructure">
+              <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed" type="button" :disabled="saving || isStructureLocked()" :title="deprecated ? ((copy as any).deprecatedLockedHint || '此版本已下架归档，无法再进行修改。') : ''" @click="saveStructure">
                 <Send class="h-4 w-4" />
                 {{ copy.saveStructure }}
               </button>
@@ -1498,7 +1499,7 @@ onMounted(() => {
           </div>
 
           <div v-if="activeLayer !== 'raw'" class="flex flex-col justify-end gap-3 border-t border-slate-200 p-4 sm:flex-row md:p-5">
-            <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving || isStructureLocked()" @click="saveStructure">
+            <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed" type="button" :disabled="saving || isStructureLocked()" :title="deprecated ? ((copy as any).deprecatedLockedHint || '此版本已下架归档，无法再进行修改。') : ''" @click="saveStructure">
               <Send class="h-4 w-4" />
               {{ copy.saveStructure }}
             </button>
@@ -1524,7 +1525,7 @@ onMounted(() => {
               <Plus class="h-4 w-4" />
               {{ copy.createDraft }}
             </button>
-            <button v-else class="inline-flex h-10 w-full min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50 sm:w-auto" type="button" :disabled="saving" @click="saveMetadata">
+            <button v-else class="inline-flex h-10 w-full min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50 sm:w-auto disabled:cursor-not-allowed" type="button" :disabled="saving || deprecated" :title="deprecated ? ((copy as any).deprecatedLockedHint || '此版本已下架归档，无法再进行修改。') : ''" @click="saveMetadata">
               <Save class="h-4 w-4" />
               {{ copy.saveBasic }}
             </button>
