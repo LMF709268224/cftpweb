@@ -170,6 +170,10 @@ export const en: AdminTranslations = {
             created_at: "Created At",
             updated_at: "Updated At",
         },
+        paymentModes: {
+            FULL_PIPELINE: "Pay in full",
+            BY_STAGE: "Pay by stage",
+        },
         bundleUnsupported: "No business order details are available.",
         bundleLoading: "Loading business order details...",
         bundleRaw: "Business order raw data",

@@ -168,6 +168,10 @@ export const zh = {
             created_at: "创建时间",
             updated_at: "更新时间",
         },
+        paymentModes: {
+            FULL_PIPELINE: "整套认证一次性支付",
+            BY_STAGE: "按阶段支付",
+        },
         bundleUnsupported: "当前订单没有可展示的业务详情。",
         bundleLoading: "正在加载业务订单详情...",
         bundleRaw: "业务订单原始数据",

@@ -810,7 +810,6 @@ onMounted(async () => {
           <div class="mb-4 flex flex-wrap items-center justify-between gap-4">
             <div class="min-w-0">
               <h2 class="break-words text-xl font-black md:text-2xl">{{ pipelineDisplayName(selectedSummary) }}</h2>
-              <p class="mt-1 break-all text-sm text-slate-500">{{ selectedPipelineUlid }}</p>
             </div>
             <span class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(statusLabel(selectedStatus))">
               {{ statusLabel(selectedStatus) }}

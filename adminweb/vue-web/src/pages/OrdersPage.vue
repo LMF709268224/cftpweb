@@ -164,6 +164,13 @@ function businessFieldLabel(key: string) {
   return copy.value.businessFields?.[key as keyof typeof copy.value.businessFields] || key.replaceAll("_", " ")
 }
 
+function paymentModeLabel(value: unknown) {
+  const raw = String(value || "").trim()
+  const normalized = normalizeStatus(raw)
+  const labels = copy.value.paymentModes as Record<string, string>
+  return labels[normalized] || raw || "-"
+}
+
 function dateValue(value: unknown) {
   if (typeof value === "number") {
     const ms = value > 1_000_000_000_000 ? value : value * 1000
@@ -177,6 +184,7 @@ function recordValue(value: unknown): JsonRecord | null {
 }
 
 function displayBusinessValue(key: string, value: unknown) {
+  if (key === "payment_mode") return paymentModeLabel(value)
   if (isTimeField(key)) return dateValue(value)
   if (typeof value === "string") return value
   if (typeof value === "number" || typeof value === "boolean") return String(value)
