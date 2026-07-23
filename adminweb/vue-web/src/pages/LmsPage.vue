@@ -3194,7 +3194,7 @@ onMounted(() => {
             <div class="min-h-0 flex-1 overflow-y-auto p-4 md:p-5">
               <div v-if="chapterDialogMode !== 'create'" class="mb-4 flex gap-4 border-b border-slate-200">
                 <button :class="chapterActiveTab === 'basic' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="chapterActiveTab = 'basic'">{{ (copy as any).basicInfo || '基本信息' }}</button>
-                <button :class="chapterActiveTab === 'prerequisites' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="chapterActiveTab = 'prerequisites'">{{ (copy as any).prerequisites || '前置条件' }}</button>
+                <button v-if="canEditCourseContent" :class="chapterActiveTab === 'prerequisites' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="chapterActiveTab = 'prerequisites'">{{ (copy as any).prerequisites || '前置条件' }}</button>
               </div>
               <div v-show="chapterActiveTab === 'basic'">
                 <div v-if="chapterDialogMode === 'detail'" class="rounded-2xl border border-slate-200 p-4">
@@ -3217,7 +3217,7 @@ onMounted(() => {
                 </label>
               </form>
               </div>
-              <div v-if="chapterActiveTab === 'prerequisites' && chapterDialogMode !== 'create'" class="mt-2">
+              <div v-if="canEditCourseContent && chapterActiveTab === 'prerequisites' && chapterDialogMode !== 'create'" class="mt-2">
                 <LmsPrerequisitesTab :targetEntityType="3" :targetEntityId="selectedChapterId" :course="completeCourseRecord" :copy="copy" />
               </div>
             </div>
@@ -3330,7 +3330,7 @@ onMounted(() => {
             <div class="min-h-0 flex-1 overflow-y-auto p-4 md:p-5">
               <div v-if="lessonDialogMode !== 'create'" class="mb-4 flex gap-4 border-b border-slate-200">
                 <button :class="lessonActiveTab === 'basic' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="lessonActiveTab = 'basic'">{{ (copy as any).basicInfo || '基本信息' }}</button>
-                <button :class="lessonActiveTab === 'prerequisites' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="lessonActiveTab = 'prerequisites'">{{ (copy as any).prerequisites || '前置条件' }}</button>
+                <button v-if="canEditCourseContent" :class="lessonActiveTab === 'prerequisites' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="lessonActiveTab = 'prerequisites'">{{ (copy as any).prerequisites || '前置条件' }}</button>
               </div>
               <div v-show="lessonActiveTab === 'basic'">
                 <div v-if="lessonDialogMode === 'detail'" class="space-y-5">
@@ -3422,7 +3422,7 @@ onMounted(() => {
                 </template>
               </form>
               </div>
-              <div v-if="lessonActiveTab === 'prerequisites' && lessonDialogMode !== 'create'" class="mt-2">
+              <div v-if="canEditCourseContent && lessonActiveTab === 'prerequisites' && lessonDialogMode !== 'create'" class="mt-2">
                 <LmsPrerequisitesTab :targetEntityType="1" :targetEntityId="editingLessonId" :course="completeCourseRecord" :copy="copy" />
               </div>
             </div>
@@ -3957,7 +3957,7 @@ onMounted(() => {
             <div class="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 md:p-5">
               <div v-if="quizDialogMode !== 'create'" class="mb-4 flex gap-4 border-b border-slate-200">
                 <button :class="quizActiveTab === 'basic' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="quizActiveTab = 'basic'">{{ (copy as any).basicInfo || '基本信息' }}</button>
-                <button :class="quizActiveTab === 'prerequisites' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="quizActiveTab = 'prerequisites'">{{ (copy as any).prerequisites || '前置条件' }}</button>
+                <button v-if="canEditCourseContent" :class="quizActiveTab === 'prerequisites' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="quizActiveTab = 'prerequisites'">{{ (copy as any).prerequisites || '前置条件' }}</button>
               </div>
               <div v-show="quizActiveTab === 'basic'" class="space-y-5 md:space-y-6">
                 <div class="grid gap-4 lg:grid-cols-3">
@@ -4102,7 +4102,7 @@ onMounted(() => {
                 </div>
               </section>
               </div>
-              <div v-if="quizActiveTab === 'prerequisites' && quizDialogMode !== 'create'" class="mt-2">
+              <div v-if="canEditCourseContent && quizActiveTab === 'prerequisites' && quizDialogMode !== 'create'" class="mt-2">
                 <LmsPrerequisitesTab :targetEntityType="2" :targetEntityId="selectedQuizId" :course="completeCourseRecord" :copy="copy" />
               </div>
             </div>
