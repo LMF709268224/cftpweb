@@ -72,6 +72,7 @@ const deleteConfirmOpen = ref(false)
 const pendingDeletePipeline = ref<JsonRecord | null>(null)
 const deletingPipeline = ref(false)
 const limit = 20
+let detailRequestId = 0
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.pipelineConfigAdmin)
 
@@ -695,6 +696,7 @@ async function loadPdfTemplateOptions() {
 
 async function selectPipeline(pipeline: JsonRecord) {
   const id = pipelineUlid(pipeline)
+  const requestId = ++detailRequestId
   selected.value = pipeline
   creating.value = false
   form.value = formFromPipeline(pipeline)
@@ -703,16 +705,19 @@ async function selectPipeline(pipeline: JsonRecord) {
   if (!id) return
   try {
     const detail = await apiClient<JsonRecord>(`/api/pipelines/${encodeURIComponent(id)}`)
+    if (requestId !== detailRequestId) return
     selected.value = detail
     form.value = formFromPipeline(detail)
     setStructure(structureFromPipeline(detail))
   } catch {
+    if (requestId !== detailRequestId) return
     form.value = formFromPipeline(pipeline)
     setStructure(structureFromPipeline(pipeline))
   }
 }
 
 function newPipeline() {
+  detailRequestId += 1
   selected.value = null
   creating.value = true
   form.value = { ...emptyForm }
@@ -721,6 +726,7 @@ function newPipeline() {
 }
 
 function back() {
+  detailRequestId += 1
   selected.value = null
   creating.value = false
   form.value = { ...emptyForm }
