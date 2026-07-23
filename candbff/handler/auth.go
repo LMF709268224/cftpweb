@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"crypto/rand"
+	"crypto/subtle"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -16,6 +18,11 @@ import (
 
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 	"golang.org/x/oauth2"
+)
+
+const (
+	oauthStateCookieName = "cand_oauth_state"
+	oauthStateTTL        = 10 * time.Minute
 )
 
 func setTokenCookies(w http.ResponseWriter, accessToken, refreshToken string, expiresAt time.Time) {
@@ -41,7 +48,18 @@ func setTokenCookies(w http.ResponseWriter, accessToken, refreshToken string, ex
 
 // GetLoginURL handles GET /api/auth/login-url.
 func (h *Handler) GetLoginURL(w http.ResponseWriter, r *http.Request) {
-	redirectSigninURL := r.URL.Query().Get("callback")
+	redirectSigninURL, err := validatedAuthCallback(r, r.URL.Query().Get("callback"))
+	if err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, err.Error())
+		return
+	}
+
+	oauthState, err := newOAuthState()
+	if err != nil {
+		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to initialize login")
+		return
+	}
+
 	signinURL := casdoorsdk.GetSigninUrl(redirectSigninURL)
 
 	if h.CasdoorEndpoint != "" {
@@ -54,6 +72,17 @@ func (h *Handler) GetLoginURL(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	parsedSigninURL, err := url.Parse(signinURL)
+	if err != nil {
+		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to build login URL")
+		return
+	}
+	query := parsedSigninURL.Query()
+	query.Set("state", oauthState)
+	parsedSigninURL.RawQuery = query.Encode()
+	signinURL = parsedSigninURL.String()
+	setOAuthStateCookie(w, oauthState)
+
 	WriteJSON(w, http.StatusOK, AuthURLRsp{URL: signinURL})
 }
 
@@ -65,8 +94,14 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	input.Code = strings.TrimSpace(input.Code)
+	input.State = strings.TrimSpace(input.State)
 	if input.Code == "" || input.State == "" {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "code and state are required")
+		return
+	}
+	if !consumeOAuthState(w, r, input.State) {
+		WriteError(w, http.StatusUnauthorized, ErrAuthFailed, "invalid or expired login state")
 		return
 	}
 
@@ -189,6 +224,7 @@ func clearTokenCookies(w http.ResponseWriter) {
 // Logout handles POST /api/auth/logout.
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	clearTokenCookies(w)
+	clearOAuthStateCookie(w)
 	WriteJSON(w, http.StatusOK, BaseRsp{Code: 200, Msg: "logout success"})
 }
 
@@ -288,3 +324,114 @@ func appendJSONClaimValues(values []string, raw interface{}) []string {
 	}
 	return values
 }
+
+func newOAuthState() (string, error) {
+	raw := make([]byte, 32)
+	if _, err := rand.Read(raw); err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(raw), nil
+}
+
+func setOAuthStateCookie(w http.ResponseWriter, state string) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     oauthStateCookieName,
+		Value:    state,
+		Path:     "/api/auth",
+		Expires:  time.Now().Add(oauthStateTTL),
+		MaxAge:   int(oauthStateTTL.Seconds()),
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+	})
+}
+
+func clearOAuthStateCookie(w http.ResponseWriter) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     oauthStateCookieName,
+		Value:    "",
+		Path:     "/api/auth",
+		Expires:  time.Now().Add(-time.Hour),
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+	})
+}
+
+func consumeOAuthState(w http.ResponseWriter, r *http.Request, provided string) bool {
+	clearOAuthStateCookie(w)
+	cookie, err := r.Cookie(oauthStateCookieName)
+	if err != nil {
+		return false
+	}
+	expected := strings.TrimSpace(cookie.Value)
+	provided = strings.TrimSpace(provided)
+	if expected == "" || len(expected) != len(provided) {
+		return false
+	}
+	return subtle.ConstantTimeCompare([]byte(expected), []byte(provided)) == 1
+}
+
+func validatedAuthCallback(r *http.Request, raw string) (string, error) {
+	raw = strings.TrimSpace(raw)
+	callback, err := url.ParseRequestURI(raw)
+	if err != nil || !callback.IsAbs() || callback.User != nil {
+		return "", fmt.Errorf("callback must be an absolute HTTP(S) URL")
+	}
+	if callback.Scheme != "http" && callback.Scheme != "https" {
+		return "", fmt.Errorf("callback must use HTTP or HTTPS")
+	}
+	if callback.Host == "" || callback.Path != "/callback" || callback.RawQuery != "" || callback.Fragment != "" {
+		return "", fmt.Errorf("callback must target the configured /callback page")
+	}
+
+	callbackOrigin := (&url.URL{Scheme: callback.Scheme, Host: callback.Host}).String()
+	if sameAuthOrigin(callbackOrigin, requestOrigin(r)) || configuredAuthOrigin(callbackOrigin) || isLocalDevOrigin(callbackOrigin) {
+		return callback.String(), nil
+	}
+	return "", fmt.Errorf("callback origin is not allowed")
+}
+
+func isLocalDevOrigin(origin string) bool {
+	parsed, err := url.Parse(origin)
+	if err != nil {
+		return false
+	}
+	hostname := strings.ToLower(parsed.Hostname())
+	return hostname == "localhost" || hostname == "127.0.0.1"
+}
+
+func requestOrigin(r *http.Request) string {
+	scheme := "http"
+	if r.TLS != nil {
+		scheme = "https"
+	}
+	if forwarded := strings.TrimSpace(strings.Split(r.Header.Get("X-Forwarded-Proto"), ",")[0]); forwarded == "http" || forwarded == "https" {
+		scheme = forwarded
+	}
+	return (&url.URL{Scheme: scheme, Host: strings.TrimSpace(r.Host)}).String()
+}
+
+func configuredAuthOrigin(origin string) bool {
+	for _, allowed := range strings.Split(os.Getenv(config.EnvCORSOrigins), ",") {
+		allowed = strings.TrimSpace(allowed)
+		if allowed == "" || allowed == "*" {
+			continue
+		}
+		parsed, err := url.Parse(allowed)
+		if err != nil || parsed.Scheme == "" || parsed.Host == "" {
+			continue
+		}
+		allowedOrigin := (&url.URL{Scheme: parsed.Scheme, Host: parsed.Host}).String()
+		if sameAuthOrigin(origin, allowedOrigin) {
+			return true
+		}
+	}
+	return false
+}
+
+func sameAuthOrigin(left, right string) bool {
+	return strings.EqualFold(strings.TrimRight(left, "/"), strings.TrimRight(right, "/"))
+}
+
