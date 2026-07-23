@@ -220,8 +220,7 @@ const quizDialogMode = ref<QuizDialogMode>("detail")
 const questionDialogOpen = ref(false)
 const questionDialogMode = ref<"detail" | "edit" | "create">("detail")
 
-const categoryFilter = ref("")
-const publishedOnly = ref(false)
+const statusFilter = ref("")
 const nextPageToken = ref("")
 const courseForm = ref<CourseForm>(emptyCourseForm())
 const chapterForm = ref<ChapterForm>(emptyChapterForm())
@@ -1090,8 +1089,7 @@ async function loadCourses(pageToken = "") {
   loading.value = true
   try {
     const params = new URLSearchParams({ page_size: String(pageSize) })
-    if (categoryFilter.value.trim()) params.set("category_tips", categoryFilter.value.trim())
-    if (publishedOnly.value) params.set("published_only", "true")
+    if (statusFilter.value) params.set("status", statusFilter.value)
     if (pageToken) params.set("cursor", pageToken)
     const data = await apiClient<JsonRecord>(`/api/lms/courses?${params}`)
     const list = Array.isArray(data.courses) ? data.courses : []
@@ -2762,7 +2760,7 @@ async function loadImportFile(event: Event) {
   input.value = ""
 }
 
-watch([categoryFilter, publishedOnly], () => {
+watch([statusFilter], () => {
   nextPageToken.value = ""
   void loadCourses()
 })
@@ -2940,24 +2938,13 @@ onMounted(() => {
     </Teleport>
 
     <section v-if="courseView === 'list'" class="rounded-2xl border border-slate-200 bg-white shadow-sm md:rounded-3xl">
-      <div class="grid gap-3 border-b border-slate-200 bg-slate-50/60 p-4 lg:grid-cols-[1fr_auto]">
-        <div class="relative min-w-0">
-          <input v-model="categoryFilter" class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 pr-10 text-sm shadow-sm outline-none transition focus:border-sky-300 focus:ring-2 focus:ring-sky-100" :placeholder="copy.categoryPlaceholder" />
-          <button
-            v-if="categoryFilter"
-            type="button"
-            class="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-            :aria-label="copy.clearCategoryFilter"
-            :title="copy.clearCategoryFilter"
-            @click="categoryFilter = ''"
-          >
-            <X class="h-4 w-4" />
-          </button>
-        </div>
-        <label class="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 shadow-sm">
-          <input v-model="publishedOnly" type="checkbox" />
-          {{ copy.publishedOnly }}
-        </label>
+      <div class="flex items-center justify-end border-b border-slate-200 bg-slate-50/60 p-4">
+        <select v-model="statusFilter" class="h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 shadow-sm">
+          <option value="">全部状态</option>
+          <option value="DRAFT">草稿</option>
+          <option value="PUBLISHED">已发布</option>
+          <option value="DEPRECATED">已下架</option>
+        </select>
       </div>
 
       <div v-if="loading && !courses.length" class="px-4 py-10 text-center text-slate-500 md:p-12">

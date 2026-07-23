@@ -128,10 +128,33 @@ func validateLmsUploadURLPayload(w http.ResponseWriter, req *lmspb.CreateUploadU
 // ListLmsCourses GET /api/lms/courses
 func (h *Handler) ListLmsCourses(w http.ResponseWriter, r *http.Request) {
 	page := parseCursorPage(r, 20)
+	status := strings.TrimSpace(r.URL.Query().Get("status"))
+	var mappedStatus string
+	currentOnly := true
+
+	switch strings.ToUpper(status) {
+	case "DRAFT":
+		mappedStatus = "Draft"
+		currentOnly = false
+	case "PUBLISHED", "ACTIVE":
+		mappedStatus = "Active"
+		currentOnly = true
+	case "DEPRECATED":
+		mappedStatus = "Deprecated"
+		currentOnly = false
+	case "":
+		mappedStatus = ""
+		currentOnly = true
+	default:
+		mappedStatus = status
+		currentOnly = false
+	}
+
 	resp, err := h.Lms.ListCoursesAdmin(r.Context(), &lmspb.ListCoursesRequest{
 		Filters: &lmspb.CourseFilters{
-			CategoryTips:  r.URL.Query().Get("category_tips"),
-			PublishedOnly: parseBoolQuery(r, "published_only"),
+			CategoryTips: r.URL.Query().Get("category_tips"),
+			Status:       mappedStatus,
+			CurrentOnly:  currentOnly,
 		},
 		PageSize:  page.PageSize,
 		SortOrder: lmspb.SortOrder(page.Sort),
