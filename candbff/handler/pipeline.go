@@ -2,19 +2,14 @@ package handler
 
 import (
 	"context"
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/base64"
 	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
 	"net/url"
-	"os"
 	"slices"
 	"strconv"
 	"strings"
-	"time"
 
 	gccpb "github.com/afnandelfin620-star/cftptest/cftp/gcc"
 	lmspb "github.com/afnandelfin620-star/cftptest/cftp/glms"
@@ -474,18 +469,6 @@ func (h *Handler) PreviewLessonPDF(w http.ResponseWriter, r *http.Request) {
 	redirectPreview(w, r, viewResp.GetViewUrl())
 }
 
-func (h *Handler) PreviewLessonPDFPublic(w http.ResponseWriter, r *http.Request) {
-	lessonID := strings.TrimSpace(chi.URLParam(r, "lessonId"))
-	token := strings.TrimSpace(r.URL.Query().Get("token"))
-	preview, ok := h.verifyPDFPreviewToken(token, "lesson", lessonID)
-	if !ok || !requireRequestFields(w, preview.CandidateID, "candidate_id", lessonID, "lesson_id") {
-		WriteError(w, http.StatusUnauthorized, ErrUnauthorized, "invalid or expired preview token")
-		return
-	}
-
-	redirectPreview(w, r, preview.SourceURL)
-}
-
 func (h *Handler) PreviewResourceURL(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
 	resourceURL := strings.TrimSpace(r.URL.Query().Get("src"))
@@ -501,32 +484,6 @@ func (h *Handler) PreviewResourceURL(w http.ResponseWriter, r *http.Request) {
 	redirectPreview(w, r, resourceURL)
 }
 
-func (h *Handler) PreviewResourceURLPublic(w http.ResponseWriter, r *http.Request) {
-	resourceURL := strings.TrimSpace(r.URL.Query().Get("src"))
-	token := strings.TrimSpace(r.URL.Query().Get("token"))
-	preview, ok := h.verifyPDFPreviewToken(token, "resource", resourceURL)
-	if !ok || !requireRequestFields(w, preview.CandidateID, "candidate_id", resourceURL, "src") {
-		WriteError(w, http.StatusUnauthorized, ErrUnauthorized, "invalid or expired preview token")
-		return
-	}
-	if !isValidPreviewResourceURL(preview.SourceURL) {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid resource url")
-		return
-	}
-	redirectPreview(w, r, preview.SourceURL)
-}
-
-func (h *Handler) PreviewResourcePackFilePDFPublic(w http.ResponseWriter, r *http.Request) {
-	fileID := strings.TrimSpace(chi.URLParam(r, "fileId"))
-	token := strings.TrimSpace(r.URL.Query().Get("token"))
-	preview, ok := h.verifyPDFPreviewToken(token, "resource-pack-file", fileID)
-	if !ok || !requireRequestFields(w, preview.CandidateID, "candidate_id", fileID, "file_id") {
-		WriteError(w, http.StatusUnauthorized, ErrUnauthorized, "invalid or expired preview token")
-		return
-	}
-	redirectPreview(w, r, preview.SourceURL)
-}
-
 func redirectPreview(w http.ResponseWriter, r *http.Request, sourceURL string) {
 	sourceURL = strings.TrimSpace(sourceURL)
 	if sourceURL == "" {
@@ -539,58 +496,6 @@ func redirectPreview(w http.ResponseWriter, r *http.Request, sourceURL string) {
 		return
 	}
 	http.Redirect(w, r, sourceURL, http.StatusTemporaryRedirect)
-}
-
-type pdfPreviewClaims struct {
-	CandidateID string
-	SourceURL   string
-	Filename    string
-}
-
-func (h *Handler) verifyPDFPreviewToken(token string, resourceKind string, resourceID string) (pdfPreviewClaims, bool) {
-	decoded, err := base64.RawURLEncoding.DecodeString(token)
-	if err != nil {
-		return pdfPreviewClaims{}, false
-	}
-	parts := strings.Split(string(decoded), "\n")
-	if len(parts) != 7 {
-		return pdfPreviewClaims{}, false
-	}
-	candidateID := parts[0]
-	if parts[1] != resourceKind || parts[2] != resourceID {
-		return pdfPreviewClaims{}, false
-	}
-	expiresAt, err := strconv.ParseInt(parts[5], 10, 64)
-	if err != nil || time.Now().Unix() > expiresAt {
-		return pdfPreviewClaims{}, false
-	}
-
-	payload := strings.Join(parts[:6], "\n")
-	mac := hmac.New(sha256.New, h.pdfPreviewSigningKey())
-	_, _ = mac.Write([]byte(payload))
-	expected := base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
-	if !hmac.Equal([]byte(expected), []byte(parts[6])) {
-		return pdfPreviewClaims{}, false
-	}
-	return pdfPreviewClaims{
-		CandidateID: candidateID,
-		SourceURL:   parts[3],
-		Filename:    parts[4],
-	}, candidateID != "" && parts[3] != ""
-}
-
-func (h *Handler) pdfPreviewSigningKey() []byte {
-	key := strings.TrimSpace(os.Getenv("PDF_PREVIEW_SIGNING_SECRET"))
-	if key == "" {
-		key = strings.TrimSpace(h.CasdoorClientSecret)
-	}
-	if key == "" {
-		key = strings.TrimSpace(h.CasdoorClientId)
-	}
-	if key == "" {
-		panic("PDF_PREVIEW_SIGNING_SECRET, CasdoorClientSecret, or CasdoorClientId must be provided")
-	}
-	return []byte(key)
 }
 
 func isValidPreviewResourceURL(resourceURL string) bool {

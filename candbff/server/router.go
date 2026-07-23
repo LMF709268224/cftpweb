@@ -32,15 +32,6 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 		r.Use(normalTimeout)
 		r.Post("/exams/callback/{urlType}/{examId}", h.ThirdPartyExamCallback)
 	})
-	r.Route("/api/public/pdf-preview", func(r chi.Router) {
-		r.Use(pdfPreviewTimeout)
-		r.Get("/lessons/{lessonId}", h.PreviewLessonPDFPublic)
-		r.Head("/lessons/{lessonId}", h.PreviewLessonPDFPublic)
-		r.Get("/resource", h.PreviewResourceURLPublic)
-		r.Head("/resource", h.PreviewResourceURLPublic)
-		r.Get("/resource-pack-files/{fileId}", h.PreviewResourcePackFilePDFPublic)
-		r.Head("/resource-pack-files/{fileId}", h.PreviewResourcePackFilePDFPublic)
-	})
 
 	r.Route("/api/public/telemetry", func(r chi.Router) {
 		r.Use(normalTimeout)
