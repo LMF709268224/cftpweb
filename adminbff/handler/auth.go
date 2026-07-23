@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
@@ -21,30 +22,6 @@ const (
 	oauthStateCookieName = "admin_oauth_state"
 	oauthStateTTL        = 10 * time.Minute
 )
-
-func setTokenCookies(w http.ResponseWriter, r *http.Request, accessToken, refreshToken string, expiresAt time.Time) {
-	if expiresAt.IsZero() || expiresAt.Before(time.Now()) {
-		expiresAt = time.Now().Add(24 * time.Hour)
-	}
-	http.SetCookie(w, &http.Cookie{
-		Name:     "access_token",
-		Value:    accessToken,
-		Expires:  expiresAt,
-		HttpOnly: true,
-		Secure:   strings.HasPrefix(requestOrigin(r), "https"),
-		SameSite: http.SameSiteStrictMode,
-		Path:     "/",
-	})
-	http.SetCookie(w, &http.Cookie{
-		Name:     "refresh_token",
-		Value:    refreshToken,
-		Expires:  expiresAt.AddDate(0, 1, 0), // arbitrarily 1 month
-		HttpOnly: true,
-		Secure:   strings.HasPrefix(requestOrigin(r), "https"),
-		SameSite: http.SameSiteStrictMode,
-		Path:     "/",
-	})
-}
 
 // GetLoginURL  GET /api/auth/login-url
 // 返回 Casdoor 登录页 URL，前端拿到后 redirect 用户到 Casdoor 完成登录
@@ -131,7 +108,11 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	setTokenCookies(w, r, token.AccessToken, token.RefreshToken, token.Expiry)
+	if err := setTokenCookies(w, r, token.AccessToken, token.RefreshToken, token.Expiry); err != nil {
+		slog.Error("Failed to store authentication cookies", "error", err)
+		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to initialize authenticated session")
+		return
+	}
 
 	WriteJSON(w, http.StatusOK, LoginRsp{
 		User: UserInfo{
@@ -143,9 +124,13 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 // RefreshToken  POST /auth/refresh
 // 用 refresh_token 换取新的 access_token
 func (h *Handler) RefreshToken(w http.ResponseWriter, r *http.Request) {
-	refreshToken := strings.TrimSpace(readRefreshToken(r))
+	refreshToken, err := readRefreshTokenCookie(r)
+	if err != nil {
+		WriteError(w, http.StatusUnauthorized, ErrInvalidToken, "invalid refresh token cookie")
+		return
+	}
 	if refreshToken == "" {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "refresh_token is required")
+		WriteError(w, http.StatusUnauthorized, ErrUnauthorized, "refresh_token is required")
 		return
 	}
 
@@ -175,40 +160,16 @@ func (h *Handler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	if strings.TrimSpace(nextRefreshToken) == "" {
 		nextRefreshToken = refreshToken
 	}
-	setTokenCookies(w, r, token.AccessToken, nextRefreshToken, token.Expiry)
+	if err := setTokenCookies(w, r, token.AccessToken, nextRefreshToken, token.Expiry); err != nil {
+		slog.Error("Failed to store refreshed authentication cookies", "error", err)
+		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to update authenticated session")
+		return
+	}
 
 	WriteJSON(w, http.StatusOK, LoginRsp{
 		User: UserInfo{
 			Name: claims.User.Name,
 		},
-	})
-}
-
-func readRefreshToken(r *http.Request) string {
-	if cookie, err := r.Cookie("refresh_token"); err == nil && strings.TrimSpace(cookie.Value) != "" {
-		return cookie.Value
-	}
-	return ""
-}
-
-func clearTokenCookies(w http.ResponseWriter, r *http.Request) {
-	http.SetCookie(w, &http.Cookie{
-		Name:     "access_token",
-		Value:    "",
-		Expires:  time.Now().Add(-1 * time.Hour),
-		HttpOnly: true,
-		Secure:   strings.HasPrefix(requestOrigin(r), "https"),
-		SameSite: http.SameSiteStrictMode,
-		Path:     "/",
-	})
-	http.SetCookie(w, &http.Cookie{
-		Name:     "refresh_token",
-		Value:    "",
-		Expires:  time.Now().Add(-1 * time.Hour),
-		HttpOnly: true,
-		Secure:   strings.HasPrefix(requestOrigin(r), "https"),
-		SameSite: http.SameSiteStrictMode,
-		Path:     "/",
 	})
 }
 
