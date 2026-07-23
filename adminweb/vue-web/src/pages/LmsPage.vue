@@ -221,7 +221,7 @@ const questionDialogOpen = ref(false)
 const questionDialogMode = ref<"detail" | "edit" | "create">("detail")
 
 const categoryFilter = ref("")
-const publishedOnly = ref(false)
+const statusFilter = ref("")
 const nextPageToken = ref("")
 const courseForm = ref<CourseForm>(emptyCourseForm())
 const chapterForm = ref<ChapterForm>(emptyChapterForm())
@@ -1091,7 +1091,7 @@ async function loadCourses(pageToken = "") {
   try {
     const params = new URLSearchParams({ page_size: String(pageSize) })
     if (categoryFilter.value.trim()) params.set("category_tips", categoryFilter.value.trim())
-    if (publishedOnly.value) params.set("published_only", "true")
+    if (statusFilter.value) params.set("status", statusFilter.value)
     if (pageToken) params.set("cursor", pageToken)
     const data = await apiClient<JsonRecord>(`/api/lms/courses?${params}`)
     const list = Array.isArray(data.courses) ? data.courses : []
@@ -2762,7 +2762,7 @@ async function loadImportFile(event: Event) {
   input.value = ""
 }
 
-watch([categoryFilter, publishedOnly], () => {
+watch([categoryFilter, statusFilter], () => {
   nextPageToken.value = ""
   void loadCourses()
 })
@@ -2954,10 +2954,12 @@ onMounted(() => {
             <X class="h-4 w-4" />
           </button>
         </div>
-        <label class="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 shadow-sm">
-          <input v-model="publishedOnly" type="checkbox" />
-          {{ copy.publishedOnly }}
-        </label>
+        <select v-model="statusFilter" class="h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 shadow-sm">
+          <option value="">全部状态</option>
+          <option value="DRAFT">草稿</option>
+          <option value="PUBLISHED">已发布</option>
+          <option value="DEPRECATED">已下架</option>
+        </select>
       </div>
 
       <div v-if="loading && !courses.length" class="px-4 py-10 text-center text-slate-500 md:p-12">
