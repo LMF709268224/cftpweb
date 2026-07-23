@@ -98,8 +98,20 @@ const availableEntities = computed(() => {
     }
   })
   
-  return entities
+  return Array.from(
+    new Map(entities.map((entity) => [`${entity.type}:${entity.id}`, entity])).values(),
+  )
 })
+
+const selectedPrerequisiteEntityIds = computed(() => new Set(
+  prerequisites.value
+    .map((item) => String(item.required_entity_ulid || item.required_entity_id || "").trim())
+    .filter(Boolean),
+))
+
+function isPrerequisiteSelected(entityId: string) {
+  return selectedPrerequisiteEntityIds.value.has(entityId)
+}
 
 const selectedEntityType = computed(() => {
   const entity = availableEntities.value.find(e => e.id === formRequiredEntity.value)
@@ -135,6 +147,11 @@ async function addPrerequisite() {
   
   const entity = availableEntities.value.find(e => e.id === formRequiredEntity.value)
   if (!entity) return
+  if (isPrerequisiteSelected(entity.id)) {
+    toast.error(props.copy.toasts.prerequisiteAlreadyExists)
+    formRequiredEntity.value = ""
+    return
+  }
   
   adding.value = true
   try {
@@ -240,8 +257,8 @@ onMounted(() => {
         <span>{{ copy.requireEntity || '要求完成项' }}</span>
         <select v-model="formRequiredEntity" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 font-semibold outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" required>
           <option value="" disabled>{{ copy.selectRequireEntity || '请选择一个课时/章节/测验' }}</option>
-          <option v-for="entity in availableEntities" :key="entity.id" :value="entity.id">
-            {{ entity.title }}
+          <option v-for="entity in availableEntities" :key="`${entity.type}:${entity.id}`" :value="entity.id" :disabled="isPrerequisiteSelected(entity.id)">
+            {{ entity.title }}{{ isPrerequisiteSelected(entity.id) ? ` (${copy.prerequisiteAlreadyAdded})` : "" }}
           </option>
         </select>
       </label>
