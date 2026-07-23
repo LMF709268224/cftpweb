@@ -41,6 +41,10 @@ const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize))
 const canPrev = computed(() => page.value > 1)
 const canNext = computed(() => hasMore.value)
 const selectedExamUlid = computed(() => examUlid(detail.value || selectedSummary.value))
+const canSyncExamResult = computed(() => {
+  const status = result.value?.result_status || detail.value?.result_status || selectedSummary.value?.result_status
+  return !!selectedExamUlid.value && normalizedResultStatus(status) === "FETCHED"
+})
 const candidateName = computed(() => {
   const source = detail.value || selectedSummary.value || {}
   return [source.candidate_first_name, source.candidate_middle_name, source.candidate_last_name].filter(Boolean).join(" ") || "-"
@@ -258,7 +262,7 @@ async function loadExamResult(id: string) {
 }
 
 async function syncExamResult() {
-  if (!selectedExamUlid.value) return
+  if (!canSyncExamResult.value) return
   actionLoading.value = true
   try {
     result.value = await apiClient<JsonRecord>(`/api/exams/${encodeURIComponent(selectedExamUlid.value)}/sync-result`, { method: "POST" })
@@ -685,7 +689,7 @@ onMounted(() => loadExams(1))
             </div>
           </div>
 
-          <div v-if="selectedExamUlid" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-4 py-4 md:px-6">
+          <div v-if="canSyncExamResult" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-4 py-4 md:px-6">
             <button
               class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 text-sm font-black text-white shadow-sm disabled:opacity-50 sm:w-auto"
               type="button"
