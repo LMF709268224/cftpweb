@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net"
@@ -18,6 +19,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
+
+var errCandidateEnrollmentNotFound = errors.New("candidate enrollment not found")
 
 // GetPipelineTimeline GET /api/mall/pipelines/{pipelineId}/timeline
 func (h *Handler) GetPipelineTimeline(w http.ResponseWriter, r *http.Request) {
@@ -570,11 +573,11 @@ func (h *Handler) findEnrollmentIdByCourse(ctx context.Context, candidateID, cou
 		return "", err
 	}
 	for _, e := range enrollments {
-		if e.GetCourseUlid() == courseID {
-			return e.GetEnrollmentId(), nil
+		if e.GetCourseUlid() == courseID && strings.TrimSpace(e.GetEnrollmentId()) != "" {
+			return strings.TrimSpace(e.GetEnrollmentId()), nil
 		}
 	}
-	return "", fmt.Errorf("enrollment not found")
+	return "", errCandidateEnrollmentNotFound
 }
 
 func (h *Handler) SyncCourseProgress(w http.ResponseWriter, r *http.Request) {
@@ -586,6 +589,10 @@ func (h *Handler) SyncCourseProgress(w http.ResponseWriter, r *http.Request) {
 
 	enrollmentID, err := h.findEnrollmentIdByCourse(r.Context(), candidateID, courseID)
 	if err != nil {
+		if !errors.Is(err, errCandidateEnrollmentNotFound) {
+			HandleGrpcError(w, err)
+			return
+		}
 		WriteJSON(w, http.StatusOK, SyncCourseProgressRsp{
 			Success:            true,
 			CourseStatus:       "learning",

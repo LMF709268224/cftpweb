@@ -21,10 +21,19 @@ const invoicePDFFetchTimeout = 30 * time.Second
 
 // invoiceHTTPClient is a dedicated client for fetching Stripe invoice pages/PDFs.
 // Using a named client (not http.DefaultClient) ensures connection and TLS timeouts are applied.
-var invoiceHTTPClient = &http.Client{Timeout: invoicePDFFetchTimeout}
+var invoiceHTTPClient = &http.Client{
+	Timeout: invoicePDFFetchTimeout,
+	CheckRedirect: func(req *http.Request, via []*http.Request) error {
+		if len(via) >= 10 {
+			return fmt.Errorf("too many invoice redirects")
+		}
+		_, err := validateStripeHostedInvoiceURL(req.URL.String())
+		return err
+	},
+}
 
-var stripeInvoicePDFPattern = regexp.MustCompile(`https://invoice\.stripe\.com/i/[A-Za-z0-9_/-]+/pdf(?:\?[^"' <]*)?`)
-var stripeRelativeInvoicePDFPattern = regexp.MustCompile(`/i/[A-Za-z0-9_/-]+/pdf(?:\?[^"' <]*)?`)
+var stripeInvoicePDFPattern = regexp.MustCompile(`https://(?:pay\.stripe\.com/invoice|invoice\.stripe\.com/i)/[A-Za-z0-9_/-]+/pdf(?:\?[^"' <]*)?`)
+var stripeRelativeInvoicePDFPattern = regexp.MustCompile(`/(?:invoice|i)/[A-Za-z0-9_/-]+/pdf(?:\?[^"' <]*)?`)
 
 func (h *Handler) verifyInvoiceableOrder(ctx context.Context, candidateID, orderID string) error {
 	const limit uint32 = 50
@@ -64,9 +73,7 @@ func writeInvoiceOrderVerificationError(w http.ResponseWriter, err error) {
 	HandleGrpcError(w, err)
 }
 
-// QueryInvoice  GET /api/invoices/{orderId}
-// TODO(security): GetInvoiceRequest has no CandidateUlid field — gpay cannot enforce ownership
-// at the proto level. Add candidate_ulid to GetInvoiceRequest and verify here once backend is updated.
+// QueryInvoice GET /api/invoices/{orderId}
 func (h *Handler) QueryInvoice(w http.ResponseWriter, r *http.Request) {
 	orderID := chi.URLParam(r, "orderId")
 
@@ -84,6 +91,12 @@ func (h *Handler) QueryInvoice(w http.ResponseWriter, r *http.Request) {
 		HandleGrpcError(w, err)
 		return
 	}
+	invoiceURL, err := validateStripeInvoiceURL(resp.GetHostedInvoiceUrl())
+	if err != nil {
+		slog.Error("Invalid Stripe hosted invoice URL", "error", err, "order_id", orderID)
+		WriteError(w, http.StatusServiceUnavailable, ErrServiceUnavailable, "invoice is not available")
+		return
+	}
 
 	WriteJSON(w, http.StatusOK, QueryInvoiceRsp{
 		InvoiceNumber: resp.InvoiceNumber,
@@ -92,12 +105,11 @@ func (h *Handler) QueryInvoice(w http.ResponseWriter, r *http.Request) {
 		TotalTax:      float64(resp.Tax) / 100.0,
 		Total:         float64(resp.Total) / 100.0,
 		Currency:      resp.Currency,
-		InvoiceUrl:    resp.HostedInvoiceUrl,
+		InvoiceUrl:    invoiceURL,
 	})
 }
 
-// DownloadPdf  GET /api/invoices/{orderId}/pdf
-// TODO(security): same ownership concern as QueryInvoice — add candidate_ulid check once backend supports it.
+// DownloadPdf GET /api/invoices/{orderId}/pdf
 func (h *Handler) DownloadPdf(w http.ResponseWriter, r *http.Request) {
 	orderID := chi.URLParam(r, "orderId")
 	if strings.TrimSpace(orderID) == "" {
@@ -131,13 +143,66 @@ func (h *Handler) DownloadPdf(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, pdfURL, http.StatusTemporaryRedirect)
 }
 
-func resolveStripeInvoicePDFURL(ctx context.Context, hostedInvoiceURL string) (string, error) {
-	hostedInvoiceURL = strings.TrimSpace(hostedInvoiceURL)
-	if hostedInvoiceURL == "" {
-		return "", fmt.Errorf("hosted invoice url is empty")
+func parseStripeURL(rawURL string) (*url.URL, error) {
+	rawURL = strings.TrimSpace(rawURL)
+	if rawURL == "" {
+		return nil, fmt.Errorf("Stripe invoice url is empty")
 	}
-	if strings.Contains(hostedInvoiceURL, "/pdf") {
-		return hostedInvoiceURL, nil
+	parsed, err := url.ParseRequestURI(rawURL)
+	if err != nil {
+		return nil, fmt.Errorf("invalid Stripe invoice url: %w", err)
+	}
+	if parsed.Scheme != "https" || parsed.User != nil || parsed.Port() != "" {
+		return nil, fmt.Errorf("Stripe invoice url must use plain HTTPS")
+	}
+	if parsed.RawFragment != "" || parsed.Fragment != "" {
+		return nil, fmt.Errorf("Stripe invoice url must not contain a fragment")
+	}
+	return parsed, nil
+}
+
+func validateStripeHostedInvoiceURL(rawURL string) (string, error) {
+	parsed, err := parseStripeURL(rawURL)
+	if err != nil {
+		return "", err
+	}
+	if !strings.EqualFold(parsed.Hostname(), "invoice.stripe.com") ||
+		!strings.HasPrefix(parsed.EscapedPath(), "/i/") ||
+		strings.HasSuffix(strings.TrimRight(parsed.EscapedPath(), "/"), "/pdf") {
+		return "", fmt.Errorf("url is not a Stripe hosted invoice page")
+	}
+	return parsed.String(), nil
+}
+
+func validateStripeInvoicePDFURL(rawURL string) (string, error) {
+	parsed, err := parseStripeURL(rawURL)
+	if err != nil {
+		return "", err
+	}
+	path := strings.TrimRight(parsed.EscapedPath(), "/")
+	isPDFPath := strings.HasSuffix(path, "/pdf")
+	isPayInvoice := strings.EqualFold(parsed.Hostname(), "pay.stripe.com") && strings.HasPrefix(path, "/invoice/")
+	isHostedInvoicePDF := strings.EqualFold(parsed.Hostname(), "invoice.stripe.com") && strings.HasPrefix(path, "/i/")
+	if !isPDFPath || (!isPayInvoice && !isHostedInvoicePDF) {
+		return "", fmt.Errorf("url is not a Stripe invoice PDF")
+	}
+	return parsed.String(), nil
+}
+
+func validateStripeInvoiceURL(rawURL string) (string, error) {
+	if hostedURL, err := validateStripeHostedInvoiceURL(rawURL); err == nil {
+		return hostedURL, nil
+	}
+	return validateStripeInvoicePDFURL(rawURL)
+}
+
+func resolveStripeInvoicePDFURL(ctx context.Context, hostedInvoiceURL string) (string, error) {
+	if pdfURL, err := validateStripeInvoicePDFURL(hostedInvoiceURL); err == nil {
+		return pdfURL, nil
+	}
+	hostedInvoiceURL, err := validateStripeHostedInvoiceURL(hostedInvoiceURL)
+	if err != nil {
+		return "", err
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, invoicePDFFetchTimeout)
@@ -163,7 +228,7 @@ func resolveStripeInvoicePDFURL(ctx context.Context, hostedInvoiceURL string) (s
 		return "", err
 	}
 
-	htmlText := html.UnescapeString(string(htmlBody))
+	htmlText := strings.ReplaceAll(html.UnescapeString(string(htmlBody)), `\u0026`, "&")
 	match := stripeInvoicePDFPattern.FindString(htmlText)
 	if match == "" {
 		match = stripeRelativeInvoicePDFPattern.FindString(htmlText)
@@ -181,5 +246,5 @@ func resolveStripeInvoicePDFURL(ctx context.Context, hostedInvoiceURL string) (s
 		}
 		match = baseURL.ResolveReference(relativeURL).String()
 	}
-	return strings.ReplaceAll(match, `\u0026`, "&"), nil
+	return validateStripeInvoicePDFURL(match)
 }

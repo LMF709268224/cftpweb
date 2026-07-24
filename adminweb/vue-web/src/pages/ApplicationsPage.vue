@@ -363,7 +363,7 @@ async function handleDownload(file: JsonRecord) {
     setTimeout(() => URL.revokeObjectURL(blobUrl), 1000)
   } catch (err) {
     console.error("Fetch download failed (likely CORS or network error), falling back to window.open:", err)
-    window.open(url, "_blank")
+    window.open(url, "_blank", "noopener,noreferrer")
   } finally {
     downloadingFile.value = null
   }
