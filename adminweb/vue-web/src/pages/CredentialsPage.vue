@@ -31,6 +31,8 @@ const acquisitionMethod = ref("")
 const constraints = ref<FileConstraint[]>([])
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.credentials)
+let listRequestId = 0
+let detailRequestId = 0
 
 const fileTypes = computed(() => [
   { value: 0, label: copy.value.fileTypes.any },
@@ -49,6 +51,18 @@ const categoryValues = computed(() => new Set(categoryOptions.value.map((option)
 
 function definitionUlid(definition: JsonRecord | null | undefined) {
   return String(pickFirst(definition || {}, ["cred_def_ulid", "cred_def_id", "qual_ulid"]) || "")
+}
+
+function invalidateDetailRequest() {
+  detailRequestId += 1
+  detailLoading.value = false
+}
+
+function isCurrentDetailRequest(requestId: number, id: string) {
+  return requestId === detailRequestId
+    && detailOpen.value
+    && mode.value === "detail"
+    && definitionUlid(selected.value) === id
 }
 
 function definitionName(definition: JsonRecord | null | undefined) {
@@ -97,36 +111,39 @@ function onRespathInput() {
 }
 
 function startCreate() {
+  invalidateDetailRequest()
   mode.value = "create"
   detailOpen.value = true
   resetForm()
 }
 
 function closeDetail() {
+  invalidateDetailRequest()
   detailOpen.value = false
   if (mode.value === "create") mode.value = "detail"
 }
 
 async function loadDefinitionDetail(definition: JsonRecord) {
   const id = definitionUlid(definition)
-  if (!id) {
-    selected.value = definition
-    return
-  }
+  const requestId = ++detailRequestId
+  detailLoading.value = false
+  if (!id) return
 
   detailLoading.value = true
   try {
     const detail = await apiClient<JsonRecord>(`/api/credentials/definitions/${encodeURIComponent(id)}`)
+    if (!isCurrentDetailRequest(requestId, id)) return
     const merged = { ...definition, ...detail }
     const index = definitions.value.findIndex((item) => definitionUlid(item) === id)
     if (index >= 0) definitions.value.splice(index, 1, merged)
     selected.value = merged
   } catch (err) {
+    if (!isCurrentDetailRequest(requestId, id)) return
     console.error(err)
     toast.error(copy.value.toasts.detailLoadFailed)
     selected.value = definition
   } finally {
-    detailLoading.value = false
+    if (isCurrentDetailRequest(requestId, id)) detailLoading.value = false
   }
 }
 
@@ -138,21 +155,26 @@ async function selectDefinition(definition: JsonRecord) {
 }
 
 async function load() {
+  const requestId = ++listRequestId
   loading.value = true
   try {
     const data = await apiClient<JsonRecord>("/api/credentials/definitions")
+    if (requestId !== listRequestId) return
     const list = Array.isArray(data.definitions) ? data.definitions : []
     definitions.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
-    if (!selected.value || !definitions.value.some((item) => definitionUlid(item) === definitionUlid(selected.value))) {
-      selected.value = definitions.value[0] || null
+    const selectedId = definitionUlid(selected.value)
+    selected.value = definitions.value.find((item) => definitionUlid(item) === selectedId) || definitions.value[0] || null
+    if (!selected.value) {
+      invalidateDetailRequest()
+      mode.value = "create"
     }
-    if (!selected.value) mode.value = "create"
-    if (selected.value && mode.value === "detail") await loadDefinitionDetail(selected.value)
+    if (selected.value && mode.value === "detail" && detailOpen.value) void loadDefinitionDetail(selected.value)
   } catch (err) {
+    if (requestId !== listRequestId) return
     console.error(err)
     toast.error(copy.value.toasts.listLoadFailed)
   } finally {
-    loading.value = false
+    if (requestId === listRequestId) loading.value = false
   }
 }
 

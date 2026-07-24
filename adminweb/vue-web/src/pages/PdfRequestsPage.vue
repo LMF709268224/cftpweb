@@ -13,6 +13,7 @@ const PAGE_SIZE = 10
 const requests = ref<JsonRecord[]>([])
 const selected = ref<JsonRecord | null>(null)
 const loading = ref(false)
+const detailLoading = ref(false)
 const detailOpen = ref(false)
 const page = ref(1)
 const total = ref(0)
@@ -22,6 +23,7 @@ const prevCursor = ref("")
 const lastPage = ref(1)
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.pdfRequests)
+let detailRequestId = 0
 
 
 const detailFields = computed(() => {
@@ -41,6 +43,10 @@ function fieldLabel(key: string) {
 
 function requestUlid(request: JsonRecord) {
   return String(pickFirst(request, ["request_ulid", "request_id", "id", "pdf_request_ulid"]) || "")
+}
+
+function isCurrentDetailRequest(requestId: number, id: string) {
+  return requestId === detailRequestId && detailOpen.value && !!selected.value && requestUlid(selected.value) === id
 }
 
 function statusLabel(value: unknown) {
@@ -69,21 +75,32 @@ function formatFieldValue(key: string, value: unknown) {
 }
 
 async function openRequest(request: JsonRecord | null, open = true) {
+  const requestId = ++detailRequestId
   selected.value = request
   detailOpen.value = !!request && open
+  detailLoading.value = false
   const id = request ? requestUlid(request) : ""
-  if (!id) return
+  if (!id || !open) return
+  detailLoading.value = true
   try {
     const detail = await apiClient<JsonRecord>(`/api/pdf-requests/${encodeURIComponent(id)}/detail`)
-    selected.value = { ...request, ...detail }
+    if (!isCurrentDetailRequest(requestId, id)) return
+    const merged = { ...request, ...detail }
+    if (requestUlid(merged) !== id) throw new Error(`PDF request detail response ID does not match ${id}`)
+    selected.value = merged
   } catch (err) {
+    if (!isCurrentDetailRequest(requestId, id)) return
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.loadFailed))
+  } finally {
+    if (isCurrentDetailRequest(requestId, id)) detailLoading.value = false
   }
 }
 
 function closeDetail() {
+  detailRequestId += 1
   detailOpen.value = false
+  detailLoading.value = false
 }
 
 let listRequestId = 0
@@ -128,14 +145,22 @@ nextCursor.value = String(data.next_cursor || "")
     lastPage.value = nextPage
 
     requests.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
-    selected.value = requests.value.find((item) => requestUlid(item) === selectedId) || requests.value[0] || null
-    if (!selected.value) detailOpen.value = false
+    const nextSelected = requests.value.find((item) => requestUlid(item) === selectedId) || requests.value[0] || null
+    if (!nextSelected) {
+      closeDetail()
+      selected.value = null
+    } else if (detailOpen.value && requestUlid(nextSelected) === selectedId && selected.value) {
+      selected.value = { ...selected.value, ...nextSelected }
+    } else {
+      if (detailOpen.value) closeDetail()
+      selected.value = nextSelected
+    }
   } catch (err) {
     if (requestId !== listRequestId) return
     console.error(err)
     requests.value = []
+    closeDetail()
     selected.value = null
-    detailOpen.value = false
     hasMore.value = false
     nextCursor.value = ""
     toast.error(apiErrorMessage(err, copy.value.toasts.loadFailed))
@@ -263,7 +288,11 @@ onMounted(() => load(1))
             </button>
           </div>
 
-          <div class="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 md:p-5">
+          <div v-if="detailLoading" class="p-12 text-center text-slate-500">
+            <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
+            {{ copy.loading }}
+          </div>
+          <div v-else class="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 md:p-5">
             <div class="rounded-2xl border border-blue-100 bg-blue-50 p-4">
               <div class="text-sm font-black text-blue-700">{{ copy.currentRequest }}</div>
               <div class="mt-1 break-all text-lg font-black text-slate-950">{{ requestUlid(selected) || "-" }}</div>

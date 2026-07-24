@@ -86,6 +86,16 @@ function summary(record: JsonRecord | null) {
 }
 
 let listRequestId = 0
+let detailRequestId = 0
+
+function invalidateDetailRequest() {
+  detailRequestId += 1
+  detailLoading.value = false
+}
+
+function isCurrentDetailRequest(requestId: number, id: string) {
+  return requestId === detailRequestId && detailOpen.value && auditId(selected.value) === id
+}
 
 async function load() {
   const requestId = ++listRequestId
@@ -128,8 +138,11 @@ nextCursor.value = String(data.next_cursor || "")
     prevCursor.value = String(data?.prev_cursor || "")
 
     lastPage.value = page.value
-if (!logs.value.some((item) => auditId(item) === auditId(selected.value))) {
+    if (!logs.value.some((item) => auditId(item) === auditId(selected.value))) {
+      invalidateDetailRequest()
       selected.value = logs.value[0] || null
+      detail.value = null
+      detailOpen.value = false
     }
   } catch (err) {
     if (requestId !== listRequestId) return
@@ -139,6 +152,9 @@ if (!logs.value.some((item) => auditId(item) === auditId(selected.value))) {
     hasMore.value = false
     nextCursor.value = ""
     selected.value = null
+    invalidateDetailRequest()
+    detail.value = null
+    detailOpen.value = false
     toast.error(copy.value.toasts.loadFailed)
   } finally {
     if (requestId === listRequestId) loading.value = false
@@ -158,18 +174,30 @@ function resetAndLoad() {
 async function openDetail(record: JsonRecord) {
   const id = auditId(record)
   if (!id) return
+  const requestId = ++detailRequestId
   selected.value = record
   detailOpen.value = true
   detailLoading.value = true
   detail.value = null
   try {
-    detail.value = await apiClient<JsonRecord>(`/api/audit/logs/${encodeURIComponent(id)}`)
+    const response = await apiClient<JsonRecord>(`/api/audit/logs/${encodeURIComponent(id)}`)
+    if (!isCurrentDetailRequest(requestId, id)) return
+    const responseId = auditId(response)
+    if (responseId && responseId !== id) throw new Error(`Audit detail response ID does not match ${id}`)
+    detail.value = response
   } catch (err) {
+    if (!isCurrentDetailRequest(requestId, id)) return
     console.error(err)
     toast.error(copy.value.toasts.detailLoadFailed)
   } finally {
-    detailLoading.value = false
+    if (isCurrentDetailRequest(requestId, id)) detailLoading.value = false
   }
+}
+
+function closeDetail() {
+  invalidateDetailRequest()
+  detailOpen.value = false
+  detail.value = null
 }
 
 function previousPage() {
@@ -304,7 +332,7 @@ onMounted(load)
             <h2 class="text-xl font-black">{{ copy.detailTitle }}</h2>
             <p class="mt-1 break-all text-sm text-slate-500">{{ auditId(selected) }}</p>
           </div>
-          <button class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="copy.close" @click="detailOpen = false">
+          <button class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="copy.close" @click="closeDetail">
             <X class="h-5 w-5" />
           </button>
         </div>
