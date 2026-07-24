@@ -218,8 +218,8 @@ func (h *Handler) ListMaterials(w http.ResponseWriter, r *http.Request) {
 			CourseUlid:    courseID,
 		})
 		if err != nil {
-			slog.Warn("failed to list candidate course materials", "error", err, "course_id", courseID)
-			continue
+			HandleGrpcError(w, err)
+			return
 		}
 		for _, material := range resp.GetMaterials() {
 			out.Materials = append(out.Materials, materialSummaryToListItem(material, title))
@@ -855,8 +855,7 @@ func (h *Handler) candidateCourseIDs(r *http.Request, candidateID string) ([]str
 			Query: &gccpb.GetPipelineRequest_PipelineUlid{PipelineUlid: pipelineID},
 		})
 		if err != nil {
-			slog.Warn("failed to get candidate pipeline config", "error", err, "pipeline_id", pipelineID)
-			continue
+			return nil, fmt.Errorf("get candidate pipeline config %q: %w", pipelineID, err)
 		}
 		for _, stage := range config.GetStages() {
 			for _, unit := range stage.GetUnits() {
