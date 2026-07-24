@@ -55,6 +55,9 @@ const formDescription = ref("")
 const formParameterSchema = ref("{}")
 const formVersion = ref(0)
 const templateTitleInputRef = ref<HTMLInputElement | null>(null)
+let templateDetailRequestId = 0
+let templateEditRequestId = 0
+let templatePayloadRequestId = 0
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.messagesAdmin)
 
@@ -189,14 +192,20 @@ async function loadTemplateDetail(path: string) {
 }
 
 async function selectTemplate(template: JsonRecord) {
-  selectedTemplate.value = template
   const path = pathOf(template)
+  if (!path) return false
+  const requestId = ++templateDetailRequestId
+  selectedTemplate.value = template
   try {
     const detail = await loadTemplateDetail(path)
+    if (requestId !== templateDetailRequestId || pathOf(selectedTemplate.value) !== path) return false
     if (detail) selectedTemplate.value = { ...template, ...detail }
+    return true
   } catch (err) {
+    if (requestId !== templateDetailRequestId || pathOf(selectedTemplate.value) !== path) return false
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.templateDetailLoadFailed))
+    return true
   }
 }
 
@@ -239,18 +248,29 @@ function openMessage(message: JsonRecord | null, open = true) {
 
 function closeMessageDetail() {
   messageDetailOpen.value = false
+  selectedMessage.value = null
 }
 
 async function openTemplateDetail(template: JsonRecord) {
-  await selectTemplate(template)
-  templateDetailOpen.value = !!selectedTemplate.value
+  templateEditRequestId += 1
+  templateEditOpen.value = false
+  resetTemplateForm()
+  const current = await selectTemplate(template)
+  if (!current) return
+  templateDetailOpen.value = true
 }
 
 function closeTemplateDetail() {
+  templateDetailRequestId += 1
   templateDetailOpen.value = false
+  selectedTemplate.value = null
 }
 
 function startTemplateCreate() {
+  templateDetailRequestId += 1
+  templateEditRequestId += 1
+  templateDetailOpen.value = false
+  selectedTemplate.value = null
   resetTemplateForm()
   templateEditOpen.value = true
   void nextTick(() => {
@@ -259,13 +279,17 @@ function startTemplateCreate() {
 }
 
 async function startTemplateEdit(template: JsonRecord | null = selectedTemplate.value) {
-  await editTemplate(template)
-  templateEditOpen.value = !!template
+  templateDetailRequestId += 1
+  templateDetailOpen.value = false
+  const current = await editTemplate(template)
+  if (!current) return
+  templateEditOpen.value = true
   await nextTick()
   templateTitleInputRef.value?.focus()
 }
 
 function closeTemplateEdit() {
+  templateEditRequestId += 1
   templateEditOpen.value = false
   resetTemplateForm()
 }
@@ -307,9 +331,14 @@ async function sendMessage() {
 async function editTemplate(template: JsonRecord | null = selectedTemplate.value) {
   if (!template) {
     resetTemplateForm()
-    return
+    return false
   }
   const path = pathOf(template)
+  if (!path) {
+    resetTemplateForm()
+    return false
+  }
+  const requestId = ++templateEditRequestId
   editingTemplatePath.value = path
   formPath.value = path
   formTitle.value = titleOf(template)
@@ -320,6 +349,7 @@ async function editTemplate(template: JsonRecord | null = selectedTemplate.value
 
   try {
     const detail = await loadTemplateDetail(path)
+    if (requestId !== templateEditRequestId || editingTemplatePath.value !== path) return false
     if (detail) {
       selectedTemplate.value = { ...template, ...detail }
       formTitle.value = String(detail.title_tpl || formTitle.value)
@@ -328,9 +358,12 @@ async function editTemplate(template: JsonRecord | null = selectedTemplate.value
       formParameterSchema.value = String(detail.parameter_schema || "{}")
       formVersion.value = Number(detail.version || formVersion.value)
     }
+    return true
   } catch (err) {
+    if (requestId !== templateEditRequestId || editingTemplatePath.value !== path) return false
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.templateDetailLoadFailed))
+    return true
   }
 }
 
@@ -373,8 +406,7 @@ async function saveTemplate() {
     })
     toast.success(editingTemplatePath.value ? copy.value.toasts.templateUpdated : copy.value.toasts.templateCreated)
     const savedPath = path
-    templateEditOpen.value = false
-    resetTemplateForm()
+    closeTemplateEdit()
     await loadTemplates()
     const savedTemplate = templates.value.find((item) => pathOf(item) === savedPath)
     if (savedTemplate) await selectTemplate(savedTemplate)
@@ -387,6 +419,7 @@ async function saveTemplate() {
 }
 
 watch(templatePath, async (path) => {
+  const requestId = ++templatePayloadRequestId
   if (!path) {
     payload.value = "{\n}"
     return
@@ -395,6 +428,7 @@ watch(templatePath, async (path) => {
   payload.value = extractPayloadTemplate(template?.title_tpl, template?.content_tpl)
   try {
     const detail = await loadTemplateDetail(path)
+    if (requestId !== templatePayloadRequestId || templatePath.value !== path) return
     payload.value = extractPayloadTemplate(detail?.title_tpl, detail?.content_tpl)
   } catch {
     // Keep the best-effort payload generated from the list response.

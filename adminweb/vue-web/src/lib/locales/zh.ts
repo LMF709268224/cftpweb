@@ -335,6 +335,12 @@ export const zh = {
         loadingDescription: "正在换取后台访问令牌。",
         successDescription: "正在进入管理后台。",
     },
+    notFound: {
+        title: "页面不存在",
+        description: "你访问的后台地址不存在或已被移除，请检查地址后重试。",
+        pathLabel: "当前地址：",
+        backToDashboard: "返回工作台",
+    },
     invoices: {
         title: "发票管理",
         subtitle: "查看支付发票和收款记录。",

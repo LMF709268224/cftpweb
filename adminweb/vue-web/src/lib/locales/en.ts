@@ -337,6 +337,12 @@ export const en: AdminTranslations = {
         loadingDescription: "Exchanging the callback for an admin access token.",
         successDescription: "Opening the admin console.",
     },
+    notFound: {
+        title: "Page Not Found",
+        description: "The admin page you requested does not exist or has been removed. Check the address and try again.",
+        pathLabel: "Current path:",
+        backToDashboard: "Back to Dashboard",
+    },
     invoices: {
         title: "Invoice Management",
         subtitle: "View payment invoices and receipt records.",

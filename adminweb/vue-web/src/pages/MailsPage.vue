@@ -60,6 +60,10 @@ const formSubject = ref("")
 const formContent = ref("")
 const formDescription = ref("")
 const formParameterSchema = ref("{}")
+let templateDetailRequestId = 0
+let templateEditRequestId = 0
+let templatePayloadRequestId = 0
+let mailDetailRequestId = 0
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.mailsAdmin)
 
@@ -260,33 +264,48 @@ async function loadTemplateDetail(path: string) {
 }
 
 async function selectTemplate(template: JsonRecord) {
+  const path = pathOf(template)
+  if (!path) return false
+  const requestId = ++templateDetailRequestId
   selectedTemplate.value = template
   templateMode.value = "detail"
   try {
-    const detail = await loadTemplateDetail(pathOf(template))
+    const detail = await loadTemplateDetail(path)
+    if (requestId !== templateDetailRequestId || pathOf(selectedTemplate.value) !== path || templateMode.value !== "detail") return false
     if (detail) selectedTemplate.value = { ...template, ...detail }
+    return true
   } catch (err) {
+    if (requestId !== templateDetailRequestId || pathOf(selectedTemplate.value) !== path || templateMode.value !== "detail") return false
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.templateDetailLoadFailed))
+    return true
   }
 }
 
 async function openTemplateDetail(template: JsonRecord) {
-  await selectTemplate(template)
-  templateDialogOpen.value = !!selectedTemplate.value
+  templateEditRequestId += 1
+  templateDialogOpen.value = false
+  resetTemplateForm()
+  const current = await selectTemplate(template)
+  if (!current) return
+  templateDialogOpen.value = true
 }
 
 async function openTemplateEdit(template: JsonRecord | null = selectedTemplate.value) {
-  await editTemplate(template)
-  templateDialogOpen.value = !!template
+  templateDetailRequestId += 1
+  templateDialogOpen.value = false
+  const current = await editTemplate(template)
+  if (!current) return
+  templateDialogOpen.value = true
 }
 
 function closeTemplateDialog() {
+  templateDetailRequestId += 1
+  templateEditRequestId += 1
   templateDialogOpen.value = false
-  if (templateMode.value !== "detail") {
-    templateMode.value = "detail"
-    resetTemplateForm()
-  }
+  selectedTemplate.value = null
+  templateMode.value = "detail"
+  resetTemplateForm()
 }
 
 async function loadStats() {
@@ -371,11 +390,16 @@ async function sendMail() {
 
 async function editTemplate(template: JsonRecord | null = selectedTemplate.value) {
   if (!template) {
-    startCreateTemplate()
-    return
+    resetTemplateForm()
+    return false
   }
-  templateMode.value = "edit"
   const path = pathOf(template)
+  if (!path) {
+    resetTemplateForm()
+    return false
+  }
+  const requestId = ++templateEditRequestId
+  templateMode.value = "edit"
   editingTemplatePath.value = path
   formPath.value = path
   formName.value = nameOf(template)
@@ -386,6 +410,7 @@ async function editTemplate(template: JsonRecord | null = selectedTemplate.value
 
   try {
     const detail = await loadTemplateDetail(path)
+    if (requestId !== templateEditRequestId || editingTemplatePath.value !== path || templateMode.value !== "edit") return false
     if (detail) {
       const merged = resolvedTemplate({ ...template, ...detail })
       selectedTemplate.value = merged
@@ -395,9 +420,12 @@ async function editTemplate(template: JsonRecord | null = selectedTemplate.value
       formDescription.value = descriptionOf(merged)
       formParameterSchema.value = String(merged.parameter_schema || "{}")
     }
+    return true
   } catch (err) {
+    if (requestId !== templateEditRequestId || editingTemplatePath.value !== path || templateMode.value !== "edit") return false
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.templateDetailLoadFailed))
+    return true
   }
 }
 
@@ -412,6 +440,8 @@ function resetTemplateForm() {
 }
 
 function startCreateTemplate() {
+  templateDetailRequestId += 1
+  templateEditRequestId += 1
   selectedTemplate.value = null
   templateMode.value = "create"
   resetTemplateForm()
@@ -448,9 +478,7 @@ async function saveTemplate() {
     })
     toast.success(editingTemplatePath.value ? copy.value.toasts.templateUpdated : copy.value.toasts.templateCreated)
     const savedPath = path
-    resetTemplateForm()
-    templateMode.value = "detail"
-    templateDialogOpen.value = false
+    closeTemplateDialog()
     await loadTemplates()
     const savedTemplate = templates.value.find((item) => pathOf(item) === savedPath)
     if (savedTemplate) await selectTemplate(savedTemplate)
@@ -463,27 +491,45 @@ async function saveTemplate() {
 }
 
 async function openMail(mail: JsonRecord | null, open = true) {
+  const requestId = ++mailDetailRequestId
   selectedMail.value = mail
   mailDetailOpen.value = open && !!mail
   mailDetail.value = null
   mailStatusDetail.value = null
   const id = mailId(mail)
-  if (!id) return
+  if (!id) {
+    mailDetailLoading.value = false
+    return
+  }
 
   mailDetailLoading.value = true
   try {
-    mailDetail.value = await apiClient<JsonRecord>(`/api/mails?mail_id=${encodeURIComponent(id)}`)
-    mailStatusDetail.value = await apiClient<JsonRecord>(`/api/mails/status?mail_id=${encodeURIComponent(id)}`)
-  } catch (err) {
-    console.error(err)
-    toast.error(apiErrorMessage(err, copy.value.toasts.mailDetailLoadFailed))
+    const [detailResult, statusResult] = await Promise.allSettled([
+      apiClient<JsonRecord>(`/api/mails?mail_id=${encodeURIComponent(id)}`),
+      apiClient<JsonRecord>(`/api/mails/status?mail_id=${encodeURIComponent(id)}`),
+    ])
+    if (requestId !== mailDetailRequestId || mailId(selectedMail.value) !== id) return
+
+    if (detailResult.status === "fulfilled") mailDetail.value = detailResult.value
+    if (statusResult.status === "fulfilled") mailStatusDetail.value = statusResult.value
+
+    const failedResult = [detailResult, statusResult].find((result) => result.status === "rejected")
+    if (failedResult?.status === "rejected") {
+      console.error(failedResult.reason)
+      toast.error(apiErrorMessage(failedResult.reason, copy.value.toasts.mailDetailLoadFailed))
+    }
   } finally {
-    mailDetailLoading.value = false
+    if (requestId === mailDetailRequestId && mailId(selectedMail.value) === id) mailDetailLoading.value = false
   }
 }
 
 function closeMailDetail() {
+  mailDetailRequestId += 1
   mailDetailOpen.value = false
+  selectedMail.value = null
+  mailDetail.value = null
+  mailStatusDetail.value = null
+  mailDetailLoading.value = false
 }
 
 async function cancelMail() {
@@ -507,6 +553,7 @@ async function cancelMail() {
 }
 
 watch(templatePath, async (path) => {
+  const requestId = ++templatePayloadRequestId
   if (!path) {
     payload.value = "{\n}"
     return
@@ -515,6 +562,7 @@ watch(templatePath, async (path) => {
   payload.value = extractPayloadTemplate(subjectOf(template), bodyOf(template || {}))
   try {
     const detail = await loadTemplateDetail(path)
+    if (requestId !== templatePayloadRequestId || templatePath.value !== path) return
     payload.value = extractPayloadTemplate(subjectOf(detail), bodyOf(detail))
   } catch {
     // Keep the best-effort payload generated from the list response.
