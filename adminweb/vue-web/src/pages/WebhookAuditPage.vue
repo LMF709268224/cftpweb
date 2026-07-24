@@ -140,7 +140,10 @@ function formatFieldValue(key: string, value: unknown) {
   return String(value)
 }
 
+let listRequestId = 0
+
 async function load(targetPage = page.value) {
+  const requestId = ++listRequestId
   loading.value = true
   try {
     const params = new URLSearchParams({
@@ -168,6 +171,7 @@ async function load(targetPage = page.value) {
     if (status.value) params.set("status", status.value)
 
     const data = await apiClient<JsonRecord>(`/api/audit/webhooks?${params}`)
+    if (requestId !== listRequestId) return
     const rawList = data.webhook_messages || data.messages || data.items
     const list = Array.isArray(rawList) ? rawList : []
     const selectedKey = selected.value ? msgKey(selected.value) : ""
@@ -193,6 +197,7 @@ nextCursor.value = String(data.next_cursor || "")
       detailOpen.value = false
     }
   } catch (err) {
+    if (requestId !== listRequestId) return
     console.error(err)
     messages.value = []
     selected.value = null
@@ -202,7 +207,7 @@ nextCursor.value = String(data.next_cursor || "")
     nextCursor.value = ""
     toast.error(copy.value.toasts.loadFailed)
   } finally {
-    loading.value = false
+    if (requestId === listRequestId) loading.value = false
   }
 }
 

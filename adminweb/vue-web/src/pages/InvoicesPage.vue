@@ -84,7 +84,10 @@ function closeDetail() {
   detailOpen.value = false
 }
 
+let listRequestId = 0
+
 async function load(targetPage = page.value) {
+  const requestId = ++listRequestId
   loading.value = true
   try {
     const params = new URLSearchParams({ page_size: String(pageSize) })
@@ -108,6 +111,7 @@ async function load(targetPage = page.value) {
 
 
     const data = await apiClient<JsonRecord>(`/api/mall/invoices?${params}`)
+    if (requestId !== listRequestId) return
     const list = Array.isArray(data.invoices) ? data.invoices : []
 
     invoices.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
@@ -125,6 +129,7 @@ nextCursor.value = String(data.next_cursor || "")
     }
     if (!invoices.value.length) detailOpen.value = false
   } catch (err) {
+    if (requestId !== listRequestId) return
     console.error(err)
     invoices.value = []
     selected.value = null
@@ -133,7 +138,7 @@ nextCursor.value = String(data.next_cursor || "")
     nextCursor.value = ""
     toast.error(apiErrorMessage(err, copy.value.toasts.loadFailed))
   } finally {
-    loading.value = false
+    if (requestId === listRequestId) loading.value = false
   }
 }
 

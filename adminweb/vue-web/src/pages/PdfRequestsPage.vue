@@ -86,7 +86,10 @@ function closeDetail() {
   detailOpen.value = false
 }
 
+let listRequestId = 0
+
 async function load(nextPage = page.value) {
+  const requestId = ++listRequestId
   loading.value = true
   try {
     const params = new URLSearchParams({ page_size: String(PAGE_SIZE) })
@@ -110,6 +113,7 @@ async function load(nextPage = page.value) {
 
 
     const data = await apiClient<JsonRecord>(`/api/pdf-requests?${params}`)
+    if (requestId !== listRequestId) return
     const list = Array.isArray(data.requests) ? data.requests : []
     const selectedId = selected.value ? requestUlid(selected.value) : ""
 
@@ -127,6 +131,7 @@ nextCursor.value = String(data.next_cursor || "")
     selected.value = requests.value.find((item) => requestUlid(item) === selectedId) || requests.value[0] || null
     if (!selected.value) detailOpen.value = false
   } catch (err) {
+    if (requestId !== listRequestId) return
     console.error(err)
     requests.value = []
     selected.value = null
@@ -135,7 +140,7 @@ nextCursor.value = String(data.next_cursor || "")
     nextCursor.value = ""
     toast.error(apiErrorMessage(err, copy.value.toasts.loadFailed))
   } finally {
-    loading.value = false
+    if (requestId === listRequestId) loading.value = false
   }
 }
 

@@ -144,7 +144,10 @@ function formatDate(raw: string) {
   return parsed.toLocaleDateString(lang.value === "zh" ? "zh-CN" : "en-US")
 }
 
+let dashboardRequestId = 0
+
 async function loadDashboard(page = userPage.value) {
+  const requestId = ++dashboardRequestId
   loading.value = true
   try {
     const params = new URLSearchParams({
@@ -155,13 +158,16 @@ async function loadDashboard(page = userPage.value) {
     if (normalizedKeyword) params.set("user_keyword", normalizedKeyword)
     if (roleFilter.value !== "all") params.set("user_role", roleFilter.value)
     if (statusFilter.value !== "all") params.set("user_status", statusFilter.value)
-    data.value = await apiClient<DashboardData>(`/api/dashboard/ops?${params}`)
-    userPage.value = Number(data.value.user_page || page)
+    const response = await apiClient<DashboardData>(`/api/dashboard/ops?${params}`)
+    if (requestId !== dashboardRequestId) return
+    data.value = response
+    userPage.value = Number(response.user_page || page)
   } catch (err) {
+    if (requestId !== dashboardRequestId) return
     console.error(err)
     toast.error(copy.value.loadFailed)
   } finally {
-    loading.value = false
+    if (requestId === dashboardRequestId) loading.value = false
   }
 }
 
