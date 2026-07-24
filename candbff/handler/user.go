@@ -238,7 +238,12 @@ func (h *Handler) SendEmailCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	existingUser, _ := casdoorsdk.GetUserByEmail(input.Email)
+	existingUser, err := casdoorsdk.GetUserByEmail(input.Email)
+	if err != nil {
+		slog.Error("Failed to check whether email is registered", "error", err)
+		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to check email availability")
+		return
+	}
 	if existingUser != nil {
 		msg := "This email is already registered by another user"
 		if input.Lang == "zh" {

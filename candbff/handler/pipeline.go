@@ -311,7 +311,11 @@ func (h *Handler) GetPipelineCourse(w http.ResponseWriter, r *http.Request) {
 			CandidateUlid: candidateID,
 			CourseUlid:    courseID,
 		})
-		if err == nil && matResp != nil {
+		if err != nil {
+			HandleGrpcError(w, err)
+			return
+		}
+		if matResp != nil {
 			var materials []*lmspb.CourseMaterial
 			for _, summary := range matResp.GetMaterials() {
 				materials = append(materials, &lmspb.CourseMaterial{
@@ -332,9 +336,11 @@ func (h *Handler) GetPipelineCourse(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Supplementary material is now included in GetCompleteCourse response
-
-	quizProgress := h.quizProgressByCourse(r, candidateID, completeCourse)
+	quizProgress, err := h.quizProgressByCourse(r.Context(), candidateID, completeCourse)
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
 	WriteJSON(w, http.StatusOK, PipelineCourseRsp{
 		CompleteCourse: completeCourse,
 		QuizProgress:   quizProgress,
@@ -643,7 +649,7 @@ func (h *Handler) ReportProgress(w http.ResponseWriter, r *http.Request) {
 			rejected++
 			continue
 		}
-		resp, err := h.Lms.CompleteLessonLearning(r.Context(), &lmspb.CompleteLessonLearningRequest{
+		_, err := h.Lms.CompleteLessonLearning(r.Context(), &lmspb.CompleteLessonLearningRequest{
 			CandidateUlid: candidateID,
 			LessonUlid:    materialID,
 		})
@@ -651,7 +657,6 @@ func (h *Handler) ReportProgress(w http.ResponseWriter, r *http.Request) {
 			rejected++
 			continue
 		}
-		_ = resp
 		accepted++
 	}
 
@@ -682,7 +687,8 @@ func (h *Handler) GetProgress(w http.ResponseWriter, r *http.Request) {
 			EnrollmentId:  e.GetEnrollmentId(),
 		})
 		if err != nil {
-			continue
+			HandleGrpcError(w, err)
+			return
 		}
 
 		for _, lessonId := range detail.GetCompletedLessonIds() {
@@ -891,12 +897,12 @@ func materialSummaryToListItem(material *lmspb.CourseMaterialSummary, courseTitl
 	}
 }
 
-func (h *Handler) quizProgressByCourse(r *http.Request, candidateID string, course *lmspb.CompleteCourse) map[string]QuizProgressItem {
+func (h *Handler) quizProgressByCourse(ctx context.Context, candidateID string, course *lmspb.CompleteCourse) (map[string]QuizProgressItem, error) {
 	quizIDs := collectCourseQuizIDs(course)
 	out := make(map[string]QuizProgressItem, len(quizIDs))
 	for _, quizID := range quizIDs {
 		item := QuizProgressItem{QuizID: quizID}
-		resp, err := h.Lms.ListQuizAttemptsCandidate(r.Context(), &lmspb.ListQuizAttemptsCandidateRequest{
+		resp, err := h.Lms.ListQuizAttemptsCandidate(ctx, &lmspb.ListQuizAttemptsCandidateRequest{
 			Filters: &lmspb.QuizAttemptsCandidateFilters{
 				QuizUlid:      quizID,
 				CandidateUlid: candidateID,
@@ -904,9 +910,7 @@ func (h *Handler) quizProgressByCourse(r *http.Request, candidateID string, cour
 			PageSize: 20,
 		})
 		if err != nil {
-			slog.Warn("failed to list candidate quiz attempts", "error", err, "candidate_id", candidateID, "quiz_id", quizID)
-			out[quizID] = item
-			continue
+			return nil, fmt.Errorf("list candidate quiz attempts for quiz %q: %w", quizID, err)
 		}
 		for _, attempt := range resp.GetAttempts() {
 			if attempt == nil {
@@ -925,7 +929,7 @@ func (h *Handler) quizProgressByCourse(r *http.Request, candidateID string, cour
 		}
 		out[quizID] = item
 	}
-	return out
+	return out, nil
 }
 
 func collectCourseQuizIDs(course *lmspb.CompleteCourse) []string {

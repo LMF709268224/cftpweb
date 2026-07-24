@@ -121,8 +121,8 @@ func (h *Handler) ListPipelines(w http.ResponseWriter, r *http.Request) {
 			PipelineUlid: pipeline.GetPipelineUlid(),
 		})
 		if err != nil {
-			slog.Error("Failed to get pipeline final eligibility", "error", err, "pipeline_id", pipeline.GetPipelineUlid())
-			continue
+			HandleGrpcError(w, err)
+			return
 		}
 
 		config := toPipelineConfig(pipelineForOutput, finalEligibilityResp.GetCerts())
@@ -378,20 +378,6 @@ func (h *Handler) GetMallPipelineThumbnailURL(w http.ResponseWriter, r *http.Req
 	if !requireRequestField(w, pipelineID, "pipeline_id") {
 		return
 	}
-
-	// pipelineResp, err := h.Gcc.GetPipeline(r.Context(), &gccpb.GetPipelineRequest{
-	// 	Query: &gccpb.GetPipelineRequest_PipelineUlid{PipelineUlid: pipelineID},
-	// })
-	// if err != nil {
-	// 	HandleGrpcError(w, err)
-	// 	return
-	// }
-
-	// objectKey := strings.TrimSpace(pipelineResp.GetThumbnailObjectKey())
-	// if objectKey == "" {
-	// 	WriteJSON(w, http.StatusOK, GetAccessURLRsp{})
-	// 	return
-	// }
 
 	viewResp, err := h.Gcc.GetPublicURL(r.Context(), &gccpb.GetPublicURLRequest{
 		PipelineUlid: pipelineID,

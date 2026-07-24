@@ -256,17 +256,16 @@ async function fetchMessages(showLoading = true, suppressErrorToast = false) {
     } else if (page.value < lastPage.value) {
       cursor = prevCursor.value
     }
-    
+
     if (cursor) params.set("cursor", cursor)
     if (selectedStatus.value) params.set("status", selectedStatus.value)
     const res = await apiClient(`/api/messages?${params.toString()}`, { suppressErrorToast })
     const isBackward = page.value < lastPage.value
     hasMore.value = isBackward ? true : Boolean(res?.has_more)
-    lastPage.value = page.value
-nextCursor.value = String(res?.next_cursor || "")
+    nextCursor.value = String(res?.next_cursor || "")
     prevCursor.value = String(res?.prev_cursor || "")
     lastPage.value = page.value
-if (res?.messages) {
+    if (res?.messages) {
       messageList.value = res.messages.map((m: any) => {
         let type = "system"
         if (m.msg_type === 2) type = "announcement"

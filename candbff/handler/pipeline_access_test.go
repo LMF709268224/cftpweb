@@ -32,7 +32,8 @@ func (s *pipelineAccessProgClientStub) ListCandidatePipelines(
 
 type pipelineAccessCCClientStub struct {
 	gccpb.CCServiceClient
-	err error
+	err                 error
+	finalEligibilityErr error
 }
 
 func (s *pipelineAccessCCClientStub) GetPipeline(
@@ -53,9 +54,34 @@ func (s *pipelineAccessCCClientStub) GetPipeline(
 	}, nil
 }
 
+func (s *pipelineAccessCCClientStub) ListPipelines(
+	_ context.Context,
+	_ *gccpb.ListPipelinesRequest,
+	_ ...grpc.CallOption,
+) (*gccpb.ListPipelinesResponse, error) {
+	return &gccpb.ListPipelinesResponse{
+		Pipelines: []*gccpb.PipelineSummary{{
+			PipelineUlid: "pipeline-config-1",
+		}},
+	}, nil
+}
+
+func (s *pipelineAccessCCClientStub) GetPipelineFinalEligibility(
+	_ context.Context,
+	_ *gccpb.GetPipelineFinalEligibilityRequest,
+	_ ...grpc.CallOption,
+) (*gccpb.GetPipelineFinalEligibilityResponse, error) {
+	if s.finalEligibilityErr != nil {
+		return nil, s.finalEligibilityErr
+	}
+	return &gccpb.GetPipelineFinalEligibilityResponse{}, nil
+}
+
 type pipelineAccessLMSClientStub struct {
 	lmspb.LmsServiceClient
-	materialsErr error
+	materialsErr        error
+	enrollmentDetailErr error
+	quizAttemptsErr     error
 }
 
 func (s *pipelineAccessLMSClientStub) GetCourseSummary(
@@ -75,6 +101,40 @@ func (s *pipelineAccessLMSClientStub) ListCourseMaterials(
 		return nil, s.materialsErr
 	}
 	return &lmspb.ListCourseMaterialsResponse{}, nil
+}
+
+func (s *pipelineAccessLMSClientStub) ListCandidateEnrollments(
+	_ context.Context,
+	_ *lmspb.ListCandidateEnrollmentsRequest,
+	_ ...grpc.CallOption,
+) (*lmspb.ListCandidateEnrollmentsResponse, error) {
+	return &lmspb.ListCandidateEnrollmentsResponse{
+		Enrollments: []*lmspb.CandidateEnrollmentSummary{{
+			EnrollmentId: "enrollment-1",
+		}},
+	}, nil
+}
+
+func (s *pipelineAccessLMSClientStub) GetCandidateEnrollmentDetail(
+	_ context.Context,
+	_ *lmspb.GetCandidateEnrollmentDetailRequest,
+	_ ...grpc.CallOption,
+) (*lmspb.GetCandidateEnrollmentDetailResponse, error) {
+	if s.enrollmentDetailErr != nil {
+		return nil, s.enrollmentDetailErr
+	}
+	return &lmspb.GetCandidateEnrollmentDetailResponse{}, nil
+}
+
+func (s *pipelineAccessLMSClientStub) ListQuizAttemptsCandidate(
+	_ context.Context,
+	_ *lmspb.ListQuizAttemptsCandidateRequest,
+	_ ...grpc.CallOption,
+) (*lmspb.ListQuizAttemptsResponse, error) {
+	if s.quizAttemptsErr != nil {
+		return nil, s.quizAttemptsErr
+	}
+	return &lmspb.ListQuizAttemptsResponse{}, nil
 }
 
 func TestCandidateCourseIDsPropagatesPipelineConfigError(t *testing.T) {
@@ -108,5 +168,58 @@ func TestListMaterialsPropagatesCourseMaterialError(t *testing.T) {
 
 	if rec.Code != http.StatusServiceUnavailable {
 		t.Fatalf("status = %d, want %d; body = %s", rec.Code, http.StatusServiceUnavailable, rec.Body.String())
+	}
+}
+
+func TestListPipelinesPropagatesFinalEligibilityError(t *testing.T) {
+	h := &Handler{
+		Gcc: &pipelineAccessCCClientStub{
+			finalEligibilityErr: status.Error(codes.Unavailable, "gcc eligibility unavailable"),
+		},
+	}
+	req := httptest.NewRequest(http.MethodGet, "/api/mall/pipelines", nil)
+	req = req.WithContext(WithCandidate(req.Context(), "candidate-1", "", "", ""))
+	rec := httptest.NewRecorder()
+
+	h.ListPipelines(rec, req)
+
+	if rec.Code != http.StatusServiceUnavailable {
+		t.Fatalf("status = %d, want %d; body = %s", rec.Code, http.StatusServiceUnavailable, rec.Body.String())
+	}
+}
+
+func TestGetProgressPropagatesEnrollmentDetailError(t *testing.T) {
+	h := &Handler{
+		Lms: &pipelineAccessLMSClientStub{
+			enrollmentDetailErr: status.Error(codes.Unavailable, "enrollment detail unavailable"),
+		},
+	}
+	req := httptest.NewRequest(http.MethodGet, "/api/pipeline/progress", nil)
+	req = req.WithContext(WithCandidate(req.Context(), "candidate-1", "", "", ""))
+	rec := httptest.NewRecorder()
+
+	h.GetProgress(rec, req)
+
+	if rec.Code != http.StatusServiceUnavailable {
+		t.Fatalf("status = %d, want %d; body = %s", rec.Code, http.StatusServiceUnavailable, rec.Body.String())
+	}
+}
+
+func TestQuizProgressByCoursePropagatesAttemptError(t *testing.T) {
+	h := &Handler{
+		Lms: &pipelineAccessLMSClientStub{
+			quizAttemptsErr: status.Error(codes.Unavailable, "quiz attempts unavailable"),
+		},
+	}
+	course := &lmspb.CompleteCourse{
+		Quizzes: []*lmspb.QuizDetail{{
+			Quiz: &lmspb.Quiz{QuizUlid: "quiz-1"},
+		}},
+	}
+
+	_, err := h.quizProgressByCourse(context.Background(), "candidate-1", course)
+
+	if status.Code(err) != codes.Unavailable {
+		t.Fatalf("quizProgressByCourse() error = %v, want Unavailable", err)
 	}
 }

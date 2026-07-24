@@ -925,10 +925,6 @@ func (h *Handler) CreateLmsLesson(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "lesson_type is required")
 		return
 	}
-	// if !validateLmsLessonPayload(w, &req) {
-	// 	return
-	// }
-
 	resp, err := h.Lms.CreateLessonAdmin(r.Context(), &req)
 	if err != nil {
 		writeLmsError(w, err)
@@ -975,10 +971,6 @@ func (h *Handler) UpdateLmsLesson(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "lesson_type is required")
 		return
 	}
-	// if !validateLmsLessonPayload(w, &req) {
-	// 	return
-	// }
-
 	resp, err := h.Lms.UpdateLessonAdmin(r.Context(), &req)
 	if err != nil {
 		writeLmsError(w, err)

@@ -36,8 +36,6 @@ type Config struct {
 	SecretConfig SecretConfig
 }
 
-// GetNamespace (Removed, use util.GetNamespace instead if needed)
-
 func LoadTransportCredentials() (credentials.TransportCredentials, error) {
 	tlsDir := strings.TrimSpace(os.Getenv(EnvTLSDir))
 	if tlsDir == "" {

@@ -19,8 +19,10 @@ import (
 )
 
 const (
-	oauthStateCookieName = "admin_oauth_state"
-	oauthStateTTL        = 10 * time.Minute
+	oauthStateCookieName      = "admin_oauth_state"
+	oauthStateCookieSeparator = "."
+	oauthStateTTL             = 10 * time.Minute
+	maxOutstandingOAuthStates = 5
 )
 
 // GetLoginURL  GET /api/auth/login-url
@@ -189,9 +191,30 @@ func newOAuthState() (string, error) {
 }
 
 func setOAuthStateCookie(w http.ResponseWriter, r *http.Request, state string) {
+	state = strings.TrimSpace(state)
+	if state == "" {
+		return
+	}
+
+	states := readOAuthStates(r)
+	for _, existing := range states {
+		if sameOAuthState(existing, state) {
+			writeOAuthStateCookie(w, r, states)
+			return
+		}
+	}
+
+	states = append(states, state)
+	if len(states) > maxOutstandingOAuthStates {
+		states = states[len(states)-maxOutstandingOAuthStates:]
+	}
+	writeOAuthStateCookie(w, r, states)
+}
+
+func writeOAuthStateCookie(w http.ResponseWriter, r *http.Request, states []string) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     oauthStateCookieName,
-		Value:    state,
+		Value:    strings.Join(states, oauthStateCookieSeparator),
 		Path:     "/api/auth",
 		Expires:  time.Now().Add(oauthStateTTL),
 		MaxAge:   int(oauthStateTTL.Seconds()),
@@ -199,6 +222,27 @@ func setOAuthStateCookie(w http.ResponseWriter, r *http.Request, state string) {
 		Secure:   strings.HasPrefix(requestOrigin(r), "https"),
 		SameSite: http.SameSiteLaxMode,
 	})
+}
+
+func readOAuthStates(r *http.Request) []string {
+	cookie, err := r.Cookie(oauthStateCookieName)
+	if err != nil {
+		return nil
+	}
+
+	rawStates := strings.Split(strings.TrimSpace(cookie.Value), oauthStateCookieSeparator)
+	states := make([]string, 0, min(len(rawStates), maxOutstandingOAuthStates))
+	for _, state := range rawStates {
+		state = strings.TrimSpace(state)
+		if state == "" {
+			continue
+		}
+		states = append(states, state)
+	}
+	if len(states) > maxOutstandingOAuthStates {
+		states = states[len(states)-maxOutstandingOAuthStates:]
+	}
+	return states
 }
 
 func clearOAuthStateCookie(w http.ResponseWriter, r *http.Request) {
@@ -215,17 +259,36 @@ func clearOAuthStateCookie(w http.ResponseWriter, r *http.Request) {
 }
 
 func consumeOAuthState(w http.ResponseWriter, r *http.Request, provided string) bool {
-	clearOAuthStateCookie(w, r)
-	cookie, err := r.Cookie(oauthStateCookieName)
-	if err != nil {
-		return false
-	}
-	expected := strings.TrimSpace(cookie.Value)
 	provided = strings.TrimSpace(provided)
-	if expected == "" || len(expected) != len(provided) {
+	if provided == "" {
 		return false
 	}
-	return subtle.ConstantTimeCompare([]byte(expected), []byte(provided)) == 1
+
+	states := readOAuthStates(r)
+	matched := false
+	remaining := states[:0]
+	for _, expected := range states {
+		if sameOAuthState(expected, provided) {
+			matched = true
+			continue
+		}
+		remaining = append(remaining, expected)
+	}
+	if !matched {
+		return false
+	}
+
+	if len(remaining) == 0 {
+		clearOAuthStateCookie(w, r)
+	} else {
+		writeOAuthStateCookie(w, r, remaining)
+	}
+	return true
+}
+
+func sameOAuthState(expected, provided string) bool {
+	return len(expected) == len(provided) &&
+		subtle.ConstantTimeCompare([]byte(expected), []byte(provided)) == 1
 }
 
 func validatedAuthCallback(r *http.Request, raw string) (string, error) {
