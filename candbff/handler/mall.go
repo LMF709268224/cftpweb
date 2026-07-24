@@ -177,12 +177,14 @@ func (h *Handler) GetPipelineDetail(w http.ResponseWriter, r *http.Request) {
 	progResp, err := h.Gprog.ListCandidatePipelines(ctx, &gprogpb.ListCandidatePipelinesReq{
 		CandidateUlid: candidateID,
 	})
-	if err == nil {
-		for _, p := range progResp.GetPipelines() {
-			if p.GetPipelineCcUlid() == gccResp.GetPipelineUlid() {
-				out.Instance = toPipelineSummary(p)
-				break
-			}
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	for _, p := range progResp.GetPipelines() {
+		if p.GetPipelineCcUlid() == gccResp.GetPipelineUlid() {
+			out.Instance = toPipelineSummary(p)
+			break
 		}
 	}
 
@@ -214,7 +216,7 @@ func (h *Handler) GetPipelineRuntime(w http.ResponseWriter, r *http.Request) {
 		CandidateUlid: candidateID,
 	})
 	if err != nil {
-		WriteJSON(w, http.StatusOK, out)
+		HandleGrpcError(w, err)
 		return
 	}
 
@@ -228,32 +230,34 @@ func (h *Handler) GetPipelineRuntime(w http.ResponseWriter, r *http.Request) {
 		runtimeResp, runtimeErr := h.Gprog.GetPipelineDetail(ctx, &gprog.GetPipelineDetailReq{
 			PipelineUlid: p.GetPipelineUlid(),
 		})
-		if runtimeErr == nil {
-			mergeRuntimeStatuses(&out.Config, runtimeResp)
-			out.NextStep = buildPipelineNextStep(runtimeResp, gccResp, p)
-			if runtimeResp.GetPipeline() != nil {
-				out.PipelineStatus = runtimeResp.GetPipeline().GetStatus().String()
-				out.CurrentStageUlid = strings.TrimSpace(runtimeResp.GetPipeline().GetCurrentStageUlid())
-			}
-			if stageDetails := runtimeResp.GetStages(); len(stageDetails) > 0 {
-				for _, stage := range stageDetails {
-					if stage == nil || stage.GetStage() == nil {
-						continue
-					}
-					if out.CurrentStageUlid != "" && stage.GetStage().GetStageUlid() == out.CurrentStageUlid {
-						out.CurrentStageName = stageConfigNameByID(gccResp, stage.GetStage().GetStageCcUlid())
-						out.CurrentStageStatus = stage.GetStage().GetStatus().String()
-						for _, unit := range stage.GetCourseUnits() {
-							if unit == nil {
-								continue
-							}
-							if unit.GetStatus() != gprog.CourseUnitStatus_COURSE_UNIT_STATUS_COMPLETED {
-								out.CurrentUnitStatus = unit.GetStatus().String()
-								break
-							}
+		if runtimeErr != nil {
+			HandleGrpcError(w, runtimeErr)
+			return
+		}
+		mergeRuntimeStatuses(&out.Config, runtimeResp)
+		out.NextStep = buildPipelineNextStep(runtimeResp, gccResp, p)
+		if runtimeResp.GetPipeline() != nil {
+			out.PipelineStatus = runtimeResp.GetPipeline().GetStatus().String()
+			out.CurrentStageUlid = strings.TrimSpace(runtimeResp.GetPipeline().GetCurrentStageUlid())
+		}
+		if stageDetails := runtimeResp.GetStages(); len(stageDetails) > 0 {
+			for _, stage := range stageDetails {
+				if stage == nil || stage.GetStage() == nil {
+					continue
+				}
+				if out.CurrentStageUlid != "" && stage.GetStage().GetStageUlid() == out.CurrentStageUlid {
+					out.CurrentStageName = stageConfigNameByID(gccResp, stage.GetStage().GetStageCcUlid())
+					out.CurrentStageStatus = stage.GetStage().GetStatus().String()
+					for _, unit := range stage.GetCourseUnits() {
+						if unit == nil {
+							continue
 						}
-						break
+						if unit.GetStatus() != gprog.CourseUnitStatus_COURSE_UNIT_STATUS_COMPLETED {
+							out.CurrentUnitStatus = unit.GetStatus().String()
+							break
+						}
 					}
+					break
 				}
 			}
 		}
