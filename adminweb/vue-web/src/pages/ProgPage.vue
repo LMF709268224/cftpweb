@@ -73,6 +73,13 @@ const selectedStageIndex = ref(0)
 const selectedUnitKey = ref("")
 const pendingAction = ref<PendingAction | null>(null)
 const actionReason = ref("")
+let pipelineContextId = 0
+let detailRequestId = 0
+let logsRequestId = 0
+let logDetailRequestId = 0
+let certificateTasksRequestId = 0
+let certificateTaskDetailRequestId = 0
+let certificateUrlRequestId = 0
 
 function asRecord(value: unknown): JsonRecord {
   return value && typeof value === "object" && !Array.isArray(value) ? value as JsonRecord : {}
@@ -82,6 +89,47 @@ function asArray(value: unknown): JsonRecord[] {
   return Array.isArray(value)
     ? value.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     : []
+}
+
+function isSelectedPipeline(pipelineId: string) {
+  return Boolean(pipelineId && pipelineUlid(selectedSummary.value) === pipelineId)
+}
+
+function invalidatePipelineDetailRequests() {
+  pipelineContextId += 1
+  detailRequestId += 1
+  logsRequestId += 1
+  logDetailRequestId += 1
+  certificateTasksRequestId += 1
+  certificateTaskDetailRequestId += 1
+  certificateUrlRequestId += 1
+  detailLoading.value = false
+  logsLoading.value = false
+  logDetailLoading.value = false
+  certificateTasksLoading.value = false
+  certificateTaskDetailLoading.value = false
+  certificateLoading.value = false
+}
+
+function clearPipelineDetailState() {
+  selectedSummary.value = null
+  detail.value = null
+  logs.value = []
+  selectedLog.value = null
+  logDetail.value = null
+  certificateTasks.value = []
+  selectedCertificateTask.value = null
+  certificateTaskDetail.value = null
+  logsCursorStack.value = [""]
+  logsNextCursor.value = ""
+  logsHasMore.value = false
+  logsTotal.value = 0
+  logOffset.value = 0
+  activeTab.value = "overview"
+  selectedStageIndex.value = 0
+  selectedUnitKey.value = ""
+  pendingAction.value = null
+  actionReason.value = ""
 }
 
 const detailPipelineRecord = computed(() => asRecord(detail.value?.pipeline))
@@ -415,41 +463,39 @@ nextCursor.value = String(data.next_cursor || "")
 }
 
 async function openPipeline(pipeline: JsonRecord) {
+  const pipelineId = pipelineUlid(pipeline)
+  if (!pipelineId) return
+  invalidatePipelineDetailRequests()
+  const contextId = pipelineContextId
+  clearPipelineDetailState()
   selectedSummary.value = pipeline
-  detail.value = null
-  logs.value = []
-  selectedLog.value = null
-  logDetail.value = null
-  certificateTasks.value = []
-  selectedCertificateTask.value = null
-  certificateTaskDetail.value = null
-  logsCursorStack.value = [""]
-  logsNextCursor.value = ""
-  logsHasMore.value = false
-  activeTab.value = "overview"
-  selectedStageIndex.value = 0
-  selectedUnitKey.value = ""
-  await loadDetail(pipelineUlid(pipeline))
-  await Promise.all([loadLogs(pipelineUlid(pipeline), 0), loadCertificateTasks()])
+  await loadDetail(pipelineId)
+  if (contextId !== pipelineContextId || !isSelectedPipeline(pipelineId)) return
+  await Promise.all([loadLogs(pipelineId, 0), loadCertificateTasks()])
 }
 
 async function loadDetail(pipelineId: string) {
   if (!pipelineId) return
+  const requestId = ++detailRequestId
   detailLoading.value = true
   try {
-    detail.value = await apiClient<JsonRecord>(`/api/prog/pipelines/${encodeURIComponent(pipelineId)}`)
+    const data = await apiClient<JsonRecord>(`/api/prog/pipelines/${encodeURIComponent(pipelineId)}`)
+    if (requestId !== detailRequestId || !isSelectedPipeline(pipelineId)) return
+    detail.value = data
     ensureSelections()
   } catch (err) {
+    if (requestId !== detailRequestId || !isSelectedPipeline(pipelineId)) return
     console.error(err)
     detail.value = null
     toast.error(copy.value.toasts.detailLoadFailed)
   } finally {
-    detailLoading.value = false
+    if (requestId === detailRequestId && isSelectedPipeline(pipelineId)) detailLoading.value = false
   }
 }
 
 async function loadLogs(pipelineId = selectedPipelineUlid.value, targetOffset = logOffset.value) {
   if (!pipelineId) return
+  const requestId = ++logsRequestId
   logsLoading.value = true
   try {
     const currentPage = Math.floor(targetOffset / logPageSize) + 1
@@ -459,6 +505,7 @@ async function loadLogs(pipelineId = selectedPipelineUlid.value, targetOffset = 
     const cursor = logsCursorStack.value[currentPage - 1] || ""
     if (cursor) params.set("cursor", cursor)
     const data = await apiClient<JsonRecord>(`/api/prog/pipelines/${encodeURIComponent(pipelineId)}/logs?${params}`)
+    if (requestId !== logsRequestId || !isSelectedPipeline(pipelineId)) return
     const list = Array.isArray(data.logs) ? data.logs : []
 
     logs.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
@@ -471,6 +518,7 @@ async function loadLogs(pipelineId = selectedPipelineUlid.value, targetOffset = 
     selectedLog.value = logs.value[0] || null
     if (selectedLog.value) await loadLogDetail(String(selectedLog.value.transition_ulid || ""))
   } catch (err) {
+    if (requestId !== logsRequestId || !isSelectedPipeline(pipelineId)) return
     console.error(err)
     logs.value = []
     selectedLog.value = null
@@ -479,84 +527,108 @@ async function loadLogs(pipelineId = selectedPipelineUlid.value, targetOffset = 
     logsNextCursor.value = ""
     toast.error(copy.value.toasts.logsLoadFailed)
   } finally {
-    logsLoading.value = false
+    if (requestId === logsRequestId && isSelectedPipeline(pipelineId)) logsLoading.value = false
   }
 }
 
 async function loadLogDetail(transitionUlid: string) {
   if (!transitionUlid) {
+    logDetailRequestId += 1
     logDetail.value = null
+    logDetailLoading.value = false
     return
   }
+  const pipelineId = pipelineUlid(selectedSummary.value)
+  const requestId = ++logDetailRequestId
   logDetailLoading.value = true
   try {
-    logDetail.value = await apiClient<JsonRecord>(`/api/prog/pipelines/logs/${encodeURIComponent(transitionUlid)}`)
+    const data = await apiClient<JsonRecord>(`/api/prog/pipelines/logs/${encodeURIComponent(transitionUlid)}`)
+    if (requestId !== logDetailRequestId || !isSelectedPipeline(pipelineId) || String(selectedLog.value?.transition_ulid || "") !== transitionUlid) return
+    logDetail.value = data
   } catch (err) {
+    if (requestId !== logDetailRequestId || !isSelectedPipeline(pipelineId) || String(selectedLog.value?.transition_ulid || "") !== transitionUlid) return
     console.error(err)
     logDetail.value = null
   } finally {
-    logDetailLoading.value = false
+    if (requestId === logDetailRequestId && isSelectedPipeline(pipelineId)) logDetailLoading.value = false
   }
 }
 
 async function loadCertificateTasks() {
   if (!selectedCandidateUlid.value || !canShowCertificateTasks.value) {
+    certificateTasksRequestId += 1
+    certificateTaskDetailRequestId += 1
     certificateTasks.value = []
     selectedCertificateTask.value = null
     certificateTaskDetail.value = null
     certificateTasksLoading.value = false
+    certificateTaskDetailLoading.value = false
     return
   }
+  const pipelineId = selectedPipelineUlid.value
+  const candidateId = selectedCandidateUlid.value
+  const requestId = ++certificateTasksRequestId
   certificateTasksLoading.value = true
   try {
     const params = new URLSearchParams({
-      candidate_ulid: selectedCandidateUlid.value,
+      candidate_ulid: candidateId,
       limit: "20",
       offset: "0",
     })
-    if (selectedPipelineUlid.value) params.set("pipeline_ulid", selectedPipelineUlid.value)
+    if (pipelineId) params.set("pipeline_ulid", pipelineId)
     const data = await apiClient<JsonRecord>(`/api/prog/certificate-tasks?${params}`)
+    if (requestId !== certificateTasksRequestId || !isSelectedPipeline(pipelineId) || selectedCandidateUlid.value !== candidateId) return
     const list = Array.isArray(data.tasks) ? data.tasks : []
 
     certificateTasks.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     selectedCertificateTask.value = certificateTasks.value[0] || null
     if (selectedCertificateTask.value) await loadCertificateTaskDetail(certificateTaskUlid(selectedCertificateTask.value))
   } catch (err) {
+    if (requestId !== certificateTasksRequestId || !isSelectedPipeline(pipelineId) || selectedCandidateUlid.value !== candidateId) return
     console.error(err)
     certificateTasks.value = []
     selectedCertificateTask.value = null
     certificateTaskDetail.value = null
     toast.error(copy.value.toasts.certificateTasksLoadFailed)
   } finally {
-    certificateTasksLoading.value = false
+    if (requestId === certificateTasksRequestId && isSelectedPipeline(pipelineId)) certificateTasksLoading.value = false
   }
 }
 
 async function loadCertificateTaskDetail(taskUlid: string) {
   if (!taskUlid) {
+    certificateTaskDetailRequestId += 1
     certificateTaskDetail.value = null
+    certificateTaskDetailLoading.value = false
     return
   }
+  const pipelineId = pipelineUlid(selectedSummary.value)
+  const requestId = ++certificateTaskDetailRequestId
   certificateTaskDetailLoading.value = true
   try {
-    certificateTaskDetail.value = await apiClient<JsonRecord>(`/api/prog/certificate-tasks/${encodeURIComponent(taskUlid)}`)
+    const data = await apiClient<JsonRecord>(`/api/prog/certificate-tasks/${encodeURIComponent(taskUlid)}`)
+    if (requestId !== certificateTaskDetailRequestId || !isSelectedPipeline(pipelineId) || certificateTaskUlid(selectedCertificateTask.value) !== taskUlid) return
+    certificateTaskDetail.value = data
   } catch (err) {
+    if (requestId !== certificateTaskDetailRequestId || !isSelectedPipeline(pipelineId) || certificateTaskUlid(selectedCertificateTask.value) !== taskUlid) return
     console.error(err)
     certificateTaskDetail.value = null
     toast.error(copy.value.toasts.certificateTaskDetailLoadFailed)
   } finally {
-    certificateTaskDetailLoading.value = false
+    if (requestId === certificateTaskDetailRequestId && isSelectedPipeline(pipelineId)) certificateTaskDetailLoading.value = false
   }
 }
 
 async function retryCertificateTask(task: JsonRecord) {
   const taskUlid = certificateTaskUlid(task)
   if (!taskUlid) return
+  const contextId = pipelineContextId
+  const pipelineId = pipelineUlid(selectedSummary.value)
   retryingCertificateTask.value = taskUlid
   try {
     const data = await apiClient<JsonRecord>(`/api/prog/certificate-tasks/${encodeURIComponent(taskUlid)}/retry`, { method: "POST" })
     toast.success(String(data.message || copy.value.toasts.certificateTaskRetried))
-    await reloadSelected()
+    if (contextId === pipelineContextId && isSelectedPipeline(pipelineId)) await reloadSelected()
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.certificateTaskRetryFailed))
@@ -566,21 +638,41 @@ async function retryCertificateTask(task: JsonRecord) {
 }
 
 async function reloadSelected() {
+  const contextId = pipelineContextId
+  const pipelineId = pipelineUlid(selectedSummary.value)
+  if (!pipelineId) return
   await loadPipelines()
-  if (selectedPipelineUlid.value) {
-    await loadDetail(selectedPipelineUlid.value)
-    await Promise.all([loadLogs(selectedPipelineUlid.value, logOffset.value), loadCertificateTasks()])
-  }
+  if (contextId !== pipelineContextId || !isSelectedPipeline(pipelineId)) return
+  await loadDetail(pipelineId)
+  if (contextId !== pipelineContextId || !isSelectedPipeline(pipelineId)) return
+  await Promise.all([loadLogs(pipelineId, logOffset.value), loadCertificateTasks()])
 }
 
 function openAction(action: PendingAction) {
+  if (!isActionCurrent(action)) return
   pendingAction.value = action
   actionReason.value = ""
+}
+
+function isActionCurrent(action: PendingAction) {
+  const pipelineId = pipelineUlid(selectedSummary.value)
+  if (!pipelineId || action.pipelineUlid !== pipelineId) return false
+  if (action.kind === "force-completed" || action.kind === "force-signup-exam") {
+    return Boolean(action.courseUnitUlid && units.value.some((item) => courseUnitUlid(item.unit) === action.courseUnitUlid))
+  }
+  return true
 }
 
 async function submitAction() {
   if (!pendingAction.value) return
   const action = pendingAction.value
+  if (!isActionCurrent(action)) {
+    pendingAction.value = null
+    actionReason.value = ""
+    toast.error(copy.value.toasts.actionFailed)
+    return
+  }
+  const contextId = pipelineContextId
   const body = JSON.stringify({ reason_message: actionReason.value.trim() })
   actionLoading.value = true
   try {
@@ -599,7 +691,7 @@ async function submitAction() {
     }
     pendingAction.value = null
     actionReason.value = ""
-    await reloadSelected()
+    if (contextId === pipelineContextId && isActionCurrent(action)) await reloadSelected()
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.actionFailed))
@@ -613,11 +705,15 @@ async function viewCertificate() {
     toast.error(copy.value.toasts.missingCertificateIds)
     return
   }
+  const pipelineId = selectedPipelineUlid.value
+  const candidateId = selectedCandidateUlid.value
+  const requestId = ++certificateUrlRequestId
   certificateLoading.value = true
   try {
     const data = await apiClient<JsonRecord>(
-      `/api/prog/pipelines/${encodeURIComponent(selectedPipelineUlid.value)}/certificate-url?candidate_ulid=${encodeURIComponent(selectedCandidateUlid.value)}`,
+      `/api/prog/pipelines/${encodeURIComponent(pipelineId)}/certificate-url?candidate_ulid=${encodeURIComponent(candidateId)}`,
     )
+    if (requestId !== certificateUrlRequestId || !isSelectedPipeline(pipelineId) || selectedCandidateUlid.value !== candidateId) return
     const url = String(data.view_url || "")
     if (!url) {
       toast.error(copy.value.toasts.noCertificate)
@@ -625,27 +721,21 @@ async function viewCertificate() {
     }
     window.open(url, "_blank", "noopener,noreferrer")
   } catch (err) {
+    if (requestId !== certificateUrlRequestId || !isSelectedPipeline(pipelineId) || selectedCandidateUlid.value !== candidateId) return
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.certificateUrlFailed))
   } finally {
-    certificateLoading.value = false
+    if (requestId === certificateUrlRequestId && isSelectedPipeline(pipelineId)) certificateLoading.value = false
   }
 }
 
 function backToList() {
-  selectedSummary.value = null
-  detail.value = null
-  logs.value = []
-  selectedLog.value = null
-  logDetail.value = null
-  certificateTasks.value = []
-  selectedCertificateTask.value = null
-  certificateTaskDetail.value = null
-  activeTab.value = "overview"
+  invalidatePipelineDetailRequests()
+  clearPipelineDetailState()
 }
 
 function resetPipelineSearchState() {
-  selectedSummary.value = null
+  backToList()
   lastPage.value = 1
   prevCursor.value = ""
   nextCursor.value = ""
@@ -674,9 +764,13 @@ watch(offset, () => loadPipelines())
 
 watch(canShowCertificateTasks, (visible) => {
   if (visible) return
+  certificateTasksRequestId += 1
+  certificateTaskDetailRequestId += 1
   certificateTasks.value = []
   selectedCertificateTask.value = null
   certificateTaskDetail.value = null
+  certificateTasksLoading.value = false
+  certificateTaskDetailLoading.value = false
   if (activeTab.value === "certificateTasks") activeTab.value = "overview"
 })
 
