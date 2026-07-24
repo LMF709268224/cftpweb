@@ -606,6 +606,28 @@ async function syncReturnedOrder(orderId: string) {
   if (!paymentSyncCancelled) toast.warning(t.value.orders.paymentSyncDelayed)
 }
 
+async function handleOrderPaymentComplete() {
+  const orderId = orderPaymentSession.value?.orderId || ""
+  orderPaymentDialogOpen.value = false
+  orderPaymentSession.value = null
+  selectedOrderDetail.value = null
+  selectedOrderItem.value = null
+  detailPaymentPreview.value = null
+  couponInput.value = ""
+  appliedCouponCodes.value = []
+  couponError.value = ""
+
+  if (!orderId) {
+    await fetchOrders(false, true)
+    return
+  }
+
+  paymentSyncingOrderId.value = orderId
+  toast.success(t.value.orders.paymentReturnSuccess)
+  await fetchOrders(false, true)
+  await syncReturnedOrder(orderId)
+}
+
 function resetCursorPagination() {
   page.value = 1
   lastPage.value = 1
@@ -875,6 +897,8 @@ onBeforeUnmount(() => {
       :source="orderPaymentSession.source"
       :return-path="orderPaymentSession.returnPath"
       :coupon-codes="orderPaymentSession.couponCodes"
+      :redirect-on-complete="false"
+      @complete="handleOrderPaymentComplete"
     />
   </AppShell>
 </template>
