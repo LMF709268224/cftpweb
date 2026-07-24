@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue"
+import { computed, onBeforeUnmount, onMounted, ref } from "vue"
 import { useRoute } from "vue-router"
 import { toast } from "vue-sonner"
 import { ChevronRight, CreditCard, Loader2, Package, Receipt, X, XCircle } from "lucide-vue-next"
@@ -134,6 +134,11 @@ const orderStatusOptions = computed(() => [
 ])
 
 const actionableOrderStatuses = new Set(["WAIT_PAYMENT", "PENDING"])
+const paidPaymentStatuses = new Set(["PAID"])
+const paymentReturnSyncAttempts = 6
+const paymentReturnSyncIntervalMs = 1500
+const paymentSyncingOrderId = ref("")
+let paymentSyncCancelled = false
 
 const detailExtraFields = computed<DetailField[]>(() => {
   const detail = selectedOrderDetail.value
@@ -174,11 +179,36 @@ function displayBusinessValue(value: unknown) {
   }
 }
 
+function normalizedStatus(value: unknown) {
+  return String(value || "").trim().toUpperCase()
+}
+
+function isPaidPaymentStatus(value: unknown) {
+  return paidPaymentStatuses.has(normalizedStatus(value))
+}
+
+function displayOrderStatus(order: OrderItem) {
+  const orderStatus = normalizedStatus(order.order_status)
+  if (actionableOrderStatuses.has(orderStatus) && isPaidPaymentStatus(order.payment_status)) {
+    return "PAID"
+  }
+  return orderStatus
+}
+
+function orderStatusLabel(order: OrderItem) {
+  if (paymentSyncingOrderId.value === order.id) return t.value.orders.statusPaymentSyncing
+  return timelineStatusLabelWithDiagnostics(t, "MALL_ORDER", displayOrderStatus(order))
+}
+
 function orderStatusBadgeClass(order: OrderItem) {
-  if (order.order_status === "COMPLETED" || order.order_status === "SUCCESS") {
+  if (paymentSyncingOrderId.value === order.id) {
+    return "border-blue-200 bg-blue-50 text-blue-700"
+  }
+  const status = displayOrderStatus(order)
+  if (status === "COMPLETED" || status === "SUCCESS") {
     return "border-[#6CE9A6] bg-[#ECFDF3] text-[#027A48]"
   }
-  return timelineStatusBadgeClassForStatus("MALL_ORDER", order.order_status)
+  return timelineStatusBadgeClassForStatus("MALL_ORDER", status)
 }
 
 function normalizeCouponCodes(codes: string[]) {
@@ -233,11 +263,13 @@ async function openOrderDetail(order: OrderItem) {
   selectedOrderItem.value = order
   detailPaymentPreview.value = null
   try {
-    selectedOrderDetail.value = await apiClient(`/api/orders/${encodeURIComponent(order.id)}`)
+    const detail = await apiClient(`/api/orders/${encodeURIComponent(order.id)}`)
+    selectedOrderDetail.value = detail
+    const latestOrder = applyOrderDetail(detail, order.id) || order
     couponInput.value = ""
     appliedCouponCodes.value = []
     couponError.value = ""
-    if (canContinuePayment(order)) {
+    if (canContinuePayment(latestOrder)) {
       await refreshPaymentPreviewWithCoupons([])
     }
   } catch (error) {
@@ -252,21 +284,24 @@ async function openOrderDetail(order: OrderItem) {
 function closeOrderDetail() {
   if (detailLoading.value) return
   selectedOrderDetail.value = null
+  selectedOrderItem.value = null
+  detailPaymentPreview.value = null
   detailError.value = ""
 }
 
 function canContinuePayment(order: OrderItem) {
   if (!order.bizType || !order.bizRefUlid) return false
-  const orderStatus = String(order.order_status || "").toUpperCase()
-  return actionableOrderStatuses.has(orderStatus)
+  if (paymentSyncingOrderId.value === order.id || isPaidPaymentStatus(order.payment_status)) return false
+  return actionableOrderStatuses.has(normalizedStatus(order.order_status))
 }
 
 function canCancelOrder(order: OrderItem) {
-  const orderStatus = String(order.order_status || "").toUpperCase()
   return Boolean(
     order.bizType
     && order.bizRefUlid
-    && actionableOrderStatuses.has(orderStatus)
+    && paymentSyncingOrderId.value !== order.id
+    && !isPaidPaymentStatus(order.payment_status)
+    && actionableOrderStatuses.has(normalizedStatus(order.order_status))
     && !cancelLoading.value,
   )
 }
@@ -298,21 +333,77 @@ async function cancelOrder(order: OrderItem) {
   }
 }
 
-function continuePayment(order: OrderItem) {
+function orderFromDetail(order: OrderItem, detail: OrderDetail) {
+  const summary = detail.summary
+  if (!summary) return order
+
+  const orderStatus = normalizedStatus(summary.order_status) || order.order_status
+  const paymentStatus = normalizedStatus(summary.payment_status) || order.payment_status
+  const amount = Number(summary.amount)
+  const currency = normalizedStatus(summary.currency) || order.currency
+  return {
+    ...order,
+    items: summary.meta?.product_name ? [summary.meta.product_name] : order.items,
+    amount: Number.isFinite(amount)
+      ? orderAmountDisplay(amount, currency, orderStatus, t.value.orders.free)
+      : order.amount,
+    currency,
+    bizType: summary.biz_type || order.bizType,
+    bizRefUlid: summary.biz_ref_ulid || order.bizRefUlid,
+    order_status: orderStatus,
+    payment_status: paymentStatus,
+  }
+}
+
+function applyOrderDetail(detail: OrderDetail, fallbackOrderId = "") {
+  const orderId = String(detail.summary?.order_id || fallbackOrderId).trim()
+  if (!orderId) return null
+
+  let latestOrder: OrderItem | null = null
+  orders.value = orders.value.map((order) => {
+    if (order.id !== orderId) return order
+    latestOrder = orderFromDetail(order, detail)
+    return latestOrder
+  })
+
+  if (selectedOrderItem.value?.id === orderId) {
+    latestOrder = orderFromDetail(selectedOrderItem.value, detail)
+    selectedOrderItem.value = latestOrder
+  }
+  return latestOrder
+}
+
+async function continuePayment(order: OrderItem) {
   if (!canContinuePayment(order) || paymentLoading.value) return
   paymentLoading.value = order.id
-  orderPaymentSession.value = {
-    orderId: order.id,
-    bizType: order.bizType,
-    bizRefUlid: order.bizRefUlid,
-    source: "orders",
-    returnPath: "/orders",
-    couponCodes: activeCouponCodes.value,
-  }
-  orderPaymentDialogOpen.value = true
-  window.setTimeout(() => {
+  try {
+    const detail = await apiClient(`/api/orders/${encodeURIComponent(order.id)}`, {
+      suppressErrorToast: true,
+    })
+    if (selectedOrderItem.value?.id === order.id) selectedOrderDetail.value = detail
+    const latestOrder = applyOrderDetail(detail, order.id) || order
+    if (!canContinuePayment(latestOrder)) {
+      orderPaymentDialogOpen.value = false
+      orderPaymentSession.value = null
+      toast.info(t.value.orders.paymentNoLongerRequired)
+      return
+    }
+
+    orderPaymentSession.value = {
+      orderId: latestOrder.id,
+      bizType: latestOrder.bizType,
+      bizRefUlid: latestOrder.bizRefUlid,
+      source: "orders",
+      returnPath: "/orders",
+      couponCodes: activeCouponCodes.value,
+    }
+    orderPaymentDialogOpen.value = true
+  } catch (error) {
+    console.error(error)
+    toast.error(t.value.orders.detailLoadFailed)
+  } finally {
     if (paymentLoading.value === order.id) paymentLoading.value = null
-  }, 300)
+  }
 }
 
 async function viewInvoice(orderId: string) {
@@ -461,6 +552,60 @@ async function fetchOrders(showLoading = true, suppressErrorToast = false) {
   }
 }
 
+function consumePaymentReturn() {
+  const url = new URL(window.location.href)
+  const paymentStatus = normalizedStatus(url.searchParams.get("payment_status"))
+  if (!paymentStatus) return null
+
+  const orderId = String(url.searchParams.get("order_id") || "").trim()
+  url.searchParams.delete("payment_status")
+  url.searchParams.delete("payment_action")
+  url.searchParams.delete("order_id")
+  window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`)
+
+  if (paymentStatus === "SUCCESS") {
+    paymentSyncingOrderId.value = orderId
+    toast.success(t.value.orders.paymentReturnSuccess)
+  } else if (paymentStatus === "CANCELLED") {
+    toast.warning(t.value.paymentReturnHandler.cancelled)
+  } else if (paymentStatus === "FAILED") {
+    toast.error(t.value.paymentReturnHandler.failed)
+  }
+
+  return { paymentStatus, orderId }
+}
+
+function waitForPaymentSync() {
+  return new Promise<void>((resolve) => window.setTimeout(resolve, paymentReturnSyncIntervalMs))
+}
+
+async function syncReturnedOrder(orderId: string) {
+  if (!orderId) {
+    paymentSyncingOrderId.value = ""
+    return
+  }
+
+  for (let attempt = 0; attempt < paymentReturnSyncAttempts && !paymentSyncCancelled; attempt += 1) {
+    try {
+      const detail: OrderDetail = await apiClient(`/api/orders/${encodeURIComponent(orderId)}`, {
+        suppressErrorToast: true,
+      })
+      applyOrderDetail(detail, orderId)
+      const orderStatus = normalizedStatus(detail.summary?.order_status)
+      if (orderStatus === "COMPLETED" || orderStatus === "SUCCESS" || isPaidPaymentStatus(detail.summary?.payment_status)) {
+        paymentSyncingOrderId.value = ""
+        return
+      }
+    } catch (error) {
+      console.error("Failed to synchronize returned payment order", error)
+    }
+
+    if (attempt < paymentReturnSyncAttempts - 1) await waitForPaymentSync()
+  }
+
+  if (!paymentSyncCancelled) toast.warning(t.value.orders.paymentSyncDelayed)
+}
+
 function resetCursorPagination() {
   page.value = 1
   lastPage.value = 1
@@ -486,8 +631,16 @@ function handlePaginationChange() {
   window.scrollTo({ top: 0, behavior: "smooth" })
 }
 
-onMounted(() => {
-  void fetchOrders()
+onMounted(async () => {
+  const paymentReturn = consumePaymentReturn()
+  await fetchOrders()
+  if (paymentReturn?.paymentStatus === "SUCCESS") {
+    await syncReturnedOrder(paymentReturn.orderId)
+  }
+})
+
+onBeforeUnmount(() => {
+  paymentSyncCancelled = true
 })
 </script>
 
@@ -552,7 +705,7 @@ onMounted(() => {
           <div class="flex w-full flex-wrap items-center justify-end gap-x-3 gap-y-3 pl-16 md:grid md:w-auto md:shrink-0 md:grid-cols-[130px_148px_36px_112px_24px] md:gap-x-5 md:pl-0">
             <div class="mr-auto flex justify-start md:mr-0 md:justify-center">
               <span class="badge text-xs" :class="orderStatusBadgeClass(order)">
-                {{ timelineStatusLabelWithDiagnostics(t, 'MALL_ORDER', order.order_status) }}
+                {{ orderStatusLabel(order) }}
               </span>
             </div>
             <div class="text-right">
