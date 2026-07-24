@@ -234,7 +234,10 @@ function closeDetail() {
   detailOpen.value = false
 }
 
+let listRequestId = 0
+
 async function load(targetPage = page.value) {
+  const requestId = ++listRequestId
   loading.value = true
   try {
     const params = new URLSearchParams({
@@ -278,6 +281,7 @@ async function load(targetPage = page.value) {
     }
 
     const data = await apiClient<JsonRecord>(`/api/mall/orders?${params}`)
+    if (requestId !== listRequestId) return
     const list = Array.isArray(data.items) ? data.items : Array.isArray(data.orders) ? data.orders : []
 
     orders.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
@@ -298,6 +302,7 @@ nextCursor.value = String(data.next_cursor || "")
       detailOpen.value = false
     }
   } catch (err) {
+    if (requestId !== listRequestId) return
     console.error(err)
     orders.value = []
     selected.value = null
@@ -308,7 +313,7 @@ nextCursor.value = String(data.next_cursor || "")
     nextCursor.value = ""
     toast.error(copy.value.toasts.ordersLoadFailed)
   } finally {
-    loading.value = false
+    if (requestId === listRequestId) loading.value = false
   }
 }
 

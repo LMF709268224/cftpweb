@@ -247,7 +247,10 @@ function closeDetail() {
   detailOpen.value = false
 }
 
+let listRequestId = 0
+
 async function load(targetPage = page.value) {
+  const requestId = ++listRequestId
   loading.value = true
   try {
     const params = new URLSearchParams({
@@ -274,6 +277,7 @@ async function load(targetPage = page.value) {
 
 
     const data = await apiClient<JsonRecord>(`/api/applications?${params}`)
+    if (requestId !== listRequestId) return
     const list = Array.isArray(data.applications) ? data.applications : []
 
     applications.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
@@ -290,6 +294,7 @@ nextCursor.value = String(data.next_cursor || "")
     page.value = targetPage
     void loadApplicationDetail(selected.value)
   } catch (err) {
+    if (requestId !== listRequestId) return
     console.error(err)
     applications.value = []
     selected.value = null
@@ -298,7 +303,7 @@ nextCursor.value = String(data.next_cursor || "")
     nextCursor.value = ""
     toast.error(copy.value.toasts.listLoadFailed)
   } finally {
-    loading.value = false
+    if (requestId === listRequestId) loading.value = false
   }
 }
 

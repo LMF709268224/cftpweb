@@ -85,7 +85,10 @@ function summary(record: JsonRecord | null) {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as JsonRecord) : record
 }
 
+let listRequestId = 0
+
 async function load() {
+  const requestId = ++listRequestId
   loading.value = true
   try {
     const params = new URLSearchParams()
@@ -115,6 +118,7 @@ async function load() {
       params.set(key, key === "start_time" || key === "end_time" ? toRFC3339Local(text) : text)
     }
     const data = await apiClient<JsonRecord>(`/api/audit/logs?${params}`)
+    if (requestId !== listRequestId) return
     logs.value = asRecordList(data.items)
     total.value = Number(data.total || logs.value.length)
     const isBackward = page.value < lastPage.value
@@ -128,6 +132,7 @@ if (!logs.value.some((item) => auditId(item) === auditId(selected.value))) {
       selected.value = logs.value[0] || null
     }
   } catch (err) {
+    if (requestId !== listRequestId) return
     console.error(err)
     logs.value = []
     total.value = 0
@@ -136,7 +141,7 @@ if (!logs.value.some((item) => auditId(item) === auditId(selected.value))) {
     selected.value = null
     toast.error(copy.value.toasts.loadFailed)
   } finally {
-    loading.value = false
+    if (requestId === listRequestId) loading.value = false
   }
 }
 

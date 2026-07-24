@@ -145,21 +145,29 @@ function validatePayload() {
   }
 }
 
+let usersRequestId = 0
+let templatesListRequestId = 0
+let sentMessagesRequestId = 0
+
 async function loadUsers() {
+  const requestId = ++usersRequestId
   usersLoading.value = true
   try {
     const data = await apiClient<JsonRecord>("/api/user/list")
+    if (requestId !== usersRequestId) return
     const list = Array.isArray(data.users) ? data.users : []
     users.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
   } catch (err) {
+    if (requestId !== usersRequestId) return
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.usersLoadFailed))
   } finally {
-    usersLoading.value = false
+    if (requestId === usersRequestId) usersLoading.value = false
   }
 }
 
 async function loadTemplates() {
+  const requestId = ++templatesListRequestId
   templatesLoading.value = true
   try {
     const params = new URLSearchParams({
@@ -168,6 +176,7 @@ async function loadTemplates() {
     const cursor = templateCursorStack.value[templatePage.value - 1] || ""
     if (cursor) params.set("cursor", cursor)
     const data = await apiClient<JsonRecord>(`/api/messages/templates?${params}`)
+    if (requestId !== templatesListRequestId) return
     const list = Array.isArray(data.templates) ? data.templates : []
     templates.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     totalTemplates.value = Number(data.total || data.total_count || templates.value.length)
@@ -179,10 +188,11 @@ async function loadTemplates() {
       selectedTemplate.value = templates.value[0] || null
     }
   } catch (err) {
+    if (requestId !== templatesListRequestId) return
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.templatesLoadFailed))
   } finally {
-    templatesLoading.value = false
+    if (requestId === templatesListRequestId) templatesLoading.value = false
   }
 }
 
@@ -210,6 +220,7 @@ async function selectTemplate(template: JsonRecord) {
 }
 
 async function loadSentMessages() {
+  const requestId = ++sentMessagesRequestId
   messagesLoading.value = true
   try {
     const params = new URLSearchParams({
@@ -219,6 +230,7 @@ async function loadSentMessages() {
     if (cursor) params.set("cursor", cursor)
     if (statusFilter.value) params.set("status", statusFilter.value)
     const data = await apiClient<JsonRecord>(`/api/messages/sent?${params}`)
+    if (requestId !== sentMessagesRequestId) return
     const list = Array.isArray(data.messages) ? data.messages : []
     messages.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     total.value = Number(data.total || messages.value.length)
@@ -231,13 +243,14 @@ async function loadSentMessages() {
     }
     if (!messages.value.length) messageDetailOpen.value = false
   } catch (err) {
+    if (requestId !== sentMessagesRequestId) return
     console.error(err)
     messages.value = []
     selectedMessage.value = null
     messageDetailOpen.value = false
     toast.error(apiErrorMessage(err, copy.value.toasts.sentLoadFailed))
   } finally {
-    messagesLoading.value = false
+    if (requestId === sentMessagesRequestId) messagesLoading.value = false
   }
 }
 

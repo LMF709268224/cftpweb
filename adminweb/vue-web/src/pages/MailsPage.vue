@@ -216,21 +216,29 @@ function validateTemplatePayload() {
   }
 }
 
+let usersRequestId = 0
+let templatesListRequestId = 0
+let sentMailsRequestId = 0
+
 async function loadUsers() {
+  const requestId = ++usersRequestId
   usersLoading.value = true
   try {
     const data = await apiClient<JsonRecord>("/api/user/list")
+    if (requestId !== usersRequestId) return
     const list = Array.isArray(data.users) ? data.users : []
     users.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item) && !!item.email)
   } catch (err) {
+    if (requestId !== usersRequestId) return
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.usersLoadFailed))
   } finally {
-    usersLoading.value = false
+    if (requestId === usersRequestId) usersLoading.value = false
   }
 }
 
 async function loadTemplates() {
+  const requestId = ++templatesListRequestId
   templatesLoading.value = true
   try {
     const params = new URLSearchParams({
@@ -239,6 +247,7 @@ async function loadTemplates() {
     const cursor = templateCursorStack.value[templatePage.value - 1] || ""
     if (cursor) params.set("cursor", cursor)
     const data = await apiClient<JsonRecord>(`/api/mails/templates?${params}`)
+    if (requestId !== templatesListRequestId) return
     const list = Array.isArray(data.templates) ? data.templates : []
     templates.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     totalTemplates.value = Number(data.total || templates.value.length)
@@ -251,10 +260,11 @@ async function loadTemplates() {
       templateMode.value = selectedTemplate.value ? "detail" : "create"
     }
   } catch (err) {
+    if (requestId !== templatesListRequestId) return
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.templatesLoadFailed))
   } finally {
-    templatesLoading.value = false
+    if (requestId === templatesListRequestId) templatesLoading.value = false
   }
 }
 
@@ -317,6 +327,7 @@ async function loadStats() {
 }
 
 async function loadSentMails() {
+  const requestId = ++sentMailsRequestId
   mailsLoading.value = true
   try {
     const params = new URLSearchParams({ page_size: String(pageSize) })
@@ -324,6 +335,7 @@ async function loadSentMails() {
     if (cursor) params.set("cursor", cursor)
     if (statusFilter.value) params.set("status", statusFilter.value)
     const data = await apiClient<JsonRecord>(`/api/mails/sent?${params}`)
+    if (requestId !== sentMailsRequestId) return
     const list = Array.isArray(data.mails) ? data.mails : []
     mails.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     total.value = Number(data.total || mails.value.length)
@@ -335,10 +347,11 @@ async function loadSentMails() {
       await openMail(mails.value[0] || null, mailDetailOpen.value)
     }
   } catch (err) {
+    if (requestId !== sentMailsRequestId) return
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.sentLoadFailed))
   } finally {
-    mailsLoading.value = false
+    if (requestId === sentMailsRequestId) mailsLoading.value = false
   }
 }
 

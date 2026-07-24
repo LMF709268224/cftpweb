@@ -626,7 +626,10 @@ function applyPdfTemplate(item: JsonRecord | null | undefined, key: "pdf_templat
   syncStructureJson()
 }
 
+let listRequestId = 0
+
 async function load() {
+  const requestId = ++listRequestId
   loading.value = true
   try {
     const params = new URLSearchParams({
@@ -636,17 +639,19 @@ async function load() {
     if (statusFilter.value) params.set("status", statusFilter.value)
     if (onlyCurrent.value) params.set("only_current", "true")
     const data = await apiClient<JsonRecord>(`/api/pipelines?${params}`)
+    if (requestId !== listRequestId) return
     const list = Array.isArray(data.pipelines) ? data.pipelines : []
     pipelines.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     hasMore.value = Boolean(data.has_more)
     nextToken.value = String(data.next_cursor || "")
     prevToken.value = String(data.prev_cursor || "")
   } catch (err) {
+    if (requestId !== listRequestId) return
     console.error(err)
     pipelines.value = []
     toast.error(copy.value.toasts.loadFailed)
   } finally {
-    loading.value = false
+    if (requestId === listRequestId) loading.value = false
   }
 }
 

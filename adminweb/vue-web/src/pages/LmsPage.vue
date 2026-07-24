@@ -1111,22 +1111,27 @@ function resetContent() {
   optionForm.value = emptyOptionForm()
 }
 
+let courseListRequestId = 0
+
 async function loadCourses(pageToken = "") {
+  const requestId = ++courseListRequestId
   loading.value = true
   try {
     const params = new URLSearchParams({ page_size: String(pageSize) })
     if (statusFilter.value) params.set("status", statusFilter.value)
     if (pageToken) params.set("cursor", pageToken)
     const data = await apiClient<JsonRecord>(`/api/lms/courses?${params}`)
+    if (requestId !== courseListRequestId) return
     const list = Array.isArray(data.courses) ? data.courses : []
     const next = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     courses.value = pageToken ? [...courses.value, ...next] : next
     nextPageToken.value = String(data.next_cursor || "")
   } catch (err) {
+    if (requestId !== courseListRequestId) return
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.courseListLoadFailed))
   } finally {
-    loading.value = false
+    if (requestId === courseListRequestId) loading.value = false
   }
 }
 

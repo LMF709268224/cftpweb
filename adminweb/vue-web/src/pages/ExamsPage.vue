@@ -170,7 +170,10 @@ function candidateIdentifier(item: JsonRecord) {
   return String(pickFirst(item, ["candidate_ulid", "candidate_id"]) || "")
 }
 
+let listRequestId = 0
+
 async function loadExams(targetPage = page.value) {
+  const requestId = ++listRequestId
   loading.value = true
   try {
     const params = new URLSearchParams({
@@ -219,6 +222,7 @@ async function loadExams(targetPage = page.value) {
     }
 
     const data = await apiClient<JsonRecord>(`/api/exams?${params}`)
+    if (requestId !== listRequestId) return
     total.value = Number(data.total) || 0
     exams.value = asArray(data.exams)
     total.value = Number(data.total || exams.value.length || 0)
@@ -234,6 +238,7 @@ nextCursor.value = String(data.next_cursor || "")
       clearSelection()
     }
   } catch (err) {
+    if (requestId !== listRequestId) return
     console.error(err)
     exams.value = []
     total.value = 0
@@ -241,7 +246,7 @@ nextCursor.value = String(data.next_cursor || "")
     nextCursor.value = ""
     toast.error(copy.value.toasts.listLoadFailed)
   } finally {
-    loading.value = false
+    if (requestId === listRequestId) loading.value = false
   }
 }
 
