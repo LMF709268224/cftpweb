@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from "vue-router"
+import { resolveAuthRedirect } from "@/lib/authRedirect"
 import { isAuthenticated } from "@/lib/authStorage"
 
 const AdminLayout = () => import("@/components/AdminLayout.vue")
@@ -301,7 +302,7 @@ router.beforeEach((to) => {
   }
 
   if (!isAuthenticated()) {
-    return { name: "login" }
+    return { name: "login", query: { redirect: resolveAuthRedirect(to.fullPath) } }
   }
 
   return true

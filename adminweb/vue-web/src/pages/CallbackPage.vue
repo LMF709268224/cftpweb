@@ -3,6 +3,7 @@ import { CheckCircle2, Loader2, ShieldAlert } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { ApiError, apiClient } from "@/lib/apiClient"
+import { clearAuthRedirect, pendingAuthRedirect } from "@/lib/authRedirect"
 import { setAuthSession } from "@/lib/authStorage"
 import { useAdminLanguage } from "@/lib/language"
 
@@ -32,10 +33,11 @@ function friendlyAuthError(err: unknown) {
 onMounted(async () => {
   const code = String(route.query.code || "")
   const state = String(route.query.state || "")
+  const redirect = pendingAuthRedirect()
   if (!code || !state) {
     status.value = "error"
     error.value = copy.value.missingParams
-    setTimeout(() => router.push("/login"), 2500)
+    setTimeout(() => router.replace({ name: "login", query: { redirect } }), 2500)
     return
   }
 
@@ -47,12 +49,13 @@ onMounted(async () => {
 
     setAuthSession(payload.user?.name)
     status.value = "success"
-    setTimeout(() => router.push("/lms"), 800)
+    clearAuthRedirect()
+    setTimeout(() => router.replace(redirect), 800)
   } catch (err) {
     console.error(err)
     status.value = "error"
     error.value = friendlyAuthError(err)
-    setTimeout(() => router.push("/login"), 2500)
+    setTimeout(() => router.replace({ name: "login", query: { redirect } }), 2500)
   }
 })
 </script>

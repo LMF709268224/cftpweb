@@ -1,4 +1,5 @@
 import { clearAuthSession } from "./authStorage"
+import { currentAuthRedirect, loginPathWithRedirect } from "./authRedirect"
 
 type JsonObject = Record<string, unknown>
 
@@ -92,7 +93,7 @@ export async function apiClient<T = unknown>(input: string, init: RequestInit = 
     const message = payloadMessage(payload, "Unauthorized")
     clearAuthSession()
     if (!isAuthEndpoint(input)) {
-      window.location.href = "/login"
+      window.location.href = loginPathWithRedirect(currentAuthRedirect())
     }
     throw new ApiError(message, response.status, payload)
   }

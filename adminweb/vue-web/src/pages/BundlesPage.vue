@@ -116,6 +116,7 @@ const mode = ref<Mode>("detail")
 const showDeleteConfirm = ref(false)
 const replacementPipelineId = ref("")
 const limit = 10
+let listRequestId = 0
 let detailRequestId = 0
 let nextCreateItemKey = 1
 const { t } = useAdminLanguage()
@@ -652,7 +653,17 @@ function formFromBundle(bundle: JsonRecord | null): BundleForm {
   }
 }
 
+function isCurrentListRequest(requestId: number, requestedPage: number, requestedStatus: string) {
+  return requestId === listRequestId
+    && currentPage.value === requestedPage
+    && statusFilter.value === requestedStatus
+}
+
 async function load() {
+  const requestId = ++listRequestId
+  const requestedPage = currentPage.value
+  const requestedStatus = statusFilter.value
+  const previousPage = lastPage.value
   loading.value = true
   try {
     const params = new URLSearchParams({
@@ -661,40 +672,30 @@ async function load() {
 
     let cursor = ""
 
-    if (currentPage.value > lastPage.value) {
-
+    if (requestedPage > previousPage) {
       cursor = nextCursor.value
-
-    } else if (currentPage.value < lastPage.value) {
-
+    } else if (requestedPage < previousPage) {
       cursor = prevCursor.value
-
-
     }
-
-    
-
     if (cursor) params.set("cursor", cursor)
+    if (requestedStatus) params.set("status", requestedStatus)
 
-
-    if (statusFilter.value) params.set("status", statusFilter.value)
     const data = await apiClient<JsonRecord>(`/api/mall/bundles?${params}`)
-    total.value = Number(data.total) || 0
-    const list = Array.isArray(data.bundles) ? data.bundles : []
+    if (!isCurrentListRequest(requestId, requestedPage, requestedStatus)) return
 
+    const list = Array.isArray(data.bundles) ? data.bundles : []
     bundles.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     total.value = Number(data.total || 0)
-    const isBackward = currentPage.value < lastPage.value
+    const isBackward = requestedPage < previousPage
     hasMore.value = isBackward ? true : Boolean(data.has_more)
-    lastPage.value = currentPage.value
-nextCursor.value = String(data.next_cursor || "")
+    nextCursor.value = String(data.next_cursor || "")
     prevCursor.value = String(data?.prev_cursor || "")
-
-    lastPage.value = currentPage.value
+    lastPage.value = requestedPage
     if (!selected.value && bundles.value.length) {
       void selectBundle(bundles.value[0], false)
     }
   } catch (err) {
+    if (!isCurrentListRequest(requestId, requestedPage, requestedStatus)) return
     console.error(err)
     bundles.value = []
     total.value = 0
@@ -702,16 +703,17 @@ nextCursor.value = String(data.next_cursor || "")
     nextCursor.value = ""
     toast.error(copy.value.toasts.loadFailed)
   } finally {
-    loading.value = false
+    if (isCurrentListRequest(requestId, requestedPage, requestedStatus)) loading.value = false
   }
 }
 
 function prevPage() {
+  if (loading.value || !canPrev.value) return
   offset.value = Math.max(0, offset.value - limit)
 }
 
 function nextPage() {
-  if (!canNext.value) return
+  if (loading.value || !canNext.value) return
   offset.value += limit
 }
 
@@ -1321,8 +1323,8 @@ onMounted(load)
         <div class="flex flex-col items-stretch justify-between gap-3 border-t border-slate-200 px-4 py-4 sm:flex-row sm:items-center md:p-5">
           <span class="text-center text-sm font-bold text-slate-500 sm:text-left">{{ copy.pageText(currentPage, totalPages, total) }}</span>
           <div class="flex gap-3">
-            <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrev" @click="prevPage">{{ copy.prev }}</button>
-            <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext" @click="nextPage">{{ copy.next }}</button>
+            <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="loading || !canPrev" @click="prevPage">{{ copy.prev }}</button>
+            <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="loading || !canNext" @click="nextPage">{{ copy.next }}</button>
           </div>
         </div>
     </section>

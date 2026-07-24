@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { Loader2, ShieldCheck } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
+import { useRoute } from "vue-router"
 import { apiClient } from "@/lib/apiClient"
+import { rememberAuthRedirect } from "@/lib/authRedirect"
 import { useAdminLanguage } from "@/lib/language"
 
 const error = ref("")
+const route = useRoute()
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.login)
 
@@ -13,6 +16,7 @@ function reload() {
 }
 
 onMounted(async () => {
+  rememberAuthRedirect(route.query.redirect)
   try {
     const callback = encodeURIComponent(`${window.location.origin}/callback`)
     const data = await apiClient<{ url?: string }>(`/api/auth/login-url?callback=${callback}`)
