@@ -35,6 +35,7 @@ const activeSection = ref<SettingsSection>("profile")
 const profileLoading = ref(false)
 const profileSaving = ref(false)
 const passwordSaving = ref(false)
+const profileBaseline = ref<string | null>(null)
 
 const profile = ref<ProfileForm>({
   name: "",
@@ -52,6 +53,11 @@ const profile = ref<ProfileForm>({
 const oldPassword = ref("")
 const newPassword = ref("")
 const confirmPassword = ref("")
+
+const profileDirty = computed(() => (
+  profileBaseline.value !== null && profileFingerprint(profile.value) !== profileBaseline.value
+))
+const profileFormDisabled = computed(() => profileLoading.value || profileSaving.value)
 
 const sections = computed(() => [
   {
@@ -81,8 +87,21 @@ function normalizeBirthday(value: unknown) {
   return text.slice(0, 10)
 }
 
+function profileFingerprint(value: ProfileForm) {
+  return JSON.stringify([
+    value.display_name,
+    value.affiliation,
+    value.title,
+    value.real_name,
+    value.bio,
+    value.gender,
+    value.birthday,
+    value.education,
+  ])
+}
+
 function applyProfile(data: JsonRecord) {
-  profile.value = {
+  const nextProfile: ProfileForm = {
     name: String(data.name || ""),
     display_name: String(data.display_name || ""),
     email: String(data.email || ""),
@@ -94,19 +113,38 @@ function applyProfile(data: JsonRecord) {
     birthday: normalizeBirthday(data.birthday),
     education: String(data.education || ""),
   }
+  profile.value = nextProfile
+  profileBaseline.value = profileFingerprint(nextProfile)
 }
 
+let profileRequestId = 0
+
 async function loadProfile() {
+  const requestId = ++profileRequestId
   profileLoading.value = true
   try {
     const data = await apiClient<JsonRecord>("/api/user/me")
+    if (requestId !== profileRequestId) return
+
     applyProfile(data || {})
   } catch (err) {
+    if (requestId !== profileRequestId) return
+
     console.error(err)
     toast.error(copy.value.toasts.profileLoadFailed)
   } finally {
-    profileLoading.value = false
+    if (requestId === profileRequestId) {
+      profileLoading.value = false
+    }
   }
+}
+
+function refreshProfile() {
+  if (profileDirty.value) {
+    toast.error(copy.value.toasts.profileReloadBlocked)
+    return
+  }
+  void loadProfile()
 }
 
 async function saveProfile() {
@@ -125,6 +163,7 @@ async function saveProfile() {
         education: profile.value.education.trim(),
       }),
     })
+    profileBaseline.value = profileFingerprint(profile.value)
     setAuthSession(profile.value.display_name.trim() || profile.value.name || "Admin")
     window.dispatchEvent(new Event("storage"))
     toast.success(copy.value.toasts.profileSaved)
@@ -185,7 +224,7 @@ onMounted(() => {
         <h1 class="text-3xl font-black tracking-tight md:text-4xl">{{ copy.title }}</h1>
         <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
       </div>
-      <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="loadProfile">
+      <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="profileFormDisabled" @click="refreshProfile">
         <RefreshCw class="h-4 w-4" :class="profileLoading ? 'animate-spin' : ''" />
         {{ copy.reload }}
       </button>
@@ -240,15 +279,15 @@ onMounted(() => {
             </label>
             <label class="block">
               <span class="text-sm font-bold">{{ copy.labels.displayName }}</span>
-              <input v-model.trim="profile.display_name" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" maxlength="80" :placeholder="copy.placeholders.displayName" />
+              <input v-model.trim="profile.display_name" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500" :disabled="profileFormDisabled" maxlength="80" :placeholder="copy.placeholders.displayName" />
             </label>
             <label class="block">
               <span class="text-sm font-bold">{{ copy.labels.realName }}</span>
-              <input v-model.trim="profile.real_name" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" maxlength="80" :placeholder="copy.placeholders.realName" />
+              <input v-model.trim="profile.real_name" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500" :disabled="profileFormDisabled" maxlength="80" :placeholder="copy.placeholders.realName" />
             </label>
             <label class="block">
               <span class="text-sm font-bold">{{ copy.labels.gender }}</span>
-              <select v-model="profile.gender" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
+              <select v-model="profile.gender" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500" :disabled="profileFormDisabled">
                 <option value="">{{ copy.placeholders.selectGender }}</option>
                 <option :value="GENDER_MALE">{{ copy.genders.male }}</option>
                 <option :value="GENDER_FEMALE">{{ copy.genders.female }}</option>
@@ -256,28 +295,28 @@ onMounted(() => {
             </label>
             <label class="block">
               <span class="text-sm font-bold">{{ copy.labels.birthday }}</span>
-              <input v-model="profile.birthday" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" type="date" />
+              <input v-model="profile.birthday" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500" :disabled="profileFormDisabled" type="date" />
             </label>
             <label class="block">
               <span class="text-sm font-bold">{{ copy.labels.affiliation }}</span>
-              <input v-model.trim="profile.affiliation" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" maxlength="160" :placeholder="copy.placeholders.affiliation" />
+              <input v-model.trim="profile.affiliation" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500" :disabled="profileFormDisabled" maxlength="160" :placeholder="copy.placeholders.affiliation" />
             </label>
             <label class="block">
               <span class="text-sm font-bold">{{ copy.labels.title }}</span>
-              <input v-model.trim="profile.title" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" maxlength="120" :placeholder="copy.placeholders.title" />
+              <input v-model.trim="profile.title" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500" :disabled="profileFormDisabled" maxlength="120" :placeholder="copy.placeholders.title" />
             </label>
             <label class="block md:col-span-2">
               <span class="text-sm font-bold">{{ copy.labels.education }}</span>
-              <input v-model.trim="profile.education" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" maxlength="200" :placeholder="copy.placeholders.education" />
+              <input v-model.trim="profile.education" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500" :disabled="profileFormDisabled" maxlength="200" :placeholder="copy.placeholders.education" />
             </label>
             <label class="block md:col-span-2">
               <span class="text-sm font-bold">{{ copy.labels.bio }}</span>
-              <textarea v-model.trim="profile.bio" class="mt-2 min-h-28 w-full rounded-xl border border-slate-200 p-4" :maxlength="BIO_MAX_LENGTH" :placeholder="copy.placeholders.bio" />
+              <textarea v-model.trim="profile.bio" class="mt-2 min-h-28 w-full rounded-xl border border-slate-200 p-4 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500" :disabled="profileFormDisabled" :maxlength="BIO_MAX_LENGTH" :placeholder="copy.placeholders.bio" />
               <span class="mt-1 block text-right text-xs text-slate-400">{{ copy.bioCount(profile.bio.length, BIO_MAX_LENGTH) }}</span>
             </label>
           </div>
 
-          <button class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50 md:w-auto" :disabled="profileSaving" type="submit">
+          <button class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-50 md:w-auto" :disabled="profileFormDisabled" type="submit">
             <Loader2 v-if="profileSaving" class="h-4 w-4 animate-spin" />
             <Save v-else class="h-4 w-4" />
             {{ profileSaving ? copy.saving : copy.saveProfile }}

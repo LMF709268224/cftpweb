@@ -546,6 +546,7 @@ export const zh = {
         updating: "更新中...",
         toasts: {
             profileLoadFailed: "个人资料加载失败",
+            profileReloadBlocked: "存在未保存的个人资料修改，请先保存后再重新加载",
             profileSaved: "个人资料已保存",
             profileSaveFailed: "个人资料保存失败",
             passwordRequired: "请填写当前密码和新密码",

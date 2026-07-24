@@ -548,6 +548,7 @@ export const en: AdminTranslations = {
         updating: "Updating...",
         toasts: {
             profileLoadFailed: "Failed to load profile",
+            profileReloadBlocked: "You have unsaved profile changes. Save them before reloading",
             profileSaved: "Profile saved",
             profileSaveFailed: "Failed to save profile",
             passwordRequired: "Please enter the current password and new password",
