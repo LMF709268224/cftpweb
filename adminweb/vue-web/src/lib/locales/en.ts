@@ -605,6 +605,15 @@ export const en: AdminTranslations = {
                 desc: "Revoke and invalidate this candidate's existing credential.",
             },
         },
+        actionConfirm: {
+            title: (action: string) => `Confirm ${action}`,
+            description: "This action changes the candidate's permission or credential status. Review the details before continuing.",
+            action: "Action",
+            credentialId: "Credential ID",
+            cancel: "Cancel",
+            confirm: "Confirm Action",
+            processing: "Processing...",
+        },
         toasts: {
             definitionsLoadFailed: "Failed to load credential definitions",
             checkRequired: "Please enter Candidate ULID and select a credential definition",
@@ -613,6 +622,7 @@ export const en: AdminTranslations = {
             reasonRequired: "Please enter an action reason",
             actionSuccess: "Action completed",
             actionFailed: "Action failed",
+            actionTargetChanged: "The candidate or credential changed. Start the action again.",
             jsonCopied: "JSON copied",
             jsonCopyFailed: "Copy failed",
         },

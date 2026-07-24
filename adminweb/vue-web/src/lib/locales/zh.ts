@@ -603,6 +603,15 @@ export const zh = {
                 desc: "将该考生已持有的该资格撤销作废。",
             },
         },
+        actionConfirm: {
+            title: (action: string) => `确认${action}`,
+            description: "该操作会修改考生的权限或资格状态，请核对以下信息后继续。",
+            action: "操作",
+            credentialId: "资格 ID",
+            cancel: "取消",
+            confirm: "确认执行",
+            processing: "处理中...",
+        },
         toasts: {
             definitionsLoadFailed: "资格定义加载失败",
             checkRequired: "请填写 Candidate ULID 并选择资格定义",
@@ -611,6 +620,7 @@ export const zh = {
             reasonRequired: "请填写操作原因",
             actionSuccess: "操作成功",
             actionFailed: "操作失败",
+            actionTargetChanged: "考生或资格已发生变化，请重新发起操作",
             jsonCopied: "JSON 已复制",
             jsonCopyFailed: "复制失败",
         },
