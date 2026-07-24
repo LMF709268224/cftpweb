@@ -197,7 +197,7 @@ function displayOrderStatus(order: OrderItem) {
 
 function orderStatusLabel(order: OrderItem) {
   if (paymentSyncingOrderId.value === order.id) return t.value.orders.statusPaymentSyncing
-  return timelineStatusLabelWithDiagnostics(t, "MALL_ORDER", displayOrderStatus(order))
+  return timelineStatusLabelWithDiagnostics(t.value, "MALL_ORDER", displayOrderStatus(order))
 }
 
 function orderStatusBadgeClass(order: OrderItem) {
