@@ -5,7 +5,7 @@ import PaymentSessionPanel from "@/components/PaymentSessionPanel.vue"
 import { useBodyScrollLock } from "@/lib/bodyScrollLock"
 import { useTranslation } from "@/lib/language"
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   open: boolean
   title: string
   subtitle?: string
@@ -17,9 +17,15 @@ const props = defineProps<{
   returnPath?: string
   extraReturnParams?: Record<string, string | number | boolean | null | undefined>
   couponCodes?: string[]
-}>()
+  redirectOnComplete?: boolean
+}>(), {
+  redirectOnComplete: true,
+})
 
-const emit = defineEmits<{ "update:open": [value: boolean] }>()
+const emit = defineEmits<{
+  "update:open": [value: boolean]
+  complete: []
+}>()
 const { t } = useTranslation()
 const copy = computed(() => t.value.paymentSession)
 
@@ -65,7 +71,9 @@ function close() {
           :return-path="returnPath"
           :extra-return-params="extraReturnParams"
           :coupon-codes="couponCodes"
+          :redirect-on-complete="redirectOnComplete"
           min-height-class="min-h-[420px]"
+          @complete="emit('complete')"
         />
       </div>
     </div>

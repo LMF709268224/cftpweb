@@ -17,15 +17,18 @@ const props = withDefaults(defineProps<{
   couponCodes?: string[]
   autoStart?: boolean
   minHeightClass?: string
+  redirectOnComplete?: boolean
 }>(), {
   couponCodes: () => [],
   autoStart: true,
   minHeightClass: "min-h-[60vh]",
+  redirectOnComplete: true,
 })
 
 const emit = defineEmits<{
   "status-change": [status: "loading" | "redirecting" | "embedded" | "error"]
   error: [message: string]
+  complete: []
 }>()
 
 const { t } = useTranslation()
@@ -38,6 +41,7 @@ const showStripeConnectionHint = ref(false)
 const checkoutContainerId = `stripe-checkout-${Math.random().toString(36).slice(2)}`
 let stripeCheckoutInstance: any = null
 let stripeCheckoutMountToken = 0
+let paymentCompletionHandled = false
 
 const copy = computed(() => t.value.paymentSession)
 
@@ -92,6 +96,16 @@ function fail(message?: string) {
   emit("error", finalMessage)
 }
 
+function handleCheckoutComplete() {
+  if (paymentCompletionHandled) return
+  paymentCompletionHandled = true
+  if (props.redirectOnComplete) {
+    window.location.replace(paymentReturnUrl("success"))
+    return
+  }
+  emit("complete")
+}
+
 async function mountStripeCheckout(secret: string) {
   destroyStripeCheckout(false)
   embeddedLoading.value = true
@@ -110,6 +124,7 @@ async function mountStripeCheckout(secret: string) {
     const stripe = stripeFactory(pk)
     const checkout = await stripe.initEmbeddedCheckout({
       fetchClientSecret: async () => secret,
+      onComplete: handleCheckoutComplete,
     })
     if (mountToken !== stripeCheckoutMountToken) {
       if (typeof checkout.destroy === "function") checkout.destroy()
@@ -134,6 +149,7 @@ async function mountStripeCheckout(secret: string) {
 
 async function startPayment() {
   destroyStripeCheckout(true)
+  paymentCompletionHandled = false
   errorMessage.value = ""
   checkoutUrl.value = ""
   clientSecret.value = ""
