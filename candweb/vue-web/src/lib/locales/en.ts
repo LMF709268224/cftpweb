@@ -773,9 +773,6 @@ export const en: AppTranslations = {
     pending: "Pending",
     rejected: "Rejected"
   },
-  loginPage: {
-    login: "Login",
-  },
   callbackPage: {
     loadingTitle: "Loading",
     loadingDesc: "Establishing a secure session. Please do not close this page...",

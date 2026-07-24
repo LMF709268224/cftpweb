@@ -121,8 +121,8 @@ func (h *Handler) ListPipelines(w http.ResponseWriter, r *http.Request) {
 			PipelineUlid: pipeline.GetPipelineUlid(),
 		})
 		if err != nil {
-			slog.Error("Failed to get pipeline final eligibility", "error", err, "pipeline_id", pipeline.GetPipelineUlid())
-			continue
+			HandleGrpcError(w, err)
+			return
 		}
 
 		config := toPipelineConfig(pipelineForOutput, finalEligibilityResp.GetCerts())
@@ -177,12 +177,14 @@ func (h *Handler) GetPipelineDetail(w http.ResponseWriter, r *http.Request) {
 	progResp, err := h.Gprog.ListCandidatePipelines(ctx, &gprogpb.ListCandidatePipelinesReq{
 		CandidateUlid: candidateID,
 	})
-	if err == nil {
-		for _, p := range progResp.GetPipelines() {
-			if p.GetPipelineCcUlid() == gccResp.GetPipelineUlid() {
-				out.Instance = toPipelineSummary(p)
-				break
-			}
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	for _, p := range progResp.GetPipelines() {
+		if p.GetPipelineCcUlid() == gccResp.GetPipelineUlid() {
+			out.Instance = toPipelineSummary(p)
+			break
 		}
 	}
 
@@ -214,7 +216,7 @@ func (h *Handler) GetPipelineRuntime(w http.ResponseWriter, r *http.Request) {
 		CandidateUlid: candidateID,
 	})
 	if err != nil {
-		WriteJSON(w, http.StatusOK, out)
+		HandleGrpcError(w, err)
 		return
 	}
 
@@ -228,32 +230,34 @@ func (h *Handler) GetPipelineRuntime(w http.ResponseWriter, r *http.Request) {
 		runtimeResp, runtimeErr := h.Gprog.GetPipelineDetail(ctx, &gprog.GetPipelineDetailReq{
 			PipelineUlid: p.GetPipelineUlid(),
 		})
-		if runtimeErr == nil {
-			mergeRuntimeStatuses(&out.Config, runtimeResp)
-			out.NextStep = buildPipelineNextStep(runtimeResp, gccResp, p)
-			if runtimeResp.GetPipeline() != nil {
-				out.PipelineStatus = runtimeResp.GetPipeline().GetStatus().String()
-				out.CurrentStageUlid = strings.TrimSpace(runtimeResp.GetPipeline().GetCurrentStageUlid())
-			}
-			if stageDetails := runtimeResp.GetStages(); len(stageDetails) > 0 {
-				for _, stage := range stageDetails {
-					if stage == nil || stage.GetStage() == nil {
-						continue
-					}
-					if out.CurrentStageUlid != "" && stage.GetStage().GetStageUlid() == out.CurrentStageUlid {
-						out.CurrentStageName = stageConfigNameByID(gccResp, stage.GetStage().GetStageCcUlid())
-						out.CurrentStageStatus = stage.GetStage().GetStatus().String()
-						for _, unit := range stage.GetCourseUnits() {
-							if unit == nil {
-								continue
-							}
-							if unit.GetStatus() != gprog.CourseUnitStatus_COURSE_UNIT_STATUS_COMPLETED {
-								out.CurrentUnitStatus = unit.GetStatus().String()
-								break
-							}
+		if runtimeErr != nil {
+			HandleGrpcError(w, runtimeErr)
+			return
+		}
+		mergeRuntimeStatuses(&out.Config, runtimeResp)
+		out.NextStep = buildPipelineNextStep(runtimeResp, gccResp, p)
+		if runtimeResp.GetPipeline() != nil {
+			out.PipelineStatus = runtimeResp.GetPipeline().GetStatus().String()
+			out.CurrentStageUlid = strings.TrimSpace(runtimeResp.GetPipeline().GetCurrentStageUlid())
+		}
+		if stageDetails := runtimeResp.GetStages(); len(stageDetails) > 0 {
+			for _, stage := range stageDetails {
+				if stage == nil || stage.GetStage() == nil {
+					continue
+				}
+				if out.CurrentStageUlid != "" && stage.GetStage().GetStageUlid() == out.CurrentStageUlid {
+					out.CurrentStageName = stageConfigNameByID(gccResp, stage.GetStage().GetStageCcUlid())
+					out.CurrentStageStatus = stage.GetStage().GetStatus().String()
+					for _, unit := range stage.GetCourseUnits() {
+						if unit == nil {
+							continue
 						}
-						break
+						if unit.GetStatus() != gprog.CourseUnitStatus_COURSE_UNIT_STATUS_COMPLETED {
+							out.CurrentUnitStatus = unit.GetStatus().String()
+							break
+						}
 					}
+					break
 				}
 			}
 		}
@@ -374,20 +378,6 @@ func (h *Handler) GetMallPipelineThumbnailURL(w http.ResponseWriter, r *http.Req
 	if !requireRequestField(w, pipelineID, "pipeline_id") {
 		return
 	}
-
-	// pipelineResp, err := h.Gcc.GetPipeline(r.Context(), &gccpb.GetPipelineRequest{
-	// 	Query: &gccpb.GetPipelineRequest_PipelineUlid{PipelineUlid: pipelineID},
-	// })
-	// if err != nil {
-	// 	HandleGrpcError(w, err)
-	// 	return
-	// }
-
-	// objectKey := strings.TrimSpace(pipelineResp.GetThumbnailObjectKey())
-	// if objectKey == "" {
-	// 	WriteJSON(w, http.StatusOK, GetAccessURLRsp{})
-	// 	return
-	// }
 
 	viewResp, err := h.Gcc.GetPublicURL(r.Context(), &gccpb.GetPublicURLRequest{
 		PipelineUlid: pipelineID,

@@ -14,7 +14,7 @@ import { usePolling } from "@/lib/polling"
 import brandLogo from "@/assets/favicon.png"
 
 const { t, lang, changeLanguage } = useTranslation()
-const { currentUser, fetchUser } = useUser()
+const { currentUser } = useUser()
 const { isSidebarCollapsed } = useSidebarCollapse()
 const route = useRoute()
 const userName = ref(t.value.common.user)
@@ -28,6 +28,7 @@ const logoutLoading = ref(false)
 const menuContainer = ref<HTMLElement | null>(null)
 let stopUnreadCountListener: (() => void) | null = null
 let stopActionableCredentialListener: (() => void) | null = null
+let initialBadgeTimer: number | null = null
 
 const navRouteGroups: Record<string, string[]> = {
   "/": ["/"],
@@ -115,14 +116,30 @@ function openMobileSidebar() {
 }
 
 const unreadCountPolling = usePolling(async () => {
-  unreadCount.value = await fetchUnreadCount(true)
-  actionableCredentialCount.value = await fetchActionableCredentialCount(true)
+  const [nextUnreadCount, nextActionableCount] = await Promise.all([
+    fetchUnreadCount(true),
+    fetchActionableCredentialCount(true),
+  ])
+  unreadCount.value = nextUnreadCount
+  actionableCredentialCount.value = nextActionableCount
 })
 
-onMounted(async () => {
+async function loadInitialBadgeCounts() {
+  try {
+    const [nextUnreadCount, nextActionableCount] = await Promise.all([
+      getCachedUnreadCount(),
+      getCachedActionableCredentialCount(),
+    ])
+    unreadCount.value = nextUnreadCount
+    actionableCredentialCount.value = nextActionableCount
+  } catch {
+    // Sidebar badges are non-critical and must not delay the current page.
+  }
+}
+
+onMounted(() => {
   initializeSidebarCollapse()
   updateName()
-  fetchUser()
   window.addEventListener("open-mobile-sidebar", openMobileSidebar)
   window.addEventListener("storage", updateName)
   window.addEventListener("pointerdown", handlePointerDown)
@@ -132,12 +149,10 @@ onMounted(async () => {
   stopActionableCredentialListener = onActionableCredentialCountChanged((value: number) => {
     actionableCredentialCount.value = value
   })
-  try {
-    unreadCount.value = await getCachedUnreadCount()
-    actionableCredentialCount.value = await getCachedActionableCredentialCount()
-  } catch {
-    // Sidebar should never block page rendering.
-  }
+  initialBadgeTimer = window.setTimeout(() => {
+    initialBadgeTimer = null
+    void loadInitialBadgeCounts()
+  }, 800)
   unreadCountPolling.start()
 })
 
@@ -147,6 +162,10 @@ onBeforeUnmount(() => {
   window.removeEventListener("pointerdown", handlePointerDown)
   stopUnreadCountListener?.()
   stopActionableCredentialListener?.()
+  if (initialBadgeTimer !== null) {
+    window.clearTimeout(initialBadgeTimer)
+    initialBadgeTimer = null
+  }
 })
 
 async function handleLogout() {

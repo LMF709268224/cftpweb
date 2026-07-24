@@ -771,9 +771,6 @@ export const zh = {
     pending: "审核中",
     rejected: "已驳回"
   },
-  loginPage: {
-    login: "登录",
-  },
   callbackPage: {
     loadingTitle: "加载中",
     loadingDesc: "正在建立安全会话，请不要关闭此页面...",

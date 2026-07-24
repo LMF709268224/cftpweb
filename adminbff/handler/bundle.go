@@ -2,6 +2,8 @@ package handler
 
 import (
 	"context"
+	"errors"
+	"io"
 	"net/http"
 	"strings"
 
@@ -179,9 +181,9 @@ func (h *Handler) ListBundles(w http.ResponseWriter, r *http.Request) {
 		filters.IsCurrentOnly = &isCurrentOnly
 	}
 	req := &mallpb.ListBundlesAdminRequest{
-		Filters:  filters,
-		Cursor:   page.Cursor,
-		PageSize: page.PageSize,
+		Filters:   filters,
+		Cursor:    page.Cursor,
+		PageSize:  page.PageSize,
 		SortOrder: mallpb.SortOrder(page.Sort),
 	}
 
@@ -271,7 +273,10 @@ func (h *Handler) AdminSyncBundleDisplayPricing(w http.ResponseWriter, r *http.R
 		BundleUlid string `json:"bundle_ulid"`
 	}
 	if r.Body != nil {
-		_ = ReadJSON(r, &body)
+		if err := ReadJSON(r, &body); err != nil && !errors.Is(err, io.EOF) {
+			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body: "+err.Error())
+			return
+		}
 	}
 	bundleULID := strings.TrimSpace(firstNonEmpty(body.BundleUlid, r.URL.Query().Get("bundle_ulid")))
 	req := &mallpb.AdminSyncBundleDisplayPricingRequest{}
@@ -294,8 +299,8 @@ func (h *Handler) ListBundleOrders(w http.ResponseWriter, r *http.Request) {
 			BundleUlid:    strings.TrimSpace(r.URL.Query().Get("bundle_ulid")),
 			OrderStatus:   strings.TrimSpace(r.URL.Query().Get("order_status")),
 		},
-		Cursor:   page.Cursor,
-		PageSize: page.PageSize,
+		Cursor:    page.Cursor,
+		PageSize:  page.PageSize,
 		SortOrder: mallpb.SortOrder(page.Sort),
 	})
 	if err != nil {

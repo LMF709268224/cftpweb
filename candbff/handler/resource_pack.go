@@ -95,9 +95,6 @@ func (h *Handler) ListResourcePackFiles(w http.ResponseWriter, r *http.Request) 
 		HasMore:       resp.GetHasMore(),
 	}
 
-	// b, _ := json.MarshalIndent(extFiles, "", "  ")
-	// slog.Info("ListResourcePackFiles returned", "pack_id", packID, "files", string(b))
-
 	WriteJSON(w, http.StatusOK, out)
 }
 

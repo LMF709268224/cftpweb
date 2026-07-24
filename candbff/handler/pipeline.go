@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net"
@@ -18,6 +19,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
+
+var errCandidateEnrollmentNotFound = errors.New("candidate enrollment not found")
 
 // GetPipelineTimeline GET /api/mall/pipelines/{pipelineId}/timeline
 func (h *Handler) GetPipelineTimeline(w http.ResponseWriter, r *http.Request) {
@@ -215,8 +218,8 @@ func (h *Handler) ListMaterials(w http.ResponseWriter, r *http.Request) {
 			CourseUlid:    courseID,
 		})
 		if err != nil {
-			slog.Warn("failed to list candidate course materials", "error", err, "course_id", courseID)
-			continue
+			HandleGrpcError(w, err)
+			return
 		}
 		for _, material := range resp.GetMaterials() {
 			out.Materials = append(out.Materials, materialSummaryToListItem(material, title))
@@ -308,7 +311,11 @@ func (h *Handler) GetPipelineCourse(w http.ResponseWriter, r *http.Request) {
 			CandidateUlid: candidateID,
 			CourseUlid:    courseID,
 		})
-		if err == nil && matResp != nil {
+		if err != nil {
+			HandleGrpcError(w, err)
+			return
+		}
+		if matResp != nil {
 			var materials []*lmspb.CourseMaterial
 			for _, summary := range matResp.GetMaterials() {
 				materials = append(materials, &lmspb.CourseMaterial{
@@ -329,9 +336,11 @@ func (h *Handler) GetPipelineCourse(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Supplementary material is now included in GetCompleteCourse response
-
-	quizProgress := h.quizProgressByCourse(r, candidateID, completeCourse)
+	quizProgress, err := h.quizProgressByCourse(r.Context(), candidateID, completeCourse)
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
 	WriteJSON(w, http.StatusOK, PipelineCourseRsp{
 		CompleteCourse: completeCourse,
 		QuizProgress:   quizProgress,
@@ -570,11 +579,11 @@ func (h *Handler) findEnrollmentIdByCourse(ctx context.Context, candidateID, cou
 		return "", err
 	}
 	for _, e := range enrollments {
-		if e.GetCourseUlid() == courseID {
-			return e.GetEnrollmentId(), nil
+		if e.GetCourseUlid() == courseID && strings.TrimSpace(e.GetEnrollmentId()) != "" {
+			return strings.TrimSpace(e.GetEnrollmentId()), nil
 		}
 	}
-	return "", fmt.Errorf("enrollment not found")
+	return "", errCandidateEnrollmentNotFound
 }
 
 func (h *Handler) SyncCourseProgress(w http.ResponseWriter, r *http.Request) {
@@ -586,6 +595,10 @@ func (h *Handler) SyncCourseProgress(w http.ResponseWriter, r *http.Request) {
 
 	enrollmentID, err := h.findEnrollmentIdByCourse(r.Context(), candidateID, courseID)
 	if err != nil {
+		if !errors.Is(err, errCandidateEnrollmentNotFound) {
+			HandleGrpcError(w, err)
+			return
+		}
 		WriteJSON(w, http.StatusOK, SyncCourseProgressRsp{
 			Success:            true,
 			CourseStatus:       "learning",
@@ -636,7 +649,7 @@ func (h *Handler) ReportProgress(w http.ResponseWriter, r *http.Request) {
 			rejected++
 			continue
 		}
-		resp, err := h.Lms.CompleteLessonLearning(r.Context(), &lmspb.CompleteLessonLearningRequest{
+		_, err := h.Lms.CompleteLessonLearning(r.Context(), &lmspb.CompleteLessonLearningRequest{
 			CandidateUlid: candidateID,
 			LessonUlid:    materialID,
 		})
@@ -644,7 +657,6 @@ func (h *Handler) ReportProgress(w http.ResponseWriter, r *http.Request) {
 			rejected++
 			continue
 		}
-		_ = resp
 		accepted++
 	}
 
@@ -675,7 +687,8 @@ func (h *Handler) GetProgress(w http.ResponseWriter, r *http.Request) {
 			EnrollmentId:  e.GetEnrollmentId(),
 		})
 		if err != nil {
-			continue
+			HandleGrpcError(w, err)
+			return
 		}
 
 		for _, lessonId := range detail.GetCompletedLessonIds() {
@@ -848,8 +861,7 @@ func (h *Handler) candidateCourseIDs(r *http.Request, candidateID string) ([]str
 			Query: &gccpb.GetPipelineRequest_PipelineUlid{PipelineUlid: pipelineID},
 		})
 		if err != nil {
-			slog.Warn("failed to get candidate pipeline config", "error", err, "pipeline_id", pipelineID)
-			continue
+			return nil, fmt.Errorf("get candidate pipeline config %q: %w", pipelineID, err)
 		}
 		for _, stage := range config.GetStages() {
 			for _, unit := range stage.GetUnits() {
@@ -885,12 +897,12 @@ func materialSummaryToListItem(material *lmspb.CourseMaterialSummary, courseTitl
 	}
 }
 
-func (h *Handler) quizProgressByCourse(r *http.Request, candidateID string, course *lmspb.CompleteCourse) map[string]QuizProgressItem {
+func (h *Handler) quizProgressByCourse(ctx context.Context, candidateID string, course *lmspb.CompleteCourse) (map[string]QuizProgressItem, error) {
 	quizIDs := collectCourseQuizIDs(course)
 	out := make(map[string]QuizProgressItem, len(quizIDs))
 	for _, quizID := range quizIDs {
 		item := QuizProgressItem{QuizID: quizID}
-		resp, err := h.Lms.ListQuizAttemptsCandidate(r.Context(), &lmspb.ListQuizAttemptsCandidateRequest{
+		resp, err := h.Lms.ListQuizAttemptsCandidate(ctx, &lmspb.ListQuizAttemptsCandidateRequest{
 			Filters: &lmspb.QuizAttemptsCandidateFilters{
 				QuizUlid:      quizID,
 				CandidateUlid: candidateID,
@@ -898,9 +910,7 @@ func (h *Handler) quizProgressByCourse(r *http.Request, candidateID string, cour
 			PageSize: 20,
 		})
 		if err != nil {
-			slog.Warn("failed to list candidate quiz attempts", "error", err, "candidate_id", candidateID, "quiz_id", quizID)
-			out[quizID] = item
-			continue
+			return nil, fmt.Errorf("list candidate quiz attempts for quiz %q: %w", quizID, err)
 		}
 		for _, attempt := range resp.GetAttempts() {
 			if attempt == nil {
@@ -919,7 +929,7 @@ func (h *Handler) quizProgressByCourse(r *http.Request, candidateID string, cour
 		}
 		out[quizID] = item
 	}
-	return out
+	return out, nil
 }
 
 func collectCourseQuizIDs(course *lmspb.CompleteCourse) []string {

@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"html"
 	"log/slog"
 	"net/http"
 	"os"
@@ -20,7 +21,10 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-const examCallbackPath = "/api/public/webhooks/exams/callback"
+const (
+	examCallbackPath         = "/api/public/webhooks/exams/callback"
+	maxExamCallbackBodyBytes = 1 << 20
+)
 
 const (
 	retakeActionNone              = "NONE"
@@ -412,11 +416,14 @@ func (h *Handler) TermUrlRedirectCallback(w http.ResponseWriter, r *http.Request
 			if callbackBody == "" {
 				callbackBody = "{}"
 			}
-			_, _ = h.Gexam.TermUrlCallback(r.Context(), &gexampb.TermUrlCallbackRequest{
+			_, err := h.Gexam.TermUrlCallback(r.Context(), &gexampb.TermUrlCallbackRequest{
 				ExamUlid:     examID,
 				UrlType:      urlType,
 				CallbackBody: callbackBody,
 			})
+			if err != nil {
+				slog.Warn("Failed to process exam term URL redirect callback", "candidate_id", candidateID, "exam_id", examID, "url_type", urlType, "error", err)
+			}
 		} else {
 			slog.Warn("TermUrlRedirectCallback denied for non-owned exam", "candidate_id", candidateID, "exam_id", examID, "error", err)
 		}
@@ -835,9 +842,23 @@ func parseExamURLType(w http.ResponseWriter, raw string) (gprog.ExamURLType, boo
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "url_type is required")
 		return gprog.ExamURLType_EXAM_URL_TYPE_UNKNOWN, false
 	}
+	urlType, ok := parseExamURLTypeValue(value)
+	if !ok {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "url_type is invalid")
+		return gprog.ExamURLType_EXAM_URL_TYPE_UNKNOWN, false
+	}
+	return urlType, true
+}
+
+func parseExamURLTypeValue(raw string) (gprog.ExamURLType, bool) {
+	value := strings.TrimSpace(raw)
+	if value == "" {
+		return gprog.ExamURLType_EXAM_URL_TYPE_UNKNOWN, false
+	}
 	if n, err := strconv.ParseInt(value, 10, 32); err == nil {
 		urlType := gprog.ExamURLType(n)
-		if urlType != gprog.ExamURLType_EXAM_URL_TYPE_UNKNOWN {
+		if _, exists := gprog.ExamURLType_name[int32(urlType)]; exists &&
+			urlType != gprog.ExamURLType_EXAM_URL_TYPE_UNKNOWN {
 			return urlType, true
 		}
 	}
@@ -854,7 +875,6 @@ func parseExamURLType(w http.ResponseWriter, raw string) (gprog.ExamURLType, boo
 	}
 	enumValue, ok := gprog.ExamURLType_value[normalized]
 	if !ok || enumValue == int32(gprog.ExamURLType_EXAM_URL_TYPE_UNKNOWN) {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "url_type is invalid")
 		return gprog.ExamURLType_EXAM_URL_TYPE_UNKNOWN, false
 	}
 	return gprog.ExamURLType(enumValue), true
@@ -895,16 +915,42 @@ func requestClientAddr(r *http.Request) string {
 	return r.RemoteAddr
 }
 
+func renderExamCallbackHTML(w http.ResponseWriter, success bool, message string) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if success {
+		_, _ = w.Write([]byte(`
+			<html><body>
+				<h3>Appointment status synced successfully!</h3>
+				<p>You can now close this window and return to your learning portal.</p>
+				<script>
+					if (window.opener) { window.opener.postMessage("schedule_success", "*"); }
+					setTimeout(function() { window.close(); }, 3000);
+				</script>
+			</body></html>
+		`))
+		return
+	}
+	_, _ = w.Write([]byte(`
+		<html><body>
+			<h3 style="color:red;">Failed to sync appointment status</h3>
+			<p>Error details: ` + html.EscapeString(message) + `</p>
+			<p>Please close this window and try again.</p>
+		</body></html>
+	`))
+}
+
 // ThirdPartyExamCallback POST /api/public/webhooks/exams/callback/{urlType}/{examId}
 func (h *Handler) ThirdPartyExamCallback(w http.ResponseWriter, r *http.Request) {
-	urlType := chi.URLParam(r, "urlType")
-	examId := chi.URLParam(r, "examId")
+	rawURLType := strings.TrimSpace(chi.URLParam(r, "urlType"))
+	examID := strings.TrimSpace(chi.URLParam(r, "examId"))
+	parsedURLType, validURLType := parseExamURLTypeValue(rawURLType)
+	urlType := examURLTypeForGexam(parsedURLType)
 	logAttrs := []any{
-		"exam_id", examId,
+		"exam_id", examID,
 		"url_type", urlType,
 		"method", r.Method,
 		"path", r.URL.Path,
-		"raw_query", truncateForLog(r.URL.RawQuery, 512),
+		"query_length", len(r.URL.RawQuery),
 		"remote_addr", requestClientAddr(r),
 		"user_agent", truncateForLog(r.UserAgent(), 256),
 		"content_type", r.Header.Get("Content-Type"),
@@ -912,54 +958,33 @@ func (h *Handler) ThirdPartyExamCallback(w http.ResponseWriter, r *http.Request)
 	}
 	slog.Info("ThirdPartyExamCallback received", logAttrs...)
 
-	// Helper function for rendering auto-closing HTML
-	renderCloseHTML := func(success bool, errMsg string) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if success {
-			w.Write([]byte(`
-				<html><body>
-					<h3>Appointment status synced successfully!</h3>
-					<p>You can now close this window and return to your learning portal.</p>
-					<script>
-						if (window.opener) { window.opener.postMessage("schedule_success", "*"); }
-						setTimeout(function() { window.close(); }, 3000);
-					</script>
-				</body></html>
-			`))
-		} else {
-			w.Write([]byte(`
-				<html><body>
-					<h3 style="color:red;">Failed to sync appointment status</h3>
-					<p>Error details: ` + errMsg + `</p>
-					<p>Please close this window and try again.</p>
-				</body></html>
-			`))
-		}
+	if examID == "" || !validURLType || urlType == "" {
+		slog.Warn("ThirdPartyExamCallback rejected invalid callback path", logAttrs...)
+		renderExamCallbackHTML(w, false, "invalid callback URL")
+		return
 	}
 
-	// 1. 解析 Form 数据
+	r.Body = http.MaxBytesReader(w, r.Body, maxExamCallbackBodyBytes)
 	if err := r.ParseForm(); err != nil {
 		slog.Warn("ThirdPartyExamCallback parse form failed", append(logAttrs, "error", err)...)
-		renderCloseHTML(false, "parse form error: "+err.Error())
+		renderExamCallbackHTML(w, false, "invalid callback data")
 		return
 	}
 	slog.Info("ThirdPartyExamCallback form parsed", append(logAttrs, "form_keys", len(r.Form))...)
 
-	// 2. 提取 apptdata 字段
 	apptDataRaw := r.FormValue("apptdata")
-	if apptDataRaw == "" {
+	if strings.TrimSpace(apptDataRaw) == "" {
 		slog.Warn("ThirdPartyExamCallback missing apptdata", logAttrs...)
-		renderCloseHTML(false, "empty apptdata")
+		renderExamCallbackHTML(w, false, "empty callback data")
 		return
 	}
 	slog.Info("ThirdPartyExamCallback apptdata extracted",
 		append(logAttrs,
 			"apptdata_length", len(apptDataRaw),
-			"apptdata_preview", truncateForLog(apptDataRaw, 1024),
 		)...,
 	)
 
-	// 3. 包装成 JSON 字符串，满足 gexam 对 callback_body 必须是合法 JSON 的要求
+	// gprog expects the provider payload wrapped in valid JSON.
 	bodyMap := map[string]string{"raw_xml": apptDataRaw}
 	bodyJson, err := json.Marshal(bodyMap)
 	if err != nil {
@@ -969,7 +994,7 @@ func (h *Handler) ThirdPartyExamCallback(w http.ResponseWriter, r *http.Request)
 				"error", err,
 			)...,
 		)
-		renderCloseHTML(false, "json marshal error")
+		renderExamCallbackHTML(w, false, "invalid callback data")
 		return
 	}
 	slog.Info("ThirdPartyExamCallback calling gprog",
@@ -978,9 +1003,8 @@ func (h *Handler) ThirdPartyExamCallback(w http.ResponseWriter, r *http.Request)
 		)...,
 	)
 
-	// 4. 将结果发送给 gprog 的 ExamUrlCallback
-	resp, err := h.Gprog.ExamUrlCallback(r.Context(), &gprog.ExamUrlCallbackReq{
-		ExamUlid:     examId,
+	_, err = h.Gprog.ExamUrlCallback(r.Context(), &gprog.ExamUrlCallbackReq{
+		ExamUlid:     examID,
 		UrlType:      urlType,
 		CallbackBody: string(bodyJson),
 	})
@@ -991,16 +1015,14 @@ func (h *Handler) ThirdPartyExamCallback(w http.ResponseWriter, r *http.Request)
 				"error", err,
 			)...,
 		)
-		renderCloseHTML(false, "backend processing failed: "+err.Error())
+		renderExamCallbackHTML(w, false, "backend processing failed")
 		return
 	}
 	slog.Info("ThirdPartyExamCallback processed successfully",
 		append(logAttrs,
 			"callback_body_length", len(bodyJson),
-			"gprog_response", resp,
 		)...,
 	)
 
-	// 5. 成功后返回自动关闭窗口的 HTML
-	renderCloseHTML(true, "")
+	renderExamCallbackHTML(w, true, "")
 }

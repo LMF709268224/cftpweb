@@ -8,7 +8,6 @@ import { isAuthenticated } from "@/lib/authStorage"
 import { useTranslation } from "@/lib/language"
 
 const { t, lang } = useTranslation()
-const userName = ref("...")
 const dashboardLoading = ref(false)
 const dashboardLoaded = ref(false)
 const counts = ref({
@@ -189,24 +188,10 @@ async function countFromRequest(endpoint: string, listKey: string) {
 
 onMounted(async () => {
   if (!isAuthenticated()) {
-    const localName = localStorage.getItem("user_name")
-    if (localName) userName.value = localName
     return
   }
 
   dashboardLoading.value = true
-  try {
-    const payload = await apiClient("/api/user/me")
-    const nameToSet = payload?.display_name || payload?.name
-    if (nameToSet) {
-      userName.value = nameToSet
-      localStorage.setItem("user_name", nameToSet)
-    }
-  } catch {
-    const localName = localStorage.getItem("user_name")
-    if (localName) userName.value = localName
-  }
-
   try {
     const [certifications, certificates, exams, resourcePacks, orders] = await Promise.all([
       countFromRequest("/api/pipeline", "list"),

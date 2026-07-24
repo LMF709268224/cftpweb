@@ -486,8 +486,6 @@ function handlePaginationChange() {
   window.scrollTo({ top: 0, behavior: "smooth" })
 }
 
-// Polling removed for testing
-
 onMounted(() => {
   void fetchOrders()
 })
