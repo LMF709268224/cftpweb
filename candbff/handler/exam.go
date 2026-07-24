@@ -416,11 +416,14 @@ func (h *Handler) TermUrlRedirectCallback(w http.ResponseWriter, r *http.Request
 			if callbackBody == "" {
 				callbackBody = "{}"
 			}
-			_, _ = h.Gexam.TermUrlCallback(r.Context(), &gexampb.TermUrlCallbackRequest{
+			_, err := h.Gexam.TermUrlCallback(r.Context(), &gexampb.TermUrlCallbackRequest{
 				ExamUlid:     examID,
 				UrlType:      urlType,
 				CallbackBody: callbackBody,
 			})
+			if err != nil {
+				slog.Warn("Failed to process exam term URL redirect callback", "candidate_id", candidateID, "exam_id", examID, "url_type", urlType, "error", err)
+			}
 		} else {
 			slog.Warn("TermUrlRedirectCallback denied for non-owned exam", "candidate_id", candidateID, "exam_id", examID, "error", err)
 		}
