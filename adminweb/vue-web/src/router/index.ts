@@ -15,6 +15,7 @@ const LmsPage = () => import("@/pages/LmsPage.vue")
 const LoginPage = () => import("@/pages/LoginPage.vue")
 const MailsPage = () => import("@/pages/MailsPage.vue")
 const MessagesPage = () => import("@/pages/MessagesPage.vue")
+const NotFoundPage = () => import("@/pages/NotFoundPage.vue")
 const OrdersPage = () => import("@/pages/OrdersPage.vue")
 const PdfRequestsPage = () => import("@/pages/PdfRequestsPage.vue")
 const PdfTemplatesPage = () => import("@/pages/PdfTemplatesPage.vue")
@@ -285,7 +286,11 @@ const router = createRouter({
     {
       path: "/",
       component: AdminLayout,
-      children: [{ path: "", redirect: "/dashboard" }, ...resourceRoutes],
+      children: [
+        { path: "", redirect: "/dashboard" },
+        ...resourceRoutes,
+        { path: ":pathMatch(.*)*", name: "not-found", component: NotFoundPage },
+      ],
     },
   ],
 })

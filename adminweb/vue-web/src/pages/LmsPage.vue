@@ -245,6 +245,11 @@ const importOpen = ref(false)
 const importScope = ref<"course" | "quiz">("course")
 const importCategoryTips = ref("")
 const importJson = ref("")
+let courseRequestId = 0
+let lessonsRequestId = 0
+let quizzesRequestId = 0
+let questionsRequestId = 0
+let optionsRequestId = 0
 
 const selectedCourseId = computed(() => courseId(selectedCourse.value))
 const isCreatingCourse = computed(() => courseCreateOpen.value && !selectedCourseId.value)
@@ -1054,6 +1059,27 @@ function mergeSelectedCourse(record: JsonRecord | null | undefined) {
   courseForm.value = courseFormFrom(selectedCourse.value)
 }
 
+function invalidateCourseRequests() {
+  courseRequestId += 1
+  lessonsRequestId += 1
+  quizzesRequestId += 1
+  questionsRequestId += 1
+  optionsRequestId += 1
+  detailLoading.value = false
+  completeLoading.value = false
+  chaptersLoading.value = false
+  lessonsLoading.value = false
+  materialsLoading.value = false
+  supplementaryMaterialLoading.value = false
+  quizzesLoading.value = false
+  questionsLoading.value = false
+  optionsLoading.value = false
+}
+
+function isCurrentCourseRequest(requestId: number, id: string) {
+  return requestId === courseRequestId && selectedCourseId.value === id
+}
+
 function resetContent() {
   courseDetail.value = null
   completeCourse.value = null
@@ -1105,6 +1131,7 @@ async function loadCourses(pageToken = "") {
 }
 
 async function selectCourse(course: JsonRecord) {
+  invalidateCourseRequests()
   selectedCourse.value = course
   courseForm.value = courseFormFrom(course)
   resetContent()
@@ -1138,12 +1165,14 @@ function closeCourseDetailDialog() {
 }
 
 function clearCourseSelection() {
+  invalidateCourseRequests()
   selectedCourse.value = null
   courseForm.value = emptyCourseForm()
   resetContent()
 }
 
 function newCourse() {
+  invalidateCourseRequests()
   courseCreateContext.value = {
     selectedCourse: selectedCourse.value,
     form: { ...courseForm.value },
@@ -1166,34 +1195,45 @@ function closeCourseCreate() {
 }
 
 function backToCourseList() {
+  clearCourseSelection()
   courseView.value = "list"
 }
 
 async function loadCourseDetail() {
-  if (!selectedCourseId.value) return
+  const id = selectedCourseId.value
+  if (!id) return
+  const requestId = courseRequestId
   detailLoading.value = true
   try {
-    courseDetail.value = await apiClient<JsonRecord>(`/api/lms/courses/${encodeURIComponent(selectedCourseId.value)}/detail`)
-    mergeSelectedCourse(courseDetail.value)
+    const data = await apiClient<JsonRecord>(`/api/lms/courses/${encodeURIComponent(id)}/detail`)
+    if (!isCurrentCourseRequest(requestId, id)) return
+    courseDetail.value = data
+    mergeSelectedCourse(data)
   } catch (err) {
+    if (!isCurrentCourseRequest(requestId, id)) return
     console.error(err)
     courseDetail.value = null
   } finally {
-    detailLoading.value = false
+    if (isCurrentCourseRequest(requestId, id)) detailLoading.value = false
   }
 }
 
 async function loadCompleteCourse() {
-  if (!selectedCourseId.value) return
+  const id = selectedCourseId.value
+  if (!id) return
+  const requestId = courseRequestId
   completeLoading.value = true
   try {
-    completeCourse.value = await apiClient<JsonRecord>(`/api/lms/courses/${encodeURIComponent(selectedCourseId.value)}/complete`)
+    const data = await apiClient<JsonRecord>(`/api/lms/courses/${encodeURIComponent(id)}/complete`)
+    if (!isCurrentCourseRequest(requestId, id)) return
+    completeCourse.value = data
     mergeSelectedCourse(extractCourseRecord(completeCourseRecord.value))
   } catch (err) {
+    if (!isCurrentCourseRequest(requestId, id)) return
     console.error(err)
     completeCourse.value = null
   } finally {
-    completeLoading.value = false
+    if (isCurrentCourseRequest(requestId, id)) completeLoading.value = false
   }
 }
 
@@ -1333,17 +1373,21 @@ async function confirmDeleteCourse() {
 }
 
 async function loadChapters() {
-  if (!selectedCourseId.value) return
+  const id = selectedCourseId.value
+  if (!id) return
+  const requestId = courseRequestId
   chaptersLoading.value = true
   try {
-    const data = await apiClient<JsonRecord>(`/api/lms/courses/${encodeURIComponent(selectedCourseId.value)}/chapters`)
+    const data = await apiClient<JsonRecord>(`/api/lms/courses/${encodeURIComponent(id)}/chapters`)
+    if (!isCurrentCourseRequest(requestId, id)) return
     const list = Array.isArray(data.chapters) ? data.chapters : []
     chapters.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
   } catch (err) {
+    if (!isCurrentCourseRequest(requestId, id)) return
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.chaptersLoadFailed))
   } finally {
-    chaptersLoading.value = false
+    if (isCurrentCourseRequest(requestId, id)) chaptersLoading.value = false
   }
 }
 
@@ -1397,6 +1441,10 @@ function newChapter() {
 
 function closeChapterDialog() {
   chapterDialogOpen.value = false
+  chapterDialogMode.value = "detail"
+  chapterActiveTab.value = "basic"
+  editingChapterId.value = ""
+  chapterForm.value = emptyChapterForm()
 }
 
 async function saveChapter() {
@@ -1470,17 +1518,23 @@ async function confirmDeleteChapter() {
 }
 
 async function loadLessons() {
-  if (!selectedChapterId.value) return
+  const courseIdValue = selectedCourseId.value
+  const chapterIdValue = selectedChapterId.value
+  if (!courseIdValue || !chapterIdValue) return
+  const courseContextId = courseRequestId
+  const requestId = ++lessonsRequestId
   lessonsLoading.value = true
   try {
-    const data = await apiClient<JsonRecord>(`/api/lms/chapters/${encodeURIComponent(selectedChapterId.value)}/lessons`)
+    const data = await apiClient<JsonRecord>(`/api/lms/chapters/${encodeURIComponent(chapterIdValue)}/lessons`)
+    if (!isCurrentCourseRequest(courseContextId, courseIdValue) || requestId !== lessonsRequestId || selectedChapterId.value !== chapterIdValue) return
     const list = Array.isArray(data.lessons) ? data.lessons : []
     lessons.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
   } catch (err) {
+    if (!isCurrentCourseRequest(courseContextId, courseIdValue) || requestId !== lessonsRequestId || selectedChapterId.value !== chapterIdValue) return
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.lessonsLoadFailed))
   } finally {
-    lessonsLoading.value = false
+    if (isCurrentCourseRequest(courseContextId, courseIdValue) && requestId === lessonsRequestId) lessonsLoading.value = false
   }
 }
 
@@ -1541,6 +1595,11 @@ function openNewLesson() {
 
 function closeLessonDialog() {
   lessonDialogOpen.value = false
+  lessonDialogMode.value = "detail"
+  lessonActiveTab.value = "basic"
+  editingLessonId.value = ""
+  lessonForm.value = emptyLessonForm()
+  if (lessonFileInput.value) lessonFileInput.value.value = ""
 }
 
 const lessonFileInput = ref<HTMLInputElement | null>(null)
@@ -1700,25 +1759,32 @@ async function confirmDeletePendingLesson() {
 }
 
 async function loadMaterials() {
-  if (!selectedCourseId.value) return
+  const id = selectedCourseId.value
+  if (!id) return
+  const requestId = courseRequestId
   materialsLoading.value = true
   try {
-    const data = await apiClient<JsonRecord>(`/api/lms/courses/${encodeURIComponent(selectedCourseId.value)}/materials`)
+    const data = await apiClient<JsonRecord>(`/api/lms/courses/${encodeURIComponent(id)}/materials`)
+    if (!isCurrentCourseRequest(requestId, id)) return
     const list = Array.isArray(data.materials) ? data.materials : []
     materials.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
   } catch (err) {
+    if (!isCurrentCourseRequest(requestId, id)) return
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.materialsLoadFailed))
   } finally {
-    materialsLoading.value = false
+    if (isCurrentCourseRequest(requestId, id)) materialsLoading.value = false
   }
 }
 
 async function loadSupplementaryMaterial() {
-  if (!selectedCourseId.value) return
+  const id = selectedCourseId.value
+  if (!id) return
+  const requestId = courseRequestId
   supplementaryMaterialLoading.value = true
   try {
-    const data = await apiClient<JsonRecord>(`/api/lms/courses/${encodeURIComponent(selectedCourseId.value)}/supplementary-material`)
+    const data = await apiClient<JsonRecord>(`/api/lms/courses/${encodeURIComponent(id)}/supplementary-material`)
+    if (!isCurrentCourseRequest(requestId, id)) return
     const material = isJsonRecord(data.material) ? data.material : null
     supplementaryMaterial.value = material
     supplementaryMaterialForm.value = material
@@ -1735,12 +1801,13 @@ async function loadSupplementaryMaterial() {
     if (firstItem) editSupplementaryItem(firstItem, false)
     else newSupplementaryItem(false)
   } catch (err) {
+    if (!isCurrentCourseRequest(requestId, id)) return
     console.error(err)
     supplementaryMaterial.value = null
     supplementaryMaterialForm.value = emptySupplementaryMaterialForm()
     newSupplementaryItem(false)
   } finally {
-    supplementaryMaterialLoading.value = false
+    if (isCurrentCourseRequest(requestId, id)) supplementaryMaterialLoading.value = false
   }
 }
 
@@ -1811,6 +1878,8 @@ function newSupplementaryItem(openDialog = true) {
 
 function closeSupplementaryItemDialog() {
   supplementaryItemDialogOpen.value = false
+  editingSupplementaryItemIndex.value = -1
+  supplementaryItemForm.value = emptySupplementaryItemForm()
 }
 
 function openDetailDeleteConfirm(deleteInfo: PendingDetailDelete) {
@@ -2154,11 +2223,17 @@ function clearQuestionState() {
 }
 
 async function loadQuizzes(scope: QuizScope = quizForm.value.scope) {
+  const courseIdValue = selectedCourseId.value
+  if (!courseIdValue) return
+  const courseContextId = courseRequestId
   const target = quizTarget(scope)
   if (!target.id) {
+    quizzesRequestId += 1
+    quizzesLoading.value = false
     toast.error(copy.value.toasts.selectTargetFirst(target.label))
     return
   }
+  const requestId = ++quizzesRequestId
 
   quizzesLoading.value = true
   try {
@@ -2167,16 +2242,20 @@ async function loadQuizzes(scope: QuizScope = quizForm.value.scope) {
       quizzable_id: target.id,
     })
     const data = await apiClient<JsonRecord>(`/api/lms/quizzes?${params}`)
+    const currentTarget = quizTarget(scope)
+    if (!isCurrentCourseRequest(courseContextId, courseIdValue) || requestId !== quizzesRequestId || currentTarget.type !== target.type || currentTarget.id !== target.id) return
     const list = Array.isArray(data.quizzes) ? data.quizzes : []
     quizzes.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     selectedQuiz.value = null
     editingQuizId.value = ""
     clearQuestionState()
   } catch (err) {
+    const currentTarget = quizTarget(scope)
+    if (!isCurrentCourseRequest(courseContextId, courseIdValue) || requestId !== quizzesRequestId || currentTarget.type !== target.type || currentTarget.id !== target.id) return
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.quizzesLoadFailed))
   } finally {
-    quizzesLoading.value = false
+    if (isCurrentCourseRequest(courseContextId, courseIdValue) && requestId === quizzesRequestId) quizzesLoading.value = false
   }
 }
 
@@ -2246,7 +2325,13 @@ function changeQuizFormScope() {
 
 function closeQuizDialog() {
   quizDialogOpen.value = false
-  questionDialogOpen.value = false
+  quizDialogMode.value = "detail"
+  quizActiveTab.value = "basic"
+  questionsRequestId += 1
+  optionsRequestId += 1
+  questionsLoading.value = false
+  optionsLoading.value = false
+  newQuiz(quizForm.value.scope)
 }
 
 async function saveQuiz() {
@@ -2333,7 +2418,10 @@ async function confirmDeleteQuiz(deleteInfo: PendingDetailDelete) {
 }
 
 async function loadQuestions(id = selectedQuizId.value, resetEditor = true) {
-  if (!id) return
+  const courseIdValue = selectedCourseId.value
+  if (!courseIdValue || !id) return
+  const courseContextId = courseRequestId
+  const requestId = ++questionsRequestId
   questionsLoading.value = true
   try {
     const data = await apiClient<JsonRecord>(`/api/lms/quizzes/${encodeURIComponent(id)}/questions`)
@@ -2348,6 +2436,7 @@ async function loadQuestions(id = selectedQuizId.value, resetEditor = true) {
         return item
       }
     }))
+    if (!isCurrentCourseRequest(courseContextId, courseIdValue) || requestId !== questionsRequestId || selectedQuizId.value !== id) return
     questions.value = details
     if (resetEditor) {
       selectedQuestion.value = null
@@ -2358,10 +2447,11 @@ async function loadQuestions(id = selectedQuizId.value, resetEditor = true) {
       optionForm.value = emptyOptionForm()
     }
   } catch (err) {
+    if (!isCurrentCourseRequest(courseContextId, courseIdValue) || requestId !== questionsRequestId || selectedQuizId.value !== id) return
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.questionsLoadFailed))
   } finally {
-    questionsLoading.value = false
+    if (isCurrentCourseRequest(courseContextId, courseIdValue) && requestId === questionsRequestId) questionsLoading.value = false
   }
 }
 
@@ -2412,6 +2502,10 @@ function viewQuestion(question: JsonRecord) {
 
 function closeQuestionDialog() {
   questionDialogOpen.value = false
+  questionDialogMode.value = "detail"
+  optionsRequestId += 1
+  optionsLoading.value = false
+  resetQuestionEditor()
 }
 
 function openMediaConfig() {
@@ -2424,9 +2518,14 @@ function openMediaConfig() {
   advancedMediaDialogOpen.value = true
 }
 
+function closeAdvancedMediaDialog() {
+  advancedMediaDialogOpen.value = false
+  parsedMediaItems.value = []
+}
+
 function saveMediaConfig() {
   questionForm.value.media_items_json = JSON.stringify(parsedMediaItems.value)
-  advancedMediaDialogOpen.value = false
+  closeAdvancedMediaDialog()
 }
 
 function extractQuestionRecord(value: unknown) {
@@ -2545,7 +2644,10 @@ async function confirmDeleteQuestion(deleteInfo: PendingDetailDelete) {
 }
 
 async function loadOptions(id = selectedQuestionId.value) {
-  if (!id) return
+  const courseIdValue = selectedCourseId.value
+  if (!courseIdValue || !id) return
+  const courseContextId = courseRequestId
+  const requestId = ++optionsRequestId
   optionsLoading.value = true
   try {
     const data = await apiClient<JsonRecord>(`/api/lms/questions/${encodeURIComponent(id)}/options`)
@@ -2560,13 +2662,15 @@ async function loadOptions(id = selectedQuestionId.value) {
         return item
       }
     }))
+    if (!isCurrentCourseRequest(courseContextId, courseIdValue) || requestId !== optionsRequestId || selectedQuestionId.value !== id) return
     options.value = details
     newOption()
   } catch (err) {
+    if (!isCurrentCourseRequest(courseContextId, courseIdValue) || requestId !== optionsRequestId || selectedQuestionId.value !== id) return
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.optionsLoadFailed))
   } finally {
-    optionsLoading.value = false
+    if (isCurrentCourseRequest(courseContextId, courseIdValue) && requestId === optionsRequestId) optionsLoading.value = false
   }
 }
 
@@ -2740,8 +2844,7 @@ async function importLmsJson() {
         }
     await apiClient("/api/lms/import", { method: "POST", body: JSON.stringify(body) })
     toast.success(copy.value.toasts.imported)
-    importOpen.value = false
-    importJson.value = ""
+    closeImportDialog(true)
     await loadCourses()
     if (selectedCourseId.value) await loadChapters()
   } catch (err) {
@@ -2750,6 +2853,14 @@ async function importLmsJson() {
   } finally {
     importing.value = false
   }
+}
+
+function closeImportDialog(force = false) {
+  if (importing.value && !force) return
+  importOpen.value = false
+  importScope.value = "course"
+  importCategoryTips.value = ""
+  importJson.value = ""
 }
 
 async function loadImportFile(event: Event) {
@@ -4255,7 +4366,7 @@ onMounted(() => {
       <div class="flex h-full max-h-none w-full max-w-3xl flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
         <div class="flex items-center justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
           <h2 class="min-w-0 text-xl font-black md:text-2xl">{{ copy.importTitle }}</h2>
-          <button class="rounded-xl border px-3 py-2 font-bold" type="button" @click="importOpen = false">{{ copy.close }}</button>
+          <button class="rounded-xl border px-3 py-2 font-bold disabled:opacity-50" type="button" :disabled="importing" @click="closeImportDialog()">{{ copy.close }}</button>
         </div>
         <div class="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
           <div class="grid gap-4 sm:grid-cols-2">
@@ -4292,7 +4403,7 @@ onMounted(() => {
       <div class="flex h-full max-h-none w-full max-w-2xl flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
         <div class="flex items-center justify-between border-b border-slate-100 px-4 py-4 md:px-6">
           <h2 class="text-lg font-black">{{ copy.mediaJsonLabel }}</h2>
-          <button class="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600" @click="advancedMediaDialogOpen = false">
+          <button class="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600" type="button" @click="closeAdvancedMediaDialog">
             <X class="h-5 w-5" />
           </button>
         </div>
@@ -4322,7 +4433,7 @@ onMounted(() => {
           </button>
         </div>
         <div class="flex shrink-0 flex-wrap justify-end gap-3 border-t border-slate-100 bg-white px-4 py-4 md:px-6">
-          <button class="rounded-xl border border-slate-200 bg-white px-5 py-2.5 font-bold text-slate-600 hover:bg-slate-50" @click="advancedMediaDialogOpen = false">{{ copy.cancelConfig }}</button>
+          <button class="rounded-xl border border-slate-200 bg-white px-5 py-2.5 font-bold text-slate-600 hover:bg-slate-50" type="button" @click="closeAdvancedMediaDialog">{{ copy.cancelConfig }}</button>
           <button class="rounded-xl bg-blue-700 px-5 py-2.5 font-bold text-white hover:bg-blue-800" @click="saveMediaConfig">{{ copy.confirmConfig }}</button>
         </div>
       </div>
