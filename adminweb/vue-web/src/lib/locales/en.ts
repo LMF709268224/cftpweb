@@ -1740,6 +1740,16 @@ export const en: AdminTranslations = {
         invalidDetailId: (id: string) => `The detail API requires a ULID, but this record returned ${id}; showing the list record without requesting detail.`,
         total: (count: number) => `${count} records`,
         confirmAction: (action: string) => `Confirm "${action}"?`,
+        actionConfirm: {
+            description: "This action will be submitted for processing. Verify the target record before continuing.",
+            action: "Action",
+            module: "Module",
+            target: "Target Record",
+            id: "Record ID",
+            cancel: "Cancel",
+            confirm: (action: string) => `Confirm ${action}`,
+            targetChanged: "The target record changed. Select it again before running this action.",
+        },
         placeholders: {
             optional: "Optional",
             required: "Required",

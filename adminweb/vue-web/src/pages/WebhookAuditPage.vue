@@ -286,13 +286,13 @@ onMounted(() => load(1))
 </script>
 
 <template>
-  <section class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-6 px-8 py-8">
-    <header class="flex items-start justify-between gap-4">
-      <div>
-        <h1 class="text-4xl font-black tracking-tight">{{ copy.title }}</h1>
+  <section class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-5 px-4 py-5 md:gap-6 md:px-8 md:py-8">
+    <header class="flex flex-col items-stretch justify-between gap-4 sm:flex-row sm:items-start">
+      <div class="min-w-0">
+        <h1 class="break-words text-3xl font-black tracking-tight md:text-4xl">{{ copy.title }}</h1>
         <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
       </div>
-      <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="load(page)">
+      <button class="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="load(page)">
         <RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
         {{ copy.refresh }}
       </button>
@@ -312,15 +312,15 @@ onMounted(() => load(1))
       </button>
     </form>
 
-    <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-      <div class="flex items-center justify-between border-b border-slate-200 p-5">
-        <div>
+    <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm md:rounded-3xl">
+      <div class="flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 p-4 md:p-5">
+        <div class="min-w-0">
           <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
           <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
         </div>
-        <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ copy.totalText(total) }}</span>
+        <span class="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ copy.totalText(total) }}</span>
       </div>
-      <div class="grid grid-cols-[minmax(0,1fr)_180px_180px_112px] gap-5 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500">
+      <div class="hidden grid-cols-[minmax(0,1fr)_180px_180px_112px] gap-5 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500 md:grid">
         <span>{{ copy.columns.webhook }}</span>
         <span class="text-center">{{ copy.columns.status }}</span>
         <span class="text-right">{{ copy.columns.createdAt }}</span>
@@ -336,7 +336,7 @@ onMounted(() => load(1))
         <div
           v-for="message in messages"
           :key="msgKey(message)"
-          class="grid cursor-pointer grid-cols-[minmax(0,1fr)_180px_180px_112px] items-center gap-5 px-5 py-4 transition hover:bg-sky-50"
+          class="flex cursor-pointer flex-col gap-3 px-4 py-4 transition hover:bg-sky-50 md:grid md:grid-cols-[minmax(0,1fr)_180px_180px_112px] md:items-center md:gap-5 md:px-5"
           :class="msgKey(selected || {}) === msgKey(message) ? 'bg-sky-50' : ''"
           role="button"
           tabindex="0"
@@ -345,18 +345,22 @@ onMounted(() => load(1))
           @keydown.space.prevent="loadDetail(message)"
         >
           <div class="min-w-0">
-            <div class="truncate text-base font-black">{{ messageTitle(message) }}</div>
-            <div class="mt-1 truncate text-sm font-semibold text-slate-600">{{ messageSubtitle(message) }}</div>
+            <div class="break-words text-base font-black md:truncate">{{ messageTitle(message) }}</div>
+            <div class="mt-1 break-words text-sm font-semibold text-slate-600 md:truncate">{{ messageSubtitle(message) }}</div>
           </div>
-          <div class="min-w-0 text-center">
+          <div class="flex min-w-0 items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 md:block md:rounded-none md:bg-transparent md:p-0 md:text-center">
+            <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.status }}</span>
             <span class="inline-flex max-w-full truncate rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(messageStatus(message))">
               {{ statusText(messageStatus(message)) }}
             </span>
           </div>
-          <div class="text-right text-sm font-semibold text-slate-500">{{ formatDate(message.created_at) || copy.noCreatedAt }}</div>
+          <div class="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-500 md:block md:rounded-none md:bg-transparent md:p-0 md:text-right">
+            <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.createdAt }}</span>
+            <span class="break-words text-right">{{ formatDate(message.created_at) || copy.noCreatedAt }}</span>
+          </div>
           <div class="text-right">
             <button
-              class="text-sm font-bold text-blue-700 transition hover:underline"
+              class="inline-flex w-full items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 transition hover:underline md:w-auto md:border-0 md:bg-transparent md:px-0 md:py-0"
               type="button"
               @click.stop="loadDetail(message)"
             >
@@ -366,11 +370,11 @@ onMounted(() => load(1))
         </div>
       </div>
 
-      <div class="flex items-center justify-between gap-3 border-t border-slate-200 p-5">
-        <span class="text-sm font-bold text-slate-500">{{ copy.pageText(page, totalPages) }}</span>
+      <div class="flex flex-col items-stretch justify-between gap-3 border-t border-slate-200 p-4 sm:flex-row sm:items-center md:p-5">
+        <span class="text-center text-sm font-bold text-slate-500 sm:text-left">{{ copy.pageText(page, totalPages) }}</span>
         <div class="flex gap-3">
           <button
-            class="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-40"
+            class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none"
             type="button"
             :disabled="page <= 1 || loading"
             @click="goPage(page - 1)"
@@ -379,7 +383,7 @@ onMounted(() => load(1))
             {{ copy.prev }}
           </button>
           <button
-            class="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-40"
+            class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none"
             type="button"
             :disabled="!hasMore || loading"
             @click="goPage(page + 1)"
@@ -392,9 +396,9 @@ onMounted(() => load(1))
     </section>
 
     <Teleport to="body">
-      <div v-if="detailOpen && selected" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-6">
-        <section class="flex max-h-[88vh] w-full max-w-[1120px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-          <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
+      <div v-if="detailOpen && selected" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-0 md:p-6">
+        <section class="flex h-full max-h-none w-full max-w-[1120px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
+          <div class="flex flex-col gap-4 border-b border-slate-200 px-4 py-4 sm:flex-row sm:items-start sm:justify-between md:px-6 md:py-5">
             <div class="flex min-w-0 items-start gap-3">
               <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
                 <Webhook class="h-5 w-5" />
@@ -404,7 +408,7 @@ onMounted(() => load(1))
                 <p class="mt-1 text-sm text-slate-500">{{ copy.detailDescription }}</p>
               </div>
             </div>
-            <div class="flex shrink-0 items-center gap-3">
+            <div class="flex shrink-0 items-center justify-end gap-3">
               <button
                 class="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
                 type="button"
@@ -429,7 +433,7 @@ onMounted(() => load(1))
             <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
             {{ copy.detailLoading }}
           </div>
-          <div v-else class="min-h-0 flex-1 space-y-5 overflow-y-auto p-5">
+          <div v-else class="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 md:p-5">
             <div class="rounded-2xl border border-blue-100 bg-blue-50 p-4">
               <div class="flex items-center gap-2 text-sm font-black text-blue-700">
                 <Webhook class="h-4 w-4" />

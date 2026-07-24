@@ -1738,6 +1738,16 @@ export const zh = {
         invalidDetailId: (id: string) => `详情接口需要 ULID，当前记录返回的是 ${id}；已显示列表记录，未继续请求详情。`,
         total: (count: number) => `共 ${count} 条`,
         confirmAction: (action: string) => `确认执行“${action}”？`,
+        actionConfirm: {
+            description: "该操作将提交到后台处理，请确认目标记录无误。",
+            action: "操作",
+            module: "所属模块",
+            target: "目标记录",
+            id: "记录 ID",
+            cancel: "取消",
+            confirm: (action: string) => `确认${action}`,
+            targetChanged: "目标记录已发生变化，请重新选择后操作。",
+        },
         placeholders: {
             optional: "可选",
             required: "必填",

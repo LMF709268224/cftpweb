@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from "vue"
-import { Search, X } from "lucide-vue-next"
+import { Ban, RotateCcw, Search, TriangleAlert, X } from "lucide-vue-next"
 import { toast } from "vue-sonner"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
@@ -41,6 +41,14 @@ type OpsModule = {
   detailPath?: (id: string) => string
   detailIDFormat?: "ulid"
   actions?: OpsAction[]
+}
+
+type PendingAction = {
+  action: OpsAction
+  moduleKey: string
+  moduleLabel: string
+  targetId: string
+  targetTitle: string
 }
 
 type DetailEntry = {
@@ -494,6 +502,7 @@ const loading = ref(false)
 const detailLoading = ref(false)
 const showDetailModal = ref(false)
 const actionLoading = ref("")
+const pendingAction = ref<PendingAction | null>(null)
 const total = ref(0)
 const page = ref(1)
 const offset = ref(0)
@@ -1504,18 +1513,42 @@ async function openItem(item: JsonRecord, openModal = true) {
 
 function closeDetailModal() {
   invalidateDetailRequest()
+  pendingAction.value = null
   showDetailModal.value = false
 }
 
-async function runAction(action: OpsAction) {
+function openActionConfirm(action: OpsAction) {
   const module = activeModule.value
   const id = getItemID(selected.value, module)
-  if (!id) return
-  if (!window.confirm(copy.value.confirmAction(action.label))) return
-  actionLoading.value = action.key
+  if (!id || !selected.value) return
+  pendingAction.value = {
+    action,
+    moduleKey: module.key,
+    moduleLabel: module.label,
+    targetId: id,
+    targetTitle: getTitle(selected.value),
+  }
+}
+
+function closeActionConfirm() {
+  if (actionLoading.value) return
+  pendingAction.value = null
+}
+
+async function executePendingAction() {
+  const pending = pendingAction.value
+  if (!pending || actionLoading.value) return
+  const module = activeModule.value
+  if (module.key !== pending.moduleKey || getItemID(selected.value, module) !== pending.targetId) {
+    pendingAction.value = null
+    toast.error(copy.value.actionConfirm.targetChanged)
+    return
+  }
+  actionLoading.value = pending.action.key
   try {
-    await apiClient(action.path(id), { method: action.method || "POST", body: JSON.stringify({}) })
+    await apiClient(pending.action.path(pending.targetId), { method: pending.action.method || "POST", body: JSON.stringify({}) })
     toast.success(copy.value.toasts.actionSuccess)
+    pendingAction.value = null
     await loadList()
   } catch (error) {
     toast.error(apiErrorMessage(error, copy.value.toasts.actionFailed))
@@ -1693,8 +1726,10 @@ void loadList()
                   v-if="!action.showIf || action.showIf(selected)"
                   class="inline-flex h-10 w-full items-center justify-center rounded-xl border border-slate-300 px-4 text-sm font-black hover:border-slate-500 disabled:opacity-50 md:w-auto"
                   :disabled="!!actionLoading"
-                  @click="runAction(action)"
+                  @click="openActionConfirm(action)"
                 >
+                  <RotateCcw v-if="action.key === 'retry'" class="mr-2 h-4 w-4" />
+                  <Ban v-else class="mr-2 h-4 w-4" />
                   {{ actionLoading === action.key ? copy.processing : action.label }}
                 </button>
               </template>
@@ -1737,6 +1772,81 @@ void loadList()
             </div>
           </div>
         </div>
+      </div>
+    </Teleport>
+
+    <Teleport to="body">
+      <div v-if="pendingAction" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/55 p-4 md:p-6">
+        <section class="w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl" role="dialog" aria-modal="true" :aria-labelledby="`action-confirm-${pendingAction.action.key}`">
+          <header class="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-5 md:px-6">
+            <div class="flex min-w-0 items-start gap-3">
+              <span
+                class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
+                :class="pendingAction.action.key === 'ignore' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600'"
+              >
+                <TriangleAlert class="h-5 w-5" />
+              </span>
+              <div class="min-w-0">
+                <h2 :id="`action-confirm-${pendingAction.action.key}`" class="break-words text-xl font-black text-slate-950">
+                  {{ copy.confirmAction(pendingAction.action.label) }}
+                </h2>
+                <p class="mt-1 text-sm leading-6 text-slate-500">{{ copy.actionConfirm.description }}</p>
+              </div>
+            </div>
+            <button
+              class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40"
+              type="button"
+              :aria-label="copy.close"
+              :disabled="!!actionLoading"
+              @click="closeActionConfirm"
+            >
+              <X class="h-5 w-5" />
+            </button>
+          </header>
+
+          <div class="px-5 py-5 md:px-6">
+            <dl class="divide-y divide-slate-200 rounded-2xl bg-slate-50 px-4">
+              <div class="grid gap-1 py-3 sm:grid-cols-[96px_minmax(0,1fr)] sm:gap-4">
+                <dt class="text-xs font-black text-slate-500">{{ copy.actionConfirm.action }}</dt>
+                <dd class="break-words text-sm font-black text-slate-950">{{ pendingAction.action.label }}</dd>
+              </div>
+              <div class="grid gap-1 py-3 sm:grid-cols-[96px_minmax(0,1fr)] sm:gap-4">
+                <dt class="text-xs font-black text-slate-500">{{ copy.actionConfirm.module }}</dt>
+                <dd class="break-words text-sm font-bold text-slate-900">{{ pendingAction.moduleLabel }}</dd>
+              </div>
+              <div class="grid gap-1 py-3 sm:grid-cols-[96px_minmax(0,1fr)] sm:gap-4">
+                <dt class="text-xs font-black text-slate-500">{{ copy.actionConfirm.target }}</dt>
+                <dd class="break-words text-sm font-bold text-slate-900">{{ pendingAction.targetTitle }}</dd>
+              </div>
+              <div class="grid gap-1 py-3 sm:grid-cols-[96px_minmax(0,1fr)] sm:gap-4">
+                <dt class="text-xs font-black text-slate-500">{{ copy.actionConfirm.id }}</dt>
+                <dd class="break-all font-mono text-xs font-bold text-blue-700">{{ pendingAction.targetId }}</dd>
+              </div>
+            </dl>
+          </div>
+
+          <footer class="flex flex-col-reverse gap-3 border-t border-slate-200 px-5 py-4 sm:flex-row sm:justify-end md:px-6">
+            <button
+              class="h-11 rounded-xl border border-slate-300 px-5 text-sm font-black text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+              type="button"
+              :disabled="!!actionLoading"
+              @click="closeActionConfirm"
+            >
+              {{ copy.actionConfirm.cancel }}
+            </button>
+            <button
+              class="inline-flex h-11 items-center justify-center rounded-xl px-5 text-sm font-black text-white transition disabled:cursor-not-allowed disabled:opacity-50"
+              :class="pendingAction.action.key === 'ignore' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-700 hover:bg-blue-800'"
+              type="button"
+              :disabled="!!actionLoading"
+              @click="executePendingAction"
+            >
+              <RotateCcw v-if="pendingAction.action.key === 'retry'" class="mr-2 h-4 w-4" :class="actionLoading ? 'animate-spin' : ''" />
+              <Ban v-else class="mr-2 h-4 w-4" />
+              {{ actionLoading ? copy.processing : copy.actionConfirm.confirm(pendingAction.action.label) }}
+            </button>
+          </footer>
+        </section>
       </div>
     </Teleport>
   </section>
