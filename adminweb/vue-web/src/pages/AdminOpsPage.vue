@@ -1459,7 +1459,7 @@ async function loadList(reset = false) {
     items.value = extractItems(data, module)
     total.value = Number(data.total || items.value.length || 0)
     if (items.value.length) {
-      await openItem(items.value[0], false)
+      void openItem(items.value[0], false)
     }
   } catch (error) {
     if (!isCurrentListRequest(requestId, moduleKey)) return
@@ -1481,6 +1481,7 @@ async function openItem(item: JsonRecord, openModal = true) {
   detail.value = item
   detailNotice.value = ""
   showDetailModal.value = openModal
+  if (!openModal) return
   if (!module.detailPath || !id) return
   if (module.detailIDFormat === "ulid" && !isULID(id)) {
     detailNotice.value = copy.value.invalidDetailId(id)

@@ -141,6 +141,7 @@ function formatFieldValue(key: string, value: unknown) {
 }
 
 let listRequestId = 0
+let detailRequestId = 0
 
 async function load(targetPage = page.value) {
   const requestId = ++listRequestId
@@ -190,7 +191,7 @@ nextCursor.value = String(data.next_cursor || "")
     page.value = targetPage
     const nextSelected = messages.value.find((item) => msgKey(item) === selectedKey) || messages.value[0] || null
     if (nextSelected) {
-      await loadDetail(nextSelected, false, detailOpen.value)
+      void loadDetail(nextSelected, detailOpen.value, detailOpen.value)
     } else {
       selected.value = null
       detail.value = null
@@ -212,24 +213,34 @@ nextCursor.value = String(data.next_cursor || "")
 }
 
 async function loadDetail(message: JsonRecord, showLoading = true, open = true) {
+  const requestId = ++detailRequestId
   selected.value = message
   detail.value = null
   detailOpen.value = open
+  if (!open) {
+    detailLoading.value = false
+    return
+  }
   const fp = msgKey(message)
   if (!fp) return
   if (showLoading) detailLoading.value = true
   try {
-    detail.value = await apiClient<JsonRecord>(`/api/audit/webhooks/detail?msg_fp=${encodeURIComponent(fp)}`)
+    const response = await apiClient<JsonRecord>(`/api/audit/webhooks/detail?msg_fp=${encodeURIComponent(fp)}`)
+    if (requestId !== detailRequestId || !selected.value || msgKey(selected.value) !== fp) return
+    detail.value = response
   } catch (err) {
+    if (requestId !== detailRequestId || !selected.value || msgKey(selected.value) !== fp) return
     console.error(err)
     toast.error(copy.value.toasts.detailLoadFailed)
   } finally {
-    detailLoading.value = false
+    if (requestId === detailRequestId && selected.value && msgKey(selected.value) === fp) detailLoading.value = false
   }
 }
 
 function closeDetail() {
+  detailRequestId += 1
   detailOpen.value = false
+  detailLoading.value = false
 }
 
 async function reprocess(message: JsonRecord) {

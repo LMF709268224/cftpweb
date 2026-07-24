@@ -207,26 +207,38 @@ function businessDetailSource(detail: JsonRecord) {
   return detail
 }
 
+let detailRequestId = 0
+
 async function loadBusinessDetail(order: JsonRecord | null) {
+  const id = orderUlid(order)
+  const requestId = ++detailRequestId
   businessDetail.value = null
-  if (!order || !orderUlid(order)) return
+  if (!order || !id) return
   detailLoading.value = true
   try {
-    const response = await apiClient<JsonRecord>(`/api/mall/orders/${encodeURIComponent(orderUlid(order))}`)
+    const response = await apiClient<JsonRecord>(`/api/mall/orders/${encodeURIComponent(id)}`)
+    if (requestId !== detailRequestId || orderUlid(selected.value) !== id) return
     businessDetail.value = recordValue(response.business_detail)
   } catch (err) {
+    if (requestId !== detailRequestId || orderUlid(selected.value) !== id) return
     console.error(err)
     toast.error(copy.value.toasts.bundleLoadFailed)
   } finally {
-    detailLoading.value = false
+    if (requestId === detailRequestId && orderUlid(selected.value) === id) detailLoading.value = false
   }
 }
 
 async function selectOrder(order: JsonRecord, open = true) {
+  detailRequestId += 1
   selected.value = order
   activeTab.value = "summary"
   showPurgeConfirm.value = false
   detailOpen.value = open
+  businessDetail.value = null
+  detailLoading.value = false
+  if (!open) {
+    return
+  }
   await loadBusinessDetail(order)
 }
 
@@ -295,7 +307,7 @@ nextCursor.value = String(data.next_cursor || "")
     lastPage.value = targetPage
     page.value = targetPage
     if (orders.value.length) {
-      await selectOrder(orders.value[0], detailOpen.value)
+      void selectOrder(orders.value[0], detailOpen.value)
     } else {
       selected.value = null
       businessDetail.value = null

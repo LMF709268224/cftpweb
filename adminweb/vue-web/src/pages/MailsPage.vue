@@ -344,7 +344,7 @@ async function loadSentMails() {
     mailCursorStack.value = mailCursorStack.value.slice(0, mailPage.value)
     mailCursorStack.value[mailPage.value] = mailNextCursor.value
     if (!selectedMail.value || !mails.value.some((item) => mailId(item) === mailId(selectedMail.value))) {
-      await openMail(mails.value[0] || null, mailDetailOpen.value)
+      void openMail(mails.value[0] || null, mailDetailOpen.value)
     }
   } catch (err) {
     if (requestId !== sentMailsRequestId) return
@@ -509,6 +509,10 @@ async function openMail(mail: JsonRecord | null, open = true) {
   mailDetailOpen.value = open && !!mail
   mailDetail.value = null
   mailStatusDetail.value = null
+  if (!open) {
+    mailDetailLoading.value = false
+    return
+  }
   const id = mailId(mail)
   if (!id) {
     mailDetailLoading.value = false

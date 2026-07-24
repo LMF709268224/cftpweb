@@ -692,7 +692,7 @@ nextCursor.value = String(data.next_cursor || "")
 
     lastPage.value = currentPage.value
     if (!selected.value && bundles.value.length) {
-      await selectBundle(bundles.value[0], false)
+      void selectBundle(bundles.value[0], false)
     }
   } catch (err) {
     console.error(err)
@@ -786,6 +786,7 @@ async function selectBundle(bundle: JsonRecord, open = true) {
   showDeleteConfirm.value = false
   replacementPipelineId.value = ""
   form.value = formFromBundle(bundle)
+  if (!open) return
   if (!id) return
   try {
     const detail = await apiClient<JsonRecord>(`/api/mall/bundles/${encodeURIComponent(id)}`)
