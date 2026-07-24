@@ -4,12 +4,7 @@ import { AlertTriangle, ExternalLink, Loader2 } from "lucide-vue-next"
 import { apiClient } from "@/lib/apiClient"
 import { sanitizePaymentReturnPath, stripeCheckoutUrl, stripeEmbeddedClientSecret } from "@/lib/payment"
 import { useTranslation } from "@/lib/language"
-
-declare global {
-  interface Window {
-    Stripe: any
-  }
-}
+import { loadStripeFactory } from "@/lib/stripe"
 
 const props = withDefaults(defineProps<{
   paymentKey?: string
@@ -104,12 +99,15 @@ async function mountStripeCheckout(secret: string) {
   const mountToken = stripeCheckoutMountToken
   let mounted = false
   try {
-    const configRes = await apiClient("/api/public/config")
+    const [configRes, stripeFactory] = await Promise.all([
+      apiClient("/api/public/config"),
+      loadStripeFactory(),
+    ])
     const pk = configRes.stripe_publishable_key
     if (!pk) throw new Error("Missing Stripe publishable key")
 
     await nextTick()
-    const stripe = window.Stripe(pk)
+    const stripe = stripeFactory(pk)
     const checkout = await stripe.initEmbeddedCheckout({
       fetchClientSecret: async () => secret,
     })

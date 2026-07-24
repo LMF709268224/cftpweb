@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onErrorCaptured, ref, watch } from "vue"
+import { computed, defineAsyncComponent, onBeforeUnmount, onErrorCaptured, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
-import { PDFViewer } from "@embedpdf/vue-pdf-viewer"
 import { AlertTriangle, ArrowLeft, Calendar, FileText, Loader2, RotateCw } from "lucide-vue-next"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
@@ -21,6 +20,9 @@ const errorMessageKey = ref<PdfPreviewErrorKey | "">("")
 const previewTitle = ref("")
 const previewExpiresAt = ref("")
 const pdfViewerRegistry = ref<any>(null)
+const PDFViewer = defineAsyncComponent(
+  () => import("@embedpdf/vue-pdf-viewer").then((module) => module.PDFViewer),
+)
 let slowPreviewTimer: number | undefined
 
 const routeFileId = computed(() => String(route.params.fileId || ""))
