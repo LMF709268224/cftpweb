@@ -37,6 +37,7 @@ const readonlyMode = computed(() => mode.value === "detail")
 
 let detailRequestController: AbortController | null = null
 let detailRequestSeq = 0
+let listRequestSeq = 0
 
 function fieldLabel(key: string) {
   return copy.value.fieldLabels?.[key as keyof typeof copy.value.fieldLabels] || key.replaceAll("_", " ")
@@ -135,9 +136,12 @@ function closeDialog() {
 }
 
 async function load() {
+  const requestSeq = ++listRequestSeq
   loading.value = true
   try {
     const data = await apiClient<JsonRecord>("/api/pdf-templates")
+    if (requestSeq !== listRequestSeq) return
+
     const list = Array.isArray(data.templates) ? data.templates : []
     templates.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     if (selected.value) {
@@ -155,10 +159,14 @@ async function load() {
       }
     }
   } catch (err) {
+    if (requestSeq !== listRequestSeq) return
+
     console.error(err)
     toast.error(copy.value.toasts.loadFailed)
   } finally {
-    loading.value = false
+    if (requestSeq === listRequestSeq) {
+      loading.value = false
+    }
   }
 }
 
@@ -208,7 +216,7 @@ onMounted(load)
         <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
       </div>
       <div class="flex flex-wrap gap-3">
-        <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="load">
+        <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="loading" @click="load">
           <RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
           {{ copy.refresh }}
         </button>
