@@ -34,16 +34,19 @@ const courseUnitFilter = ref("")
 const appliedCandidateFilter = ref("")
 const appliedConfirmationFilter = ref("")
 const appliedCourseUnitFilter = ref("")
+let detailRequestId = 0
+let actionRequestId = 0
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.exams)
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)))
 const canPrev = computed(() => page.value > 1)
 const canNext = computed(() => hasMore.value)
-const selectedExamUlid = computed(() => examUlid(detail.value || selectedSummary.value))
+const selectedExamUlid = computed(() => examUlid(selectedSummary.value))
 const canSyncExamResult = computed(() => {
+  if (!selectedExamUlid.value || !responseMatchesExam(detail.value, selectedExamUlid.value) || !responseMatchesExam(result.value, selectedExamUlid.value)) return false
   const status = result.value?.result_status || detail.value?.result_status || selectedSummary.value?.result_status
-  return !!selectedExamUlid.value && normalizedResultStatus(status) === "FETCHED"
+  return normalizedResultStatus(status) === "FETCHED"
 })
 const candidateName = computed(() => {
   const source = detail.value || selectedSummary.value || {}
@@ -76,6 +79,26 @@ function asArray(value: unknown): JsonRecord[] {
 
 function examUlid(item: JsonRecord | null | undefined) {
   return String(pickFirst(item || {}, ["exam_ulid", "exam_id"]) || "")
+}
+
+function responseMatchesExam(record: JsonRecord | null | undefined, id: string) {
+  const responseId = examUlid(record)
+  return !responseId || responseId === id
+}
+
+function isCurrentDetailRequest(requestId: number, id: string) {
+  return requestId === detailRequestId && detailDialogOpen.value && examUlid(selectedSummary.value) === id
+}
+
+function isCurrentActionRequest(requestId: number, id: string) {
+  return requestId === actionRequestId && detailDialogOpen.value && examUlid(selectedSummary.value) === id
+}
+
+function invalidateExamRequests() {
+  detailRequestId += 1
+  actionRequestId += 1
+  detailLoading.value = false
+  actionLoading.value = false
 }
 
 function label(value: unknown) {
@@ -223,16 +246,20 @@ nextCursor.value = String(data.next_cursor || "")
 }
 
 async function openExam(item: JsonRecord) {
+  const id = examUlid(item)
+  if (!id) return
+  invalidateExamRequests()
   selectedSummary.value = item
   detail.value = null
   result.value = null
   transitions.value = []
   detailDialogOpen.value = true
-  await loadExamDetail(examUlid(item))
+  await loadExamDetail(id)
 }
 
 async function loadExamDetail(id: string) {
-  if (!id) return
+  if (!id || examUlid(selectedSummary.value) !== id) return
+  const requestId = ++detailRequestId
   detailLoading.value = true
   try {
     const [detailData, resultData, transitionsData] = await Promise.all([
@@ -240,14 +267,19 @@ async function loadExamDetail(id: string) {
       loadExamResult(id),
       apiClient<JsonRecord>(`/api/exams/${encodeURIComponent(id)}/transitions`),
     ])
+    if (!isCurrentDetailRequest(requestId, id)) return
+    if (!responseMatchesExam(detailData, id) || !responseMatchesExam(resultData, id) || !responseMatchesExam(transitionsData, id)) {
+      throw new Error(`Exam detail response ID does not match ${id}`)
+    }
     detail.value = detailData
     result.value = resultData
     transitions.value = asArray(transitionsData.transitions)
   } catch (err) {
+    if (!isCurrentDetailRequest(requestId, id)) return
     console.error(err)
     toast.error(copy.value.toasts.detailLoadFailed)
   } finally {
-    detailLoading.value = false
+    if (isCurrentDetailRequest(requestId, id)) detailLoading.value = false
   }
 }
 
@@ -262,18 +294,25 @@ async function loadExamResult(id: string) {
 }
 
 async function syncExamResult() {
-  if (!canSyncExamResult.value) return
+  const id = selectedExamUlid.value
+  if (!id || !canSyncExamResult.value || examUlid(selectedSummary.value) !== id) return
+  const requestId = ++actionRequestId
   actionLoading.value = true
   try {
-    result.value = await apiClient<JsonRecord>(`/api/exams/${encodeURIComponent(selectedExamUlid.value)}/sync-result`, { method: "POST" })
+    const syncedResult = await apiClient<JsonRecord>(`/api/exams/${encodeURIComponent(id)}/sync-result`, { method: "POST" })
+    if (!isCurrentActionRequest(requestId, id)) return
+    if (!responseMatchesExam(syncedResult, id)) throw new Error(`Exam result response ID does not match ${id}`)
+    result.value = syncedResult
     toast.success(copy.value.toasts.syncSuccess)
-    await loadExamDetail(selectedExamUlid.value)
+    await loadExamDetail(id)
+    if (!isCurrentActionRequest(requestId, id)) return
     await loadExams(page.value)
   } catch (err) {
+    if (!isCurrentActionRequest(requestId, id)) return
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.syncFailed))
   } finally {
-    actionLoading.value = false
+    if (isCurrentActionRequest(requestId, id)) actionLoading.value = false
   }
 }
 
@@ -320,6 +359,7 @@ async function refreshAll() {
 }
 
 function clearSelection() {
+  invalidateExamRequests()
   detailDialogOpen.value = false
   selectedSummary.value = null
   detail.value = null

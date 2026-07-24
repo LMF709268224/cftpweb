@@ -498,6 +498,8 @@ const total = ref(0)
 const page = ref(1)
 const offset = ref(0)
 const pageSize = 20
+let listRequestId = 0
+let detailRequestId = 0
 
 const activeModule = computed(() => modules.value.find((module) => module.key === activeKey.value) || modules.value[0])
 const activeFilters = computed(() => filters[activeModule.value.key] || (filters[activeModule.value.key] = {}))
@@ -567,6 +569,19 @@ function getDetailField(item: JsonRecord, keys: string[]): unknown {
 function getItemID(item: JsonRecord | null, module = activeModule.value) {
   const value = getField(item, module.idKeys)
   return value === undefined ? "" : String(value)
+}
+
+function isCurrentListRequest(requestId: number, moduleKey: string) {
+  return requestId === listRequestId && activeKey.value === moduleKey
+}
+
+function isCurrentDetailRequest(requestId: number, module: OpsModule, id: string) {
+  return requestId === detailRequestId && activeKey.value === module.key && getItemID(selected.value, module) === id
+}
+
+function invalidateDetailRequest() {
+  detailRequestId += 1
+  detailLoading.value = false
 }
 
 function isULID(value: string) {
@@ -1418,7 +1433,11 @@ function buildListURL(module: OpsModule) {
 }
 
 async function loadList(reset = false) {
-  ensureOptionFilterDefaults()
+  const requestId = ++listRequestId
+  invalidateDetailRequest()
+  const module = activeModule.value
+  const moduleKey = module.key
+  ensureOptionFilterDefaults(module)
   if (reset) {
     page.value = 1
     offset.value = 0
@@ -1430,33 +1449,38 @@ async function loadList(reset = false) {
   if (!canLoad.value) {
     items.value = []
     total.value = 0
+    loading.value = false
     return
   }
   loading.value = true
   try {
-    const module = activeModule.value
     const data = await apiClient<JsonRecord>(buildListURL(module))
+    if (!isCurrentListRequest(requestId, moduleKey)) return
     items.value = extractItems(data, module)
     total.value = Number(data.total || items.value.length || 0)
     if (items.value.length) {
       await openItem(items.value[0], false)
     }
   } catch (error) {
+    if (!isCurrentListRequest(requestId, moduleKey)) return
     items.value = []
     total.value = 0
     toast.error(apiErrorMessage(error, copy.value.toasts.loadFailed))
   } finally {
-    loading.value = false
+    if (isCurrentListRequest(requestId, moduleKey)) loading.value = false
   }
 }
 
 async function openItem(item: JsonRecord, openModal = true) {
+  const module = activeModule.value
+  const moduleKey = module.key
+  const id = getItemID(item, module)
+  const requestId = ++detailRequestId
+  detailLoading.value = false
   selected.value = item
   detail.value = item
   detailNotice.value = ""
   showDetailModal.value = openModal
-  const module = activeModule.value
-  const id = getItemID(item, module)
   if (!module.detailPath || !id) return
   if (module.detailIDFormat === "ulid" && !isULID(id)) {
     detailNotice.value = copy.value.invalidDetailId(id)
@@ -1464,15 +1488,21 @@ async function openItem(item: JsonRecord, openModal = true) {
   }
   detailLoading.value = true
   try {
-    detail.value = await apiClient<JsonRecord>(module.detailPath(id))
+    const response = await apiClient<JsonRecord>(module.detailPath(id))
+    if (!isCurrentDetailRequest(requestId, module, id)) return
+    const responseId = getItemID(response, module)
+    if (responseId && responseId !== id) throw new Error(`Detail response ID does not match ${moduleKey}:${id}`)
+    detail.value = response
   } catch (error) {
+    if (!isCurrentDetailRequest(requestId, module, id)) return
     toast.error(apiErrorMessage(error, copy.value.toasts.detailFailed))
   } finally {
-    detailLoading.value = false
+    if (isCurrentDetailRequest(requestId, module, id)) detailLoading.value = false
   }
 }
 
 function closeDetailModal() {
+  invalidateDetailRequest()
   showDetailModal.value = false
 }
 
