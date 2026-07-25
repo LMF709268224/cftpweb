@@ -721,6 +721,23 @@ async function selectPipeline(pipeline: JsonRecord) {
   }
 }
 
+async function refreshSelectedPipelineDetail(pipelineId = selectedId.value) {
+  if (!pipelineId || selectedId.value !== pipelineId) return
+
+  const requestId = ++detailRequestId
+  try {
+    const detail = await apiClient<JsonRecord>(`/api/pipelines/${encodeURIComponent(pipelineId)}`)
+    if (requestId !== detailRequestId || selectedId.value !== pipelineId) return
+    selected.value = detail
+    form.value = formFromPipeline(detail)
+    setStructure(structureFromPipeline(detail))
+  } catch (err) {
+    if (requestId !== detailRequestId || selectedId.value !== pipelineId) return
+    console.error(err)
+    toast.error(apiErrorMessage(err, copy.value.toasts.loadFailed))
+  }
+}
+
 function newPipeline() {
   detailRequestId += 1
   selected.value = null
@@ -822,6 +839,7 @@ async function saveStructure() {
 
 async function publish() {
   if (!canPublishSelectedPipeline.value) return
+  const pipelineId = selectedId.value
   const parsed = parseStructure()
   if (!parsed) return
   if (!validateStructureForSave(parsed)) {
@@ -830,12 +848,13 @@ async function publish() {
   }
   saving.value = true
   try {
-    await apiClient(`/api/pipelines/${encodeURIComponent(selectedId.value)}/publish`, {
+    await apiClient(`/api/pipelines/${encodeURIComponent(pipelineId)}/publish`, {
       method: "POST",
       body: JSON.stringify({}),
     })
     toast.success(copy.value.toasts.published)
     await load()
+    await refreshSelectedPipelineDetail(pipelineId)
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.publishFailed))
@@ -856,15 +875,17 @@ function closeDeprecateConfirm() {
 
 async function confirmDeprecate() {
   if (!selectedId.value) return
+  const pipelineId = selectedId.value
   deprecating.value = true
   try {
-    await apiClient(`/api/pipelines/${encodeURIComponent(selectedId.value)}/deprecate`, {
+    await apiClient(`/api/pipelines/${encodeURIComponent(pipelineId)}/deprecate`, {
       method: "POST",
       body: JSON.stringify({}),
     })
     toast.success(copy.value.toasts.deprecated)
     deprecateConfirmOpen.value = false
     await load()
+    await refreshSelectedPipelineDetail(pipelineId)
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.deprecateFailed))
@@ -1047,10 +1068,17 @@ onMounted(() => {
 
     <Teleport to="body">
       <div v-if="inEditor" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-0 md:p-6">
-        <div class="flex h-full max-h-none w-full max-w-[1320px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
+        <div
+          v-modal-dialog="back"
+          class="flex h-full max-h-none w-full max-w-[1320px] flex-col overflow-hidden rounded-none bg-white shadow-2xl outline-none md:h-auto md:max-h-[88vh] md:rounded-3xl"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="pipeline-editor-title"
+          tabindex="-1"
+        >
           <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
             <div class="min-w-0">
-              <h2 class="break-words text-xl font-black md:truncate md:text-2xl">{{ creating ? copy.newPipeline : form.name || copy.detailTitle }}</h2>
+              <h2 id="pipeline-editor-title" class="break-words text-xl font-black md:truncate md:text-2xl">{{ creating ? copy.newPipeline : form.name || copy.detailTitle }}</h2>
               <p class="mt-1 text-sm text-slate-500">{{ copy.detailDescription }}</p>
             </div>
             <button class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="copy.close" @click="back">
@@ -1554,16 +1582,25 @@ onMounted(() => {
 
     <Teleport to="body">
       <div v-if="deprecateConfirmOpen && selected" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 p-4 md:p-6">
-        <section class="w-full max-w-[460px] rounded-2xl bg-white p-4 shadow-2xl md:rounded-3xl md:p-6">
-          <h2 class="text-xl font-black text-slate-950 md:text-2xl">{{ copy.deprecate }}</h2>
-          <p class="mt-3 text-sm font-semibold text-slate-500">{{ copy.confirmDeprecate }}</p>
+        <section
+          v-modal-dialog="closeDeprecateConfirm"
+          class="w-full max-w-[460px] rounded-2xl bg-white p-4 shadow-2xl outline-none md:rounded-3xl md:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="pipeline-deprecate-title"
+          aria-describedby="pipeline-deprecate-description"
+          :aria-busy="deprecating ? 'true' : 'false'"
+          tabindex="-1"
+        >
+          <h2 id="pipeline-deprecate-title" class="text-xl font-black text-slate-950 md:text-2xl">{{ copy.deprecate }}</h2>
+          <p id="pipeline-deprecate-description" class="mt-3 text-sm font-semibold text-slate-500">{{ copy.confirmDeprecate }}</p>
           <div class="mt-5 rounded-2xl bg-slate-50 p-4">
             <div class="break-words font-black text-slate-950">{{ pipelineName(selected) }}</div>
             <div class="mt-1 break-all text-sm font-semibold text-slate-500">{{ pipelineUlid(selected) }}</div>
             <div class="mt-1 text-sm font-semibold text-slate-500">{{ copy.fields.version }}: v{{ selected.version || 0 }}</div>
           </div>
           <div class="mt-6 flex flex-col justify-end gap-3 sm:flex-row">
-            <button class="rounded-xl border border-slate-900 px-5 py-3 font-bold text-slate-950 disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deprecating" @click="closeDeprecateConfirm">{{ copy.cancel }}</button>
+            <button data-dialog-initial-focus class="rounded-xl border border-slate-900 px-5 py-3 font-bold text-slate-950 disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deprecating" @click="closeDeprecateConfirm">{{ copy.cancel }}</button>
             <button class="rounded-xl bg-red-600 px-5 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deprecating" @click="confirmDeprecate">
               {{ copy.deprecate }}
             </button>
@@ -1574,16 +1611,25 @@ onMounted(() => {
 
     <Teleport to="body">
       <div v-if="deleteConfirmOpen && pendingDeletePipeline" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 p-4 md:p-6">
-        <section class="w-full max-w-[460px] rounded-2xl bg-white p-4 shadow-2xl md:rounded-3xl md:p-6">
-          <h2 class="text-xl font-black text-slate-950 md:text-2xl">{{ copy.deleteConfirmTitle }}</h2>
-          <p class="mt-3 text-sm font-semibold text-slate-500">{{ copy.deleteConfirmDescription }}</p>
+        <section
+          v-modal-dialog="closeDeleteConfirm"
+          class="w-full max-w-[460px] rounded-2xl bg-white p-4 shadow-2xl outline-none md:rounded-3xl md:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="pipeline-delete-title"
+          aria-describedby="pipeline-delete-description"
+          :aria-busy="deletingPipeline ? 'true' : 'false'"
+          tabindex="-1"
+        >
+          <h2 id="pipeline-delete-title" class="text-xl font-black text-slate-950 md:text-2xl">{{ copy.deleteConfirmTitle }}</h2>
+          <p id="pipeline-delete-description" class="mt-3 text-sm font-semibold text-slate-500">{{ copy.deleteConfirmDescription }}</p>
           <div class="mt-5 rounded-2xl bg-slate-50 p-4">
             <div class="break-words font-black text-slate-950">{{ pipelineName(pendingDeletePipeline) }}</div>
             <div class="mt-1 break-all text-sm font-semibold text-slate-500">{{ pipelineUlid(pendingDeletePipeline) }}</div>
             <div class="mt-1 text-sm font-semibold text-slate-500">{{ copy.fields.version }}: v{{ pendingDeletePipeline.version || 0 }}</div>
           </div>
           <div class="mt-6 flex flex-col justify-end gap-3 sm:flex-row">
-            <button class="rounded-xl border border-slate-900 px-5 py-3 font-bold text-slate-950 disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deletingPipeline" @click="closeDeleteConfirm">{{ copy.cancel }}</button>
+            <button data-dialog-initial-focus class="rounded-xl border border-slate-900 px-5 py-3 font-bold text-slate-950 disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deletingPipeline" @click="closeDeleteConfirm">{{ copy.cancel }}</button>
             <button class="rounded-xl bg-red-600 px-5 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deletingPipeline" @click="confirmDeletePipeline">
               {{ deletingPipeline ? copy.deleting : copy.confirmDeleteAction }}
             </button>

@@ -1708,7 +1708,7 @@ void loadList()
 
     <Teleport to="body">
       <div v-if="showDetailModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-0 md:p-6">
-        <div class="flex h-full max-h-none w-full max-w-6xl flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
+        <div v-modal-dialog="closeDetailModal" class="flex h-full max-h-none w-full max-w-6xl flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
           <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
             <div class="min-w-0">
               <h2 class="text-xl font-black text-slate-950 md:text-2xl">{{ copy.detailTitle }}</h2>
@@ -1777,7 +1777,7 @@ void loadList()
 
     <Teleport to="body">
       <div v-if="pendingAction" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/55 p-4 md:p-6">
-        <section class="w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl" role="dialog" aria-modal="true" :aria-labelledby="`action-confirm-${pendingAction.action.key}`">
+        <section v-modal-dialog="closeActionConfirm" class="w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl" role="dialog" aria-modal="true" :aria-labelledby="`action-confirm-${pendingAction.action.key}`">
           <header class="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-5 md:px-6">
             <div class="flex min-w-0 items-start gap-3">
               <span
@@ -1827,6 +1827,7 @@ void loadList()
 
           <footer class="flex flex-col-reverse gap-3 border-t border-slate-200 px-5 py-4 sm:flex-row sm:justify-end md:px-6">
             <button
+              data-dialog-initial-focus
               class="h-11 rounded-xl border border-slate-300 px-5 text-sm font-black text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
               type="button"
               :disabled="!!actionLoading"

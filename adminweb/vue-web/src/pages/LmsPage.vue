@@ -2933,7 +2933,7 @@ onMounted(() => {
     </header>
 
     <Teleport to="body">
-      <section v-if="courseCreateOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-0 md:p-6" role="dialog" aria-modal="true">
+      <section v-if="courseCreateOpen" v-modal-dialog="closeCourseCreate" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-0 md:p-6" role="dialog" aria-modal="true">
         <div class="flex h-full max-h-none w-full max-w-[980px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
           <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
             <div class="min-w-0">
@@ -3009,7 +3009,7 @@ onMounted(() => {
     </Teleport>
 
     <Teleport to="body">
-      <section v-if="courseDetailDialogOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-0 md:p-6" role="dialog" aria-modal="true">
+      <section v-if="courseDetailDialogOpen" v-modal-dialog="closeCourseDetailDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-0 md:p-6" role="dialog" aria-modal="true">
         <div class="flex h-full max-h-none w-full max-w-[980px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
           <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
             <div class="min-w-0">
@@ -3209,7 +3209,7 @@ onMounted(() => {
 
       <template v-if="showCourseContentSections">
         <Teleport to="body">
-          <section v-if="courseDeleteConfirmOpen && pendingDeleteCourse" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 md:p-6">
+          <section v-if="courseDeleteConfirmOpen && pendingDeleteCourse" v-modal-dialog="closeCourseDeleteConfirm" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 md:p-6">
             <div class="w-full max-w-[460px] rounded-2xl bg-white p-4 shadow-2xl md:rounded-3xl md:p-6">
               <h2 class="text-xl font-black text-slate-950 md:text-2xl">{{ copy.courseDeleteConfirmTitle }}</h2>
               <p class="mt-3 text-sm font-semibold text-slate-500">{{ copy.courseDeleteConfirmDescription }}</p>
@@ -3286,7 +3286,7 @@ onMounted(() => {
       </section>
 
       <Teleport to="body">
-        <section v-if="chapterDialogOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-0 md:p-6" role="dialog" aria-modal="true">
+        <section v-if="chapterDialogOpen" v-modal-dialog="closeChapterDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-0 md:p-6" role="dialog" aria-modal="true">
           <div class="flex h-full max-h-none w-full max-w-[980px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
             <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
               <div>
@@ -3341,7 +3341,7 @@ onMounted(() => {
       </Teleport>
 
       <Teleport to="body">
-        <section v-if="chapterDeleteConfirmOpen && pendingDeleteChapter" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-6">
+        <section v-if="chapterDeleteConfirmOpen && pendingDeleteChapter" v-modal-dialog="closeChapterDeleteConfirm" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-6">
           <div class="w-full max-w-[460px] rounded-3xl bg-white p-6 shadow-2xl">
             <h2 class="text-2xl font-black text-slate-950">{{ copy.chapterDeleteConfirmTitle }}</h2>
             <p class="mt-3 text-sm font-semibold text-slate-500">{{ copy.chapterDeleteConfirmDescription }}</p>
@@ -3422,7 +3422,7 @@ onMounted(() => {
       </section>
 
       <Teleport to="body">
-        <section v-if="lessonDialogOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-0 md:p-6" role="dialog" aria-modal="true">
+        <section v-if="lessonDialogOpen" v-modal-dialog="closeLessonDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-0 md:p-6" role="dialog" aria-modal="true">
           <div class="flex h-full max-h-none w-full max-w-[980px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
             <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
               <div>
@@ -3555,7 +3555,7 @@ onMounted(() => {
       </Teleport>
 
       <Teleport to="body">
-        <section v-if="lessonDeleteConfirmOpen && pendingDeleteLesson" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-6">
+        <section v-if="lessonDeleteConfirmOpen && pendingDeleteLesson" v-modal-dialog="closeLessonDeleteConfirm" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-6">
           <div class="w-full max-w-[460px] rounded-3xl bg-white p-6 shadow-2xl">
             <h2 class="text-2xl font-black text-slate-950">{{ copy.lessonDeleteConfirmTitle }}</h2>
             <p class="mt-3 text-sm font-semibold text-slate-500">{{ copy.lessonDeleteConfirmDescription }}</p>
@@ -3574,7 +3574,7 @@ onMounted(() => {
       </Teleport>
 
       <Teleport to="body">
-        <section v-if="detailDeleteConfirmOpen && pendingDetailDelete" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 p-6">
+        <section v-if="detailDeleteConfirmOpen && pendingDetailDelete" v-modal-dialog="closeDetailDeleteConfirm" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 p-6">
           <div class="w-full max-w-[460px] rounded-3xl bg-white p-6 shadow-2xl">
             <h2 class="text-2xl font-black text-slate-950">{{ copy.confirmDeleteAction }}</h2>
             <p class="mt-3 text-sm font-semibold text-slate-500">{{ pendingDetailDelete.description }}</p>
@@ -3677,7 +3677,7 @@ onMounted(() => {
           </div>
 
           <Teleport to="body">
-            <div v-if="supplementaryItemDialogOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-0 md:p-6" role="dialog" aria-modal="true">
+            <div v-if="supplementaryItemDialogOpen" v-modal-dialog="closeSupplementaryItemDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-0 md:p-6" role="dialog" aria-modal="true">
               <form class="flex h-full max-h-none w-full max-w-[720px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl" @submit.prevent="canEditCourseContent && saveSupplementaryItem()">
                 <div class="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
                   <div>
@@ -3858,7 +3858,7 @@ onMounted(() => {
         </div>
 
         <Teleport to="body">
-          <section v-if="materialDialogOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-0 md:p-6" role="dialog" aria-modal="true">
+          <section v-if="materialDialogOpen" v-modal-dialog="closeMaterialDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-0 md:p-6" role="dialog" aria-modal="true">
             <div v-if="materialDialogMode === 'detail'" class="flex h-full max-h-none w-full max-w-[860px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
               <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
                 <div>
@@ -4049,7 +4049,7 @@ onMounted(() => {
       </section>
 
       <Teleport to="body">
-        <section v-if="quizDialogOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-0 md:p-6" role="dialog" aria-modal="true">
+        <section v-if="quizDialogOpen" v-modal-dialog="closeQuizDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-0 md:p-6" role="dialog" aria-modal="true">
           <div class="flex h-full max-h-none w-full max-w-[1180px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
             <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
               <div>
@@ -4226,7 +4226,7 @@ onMounted(() => {
       </Teleport>
 
       <Teleport to="body">
-        <section v-if="questionDialogOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-0 md:p-6" role="dialog" aria-modal="true">
+        <section v-if="questionDialogOpen" v-modal-dialog="closeQuestionDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-0 md:p-6" role="dialog" aria-modal="true">
           <div class="flex h-full max-h-none w-full max-w-[980px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
             <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
               <div>
@@ -4367,7 +4367,7 @@ onMounted(() => {
       </template>
     </main>
 
-    <div v-if="importOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-0 md:p-6" @click.self="importOpen = false">
+    <div v-if="importOpen" v-modal-dialog="closeImportDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-0 md:p-6" @click.self="importOpen = false">
       <div class="flex h-full max-h-none w-full max-w-3xl flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
         <div class="flex items-center justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
           <h2 class="min-w-0 text-xl font-black md:text-2xl">{{ copy.importTitle }}</h2>
@@ -4404,7 +4404,7 @@ onMounted(() => {
     </div>
   </div>
   <teleport to="body">
-    <div v-if="advancedMediaDialogOpen" class="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 p-0 backdrop-blur-sm md:p-6" role="dialog" aria-modal="true">
+    <div v-if="advancedMediaDialogOpen" v-modal-dialog="closeAdvancedMediaDialog" class="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 p-0 backdrop-blur-sm md:p-6" role="dialog" aria-modal="true">
       <div class="flex h-full max-h-none w-full max-w-2xl flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
         <div class="flex items-center justify-between border-b border-slate-100 px-4 py-4 md:px-6">
           <h2 class="text-lg font-black">{{ copy.mediaJsonLabel }}</h2>

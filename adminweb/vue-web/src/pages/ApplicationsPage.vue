@@ -460,7 +460,7 @@ onMounted(() => load(1))
 
     <Teleport to="body">
       <div v-if="detailOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-0 md:p-6">
-        <section class="flex h-full max-h-none w-full max-w-[1280px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
+        <section v-modal-dialog="closeDetail" class="flex h-full max-h-none w-full max-w-[1280px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
         <div v-if="!selected" class="flex items-start justify-between gap-4 p-4 md:p-6">
           <div>
             <h2 class="text-xl font-black md:text-2xl">{{ copy.detailTitle }}</h2>

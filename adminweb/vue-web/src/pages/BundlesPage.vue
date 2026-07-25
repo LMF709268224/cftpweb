@@ -820,6 +820,11 @@ function closeDetail() {
   if (mode.value === "create") mode.value = "detail"
 }
 
+function closeDeleteConfirm() {
+  if (deleting.value) return
+  showDeleteConfirm.value = false
+}
+
 const uploadingThumbnail = ref(false)
 const thumbnailFileInput = ref<HTMLInputElement | null>(null)
 
@@ -1331,7 +1336,7 @@ onMounted(load)
 
     <Teleport to="body">
       <div v-if="detailOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-0 md:p-6">
-        <section class="flex h-full max-h-none w-full max-w-[1320px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
+        <section v-modal-dialog="closeDetail" class="flex h-full max-h-none w-full max-w-[1320px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
         <template v-if="mode === 'create'">
           <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:p-5">
             <div class="min-w-0">
@@ -1792,7 +1797,7 @@ onMounted(load)
 
     <Teleport to="body">
       <div v-if="showDeleteConfirm && canDeleteSelectedBundle" class="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/60 p-4 md:p-6">
-        <div class="w-full max-w-md rounded-2xl bg-white p-4 shadow-2xl md:rounded-3xl md:p-6">
+        <div v-modal-dialog="closeDeleteConfirm" class="w-full max-w-md rounded-2xl bg-white p-4 shadow-2xl md:rounded-3xl md:p-6">
           <h2 class="text-xl font-black md:text-2xl">{{ copy.deleteConfirmTitle }}</h2>
           <p class="mt-3 text-sm text-slate-600">{{ copy.deleteConfirmDescription }}</p>
           <div class="mt-5 rounded-2xl bg-slate-50 p-4">
@@ -1800,7 +1805,7 @@ onMounted(load)
             <div class="mt-1 break-all text-xs text-slate-500">{{ selectedId }}</div>
           </div>
           <div class="mt-6 flex flex-col items-stretch justify-end gap-3 sm:flex-row sm:items-center">
-            <button class="inline-flex h-11 min-w-[96px] items-center justify-center rounded-xl border px-5 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="deleting" @click="showDeleteConfirm = false">{{ copy.cancel }}</button>
+            <button data-dialog-initial-focus class="inline-flex h-11 min-w-[96px] items-center justify-center rounded-xl border px-5 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="deleting" @click="closeDeleteConfirm">{{ copy.cancel }}</button>
             <button class="inline-flex h-11 min-w-[112px] items-center justify-center gap-2 rounded-xl bg-red-600 px-5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="deleting" @click="removeBundle">
               <Loader2 v-if="deleting" class="h-4 w-4 animate-spin" />
               {{ deleting ? copy.deleting : copy.confirmDelete }}

@@ -246,6 +246,11 @@ function closeDetail() {
   detailOpen.value = false
 }
 
+function closePurgeConfirm() {
+  if (purging.value) return
+  showPurgeConfirm.value = false
+}
+
 let listRequestId = 0
 
 async function load(targetPage = page.value) {
@@ -509,7 +514,7 @@ onMounted(() => load(1))
 
     <Teleport to="body">
       <div v-if="detailOpen && selected" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-0 md:p-6">
-        <section class="flex h-full max-h-none w-full max-w-[1280px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
+        <section v-modal-dialog="closeDetail" class="flex h-full max-h-none w-full max-w-[1280px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
           <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
             <div class="min-w-0">
               <h2 class="break-words text-xl font-black text-slate-950 md:truncate md:text-2xl">{{ productName(selected) }}</h2>
@@ -621,7 +626,7 @@ onMounted(() => load(1))
     </Teleport>
 
     <div v-if="showPurgeConfirm" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 md:p-6">
-      <div class="w-full max-w-md rounded-2xl bg-white p-4 shadow-2xl md:rounded-3xl md:p-6">
+      <div v-modal-dialog="closePurgeConfirm" class="w-full max-w-md rounded-2xl bg-white p-4 shadow-2xl md:rounded-3xl md:p-6">
         <h2 class="text-xl font-black md:text-2xl">{{ copy.confirmTitle }}</h2>
         <p class="mt-3 text-sm text-slate-600">{{ copy.confirmDescription }}</p>
         <div class="mt-5 rounded-2xl bg-slate-50 p-4">
@@ -629,7 +634,7 @@ onMounted(() => load(1))
           <div class="mt-1 break-all text-xs text-slate-500">{{ bizRef(selected) }}</div>
         </div>
         <div class="mt-6 flex flex-col items-stretch justify-end gap-3 sm:flex-row sm:items-center">
-          <button class="inline-flex h-11 min-w-[96px] items-center justify-center rounded-xl border px-5 text-sm font-bold disabled:opacity-50" type="button" :disabled="Boolean(purging)" @click="showPurgeConfirm = false">{{ copy.cancel }}</button>
+          <button data-dialog-initial-focus class="inline-flex h-11 min-w-[96px] items-center justify-center rounded-xl border px-5 text-sm font-bold disabled:opacity-50" type="button" :disabled="Boolean(purging)" @click="closePurgeConfirm">{{ copy.cancel }}</button>
           <button class="inline-flex h-11 min-w-[112px] items-center justify-center rounded-xl bg-red-600 px-5 text-sm font-bold text-white disabled:opacity-50" type="button" :disabled="Boolean(purging)" @click="purgeSelected">
             {{ purging ? copy.purging : copy.confirmPurge }}
           </button>

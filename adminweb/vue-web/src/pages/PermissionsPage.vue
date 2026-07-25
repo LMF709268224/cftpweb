@@ -195,6 +195,10 @@ function closeActionConfirm() {
   pendingAction.value = null
 }
 
+function closeDetail() {
+  detailOpen.value = false
+}
+
 function isCurrentActionTarget(action: PendingPermissionAction) {
   return candidateUlid.value.trim() === action.candidateUlid && credDefUlid.value === action.credDefUlid
 }
@@ -311,13 +315,13 @@ onMounted(loadDefinitions)
     </div>
 
     <div v-if="detailOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-0 md:p-6">
-      <div class="flex h-full max-h-none w-full max-w-[1180px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
+      <div v-modal-dialog="closeDetail" class="flex h-full max-h-none w-full max-w-[1180px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
         <div class="flex items-center justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6">
           <div class="min-w-0">
             <h2 class="break-words text-xl font-black md:truncate md:text-2xl">{{ detailDialogTitle }}</h2>
             <p class="mt-1 break-all text-sm text-slate-500">{{ definitionName(selectedDefinition) }}</p>
           </div>
-          <button class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="closeLabel" @click="detailOpen = false">
+          <button class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="closeLabel" @click="closeDetail">
             <X class="h-5 w-5" />
           </button>
         </div>
@@ -414,7 +418,7 @@ onMounted(loadDefinitions)
 
     <Teleport to="body">
       <div v-if="pendingAction" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 p-4 md:p-6">
-        <section class="flex max-h-[calc(100vh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl md:rounded-3xl" role="dialog" aria-modal="true" :aria-labelledby="`permission-action-confirm-${pendingAction.key}`">
+        <section v-modal-dialog="closeActionConfirm" class="flex max-h-[calc(100vh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl md:rounded-3xl" role="dialog" aria-modal="true" :aria-labelledby="`permission-action-confirm-${pendingAction.key}`">
           <header class="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-5 md:px-6">
             <div class="flex min-w-0 items-start gap-3">
               <span class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600">
@@ -458,7 +462,7 @@ onMounted(loadDefinitions)
           </div>
 
           <footer class="flex flex-col-reverse gap-3 border-t border-slate-200 px-5 py-4 sm:flex-row sm:justify-end md:px-6">
-            <button class="h-11 rounded-xl border border-slate-300 px-5 text-sm font-black text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40" type="button" :disabled="loading" @click="closeActionConfirm">
+            <button data-dialog-initial-focus class="h-11 rounded-xl border border-slate-300 px-5 text-sm font-black text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40" type="button" :disabled="loading" @click="closeActionConfirm">
               {{ copy.actionConfirm.cancel }}
             </button>
             <button class="inline-flex h-11 items-center justify-center rounded-xl bg-red-600 px-5 text-sm font-black text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="loading" @click="executeAction(pendingAction)">

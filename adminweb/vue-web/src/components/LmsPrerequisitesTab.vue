@@ -280,6 +280,7 @@ onMounted(() => {
   <Teleport to="body">
     <div
       v-if="pendingDeletePrerequisite"
+      v-modal-dialog="closeDeleteConfirm"
       class="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/50 p-4"
       role="dialog"
       aria-modal="true"
@@ -295,7 +296,7 @@ onMounted(() => {
           </div>
         </div>
         <div class="mt-6 flex justify-end gap-3">
-          <button class="h-11 min-w-24 rounded-xl border border-slate-900 px-5 font-bold text-slate-950 disabled:opacity-50" type="button" :disabled="deleting" @click="closeDeleteConfirm">
+          <button data-dialog-initial-focus class="h-11 min-w-24 rounded-xl border border-slate-900 px-5 font-bold text-slate-950 disabled:opacity-50" type="button" :disabled="deleting" @click="closeDeleteConfirm">
             {{ copy.prerequisiteDeleteCancel }}
           </button>
           <button class="inline-flex h-11 min-w-28 items-center justify-center gap-2 rounded-xl bg-red-600 px-5 font-bold text-white disabled:opacity-50" type="button" :disabled="deleting" @click="confirmDeletePrerequisite">

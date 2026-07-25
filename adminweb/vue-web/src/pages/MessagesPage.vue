@@ -698,7 +698,7 @@ onMounted(async () => {
 
     <Teleport to="body">
       <div v-if="messageDetailOpen && selectedMessage" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-0 md:p-6">
-        <section class="flex h-full max-h-none w-full max-w-[1120px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
+        <section v-modal-dialog="closeMessageDetail" class="flex h-full max-h-none w-full max-w-[1120px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
           <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
             <div class="min-w-0">
               <h2 class="break-words text-xl font-black text-slate-950 md:truncate md:text-2xl">{{ copy.sent.detailTitle }}</h2>
@@ -731,7 +731,7 @@ onMounted(async () => {
 
     <Teleport to="body">
       <div v-if="templateDetailOpen && selectedTemplate" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-0 md:p-6">
-        <section class="flex h-full max-h-none w-full max-w-[1120px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
+        <section v-modal-dialog="closeTemplateDetail" class="flex h-full max-h-none w-full max-w-[1120px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
           <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
             <div class="min-w-0">
               <h2 class="break-words text-xl font-black text-slate-950 md:truncate md:text-2xl">{{ copy.templates.detailTitle }}</h2>
@@ -765,7 +765,7 @@ onMounted(async () => {
 
     <Teleport to="body">
       <div v-if="templateEditOpen" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-0 md:p-6">
-        <form class="flex h-full max-h-none w-full max-w-[920px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl" @submit.prevent="saveTemplate">
+        <form v-modal-dialog="closeTemplateEdit" class="flex h-full max-h-none w-full max-w-[920px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl" @submit.prevent="saveTemplate">
           <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
             <div class="min-w-0">
               <h2 class="break-words text-xl font-black text-slate-950 md:truncate md:text-2xl">{{ editingTemplatePath ? copy.templates.editTitle : copy.templates.createTitle }}</h2>
@@ -788,7 +788,7 @@ onMounted(async () => {
             </label>
             <label class="block">
               <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.templates.titleTemplate }}</span>
-              <input ref="templateTitleInputRef" v-model="formTitle" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-4" />
+              <input ref="templateTitleInputRef" v-model="formTitle" data-dialog-initial-focus class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-4" />
             </label>
             <label class="block">
               <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.templates.contentTemplate }}</span>

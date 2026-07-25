@@ -246,6 +246,7 @@ function requestDeleteFile(file: JsonRecord | null = selected.value) {
 }
 
 function closeDeleteConfirm() {
+  if (saving.value) return
   deleteConfirmOpen.value = false
 }
 
@@ -579,7 +580,7 @@ onMounted(load)
       </section>
 
       <section v-if="detailOpen" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-0 md:p-6">
-        <div class="flex h-full max-h-none w-full max-w-[1100px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
+        <div v-modal-dialog="closeFileDetail" class="flex h-full max-h-none w-full max-w-[1100px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
         <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-5">
           <div class="min-w-0">
             <h2 class="break-words text-xl font-black">{{ mode === "create" ? copy.createTitle : mode === "edit" ? copy.editTitle : copy.detailTitle }}</h2>
@@ -732,7 +733,7 @@ onMounted(load)
 
       <Teleport to="body">
         <div v-if="deleteConfirmOpen && selected" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 md:p-6">
-          <section class="w-full max-w-[460px] rounded-2xl bg-white p-4 shadow-2xl md:rounded-3xl md:p-6">
+          <section v-modal-dialog="closeDeleteConfirm" class="w-full max-w-[460px] rounded-2xl bg-white p-4 shadow-2xl md:rounded-3xl md:p-6">
             <h2 class="text-xl font-black text-slate-950 md:text-2xl">{{ copy.deleteConfirmTitle }}</h2>
             <p class="mt-3 text-sm font-semibold text-slate-500">{{ copy.deleteConfirmDescription }}</p>
             <div class="mt-5 rounded-2xl bg-slate-50 p-4">
@@ -740,7 +741,7 @@ onMounted(load)
               <div class="mt-1 break-all text-sm font-semibold text-slate-500">{{ fileId(selected) }}</div>
             </div>
             <div class="mt-6 flex flex-col justify-end gap-3 sm:flex-row">
-              <button class="rounded-xl border border-slate-900 px-5 py-3 font-bold text-slate-950 disabled:opacity-50" type="button" :disabled="saving" @click="closeDeleteConfirm">{{ copy.cancel }}</button>
+              <button data-dialog-initial-focus class="rounded-xl border border-slate-900 px-5 py-3 font-bold text-slate-950 disabled:opacity-50" type="button" :disabled="saving" @click="closeDeleteConfirm">{{ copy.cancel }}</button>
               <button class="rounded-xl bg-red-600 px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="deleteFile">
                 {{ saving ? copy.deleting : copy.confirmDeleteAction }}
               </button>
