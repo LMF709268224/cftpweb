@@ -176,6 +176,14 @@ function pipelineStatusLabel(value: unknown) {
   return labels[normalized] || raw || "-"
 }
 
+function pipelineStatusBadgeClass(value: unknown) {
+  const normalized = String(value || "").trim().toUpperCase().replace(/^PIPELINE_STATUS_/, "")
+  if (normalized === "DRAFT") return "border-amber-200 bg-amber-50 text-amber-700"
+  if (normalized === "ACTIVE" || normalized === "PUBLISHED") return "border-emerald-200 bg-emerald-50 text-emerald-700"
+  if (normalized === "DEPRECATED" || normalized === "INACTIVE" || normalized === "ARCHIVED") return "border-slate-300 bg-slate-100 text-slate-700"
+  return badgeClass(value)
+}
+
 function itemTitle(item: JsonRecord | null | undefined, fallback: string) {
   if (!item) return fallback
   return String(pickFirst(item, ["name", "title", "unit_name", "stage_name", "name_hint", "qual_name", "qual_ulid", "unit_ulid", "stage_ulid"]) || fallback)
@@ -1045,7 +1053,7 @@ onMounted(() => {
           </div>
           <span class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:block md:self-center md:justify-self-center md:rounded-none md:bg-transparent md:p-0">
             <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.status }}</span>
-            <span class="inline-flex whitespace-nowrap rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(pipelineStatus(pipeline))">{{ pipelineStatusLabel(pipelineStatus(pipeline)) }}</span>
+            <span class="inline-flex whitespace-nowrap rounded-full border px-3 py-1 text-xs font-black" :class="pipelineStatusBadgeClass(pipelineStatus(pipeline))">{{ pipelineStatusLabel(pipelineStatus(pipeline)) }}</span>
           </span>
           <span class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:block md:self-center md:rounded-none md:bg-transparent md:p-0 md:text-center">
             <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.version }}</span>
@@ -1094,12 +1102,12 @@ onMounted(() => {
             <p class="mt-1 text-sm text-slate-500">{{ copy.basicDescription }}</p>
           </div>
           <div v-if="!creating" class="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap">
-            <button class="inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2 font-bold" type="button" @click="clonePipeline">
+            <button class="inline-flex items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 font-bold text-blue-700 transition hover:bg-blue-100" type="button" @click="clonePipeline">
               <Copy class="h-4 w-4" />
               {{ copy.cloneVersion }}
             </button>
-            <button v-if="canPublishSelectedPipeline" class="rounded-xl border px-4 py-2 font-bold" type="button" @click="publish">{{ copy.publish }}</button>
-            <button v-if="canDeprecateSelectedPipeline" class="rounded-xl border px-4 py-2 font-bold disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deprecating" @click="deprecate">{{ copy.deprecate }}</button>
+            <button v-if="canPublishSelectedPipeline" class="rounded-xl border border-emerald-600 bg-emerald-600 px-4 py-2 font-bold text-white shadow-sm transition hover:bg-emerald-700" type="button" @click="publish">{{ copy.publish }}</button>
+            <button v-if="canDeprecateSelectedPipeline" class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 font-bold text-amber-700 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deprecating" @click="deprecate">{{ copy.deprecate }}</button>
             <button v-if="canDeleteSelectedPipeline" class="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2 font-bold text-white" type="button" @click="removePipeline">
               <Trash2 class="h-4 w-4" />
               {{ copy.delete }}
@@ -1173,7 +1181,7 @@ onMounted(() => {
             </div>
             <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
               <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.status }}</div>
-              <div class="mt-2"><span class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(pipelineStatus(selected || {}))">{{ pipelineStatusLabel(pipelineStatus(selected || {})) }}</span></div>
+              <div class="mt-2"><span class="rounded-full border px-3 py-1 text-xs font-black" :class="pipelineStatusBadgeClass(pipelineStatus(selected || {}))">{{ pipelineStatusLabel(pipelineStatus(selected || {})) }}</span></div>
             </div>
             <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
               <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.version }}</div>

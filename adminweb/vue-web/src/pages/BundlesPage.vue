@@ -1760,16 +1760,16 @@ onMounted(load)
                   <h3 class="font-black">{{ copy.actionsTitle }}</h3>
                   <p class="mt-1 text-sm text-slate-500">{{ copy.actionsDescription }}</p>
                   <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                    <button v-if="canCloneSelectedBundle" class="inline-flex h-11 items-center justify-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="statusActionBusy" @click="duplicateBundle">
+                    <button v-if="canCloneSelectedBundle" class="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 text-sm font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="statusActionBusy" @click="duplicateBundle">
                       <Loader2 v-if="duplicating" class="h-4 w-4 animate-spin" />
                       <Copy v-else class="h-4 w-4" />
                       {{ duplicating ? copy.duplicating : copy.duplicateDraft }}
                     </button>
-                    <button v-if="canPublishSelectedBundle" class="inline-flex h-11 items-center justify-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="statusActionBusy" @click="publish">
+                    <button v-if="canPublishSelectedBundle" class="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-emerald-600 bg-emerald-600 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="statusActionBusy" @click="publish">
                       <Loader2 v-if="publishing" class="h-4 w-4 animate-spin" />
                       {{ publishing ? copy.publishing : copy.publish }}
                     </button>
-                    <button v-if="canDeprecateSelectedBundle" class="inline-flex h-11 items-center justify-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="statusActionBusy" @click="deprecate">
+                    <button v-if="canDeprecateSelectedBundle" class="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 text-sm font-bold text-amber-700 shadow-sm transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="statusActionBusy" @click="deprecate">
                       <Loader2 v-if="deprecating" class="h-4 w-4 animate-spin" />
                       {{ deprecating ? copy.deprecating : copy.deprecate }}
                     </button>
