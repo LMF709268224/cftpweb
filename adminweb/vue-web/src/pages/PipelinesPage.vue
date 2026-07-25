@@ -1036,12 +1036,7 @@ onMounted(() => {
         <div
           v-for="pipeline in pipelines"
           :key="pipelineUlid(pipeline)"
-          class="flex w-full cursor-pointer flex-col gap-3 border-b border-slate-100 px-4 py-4 text-left transition last:border-b-0 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 md:grid md:grid-cols-[minmax(0,1fr)_150px_72px_170px_112px] md:gap-4 md:px-5"
-          role="button"
-          tabindex="0"
-          @click="selectPipeline(pipeline)"
-          @keydown.enter.prevent="selectPipeline(pipeline)"
-          @keydown.space.prevent="selectPipeline(pipeline)"
+          class="flex w-full flex-col gap-3 border-b border-slate-100 px-4 py-4 text-left transition last:border-b-0 hover:bg-slate-50 md:grid md:grid-cols-[minmax(0,1fr)_150px_72px_170px_112px] md:gap-4 md:px-5"
         >
           <div class="min-w-0">
             <div class="break-words text-lg font-black md:truncate">{{ pipelineName(pipeline) }}</div>

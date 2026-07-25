@@ -260,13 +260,8 @@ onMounted(load)
         <div
           v-for="definition in definitions"
           :key="definitionUlid(definition)"
-          class="flex w-full cursor-pointer flex-col gap-3 border-b border-slate-100 px-4 py-4 text-left transition last:border-b-0 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 md:grid md:grid-cols-[minmax(0,1fr)_180px_112px] md:gap-4 md:px-5"
+          class="flex w-full flex-col gap-3 border-b border-slate-100 px-4 py-4 text-left transition last:border-b-0 hover:bg-slate-50 md:grid md:grid-cols-[minmax(0,1fr)_180px_112px] md:gap-4 md:px-5"
           :class="mode === 'detail' && definitionUlid(selected) === definitionUlid(definition) ? 'bg-sky-50' : ''"
-          role="button"
-          tabindex="0"
-          @click="selectDefinition(definition)"
-          @keydown.enter.prevent="selectDefinition(definition)"
-          @keydown.space.prevent="selectDefinition(definition)"
         >
           <div class="min-w-0">
             <div class="break-words text-lg font-black md:truncate">{{ definitionName(definition) }}</div>

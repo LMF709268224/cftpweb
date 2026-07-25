@@ -423,13 +423,8 @@ onMounted(() => load(1))
           <div
             v-for="app in applications"
             :key="appUlid(app)"
-            class="flex w-full cursor-pointer flex-col gap-3 border-b border-slate-100 px-4 py-4 text-left transition last:border-b-0 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 md:grid md:grid-cols-[minmax(0,1fr)_160px_170px_112px] md:gap-4 md:px-5"
+            class="flex w-full flex-col gap-3 border-b border-slate-100 px-4 py-4 text-left transition last:border-b-0 hover:bg-slate-50 md:grid md:grid-cols-[minmax(0,1fr)_160px_170px_112px] md:gap-4 md:px-5"
             :class="appUlid(selected) === appUlid(app) ? 'bg-sky-50' : ''"
-            role="button"
-            tabindex="0"
-            @click="selectApplication(app)"
-            @keydown.enter.prevent="selectApplication(app)"
-            @keydown.space.prevent="selectApplication(app)"
           >
             <div class="min-w-0">
               <div class="break-words text-lg font-black text-slate-950 md:truncate">{{ credential(app) }}</div>

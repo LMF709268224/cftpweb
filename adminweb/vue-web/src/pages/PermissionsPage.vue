@@ -296,16 +296,24 @@ onMounted(loadDefinitions)
           <div
             v-for="definition in definitions"
             :key="definitionUlid(definition)"
-            class="grid cursor-pointer gap-4 px-4 py-4 hover:bg-sky-50 md:grid-cols-[minmax(0,1fr)_120px] md:items-center md:px-5"
+            class="grid grid-cols-[20px_minmax(0,1fr)] gap-4 px-4 py-4 md:grid-cols-[20px_minmax(0,1fr)_120px] md:items-center md:px-5"
             :class="definitionUlid(selectedDefinition) === definitionUlid(definition) ? 'bg-sky-50' : ''"
-            @click="selectDefinition(definition)"
           >
+            <input
+              class="h-4 w-4 cursor-pointer accent-blue-700 md:self-center"
+              type="radio"
+              name="permission-credential-definition"
+              :checked="definitionUlid(selectedDefinition) === definitionUlid(definition)"
+              :aria-label="`${copy.selectDefinition}: ${definitionName(definition)}`"
+              :title="`${copy.selectDefinition}: ${definitionName(definition)}`"
+              @change="selectDefinition(definition)"
+            />
             <div class="min-w-0">
               <div class="break-words font-black">{{ definitionName(definition) }}</div>
               <div class="mt-1 text-sm text-slate-500">{{ definition.category || "-" }}</div>
               <div class="mt-2 break-all text-xs font-semibold text-slate-500">ID: {{ definitionUlid(definition) || "-" }}</div>
             </div>
-            <button class="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 hover:text-blue-900 md:justify-self-end md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click.stop="openDetail(definition)">
+            <button class="col-start-2 inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 hover:text-blue-900 md:col-start-auto md:justify-self-end md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click="openDetail(definition)">
               {{ viewDetailLabel }}
             </button>
           </div>

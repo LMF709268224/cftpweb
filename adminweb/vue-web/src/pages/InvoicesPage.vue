@@ -181,13 +181,8 @@ onMounted(() => load(1))
         <div
           v-for="invoice in invoices"
           :key="invoiceId(invoice)"
-          class="flex cursor-pointer flex-col gap-3 px-4 py-4 transition hover:bg-sky-50 md:grid md:grid-cols-[minmax(0,1fr)_120px_240px_180px_112px] md:items-center md:gap-5 md:px-5"
+          class="flex flex-col gap-3 px-4 py-4 transition hover:bg-sky-50 md:grid md:grid-cols-[minmax(0,1fr)_120px_240px_180px_112px] md:items-center md:gap-5 md:px-5"
           :class="invoiceId(selected) === invoiceId(invoice) ? 'bg-sky-50' : ''"
-          role="button"
-          tabindex="0"
-          @click="openInvoice(invoice)"
-          @keydown.enter.prevent="openInvoice(invoice)"
-          @keydown.space.prevent="openInvoice(invoice)"
         >
           <div class="min-w-0">
             <div class="break-all font-black text-slate-950 md:truncate">{{ invoiceId(invoice) || "-" }}</div>

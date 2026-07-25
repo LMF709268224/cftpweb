@@ -458,13 +458,8 @@ onMounted(() => load(1))
         <div
           v-for="order in orders"
           :key="orderUlid(order)"
-          class="flex cursor-pointer flex-col gap-3 px-4 py-4 transition hover:bg-sky-50 md:grid md:grid-cols-[minmax(0,1fr)_160px_140px_150px_170px_112px] md:items-center md:gap-4 md:px-5"
+          class="flex flex-col gap-3 px-4 py-4 transition hover:bg-sky-50 md:grid md:grid-cols-[minmax(0,1fr)_160px_140px_150px_170px_112px] md:items-center md:gap-4 md:px-5"
           :class="orderUlid(selected) === orderUlid(order) ? 'bg-sky-50' : ''"
-          role="button"
-          tabindex="0"
-          @click="selectOrder(order)"
-          @keydown.enter.prevent="selectOrder(order)"
-          @keydown.space.prevent="selectOrder(order)"
         >
           <div class="min-w-0">
             <div class="break-words font-black text-slate-950 md:truncate">{{ productName(order) }}</div>

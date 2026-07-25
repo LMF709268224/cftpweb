@@ -743,13 +743,8 @@ onMounted(async () => {
             <div
               v-for="mail in mails"
               :key="mailId(mail)"
-              class="flex cursor-pointer flex-col gap-3 px-4 py-4 transition hover:bg-sky-50 md:grid md:grid-cols-[minmax(0,1fr)_220px_150px_180px_112px] md:items-center md:gap-5 md:px-5"
+              class="flex flex-col gap-3 px-4 py-4 transition hover:bg-sky-50 md:grid md:grid-cols-[minmax(0,1fr)_220px_150px_180px_112px] md:items-center md:gap-5 md:px-5"
               :class="mailId(selectedMail) === mailId(mail) ? 'bg-sky-50' : ''"
-              role="button"
-              tabindex="0"
-              @click="openMail(mail)"
-              @keydown.enter.prevent="openMail(mail)"
-              @keydown.space.prevent="openMail(mail)"
             >
               <div class="min-w-0">
                 <div class="break-words font-black text-slate-950 md:truncate">{{ pickFirst(mail, ["subject", "template_path", "mail_id"]) || copy.defaults.mail }}</div>

@@ -597,13 +597,8 @@ onMounted(async () => {
             <div
               v-for="message in messages"
               :key="messageId(message)"
-              class="flex cursor-pointer flex-col gap-3 px-4 py-4 transition hover:bg-sky-50 md:grid md:grid-cols-[minmax(0,1fr)_180px_112px] md:items-center md:gap-5 md:px-5"
+              class="flex flex-col gap-3 px-4 py-4 transition hover:bg-sky-50 md:grid md:grid-cols-[minmax(0,1fr)_180px_112px] md:items-center md:gap-5 md:px-5"
               :class="messageId(selectedMessage) === messageId(message) ? 'bg-sky-50' : ''"
-              role="button"
-              tabindex="0"
-              @click="openMessage(message)"
-              @keydown.enter.prevent="openMessage(message)"
-              @keydown.space.prevent="openMessage(message)"
             >
               <div class="min-w-0">
                 <div class="break-words font-black text-slate-950 md:truncate">{{ pickFirst(message, ["title", "subject", "template_path", "message_id"]) || copy.defaults.message }}</div>

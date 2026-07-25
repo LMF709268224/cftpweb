@@ -3079,12 +3079,8 @@ onMounted(() => {
         <div
           v-for="course in courses"
           :key="courseId(course)"
-          class="block w-full cursor-pointer border-b border-slate-100 px-4 py-4 text-left transition last:border-b-0 hover:bg-slate-50 md:px-5 md:py-3"
+          class="block w-full border-b border-slate-100 px-4 py-4 text-left transition last:border-b-0 hover:bg-slate-50 md:px-5 md:py-3"
           :class="courseId(course) === selectedCourseId ? 'bg-sky-50/70' : ''"
-          role="button"
-          tabindex="0"
-          @click="selectCourse(course)"
-          @keyup.enter="selectCourse(course)"
         >
           <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_120px_260px_120px_180px] lg:items-center lg:gap-6">
             <div class="min-w-0">

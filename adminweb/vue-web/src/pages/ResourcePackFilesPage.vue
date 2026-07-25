@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Loader2, Plus, RefreshCw, Save, X, UploadCloud } from "lucide-vue-next"
-import { computed, onMounted, ref } from "vue"
+import { computed, onMounted, onUnmounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
@@ -15,7 +15,8 @@ const packs = ref<JsonRecord[]>([])
 const files = ref<JsonRecord[]>([])
 const selected = ref<JsonRecord | null>(null)
 const total = ref(0)
-const loading = ref(false)
+const packsLoading = ref(false)
+const filesLoading = ref(false)
 const detailLoading = ref(false)
 const saving = ref(false)
 const detailOpen = ref(false)
@@ -26,9 +27,13 @@ const nextPageToken = ref("")
 const previousTokens = ref<string[]>([])
 const currentPage = ref(1)
 const packFilter = ref("")
+let unmounted = false
+let listRequestId = 0
+let listRequestController: AbortController | null = null
 let detailRequestId = 0
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.resourcePackFilesAdmin)
+const loading = computed(() => packsLoading.value || filesLoading.value)
 
 const uploadingFile = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -179,35 +184,79 @@ async function loadPacks() {
   packs.value = await fetchAllCursorRecords("/api/lms/resource-packs", "packs")
 }
 
+function isAbortError(err: unknown) {
+  return Boolean(err && typeof err === "object" && "name" in err && err.name === "AbortError")
+}
+
+function cancelListRequest() {
+  listRequestId += 1
+  listRequestController?.abort()
+  listRequestController = null
+  filesLoading.value = false
+}
+
 async function loadFiles() {
+  if (unmounted) return
+  const requestId = ++listRequestId
+  const requestedPackFilter = packFilter.value
+  const requestedPageToken = pageToken.value
+  listRequestController?.abort()
+  const controller = new AbortController()
+  listRequestController = controller
+  filesLoading.value = true
+
   const url = new URL("/api/lms/resource-pack-files", window.location.origin)
   url.searchParams.set("page_size", String(pageSize))
-  if (packFilter.value) url.searchParams.set("pack_id", packFilter.value)
-  if (pageToken.value) url.searchParams.set(packFilter.value ? "cursor" : "page_token", pageToken.value)
+  if (requestedPackFilter) url.searchParams.set("pack_id", requestedPackFilter)
+  if (requestedPageToken) url.searchParams.set(requestedPackFilter ? "cursor" : "page_token", requestedPageToken)
 
-  const data = await apiClient<JsonRecord>(`${url.pathname}${url.search}`)
-  files.value = asRecordList(data.files || data.items)
-  total.value = packFilter.value ? Number(data.total) || 0 : 0
-  nextPageToken.value = String(packFilter.value ? data.next_cursor || "" : data.next_page_token || "")
-  const nextSelected = files.value.find((file) => fileId(file) === form.value.file_id) || files.value[0] || null
-  selectFile(nextSelected)
+  try {
+    const data = await apiClient<JsonRecord>(`${url.pathname}${url.search}`, { signal: controller.signal })
+    if (requestId !== listRequestId || controller.signal.aborted) return
+
+    files.value = asRecordList(data.files || data.items)
+    total.value = requestedPackFilter ? Number(data.total) || 0 : 0
+    nextPageToken.value = String(requestedPackFilter ? data.next_cursor || "" : data.next_page_token || "")
+    const nextSelected = files.value.find((file) => fileId(file) === form.value.file_id) || files.value[0] || null
+    selectFile(nextSelected)
+  } catch (err) {
+    if (isAbortError(err) || requestId !== listRequestId) return
+    console.error(err)
+    files.value = []
+    total.value = 0
+    nextPageToken.value = ""
+    if (!detailOpen.value) {
+      selected.value = null
+      fillForm(null)
+    }
+    toast.error(apiErrorMessage(err, copy.value.toasts.loadFailed))
+  } finally {
+    if (requestId === listRequestId) {
+      filesLoading.value = false
+      if (listRequestController === controller) listRequestController = null
+    }
+  }
 }
 
 async function load() {
-  loading.value = true
+  if (loading.value) return
+  packsLoading.value = true
   try {
     await loadPacks()
-    await loadFiles()
+    if (unmounted) return
   } catch (err) {
     console.error(err)
+    cancelListRequest()
     packs.value = []
     files.value = []
     selected.value = null
     fillForm(null)
     toast.error(copy.value.toasts.loadFailed)
+    return
   } finally {
-    loading.value = false
+    packsLoading.value = false
   }
+  await loadFiles()
 }
 
 function selectFile(file: JsonRecord | null, openDetail = false) {
@@ -467,14 +516,14 @@ async function handleThumbnailFileUpload(event: Event) {
 }
 
 function previousPage() {
-  if (!canPrevious.value) return
+  if (loading.value || !canPrevious.value) return
   pageToken.value = previousTokens.value.pop() || ""
   currentPage.value = Math.max(1, currentPage.value - 1)
   void loadFiles()
 }
 
 function nextPage() {
-  if (!canNext.value) return
+  if (loading.value || !canNext.value) return
   previousTokens.value.push(pageToken.value)
   pageToken.value = nextPageToken.value
   currentPage.value += 1
@@ -482,6 +531,10 @@ function nextPage() {
 }
 
 onMounted(load)
+onUnmounted(() => {
+  unmounted = true
+  cancelListRequest()
+})
 </script>
 
 <template>
@@ -510,7 +563,7 @@ onMounted(load)
           <h2 class="text-lg font-black">{{ copy.filterTitle }}</h2>
           <p class="mt-1 text-sm text-slate-500">{{ copy.filterDescription }}</p>
         </div>
-        <select v-model="packFilter" class="h-10 w-full min-w-0 rounded-xl border border-slate-200 px-3 text-sm font-bold sm:w-auto sm:min-w-[360px]" @change="changePackFilter">
+        <select v-model="packFilter" class="h-10 w-full min-w-0 rounded-xl border border-slate-200 px-3 text-sm font-bold disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400 sm:w-auto sm:min-w-[360px]" :disabled="loading" @change="changePackFilter">
           <option value="">{{ copy.allPacks }}</option>
           <option v-for="pack in packs" :key="packId(pack)" :value="packId(pack)">{{ copy.ownerText(packTitle(pack), packId(pack)) }}</option>
         </select>

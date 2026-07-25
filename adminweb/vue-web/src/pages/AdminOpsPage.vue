@@ -1678,20 +1678,25 @@ void loadList()
           <span>{{ copy.record }}</span>
           <span class="text-right">{{ copy.operation }}</span>
         </div>
-        <button
+        <div
           v-for="item in items"
           :key="getItemID(item) || stringify(item)"
           class="grid w-full gap-3 border-b border-slate-100 p-4 text-left transition last:border-b-0 hover:bg-slate-50 md:grid-cols-[minmax(0,1fr)_112px] md:items-center md:gap-4 md:p-5"
           :class="getItemID(item) === getItemID(selected) ? 'bg-sky-50' : ''"
-          @click="openItem(item)"
         >
           <span class="min-w-0">
             <span class="block break-words font-black text-slate-950">{{ getTitle(item) }}</span>
             <span class="mt-1 block break-all text-xs font-bold text-blue-700">{{ getItemID(item) || "-" }}</span>
             <span class="mt-1 block break-words text-xs font-semibold text-slate-500">{{ getSubtitle(item) || "-" }}</span>
           </span>
-          <span class="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 md:justify-self-end md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-right">{{ copy.viewDetail }}</span>
-        </button>
+          <button
+            class="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 md:justify-self-end md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-right"
+            type="button"
+            @click="openItem(item)"
+          >
+            {{ copy.viewDetail }}
+          </button>
+        </div>
       </div>
 
       <div class="flex items-center justify-end gap-3 border-t border-slate-200 px-4 py-4 md:px-5">

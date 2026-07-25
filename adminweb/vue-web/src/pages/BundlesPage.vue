@@ -1290,13 +1290,8 @@ onMounted(load)
           <div
             v-for="bundle in bundles"
             :key="bundleUlid(bundle)"
-            class="flex w-full cursor-pointer flex-col gap-3 border-b border-slate-100 px-4 py-4 text-left transition last:border-b-0 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 md:grid md:grid-cols-[minmax(0,1fr)_160px_110px_170px_112px] md:gap-4 md:px-5"
+            class="flex w-full flex-col gap-3 border-b border-slate-100 px-4 py-4 text-left transition last:border-b-0 hover:bg-slate-50 md:grid md:grid-cols-[minmax(0,1fr)_160px_110px_170px_112px] md:gap-4 md:px-5"
             :class="mode === 'detail' && selectedId === bundleUlid(bundle) ? 'bg-sky-50' : ''"
-            role="button"
-            tabindex="0"
-            @click="selectBundle(bundle)"
-            @keydown.enter.prevent="selectBundle(bundle)"
-            @keydown.space.prevent="selectBundle(bundle)"
           >
             <div class="min-w-0">
               <div class="break-words text-lg font-black md:truncate">{{ bundleName(bundle) }}</div>
