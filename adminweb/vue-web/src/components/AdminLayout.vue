@@ -234,7 +234,7 @@ onUnmounted(() => {
               v-for="item in group.items"
               :key="item.path"
               :to="item.path"
-              class="relative flex h-10 items-center gap-3 rounded-xl px-3 text-[15px] font-semibold text-slate-700 transition hover:bg-slate-100"
+              class="relative flex h-10 items-center gap-3 rounded-xl px-3 text-[14px] font-semibold text-slate-700 transition hover:bg-slate-100"
               :class="isActivePath(item.path) ? 'bg-blue-200 text-[#0b4ea2] shadow-none hover:bg-blue-200 md:!bg-[#0b4ea2] md:!text-white md:shadow-lg md:shadow-sky-200 md:hover:!bg-[#0b4ea2]' : ''"
               @click="mobileNavOpen = false"
             >

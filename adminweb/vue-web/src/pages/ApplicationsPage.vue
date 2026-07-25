@@ -292,7 +292,7 @@ nextCursor.value = String(data.next_cursor || "")
     selected.value = applications.value[0] || null
     activeTab.value = "overview"
     page.value = targetPage
-    void loadApplicationDetail(selected.value)
+    if (detailOpen.value) void loadApplicationDetail(selected.value)
   } catch (err) {
     if (requestId !== listRequestId) return
     console.error(err)

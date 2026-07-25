@@ -179,8 +179,10 @@ function selectPack(pack: JsonRecord | null, openDetail = false) {
   selected.value = pack
   mode.value = openDetail ? "detail" : pack ? "edit" : "create"
   fillForm(pack)
-  void loadPackDetail(pack)
-  if (openDetail) detailOpen.value = true
+  if (openDetail) {
+    detailOpen.value = true
+    void loadPackDetail(pack)
+  }
 }
 
 watch(() => mode.value, (m) => {
@@ -218,6 +220,7 @@ function openPackEditor(pack: JsonRecord) {
   selectPack(pack)
   mode.value = "edit"
   detailOpen.value = true
+  void loadPackDetail(pack)
 }
 
 function closePackDetail() {

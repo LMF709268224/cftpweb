@@ -214,8 +214,10 @@ function selectFile(file: JsonRecord | null, openDetail = false) {
   selected.value = file
   mode.value = openDetail ? "detail" : file ? "edit" : "create"
   fillForm(file)
-  void loadFileDetail(file)
-  if (openDetail) detailOpen.value = true
+  if (openDetail) {
+    detailOpen.value = true
+    void loadFileDetail(file)
+  }
 }
 
 function openFileDetail(file: JsonRecord) {
@@ -226,6 +228,7 @@ function openFileEditor(file: JsonRecord) {
   selectFile(file)
   mode.value = "edit"
   detailOpen.value = true
+  void loadFileDetail(file)
 }
 
 function closeFileDetail() {
