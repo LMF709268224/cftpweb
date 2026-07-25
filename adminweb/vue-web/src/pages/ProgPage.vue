@@ -224,6 +224,35 @@ function isCertificateTaskPipelineStatus(value: unknown) {
   return ["3", "4", "COMPLETED", "ISSUING_CERT"].includes(normalizedPipelineStatus(value))
 }
 
+function statusBadgeClass(value: unknown, scope: "pipeline" | "stage" | "unit" = "pipeline") {
+  const normalized = scope === "pipeline"
+    ? normalizedPipelineStatus(value)
+    : String(value ?? "").trim().toUpperCase()
+
+  if (scope === "pipeline") {
+    if (["1", "RUNNING"].includes(normalized)) return "border-blue-200 bg-blue-50 text-blue-700"
+    if (["2", "WAIT_FINAL_ELIG"].includes(normalized)) return "border-amber-200 bg-amber-50 text-amber-700"
+    if (["3", "COMPLETED"].includes(normalized)) return "border-emerald-200 bg-emerald-50 text-emerald-700"
+    if (["4", "ISSUING_CERT"].includes(normalized)) return "border-cyan-200 bg-cyan-50 text-cyan-700"
+    if (["5", "CANCELLED"].includes(normalized)) return "border-red-200 bg-red-50 text-red-700"
+  }
+  if (scope === "stage") {
+    if (normalized === "1") return "border-amber-200 bg-amber-50 text-amber-700"
+    if (normalized === "2") return "border-blue-200 bg-blue-50 text-blue-700"
+    if (normalized === "3") return "border-emerald-200 bg-emerald-50 text-emerald-700"
+    if (normalized === "4") return "border-red-200 bg-red-50 text-red-700"
+  }
+  if (scope === "unit") {
+    if (normalized === "1") return "border-slate-200 bg-slate-50 text-slate-600"
+    if (normalized === "2") return "border-amber-200 bg-amber-50 text-amber-700"
+    if (normalized === "3") return "border-blue-200 bg-blue-50 text-blue-700"
+    if (normalized === "4") return "border-cyan-200 bg-cyan-50 text-cyan-700"
+    if (normalized === "5") return "border-red-200 bg-red-50 text-red-700"
+    if (normalized === "6") return "border-emerald-200 bg-emerald-50 text-emerald-700"
+  }
+  return badgeClass(value)
+}
+
 function statusLabel(value: unknown, scope: "pipeline" | "stage" | "unit" = "pipeline") {
   const normalized = scope === "pipeline" ? normalizedPipelineStatus(value) : String(value ?? "")
   if (scope === "pipeline") {
@@ -874,7 +903,7 @@ onMounted(async () => {
               </div>
               <span class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:block md:self-center md:justify-self-center md:rounded-none md:bg-transparent md:p-0">
                 <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.status }}</span>
-                <span class="inline-flex whitespace-nowrap rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(statusLabel(pipeline.status))">{{ statusLabel(pipeline.status) }}</span>
+                <span class="inline-flex whitespace-nowrap rounded-full border px-3 py-1 text-xs font-black" :class="statusBadgeClass(pipeline.status)">{{ statusLabel(pipeline.status) }}</span>
               </span>
               <span class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:block md:self-center md:justify-self-end md:rounded-none md:bg-transparent md:p-0">
                 <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.startedAt }}</span>
@@ -910,7 +939,7 @@ onMounted(async () => {
             <div class="min-w-0">
               <h2 class="break-words text-xl font-black md:text-2xl">{{ pipelineDisplayName(selectedSummary) }}</h2>
             </div>
-            <span class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(statusLabel(selectedStatus))">
+            <span class="rounded-full border px-3 py-1 text-xs font-black" :class="statusBadgeClass(selectedStatus)">
               {{ statusLabel(selectedStatus) }}
             </span>
           </div>
@@ -1020,7 +1049,7 @@ onMounted(async () => {
                     <div class="font-black">{{ stageName(stage) }}</div>
                     <div class="mt-1 text-sm text-slate-500">{{ copy.courseUnitCount(courseUnits(stage).length) }}</div>
                     <div class="mt-2 break-all text-xs text-slate-500">ID: {{ stageUlid(stage) || "-" }}</div>
-                    <span class="mt-3 inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(statusLabel(stageStatus(stage), 'stage'))">
+                    <span class="mt-3 inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="statusBadgeClass(stageStatus(stage), 'stage')">
                       {{ statusLabel(stageStatus(stage), "stage") }}
                     </span>
                   </button>
@@ -1056,7 +1085,7 @@ onMounted(async () => {
                     <div class="font-black">{{ item.unit.course_unit_cc_ulid || item.unit.course_unit_ulid || copy.unitFallback(item.unitIndex + 1) }}</div>
                     <div class="mt-1 text-sm text-slate-500">{{ copy.parentStagePrefix }}{{ stageName(item.stage) }}</div>
                     <div class="mt-2 break-all text-xs text-slate-500">ID: {{ courseUnitUlid(item.unit) || "-" }}</div>
-                    <span class="mt-3 inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(statusLabel(courseUnitStatus(item.unit), 'unit'))">
+                    <span class="mt-3 inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="statusBadgeClass(courseUnitStatus(item.unit), 'unit')">
                       {{ statusLabel(courseUnitStatus(item.unit), "unit") }}
                     </span>
                   </button>

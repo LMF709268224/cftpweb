@@ -336,13 +336,8 @@ onMounted(() => load(1))
         <div
           v-for="message in messages"
           :key="msgKey(message)"
-          class="flex cursor-pointer flex-col gap-3 px-4 py-4 transition hover:bg-sky-50 md:grid md:grid-cols-[minmax(0,1fr)_180px_180px_112px] md:items-center md:gap-5 md:px-5"
+          class="flex flex-col gap-3 px-4 py-4 transition hover:bg-sky-50 md:grid md:grid-cols-[minmax(0,1fr)_180px_180px_112px] md:items-center md:gap-5 md:px-5"
           :class="msgKey(selected || {}) === msgKey(message) ? 'bg-sky-50' : ''"
-          role="button"
-          tabindex="0"
-          @click="loadDetail(message)"
-          @keydown.enter.prevent="loadDetail(message)"
-          @keydown.space.prevent="loadDetail(message)"
         >
           <div class="min-w-0">
             <div class="break-words text-base font-black md:truncate">{{ messageTitle(message) }}</div>

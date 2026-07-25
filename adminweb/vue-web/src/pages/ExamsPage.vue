@@ -122,6 +122,15 @@ function examStatusLabel(value: unknown) {
   return status || "-"
 }
 
+function examStatusBadgeClass(value: unknown) {
+  const status = normalizedStatus(value)
+  if (["OPEN", "CREATED", "EXAM_STATUS_OPEN"].includes(status)) return "border-blue-200 bg-blue-50 text-blue-700"
+  if (["SCHEDULED", "EXAM_STATUS_SCHEDULED"].includes(status)) return "border-cyan-200 bg-cyan-50 text-cyan-700"
+  if (["DONE", "COMPLETED", "EXAM_STATUS_DONE", "EXAM_STATUS_COMPLETED"].includes(status)) return "border-emerald-200 bg-emerald-50 text-emerald-700"
+  if (["CANCELLED", "CANCELED", "EXAM_STATUS_CANCELLED", "EXAM_STATUS_CANCELED"].includes(status)) return "border-red-200 bg-red-50 text-red-700"
+  return badgeClass(value)
+}
+
 function resultStatusLabel(value: unknown, passed?: unknown) {
   const status = normalizedResultStatus(value)
   if (status === "NONE") return copy.value.statusOptions.none
@@ -525,7 +534,7 @@ onMounted(() => loadExams(1))
               </div>
               <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
                 <span class="text-xs font-black text-slate-400">{{ copy.columns.status }}</span>
-                <span class="whitespace-nowrap rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(exam.exam_status)">
+                <span class="whitespace-nowrap rounded-full border px-3 py-1 text-xs font-black" :class="examStatusBadgeClass(exam.exam_status)">
                   {{ examStatusLabel(exam.exam_status) }}
                 </span>
               </div>
@@ -566,7 +575,7 @@ onMounted(() => loadExams(1))
                 </td>
                 <td class="whitespace-nowrap px-5 py-4 font-semibold text-slate-700">{{ formatDate(String(exam.appointment_start_time || "")) || "-" }}</td>
                 <td class="px-5 py-4">
-                  <span class="whitespace-nowrap rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(exam.exam_status)">
+                  <span class="whitespace-nowrap rounded-full border px-3 py-1 text-xs font-black" :class="examStatusBadgeClass(exam.exam_status)">
                     {{ examStatusLabel(exam.exam_status) }}
                   </span>
                 </td>
@@ -621,7 +630,7 @@ onMounted(() => loadExams(1))
                 <h3 class="mt-1 break-all text-xl font-black md:text-2xl">{{ field(detail || selectedSummary, ["exam_code", "exam_ulid"]) }}</h3>
                 <p class="mt-1 break-all font-mono text-sm font-bold text-blue-800">{{ selectedExamUlid }}</p>
               </div>
-              <span class="rounded-full border px-3 py-1 text-sm font-black" :class="badgeClass((detail || selectedSummary)?.exam_status)">
+              <span class="rounded-full border px-3 py-1 text-sm font-black" :class="examStatusBadgeClass((detail || selectedSummary)?.exam_status)">
                 {{ examStatusLabel((detail || selectedSummary)?.exam_status) }}
               </span>
             </div>
