@@ -28,6 +28,8 @@ const PdfPreviewPage = () => import("@/pages/PdfPreviewPage.vue")
 const VideoPreviewPage = () => import("@/pages/VideoPreviewPage.vue")
 const InvoiceRedirectPage = () => import("@/pages/InvoiceRedirectPage.vue")
 const PaymentBridgePage = () => import("@/pages/PaymentBridgePage.vue")
+const CheckoutWizardPage = () => import("@/pages/CheckoutWizardPage.vue")
+const CheckoutSuccessPage = () => import("@/pages/CheckoutSuccessPage.vue")
 const NotFoundPage = () => import("@/pages/NotFoundPage.vue")
 
 function firstRouteValue(value: unknown) {
@@ -100,6 +102,8 @@ export const router = createRouter({
     { path: "/courses/timeline", redirect: redirectCertificationTimeline },
     { path: "/membership", component: MembershipPage, meta: { titleKey: "membership", requiresAuth: true } },
     { path: "/exams", component: ExamsPage, meta: { titleKey: "exams", requiresAuth: true } },
+    { path: "/checkout/success/:orderId", component: CheckoutSuccessPage, meta: { titleKey: "exams", requiresAuth: true } },
+    { path: "/checkout/:bundleId", component: CheckoutWizardPage, meta: { titleKey: "exams", requiresAuth: true } },
     { path: "/exams/result", component: ExamResultPage, meta: { titleKey: "examResult", requiresAuth: true } },
     { path: "/exams/signup", component: ExamSignupPage, meta: { titleKey: "examSignup", requiresAuth: true } },
     { path: "/records", component: RecordsPage, meta: { titleKey: "records", requiresAuth: true } },

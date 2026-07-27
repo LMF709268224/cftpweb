@@ -6,7 +6,6 @@ import { AlertCircle, BookOpen, CheckCircle2, Clock, Lock, ShoppingCart, Users }
 import { CANDIDATE_PIPELINE_STATUS_LABELS, statusLabel } from "@/lib/status-labels"
 import { useTranslation } from "@/lib/language"
 import { apiClient } from "@/lib/apiClient"
-import PurchaseDialog from "./PurchaseDialog.vue"
 
 type CourseCardStat = { label: string; value: string | number }
 type EligibilityBlocker = { blocker_type?: string; description?: string }
@@ -46,13 +45,10 @@ const props = defineProps<{
 
 const { t } = useTranslation()
 const router = useRouter()
-const showPurchaseDialog = ref(false)
 const freshBundle = ref<any | null>(null)
 const statusRefreshing = ref(false)
 const currentEligibility = computed<EligibilityPreview | null>(() => freshBundle.value?.purchase_state?.eligibility || freshBundle.value?.eligibility || props.eligibility || null)
 const currentActiveOrder = computed<ActiveOrderPreview | null>(() => freshBundle.value?.purchase_state?.active_order || freshBundle.value?.active_order || props.activeOrder || null)
-const currentPaymentPreview = computed<PaymentPreview | null>(() => freshBundle.value?.purchase_state?.payment_preview || freshBundle.value?.payment_preview || props.paymentPreview || null)
-const currentExemptionOptions = computed<ExemptionOptions | null>(() => freshBundle.value?.purchase_state?.exemption_options || freshBundle.value?.exemption_options || props.exemptionOptions || null)
 const currentActiveMembership = computed<Record<string, unknown> | null>(() => freshBundle.value?.active_membership || props.activeMembership || null)
 const blockers = computed(() => currentEligibility.value?.blockers || [])
 const isPipelineProduct = computed(() => Boolean(props.isPipelineBundle && props.pipelineId))
@@ -148,7 +144,7 @@ async function handleCardClick() {
     router.push({ path: "/orders" })
     return
   }
-  showPurchaseDialog.value = true
+  router.push(`/checkout/${encodeURIComponent(props.id)}`)
 }
 </script>
 
@@ -260,21 +256,4 @@ async function handleCardClick() {
       </div>
     </div>
   </component>
-
-  <PurchaseDialog
-    v-model:open="showPurchaseDialog"
-    :course-name="title"
-    :description="description"
-    :pipeline-id="pipelineId || ''"
-    :bundle-id="id"
-    :is-pipeline-bundle="isPipelineProduct"
-    :is-membership-bundle="isMembershipProduct"
-    :membership-id="membershipId || ''"
-    :membership-gpath="membershipGpath || ''"
-    :initial-eligibility="currentEligibility || null"
-    :initial-active-order="currentActiveOrder || null"
-    :initial-payment-preview="currentPaymentPreview || null"
-    :initial-exemption-options="currentExemptionOptions || null"
-    @cancelled="refreshBundleState"
-  />
 </template>

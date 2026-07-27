@@ -509,6 +509,8 @@ export const zh = {
     validationInvalidEmail: "邮箱格式不正确，请填写有效的邮箱地址",
     validationInvalidPhone: "{{field}} 格式不正确，请以 + 和国家/地区码开头，并填写共 7-15 位数字",
     validationInvalidPostalCode: "邮政编码格式不正确，请使用 2-16 位字母、数字、空格或连字符",
+    agreement: "CFtP用户协议及隐私政策",
+    agreementRequired: "请阅读并同意CFtP用户协议及隐私政策",
     backToCourse: "返回上一步",
     backToLearning: "返回学习",
     backToCertification: "返回认证详情",
