@@ -430,22 +430,7 @@ function buildSelectedExemptionsJson() {
   })
 }
 
-async function refreshPaymentPreview() {
-  if (!bundleId) return
-  try {
-    const res = await apiClient(`/api/mall/payments/preview`, {
-      method: "POST",
-      body: JSON.stringify({
-        bundle_id: bundleId,
-        payment_mode: "FULL_PIPELINE",
-        selected_exemptions_json: buildSelectedExemptionsJson()
-      })
-    })
-    paymentPreview.value = res
-  } catch (err) {
-    console.error("Failed to refresh payment preview:", err)
-  }
-}
+
 
 async function onExemptionToggle(unit: any, event: Event) {
   const input = event.target as HTMLInputElement | null
@@ -454,7 +439,6 @@ async function onExemptionToggle(unit: any, event: Event) {
     ...selectedExemptionUnitIds.value,
     [unit.unit_id]: Boolean(input?.checked),
   }
-  await refreshPaymentPreview()
 }
 
 function triggerFileInput(unitId: string) {
@@ -611,17 +595,17 @@ async function confirmAndPay() {
     <div class="page-panel">
       <header class="flex h-16 items-center border-b border-border bg-white px-5">
         <ClipboardList class="mr-4 h-4 w-4 text-slate-700" />
-        <span class="text-sm font-medium text-foreground">Checkout</span>
+        <span class="text-sm font-medium text-foreground">{{ t.checkoutWizard?.checkoutTitle || "Checkout" }}</span>
       </header>
 
       <main class="px-5 py-8 md:px-8 lg:px-10">
         <div class="mb-8 max-w-2xl">
-          <h1 class="text-3xl font-bold tracking-tight text-foreground">Checkout</h1>
+          <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.checkoutWizard?.checkoutTitle || "Checkout" }}</h1>
           <div class="mt-4 flex gap-4 text-sm">
-            <span :class="currentStep === 1 ? 'font-bold text-primary' : 'text-muted-foreground'">1 选择</span>
-            <span :class="currentStep === 2 ? 'font-bold text-primary' : 'text-muted-foreground'">2 登记</span>
-            <span :class="currentStep === 3 ? 'font-bold text-primary' : 'text-muted-foreground'">3 审查</span>
-            <span :class="currentStep === 4 ? 'font-bold text-primary' : 'text-muted-foreground'">4 支付</span>
+            <span :class="currentStep === 1 ? 'font-bold text-primary' : 'text-muted-foreground'">{{ t.checkoutWizard?.step1 || "1 选择" }}</span>
+            <span :class="currentStep === 2 ? 'font-bold text-primary' : 'text-muted-foreground'">{{ t.checkoutWizard?.step2 || "2 登记" }}</span>
+            <span :class="currentStep === 3 ? 'font-bold text-primary' : 'text-muted-foreground'">{{ t.checkoutWizard?.step3 || "3 审查" }}</span>
+            <span :class="currentStep === 4 ? 'font-bold text-primary' : 'text-muted-foreground'">{{ t.checkoutWizard?.step4 || "4 支付" }}</span>
           </div>
         </div>
         
@@ -679,7 +663,7 @@ async function confirmAndPay() {
                         >
                           <Loader2 v-if="uploadingUnitId === unit.unit_id" class="h-5 w-5 animate-spin" />
                           <UploadCloud v-else class="h-5 w-5" />
-                          <span>{{ uploadingUnitId === unit.unit_id ? "上传中..." : "添加证据" }}</span>
+                          <span>{{ uploadingUnitId === unit.unit_id ? (t.checkoutWizard?.uploading || "上传中...") : (t.checkoutWizard?.addEvidence || "添加证据") }}</span>
                         </button>
                         <input :id="`file-${unit.unit_id}`" type="file" class="hidden" accept=".pdf,.doc,.docx,.jpg,.png" @change="onConstraintFileChange($event, unit, unit.exemption_quals?.[0] || {})" />
                         
@@ -695,14 +679,14 @@ async function confirmAndPay() {
                             v-model="exemptionReasons[unit.unit_id]"
                             class="w-full rounded-lg border border-slate-300 p-3 text-sm focus:border-emerald-500"
                             rows="3"
-                            placeholder="请填写申请理由..."
+                            :placeholder="t.checkoutWizard?.proofPlaceholder || '请填写申请理由...'"
                           ></textarea>
                         </div>
                         
                         <div class="mt-4 rounded-lg bg-emerald-50/50 p-4">
                           <label class="flex items-start gap-3">
                             <input type="checkbox" v-model="exemptionDeclarations[unit.unit_id]" class="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
-                            <span class="text-xs leading-relaxed text-emerald-800 font-medium">我声明我的证据真实有效。</span>
+                            <span class="text-xs leading-relaxed text-emerald-800 font-medium">{{ t.checkoutWizard?.declareEvidenceValid || "我声明我的证据真实有效。" }}</span>
                           </label>
                         </div>
                       </div>
@@ -711,10 +695,14 @@ async function confirmAndPay() {
                 </div>
               </div>
               
-              <div v-if="paymentPreview" class="mt-8 flex flex-col items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 p-6 sm:flex-row shadow-sm">
-                <div class="text-lg font-bold text-slate-900">总额 {{ formatMoney(paymentPreview.total_amount) }}</div>
+              <div v-if="bundleData" class="mt-8 flex flex-col items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 p-6 sm:flex-row shadow-sm">
+                <div class="text-lg font-bold text-slate-900">
+                  <template v-if="paymentPreview">
+                    {{ t.checkoutWizard?.baseTotal || "基础总额" }} {{ formatMoney(paymentPreview.total, paymentPreview.currency) }}
+                  </template>
+                </div>
                 <button class="btn bg-emerald-600 text-white shadow-md hover:bg-emerald-700 rounded-full px-8 py-3" @click="nextFromStep1">
-                  保存并继续 ->
+                  {{ t.checkoutWizard?.saveAndContinue || "保存并继续 ->" }}
                 </button>
               </div>
             </div>
