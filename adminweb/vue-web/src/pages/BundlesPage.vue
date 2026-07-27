@@ -851,7 +851,7 @@ async function handleThumbnailUpload(event: Event) {
         return
       }
     } else {
-      toast.error("状态错误，请先刷新页面")
+      toast.error(copy.value.toasts.thumbnailStateInvalid)
       if (thumbnailFileInput.value) thumbnailFileInput.value.value = ""
       return
     }
@@ -891,10 +891,10 @@ async function handleThumbnailUpload(event: Event) {
 
     form.value.thumbnail_object_key = objectKey
     form.value.thumbnail_file_hash = hashHex
-    toast.success("上传成功")
+    toast.success(copy.value.toasts.thumbnailUploaded)
   } catch (err: any) {
     console.error(err)
-    toast.error(apiErrorMessage(err, "上传失败"))
+    toast.error(apiErrorMessage(err, copy.value.toasts.thumbnailUploadFailed))
   } finally {
     uploadingThumbnail.value = false
     if (thumbnailFileInput.value) thumbnailFileInput.value.value = ""
@@ -1414,7 +1414,7 @@ onMounted(load)
                   <button type="button" class="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 py-3 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50 sm:w-auto" :disabled="uploadingThumbnail" @click="thumbnailFileInput?.click()">
                     <Loader2 v-if="uploadingThumbnail" class="h-4 w-4 animate-spin" />
                     <UploadCloud v-else class="h-4 w-4" />
-                    {{ uploadingThumbnail ? (copy as any).uploading || "上传中..." : (copy as any).uploadThumbnail || "上传封面图" }}
+                    {{ uploadingThumbnail ? copy.uploading : copy.uploadThumbnail }}
                   </button>
                 </div>
                 <label class="grid gap-2 text-sm font-bold md:col-span-2">
@@ -1425,7 +1425,7 @@ onMounted(load)
             </section>
 
             <details class="rounded-2xl border border-slate-200 bg-white p-4 md:p-5 mt-4">
-              <summary class="cursor-pointer text-sm font-black text-slate-700">{{ (copy as any).advancedConfig || "高级配置" }}</summary>
+              <summary class="cursor-pointer text-sm font-black text-slate-700">{{ copy.advancedConfig }}</summary>
               <div class="mt-4 grid gap-4 md:grid-cols-2">
                 <label class="grid grid-rows-[auto_auto_1.25rem] gap-2 text-sm font-bold md:col-span-2">
                   <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.bundleGpath }}</span>
@@ -1559,13 +1559,13 @@ onMounted(load)
                     <button type="button" class="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 py-3 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50 sm:w-auto" :disabled="uploadingThumbnail" @click="thumbnailFileInput?.click()">
                       <Loader2 v-if="uploadingThumbnail" class="h-4 w-4 animate-spin" />
                       <UploadCloud v-else class="h-4 w-4" />
-                      {{ uploadingThumbnail ? (copy as any).uploading || "上传中..." : (copy as any).uploadThumbnail || "上传封面图" }}
+                      {{ uploadingThumbnail ? copy.uploading : copy.uploadThumbnail }}
                     </button>
                   </div>
                 </div>
 
                 <details class="rounded-2xl border border-slate-200 bg-white p-4 md:p-5 mt-6 mb-4">
-                  <summary class="cursor-pointer text-sm font-black text-slate-700">{{ (copy as any).advancedConfig || "高级配置" }}</summary>
+                  <summary class="cursor-pointer text-sm font-black text-slate-700">{{ copy.advancedConfig }}</summary>
                   <div class="mt-4 grid gap-4">
                     <label class="grid gap-2 text-sm font-bold">
                       {{ copy.fields.bundleGpath }}

@@ -176,7 +176,7 @@ onUnmounted(() => {
       v-if="!mobileNavOpen"
       class="fixed left-4 top-4 z-30 flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-lg shadow-slate-200/70 md:hidden"
       type="button"
-      aria-label="打开菜单"
+      :aria-label="copy.openMenu"
       @click="mobileNavOpen = true"
     >
       <Menu class="h-5 w-5" />
@@ -186,7 +186,7 @@ onUnmounted(() => {
       v-if="mobileNavOpen"
       class="fixed inset-0 z-30 bg-slate-950/45 backdrop-blur-[1px] md:hidden"
       type="button"
-      aria-label="关闭菜单"
+      :aria-label="copy.closeMenu"
       @click="mobileNavOpen = false"
     />
 
@@ -208,7 +208,7 @@ onUnmounted(() => {
         <button
           class="ml-auto flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-white/80 hover:text-slate-900 md:hidden"
           type="button"
-          aria-label="关闭菜单"
+          :aria-label="copy.closeMenu"
           @click="mobileNavOpen = false"
         >
           <X class="h-5 w-5" />

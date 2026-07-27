@@ -1009,7 +1009,7 @@ onMounted(() => {
         </div>
         <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
           <select v-model="statusFilter" class="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm sm:w-auto bg-white">
-            <option value="">全部状态</option>
+            <option value="">{{ copy.allStatus }}</option>
             <option value="DRAFT">{{ copy.status.draft }}</option>
             <option value="PUBLISHED">{{ copy.status.published }}</option>
             <option value="DEPRECATED">{{ copy.status.deprecated }}</option>
@@ -1116,7 +1116,7 @@ onMounted(() => {
           </label>
           <details class="group md:col-span-2">
             <summary class="inline-flex cursor-pointer select-none items-center gap-1 rounded-lg text-sm font-bold text-slate-500 transition-colors hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
-              {{ (copy as any).advancedConfig || '高级配置' }}
+              {{ copy.advancedConfig }}
               <ChevronDown class="h-4 w-4 transition-transform group-open:rotate-180" />
             </summary>
             <div class="mt-4 grid gap-4 md:grid-cols-2">
@@ -1156,7 +1156,7 @@ onMounted(() => {
         </div>
 
         <div v-if="structureLocked" class="border-b border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-900">
-            {{ deprecated ? ((copy as any).deprecatedLockedHint || '此版本已下架归档，无法再进行修改。') : copy.structureLockedHint }}
+            {{ deprecated ? copy.deprecatedLockedHint : copy.structureLockedHint }}
           </div>
 
         <main class="h-full min-h-0 max-h-none min-w-0 overflow-y-auto md:h-[60vh] md:min-h-[360px] md:max-h-[620px]">
@@ -1344,7 +1344,7 @@ onMounted(() => {
                     <p class="text-xs font-semibold text-slate-500">{{ copy.glmsCourseHint }}</p>
                   </label>
                   <div class="md:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                    <div class="mb-4 text-sm font-black text-slate-700">{{ (copy as any).examConfig || '考试配置' }}</div>
+                    <div class="mb-4 text-sm font-black text-slate-700">{{ copy.examConfig }}</div>
                     <div class="grid gap-4 md:grid-cols-2">
                       <label class="grid gap-2 text-sm font-bold">
                         {{ copy.fields.program }}
@@ -1366,13 +1366,13 @@ onMounted(() => {
 
                     <div v-if="boolValue(selectedUnitItem.unit, 'allow_exemption')" class="mt-4 border-t border-slate-200 pt-4">
                       <div class="mb-2 flex items-center gap-1 text-sm font-bold text-slate-700">
-                        {{ copy.exemptionQualificationsJsonLabel || '豁免资格' }}
-                        <span :title="(copy as any).exemptionQualificationsTooltip || '只需满足任一勾选的资格即可免考'" class="cursor-help flex items-center">
+                        {{ copy.exemptionQualificationsJsonLabel }}
+                        <span :title="copy.exemptionQualificationsTooltip" class="cursor-help flex items-center">
                           <Info class="h-4 w-4 text-slate-400" />
                         </span>
                       </div>
                       <div v-if="credentialOptionsLoading" class="text-xs text-slate-500">{{ copy.loadingQualifications }}</div>
-                      <div v-else-if="!credentialOptions.length" class="text-xs text-slate-500">（无可用资格）</div>
+                      <div v-else-if="!credentialOptions.length" class="text-xs text-slate-500">{{ copy.noAvailableCredentials }}</div>
                       <div v-else class="grid gap-2 md:grid-cols-2">
                         <label v-for="definition in credentialOptions" :key="credentialId(definition)" class="flex items-center gap-2 text-sm font-medium text-slate-600">
                           <input type="checkbox" :value="credentialId(definition)" :checked="(Array.isArray(selectedUnitItem.unit?.exemption_quals) ? selectedUnitItem.unit?.exemption_quals : []).includes(credentialId(definition))" :disabled="isStructureLocked()" @change="toggleExemptionQual(selectedUnitItem?.unit, credentialId(definition), eventChecked($event))" />
@@ -1383,7 +1383,7 @@ onMounted(() => {
                   </div>
                   <details class="group md:col-span-2">
                     <summary class="inline-flex cursor-pointer select-none items-center gap-1 rounded-lg text-sm font-bold text-slate-500 transition-colors hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
-                      {{ (copy as any).certConfig || '资格证书配置' }}
+                      {{ copy.certConfig }}
                       <ChevronDown class="h-4 w-4 transition-transform group-open:rotate-180" />
                     </summary>
                     <div class="mt-4 grid gap-4 rounded-xl border border-slate-100 bg-slate-50 p-4 md:grid-cols-2">
@@ -1540,7 +1540,7 @@ onMounted(() => {
             <textarea v-model="form.structure_json" :disabled="isStructureLocked()" class="min-h-[560px] w-full rounded-xl border border-slate-200 p-4 font-mono text-xs leading-6 disabled:bg-slate-100 disabled:text-slate-500" />
             <div class="flex flex-col justify-end gap-3 sm:flex-row">
               <button v-if="!isStructureLocked()" class="rounded-xl border px-5 py-3 font-bold" type="button" @click="applyRawStructure">{{ copy.applyRaw }}</button>
-              <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed" type="button" :disabled="saving || isStructureLocked()" :title="deprecated ? ((copy as any).deprecatedLockedHint || '此版本已下架归档，无法再进行修改。') : ''" @click="saveStructure">
+              <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed" type="button" :disabled="saving || isStructureLocked()" :title="deprecated ? copy.deprecatedLockedHint : ''" @click="saveStructure">
                 <Send class="h-4 w-4" />
                 {{ copy.saveStructure }}
               </button>
@@ -1548,7 +1548,7 @@ onMounted(() => {
           </div>
 
           <div v-if="activeLayer !== 'raw'" class="flex flex-col justify-end gap-3 border-t border-slate-200 p-4 sm:flex-row md:p-5">
-            <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed" type="button" :disabled="saving || isStructureLocked()" :title="deprecated ? ((copy as any).deprecatedLockedHint || '此版本已下架归档，无法再进行修改。') : ''" @click="saveStructure">
+            <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed" type="button" :disabled="saving || isStructureLocked()" :title="deprecated ? copy.deprecatedLockedHint : ''" @click="saveStructure">
               <Send class="h-4 w-4" />
               {{ copy.saveStructure }}
             </button>
@@ -1574,7 +1574,7 @@ onMounted(() => {
               <Plus class="h-4 w-4" />
               {{ copy.createDraft }}
             </button>
-            <button v-else class="inline-flex h-10 w-full min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50 sm:w-auto disabled:cursor-not-allowed" type="button" :disabled="saving || deprecated" :title="deprecated ? ((copy as any).deprecatedLockedHint || '此版本已下架归档，无法再进行修改。') : ''" @click="saveMetadata">
+            <button v-else class="inline-flex h-10 w-full min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50 sm:w-auto disabled:cursor-not-allowed" type="button" :disabled="saving || deprecated" :title="deprecated ? copy.deprecatedLockedHint : ''" @click="saveMetadata">
               <Save class="h-4 w-4" />
               {{ copy.saveBasic }}
             </button>

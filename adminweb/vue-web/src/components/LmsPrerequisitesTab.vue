@@ -36,7 +36,7 @@ const availableEntities = computed(() => {
       entities.push({
         id: chapterIdStr,
         type: 3, // CHAPTER
-        title: `[${props.copy.chapter || '章节'}] ${chapter.title}`,
+        title: `[${props.copy.fallbacks.chapter}] ${chapter.title}`,
         result: 1 // COMPLETED
       })
     }
@@ -49,7 +49,7 @@ const availableEntities = computed(() => {
         entities.push({
           id: lessonIdStr,
           type: 1, // LESSON
-          title: `[${props.copy.lesson || '课时'}] ${lesson.title}`,
+          title: `[${props.copy.fallbacks.lesson}] ${lesson.title}`,
           result: 1 // COMPLETED
         })
       }
@@ -62,7 +62,7 @@ const availableEntities = computed(() => {
           entities.push({
             id: quizIdStr,
             type: 2, // QUIZ
-            title: `[${props.copy.quiz || '测验'}] ${quiz.title}`,
+            title: `[${props.copy.fallbacks.quiz}] ${quiz.title}`,
             result: 2 // PASSED
           })
         }
@@ -77,7 +77,7 @@ const availableEntities = computed(() => {
         entities.push({
           id: quizIdStr,
           type: 2, // QUIZ
-          title: `[${props.copy.quiz || '测验'}] ${quiz.title}`,
+          title: `[${props.copy.fallbacks.quiz}] ${quiz.title}`,
           result: 2 // PASSED
         })
       }
@@ -92,7 +92,7 @@ const availableEntities = computed(() => {
       entities.push({
         id: quizIdStr,
         type: 2, // QUIZ
-        title: `[${props.copy.quiz || '测验'}] ${quiz.title}`,
+        title: `[${props.copy.fallbacks.quiz}] ${quiz.title}`,
         result: 2 // PASSED
       })
     }
@@ -226,8 +226,8 @@ onMounted(() => {
 <template>
   <div class="space-y-6 rounded-2xl border border-slate-200 p-5">
     <div>
-      <h3 class="text-base font-black">{{ copy.prerequisites || '前置条件' }}</h3>
-      <p class="mt-1 text-sm text-slate-500">{{ copy.prerequisitesDesc || '添加必须完成的课时或测验' }}</p>
+      <h3 class="text-base font-black">{{ copy.prerequisites }}</h3>
+      <p class="mt-1 text-sm text-slate-500">{{ copy.prerequisitesDesc }}</p>
     </div>
     
     <div v-if="loading" class="flex justify-center p-8 text-slate-400">
@@ -235,14 +235,14 @@ onMounted(() => {
     </div>
     <div v-else>
       <div v-if="prerequisites.length === 0" class="rounded-xl border border-dashed border-slate-200 p-8 text-center text-sm font-semibold text-slate-500">
-        {{ copy.noPrerequisites || '尚未添加前置条件' }}
+        {{ copy.noPrerequisites }}
       </div>
       <div v-else class="space-y-3">
         <div v-for="item in prerequisites" :key="String(item.prerequisite_id || item.prerequisite_ulid)" class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
           <div>
             <div class="font-bold text-slate-700">{{ entityName(String(item.required_entity_id || item.required_entity_ulid)) }}</div>
             <div class="mt-0.5 text-xs text-slate-500">
-              {{ item.required_result === 2 || item.required_result === 'PREREQUISITE_RESULT_PASSED' ? (copy.mustPass || '必须通过') : (copy.mustComplete || '必须完成') }}
+              {{ item.required_result === 2 || item.required_result === 'PREREQUISITE_RESULT_PASSED' ? copy.mustPass : copy.mustComplete }}
             </div>
           </div>
           <button class="shrink-0 rounded-full p-2 text-slate-400 transition hover:bg-slate-200 hover:text-red-500" type="button" :aria-label="copy.delete" @click="requestDeletePrerequisite(item)">
@@ -254,25 +254,25 @@ onMounted(() => {
     
     <form class="flex flex-wrap items-end gap-3 border-t border-slate-200 pt-5" @submit.prevent="addPrerequisite">
       <label class="flex-1 space-y-2 text-sm font-bold min-w-[200px]">
-        <span>{{ copy.requireEntity || '要求完成项' }}</span>
+        <span>{{ copy.requireEntity }}</span>
         <select v-model="formRequiredEntity" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 font-semibold outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" required>
-          <option value="" disabled>{{ copy.selectRequireEntity || '请选择一个课时/章节/测验' }}</option>
+          <option value="" disabled>{{ copy.selectRequireEntity }}</option>
           <option v-for="entity in availableEntities" :key="`${entity.type}:${entity.id}`" :value="entity.id" :disabled="isPrerequisiteSelected(entity.id)">
             {{ entity.title }}{{ isPrerequisiteSelected(entity.id) ? ` (${copy.prerequisiteAlreadyAdded})` : "" }}
           </option>
         </select>
       </label>
       <label v-if="selectedEntityType === 2" class="space-y-2 text-sm font-bold w-[140px]">
-        <span>{{ copy.requireStandard || '要求标准' }}</span>
+        <span>{{ copy.requireStandard }}</span>
         <select v-model="formRequiredResult" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 font-semibold outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" required>
-          <option :value="2">{{ copy.mustPass || '必须通过' }}</option>
-          <option :value="1">{{ copy.mustComplete || '必须完成' }}</option>
+          <option :value="2">{{ copy.mustPass }}</option>
+          <option :value="1">{{ copy.mustComplete }}</option>
         </select>
       </label>
       <button class="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-blue-700 px-4 font-bold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50" type="submit" :disabled="!formRequiredEntity || adding">
         <Loader2 v-if="adding" class="h-4 w-4 animate-spin" />
         <Plus v-else class="h-4 w-4" />
-        {{ copy.add || '添加' }}
+        {{ copy.add }}
       </button>
     </form>
   </div>

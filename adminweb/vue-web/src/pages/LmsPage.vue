@@ -819,8 +819,8 @@ function quizReadonlyFieldLabel(key: string) {
 }
 
 function quizTypeLabel(value: unknown) {
-  if (value === 1) return (copy.value as any).quizTypeMustPass || '必过测验'
-  if (value === 2) return (copy.value as any).quizTypeSkippable || '可跳过/自助完成测验'
+  if (value === 1) return copy.value.quizTypeMustPass
+  if (value === 2) return copy.value.quizTypeSkippable
   return String(value || "-")
 }
 
@@ -1244,7 +1244,7 @@ async function loadCompleteCourse() {
 
 async function saveCourse() {
   if (courseStatusKey(selectedCourse.value) === "deprecated") {
-    toast.error("已弃用的课程不能修改保存")
+    toast.error(copy.value.toasts.deprecatedCourseCannotSave)
     return
   }
   if (!courseForm.value.title.trim()) {
@@ -1305,15 +1305,15 @@ async function cloneCourse(course: JsonRecord) {
     await apiClient<JsonRecord>("/api/lms/courses", {
       method: "POST",
       body: JSON.stringify({
-        title: courseTitle(course) + " (副本)",
+        title: courseTitle(course) + copy.value.courseCopySuffix,
         from_course_id: id,
       })
     })
-    toast.success("课程克隆成功")
+    toast.success(copy.value.toasts.courseCloneSuccess)
     await loadCourses()
   } catch (err) {
     console.error(err)
-    toast.error(apiErrorMessage(err, "课程克隆失败"))
+    toast.error(apiErrorMessage(err, copy.value.toasts.courseCloneFailed))
   } finally {
     cloningCourseId.value = ""
   }
@@ -1334,7 +1334,7 @@ async function publishCourse() {
   } catch (err: any) {
     console.error(err)
     if (err?.status === 409) {
-      toast.error(apiErrorMessage(err, (copy.value.toasts as any).coursePublishMissingConfig || "课程发布失败，请检查下方带有「缺少内容」标签的章节或课时并完善配置"))
+      toast.error(apiErrorMessage(err, copy.value.toasts.coursePublishMissingConfig))
     } else {
       toast.error(apiErrorMessage(err, copy.value.toasts.coursePublishFailed))
     }
@@ -1461,7 +1461,7 @@ async function saveChapter() {
   const targetSort = Number(chapterForm.value.sort_order || 1)
   const isConflict = chapters.value.some(c => Number(c.sort_order || 0) === targetSort && chapterId(c) !== editingChapterId.value)
   if (isConflict) {
-    toast.error((copy.value.toasts as any)?.duplicateChapterSort || "该排序序号已被其他章节使用，请更换")
+    toast.error(copy.value.toasts.duplicateChapterSort)
     return
   }
 
@@ -1654,11 +1654,11 @@ async function handleLessonFileUpload(event: Event) {
     }
     
     if (await saveLesson()) {
-      toast.success((copy.value.toasts as any)?.uploadSuccess || "课时资产直传并配置成功")
+      toast.success(copy.value.toasts.uploadSuccess)
     }
   } catch (err) {
     console.error(err)
-    toast.error(apiErrorMessage(err, (copy.value.toasts as any)?.uploadFailed || "上传失败"))
+    toast.error(apiErrorMessage(err, copy.value.toasts.uploadFailed))
   } finally {
     uploadingLesson.value = false
     if (lessonFileInput.value) lessonFileInput.value.value = ""
@@ -1677,14 +1677,14 @@ async function saveLesson(): Promise<boolean> {
     return false
   }
   if (lessonForm.value.lesson_type === '7' && !lessonForm.value.asset_object_key.trim()) {
-    toast.error((copy.value.toasts as any)?.externalUrlRequired || "外部链接不能为空 (External URL required)")
+    toast.error(copy.value.toasts.externalUrlRequired)
     return false
   }
 
   const targetSort = Number(lessonForm.value.sort_order || 1)
   const isConflict = allLessonItems.value.some(item => chapterId(item.chapter) === targetChapterId && Number(item.lesson.sort_order || 0) === targetSort && lessonId(item.lesson) !== editingLessonId.value)
   if (isConflict) {
-    toast.error((copy.value.toasts as any)?.duplicateLessonSort || "该章节下已有相同排序的课时，请更换")
+    toast.error(copy.value.toasts.duplicateLessonSort)
     return false
   }
 
@@ -1714,7 +1714,7 @@ async function saveLesson(): Promise<boolean> {
       toast.success(copy.value.toasts.lessonCreated)
       if ([1, 3, 4, 5, 6].includes(type)) {
         editingLessonId.value = String(res.lesson_ulid)
-        toast.info("请继续点击下方按钮上传课时文件 (视频/PDF等)")
+        toast.info(copy.value.toasts.continueUploadLessonFile)
         await Promise.all([loadLessons(), loadCompleteCourse(), loadCourseDetail()])
       } else {
         await Promise.all([loadLessons(), loadCompleteCourse(), loadCourseDetail()])
@@ -1910,7 +1910,7 @@ async function saveSupplementaryItem() {
     return
   }
   if (isSupplementaryAssetRequired(type) && !supplementaryItemForm.value.url.trim()) {
-    toast.error((copy.value.toasts as any)?.externalUrlRequired || "外部链接不能为空 (URL required)")
+    toast.error(copy.value.toasts.externalUrlRequired)
     return
   }
   const records = supplementaryEditableRecords()
@@ -2049,10 +2049,10 @@ async function handleMaterialFileUpload(event: Event) {
     materialForm.value.file_size = String(file.size)
     
     await saveMaterial()
-    toast.success((copy.value.toasts as any)?.uploadSuccess || "文件直传并配置成功")
+    toast.success(copy.value.toasts.uploadSuccess)
   } catch (err) {
     console.error(err)
-    toast.error(apiErrorMessage(err, (copy.value.toasts as any)?.uploadFailed || "上传失败"))
+    toast.error(apiErrorMessage(err, copy.value.toasts.uploadFailed))
   } finally {
     uploadingMaterial.value = false
     if (materialFileInput.value) materialFileInput.value.value = ""
@@ -2097,10 +2097,10 @@ async function handleSupplementaryFileUpload(event: Event) {
     supplementaryItemForm.value.url = String(uploadRes.object_key)
     
     await saveSupplementaryItem()
-    toast.success((copy.value.toasts as any)?.uploadSuccess || "上传成功")
+    toast.success(copy.value.toasts.uploadSuccess)
   } catch (err) {
     console.error(err)
-    toast.error((copy.value.toasts as any)?.uploadFailed || "上传失败")
+    toast.error(copy.value.toasts.uploadFailed)
   } finally {
     uploadingSupplementary.value = false
     if (supplementaryFileInput.value) supplementaryFileInput.value.value = ""
@@ -2116,7 +2116,7 @@ async function saveMaterial() {
   const targetSort = Number(materialForm.value.sort_order || 1)
   const isConflict = materials.value.some(m => Number(m.sort_order || 0) === targetSort && materialId(m) !== editingMaterialId.value)
   if (isConflict) {
-    toast.error((copy.value.toasts as any)?.duplicateMaterialSort || "该课程下已有相同排序的资料，请更换")
+    toast.error(copy.value.toasts.duplicateMaterialSort)
     return
   }
 
@@ -2562,7 +2562,7 @@ async function saveQuestion({ closeDialog = true, resetEditor = true, silentSucc
   const targetSort = Number(questionForm.value.sort_order || 1)
   const isConflict = questions.value.some(q => Number(q.sort_order || 0) === targetSort && questionId(q) !== editingQuestionId.value)
   if (isConflict) {
-    toast.error((copy.value.toasts as any)?.duplicateQuestionSort || "该课检下已有相同排序的题目，请更换")
+    toast.error(copy.value.toasts.duplicateQuestionSort)
     return ""
   }
   const mediaJson = questionForm.value.media_items_json.trim() || "[]"
@@ -2703,21 +2703,21 @@ async function saveOptionForQuestion(questionIdValue = selectedQuestionId.value,
 
   const qType = Number(selectedQuestion.value?.question_type || 0)
   if (qType === 3 && !editingOptionId.value && options.value.length >= 2) {
-    toast.error((copy.value.toasts as any)?.judgementMaxOptions || "判断题最多只能有 2 个选项")
+    toast.error(copy.value.toasts.judgementMaxOptions)
     return false
   }
 
   if ((qType === 1 || qType === 3) && optionForm.value.is_correct) {
     const hasOtherCorrect = options.value.some(o => o.is_correct && optionId(o) !== editingOptionId.value)
     if (hasOtherCorrect) {
-      toast.error((copy.value.toasts as any)?.singleCorrectOptionLimit || "该题型只能有一个正确选项，请先取消其他选项的正确答案状态")
+      toast.error(copy.value.toasts.singleCorrectOptionLimit)
       return false
     }
   }
   const targetSort = Number(optionForm.value.sort_order || 1)
   const isConflict = options.value.some(o => Number(o.sort_order || 0) === targetSort && optionId(o) !== editingOptionId.value)
   if (isConflict) {
-    toast.error((copy.value.toasts as any)?.duplicateOptionSort || "该题目下已有相同排序的选项，请更换")
+    toast.error(copy.value.toasts.duplicateOptionSort)
     return false
   }
 
@@ -2961,7 +2961,7 @@ onMounted(() => {
               </label>
               <details class="group md:col-span-2">
                 <summary class="inline-flex cursor-pointer select-none items-center gap-1 rounded-lg text-sm font-bold text-slate-500 transition-colors hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
-                  {{ (copy as any).advancedConfig || '高级配置' }}
+                  {{ copy.advancedConfig }}
                   <ChevronDown class="h-4 w-4 transition-transform group-open:rotate-180" />
                 </summary>
                 <div class="mt-4 grid gap-3 md:grid-cols-1">
@@ -3056,10 +3056,10 @@ onMounted(() => {
     <section v-if="courseView === 'list'" class="rounded-2xl border border-slate-200 bg-white shadow-sm md:rounded-3xl">
       <div class="flex items-center justify-end border-b border-slate-200 bg-slate-50/60 p-4">
         <select v-model="statusFilter" class="h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 shadow-sm">
-          <option value="">全部状态</option>
-          <option value="DRAFT">草稿</option>
-          <option value="PUBLISHED">已发布</option>
-          <option value="DEPRECATED">已下架</option>
+          <option value="">{{ copy.allStatus }}</option>
+          <option value="DRAFT">{{ copy.courseStatuses.draft }}</option>
+          <option value="PUBLISHED">{{ copy.courseStatuses.published }}</option>
+          <option value="DEPRECATED">{{ copy.courseStatuses.deprecated }}</option>
         </select>
       </div>
 
@@ -3113,7 +3113,7 @@ onMounted(() => {
               </button>
               <button class="inline-flex items-center justify-center rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-600 transition hover:underline lg:border-0 lg:bg-transparent lg:px-0 lg:py-0 disabled:opacity-50" type="button" :disabled="cloningCourseId === courseId(course)" @click.stop="cloneCourse(course)">
                 <Loader2 v-if="cloningCourseId === courseId(course)" class="mr-1 h-3 w-3 animate-spin lg:hidden" />
-                克隆
+                {{ copy.cloneCourse }}
               </button>
             </div>
           </div>
@@ -3154,7 +3154,7 @@ onMounted(() => {
             </label>
             <details class="group lg:col-span-2">
               <summary class="inline-flex cursor-pointer select-none items-center gap-1 rounded-lg text-sm font-bold text-slate-500 transition-colors hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
-                {{ (copy as any).advancedConfig || '高级配置' }}
+                {{ copy.advancedConfig }}
                 <ChevronDown class="h-4 w-4 transition-transform group-open:rotate-180" />
               </summary>
               <div class="mt-4 grid gap-3 lg:grid-cols-1">
@@ -3256,7 +3256,7 @@ onMounted(() => {
             <div class="min-w-0">
               <div class="flex items-center gap-2 overflow-hidden">
                 <span class="truncate text-lg font-black text-slate-950">{{ chapterTitle(chapter) }}</span>
-                <span v-if="isChapterEmpty(chapter)" class="shrink-0 rounded border border-red-200 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-600">{{ (copy as any).missingConfig || '缺少内容' }}</span>
+                <span v-if="isChapterEmpty(chapter)" class="shrink-0 rounded border border-red-200 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-600">{{ copy.missingConfig }}</span>
               </div>
               <div class="mt-1 truncate font-mono text-xs font-semibold text-slate-500">ID: {{ chapterId(chapter) || "-" }}</div>
             </div>
@@ -3296,8 +3296,8 @@ onMounted(() => {
 
             <div class="min-h-0 flex-1 overflow-y-auto p-4 md:p-5">
               <div v-if="chapterDialogMode !== 'create'" class="mb-4 flex gap-4 border-b border-slate-200">
-                <button :class="chapterActiveTab === 'basic' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="chapterActiveTab = 'basic'">{{ (copy as any).basicInfo || '基本信息' }}</button>
-                <button v-if="canEditCourseContent" :class="chapterActiveTab === 'prerequisites' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="chapterActiveTab = 'prerequisites'">{{ (copy as any).prerequisites || '前置条件' }}</button>
+                <button :class="chapterActiveTab === 'basic' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="chapterActiveTab = 'basic'">{{ copy.basicInfo }}</button>
+                <button v-if="canEditCourseContent" :class="chapterActiveTab === 'prerequisites' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="chapterActiveTab = 'prerequisites'">{{ copy.prerequisites }}</button>
               </div>
               <div v-show="chapterActiveTab === 'basic'">
                 <div v-if="chapterDialogMode === 'detail'" class="rounded-2xl border border-slate-200 p-4">
@@ -3388,7 +3388,7 @@ onMounted(() => {
             <div class="min-w-0">
               <div class="flex items-center gap-2 overflow-hidden">
                 <span class="truncate text-lg font-black text-slate-950">{{ lessonTitle(item.lesson) }}</span>
-                <span v-if="isLessonEmpty(item.lesson)" class="shrink-0 rounded border border-red-200 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-600">{{ (copy as any).missingConfig || '缺少内容' }}</span>
+                <span v-if="isLessonEmpty(item.lesson)" class="shrink-0 rounded border border-red-200 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-600">{{ copy.missingConfig }}</span>
               </div>
               <div class="mt-1 truncate font-mono text-xs font-semibold text-slate-500">ID: {{ lessonId(item.lesson) || "-" }}</div>
             </div>
@@ -3432,8 +3432,8 @@ onMounted(() => {
 
             <div class="min-h-0 flex-1 overflow-y-auto p-4 md:p-5">
               <div v-if="lessonDialogMode !== 'create'" class="mb-4 flex gap-4 border-b border-slate-200">
-                <button :class="lessonActiveTab === 'basic' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="lessonActiveTab = 'basic'">{{ (copy as any).basicInfo || '基本信息' }}</button>
-                <button v-if="canEditCourseContent" :class="lessonActiveTab === 'prerequisites' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="lessonActiveTab = 'prerequisites'">{{ (copy as any).prerequisites || '前置条件' }}</button>
+                <button :class="lessonActiveTab === 'basic' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="lessonActiveTab = 'basic'">{{ copy.basicInfo }}</button>
+                <button v-if="canEditCourseContent" :class="lessonActiveTab === 'prerequisites' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="lessonActiveTab = 'prerequisites'">{{ copy.prerequisites }}</button>
               </div>
               <div v-show="lessonActiveTab === 'basic'">
                 <div v-if="lessonDialogMode === 'detail'" class="space-y-5">
@@ -3496,7 +3496,7 @@ onMounted(() => {
                 </label>
                 <template v-if="lessonForm.lesson_type === '7'">
                   <label class="block">
-                    <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ (copy as any).externalUrl }}</span>
+                    <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.externalUrl }}</span>
                     <input v-model="lessonForm.asset_object_key" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" placeholder="https://" />
                   </label>
                 </template>
@@ -3511,10 +3511,10 @@ onMounted(() => {
                 </template>
                 <template v-else-if="lessonForm.lesson_type !== '2'">
                   <label class="block">
-                    <span class="text-sm font-bold">{{ (copy as any).assetObjectKeyLabel }}</span>
+                    <span class="text-sm font-bold">{{ copy.assetObjectKeyLabel }}</span>
                     <input v-model="lessonForm.asset_object_key" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.assetObjectKeyPlaceholder" />
                     <span v-if="!editingLessonId" class="mt-2 block text-xs font-semibold text-amber-600">
-                      {{ (copy as any).uploadAfterSaveHint }}
+                      {{ copy.uploadAfterSaveHint }}
                     </span>
                   </label>
                   <label class="block">
@@ -3536,7 +3536,7 @@ onMounted(() => {
                 <button type="button" class="flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50" :disabled="uploadingLesson" @click="lessonFileInput?.click()">
                   <Loader2 v-if="uploadingLesson" class="h-4 w-4 animate-spin" />
                   <UploadCloud v-else class="h-4 w-4" />
-                  {{ uploadingLesson ? (copy as any).uploading : (copy as any).uploadLessonFile }}
+                  {{ uploadingLesson ? copy.uploading : copy.uploadLessonFile }}
                 </button>
               </div>
               <div class="min-w-0 flex-1" v-else></div>
@@ -3651,7 +3651,7 @@ onMounted(() => {
                     <td class="px-4 py-4">
                       <div class="flex items-center gap-2 overflow-hidden">
                         <span class="truncate font-black text-slate-950">{{ item.title }}</span>
-                        <span v-if="isSupplementaryMaterialEmpty(item)" class="shrink-0 rounded border border-red-200 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-600">{{ (copy as any).missingConfig || '缺少内容' }}</span>
+                        <span v-if="isSupplementaryMaterialEmpty(item)" class="shrink-0 rounded border border-red-200 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-600">{{ copy.missingConfig }}</span>
                       </div>
                       <div v-if="item.description" class="mt-1 max-w-2xl text-sm text-slate-500">{{ item.description }}</div>
                     </td>
@@ -3726,16 +3726,16 @@ onMounted(() => {
                     </label>
                     <template v-if="isSupplementaryLinkType()">
                       <label class="block">
-                        <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ (copy as any).externalUrl }}</span>
+                        <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.externalUrl }}</span>
                         <input v-model="supplementaryItemForm.url" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-50 disabled:text-slate-500" placeholder="https://..." :disabled="!canEditCourseContent" />
                       </label>
                     </template>
                     <template v-else>
                       <label class="block">
-                        <span class="text-sm font-bold"><span v-if="isSupplementaryAssetRequired()" class="mr-1 text-red-500" aria-hidden="true">*</span>{{ (copy as any).assetObjectKeyLabel }}</span>
+                        <span class="text-sm font-bold"><span v-if="isSupplementaryAssetRequired()" class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.assetObjectKeyLabel }}</span>
                         <input v-model="supplementaryItemForm.url" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-50 disabled:text-slate-500" :placeholder="copy.assetObjectKeyPlaceholder" :disabled="!canEditCourseContent" />
                         <span v-if="editingSupplementaryItemIndex < 0" class="mt-2 block text-xs font-semibold text-amber-600">
-                          {{ (copy as any).uploadAfterSaveHintSupplementary }}
+                          {{ copy.uploadAfterSaveHintSupplementary }}
                         </span>
                       </label>
                       <div v-if="canEditCourseContent && editingSupplementaryItemIndex >= 0" class="mt-3 flex gap-3">
@@ -3743,7 +3743,7 @@ onMounted(() => {
                         <button type="button" class="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 py-3 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50" :disabled="uploadingSupplementary" @click="supplementaryFileInput?.click()">
                           <Loader2 v-if="uploadingSupplementary" class="h-4 w-4 animate-spin" />
                           <UploadCloud v-else class="h-4 w-4" />
-                          {{ uploadingSupplementary ? (copy as any).uploading : (copy as any).uploadSupplementaryFile }}
+                          {{ uploadingSupplementary ? copy.uploading : copy.uploadSupplementaryFile }}
                         </button>
                       </div>
                     </template>
@@ -3907,7 +3907,7 @@ onMounted(() => {
                     <input v-model="materialForm.file_object_key" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.fileObjectKeyPlaceholder" />
                     <span class="mt-1 block text-xs text-slate-500">{{ copy.fileObjectKeyHint }}</span>
                     <span v-if="!editingMaterialId" class="mt-2 block text-xs font-semibold text-amber-600">
-                      {{ (copy as any).uploadAfterSaveHintMaterial }}
+                      {{ copy.uploadAfterSaveHintMaterial }}
                     </span>
                   </label>
                   <label class="block">
@@ -3948,7 +3948,7 @@ onMounted(() => {
                     <button type="button" class="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 py-3 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50" :disabled="uploadingMaterial" @click="materialFileInput?.click()">
                       <Loader2 v-if="uploadingMaterial" class="h-4 w-4 animate-spin" />
                       <UploadCloud v-else class="h-4 w-4" />
-                      {{ uploadingMaterial ? (copy as any).uploading : (copy as any).uploadFile }}
+                      {{ uploadingMaterial ? copy.uploading : copy.uploadFile }}
                     </button>
                   </div>
                 </div>
@@ -4013,7 +4013,7 @@ onMounted(() => {
             <div class="min-w-0">
               <div class="flex items-center gap-2 overflow-hidden">
                 <span class="truncate text-lg font-black text-slate-950">{{ quizTitle(item.quiz) }}</span>
-                <span v-if="isQuizEmpty(item)" class="shrink-0 rounded border border-red-200 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-600">{{ (copy as any).missingConfig || '缺少内容' }}</span>
+                <span v-if="isQuizEmpty(item)" class="shrink-0 rounded border border-red-200 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-600">{{ copy.missingConfig }}</span>
               </div>
               <div class="mt-1 truncate font-mono text-xs font-semibold text-slate-500">ID: {{ quizId(item.quiz) || "-" }}</div>
             </div>
@@ -4059,8 +4059,8 @@ onMounted(() => {
 
             <div class="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 md:p-5">
               <div v-if="quizDialogMode !== 'create'" class="mb-4 flex gap-4 border-b border-slate-200">
-                <button :class="quizActiveTab === 'basic' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="quizActiveTab = 'basic'">{{ (copy as any).basicInfo || '基本信息' }}</button>
-                <button v-if="canEditCourseContent" :class="quizActiveTab === 'prerequisites' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="quizActiveTab = 'prerequisites'">{{ (copy as any).prerequisites || '前置条件' }}</button>
+                <button :class="quizActiveTab === 'basic' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="quizActiveTab = 'basic'">{{ copy.basicInfo }}</button>
+                <button v-if="canEditCourseContent" :class="quizActiveTab === 'prerequisites' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="quizActiveTab = 'prerequisites'">{{ copy.prerequisites }}</button>
               </div>
               <div v-show="quizActiveTab === 'basic'" class="space-y-5 md:space-y-6">
                 <div class="grid gap-4 lg:grid-cols-3">
@@ -4129,10 +4129,10 @@ onMounted(() => {
                   <input v-model="quizForm.title" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.quizTitlePlaceholder" />
                 </label>
                 <label class="mt-3 block">
-                  <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ (copy as any).quizType || '测验类型' }}</span>
+                  <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.quizType }}</span>
                   <select v-model.number="quizForm.quiz_type" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3">
-                    <option :value="1">{{ (copy as any).quizTypeMustPass || '必过测验' }}</option>
-                    <option :value="2">{{ (copy as any).quizTypeSkippable || '可跳过/自助完成测验' }}</option>
+                    <option :value="1">{{ copy.quizTypeMustPass }}</option>
+                    <option :value="2">{{ copy.quizTypeSkippable }}</option>
                   </select>
                 </label>
                 <textarea v-model="quizForm.description" class="mt-3 min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.description" />
@@ -4254,8 +4254,8 @@ onMounted(() => {
                     <textarea v-model="questionForm.question_text" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.questionTextPlaceholder" />
                   </label>
                   <label class="mt-3 block">
-                    <span class="text-sm font-bold">{{ copy.explanationLabel || '解答说明' }}</span>
-                    <textarea v-model="questionForm.explanation" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.explanationPlaceholder || '输入解答说明（最多 1024 字符）...'" maxlength="1024" />
+                    <span class="text-sm font-bold">{{ copy.explanationLabel }}</span>
+                    <textarea v-model="questionForm.explanation" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.explanationPlaceholder" maxlength="1024" />
                   </label>
                   <div class="mt-3 grid gap-3 sm:grid-cols-3">
                     <select v-model="questionForm.question_type" class="h-11 w-full rounded-xl border border-slate-200 px-3" :title="copy.questionTypePoints">
@@ -4415,8 +4415,8 @@ onMounted(() => {
               <label class="block w-32 shrink-0">
                 <span class="text-xs font-bold text-slate-500">{{ copy.mediaType }}</span>
                 <select v-model="item.type" class="mt-1 h-11 w-full rounded-lg border border-slate-200 px-3 text-sm">
-                  <option value="image">Image (图片)</option>
-                  <option value="video">Video (视频)</option>
+                  <option value="image">{{ copy.lessonTypes.image }}</option>
+                  <option value="video">{{ copy.lessonTypes.video }}</option>
                 </select>
               </label>
               <label class="block flex-1 min-w-0">
