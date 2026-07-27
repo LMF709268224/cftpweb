@@ -22,6 +22,7 @@ const paymentPreview = ref<any>(null)
 const exemptionStages = ref<any[]>([])
 const selectedExemptionUnitIds = ref<Record<string, boolean>>({})
 const activeOrderId = ref("")
+const levelPlaceholder = "{" + "{level}}"
 
 const uploadedExemptionFiles = ref<Record<string, { name: string; url: string; ext: string; hash: string; size: number }>>({})
 const exemptionReasons = ref<Record<string, string>>({})
@@ -628,7 +629,7 @@ async function confirmAndPay() {
           <!-- Step 1: Selection -->
           <div v-if="currentStep === 1" class="space-y-8">
             <div class="mb-4">
-              <h2 class="text-2xl font-bold">{{ t.checkoutWizard?.yourLevel1Paper?.replace('{' + '{level}}', "1") || "你的1级试卷" }}</h2>
+              <h2 class="text-2xl font-bold">{{ t.checkoutWizard?.yourLevel1Paper?.replace(levelPlaceholder, "1") || "你的1级试卷" }}</h2>
             </div>
             
             <div v-if="exemptionStages.length > 0" class="space-y-6">
