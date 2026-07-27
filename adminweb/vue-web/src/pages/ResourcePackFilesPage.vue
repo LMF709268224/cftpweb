@@ -217,8 +217,10 @@ async function loadFiles() {
     files.value = asRecordList(data.files || data.items)
     total.value = requestedPackFilter ? Number(data.total) || 0 : 0
     nextPageToken.value = String(requestedPackFilter ? data.next_cursor || "" : data.next_page_token || "")
-    const nextSelected = files.value.find((file) => fileId(file) === form.value.file_id) || files.value[0] || null
-    selectFile(nextSelected)
+    if (!detailOpen.value) {
+      const nextSelected = files.value.find((file) => fileId(file) === form.value.file_id) || files.value[0] || null
+      selectFile(nextSelected)
+    }
   } catch (err) {
     if (isAbortError(err) || requestId !== listRequestId) return
     console.error(err)
@@ -249,8 +251,10 @@ async function load() {
     cancelListRequest()
     packs.value = []
     files.value = []
-    selected.value = null
-    fillForm(null)
+    if (!detailOpen.value) {
+      selected.value = null
+      fillForm(null)
+    }
     toast.error(copy.value.toasts.loadFailed)
     return
   } finally {

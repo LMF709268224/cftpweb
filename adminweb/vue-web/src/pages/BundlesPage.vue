@@ -691,7 +691,7 @@ async function load() {
     nextCursor.value = String(data.next_cursor || "")
     prevCursor.value = String(data?.prev_cursor || "")
     lastPage.value = requestedPage
-    if (!selected.value && bundles.value.length) {
+    if (!detailOpen.value && mode.value !== "create" && !selected.value && bundles.value.length) {
       void selectBundle(bundles.value[0], false)
     }
   } catch (err) {

@@ -162,13 +162,17 @@ async function load() {
     total.value = Number(data.total) || 0
     packs.value = asRecordList(data.packs || data.items)
     nextPageToken.value = String(data.next_cursor || "")
-    const nextSelected = packs.value.find((pack) => packId(pack) === form.value.pack_id) || packs.value[0] || null
-    selectPack(nextSelected)
+    if (!detailOpen.value) {
+      const nextSelected = packs.value.find((pack) => packId(pack) === form.value.pack_id) || packs.value[0] || null
+      selectPack(nextSelected)
+    }
   } catch (err) {
     console.error(err)
     packs.value = []
-    selected.value = null
-    fillForm(null)
+    if (!detailOpen.value) {
+      selected.value = null
+      fillForm(null)
+    }
     toast.error(copy.value.toasts.listLoadFailed)
   } finally {
     loading.value = false
