@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed } from "vue"
+import { computed, onMounted } from "vue"
 import { RouterLink, useRoute } from "vue-router"
 import { CheckCircle2, ChevronRight, Home } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import { useTranslation } from "@/lib/language"
 import { useUser } from "@/lib/user"
+import { apiClient } from "@/lib/apiClient"
 
 const route = useRoute()
 const { t } = useTranslation()
@@ -12,6 +13,51 @@ const { currentUser } = useUser()
 
 const orderId = computed(() => route.params.orderId as string)
 const candUlid = computed(() => currentUser.value?.cand_ulid || currentUser.value?.ulid || "")
+
+onMounted(async () => {
+  if (!orderId.value) return
+  const evidenceStr = sessionStorage.getItem(`bundle_evidence_${orderId.value}`)
+  if (!evidenceStr) return
+  
+  try {
+    const evidence = JSON.parse(evidenceStr)
+    const { files, unitQualMap } = evidence
+    
+    // Process each unit's evidence
+    const promises = Object.keys(unitQualMap).map(async (unitId) => {
+      const qualId = unitQualMap[unitId]
+      const fileData = files[unitId]
+      // reasons[unitId] is available if backend supports it
+      if (!qualId || !fileData) return
+      
+      // Find the application created by the bundle purchase
+      const res = await apiClient(`/api/credentials/applications?cred_def_ulid=${encodeURIComponent(qualId)}`)
+      const app = (res?.applications || [])[0]
+      if (!app?.app_ulid) return
+      
+      // Attach the evidence
+      const payload = {
+        app_id: app.app_ulid,
+        files: [{
+          file_name: fileData.name,
+          file_url: fileData.url,
+          file_hash: fileData.hash,
+          file_ext: fileData.ext,
+          file_size: fileData.size,
+          file_usage: "EXEMPTION_EVIDENCE",
+          file_type: 1
+        }]
+      }
+      await apiClient("/api/credentials/update", { method: "PUT", body: JSON.stringify(payload) })
+    })
+    
+    await Promise.all(promises)
+    sessionStorage.removeItem(`bundle_evidence_${orderId.value}`)
+  } catch (err) {
+    console.error("Failed to auto-submit evidence:", err)
+    // Don't toast error here, it might just mean the application isn't ready yet or already submitted
+  }
+})
 </script>
 
 <template>

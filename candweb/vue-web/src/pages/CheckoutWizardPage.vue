@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive, ref, watch } from "vue"
 import { useRoute } from "vue-router"
 import { toast } from "vue-sonner"
-import { ClipboardList, Loader2, Send, Check, ShoppingCart } from "lucide-vue-next"
+import { ClipboardList, Loader2, Send, Check, ShoppingCart, UploadCloud, FileCheck } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import PaymentSessionPanel from "@/components/PaymentSessionPanel.vue"
 import { apiClient } from "@/lib/apiClient"
@@ -10,6 +10,7 @@ import { useTranslation } from "@/lib/language"
 import { useUser } from "@/lib/user"
 import { getCachedCountries, getCountryCityOptions, getCountryOptions, getProvinceOptions, getStateCityOptions, loadLocationData, type CountryOption } from "@/lib/locationOptions"
 import { GENDER_OPTIONS, PROFILE_TEXT_LIMITS, isValidEmail, isValidInternationalPhone, isValidPostalCode, normalizeGender, normalizeInternationalPhone, normalizePostalCode, trimToMax } from "@/lib/profileFormValidation"
+import { sha256Hex, uploadWithTimeout } from "@/lib/upload"
 
 const route = useRoute()
 const { t, lang } = useTranslation()
@@ -21,6 +22,11 @@ const paymentPreview = ref<any>(null)
 const exemptionStages = ref<any[]>([])
 const selectedExemptionUnitIds = ref<Record<string, boolean>>({})
 const activeOrderId = ref("")
+
+const uploadedExemptionFiles = ref<Record<string, { name: string; url: string; ext: string; hash: string; size: number }>>({})
+const exemptionReasons = ref<Record<string, string>>({})
+const exemptionDeclarations = ref<Record<string, boolean>>({})
+const uploadingUnitId = ref("")
 
 const isMembershipBundle = computed(() => {
   if (!bundleData.value) return false
@@ -406,6 +412,11 @@ function buildSelectedExemptionsJson() {
         index: stage.index,
         stage_cc_ulid: stage.stage_id,
         exempted_unit_cc_ulids: exemptedUnitIds,
+        exemptions_evidence: exemptedUnitIds.map((id: string) => ({
+          unit_id: id,
+          file_key: uploadedExemptionFiles.value[id]?.url,
+          reason: exemptionReasons.value[id]
+        }))
       }
     })
     .filter((stage) => stage.exempted_unit_cc_ulids.length > 0)
@@ -418,17 +429,88 @@ function buildSelectedExemptionsJson() {
   })
 }
 
-function onExemptionToggle(unit: any, event: Event) {
+async function refreshPaymentPreview() {
+  if (!bundleId) return
+  try {
+    const res = await apiClient(`/api/mall/payments/preview`, {
+      method: "POST",
+      body: JSON.stringify({
+        bundle_id: bundleId,
+        payment_mode: "FULL_PIPELINE",
+        selected_exemptions_json: buildSelectedExemptionsJson()
+      })
+    })
+    paymentPreview.value = res
+  } catch (err) {
+    console.error("Failed to refresh payment preview:", err)
+  }
+}
+
+async function onExemptionToggle(unit: any, event: Event) {
   const input = event.target as HTMLInputElement | null
   if (!unit.qualified || !unit.unit_id) return
   selectedExemptionUnitIds.value = {
     ...selectedExemptionUnitIds.value,
     [unit.unit_id]: Boolean(input?.checked),
   }
+  await refreshPaymentPreview()
 }
 
-function goToCredentialUpload() {
-  window.location.assign("/credentials")
+function triggerFileInput(unitId: string) {
+  document.getElementById(`file-${unitId}`)?.click()
+}
+
+async function onConstraintFileChange(event: Event, unit: any, qual: any) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  await handleFileUpload(unit, qual, file)
+  input.value = ""
+}
+
+async function handleFileUpload(unit: any, qual: any, file: File) {
+  if (uploadingUnitId.value) return
+  const unitId = unit.unit_id
+  
+  const fileExt = file.name.includes(".") ? "." + file.name.split(".").pop()?.toLowerCase() : ""
+  if (file.size > 20 * 1024 * 1024) {
+    toast.error("File size limit exceeded (20MB)")
+    return
+  }
+
+  uploadingUnitId.value = unitId
+  try {
+    const fileHash = await sha256Hex(file)
+    const contentType = file.type || "application/octet-stream"
+    const qualId = String(qual.qual_id || "").trim()
+    
+    const res = await apiClient("/api/credentials/upload-url", {
+      method: "POST",
+      body: JSON.stringify({ cred_def_ulid: qualId, file_name: file.name, file_ext: fileExt, file_hash: fileHash, content_type: contentType, file_usage: "EXEMPTION_EVIDENCE" }),
+    })
+    const uploadRes = await uploadWithTimeout(res.upload_url, { method: "PUT", headers: new Headers(res.signed_headers || {}), body: file })
+    if (!uploadRes.ok) throw new Error(`S3 upload failed: ${uploadRes.status} ${uploadRes.statusText}`)
+    
+    uploadedExemptionFiles.value = { ...uploadedExemptionFiles.value, [unitId]: { name: file.name, url: res.file_key, ext: fileExt, hash: fileHash, size: file.size } }
+  } catch (err: any) {
+    toast.error(`Upload failed: ${err?.message || err}`)
+  } finally {
+    uploadingUnitId.value = ""
+  }
+}
+
+async function nextFromStep1() {
+  for (const stage of exemptionStages.value) {
+    for (const unit of stage.units || []) {
+      if (selectedExemptionUnitIds.value[unit.unit_id]) {
+        if (!exemptionDeclarations.value[unit.unit_id]) {
+          toast.error("Please declare your evidence is true and valid for selected exemptions.")
+          return
+        }
+      }
+    }
+  }
+  currentStep.value = 2
 }
 
 function formatMoney(amount?: number, currency = "usd") {
@@ -497,6 +579,19 @@ async function confirmAndPay() {
     })
     activeOrderId.value = res.bundle_order_ulid || res.order_id || ""
     if (activeOrderId.value) {
+      // Store evidence files for success page to submit
+      if (Object.keys(uploadedExemptionFiles.value).length > 0) {
+        sessionStorage.setItem(`bundle_evidence_${activeOrderId.value}`, JSON.stringify({
+          files: uploadedExemptionFiles.value,
+          reasons: exemptionReasons.value,
+          unitQualMap: exemptionStages.value.flatMap(s => s.units || []).reduce((acc: any, u: any) => {
+            if (u.unit_id && u.exemption_quals?.[0]?.qual_id) {
+              acc[u.unit_id] = u.exemption_quals[0].qual_id
+            }
+            return acc
+          }, {})
+        }))
+      }
       currentStep.value = 4
     } else {
       toast.error(t.value.common?.error || "Order creation failed")
@@ -531,62 +626,96 @@ async function confirmAndPay() {
         
         <div class="max-w-2xl rounded-[16px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
           <!-- Step 1: Selection -->
-          <div v-if="currentStep === 1" class="space-y-6">
-            <h2 class="text-xl font-semibold">Exemption Options</h2>
-            <div v-if="exemptionStages.length > 0" class="space-y-4">
-              <div v-for="stage in exemptionStages" :key="stage.stage_id || stage.index" class="rounded-lg border border-border bg-background p-4">
-                <div class="mb-3 font-semibold">{{ stage.stage_name || `Stage ${stage.index + 1}` }}</div>
-                <div class="space-y-3">
-                  <label
+          <div v-if="currentStep === 1" class="space-y-8">
+            <div class="mb-4">
+              <h2 class="text-2xl font-bold">{{ t.checkoutWizard?.yourLevel1Paper?.replace("{{level}}", "1") || "你的1级试卷" }}</h2>
+            </div>
+            
+            <div v-if="exemptionStages.length > 0" class="space-y-6">
+              <div v-for="stage in exemptionStages" :key="stage.stage_id || stage.index" class="space-y-6">
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div
                     v-for="unit in stage.units"
                     :key="unit.unit_id"
                     :class="[
-                      'group flex gap-3 rounded-xl border p-3.5 transition-all duration-200',
+                      'group relative flex flex-col justify-between overflow-hidden rounded-2xl border p-5 transition-all duration-300',
                       selectedExemptionUnitIds[unit.unit_id]
-                        ? 'border-emerald-300 bg-emerald-50/70 shadow-sm'
+                        ? 'border-emerald-400 bg-emerald-50/40 shadow-md ring-1 ring-emerald-400'
                         : unit.qualified
-                          ? 'cursor-pointer border-border hover:border-primary/30'
-                          : 'border-border bg-muted/30 opacity-75',
+                          ? 'cursor-pointer border-border hover:border-emerald-200 hover:shadow-sm'
+                          : 'border-border bg-muted/50 opacity-80',
                     ]"
                   >
-                    <input
-                      type="checkbox"
-                      class="sr-only"
-                      :checked="Boolean(selectedExemptionUnitIds[unit.unit_id])"
-                      :disabled="!unit.qualified"
-                      @change="onExemptionToggle(unit, $event)"
-                    />
-                    <span
-                      :class="[
-                        'mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-all duration-200',
-                        selectedExemptionUnitIds[unit.unit_id]
-                          ? 'border-emerald-500 bg-emerald-500 text-white shadow-sm'
-                          : unit.qualified
-                            ? 'border-slate-300 bg-white group-hover:border-primary/50'
-                            : 'border-slate-200 bg-muted text-transparent',
-                      ]"
-                    >
-                      <Check v-if="selectedExemptionUnitIds[unit.unit_id]" class="h-4 w-4" />
-                    </span>
-                    <div class="min-w-0 flex-1">
-                      <div class="font-semibold">{{ unit.unit_name || unit.unit_id }}</div>
-                      <div v-if="!unit.qualified" class="mt-2 flex flex-wrap items-center gap-2 text-xs">
-                        <span class="text-muted-foreground">Missing qualifications</span>
+                    <div class="mb-4">
+                      <div class="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{{ unit.unit_id }}</div>
+                      <h3 class="text-xl font-bold text-slate-800">{{ unit.unit_name || unit.unit_id }}</h3>
+                    </div>
+                    
+                    <div class="mt-auto pt-4 flex items-center justify-between border-t border-slate-100">
+                      <label class="flex cursor-pointer items-center gap-3">
+                        <div class="relative flex items-center justify-center">
+                          <input
+                            type="checkbox"
+                            class="peer sr-only"
+                            :checked="Boolean(selectedExemptionUnitIds[unit.unit_id])"
+                            :disabled="!unit.qualified"
+                            @change="onExemptionToggle(unit, $event)"
+                          />
+                          <div class="h-6 w-6 rounded-md border-2 border-slate-300 bg-white transition-all peer-checked:border-emerald-500 peer-checked:bg-emerald-500"></div>
+                          <Check class="pointer-events-none absolute h-4 w-4 text-white opacity-0 transition-opacity peer-checked:opacity-100" />
+                        </div>
+                        <span class="font-medium text-slate-700">{{ t.checkoutWizard?.applyForExemption || "申请豁免" }}</span>
+                      </label>
+                    </div>
+                    
+                    <div v-if="selectedExemptionUnitIds[unit.unit_id]" class="mt-6 animate-in slide-in-from-top-2 fade-in duration-300">
+                      <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm">
                         <button
                           type="button"
-                          class="inline-flex font-semibold text-primary hover:underline"
-                          @click.prevent="goToCredentialUpload()"
+                          class="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 py-4 text-sm font-medium text-slate-600 transition-colors hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700"
+                          :disabled="uploadingUnitId === unit.unit_id"
+                          @click="triggerFileInput(unit.unit_id)"
                         >
-                          申请豁免 (Apply for exemption)
+                          <Loader2 v-if="uploadingUnitId === unit.unit_id" class="h-5 w-5 animate-spin" />
+                          <UploadCloud v-else class="h-5 w-5" />
+                          <span>{{ uploadingUnitId === unit.unit_id ? "上传中..." : "添加证据" }}</span>
                         </button>
+                        <input :id="`file-${unit.unit_id}`" type="file" class="hidden" accept=".pdf,.doc,.docx,.jpg,.png" @change="onConstraintFileChange($event, unit, unit.exemption_quals?.[0] || {})" />
+                        
+                        <div v-if="uploadedExemptionFiles[unit.unit_id]" class="mt-3 flex items-center justify-between rounded-lg border border-emerald-100 bg-emerald-50/50 px-3 py-2 text-sm text-emerald-800">
+                          <div class="flex items-center gap-2 overflow-hidden">
+                            <FileCheck class="h-4 w-4 shrink-0 text-emerald-500" />
+                            <span class="truncate">{{ uploadedExemptionFiles[unit.unit_id].name }}</span>
+                          </div>
+                        </div>
+
+                        <div class="mt-4">
+                          <textarea
+                            v-model="exemptionReasons[unit.unit_id]"
+                            class="w-full rounded-lg border border-slate-300 p-3 text-sm focus:border-emerald-500"
+                            rows="3"
+                            placeholder="请填写申请理由..."
+                          ></textarea>
+                        </div>
+                        
+                        <div class="mt-4 rounded-lg bg-emerald-50/50 p-4">
+                          <label class="flex items-start gap-3">
+                            <input type="checkbox" v-model="exemptionDeclarations[unit.unit_id]" class="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                            <span class="text-xs leading-relaxed text-emerald-800 font-medium">我声明我的证据真实有效。</span>
+                          </label>
+                        </div>
                       </div>
                     </div>
-                  </label>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="flex justify-end pt-4">
-              <button class="btn btn-primary" @click="currentStep = 2">Next <Send class="ml-2 h-4 w-4" /></button>
+              
+              <div v-if="paymentPreview" class="mt-8 flex flex-col items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 p-6 sm:flex-row shadow-sm">
+                <div class="text-lg font-bold text-slate-900">总额 {{ formatMoney(paymentPreview.total_amount) }}</div>
+                <button class="btn bg-emerald-600 text-white shadow-md hover:bg-emerald-700 rounded-full px-8 py-3" @click="nextFromStep1">
+                  保存并继续 ->
+                </button>
+              </div>
             </div>
           </div>
 
@@ -635,6 +764,7 @@ async function confirmAndPay() {
             </div>
             <label class="block space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formAddress }}</span><input v-model="formData.address" class="input" :maxlength="PROFILE_TEXT_LIMITS.address" required /></label>
             <label class="block space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formPostalCode }}</span><input v-model="formData.postal_code" class="input" :maxlength="PROFILE_TEXT_LIMITS.postalCode" pattern="[A-Za-z0-9][A-Za-z0-9 -]*[A-Za-z0-9]" required @blur="formData.postal_code = normalizePostalCode(formData.postal_code)" /></label>
+            
             <div class="grid gap-4 sm:grid-cols-1">
               <label class="space-y-2">
                 <span class="text-sm font-medium">{{ t.examSignup.formWorkPhone }}</span>
@@ -658,15 +788,15 @@ async function confirmAndPay() {
 
             <div v-if="!isMembershipBundle" class="mt-6 border-t border-border pt-6">
               <label class="flex items-center gap-3">
-                <input v-model="formData.agreement" type="checkbox" class="h-4 w-4 shrink-0 rounded border-gray-300 text-primary" :required="!isMembershipBundle" />
-                <span class="text-sm font-medium text-foreground">我已阅读并同意隐私政策 ({{ t.examSignup?.agreement || 'Privacy Policy' }})</span>
+                <input v-model="formData.agreement" type="checkbox" class="h-4 w-4 shrink-0 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500" :required="!isMembershipBundle" />
+                <span class="text-sm font-medium text-foreground">{{ t.examSignup?.agreementRequired || "我已阅读并同意 CFtP 用户协议及隐私政策" }}</span>
               </label>
             </div>
 
-            <div class="flex justify-between pt-4">
+            <div class="flex items-center justify-between border-t pt-6 mt-6">
               <button type="button" class="btn btn-outline" @click="currentStep = 1" v-if="exemptionStages.length > 0">Back</button>
               <div v-else></div>
-              <button class="btn btn-primary" :disabled="loading">
+              <button class="btn bg-emerald-600 text-white hover:bg-emerald-700 rounded-full px-8" :disabled="loading" @click="nextFromStep2">
                 <template v-if="loading"><Loader2 class="h-4 w-4 animate-spin" /> {{ t.examSignup.submitting }}</template>
                 <template v-else>Next <Send class="ml-2 h-4 w-4" /></template>
               </button>
