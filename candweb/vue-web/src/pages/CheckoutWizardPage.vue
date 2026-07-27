@@ -18,11 +18,16 @@ const { currentUser, fetchUser } = useUser()
 const bundleId = String(route.params.bundleId || route.query.bundleId || "")
 const currentStep = ref(1)
 const bundleData = ref<any>(null)
+const paymentMode = ref("FULL_PIPELINE")
 const paymentPreview = ref<any>(null)
 const exemptionStages = ref<any[]>([])
 const selectedExemptionUnitIds = ref<Record<string, boolean>>({})
 const activeOrderId = ref("")
 const levelPlaceholder = "{" + "{level}}"
+
+const isMultiStage = computed(() => {
+  return (bundleData.value?.stages?.length || 0) > 1
+})
 
 const uploadedExemptionFiles = ref<Record<string, { name: string; url: string; ext: string; hash: string; size: number }>>({})
 const exemptionReasons = ref<Record<string, string>>({})
@@ -557,7 +562,7 @@ async function confirmAndPay() {
   try {
     const body = {
       bundle_id: bundleId,
-      payment_mode: "FULL_PIPELINE",
+      payment_mode: paymentMode.value,
       selected_exemptions_json: buildSelectedExemptionsJson()
     }
     const res = await apiClient("/api/mall/orders", {
@@ -818,7 +823,28 @@ async function confirmAndPay() {
               </div>
             </div>
 
-            <div v-if="paymentPreview" class="rounded-lg bg-muted/30 p-4 border border-border">
+            <!-- PAYMENT MODE SELECTION -->
+            <div v-if="isMultiStage" class="rounded-lg border border-border p-4 text-sm space-y-4">
+              <div class="mb-2 text-sm font-semibold">{{ t.checkoutWizard?.paymentModeTitle || "Payment Mode" }}</div>
+              
+              <label class="flex items-start gap-3 rounded-lg border p-4 transition-colors hover:bg-slate-50 cursor-pointer" :class="{ 'border-emerald-500 bg-emerald-50/30': paymentMode === 'FULL_PIPELINE', 'border-border': paymentMode !== 'FULL_PIPELINE' }">
+                <input type="radio" v-model="paymentMode" value="FULL_PIPELINE" class="mt-1 h-4 w-4 text-emerald-600 focus:ring-emerald-500" />
+                <div>
+                  <div class="font-medium text-slate-900">{{ t.checkoutWizard?.modeFullPipeline || "Pay in Full" }}</div>
+                  <div class="text-xs text-slate-500 mt-1">{{ t.checkoutWizard?.modeFullPipelineDesc || "Pay for the entire program upfront and enjoy uninterrupted learning." }}</div>
+                </div>
+              </label>
+
+              <label class="flex items-start gap-3 rounded-lg border p-4 transition-colors hover:bg-slate-50 cursor-pointer" :class="{ 'border-emerald-500 bg-emerald-50/30': paymentMode === 'BY_STAGE', 'border-border': paymentMode !== 'BY_STAGE' }">
+                <input type="radio" v-model="paymentMode" value="BY_STAGE" class="mt-1 h-4 w-4 text-emerald-600 focus:ring-emerald-500" />
+                <div>
+                  <div class="font-medium text-slate-900">{{ t.checkoutWizard?.modeByStage || "Pay by Stage" }}</div>
+                  <div class="text-xs text-slate-500 mt-1">{{ t.checkoutWizard?.modeByStageDesc || "Pay only for the first stage now. Unlock subsequent stages as you progress." }}</div>
+                </div>
+              </label>
+            </div>
+
+            <div v-if="paymentPreview && paymentMode === 'FULL_PIPELINE'" class="rounded-lg bg-muted/30 p-4 border border-border">
               <div class="mb-3 text-sm font-semibold">{{ t.checkoutWizard?.priceSummary || "Price Summary" }}</div>
               <div class="space-y-2 text-sm">
                 <div class="flex justify-between">
