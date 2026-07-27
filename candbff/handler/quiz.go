@@ -79,6 +79,39 @@ func (h *Handler) SubmitQuiz(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, resp)
 }
 
+func (h *Handler) SaveQuizDraft(w http.ResponseWriter, r *http.Request) {
+	candidateID := CandidateID(r)
+	attemptID := strings.TrimSpace(chi.URLParam(r, "attemptId"))
+	if !requireRequestFields(w, candidateID, "candidate_id", attemptID, "attempt_id") {
+		return
+	}
+
+	var input SubmitQuizInput
+	if err := ReadJSON(r, &input); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid request body: "+err.Error())
+		return
+	}
+
+	submissions := make([]*lmspb.QuizAnswerSubmission, 0, len(input.Submissions))
+	for _, sub := range input.Submissions {
+		submissions = append(submissions, &lmspb.QuizAnswerSubmission{
+			QuestionUlid:      sub.QuestionId,
+			SelectedOptionIds: sub.SelectedOptionIds,
+		})
+	}
+
+	resp, err := h.Lms.SaveQuizDraft(r.Context(), &lmspb.SaveQuizDraftRequest{
+		CandidateUlid: candidateID,
+		AttemptId:     attemptID,
+		Submissions:   submissions,
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
 func (h *Handler) GetQuizAttemptDetail(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
 	attemptID := strings.TrimSpace(chi.URLParam(r, "attemptId"))

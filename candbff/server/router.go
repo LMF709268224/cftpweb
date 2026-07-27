@@ -136,6 +136,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Post("/{quizId}/complete", h.CompleteLmsQuiz)
 			r.Get("/attempts/{attemptId}/paper", h.GetQuizPaper)
 			r.Get("/attempts/{attemptId}/detail", h.GetQuizAttemptDetail)
+			r.Post("/attempts/{attemptId}/draft", h.SaveQuizDraft)
 			r.Post("/attempts/{attemptId}/submit", h.SubmitQuiz)
 		})
 

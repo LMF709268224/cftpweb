@@ -19,6 +19,8 @@ const returnTo = computed(() => {
 })
 const loading = ref(true)
 const submitting = ref(false)
+const remainingSeconds = ref<number>(0)
+const timerInterval = ref<number | null>(null)
 const paper = ref<any>(null)
 const answers = ref<Record<string, string[]>>({})
 const result = ref<any>(null)
@@ -63,6 +65,33 @@ function formatQuizQuestionCount(current: number, total: number) {
   return (t.value.learning?.quizQuestionCount || "")
     .replace("{{current}}", String(current))
     .replace("{{total}}", String(total))
+}
+
+const formattedTimer = computed(() => {
+  if (remainingSeconds.value <= 0) return ""
+  const m = Math.floor(remainingSeconds.value / 60)
+  const s = remainingSeconds.value % 60
+  return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`
+})
+
+function startTimer() {
+  stopTimer()
+  if (remainingSeconds.value <= 0) return
+  timerInterval.value = window.setInterval(() => {
+    remainingSeconds.value--
+    if (remainingSeconds.value <= 0) {
+      stopTimer()
+      toast.error((t.value.learning as any)?.quizTimeUp || "Time is up, automatically submitting...")
+      submitQuiz(true)
+    }
+  }, 1000)
+}
+
+function stopTimer() {
+  if (timerInterval.value) {
+    window.clearInterval(timerInterval.value)
+    timerInterval.value = null
+  }
 }
 
 function formatQuizAnsweredCount(current: number, total: number) {
@@ -121,6 +150,12 @@ function persistQuizDraft(nextAnswers = answers.value) {
   } catch (err) {
     console.warn("Failed to save quiz draft", err)
   }
+
+  // Silent remote sync
+  const submissions = Object.entries(sanitized).map(([questionId, selectedOptionIds]) => ({ question_id: questionId, selected_option_ids: selectedOptionIds }))
+  apiClient(`/api/quizzes/attempts/${attemptId.value}/draft`, { method: "POST", body: JSON.stringify({ submissions }) }).catch(err => {
+    console.warn("Failed to sync quiz draft to server", err)
+  })
 }
 
 function restoreQuizDraft() {
@@ -181,7 +216,29 @@ async function loadPaper() {
       ...res,
       questions: Array.isArray(res?.questions) ? res.questions.map(normalizeQuestion) : [],
     }
-    restoreQuizDraft()
+    
+    if (res?.draft_submissions && res.draft_submissions.length > 0) {
+      const serverAnswers: Record<string, string[]> = {}
+      res.draft_submissions.forEach((sub: any) => {
+         const qid = firstString(sub.question_id, sub.question_ulid, sub.questionUlid)
+         const opts = Array.isArray(sub.selected_option_ids) ? sub.selected_option_ids : (sub.selectedOptionIds || [])
+         if (qid && opts.length > 0) {
+            serverAnswers[qid] = opts
+         }
+      })
+      if (hasAnswerValues(serverAnswers)) {
+          answers.value = sanitizeAnswersForCurrentPaper(serverAnswers)
+      } else {
+          restoreQuizDraft()
+      }
+    } else {
+      restoreQuizDraft()
+    }
+
+    if (res?.remaining_seconds > 0) {
+      remainingSeconds.value = Number(res.remaining_seconds)
+      startTimer()
+    }
   } finally {
     loading.value = false
   }
@@ -201,9 +258,9 @@ function handleSelectOption(questionId: string, optionId: string, isMultipleChoi
   persistQuizDraft()
 }
 
-async function submitQuiz() {
+async function submitQuiz(autoSubmit = false) {
   if (!paper.value?.questions) return
-  if (!window.confirm(quizSubmitConfirmMessage())) return
+  if (!autoSubmit && !window.confirm(quizSubmitConfirmMessage())) return
   const sanitizedAnswers = sanitizeAnswersForCurrentPaper(answers.value)
   const submissions = Object.entries(sanitizedAnswers).map(([questionId, selectedOptionIds]) => ({ question_id: questionId, selected_option_ids: selectedOptionIds }))
   submitting.value = true
@@ -211,8 +268,19 @@ async function submitQuiz() {
     result.value = await apiClient(`/api/quizzes/attempts/${attemptId.value}/submit`, { method: "POST", body: JSON.stringify({ submissions }) })
     clearQuizDraft()
     toast.success(t.value.learning?.quizSubmittedDesc || t.value.common.success)
+  } catch (err: any) {
+    if (err?.error_code === "FAILED_PRECONDITION" || err?.status === 412 || err?.status === 400) {
+      toast.info((t.value.learning as any)?.quizTimeUp || "Quiz time ended. Loading results...")
+      await loadAttemptDetail()
+      if (detailedAnswers.value.length > 0) {
+         result.value = { score: 0, max_score: 0 } 
+      }
+    } else {
+      throw err
+    }
   } finally {
     submitting.value = false
+    stopTimer()
   }
 }
 
@@ -247,6 +315,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener("beforeunload", handleBeforeUnload)
+  stopTimer()
 })
 
 onBeforeRouteLeave(() => {
@@ -358,7 +427,10 @@ onBeforeRouteLeave(() => {
             <h1 class="text-2xl font-bold text-foreground sm:text-3xl">{{ paper.title || t.learning?.quizPrefix }}</h1>
             <p v-if="paper.description" class="mt-2 text-muted-foreground">{{ paper.description }}</p>
           </div>
-          <div v-if="paper.time_limit > 0" class="flex shrink-0 items-center gap-2 rounded-full border bg-muted/30 px-3 py-1.5 text-sm font-medium text-foreground">
+          <div v-if="formattedTimer" class="flex shrink-0 items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-sm font-bold text-rose-700 shadow-sm animate-pulse">
+            <Clock class="h-4 w-4" /> {{ formattedTimer }}
+          </div>
+          <div v-else-if="paper.time_limit > 0" class="flex shrink-0 items-center gap-2 rounded-full border bg-muted/30 px-3 py-1.5 text-sm font-medium text-foreground">
             <Clock class="h-4 w-4 text-primary" /> {{ paper.time_limit }} {{ t.learning?.quizMin }}
           </div>
         </div>
@@ -400,7 +472,7 @@ onBeforeRouteLeave(() => {
 
       <div class="sticky bottom-4 flex flex-col items-center justify-between gap-4 rounded-md bg-white/95 p-4 shadow-sm backdrop-blur-md sm:flex-row sm:p-6">
         <div class="text-sm text-muted-foreground">{{ formatQuizAnsweredCount(answeredCount, questions.length) }}</div>
-        <button class="btn btn-primary w-full cursor-pointer px-8 disabled:cursor-not-allowed sm:w-auto" :disabled="submitting || !allAnswered" @click="submitQuiz">
+        <button class="btn btn-primary w-full cursor-pointer px-8 disabled:cursor-not-allowed sm:w-auto" :disabled="submitting || !allAnswered" @click="() => submitQuiz(false)">
           <span v-if="submitting" class="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-r-transparent" />
           <FileText v-else class="h-4 w-4" />
           {{ submitting ? t.common.loading : t.learning?.quizSubmit }}
