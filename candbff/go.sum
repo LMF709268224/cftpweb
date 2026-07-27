@@ -4,6 +4,8 @@ github.com/afnandelfin620-star/cftptest/cftp v0.0.0-20260722020839-002d16fcc4a9 
 github.com/afnandelfin620-star/cftptest/cftp v0.0.0-20260722020839-002d16fcc4a9/go.mod h1:00s9AuWPk/1OxEv2bjpjWVk9FQxV8xM+mWO9GchE1i4=
 github.com/afnandelfin620-star/cftptest/cftp v0.0.0-20260723093217-ad18c714de1f h1:6QZwHVAMtAl7bCoXK5lAsWasRzAxirtWzK4iXafyO9M=
 github.com/afnandelfin620-star/cftptest/cftp v0.0.0-20260723093217-ad18c714de1f/go.mod h1:00s9AuWPk/1OxEv2bjpjWVk9FQxV8xM+mWO9GchE1i4=
+github.com/afnandelfin620-star/cftptest/cftp v0.0.0-20260726232017-c9a01c190667 h1:iRfkPXLtvOxBiF1HIKzsn2o3BAoCxbKzzHax/yXBwSY=
+github.com/afnandelfin620-star/cftptest/cftp v0.0.0-20260726232017-c9a01c190667/go.mod h1:00s9AuWPk/1OxEv2bjpjWVk9FQxV8xM+mWO9GchE1i4=
 github.com/casdoor/casdoor-go-sdk v1.46.0 h1:a2LAon5daFoJes4E5FEQinaLC/QaH6XBtOEdrvJlVc4=
 github.com/casdoor/casdoor-go-sdk v1.46.0/go.mod h1:7aXOpfl6s5M5/yjHgIGuPBwdHeSCV/jha1iYsnE1MNc=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=
