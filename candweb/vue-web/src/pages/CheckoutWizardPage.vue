@@ -783,18 +783,18 @@ async function confirmAndPay() {
             </div>
 
             <div class="flex items-center justify-between border-t pt-6 mt-6">
-              <button type="button" class="btn btn-outline" @click="currentStep = 1" v-if="exemptionStages.length > 0">Back</button>
+              <button type="button" class="btn btn-outline" @click="currentStep = 1" v-if="exemptionStages.length > 0">{{ t.checkoutWizard?.back || "Back" }}</button>
               <div v-else></div>
-              <button class="btn bg-emerald-600 text-white hover:bg-emerald-700 rounded-full px-8" :disabled="loading" @click="nextFromStep2">
+              <button type="submit" class="btn bg-emerald-600 text-white hover:bg-emerald-700 rounded-full px-8" :disabled="loading">
                 <template v-if="loading"><Loader2 class="h-4 w-4 animate-spin" /> {{ t.examSignup.submitting }}</template>
-                <template v-else>Next <Send class="ml-2 h-4 w-4" /></template>
+                <template v-else>{{ t.checkoutWizard?.next || "Next" }} <Send class="ml-2 h-4 w-4" /></template>
               </button>
             </div>
           </form>
 
           <!-- Step 3: Review -->
           <div v-if="currentStep === 3" class="space-y-6">
-            <h2 class="text-xl font-semibold">Review</h2>
+            <h2 class="text-xl font-semibold">{{ t.checkoutWizard?.review || "Review" }}</h2>
             <div class="rounded-lg border border-border p-4 text-sm space-y-2">
               <div class="grid grid-cols-3 gap-2">
                 <div class="text-muted-foreground">Name:</div>
@@ -809,35 +809,35 @@ async function confirmAndPay() {
             </div>
 
             <div v-if="paymentPreview" class="rounded-lg bg-muted/30 p-4 border border-border">
-              <div class="mb-3 text-sm font-semibold">Price Summary</div>
+              <div class="mb-3 text-sm font-semibold">{{ t.checkoutWizard?.priceSummary || "Price Summary" }}</div>
               <div class="space-y-2 text-sm">
                 <div class="flex justify-between">
-                  <span class="text-muted-foreground">Subtotal</span>
+                  <span class="text-muted-foreground">{{ t.checkoutWizard?.subtotal || "Subtotal" }}</span>
                   <span class="font-medium">{{ paymentPreview.amount_label || formatMoney(paymentPreview.subtotal, paymentPreview.currency) }}</span>
                 </div>
                 <div v-if="paymentPreview.discount_total" class="flex justify-between">
-                  <span class="text-muted-foreground">Discount</span>
+                  <span class="text-muted-foreground">{{ t.checkoutWizard?.discount || "Discount" }}</span>
                   <span class="font-medium">-{{ formatMoney(paymentPreview.discount_total, paymentPreview.currency) }}</span>
                 </div>
                 <div class="mt-2 flex justify-between border-t border-border pt-2">
-                  <span class="font-semibold text-foreground">Total</span>
+                  <span class="font-semibold text-foreground">{{ t.checkoutWizard?.total || "Total" }}</span>
                   <span class="text-lg font-bold text-foreground">{{ paymentPreview.pay_amount_label || formatMoney(paymentPreview.total, paymentPreview.currency) }}</span>
                 </div>
               </div>
             </div>
 
             <div class="flex justify-between pt-4">
-              <button type="button" class="btn btn-outline" @click="currentStep = 2" :disabled="loading">Back</button>
+              <button type="button" class="btn btn-outline" @click="currentStep = 2" :disabled="loading">{{ t.checkoutWizard?.back || "Back" }}</button>
               <button class="btn btn-primary" :disabled="loading" @click="confirmAndPay">
-                <template v-if="loading"><Loader2 class="h-4 w-4 animate-spin" /> Processing...</template>
-                <template v-else>Confirm & Pay <ShoppingCart class="ml-2 h-4 w-4" /></template>
+                <template v-if="loading"><Loader2 class="h-4 w-4 animate-spin" /> {{ t.checkoutWizard?.processing || "Processing..." }}</template>
+                <template v-else>{{ t.checkoutWizard?.confirmAndPay || "Confirm & Pay" }} <ShoppingCart class="ml-2 h-4 w-4" /></template>
               </button>
             </div>
           </div>
 
           <!-- Step 4: Payment -->
           <div v-if="currentStep === 4" class="space-y-6">
-            <h2 class="text-xl font-semibold">Payment</h2>
+            <h2 class="text-xl font-semibold">{{ t.checkoutWizard?.payment || "Payment" }}</h2>
             <PaymentSessionPanel
               v-if="activeOrderId"
               :biz-type="'BUNDLE_PURCHASE'"
