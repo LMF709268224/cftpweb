@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive, ref, watch } from "vue"
 import { useRoute } from "vue-router"
 import { toast } from "vue-sonner"
-import { ClipboardList, Loader2, Send, Check, ShoppingCart, UploadCloud, FileCheck } from "lucide-vue-next"
+import { ClipboardList, Loader2, Send, Check, CheckCircle2, Clock, ShoppingCart, UploadCloud, FileCheck } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import PaymentSessionPanel from "@/components/PaymentSessionPanel.vue"
 import { apiClient } from "@/lib/apiClient"
@@ -488,9 +488,11 @@ async function nextFromStep1() {
   for (const stage of exemptionStages.value) {
     for (const unit of stage.units || []) {
       if (selectedExemptionUnitIds.value[unit.unit_id]) {
-        if (!exemptionDeclarations.value[unit.unit_id]) {
-          toast.error("Please declare your evidence is true and valid for selected exemptions.")
-          return
+        if (unit.exemption_quals?.[0]?.credential_status !== 'CREDENTIAL_STATUS_ACTIVE') {
+          if (!exemptionDeclarations.value[unit.unit_id]) {
+            toast.error(t.value.checkoutWizard?.declareEvidenceValidError || "请声明证据真实有效")
+            return
+          }
         }
       }
     }
@@ -634,6 +636,14 @@ async function confirmAndPay() {
                     <div class="mb-4">
                       <div class="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{{ unit.unit_id }}</div>
                       <h3 class="text-xl font-bold text-slate-800">{{ unit.unit_name || unit.unit_id }}</h3>
+                      <p v-if="unit.exemption_quals?.[0]?.description" class="mt-2 text-sm text-slate-500">{{ unit.exemption_quals[0].description }}</p>
+                      
+                      <div v-if="unit.exemption_quals?.[0]?.credential_status === 'CREDENTIAL_STATUS_ACTIVE'" class="mt-3 inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-800">
+                        <CheckCircle2 class="mr-1 h-3.5 w-3.5" /> {{ t.checkoutWizard?.statusApproved || "已通过" }}
+                      </div>
+                      <div v-else-if="unit.exemption_quals?.[0]?.credential_status" class="mt-3 inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
+                        <Clock class="mr-1 h-3.5 w-3.5" /> {{ t.checkoutWizard?.statusPending || "审核中" }}
+                      </div>
                     </div>
                     
                     <div class="mt-auto pt-4 flex items-center justify-between border-t border-slate-100">
@@ -643,7 +653,7 @@ async function confirmAndPay() {
                             type="checkbox"
                             class="peer sr-only"
                             :checked="Boolean(selectedExemptionUnitIds[unit.unit_id])"
-                            :disabled="!unit.qualified"
+                            :disabled="!unit.qualified || (unit.exemption_quals?.[0]?.credential_status && unit.exemption_quals?.[0]?.credential_status !== 'CREDENTIAL_STATUS_ACTIVE')"
                             @change="onExemptionToggle(unit, $event)"
                           />
                           <div class="h-6 w-6 rounded-md border-2 border-slate-300 bg-white transition-all peer-checked:border-emerald-500 peer-checked:bg-emerald-500"></div>
@@ -653,7 +663,7 @@ async function confirmAndPay() {
                       </label>
                     </div>
                     
-                    <div v-if="selectedExemptionUnitIds[unit.unit_id]" class="mt-6 animate-in slide-in-from-top-2 fade-in duration-300">
+                    <div v-if="selectedExemptionUnitIds[unit.unit_id] && unit.exemption_quals?.[0]?.credential_status !== 'CREDENTIAL_STATUS_ACTIVE'" class="mt-6 animate-in slide-in-from-top-2 fade-in duration-300">
                       <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm">
                         <button
                           type="button"
