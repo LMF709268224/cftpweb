@@ -537,6 +537,7 @@ export const en: AdminTranslations = {
             title: "Role / title",
             education: "Education",
             bio: "Administrator bio",
+            birthday: "MM/DD/YYYY",
         },
         genders: {
             male: "Male",
@@ -911,6 +912,7 @@ export const en: AdminTranslations = {
             operator: "operator ULID",
             resourceType: "credential_application",
             resourceId: "resource ULID",
+            dateTime: "MM/DD/YYYY --:--",
         },
         columns: {
             time: "Time",

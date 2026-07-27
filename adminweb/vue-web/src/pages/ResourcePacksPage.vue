@@ -22,7 +22,7 @@ const nextPageToken = ref("")
 const previousTokens = ref<string[]>([])
 const currentPage = ref(1)
 let detailRequestId = 0
-const { t } = useAdminLanguage()
+const { t, isZh } = useAdminLanguage()
 const copy = computed(() => t.value.resourcePacksAdmin)
 
 const uploadingThumbnail = ref(false)
@@ -536,7 +536,10 @@ onMounted(load)
         </div>
         <div v-else-if="!packs.length" class="px-4 py-10 text-center text-slate-500 md:p-12">{{ copy.empty }}</div>
         <div v-else>
-          <div class="hidden grid-cols-[minmax(0,1fr)_84px_120px_300px] gap-6 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400 lg:grid">
+          <div
+            class="hidden gap-6 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400 lg:grid"
+            :class="isZh ? 'grid-cols-[minmax(0,1fr)_84px_120px_300px]' : 'grid-cols-[minmax(0,1fr)_84px_120px_300px] xl:grid-cols-[minmax(0,1fr)_84px_120px_420px]'"
+          >
             <span>{{ copy.columns.pack }}</span>
             <span>{{ copy.columns.version }}</span>
             <span class="text-center">{{ copy.columns.status }}</span>
@@ -545,8 +548,11 @@ onMounted(load)
           <div
             v-for="pack in packs"
             :key="packId(pack)"
-            class="grid w-full gap-3 border-b border-slate-100 px-4 py-4 text-left transition last:border-b-0 hover:bg-slate-50 md:px-5 md:py-3 lg:grid-cols-[minmax(0,1fr)_84px_120px_300px] lg:items-center lg:gap-6"
-            :class="packId(selected) === packId(pack) ? 'bg-sky-50/70' : ''"
+            class="grid w-full gap-3 border-b border-slate-100 px-4 py-4 text-left transition last:border-b-0 hover:bg-slate-50 md:px-5 md:py-3 lg:items-center lg:gap-6"
+            :class="[
+              packId(selected) === packId(pack) ? 'bg-sky-50/70' : '',
+              isZh ? 'lg:grid-cols-[minmax(0,1fr)_84px_120px_300px]' : 'lg:grid-cols-[minmax(0,1fr)_84px_120px_300px] xl:grid-cols-[minmax(0,1fr)_84px_120px_420px]',
+            ]"
           >
             <div class="min-w-0">
               <div class="break-words text-base font-black text-slate-950 lg:truncate">{{ packTitle(pack) }}</div>
@@ -563,7 +569,10 @@ onMounted(load)
                 {{ packStatusLabel(pack) }}
               </span>
             </span>
-            <div class="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center sm:justify-start lg:justify-center">
+            <div
+              class="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center sm:justify-start lg:justify-center"
+              :class="isZh ? '' : 'xl:flex-nowrap xl:gap-4'"
+            >
               <button class="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 transition hover:underline lg:border-0 lg:bg-transparent lg:px-0 lg:py-0" type="button" @click="openPackDetail(pack)">
                 {{ copy.viewDetails }}
               </button>

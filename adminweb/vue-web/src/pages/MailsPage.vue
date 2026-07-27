@@ -64,7 +64,7 @@ let templateDetailRequestId = 0
 let templateEditRequestId = 0
 let templatePayloadRequestId = 0
 let mailDetailRequestId = 0
-const { t } = useAdminLanguage()
+const { t, isZh } = useAdminLanguage()
 const copy = computed(() => t.value.mailsAdmin)
 
 const tabs = computed(() => [
@@ -797,7 +797,10 @@ onMounted(async () => {
             </button>
           </div>
           </div>
-          <div class="hidden grid-cols-[minmax(0,1fr)_140px_180px_160px] gap-5 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500 md:grid">
+          <div
+            class="hidden gap-5 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500 md:grid"
+            :class="isZh ? 'grid-cols-[minmax(0,1fr)_140px_180px_160px]' : 'grid-cols-[minmax(0,1fr)_140px_180px_160px] xl:grid-cols-[minmax(0,1fr)_140px_180px_220px]'"
+          >
             <span>{{ copy.template }}</span>
             <span class="text-center">{{ copy.templateColumns.version }}</span>
             <span class="text-right">{{ copy.templateColumns.updatedAt }}</span>
@@ -811,8 +814,11 @@ onMounted(async () => {
             <div
               v-for="template in templates"
               :key="pathOf(template)"
-              class="flex flex-col gap-3 px-4 py-4 transition hover:bg-slate-50 md:grid md:grid-cols-[minmax(0,1fr)_140px_180px_160px] md:items-center md:gap-5 md:px-5"
-              :class="pathOf(selectedTemplate) === pathOf(template) ? 'bg-sky-50' : ''"
+              class="flex flex-col gap-3 px-4 py-4 transition hover:bg-slate-50 md:grid md:items-center md:gap-5 md:px-5"
+              :class="[
+                pathOf(selectedTemplate) === pathOf(template) ? 'bg-sky-50' : '',
+                isZh ? 'md:grid-cols-[minmax(0,1fr)_140px_180px_160px]' : 'md:grid-cols-[minmax(0,1fr)_140px_180px_160px] xl:grid-cols-[minmax(0,1fr)_140px_180px_220px]',
+              ]"
             >
               <div class="min-w-0">
                 <div class="break-words font-black text-slate-950 md:truncate">{{ nameOf(template) }}</div>
@@ -828,8 +834,8 @@ onMounted(async () => {
                 <span class="text-right text-sm font-semibold text-slate-500">{{ formatDate(String(pickFirst(template, ["updated_at", "created_at"]) || "")) }}</span>
               </div>
               <div class="flex flex-col justify-end gap-3 sm:flex-row">
-                <button class="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 transition hover:underline md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click="openTemplateDetail(template)">{{ copy.viewDetails }}</button>
-                <button class="inline-flex items-center justify-center rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-600 transition hover:underline md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click="openTemplateEdit(template)">{{ copy.editTemplate }}</button>
+                <button class="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 transition hover:underline md:border-0 md:bg-transparent md:px-0 md:py-0" :class="isZh ? '' : 'xl:shrink-0 xl:whitespace-nowrap'" type="button" @click="openTemplateDetail(template)">{{ copy.viewDetails }}</button>
+                <button class="inline-flex items-center justify-center rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-600 transition hover:underline md:border-0 md:bg-transparent md:px-0 md:py-0" :class="isZh ? '' : 'xl:shrink-0 xl:whitespace-nowrap'" type="button" @click="openTemplateEdit(template)">{{ copy.editTemplate }}</button>
               </div>
             </div>
           </div>

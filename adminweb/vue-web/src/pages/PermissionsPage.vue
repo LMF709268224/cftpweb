@@ -39,6 +39,7 @@ const loading = ref(false)
 const activeAction = ref<PermissionAction | null>(null)
 const pendingAction = ref<PendingPermissionAction | null>(null)
 const detailOpen = ref(false)
+let definitionsRequestSeq = 0
 const { t, isZh } = useAdminLanguage()
 const copy = computed(() => t.value.permissions)
 
@@ -119,19 +120,23 @@ function resultStatus() {
 }
 
 async function loadDefinitions() {
+  const requestSeq = ++definitionsRequestSeq
   definitionsLoading.value = true
   try {
     const data = await apiClient<JsonRecord>("/api/credentials/definitions")
+    if (requestSeq !== definitionsRequestSeq) return
+
     const list = Array.isArray(data.definitions) ? data.definitions : []
-    definitions.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
-    if (!selectedDefinition.value || !definitions.value.some((item) => definitionUlid(item) === definitionUlid(selectedDefinition.value))) {
-      selectedDefinition.value = definitions.value[0] || null
-    }
+    const nextDefinitions = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
+    const selectedDefinitionId = definitionUlid(selectedDefinition.value)
+    definitions.value = nextDefinitions
+    selectedDefinition.value = nextDefinitions.find((item) => definitionUlid(item) === selectedDefinitionId) || nextDefinitions[0] || null
   } catch (err) {
+    if (requestSeq !== definitionsRequestSeq) return
     console.error(err)
     toast.error(copy.value.toasts.definitionsLoadFailed)
   } finally {
-    definitionsLoading.value = false
+    if (requestSeq === definitionsRequestSeq) definitionsLoading.value = false
   }
 }
 
@@ -247,7 +252,7 @@ onMounted(loadDefinitions)
         <h1 class="text-3xl font-black tracking-tight md:text-4xl">{{ copy.title }}</h1>
         <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
       </div>
-      <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="loadDefinitions">
+      <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="definitionsLoading" @click="loadDefinitions">
         <RefreshCw class="h-4 w-4" :class="definitionsLoading ? 'animate-spin' : ''" />
         {{ copy.refreshDefinitions }}
       </button>

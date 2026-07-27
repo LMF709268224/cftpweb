@@ -29,7 +29,7 @@ const GENDER_FEMALE = "\u5973"
 const BIO_MAX_LENGTH = 1000
 
 const router = useRouter()
-const { t } = useAdminLanguage()
+const { t, isZh } = useAdminLanguage()
 const copy = computed(() => t.value.settings)
 const activeSection = ref<SettingsSection>("profile")
 const profileLoading = ref(false)
@@ -295,7 +295,19 @@ onMounted(() => {
             </label>
             <label class="block">
               <span class="text-sm font-bold">{{ copy.labels.birthday }}</span>
-              <input v-model="profile.birthday" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500" :disabled="profileFormDisabled" type="date" />
+              <span class="relative mt-2 block">
+                <input
+                  v-model="profile.birthday"
+                  class="w-full rounded-xl border border-slate-200 px-4 py-3 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
+                  :class="!isZh && !profile.birthday ? 'settings-date-empty' : ''"
+                  :disabled="profileFormDisabled"
+                  type="date"
+                  :lang="isZh ? 'zh-CN' : 'en-US'"
+                />
+                <span v-if="!isZh && !profile.birthday" class="pointer-events-none absolute inset-y-0 left-4 flex items-center text-sm font-semibold text-slate-400">
+                  {{ copy.placeholders.birthday }}
+                </span>
+              </span>
             </label>
             <label class="block">
               <span class="text-sm font-bold">{{ copy.labels.affiliation }}</span>
@@ -359,3 +371,13 @@ onMounted(() => {
     </div>
   </section>
 </template>
+
+<style scoped>
+.settings-date-empty::-webkit-datetime-edit,
+.settings-date-empty::-webkit-datetime-edit-text,
+.settings-date-empty::-webkit-datetime-edit-month-field,
+.settings-date-empty::-webkit-datetime-edit-day-field,
+.settings-date-empty::-webkit-datetime-edit-year-field {
+  color: transparent;
+}
+</style>

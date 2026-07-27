@@ -8,7 +8,7 @@ import { useAdminLanguage } from "@/lib/language"
 
 const pageSize = 20
 
-const { t } = useAdminLanguage()
+const { t, isZh } = useAdminLanguage()
 const copy = computed(() => t.value.auditLogs)
 const logs = ref<JsonRecord[]>([])
 const selected = ref<JsonRecord | null>(null)
@@ -262,11 +262,33 @@ onMounted(load)
         </label>
         <label class="grid gap-2 text-sm font-bold">
           {{ copy.filters.startTime }}
-          <input v-model="filters.start_time" class="h-11 w-full rounded-xl border border-slate-200 px-3" type="datetime-local" />
+          <span class="relative">
+            <input
+              v-model="filters.start_time"
+              class="h-11 w-full rounded-xl border border-slate-200 px-3"
+              :class="!isZh && !filters.start_time ? 'audit-datetime-empty' : ''"
+              type="datetime-local"
+              :lang="isZh ? 'zh-CN' : 'en-US'"
+            />
+            <span v-if="!isZh && !filters.start_time" class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm font-semibold text-slate-400">
+              {{ copy.placeholders.dateTime }}
+            </span>
+          </span>
         </label>
         <label class="grid gap-2 text-sm font-bold">
           {{ copy.filters.endTime }}
-          <input v-model="filters.end_time" class="h-11 w-full rounded-xl border border-slate-200 px-3" type="datetime-local" />
+          <span class="relative">
+            <input
+              v-model="filters.end_time"
+              class="h-11 w-full rounded-xl border border-slate-200 px-3"
+              :class="!isZh && !filters.end_time ? 'audit-datetime-empty' : ''"
+              type="datetime-local"
+              :lang="isZh ? 'zh-CN' : 'en-US'"
+            />
+            <span v-if="!isZh && !filters.end_time" class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm font-semibold text-slate-400">
+              {{ copy.placeholders.dateTime }}
+            </span>
+          </span>
         </label>
         <button class="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 text-sm font-black text-white shadow-sm md:mt-7" type="button" @click="resetAndLoad">
           <Search class="h-4 w-4" />
@@ -374,3 +396,16 @@ onMounted(load)
     </section>
   </section>
 </template>
+
+<style scoped>
+.audit-datetime-empty::-webkit-datetime-edit,
+.audit-datetime-empty::-webkit-datetime-edit-text,
+.audit-datetime-empty::-webkit-datetime-edit-month-field,
+.audit-datetime-empty::-webkit-datetime-edit-day-field,
+.audit-datetime-empty::-webkit-datetime-edit-year-field,
+.audit-datetime-empty::-webkit-datetime-edit-hour-field,
+.audit-datetime-empty::-webkit-datetime-edit-minute-field,
+.audit-datetime-empty::-webkit-datetime-edit-ampm-field {
+  color: transparent;
+}
+</style>

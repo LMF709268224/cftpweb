@@ -23,7 +23,7 @@ type SummaryField = {
   value: string
 }
 
-const { t } = useAdminLanguage()
+const { t, isZh } = useAdminLanguage()
 const copy = computed(() => t.value.orders)
 
 const orders = ref<JsonRecord[]>([])
@@ -396,7 +396,10 @@ onMounted(() => load(1))
     </header>
 
     <form class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5" @submit.prevent="search">
-      <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_180px_180px_auto]">
+      <div
+        class="grid gap-4"
+        :class="isZh ? 'xl:grid-cols-[minmax(0,1fr)_180px_180px_auto]' : 'xl:grid-cols-[minmax(0,1fr)_220px_220px_auto]'"
+      >
         <label class="grid gap-2 text-sm font-bold">
           {{ copy.candidatePlaceholder }}
           <div class="relative">
@@ -415,14 +418,14 @@ onMounted(() => load(1))
         </label>
         <label class="grid gap-2 text-sm font-bold">
           {{ copy.fields.bizType }}
-          <select v-model="bizType" class="h-11 rounded-xl border border-slate-200 px-3">
+          <select v-model="bizType" class="h-11 rounded-xl border border-slate-200 px-3" :class="isZh ? '' : 'min-w-0 bg-white xl:pr-10'">
             <option value="">{{ copy.allTypes }}</option>
             <option v-for="option in localizedBizTypeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
           </select>
         </label>
         <label class="grid gap-2 text-sm font-bold">
           {{ copy.fields.orderStatus }}
-          <select v-model="orderStatus" class="h-11 rounded-xl border border-slate-200 px-3">
+          <select v-model="orderStatus" class="h-11 rounded-xl border border-slate-200 px-3" :class="isZh ? '' : 'min-w-0 bg-white xl:pr-10'">
             <option value="">{{ copy.allStatuses }}</option>
             <option v-for="option in localizedOrderStatusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
           </select>

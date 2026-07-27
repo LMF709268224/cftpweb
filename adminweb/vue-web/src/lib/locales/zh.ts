@@ -535,6 +535,7 @@ export const zh = {
             title: "职位/头衔",
             education: "教育背景",
             bio: "管理员简介",
+            birthday: "年/月/日",
         },
         genders: {
             male: "男",
@@ -909,6 +910,7 @@ export const zh = {
             operator: "operator ULID",
             resourceType: "credential_application",
             resourceId: "资源 ULID",
+            dateTime: "年/月/日 --:--",
         },
         columns: {
             time: "时间",
