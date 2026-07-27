@@ -511,6 +511,8 @@ export const en: AppTranslations = {
     validationInvalidEmail: "Please enter a valid email address",
     validationInvalidPhone: "{{field}} is invalid. Start with + and a country/region code, using 7-15 digits in total",
     validationInvalidPostalCode: "Postal code is invalid. Use 2-16 letters, digits, spaces, or hyphens",
+    agreement: "CFtP Terms of Service and Privacy Policy",
+    agreementRequired: "Please read and agree to the CFtP Terms of Service and Privacy Policy",
     backToCourse: "Go Back",
     backToLearning: "Back to learning",
     backToCertification: "Back to certification details",

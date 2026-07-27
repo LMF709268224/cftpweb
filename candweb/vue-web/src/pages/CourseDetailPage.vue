@@ -21,7 +21,6 @@ import {
 import AppShell from "@/components/AppShell.vue"
 import LoadingState from "@/components/LoadingState.vue"
 import PaymentSessionDialog from "@/components/PaymentSessionDialog.vue"
-import PurchaseDialog from "@/components/PurchaseDialog.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
 import { usePolling } from "@/lib/polling"
@@ -859,12 +858,6 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
         </div>
       </section>
 
-      <PurchaseDialog
-        v-model:open="purchaseOpen"
-        :course-name="pipeline.name || t.common.unknownCourse"
-        :description="pipeline.description || ''"
-        :pipeline-id="pipeline.pipeline_id || pipelineId"
-      />
       <PaymentSessionDialog
         v-if="finalQualificationPaymentSession"
         v-model:open="finalQualificationPaymentOpen"
