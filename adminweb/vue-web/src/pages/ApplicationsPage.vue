@@ -285,14 +285,25 @@ async function load(targetPage = page.value) {
     const isBackward = page.value < lastPage.value
     hasMore.value = isBackward ? true : Boolean(data.has_more)
     lastPage.value = page.value
-nextCursor.value = String(data.next_cursor || "")
+    nextCursor.value = String(data.next_cursor || "")
     prevCursor.value = String(data?.prev_cursor || "")
 
     lastPage.value = targetPage
-    selected.value = applications.value[0] || null
-    activeTab.value = "overview"
+    const currentApplicationId = appUlid(selected.value)
+    const nextSelected = currentApplicationId
+      ? applications.value.find((app) => appUlid(app) === currentApplicationId) || null
+      : null
+    selected.value = nextSelected
     page.value = targetPage
-    if (detailOpen.value) void loadApplicationDetail(selected.value)
+    if (detailOpen.value && nextSelected) {
+      if (!canAuditApplication(nextSelected) && activeTab.value === "audit") activeTab.value = "overview"
+      void loadApplicationDetail(nextSelected)
+    } else if (detailOpen.value) {
+      detailRequestId += 1
+      detailLoading.value = false
+      detailOpen.value = false
+      activeTab.value = "overview"
+    }
   } catch (err) {
     if (requestId !== listRequestId) return
     console.error(err)
@@ -313,20 +324,23 @@ async function audit(action: "approve" | "reject" | "resubmit") {
     toast.error(copy.value.toasts.remarkRequired)
     return
   }
+  const auditedApplicationId = appUlid(selected.value)
+  const auditedRemark = auditRemark.value
+  if (!auditedApplicationId) return
 
   auditing.value = true
   try {
     await apiClient("/api/applications/audit", {
       method: "POST",
       body: JSON.stringify({
-        application_id: appUlid(selected.value),
+        application_id: auditedApplicationId,
         approved: action === "approve",
-        reject_reason: auditRemark.value,
+        reject_reason: auditedRemark,
         require_resubmit: action === "resubmit",
       }),
     })
     toast.success(copy.value.toasts.auditSubmitted)
-    auditRemark.value = ""
+    if (appUlid(selected.value) === auditedApplicationId) auditRemark.value = ""
     await load(page.value)
   } catch (err) {
     console.error(err)
