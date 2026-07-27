@@ -21,6 +21,7 @@ const pageToken = ref("")
 const nextPageToken = ref("")
 const previousTokens = ref<string[]>([])
 const currentPage = ref(1)
+let listRequestId = 0
 let detailRequestId = 0
 const { t, isZh } = useAdminLanguage()
 const copy = computed(() => t.value.resourcePacksAdmin)
@@ -152,13 +153,16 @@ async function loadPackDetail(pack: JsonRecord | null) {
 }
 
 async function load() {
+  const requestId = ++listRequestId
+  const requestedPageToken = pageToken.value
   loading.value = true
   try {
     const url = new URL("/api/lms/resource-packs", window.location.origin)
     url.searchParams.set("page_size", String(pageSize))
-    if (pageToken.value) url.searchParams.set("cursor", pageToken.value)
+    if (requestedPageToken) url.searchParams.set("cursor", requestedPageToken)
 
     const data = await apiClient<JsonRecord>(`${url.pathname}${url.search}`)
+    if (requestId !== listRequestId) return
     total.value = Number(data.total) || 0
     packs.value = asRecordList(data.packs || data.items)
     nextPageToken.value = String(data.next_cursor || "")
@@ -167,6 +171,7 @@ async function load() {
       selectPack(nextSelected)
     }
   } catch (err) {
+    if (requestId !== listRequestId) return
     console.error(err)
     packs.value = []
     if (!detailOpen.value) {
@@ -175,7 +180,7 @@ async function load() {
     }
     toast.error(copy.value.toasts.listLoadFailed)
   } finally {
-    loading.value = false
+    if (requestId === listRequestId) loading.value = false
   }
 }
 
