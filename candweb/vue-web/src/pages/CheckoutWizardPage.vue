@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from "vue"
-import { RouterLink, useRoute, useRouter } from "vue-router"
+import { useRoute } from "vue-router"
 import { toast } from "vue-sonner"
-import { ArrowLeft, ClipboardList, Loader2, Send, Check, Lock, ShoppingCart } from "lucide-vue-next"
+import { ClipboardList, Loader2, Send, Check, ShoppingCart } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import PaymentSessionPanel from "@/components/PaymentSessionPanel.vue"
 import { apiClient } from "@/lib/apiClient"
@@ -12,12 +12,8 @@ import { getCachedCountries, getCountryCityOptions, getCountryOptions, getProvin
 import { GENDER_OPTIONS, PROFILE_TEXT_LIMITS, isValidEmail, isValidInternationalPhone, isValidPostalCode, normalizeGender, normalizeInternationalPhone, normalizePostalCode, trimToMax } from "@/lib/profileFormValidation"
 
 const route = useRoute()
-const router = useRouter()
 const { t, lang } = useTranslation()
 const { currentUser, fetchUser } = useUser()
-const unitId = String(route.query.unitId || "")
-const pipelineId = String(route.query.pipelineId || "")
-const courseId = String(route.query.courseId || "")
 const bundleId = String(route.params.bundleId || route.query.bundleId || "")
 const currentStep = ref(1)
 const bundleData = ref<any>(null)
@@ -55,22 +51,6 @@ const formData = reactive({
   phone_country_code: "",
   phone: "",
   agreement: false,
-})
-const returnTo = computed(() => {
-  const value = route.query.returnTo
-  return Array.isArray(value) ? String(value[0] || "") : String(value || "")
-})
-const shouldReturnToExams = computed(() => returnTo.value === "/exams")
-const backLink = computed(() => {
-  if (shouldReturnToExams.value) return "/exams"
-  if (pipelineId && courseId) return `/certifications/${encodeURIComponent(pipelineId)}/learn/${encodeURIComponent(courseId)}`
-  if (pipelineId) return `/certifications/${encodeURIComponent(pipelineId)}`
-  return "/exams"
-})
-const backLabel = computed(() => {
-  if (shouldReturnToExams.value || (!pipelineId && !courseId)) return t.value.examsPage.backToExams
-  if (pipelineId && courseId) return t.value.examSignup.backToLearning
-  return t.value.examSignup.backToCertification
 })
 const CN_STATE_LABELS: Record<string, string> = {
   AH: "安徽", BJ: "北京", CQ: "重庆", FJ: "福建", GS: "甘肃", GD: "广东", GX: "广西", GZ: "贵州",

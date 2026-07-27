@@ -22,7 +22,7 @@ const candUlid = computed(() => currentUser.value?.cand_ulid || currentUser.valu
           <CheckCircle2 class="h-12 w-12" />
         </div>
         
-        <h1 class="mb-3 text-3xl font-bold tracking-tight text-slate-900">{{ t.payment?.purchaseSuccess || 'Payment Successful' }}</h1>
+        <h1 class="mb-3 text-3xl font-bold tracking-tight text-slate-900">{{ t.common?.success || 'Payment Successful' }}</h1>
         <p class="mb-8 text-slate-500 text-lg">
           Your order has been placed.
         </p>
