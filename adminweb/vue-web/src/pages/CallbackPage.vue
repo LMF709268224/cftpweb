@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { CheckCircle2, Loader2, ShieldAlert } from "lucide-vue-next"
-import { computed, onMounted, ref } from "vue"
+import { computed, onMounted, onUnmounted, ref } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { ApiError, apiClient } from "@/lib/apiClient"
 import { clearAuthRedirect, pendingAuthRedirect } from "@/lib/authRedirect"
@@ -13,6 +13,17 @@ const status = ref<"loading" | "success" | "error">("loading")
 const error = ref("")
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.callback)
+let redirectTimer: number | undefined
+let unmounted = false
+
+function scheduleRedirect(action: () => void, delay: number) {
+  if (unmounted) return
+  if (redirectTimer) window.clearTimeout(redirectTimer)
+  redirectTimer = window.setTimeout(() => {
+    redirectTimer = undefined
+    if (!unmounted) action()
+  }, delay)
+}
 
 function friendlyAuthError(err: unknown) {
   if (err instanceof ApiError) {
@@ -37,7 +48,7 @@ onMounted(async () => {
   if (!code || !state) {
     status.value = "error"
     error.value = copy.value.missingParams
-    setTimeout(() => router.replace({ name: "login", query: { redirect } }), 2500)
+    scheduleRedirect(() => { void router.replace({ name: "login", query: { redirect } }) }, 2500)
     return
   }
 
@@ -50,13 +61,19 @@ onMounted(async () => {
     setAuthSession(payload.user?.name)
     status.value = "success"
     clearAuthRedirect()
-    setTimeout(() => router.replace(redirect), 800)
+    scheduleRedirect(() => { void router.replace(redirect) }, 800)
   } catch (err) {
     console.error(err)
     status.value = "error"
     error.value = friendlyAuthError(err)
-    setTimeout(() => router.replace({ name: "login", query: { redirect } }), 2500)
+    scheduleRedirect(() => { void router.replace({ name: "login", query: { redirect } }) }, 2500)
   }
+})
+
+onUnmounted(() => {
+  unmounted = true
+  if (redirectTimer) window.clearTimeout(redirectTimer)
+  redirectTimer = undefined
 })
 </script>
 
