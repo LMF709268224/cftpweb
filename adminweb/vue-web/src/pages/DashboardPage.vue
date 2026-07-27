@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Activity, BarChart3, CreditCard, Loader2, Mail, RefreshCw, Search, Shield, UserCheck, Users, X } from "lucide-vue-next"
-import { computed, onMounted, ref, watch } from "vue"
+import { computed, onMounted, onUnmounted, ref, watch } from "vue"
 import { RouterLink } from "vue-router"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
@@ -186,8 +186,15 @@ onMounted(loadDashboard)
 watch([keyword, roleFilter, statusFilter], () => {
   if (filterReloadTimer) window.clearTimeout(filterReloadTimer)
   filterReloadTimer = window.setTimeout(() => {
+    filterReloadTimer = undefined
     void loadDashboard(1)
   }, 250)
+})
+
+onUnmounted(() => {
+  if (filterReloadTimer) window.clearTimeout(filterReloadTimer)
+  filterReloadTimer = undefined
+  dashboardRequestId += 1
 })
 </script>
 
