@@ -97,6 +97,7 @@ const linkedUnitOptions = ref<PricingSelectOption[]>([])
 const targetOptionsLoading = ref(false)
 const pricingTargetsLoading = ref(false)
 const loading = ref(false)
+const syncingDisplayPricing = ref(false)
 const saving = ref(false)
 const publishing = ref(false)
 const deprecating = ref(false)
@@ -1198,10 +1199,17 @@ async function syncBundleDisplayPricing(bundleId = selectedId.value) {
 }
 
 async function syncDisplayPricing() {
-  await syncBundleDisplayPricing()
-  toast.success(copy.value.toasts.displayPricingSynced)
-  await load()
-  await refreshSelectedBundleDetail()
+  if (syncingDisplayPricing.value) return
+
+  syncingDisplayPricing.value = true
+  try {
+    await syncBundleDisplayPricing()
+    toast.success(copy.value.toasts.displayPricingSynced)
+    await load()
+    await refreshSelectedBundleDetail()
+  } finally {
+    syncingDisplayPricing.value = false
+  }
 }
 
 
@@ -1248,8 +1256,13 @@ onMounted(load)
           <Plus class="h-4 w-4" />
           {{ copy.newBundle }}
         </button>
-        <button class="inline-flex h-10 items-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold shadow-sm" type="button" @click="syncDisplayPricing">
-          <RefreshCw class="h-4 w-4" />
+        <button
+          class="inline-flex h-10 items-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+          type="button"
+          :disabled="syncingDisplayPricing"
+          @click="syncDisplayPricing"
+        >
+          <RefreshCw class="h-4 w-4" :class="syncingDisplayPricing ? 'animate-spin' : ''" />
           {{ copy.syncDisplayPricing }}
         </button>
         <button class="inline-flex h-10 items-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold shadow-sm" type="button" @click="load">

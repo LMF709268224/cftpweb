@@ -1139,7 +1139,15 @@ onMounted(async () => {
                       <div class="font-black">{{ copy.certificateTasks.listTitle }}</div>
                       <div class="text-xs text-slate-500">{{ copy.certificateTasks.listDescription }}</div>
                     </div>
-                    <button class="rounded-xl border px-3 py-2 text-sm font-bold" type="button" @click="loadCertificateTasks">{{ copy.load }}</button>
+                    <button
+                      class="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50"
+                      type="button"
+                      :disabled="certificateTasksLoading"
+                      @click="loadCertificateTasks"
+                    >
+                      <Loader2 v-if="certificateTasksLoading" class="h-4 w-4 animate-spin" />
+                      {{ copy.load }}
+                    </button>
                   </div>
                   <div v-if="certificateTasksLoading" class="p-10 text-center text-slate-500">
                     <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
@@ -1222,7 +1230,15 @@ onMounted(async () => {
                       <div class="font-black">{{ copy.logListTitle }}</div>
                       <div class="text-xs text-slate-500">{{ copy.logListDescription }}</div>
                     </div>
-                    <button class="rounded-xl border px-3 py-2 text-sm font-bold" type="button" @click="loadLogs()">{{ copy.load }}</button>
+                    <button
+                      class="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50"
+                      type="button"
+                      :disabled="logsLoading"
+                      @click="loadLogs()"
+                    >
+                      <Loader2 v-if="logsLoading" class="h-4 w-4 animate-spin" />
+                      {{ copy.load }}
+                    </button>
                   </div>
                   <div v-if="logsLoading" class="p-10 text-center text-slate-500">
                     <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
@@ -1245,8 +1261,8 @@ onMounted(async () => {
                   <div class="flex flex-col items-stretch justify-between gap-3 border-t border-slate-200 px-4 py-4 sm:flex-row sm:items-center md:px-5">
                     <span class="text-sm font-bold text-slate-500">{{ Math.floor(logOffset / logPageSize) + 1 }} / {{ Math.max(1, Math.ceil(logsTotal / logPageSize)) }}</span>
                     <div class="flex flex-col gap-3 sm:flex-row">
-                    <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrevLogs" @click="loadLogs(selectedPipelineUlid, Math.max(0, logOffset - logPageSize))">{{ copy.prev }}</button>
-                    <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNextLogs" @click="loadLogs(selectedPipelineUlid, logOffset + logPageSize)">{{ copy.next }}</button>
+                    <button class="rounded-xl border px-4 py-2 font-bold disabled:cursor-not-allowed disabled:opacity-40" type="button" :disabled="logsLoading || !canPrevLogs" @click="loadLogs(selectedPipelineUlid, Math.max(0, logOffset - logPageSize))">{{ copy.prev }}</button>
+                    <button class="rounded-xl border px-4 py-2 font-bold disabled:cursor-not-allowed disabled:opacity-40" type="button" :disabled="logsLoading || !canNextLogs" @click="loadLogs(selectedPipelineUlid, logOffset + logPageSize)">{{ copy.next }}</button>
                     </div>
                   </div>
                 </div>
