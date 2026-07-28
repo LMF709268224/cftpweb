@@ -2,15 +2,15 @@
 import { computed, onMounted, reactive, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
-import { ClipboardList, Loader2, Send, Check, CheckCircle2, CircleAlert, Clock, ShoppingCart, UploadCloud, FileCheck } from "lucide-vue-next"
+import { ClipboardList, Loader2, Send, Check, CheckCircle2, CircleAlert, Clock, ShoppingCart } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import PaymentSessionPanel from "@/components/PaymentSessionPanel.vue"
-import { apiClient } from "@/lib/apiClient"
+import { ApiClientError, apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
 import { useUser } from "@/lib/user"
 import { getCachedCountries, getCountryCityOptions, getCountryOptions, getProvinceOptions, getStateCityOptions, loadLocationData, type CountryOption } from "@/lib/locationOptions"
 import { GENDER_OPTIONS, PROFILE_TEXT_LIMITS, isValidEmail, isValidInternationalPhone, isValidPostalCode, normalizeGender, normalizeInternationalPhone, normalizePostalCode, trimToMax } from "@/lib/profileFormValidation"
-import { sha256Hex, uploadWithTimeout } from "@/lib/upload"
+import { CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, statusEnumNameForStatus } from "@/lib/status-labels"
 
 const route = useRoute()
 const router = useRouter()
@@ -25,17 +25,15 @@ const paymentPreview = ref<any>(null)
 const exemptionStages = ref<any[]>([])
 const selectedExemptionUnitIds = ref<Record<string, boolean>>({})
 const activeOrderId = ref("")
-const activeOrderAction = ref<"purchase" | "unlock">("purchase")
+const activeOrderAction = ref<"purchase" | "unlock" | "credential_application">("purchase")
+const activeCredentialQualIds = ref<string[]>([])
+const credentialApplicationLoadingUnitId = ref("")
+const qualificationApplications = ref<Record<string, any>>({})
 const levelPlaceholder = "{" + "{level}}"
 
 const isMultiStage = computed(() => {
   return (bundleData.value?.stages?.length || 0) > 1
 })
-
-const uploadedExemptionFiles = ref<Record<string, { name: string; url: string; ext: string; hash: string; size: number }>>({})
-const exemptionReasons = ref<Record<string, string>>({})
-const exemptionDeclarations = ref<Record<string, boolean>>({})
-const uploadingUnitId = ref("")
 
 const isMembershipBundle = computed(() => {
   if (!bundleData.value) return false
@@ -47,18 +45,28 @@ const loading = ref(false)
 const pipelineId = computed(() =>
   String(bundleData.value?.pipeline_id || bundleData.value?.pipeline_cc_ulid || "").trim()
 )
-const paymentBizType = computed(() =>
-  activeOrderAction.value === "unlock" ? "PIPELINE_UNLOCK" : "BUNDLE_PURCHASE"
-)
-const paymentReturnPath = computed(() =>
-  activeOrderAction.value === "unlock"
-    ? "/my-certifications"
-    : `/checkout/success/${activeOrderId.value}`
-)
-const paymentReturnParams = computed(() => ({
-  bundle_id: bundleId,
-  pipeline_id: pipelineId.value,
-}))
+const paymentBizType = computed(() => {
+  if (activeOrderAction.value === "unlock") return "PIPELINE_UNLOCK"
+  if (activeOrderAction.value === "credential_application") return "CREDENTIAL_APPLICATION"
+  return "BUNDLE_PURCHASE"
+})
+const paymentReturnPath = computed(() => {
+  if (activeOrderAction.value === "unlock") return "/my-certifications"
+  if (activeOrderAction.value === "credential_application") return "/credentials"
+  return `/checkout/success/${activeOrderId.value}`
+})
+const paymentReturnParams = computed(() => {
+  if (activeOrderAction.value === "credential_application") {
+    return {
+      qual_ulids: activeCredentialQualIds.value.join(","),
+      return_to: route.fullPath,
+    }
+  }
+  return {
+    bundle_id: bundleId,
+    pipeline_id: pipelineId.value,
+  }
+})
 const selectedCountryCode = ref("")
 const selectedProvinceCode = ref("")
 const countryOptions = ref<CountryOption[]>([])
@@ -458,6 +466,7 @@ async function completeTemporaryCftpUnlock(response: any) {
 async function loadBundleInfo() {
   const response = await fetchBundlePayload()
   applyBundleInfo(response)
+  await refreshQualificationApplications()
   return response
 }
 
@@ -465,6 +474,7 @@ async function loadPurchaseReadyBundleInfo() {
   const response = await fetchBundlePayload()
   const purchaseReadyBundle = await completeTemporaryCftpUnlock(response)
   applyBundleInfo(purchaseReadyBundle)
+  await refreshQualificationApplications()
   return purchaseReadyBundle
 }
 
@@ -493,11 +503,6 @@ function buildSelectedExemptionsJson() {
         index: stage.index,
         stage_cc_ulid: stage.stage_id,
         exempted_unit_cc_ulids: exemptedUnitIds,
-        exemptions_evidence: exemptedUnitIds.map((id: string) => ({
-          unit_id: id,
-          file_key: uploadedExemptionFiles.value[id]?.url,
-          reason: exemptionReasons.value[id]
-        }))
       }
     })
     .filter((stage) => stage.exempted_unit_cc_ulids.length > 0)
@@ -512,71 +517,207 @@ function buildSelectedExemptionsJson() {
 
 
 
+function normalizedCredentialApplicationStatus(status: unknown) {
+  const enumName = statusEnumNameForStatus(CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, status as string)
+  return String(enumName || status || "").trim().toUpperCase()
+}
+
+function isApplicationPendingStatus(status: unknown) {
+  return normalizedCredentialApplicationStatus(status) === "APPLICATION_STATUS_PENDING"
+}
+
+function isApplicationApprovedStatus(status: unknown) {
+  return normalizedCredentialApplicationStatus(status) === "APPLICATION_STATUS_APPROVED"
+}
+
+function isApplicationRejectedStatus(status: unknown) {
+  return normalizedCredentialApplicationStatus(status) === "APPLICATION_STATUS_REJECTED"
+}
+
+function isApplicationResubmitStatus(status: unknown) {
+  return normalizedCredentialApplicationStatus(status) === "APPLICATION_STATUS_RESUBMIT"
+}
+
+function qualificationIdsForUnit(unit: any) {
+  return (unit?.exemption_quals || [])
+    .map((qual: any) => String(qual?.qual_id || "").trim())
+    .filter(Boolean)
+}
+
+function qualificationApplicationForUnit(unit: any) {
+  const applications = qualificationIdsForUnit(unit)
+    .map((qualId: string) => qualificationApplications.value[qualId])
+    .filter(Boolean)
+  return applications.find((application: any) => isApplicationPendingStatus(application?.status))
+    || applications.find((application: any) => isApplicationResubmitStatus(application?.status))
+    || applications.find((application: any) => isApplicationRejectedStatus(application?.status))
+    || applications.find((application: any) => isApplicationApprovedStatus(application?.status))
+    || applications[0]
+    || null
+}
+
+async function latestCredentialApplication(qualId: string) {
+  const response = await apiClient(`/api/credentials/applications?cred_def_ulid=${encodeURIComponent(qualId)}`, {
+    suppressErrorToast: true,
+  })
+  return (response?.applications || [])[0] || null
+}
+
+async function refreshQualificationApplications() {
+  const qualIds = Array.from(new Set(
+    exemptionStages.value
+      .flatMap((stage: any) => stage.units || [])
+      .flatMap((unit: any) => qualificationIdsForUnit(unit)),
+  ))
+  const next: Record<string, any> = {}
+  await Promise.all(qualIds.map(async (qualId) => {
+    try {
+      const application = await latestCredentialApplication(qualId)
+      if (application) next[qualId] = application
+    } catch (error) {
+      console.warn(`Failed to load credential application ${qualId}`, error)
+    }
+  }))
+  qualificationApplications.value = next
+}
+
+function credentialUploadLocation(qualIds: string[]) {
+  return {
+    path: "/credentials",
+    query: {
+      qual_ulids: qualIds.join(","),
+      return_to: route.fullPath,
+    },
+  }
+}
+
+async function goToCredentialUpload(qualIds: string[]) {
+  await router.push(credentialUploadLocation(qualIds))
+}
+
+function isUploadReadyStatus(status: unknown) {
+  return String(status || "").trim().toUpperCase().includes("UPLOAD_READY")
+}
+
+function isCredentialApplicationPaymentStatus(status: unknown) {
+  return String(status || "").trim().toUpperCase().includes("WAIT_REVIEW_FEE_PAYMENT")
+}
+
+function isCredentialApplicationUnderReviewStatus(status: unknown) {
+  return String(status || "").trim().toUpperCase().includes("UNDER_REVIEW")
+}
+
+function isCredentialApplicationResolvedStatus(status: unknown) {
+  return String(status || "").trim().toUpperCase().includes("RESOLVED")
+}
+
+async function startQualificationApplication(unit: any) {
+  const qualId = qualificationIdsForUnit(unit)[0] || ""
+  if (!unit?.unit_id || !qualId || !pipelineId.value || !bundleId) {
+    toast.error(t.value.checkoutWizard?.qualificationApplicationFailed || "Unable to start qualification application")
+    return
+  }
+
+  credentialApplicationLoadingUnitId.value = unit.unit_id
+  try {
+    const existingApplication = qualificationApplications.value[qualId] || await latestCredentialApplication(qualId)
+    if (existingApplication) {
+      qualificationApplications.value = {
+        ...qualificationApplications.value,
+        [qualId]: existingApplication,
+      }
+      if (isApplicationPendingStatus(existingApplication.status)) {
+        toast.info(t.value.checkoutWizard?.qualificationUnderReview || "Qualification application is under review")
+        await goToCredentialUpload([qualId])
+        return
+      }
+      if (isApplicationApprovedStatus(existingApplication.status)) {
+        toast.success(t.value.checkoutWizard?.qualificationAlreadyApproved || "Qualification application approved")
+        await loadPurchaseReadyBundleInfo()
+        return
+      }
+      if (isApplicationResubmitStatus(existingApplication.status)) {
+        await goToCredentialUpload([qualId])
+        return
+      }
+    }
+
+    let order
+    try {
+      order = await apiClient("/api/credentials/application-orders", {
+        method: "POST",
+        suppressErrorToast: true,
+        body: JSON.stringify({
+          pipeline_cc_ulid: pipelineId.value,
+          bundle_ulid: bundleId,
+          qual_ulids: [qualId],
+        }),
+      })
+    } catch (error) {
+      const message = error instanceof ApiClientError
+        ? error.rawMessage || error.errorCode || ""
+        : error instanceof Error ? error.message : ""
+      if (message.includes("in-progress credential application") || message.includes("进行中") || message.includes("请先处理")) {
+        await refreshQualificationApplications()
+        toast.info(t.value.checkoutWizard?.qualificationUnderReview || "Qualification application is under review")
+        await goToCredentialUpload([qualId])
+        return
+      }
+      throw error
+    }
+
+    const orderId = String(order?.application_order_ulid || "").trim()
+    const orderStatus = String(order?.order_status || "")
+    if (isUploadReadyStatus(orderStatus)) {
+      toast.info(t.value.checkoutWizard?.qualificationUploadReady || "Qualification application created. Opening material upload.")
+      await goToCredentialUpload([qualId])
+      return
+    }
+    if (isCredentialApplicationUnderReviewStatus(orderStatus)) {
+      await refreshQualificationApplications()
+      toast.info(t.value.checkoutWizard?.qualificationUnderReview || "Qualification application is under review")
+      await goToCredentialUpload([qualId])
+      return
+    }
+    if (isCredentialApplicationResolvedStatus(orderStatus)) {
+      await loadPurchaseReadyBundleInfo()
+      return
+    }
+    if (isCredentialApplicationPaymentStatus(orderStatus) || order?.payment_key) {
+      if (!orderId) {
+        throw new Error(t.value.checkoutWizard?.qualificationApplicationFailed || "Unable to start qualification application")
+      }
+      activeCredentialQualIds.value = [qualId]
+      activeOrderAction.value = "credential_application"
+      activeOrderId.value = orderId
+      currentStep.value = 4
+      return
+    }
+    toast.info(t.value.checkoutWizard?.qualificationApplicationCreated || "Qualification application created")
+  } catch (error) {
+    console.error(error)
+    toast.error(error instanceof Error && error.message
+      ? error.message
+      : t.value.checkoutWizard?.qualificationApplicationFailed || "Unable to start qualification application")
+  } finally {
+    credentialApplicationLoadingUnitId.value = ""
+  }
+}
+
 async function onExemptionToggle(unit: any, event: Event) {
   const input = event.target as HTMLInputElement | null
-  if (!unit.qualified || !unit.unit_id) return
+  if (!unit?.unit_id) return
+  if (!unit.qualified) {
+    if (input?.checked) await startQualificationApplication(unit)
+    return
+  }
   selectedExemptionUnitIds.value = {
     ...selectedExemptionUnitIds.value,
     [unit.unit_id]: Boolean(input?.checked),
   }
 }
 
-function triggerFileInput(unitId: string) {
-  document.getElementById(`file-${unitId}`)?.click()
-}
-
-async function onConstraintFileChange(event: Event, unit: any, qual: any) {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file) return
-  await handleFileUpload(unit, qual, file)
-  input.value = ""
-}
-
-async function handleFileUpload(unit: any, qual: any, file: File) {
-  if (uploadingUnitId.value) return
-  const unitId = unit.unit_id
-  
-  const fileExt = file.name.includes(".") ? "." + file.name.split(".").pop()?.toLowerCase() : ""
-  if (file.size > 20 * 1024 * 1024) {
-    toast.error("File size limit exceeded (20MB)")
-    return
-  }
-
-  uploadingUnitId.value = unitId
-  try {
-    const fileHash = await sha256Hex(file)
-    const contentType = file.type || "application/octet-stream"
-    const qualId = String(qual.qual_id || "").trim()
-    
-    const res = await apiClient("/api/credentials/upload-url", {
-      method: "POST",
-      body: JSON.stringify({ cred_def_ulid: qualId, file_name: file.name, file_ext: fileExt, file_hash: fileHash, content_type: contentType, file_usage: "EXEMPTION_EVIDENCE" }),
-    })
-    const uploadRes = await uploadWithTimeout(res.upload_url, { method: "PUT", headers: new Headers(res.signed_headers || {}), body: file })
-    if (!uploadRes.ok) throw new Error(`S3 upload failed: ${uploadRes.status} ${uploadRes.statusText}`)
-    
-    uploadedExemptionFiles.value = { ...uploadedExemptionFiles.value, [unitId]: { name: file.name, url: res.file_key, ext: fileExt, hash: fileHash, size: file.size } }
-  } catch (err: any) {
-    toast.error(`Upload failed: ${err?.message || err}`)
-  } finally {
-    uploadingUnitId.value = ""
-  }
-}
-
 async function nextFromStep1() {
-  for (const stage of exemptionStages.value) {
-    for (const unit of stage.units || []) {
-      if (selectedExemptionUnitIds.value[unit.unit_id]) {
-        if (!unit.qualified) {
-          if (!exemptionDeclarations.value[unit.unit_id]) {
-            toast.error(t.value.checkoutWizard?.declareEvidenceValidError || "请声明证据真实有效")
-            return
-          }
-        }
-      }
-    }
-  }
   currentStep.value = 2
 }
 
@@ -585,7 +726,7 @@ function formatMoney(amount?: number, currency = "usd") {
   return new Intl.NumberFormat(undefined, { style: "currency", currency: currency || "usd" }).format(amount / 100)
 }
 
-type ExemptionCredentialState = "active" | "expired" | "revoked" | "missing" | "unavailable"
+type ExemptionCredentialState = "active" | "pending" | "resubmit" | "rejected" | "expired" | "revoked" | "missing" | "unavailable"
 
 function exemptionCredentialState(unit: any): ExemptionCredentialState {
   const qualifications = unit?.exemption_quals || []
@@ -594,6 +735,12 @@ function exemptionCredentialState(unit: any): ExemptionCredentialState {
   )) {
     return "active"
   }
+
+  const application = qualificationApplicationForUnit(unit)
+  if (isApplicationPendingStatus(application?.status)) return "pending"
+  if (isApplicationResubmitStatus(application?.status)) return "resubmit"
+  if (isApplicationRejectedStatus(application?.status)) return "rejected"
+  if (isApplicationApprovedStatus(application?.status)) return "active"
 
   const statuses = qualifications
     .map((qual: any) => String(qual?.credential_status || "").trim().toUpperCase())
@@ -608,6 +755,12 @@ function exemptionCredentialLabel(unit: any) {
   switch (exemptionCredentialState(unit)) {
     case "active":
       return t.value.checkoutWizard?.statusApproved || "Approved"
+    case "pending":
+      return t.value.checkoutWizard?.statusPending || "Under review"
+    case "resubmit":
+      return t.value.checkoutWizard?.statusResubmit || "More materials required"
+    case "rejected":
+      return t.value.checkoutWizard?.statusRejected || "Qualification application rejected"
     case "expired":
       return t.value.checkoutWizard?.statusExpired || "Qualification expired"
     case "revoked":
@@ -623,12 +776,29 @@ function exemptionCredentialBadgeClass(unit: any) {
   switch (exemptionCredentialState(unit)) {
     case "active":
       return "bg-emerald-100 text-emerald-800"
+    case "pending":
+      return "bg-blue-100 text-blue-800"
+    case "resubmit":
+      return "bg-amber-100 text-amber-800"
+    case "rejected":
+      return "bg-rose-100 text-rose-800"
     case "expired":
       return "bg-amber-100 text-amber-800"
     case "revoked":
       return "bg-rose-100 text-rose-800"
     default:
       return "bg-slate-100 text-slate-700"
+  }
+}
+
+function qualificationActionLabel(unit: any) {
+  switch (exemptionCredentialState(unit)) {
+    case "pending":
+      return t.value.checkoutWizard?.viewQualificationApplication || "View qualification application"
+    case "resubmit":
+      return t.value.checkoutWizard?.resubmitQualification || "Add qualification materials"
+    default:
+      return t.value.checkoutWizard?.applyQualification || "Apply for qualification"
   }
 }
 
@@ -710,24 +880,6 @@ function getEligibility(response: any) {
   return response?.purchase_state?.eligibility || response?.eligibility || {}
 }
 
-function cacheExemptionEvidence(orderId: string) {
-  if (Object.keys(uploadedExemptionFiles.value).length === 0) return
-  try {
-    sessionStorage.setItem(`bundle_evidence_${orderId}`, JSON.stringify({
-      files: uploadedExemptionFiles.value,
-      reasons: exemptionReasons.value,
-      unitQualMap: exemptionStages.value.flatMap(stage => stage.units || []).reduce((acc: any, unit: any) => {
-        if (unit.unit_id && unit.exemption_quals?.[0]?.qual_id) {
-          acc[unit.unit_id] = unit.exemption_quals[0].qual_id
-        }
-        return acc
-      }, {})
-    }))
-  } catch (error) {
-    console.warn("Failed to cache exemption evidence", error)
-  }
-}
-
 async function createPurchaseOrder() {
   const response = await apiClient(`/api/mall/bundles/${encodeURIComponent(bundleId)}/purchase`, {
     method: "POST",
@@ -747,7 +899,6 @@ async function createPurchaseOrder() {
     throw new Error(t.value.checkoutWizard?.orderCreationFailed || "Order creation failed")
   }
 
-  cacheExemptionEvidence(orderId)
   if (isCompletedStatus(orderStatus)) {
     toast.success(t.value.checkoutWizard?.purchaseCompleted || "Purchase completed")
     await router.push(`/checkout/success/${encodeURIComponent(orderId)}`)
@@ -874,7 +1025,7 @@ async function confirmAndPay() {
                         ? 'border-emerald-400 bg-emerald-50/40 shadow-md ring-1 ring-emerald-400'
                         : unit.qualified
                           ? 'cursor-pointer border-border hover:border-emerald-200 hover:shadow-sm'
-                          : 'border-border bg-muted/50 opacity-80',
+                          : 'cursor-pointer border-border bg-slate-50/70 hover:border-blue-200 hover:shadow-sm',
                     ]"
                   >
                     <div class="mb-4">
@@ -884,7 +1035,7 @@ async function confirmAndPay() {
                       
                       <div :class="['mt-3 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium', exemptionCredentialBadgeClass(unit)]">
                         <CheckCircle2 v-if="exemptionCredentialState(unit) === 'active'" class="mr-1 h-3.5 w-3.5" />
-                        <Clock v-else-if="exemptionCredentialState(unit) === 'expired'" class="mr-1 h-3.5 w-3.5" />
+                        <Clock v-else-if="['pending', 'expired'].includes(exemptionCredentialState(unit))" class="mr-1 h-3.5 w-3.5" />
                         <CircleAlert v-else class="mr-1 h-3.5 w-3.5" />
                         {{ exemptionCredentialLabel(unit) }}
                       </div>
@@ -897,53 +1048,17 @@ async function confirmAndPay() {
                             type="checkbox"
                             class="peer sr-only"
                             :checked="Boolean(selectedExemptionUnitIds[unit.unit_id])"
-                            :disabled="!unit.qualified"
+                            :disabled="credentialApplicationLoadingUnitId === unit.unit_id"
                             @change="onExemptionToggle(unit, $event)"
                           />
                           <div class="h-6 w-6 rounded-md border-2 border-slate-300 bg-white transition-all peer-checked:border-emerald-500 peer-checked:bg-emerald-500"></div>
-                          <Check class="pointer-events-none absolute h-4 w-4 text-white opacity-0 transition-opacity peer-checked:opacity-100" />
+                          <Loader2 v-if="credentialApplicationLoadingUnitId === unit.unit_id" class="pointer-events-none absolute h-4 w-4 animate-spin text-blue-600" />
+                          <Check v-else class="pointer-events-none absolute h-4 w-4 text-white opacity-0 transition-opacity peer-checked:opacity-100" />
                         </div>
-                        <span class="font-medium text-slate-700">{{ t.checkoutWizard?.applyForExemption || "申请豁免" }}</span>
+                        <span class="font-medium text-slate-700">
+                          {{ unit.qualified ? (t.checkoutWizard?.applyForExemption || "申请豁免") : qualificationActionLabel(unit) }}
+                        </span>
                       </label>
-                    </div>
-                    
-                    <div v-if="selectedExemptionUnitIds[unit.unit_id] && !unit.qualified" class="mt-6 animate-in slide-in-from-top-2 fade-in duration-300">
-                      <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm">
-                        <button
-                          type="button"
-                          class="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 py-4 text-sm font-medium text-slate-600 transition-colors hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700"
-                          :disabled="uploadingUnitId === unit.unit_id"
-                          @click="triggerFileInput(unit.unit_id)"
-                        >
-                          <Loader2 v-if="uploadingUnitId === unit.unit_id" class="h-5 w-5 animate-spin" />
-                          <UploadCloud v-else class="h-5 w-5" />
-                          <span>{{ uploadingUnitId === unit.unit_id ? (t.checkoutWizard?.uploading || "上传中...") : (t.checkoutWizard?.addEvidence || "添加证据") }}</span>
-                        </button>
-                        <input :id="`file-${unit.unit_id}`" type="file" class="hidden" accept=".pdf,.doc,.docx,.jpg,.png" @change="onConstraintFileChange($event, unit, unit.exemption_quals?.[0] || {})" />
-                        
-                        <div v-if="uploadedExemptionFiles[unit.unit_id]" class="mt-3 flex items-center justify-between rounded-lg border border-emerald-100 bg-emerald-50/50 px-3 py-2 text-sm text-emerald-800">
-                          <div class="flex items-center gap-2 overflow-hidden">
-                            <FileCheck class="h-4 w-4 shrink-0 text-emerald-500" />
-                            <span class="truncate">{{ uploadedExemptionFiles[unit.unit_id].name }}</span>
-                          </div>
-                        </div>
-
-                        <div class="mt-4">
-                          <textarea
-                            v-model="exemptionReasons[unit.unit_id]"
-                            class="w-full rounded-lg border border-slate-300 p-3 text-sm focus:border-emerald-500"
-                            rows="3"
-                            :placeholder="t.checkoutWizard?.proofPlaceholder || '请填写申请理由...'"
-                          ></textarea>
-                        </div>
-                        
-                        <div class="mt-4 rounded-lg bg-emerald-50/50 p-4">
-                          <label class="flex items-start gap-3">
-                            <input type="checkbox" v-model="exemptionDeclarations[unit.unit_id]" class="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
-                            <span class="text-xs leading-relaxed text-emerald-800 font-medium">{{ t.checkoutWizard?.declareEvidenceValid || "我声明我的证据真实有效。" }}</span>
-                          </label>
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -1112,7 +1227,16 @@ async function confirmAndPay() {
 
           <!-- Step 4: Payment -->
           <div v-if="currentStep === 4" class="space-y-6">
-            <h2 class="text-xl font-semibold">{{ t.checkoutWizard?.payment || "Payment" }}</h2>
+            <div>
+              <h2 class="text-xl font-semibold">
+                {{ activeOrderAction === "credential_application"
+                  ? (t.checkoutWizard?.qualificationPaymentTitle || "Qualification review payment")
+                  : (t.checkoutWizard?.payment || "Payment") }}
+              </h2>
+              <p v-if="activeOrderAction === 'credential_application'" class="mt-2 text-sm text-muted-foreground">
+                {{ t.checkoutWizard?.qualificationPaymentDesc || "After payment, continue to upload your qualification materials." }}
+              </p>
+            </div>
             <PaymentSessionPanel
               v-if="activeOrderId"
               :biz-type="paymentBizType"
