@@ -402,7 +402,7 @@ onMounted(() => load(1))
         <h1 class="text-3xl font-black tracking-tight md:text-4xl">{{ copy.title }}</h1>
         <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
       </div>
-      <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="load(page)">
+      <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="loading" @click="load(page)">
         <RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
         {{ copy.refresh }}
       </button>
@@ -462,8 +462,8 @@ onMounted(() => load(1))
         </template>
 
         <div class="flex flex-col justify-end gap-3 border-t border-slate-200 p-4 sm:flex-row md:p-5">
-          <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrev" @click="load(page - 1)">{{ copy.prev }}</button>
-          <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext" @click="load(page + 1)">{{ copy.next }}</button>
+          <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="loading || !canPrev" @click="load(page - 1)">{{ copy.prev }}</button>
+          <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="loading || !canNext" @click="load(page + 1)">{{ copy.next }}</button>
         </div>
     </section>
 

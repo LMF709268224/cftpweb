@@ -74,6 +74,7 @@ const selectedUnitKey = ref("")
 const pendingAction = ref<PendingAction | null>(null)
 const actionReason = ref("")
 let pipelineContextId = 0
+let listRequestId = 0
 let detailRequestId = 0
 let logsRequestId = 0
 let logDetailRequestId = 0
@@ -431,6 +432,7 @@ async function loadPipelineCatalog() {
 }
 
 async function loadPipelines() {
+  const requestId = ++listRequestId
   loading.value = true
   try {
     const currentPage = Math.floor(offset.value / pageSize) + 1
@@ -470,6 +472,7 @@ async function loadPipelines() {
     }
 
     const data = await apiClient<JsonRecord>(`/api/prog/pipelines?${params}`)
+    if (requestId !== listRequestId) return
     const list = Array.isArray(data.pipelines) ? data.pipelines : []
 
     pipelines.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
@@ -481,13 +484,14 @@ nextCursor.value = String(data.next_cursor || "")
 
     lastPage.value = currentPage
   } catch (err) {
+    if (requestId !== listRequestId) return
     console.error(err)
     pipelines.value = []
     hasMore.value = false
     nextCursor.value = ""
     toast.error(copy.value.toasts.listLoadFailed)
   } finally {
-    loading.value = false
+    if (requestId === listRequestId) loading.value = false
   }
 }
 
@@ -825,7 +829,7 @@ onMounted(async () => {
           <ArrowLeft class="h-4 w-4" />
           {{ copy.backToList }}
         </button>
-        <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="reloadSelected">
+        <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="loading || detailLoading" @click="reloadSelected">
           <RefreshCw class="h-4 w-4" :class="loading || detailLoading ? 'animate-spin' : ''" />
           {{ copy.refresh }}
         </button>
@@ -914,8 +918,8 @@ onMounted(async () => {
           </template>
           <div v-else class="px-4 py-10 text-center text-slate-500 md:px-6">{{ copy.empty }}</div>
           <div class="flex flex-col justify-end gap-3 border-t border-slate-200 px-4 py-4 sm:flex-row md:px-5">
-            <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrev" @click="offset = Math.max(0, offset - pageSize)">{{ copy.prev }}</button>
-            <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext" @click="offset += pageSize">{{ copy.next }}</button>
+            <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="loading || !canPrev" @click="offset = Math.max(0, offset - pageSize)">{{ copy.prev }}</button>
+            <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="loading || !canNext" @click="offset += pageSize">{{ copy.next }}</button>
           </div>
         </section>
       </aside>
