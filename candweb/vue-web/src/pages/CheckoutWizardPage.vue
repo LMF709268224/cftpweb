@@ -33,7 +33,7 @@ const activeCredentialUnitId = ref("")
 const credentialApplicationLoadingUnitId = ref("")
 const qualificationApplications = ref<Record<string, any>>({})
 const qualificationDefinitions = ref<Record<string, any>>({})
-const expandedQualificationUnitId = ref("")
+const expandedQualificationUnitIds = ref<Record<string, boolean>>({})
 const qualificationUploadedFiles = ref<Record<string, Record<string, { name: string; url: string; ext: string; hash: string; size: number }>>>({})
 const qualificationUploadingKey = ref("")
 const qualificationSubmittingUnitId = ref("")
@@ -42,6 +42,9 @@ const levelPlaceholder = "{" + "{level}}"
 const isMultiStage = computed(() => {
   return (bundleData.value?.stages?.length || 0) > 1
 })
+const hasExpandedQualificationEditors = computed(() =>
+  Object.values(expandedQualificationUnitIds.value).some(Boolean)
+)
 
 const isMembershipBundle = computed(() => {
   if (!bundleData.value) return false
@@ -639,11 +642,20 @@ async function loadQualificationDefinition(qualId: string) {
 async function openQualificationEditor(unit: any, qualId = qualificationIdsForUnit(unit)[0] || "") {
   if (!unit?.unit_id || !qualId) return
   await loadQualificationDefinition(qualId)
-  expandedQualificationUnitId.value = unit.unit_id
+  expandedQualificationUnitIds.value = {
+    ...expandedQualificationUnitIds.value,
+    [unit.unit_id]: true,
+  }
 }
 
 function closeQualificationEditor(unitId: string) {
-  if (expandedQualificationUnitId.value === unitId) expandedQualificationUnitId.value = ""
+  const next = { ...expandedQualificationUnitIds.value }
+  delete next[unitId]
+  expandedQualificationUnitIds.value = next
+}
+
+function isQualificationEditorExpanded(unitId: string) {
+  return Boolean(expandedQualificationUnitIds.value[unitId])
 }
 
 function qualificationConstraintInputId(unitId: string, constraintName: string) {
@@ -1241,7 +1253,7 @@ async function confirmAndPay() {
                     :key="unit.unit_id"
                     :class="[
                       'group relative flex flex-col justify-between overflow-hidden rounded-2xl border p-5 transition-all duration-300',
-                      expandedQualificationUnitId === unit.unit_id ? 'md:col-span-2' : '',
+                      isQualificationEditorExpanded(unit.unit_id) ? 'md:col-span-2' : '',
                       selectedExemptionUnitIds[unit.unit_id]
                         ? 'border-emerald-400 bg-emerald-50/40 shadow-md ring-1 ring-emerald-400'
                         : unit.qualified
@@ -1268,7 +1280,7 @@ async function confirmAndPay() {
                           <input
                             type="checkbox"
                             class="peer sr-only"
-                            :checked="unit.qualified ? Boolean(selectedExemptionUnitIds[unit.unit_id]) : expandedQualificationUnitId === unit.unit_id"
+                            :checked="unit.qualified ? Boolean(selectedExemptionUnitIds[unit.unit_id]) : isQualificationEditorExpanded(unit.unit_id)"
                             :disabled="credentialApplicationLoadingUnitId === unit.unit_id || (!unit.qualified && exemptionCredentialState(unit) === 'pending')"
                             @change="onExemptionToggle(unit, $event)"
                           />
@@ -1283,7 +1295,7 @@ async function confirmAndPay() {
                     </div>
 
                     <div
-                      v-if="expandedQualificationUnitId === unit.unit_id && !unit.qualified"
+                      v-if="isQualificationEditorExpanded(unit.unit_id) && !unit.qualified"
                       class="mt-5 border-t border-blue-100 pt-5"
                     >
                       <div class="rounded-2xl border border-blue-100 bg-blue-50/70 p-4 sm:p-5">
@@ -1388,7 +1400,7 @@ async function confirmAndPay() {
                 </div>
                 <button
                   class="btn rounded-full bg-emerald-600 px-8 py-3 text-white shadow-md hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
-                  :disabled="Boolean(expandedQualificationUnitId) || Boolean(qualificationSubmittingUnitId)"
+                  :disabled="hasExpandedQualificationEditors || Boolean(qualificationSubmittingUnitId)"
                   @click="nextFromStep1"
                 >
                   {{ t.checkoutWizard?.saveAndContinue || "保存并继续 ->" }}
