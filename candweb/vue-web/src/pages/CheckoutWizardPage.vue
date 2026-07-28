@@ -558,6 +558,19 @@ function qualificationIdsForUnit(unit: any) {
     .filter(Boolean)
 }
 
+function qualificationOrderQualIds(primaryQualId: string) {
+  const allQualIds = Array.from(new Set(
+    exemptionStages.value
+      .flatMap((stage: any) => stage.units || [])
+      .filter((unit: any) => !unit?.qualified)
+      .flatMap((unit: any) => qualificationIdsForUnit(unit)),
+  ))
+  return [
+    primaryQualId,
+    ...allQualIds.filter((qualId) => qualId !== primaryQualId),
+  ].filter(Boolean)
+}
+
 function qualificationApplicationForUnit(unit: any) {
   const applications = qualificationIdsForUnit(unit)
     .map((qualId: string) => qualificationApplications.value[qualId])
@@ -846,7 +859,8 @@ function isCredentialApplicationResolvedStatus(status: unknown) {
 
 async function startQualificationApplication(unit: any) {
   const qualId = qualificationIdsForUnit(unit)[0] || ""
-  if (!unit?.unit_id || !qualId || !pipelineId.value || !bundleId) {
+  const orderQualIds = qualificationOrderQualIds(qualId)
+  if (!unit?.unit_id || !qualId || orderQualIds.length === 0 || !pipelineId.value || !bundleId) {
     toast.error(t.value.checkoutWizard.qualificationApplicationFailed)
     return
   }
@@ -882,7 +896,7 @@ async function startQualificationApplication(unit: any) {
         body: JSON.stringify({
           pipeline_cc_ulid: pipelineId.value,
           bundle_ulid: bundleId,
-          qual_ulids: [qualId],
+          qual_ulids: orderQualIds,
         }),
       })
     } catch (error) {
@@ -917,7 +931,7 @@ async function startQualificationApplication(unit: any) {
       if (!orderId) {
         throw new Error(t.value.checkoutWizard.qualificationApplicationFailed)
       }
-      activeCredentialQualIds.value = [qualId]
+      activeCredentialQualIds.value = orderQualIds
       activeCredentialUnitId.value = unit.unit_id
       activeOrderAction.value = "credential_application"
       activeOrderId.value = orderId
