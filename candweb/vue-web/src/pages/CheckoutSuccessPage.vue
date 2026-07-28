@@ -23,19 +23,19 @@ const candUlid = computed(() => currentUser.value?.cand_ulid || currentUser.valu
           <CheckCircle2 class="h-12 w-12" />
         </div>
         
-        <h1 class="mb-3 text-3xl font-bold tracking-tight text-slate-900">{{ t.common?.success || 'Payment Successful' }}</h1>
+        <h1 class="mb-3 text-3xl font-bold tracking-tight text-slate-900">{{ t.checkoutSuccess.title }}</h1>
         <p class="mb-8 text-slate-500 text-lg">
-          Your order has been placed.
+          {{ t.checkoutSuccess.orderPlaced }}
         </p>
 
         <div class="mb-8 rounded-2xl border border-slate-100 bg-slate-50 p-6 text-left">
           <div class="flex flex-col gap-4">
             <div>
-              <div class="text-sm font-medium text-slate-500">Order ID</div>
+              <div class="text-sm font-medium text-slate-500">{{ t.checkoutSuccess.orderId }}</div>
               <div class="mt-1 font-mono text-slate-900">{{ orderId }}</div>
             </div>
             <div v-if="candUlid">
-              <div class="text-sm font-medium text-slate-500">Candidate ID</div>
+              <div class="text-sm font-medium text-slate-500">{{ t.checkoutSuccess.candidateId }}</div>
               <div class="mt-1 font-mono text-slate-900 font-semibold">{{ candUlid }}</div>
             </div>
           </div>
@@ -43,10 +43,10 @@ const candUlid = computed(() => currentUser.value?.cand_ulid || currentUser.valu
 
         <div class="flex flex-col gap-3">
           <RouterLink to="/my-certifications" class="btn btn-primary w-full text-base h-12">
-            View My Certifications <ChevronRight class="ml-2 h-5 w-5" />
+            {{ t.checkoutSuccess.viewCertifications }} <ChevronRight class="ml-2 h-5 w-5" />
           </RouterLink>
           <RouterLink to="/courses" class="btn btn-outline w-full text-base h-12">
-            <Home class="mr-2 h-4 w-4" /> Go to Mall
+            <Home class="mr-2 h-4 w-4" /> {{ t.checkoutSuccess.goToMall }}
           </RouterLink>
         </div>
       </div>

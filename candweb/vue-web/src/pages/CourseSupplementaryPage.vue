@@ -45,7 +45,12 @@ const supplementaryMaterials = computed(() => {
     payload.value?.supplementaryMaterial
   return normalizeSupplementaryMaterials(raw)
 })
-const items = computed(() => parseSupplementaryMaterialItems(supplementaryMaterials.value, t.value.learning.supplementaryChapterHeader))
+const items = computed(() => parseSupplementaryMaterialItems(
+  supplementaryMaterials.value,
+  t.value.learning.supplementaryChapterHeader,
+  t.value.learning.materialTypeUnknown,
+  t.value.learning.unknownMaterial,
+))
 
 function supplementaryChapterLabel(item: SupplementaryMaterialItem, index: number) {
   return items.value[index - 1]?.chapter === item.chapter ? "" : item.chapter

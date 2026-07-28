@@ -6,80 +6,12 @@ import { useTranslation } from "@/lib/language"
 
 type LoginState = "idle" | "loading" | "error"
 
-const { lang, changeLanguage } = useTranslation()
+const { t, lang, changeLanguage } = useTranslation()
 const loginState = ref<LoginState>("idle")
 const showSlowHint = ref(false)
 let slowHintTimer: number | undefined
 
-const copy = computed(() => lang.value === "zh" ? {
-  brandAria: "GFI 品牌区",
-  institute: "环球金融科技学院",
-  portal: "官方登录入口",
-  official: "官方认证",
-  claim: "为新金融铸造信用",
-  description: "GFI 面向全球金融从业者颁发金融科技职业认证。课程、阶段考试与认证委员会审核层层铸造，最终成为一枚可验证的证书。",
-  pathway: "认证路径 · CFtA → CFtP",
-  cfta: "CFtA · 金融科技分析师",
-  cftaMeta: "初阶认证 · 1 个阶段 · 12 课时",
-  cftp: "CFtP · 金融科技专业人士",
-  cftpMeta: "高阶认证 · 4 个阶段 · 36 课时",
-  executive: "高管项目 · Web3 领袖计划",
-  executiveMeta: "新加坡 · 规则 × 资本",
-  holders: "持证人",
-  countries: "个国家",
-  established: "创立于",
-  foundation: "Global Fintech Institute 环球金融科技学院 · 创立于 2016",
-  authAria: "登录区",
-  languageAria: "界面语言",
-  welcome: "欢迎回来",
-  subtitle: "登录以继续你的认证之旅",
-  login: "使用 GFI 账号登录",
-  loading: "正在连接安全登录服务…",
-  secure: "加密连接 · 点击后跳转至 GFI 安全登录服务",
-  slow: "正在跳转安全登录服务，请稍候…",
-  errorTitle: "暂时连不上登录服务",
-  errorDescription: "请检查网络后重试；本次未进入登录，你的账号与学习进度不受影响。",
-  retry: "重试",
-  secureAccess: "安全学习入口",
-  secureAccessSub: "GFI 统一身份服务",
-  trustOfficial: "官方入口",
-  trustEncrypted: "加密连接",
-  trustSynced: "进度同步",
-} : {
-  brandAria: "GFI brand presentation",
-  institute: "Global Fintech Institute",
-  portal: "Official sign-in portal",
-  official: "Official access",
-  claim: "Minting trust for the future of finance",
-  description: "GFI awards professional FinTech credentials to finance practitioners worldwide. Structured learning, assessments and committee review culminate in a credential that can be independently verified.",
-  pathway: "Credential pathway · CFtA → CFtP",
-  cfta: "CFtA · Chartered FinTech Analyst",
-  cftaMeta: "Foundation credential · 1 stage · 12 lessons",
-  cftp: "CFtP · Chartered FinTech Professional",
-  cftpMeta: "Advanced credential · 4 stages · 36 lessons",
-  executive: "Executive Programme · Web3 Leaders Programme",
-  executiveMeta: "Singapore · Rules × Capital",
-  holders: "credential holders",
-  countries: "countries",
-  established: "Established",
-  foundation: "Global Fintech Institute · Established 2016",
-  authAria: "Sign-in area",
-  languageAria: "Interface language",
-  welcome: "Welcome back",
-  subtitle: "Sign in to continue your credential journey",
-  login: "Continue with your GFI account",
-  loading: "Connecting to the secure sign-in service…",
-  secure: "Encrypted connection · You will continue to GFI secure sign-in",
-  slow: "Still connecting to the secure sign-in service…",
-  errorTitle: "The sign-in service is unavailable",
-  errorDescription: "Check your connection and try again. Your account and learning progress are unaffected.",
-  retry: "Try again",
-  secureAccess: "Secure learner access",
-  secureAccessSub: "GFI unified identity service",
-  trustOfficial: "Official access",
-  trustEncrypted: "Encrypted",
-  trustSynced: "Progress synced",
-})
+const copy = computed(() => t.value.loginPage)
 
 function clearSlowHintTimer() {
   if (slowHintTimer !== undefined) {
@@ -136,7 +68,7 @@ onBeforeUnmount(clearSlowHintTimer)
 
       <div class="brand-content">
         <header class="brand-header entrance entrance-1">
-          <div class="brand-lockup" aria-label="Global Fintech Institute">
+          <div class="brand-lockup" :aria-label="copy.brandName">
             <svg class="gfi-logo" viewBox="0 0 1734 897" aria-hidden="true"><use href="#login-gfi-logo" /></svg>
           </div>
           <div class="brand-organization">
@@ -151,8 +83,8 @@ onBeforeUnmount(clearSlowHintTimer)
                 <path id="login-seal-top" d="M13 46 A35 35 0 0 1 83 46" />
                 <path id="login-seal-bottom" d="M10 46 A38 38 0 0 0 86 46" />
               </defs>
-              <text><textPath href="#login-seal-top" startOffset="50%" text-anchor="middle">GLOBAL FINTECH INSTITUTE</textPath></text>
-              <text><textPath href="#login-seal-bottom" startOffset="50%" text-anchor="middle">OFFICIAL SITE · SECURE ACCESS</textPath></text>
+              <text><textPath href="#login-seal-top" startOffset="50%" text-anchor="middle">{{ copy.sealTop }}</textPath></text>
+              <text><textPath href="#login-seal-bottom" startOffset="50%" text-anchor="middle">{{ copy.sealBottom }}</textPath></text>
             </svg>
             <svg class="seal-check" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4.5 4.5L19 7" /></svg>
           </div>
@@ -167,7 +99,7 @@ onBeforeUnmount(clearSlowHintTimer)
             <p class="credential-eyebrow">{{ copy.pathway }}</p>
             <div class="credential-path">
               <div class="credential-item">
-                <svg class="credential-shield credential-shield-silver" viewBox="-14 -14 124 142" role="img" aria-label="CFtA">
+                <svg class="credential-shield credential-shield-silver" viewBox="-14 -14 124 142" role="img" :aria-label="copy.cftaShort">
                   <defs>
                     <linearGradient id="silver-shield" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f8fbff" /><stop offset=".58" stop-color="#dce9f8" /><stop offset="1" stop-color="#a9c5e8" /></linearGradient>
                     <clipPath id="silver-shield-clip"><path d="M50.85 4.93 85.15 16.07Q88 17 88 20v35c0 26-18 44-40 53C26 99 8 81 8 55V20q0-3 2.85-3.93L45.15 4.93Q48 4 50.85 4.93Z" /></clipPath>
@@ -176,7 +108,7 @@ onBeforeUnmount(clearSlowHintTimer)
                   <path class="shield-face" fill="url(#silver-shield)" d="M50.85 4.93 85.15 16.07Q88 17 88 20v35c0 26-18 44-40 53C26 99 8 81 8 55V20q0-3 2.85-3.93L45.15 4.93Q48 4 50.85 4.93Z" />
                   <g clip-path="url(#silver-shield-clip)"><ellipse class="shield-highlight" cx="34" cy="29" rx="26" ry="38" transform="rotate(-22 34 29)" /></g>
                   <path class="shield-line" d="M48 14 79 24v30c0 21-15 36-31 43-16-7-31-22-31-43V24Z" />
-                  <text x="48" y="55" text-anchor="middle">CFtA</text>
+                  <text x="48" y="55" text-anchor="middle">{{ copy.cftaShort }}</text>
                   <path class="shield-check" d="m37 68 7 7 14-15" />
                 </svg>
                 <strong>{{ copy.cfta }}</strong>
@@ -190,7 +122,7 @@ onBeforeUnmount(clearSlowHintTimer)
               </div>
 
               <div class="credential-item">
-                <svg class="credential-shield credential-shield-gold" viewBox="-14 -14 124 142" role="img" aria-label="CFtP">
+                <svg class="credential-shield credential-shield-gold" viewBox="-14 -14 124 142" role="img" :aria-label="copy.cftpShort">
                   <defs>
                     <linearGradient id="gold-shield" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f3d98c" /><stop offset=".52" stop-color="#d5a63c" /><stop offset="1" stop-color="#a9771e" /></linearGradient>
                     <clipPath id="gold-shield-clip"><path d="M50.85 4.93 85.15 16.07Q88 17 88 20v35c0 26-18 44-40 53C26 99 8 81 8 55V20q0-3 2.85-3.93L45.15 4.93Q48 4 50.85 4.93Z" /></clipPath>
@@ -199,7 +131,7 @@ onBeforeUnmount(clearSlowHintTimer)
                   <path class="shield-face" fill="url(#gold-shield)" d="M50.85 4.93 85.15 16.07Q88 17 88 20v35c0 26-18 44-40 53C26 99 8 81 8 55V20q0-3 2.85-3.93L45.15 4.93Q48 4 50.85 4.93Z" />
                   <g clip-path="url(#gold-shield-clip)"><ellipse class="shield-highlight" cx="34" cy="29" rx="26" ry="38" transform="rotate(-22 34 29)" /></g>
                   <path class="shield-line" d="M48 14 79 24v30c0 21-15 36-31 43-16-7-31-22-31-43V24Z" />
-                  <text x="48" y="55" text-anchor="middle">CFtP</text>
+                  <text x="48" y="55" text-anchor="middle">{{ copy.cftpShort }}</text>
                   <path class="shield-check" d="m37 68 7 7 14-15" />
                 </svg>
                 <strong>{{ copy.cftp }}</strong>
@@ -223,7 +155,7 @@ onBeforeUnmount(clearSlowHintTimer)
             <div><strong>68</strong><span>{{ copy.countries }}</span></div>
             <div><strong>2016</strong><span>{{ copy.established }}</span></div>
           </div>
-          <div class="micro-copy" aria-hidden="true">GLOBAL FINTECH INSTITUTE · MINTING TRUST · GLOBAL FINTECH INSTITUTE · MINTING TRUST</div>
+          <div class="micro-copy" aria-hidden="true">{{ copy.microCopy }}</div>
           <p>{{ copy.foundation }}</p>
         </footer>
       </div>
@@ -235,8 +167,8 @@ onBeforeUnmount(clearSlowHintTimer)
           <svg class="gfi-logo" viewBox="0 0 1734 897"><use href="#login-gfi-logo" /></svg>
         </div>
         <div class="language-switch" role="group" :aria-label="copy.languageAria">
-          <button type="button" :class="{ active: lang === 'zh' }" :aria-pressed="lang === 'zh'" @click="changeLanguage('zh')">中文</button>
-          <button type="button" :class="{ active: lang === 'en' }" :aria-pressed="lang === 'en'" @click="changeLanguage('en')">EN</button>
+          <button type="button" :class="{ active: lang === 'zh' }" :aria-pressed="lang === 'zh'" @click="changeLanguage('zh')">{{ copy.chineseLanguage }}</button>
+          <button type="button" :class="{ active: lang === 'en' }" :aria-pressed="lang === 'en'" @click="changeLanguage('en')">{{ copy.englishLanguage }}</button>
         </div>
       </div>
 

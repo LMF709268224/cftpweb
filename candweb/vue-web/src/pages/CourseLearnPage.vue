@@ -221,7 +221,12 @@ const supplementaryMaterials = computed<SupplementaryMaterial[]>(() => {
   return normalizeSupplementaryMaterials(raw)
 })
 const supplementaryMaterialItems = computed<SupplementaryMaterialItem[]>(() =>
-  parseSupplementaryMaterialItems(supplementaryMaterials.value, t.value.learning.supplementaryChapterHeader),
+  parseSupplementaryMaterialItems(
+    supplementaryMaterials.value,
+    t.value.learning.supplementaryChapterHeader,
+    t.value.learning.materialTypeUnknown,
+    t.value.learning.unknownMaterial,
+  ),
 )
 const totalMaterialCount = computed(() => materials.value.length + supplementaryMaterialItems.value.length)
 const courseQuizzes = computed<any[]>(() => completeCourse.value?.quizzes || [])

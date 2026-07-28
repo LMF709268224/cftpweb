@@ -7,7 +7,7 @@ import { apiClient } from "@/lib/apiClient"
 import { isAuthenticated } from "@/lib/authStorage"
 import { useTranslation } from "@/lib/language"
 
-const { t, lang } = useTranslation()
+const { t } = useTranslation()
 const dashboardLoading = ref(false)
 const dashboardLoaded = ref(false)
 const counts = ref({
@@ -38,13 +38,12 @@ type PortalCard = {
 }
 
 const portalCards = computed<PortalCard[]>(() => {
-  const zh = lang.value === "zh"
   const cards: PortalCard[] = [
     {
       key: "certifications",
-      title: zh ? "已完成认证" : "Completed Certifications",
+      title: t.value.home.completedCertifications,
       value: counts.value.certifications,
-      action: zh ? "点击查看认证" : "Click to explore certifications",
+      action: t.value.home.viewCertifications,
       href: "/certifications",
       icon: Award,
       color: "orange",
@@ -52,9 +51,9 @@ const portalCards = computed<PortalCard[]>(() => {
     },
     {
       key: "courses",
-      title: zh ? "课程进行中" : "Courses in Progress",
+      title: t.value.home.coursesInProgress,
       value: counts.value.courses,
-      action: zh ? "点击查看课程资料" : "Click to explore courses",
+      action: t.value.home.viewCourses,
       href: "/certifications",
       icon: BookOpen,
       color: "purple",
@@ -62,9 +61,9 @@ const portalCards = computed<PortalCard[]>(() => {
     },
     {
       key: "exams",
-      title: zh ? "考试数" : "Available Exams",
+      title: t.value.home.examCount,
       value: counts.value.exams,
-      action: zh ? "点击查看考试" : "Click to explore exams",
+      action: t.value.home.viewExams,
       href: "/exams",
       icon: ClipboardList,
       color: "blue",
@@ -72,9 +71,9 @@ const portalCards = computed<PortalCard[]>(() => {
     },
     {
       key: "resourcePacks",
-      title: zh ? "资源包数" : "Resource Packs",
+      title: t.value.home.resourcePackCount,
       value: counts.value.resourcePacks,
-      action: zh ? "点击查看资源包" : "Click to explore resource packs",
+      action: t.value.home.viewResourcePacks,
       href: "/resource-packs",
       icon: PackageOpen,
       color: "teal",
@@ -82,9 +81,9 @@ const portalCards = computed<PortalCard[]>(() => {
     },
     {
       key: "orders",
-      title: zh ? "订单数" : "Orders",
+      title: t.value.home.orderCount,
       value: counts.value.orders,
-      action: zh ? "点击查看订单" : "Click to view orders",
+      action: t.value.home.viewOrders,
       href: "/orders",
       icon: Receipt,
       color: "green",

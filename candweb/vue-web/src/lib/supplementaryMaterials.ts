@@ -32,7 +32,12 @@ export function normalizeSupplementaryMaterials(raw: SupplementaryMaterial | Sup
   return []
 }
 
-export function parseSupplementaryMaterialItems(materials: SupplementaryMaterial[], fallbackChapter = "Chapter"): SupplementaryMaterialItem[] {
+export function parseSupplementaryMaterialItems(
+  materials: SupplementaryMaterial[],
+  fallbackChapter: string,
+  fallbackType: string,
+  fallbackTitle: string,
+): SupplementaryMaterialItem[] {
   return materials.flatMap((material, materialIndex) => {
     const data = parseSupplementaryJson(material.data_json ?? material.dataJson)
     const records = supplementaryRecordsFromData(data)
@@ -40,7 +45,7 @@ export function parseSupplementaryMaterialItems(materials: SupplementaryMaterial
     return records.map((record, recordIndex) => {
       const title = stringFromRecord(record, ["title", "name", "label", "heading"])
       const description = stringFromRecord(record, ["description", "desc", "summary", "detail", "content"])
-      const type = stringFromRecord(record, ["type", "material_type", "resource_type", "kind"]) || "Material"
+      const type = stringFromRecord(record, ["type", "material_type", "resource_type", "kind"]) || fallbackType
       const chapter = stringFromRecord(record, ["chapter", "chapter_title", "chapterTitle", "section"]) || fallbackChapter
       const url = stringFromRecord(record, ["resource_link", "resourceLink", "url", "link", "href", "external_url", "externalUrl"])
       const materialId = material.material_id || material.material_ulid || material.materialId || material.materialUlid || "supplementary"
@@ -50,7 +55,7 @@ export function parseSupplementaryMaterialItems(materials: SupplementaryMaterial
         key: stringFromRecord(record, ["id", "material_id", "material_ulid", "materialId", "materialUlid", "resource_id", "resource_ulid", "resourceId", "resourceUlid", "key"]) || fallbackKey,
         chapter,
         type,
-        title: title || "Untitled material",
+        title: title || fallbackTitle,
         description,
         url,
         sourceKind: material.kind || "",

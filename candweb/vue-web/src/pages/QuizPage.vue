@@ -81,7 +81,7 @@ function startTimer() {
     remainingSeconds.value--
     if (remainingSeconds.value <= 0) {
       stopTimer()
-      toast.error((t.value.learning as any)?.quizTimeUp || "Time is up, automatically submitting...")
+      toast.error(t.value.learning.quizTimeUp)
       submitQuiz(true)
     }
   }, 1000)
@@ -270,7 +270,7 @@ async function submitQuiz(autoSubmit = false) {
     toast.success(t.value.learning?.quizSubmittedDesc || t.value.common.success)
   } catch (err: any) {
     if (err?.error_code === "FAILED_PRECONDITION" || err?.status === 412 || err?.status === 400) {
-      toast.info((t.value.learning as any)?.quizTimeUp || "Quiz time ended. Loading results...")
+      toast.info(t.value.learning.quizTimeEndedLoadingResults)
       await loadAttemptDetail()
       if (detailedAnswers.value.length > 0) {
          result.value = { score: 0, max_score: 0 } 
