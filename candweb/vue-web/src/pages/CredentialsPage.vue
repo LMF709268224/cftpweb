@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue"
-import { useRoute, useRouter } from "vue-router"
+import { onMounted, ref } from "vue"
+import { useRoute } from "vue-router"
 import { AlertCircle, Award, CheckCircle, Clock, FileText, Loader2, X, XCircle } from "lucide-vue-next"
 import { getFileConstraintInfo } from "../lib/fileConstraints"
 import { CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, CANDIDATE_APPLICATION_STATUS_LABELS, statusEnumNameForStatus, statusLabel } from "@/lib/status-labels"
@@ -14,12 +14,6 @@ import { toast } from "vue-sonner"
 
 const { t, lang } = useTranslation()
 const route = useRoute()
-const router = useRouter()
-const returnTo = computed(() => {
-  const rawValue = Array.isArray(route.query.return_to) ? route.query.return_to[0] : route.query.return_to
-  const value = String(rawValue || "").trim()
-  return value.startsWith("/") && !value.startsWith("//") ? value : ""
-})
 const definitions = ref<any[]>([])
 const applications = ref<any[]>([])
 const applicationPage = ref(1)
@@ -229,10 +223,6 @@ async function handleSubmitApplication() {
     }
     toast.success(t.value.credentialsPage.submitSuccess)
     isApplyOpen.value = false
-    if (returnTo.value) {
-      await router.push(returnTo.value)
-      return
-    }
     applicationPage.value = 1
     await fetchData()
   } catch {

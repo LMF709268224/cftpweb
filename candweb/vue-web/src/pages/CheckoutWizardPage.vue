@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
-import { ClipboardList, Loader2, Send, Check, CheckCircle2, CircleAlert, Clock, ShoppingCart } from "lucide-vue-next"
+import { ClipboardList, Loader2, Send, Check, CheckCircle2, CircleAlert, Clock, ShoppingCart, UploadCloud } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import PaymentSessionPanel from "@/components/PaymentSessionPanel.vue"
 import { ApiClientError, apiClient } from "@/lib/apiClient"
@@ -11,6 +11,8 @@ import { useUser } from "@/lib/user"
 import { getCachedCountries, getCountryCityOptions, getCountryOptions, getProvinceOptions, getStateCityOptions, loadLocationData, type CountryOption } from "@/lib/locationOptions"
 import { GENDER_OPTIONS, PROFILE_TEXT_LIMITS, isValidEmail, isValidInternationalPhone, isValidPostalCode, normalizeGender, normalizeInternationalPhone, normalizePostalCode, trimToMax } from "@/lib/profileFormValidation"
 import { CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, statusEnumNameForStatus } from "@/lib/status-labels"
+import { getFileConstraintInfo } from "@/lib/fileConstraints"
+import { sha256Hex, uploadWithTimeout } from "@/lib/upload"
 
 const route = useRoute()
 const router = useRouter()
@@ -27,8 +29,14 @@ const selectedExemptionUnitIds = ref<Record<string, boolean>>({})
 const activeOrderId = ref("")
 const activeOrderAction = ref<"purchase" | "unlock" | "credential_application">("purchase")
 const activeCredentialQualIds = ref<string[]>([])
+const activeCredentialUnitId = ref("")
 const credentialApplicationLoadingUnitId = ref("")
 const qualificationApplications = ref<Record<string, any>>({})
+const qualificationDefinitions = ref<Record<string, any>>({})
+const expandedQualificationUnitId = ref("")
+const qualificationUploadedFiles = ref<Record<string, Record<string, { name: string; url: string; ext: string; hash: string; size: number }>>>({})
+const qualificationUploadingKey = ref("")
+const qualificationSubmittingUnitId = ref("")
 const levelPlaceholder = "{" + "{level}}"
 
 const isMultiStage = computed(() => {
@@ -52,14 +60,14 @@ const paymentBizType = computed(() => {
 })
 const paymentReturnPath = computed(() => {
   if (activeOrderAction.value === "unlock") return "/my-certifications"
-  if (activeOrderAction.value === "credential_application") return "/credentials"
+  if (activeOrderAction.value === "credential_application") return route.path
   return `/checkout/success/${activeOrderId.value}`
 })
 const paymentReturnParams = computed(() => {
   if (activeOrderAction.value === "credential_application") {
     return {
       qual_ulids: activeCredentialQualIds.value.join(","),
-      return_to: route.fullPath,
+      qualification_unit_id: activeCredentialUnitId.value,
     }
   }
   return {
@@ -368,7 +376,10 @@ async function fetchOrgConfig() {
 }
 
 onMounted(() => {
-  void fetchBundleInfo()
+  void (async () => {
+    await fetchBundleInfo()
+    await resumeQualificationUploadAfterPayment()
+  })()
   void loadProfile()
   void loadLocationData()
     .then(() => {
@@ -581,18 +592,228 @@ async function refreshQualificationApplications() {
   qualificationApplications.value = next
 }
 
-function credentialUploadLocation(qualIds: string[]) {
-  return {
-    path: "/credentials",
-    query: {
-      qual_ulids: qualIds.join(","),
-      return_to: route.fullPath,
-    },
+function qualificationDefinitionId(definition: any) {
+  return String(definition?.cred_def_id || definition?.cred_def_ulid || "").trim()
+}
+
+function qualificationApplicationId(application: any) {
+  return String(application?.app_id || application?.app_ulid || "").trim()
+}
+
+function exemptionUnitById(unitId: string) {
+  return exemptionStages.value
+    .flatMap((stage: any) => stage.units || [])
+    .find((unit: any) => String(unit?.unit_id || "") === unitId)
+}
+
+function exemptionUnitByQualId(qualId: string) {
+  return exemptionStages.value
+    .flatMap((stage: any) => stage.units || [])
+    .find((unit: any) => qualificationIdsForUnit(unit).includes(qualId))
+}
+
+function qualificationDefinitionForUnit(unit: any) {
+  const qualId = qualificationIdsForUnit(unit)[0] || ""
+  return qualificationDefinitions.value[qualId] || null
+}
+
+function qualificationFilesForUnit(unitId: string) {
+  return qualificationUploadedFiles.value[unitId] || {}
+}
+
+async function loadQualificationDefinition(qualId: string) {
+  if (qualificationDefinitions.value[qualId]) return qualificationDefinitions.value[qualId]
+  const response = await apiClient(`/api/credentials/definitions?qual_ulids=${encodeURIComponent(qualId)}`)
+  const definitions = Array.isArray(response?.definitions) ? response.definitions : []
+  const definition = definitions.find((item: any) => qualificationDefinitionId(item) === qualId) || definitions[0]
+  if (!definition) {
+    throw new Error(t.value.credentialsPage?.materialRequirementsUnavailable || "Qualification material requirements are unavailable")
+  }
+  qualificationDefinitions.value = {
+    ...qualificationDefinitions.value,
+    [qualId]: definition,
+  }
+  return definition
+}
+
+async function openQualificationEditor(unit: any, qualId = qualificationIdsForUnit(unit)[0] || "") {
+  if (!unit?.unit_id || !qualId) return
+  await loadQualificationDefinition(qualId)
+  expandedQualificationUnitId.value = unit.unit_id
+}
+
+function closeQualificationEditor(unitId: string) {
+  if (expandedQualificationUnitId.value === unitId) expandedQualificationUnitId.value = ""
+}
+
+function qualificationConstraintInputId(unitId: string, constraintName: string) {
+  return `qualification-file-${unitId}-${constraintName}`
+}
+
+function triggerQualificationFileInput(unitId: string, constraintName: string) {
+  document.getElementById(qualificationConstraintInputId(unitId, constraintName))?.click()
+}
+
+function qualificationFormatHint(constraint: any) {
+  const info = getFileConstraintInfo(constraint?.type)
+  const extText = info.extLabel === "Any" ? (lang.value === "zh" ? "不限" : "Any") : info.extLabel
+  return t.value.credentialsPage.supportedFormats
+    .replace("{{exts}}", extText)
+    .replace("{{limit}}", info.maxLabel)
+}
+
+function qualificationUploadSuccessText(fileName: string) {
+  return t.value.credentialsPage.uploadSuccess.replace("{{fileName}}", fileName)
+}
+
+async function onQualificationFileChange(event: Event, unit: any, constraint: any) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (file) await uploadQualificationFile(unit, constraint, file)
+  input.value = ""
+}
+
+async function uploadQualificationFile(unit: any, constraint: any, file: File) {
+  const unitId = String(unit?.unit_id || "")
+  const qualId = qualificationIdsForUnit(unit)[0] || ""
+  const constraintName = String(constraint?.name || "").trim()
+  const uploadingKey = `${unitId}:${constraintName}`
+  if (!unitId || !qualId || !constraintName || qualificationUploadingKey.value) return
+
+  const info = getFileConstraintInfo(constraint?.type)
+  const fileExt = file.name.includes(".") ? `.${file.name.split(".").pop()?.toLowerCase()}` : ""
+  if (info.maxSize && file.size > info.maxSize) {
+    toast.error(t.value.credentialsPage.fileSizeLimitError.replace("{{limit}}", info.maxLabel))
+    return
+  }
+  if (info.exts.length > 0 && !info.exts.includes(fileExt)) {
+    toast.error(t.value.credentialsPage.fileTypeError.replace("{{exts}}", info.extLabel))
+    return
+  }
+
+  qualificationUploadingKey.value = uploadingKey
+  try {
+    const fileHash = await sha256Hex(file)
+    const contentType = file.type || "application/octet-stream"
+    const upload = await apiClient("/api/credentials/upload-url", {
+      method: "POST",
+      body: JSON.stringify({
+        cred_def_ulid: qualId,
+        file_name: file.name,
+        file_ext: fileExt,
+        file_hash: fileHash,
+        content_type: contentType,
+        file_usage: constraintName,
+      }),
+    })
+    const uploadResponse = await uploadWithTimeout(upload.upload_url, {
+      method: "PUT",
+      headers: new Headers(upload.signed_headers || {}),
+      body: file,
+    })
+    if (!uploadResponse.ok) {
+      throw new Error(`S3 upload failed: ${uploadResponse.status} ${uploadResponse.statusText}`)
+    }
+    qualificationUploadedFiles.value = {
+      ...qualificationUploadedFiles.value,
+      [unitId]: {
+        ...qualificationFilesForUnit(unitId),
+        [constraintName]: {
+          name: file.name,
+          url: upload.file_key,
+          ext: fileExt,
+          hash: fileHash,
+          size: file.size,
+        },
+      },
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error || "")
+    toast.error(`${t.value.credentialsPage.uploadFailed}: ${message}`)
+  } finally {
+    qualificationUploadingKey.value = ""
   }
 }
 
-async function goToCredentialUpload(qualIds: string[]) {
-  await router.push(credentialUploadLocation(qualIds))
+async function submitQualificationApplication(unit: any) {
+  const unitId = String(unit?.unit_id || "")
+  const qualId = qualificationIdsForUnit(unit)[0] || ""
+  const definition = qualificationDefinitionForUnit(unit)
+  const constraints = definition?.file_constraints
+  const uploadedFiles = qualificationFilesForUnit(unitId)
+  if (!unitId || !qualId || !Array.isArray(constraints)) {
+    toast.error(t.value.credentialsPage.materialRequirementsUnavailable)
+    return
+  }
+  if (Object.keys(uploadedFiles).length === 0
+    || constraints.some((constraint: any) => constraint.is_required && !uploadedFiles[constraint.name])) {
+    toast.error(t.value.credentialsPage.requiredMaterialsMissing)
+    return
+  }
+
+  const evidenceFiles = Object.keys(uploadedFiles).map((constraintName) => ({
+    file_name: uploadedFiles[constraintName].name,
+    file_url: uploadedFiles[constraintName].url,
+    file_hash: uploadedFiles[constraintName].hash,
+    file_ext: uploadedFiles[constraintName].ext,
+    file_size: uploadedFiles[constraintName].size,
+    file_usage: constraintName,
+    file_type: constraints.find((constraint: any) => constraint.name === constraintName)?.type || 1,
+  }))
+  const existingApplication = qualificationApplications.value[qualId]
+  qualificationSubmittingUnitId.value = unitId
+  try {
+    if (isApplicationResubmitStatus(existingApplication?.status)) {
+      const appId = qualificationApplicationId(existingApplication)
+      if (!appId) throw new Error(t.value.credentialsPage.submitFailed)
+      await apiClient("/api/credentials/update", {
+        method: "PUT",
+        body: JSON.stringify({ app_id: appId, files: evidenceFiles }),
+      })
+    } else {
+      await apiClient("/api/credentials/submit", {
+        method: "POST",
+        body: JSON.stringify({ cred_def_ulid: qualId, files: evidenceFiles }),
+      })
+    }
+    toast.success(t.value.credentialsPage.submitSuccess)
+    closeQualificationEditor(unitId)
+    qualificationUploadedFiles.value = {
+      ...qualificationUploadedFiles.value,
+      [unitId]: {},
+    }
+    await refreshQualificationApplications()
+  } catch (error) {
+    console.error(error)
+    toast.error(t.value.credentialsPage.submitFailed)
+  } finally {
+    qualificationSubmittingUnitId.value = ""
+  }
+}
+
+async function resumeQualificationUploadAfterPayment() {
+  const paymentAction = String(route.query.payment_action || "")
+  const paymentStatus = String(route.query.payment_status || "")
+  if (paymentAction !== "credential_application" || paymentStatus !== "success") return
+  const qualId = String(route.query.qual_ulids || "").split(",")[0]?.trim() || ""
+  const unitId = String(route.query.qualification_unit_id || "").trim()
+  const unit = exemptionUnitById(unitId) || exemptionUnitByQualId(qualId)
+  if (unit && qualId) {
+    currentStep.value = 1
+    try {
+      await openQualificationEditor(unit, qualId)
+    } catch (error) {
+      console.error(error)
+      toast.error(t.value.checkoutWizard?.qualificationApplicationFailed || "Unable to open qualification materials")
+    }
+  }
+  const nextQuery = { ...route.query }
+  delete nextQuery.payment_status
+  delete nextQuery.payment_action
+  delete nextQuery.order_id
+  delete nextQuery.qual_ulids
+  delete nextQuery.qualification_unit_id
+  await router.replace({ path: route.path, query: nextQuery })
 }
 
 function isUploadReadyStatus(status: unknown) {
@@ -628,7 +849,6 @@ async function startQualificationApplication(unit: any) {
       }
       if (isApplicationPendingStatus(existingApplication.status)) {
         toast.info(t.value.checkoutWizard?.qualificationUnderReview || "Qualification application is under review")
-        await goToCredentialUpload([qualId])
         return
       }
       if (isApplicationApprovedStatus(existingApplication.status)) {
@@ -637,7 +857,7 @@ async function startQualificationApplication(unit: any) {
         return
       }
       if (isApplicationResubmitStatus(existingApplication.status)) {
-        await goToCredentialUpload([qualId])
+        await openQualificationEditor(unit, qualId)
         return
       }
     }
@@ -660,7 +880,6 @@ async function startQualificationApplication(unit: any) {
       if (message.includes("in-progress credential application") || message.includes("进行中") || message.includes("请先处理")) {
         await refreshQualificationApplications()
         toast.info(t.value.checkoutWizard?.qualificationUnderReview || "Qualification application is under review")
-        await goToCredentialUpload([qualId])
         return
       }
       throw error
@@ -669,14 +888,13 @@ async function startQualificationApplication(unit: any) {
     const orderId = String(order?.application_order_ulid || "").trim()
     const orderStatus = String(order?.order_status || "")
     if (isUploadReadyStatus(orderStatus)) {
-      toast.info(t.value.checkoutWizard?.qualificationUploadReady || "Qualification application created. Opening material upload.")
-      await goToCredentialUpload([qualId])
+      toast.info(t.value.checkoutWizard?.qualificationUploadReady || "Qualification application created. Opening material upload below.")
+      await openQualificationEditor(unit, qualId)
       return
     }
     if (isCredentialApplicationUnderReviewStatus(orderStatus)) {
       await refreshQualificationApplications()
       toast.info(t.value.checkoutWizard?.qualificationUnderReview || "Qualification application is under review")
-      await goToCredentialUpload([qualId])
       return
     }
     if (isCredentialApplicationResolvedStatus(orderStatus)) {
@@ -688,6 +906,7 @@ async function startQualificationApplication(unit: any) {
         throw new Error(t.value.checkoutWizard?.qualificationApplicationFailed || "Unable to start qualification application")
       }
       activeCredentialQualIds.value = [qualId]
+      activeCredentialUnitId.value = unit.unit_id
       activeOrderAction.value = "credential_application"
       activeOrderId.value = orderId
       currentStep.value = 4
@@ -709,6 +928,7 @@ async function onExemptionToggle(unit: any, event: Event) {
   if (!unit?.unit_id) return
   if (!unit.qualified) {
     if (input?.checked) await startQualificationApplication(unit)
+    else closeQualificationEditor(unit.unit_id)
     return
   }
   selectedExemptionUnitIds.value = {
@@ -794,7 +1014,7 @@ function exemptionCredentialBadgeClass(unit: any) {
 function qualificationActionLabel(unit: any) {
   switch (exemptionCredentialState(unit)) {
     case "pending":
-      return t.value.checkoutWizard?.viewQualificationApplication || "View qualification application"
+      return t.value.checkoutWizard?.statusPending || "Under review"
     case "resubmit":
       return t.value.checkoutWizard?.resubmitQualification || "Add qualification materials"
     default:
@@ -1021,6 +1241,7 @@ async function confirmAndPay() {
                     :key="unit.unit_id"
                     :class="[
                       'group relative flex flex-col justify-between overflow-hidden rounded-2xl border p-5 transition-all duration-300',
+                      expandedQualificationUnitId === unit.unit_id ? 'md:col-span-2' : '',
                       selectedExemptionUnitIds[unit.unit_id]
                         ? 'border-emerald-400 bg-emerald-50/40 shadow-md ring-1 ring-emerald-400'
                         : unit.qualified
@@ -1047,8 +1268,8 @@ async function confirmAndPay() {
                           <input
                             type="checkbox"
                             class="peer sr-only"
-                            :checked="Boolean(selectedExemptionUnitIds[unit.unit_id])"
-                            :disabled="credentialApplicationLoadingUnitId === unit.unit_id"
+                            :checked="unit.qualified ? Boolean(selectedExemptionUnitIds[unit.unit_id]) : expandedQualificationUnitId === unit.unit_id"
+                            :disabled="credentialApplicationLoadingUnitId === unit.unit_id || (!unit.qualified && exemptionCredentialState(unit) === 'pending')"
                             @change="onExemptionToggle(unit, $event)"
                           />
                           <div class="h-6 w-6 rounded-md border-2 border-slate-300 bg-white transition-all peer-checked:border-emerald-500 peer-checked:bg-emerald-500"></div>
@@ -1060,6 +1281,101 @@ async function confirmAndPay() {
                         </span>
                       </label>
                     </div>
+
+                    <div
+                      v-if="expandedQualificationUnitId === unit.unit_id && !unit.qualified"
+                      class="mt-5 border-t border-blue-100 pt-5"
+                    >
+                      <div class="rounded-2xl border border-blue-100 bg-blue-50/70 p-4 sm:p-5">
+                        <div class="flex items-start gap-3">
+                          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-blue-600 shadow-sm">
+                            <UploadCloud class="h-5 w-5" />
+                          </div>
+                          <div>
+                            <h4 class="font-semibold text-slate-900">
+                              {{ qualificationDefinitionForUnit(unit)?.name || (t.credentialsPage?.uploadMaterials || "上传资格材料") }}
+                            </h4>
+                            <p class="mt-1 text-sm leading-6 text-slate-600">
+                              {{ qualificationDefinitionForUnit(unit)?.description || t.credentialsPage?.description }}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div
+                          v-if="Array.isArray(qualificationDefinitionForUnit(unit)?.file_constraints)"
+                          class="mt-5 grid gap-4 sm:grid-cols-2"
+                        >
+                          <div
+                            v-for="constraint in qualificationDefinitionForUnit(unit)?.file_constraints || []"
+                            :key="constraint.name"
+                            class="rounded-xl border border-white bg-white p-4 shadow-sm"
+                          >
+                            <div class="flex items-center gap-1 text-sm font-semibold text-slate-800">
+                              <span v-if="constraint.is_required" class="text-rose-500">*</span>
+                              <span>{{ constraint.name }}</span>
+                            </div>
+                            <p class="mt-1 text-xs text-slate-500">{{ qualificationFormatHint(constraint) }}</p>
+                            <div class="mt-3 flex flex-wrap items-center gap-3">
+                              <button
+                                type="button"
+                                class="btn btn-outline h-9 rounded-lg px-3 text-xs"
+                                :disabled="Boolean(qualificationUploadingKey) || qualificationSubmittingUnitId === unit.unit_id"
+                                @click="triggerQualificationFileInput(unit.unit_id, constraint.name)"
+                              >
+                                <Loader2
+                                  v-if="qualificationUploadingKey === `${unit.unit_id}:${constraint.name}`"
+                                  class="h-4 w-4 animate-spin"
+                                />
+                                <UploadCloud v-else class="h-4 w-4" />
+                                {{ t.credentialsPage?.chooseFile || "选择文件" }}
+                              </button>
+                              <span
+                                class="max-w-[260px] truncate text-sm text-slate-500"
+                                :title="qualificationFilesForUnit(unit.unit_id)[constraint.name]?.name || ''"
+                              >
+                                {{ qualificationFilesForUnit(unit.unit_id)[constraint.name]?.name || (t.credentialsPage?.noFileChosen || "未选择文件") }}
+                              </span>
+                              <input
+                                :id="qualificationConstraintInputId(unit.unit_id, constraint.name)"
+                                type="file"
+                                class="hidden"
+                                :accept="getFileConstraintInfo(constraint.type).acceptStr"
+                                @change="onQualificationFileChange($event, unit, constraint)"
+                              />
+                            </div>
+                            <p
+                              v-if="qualificationFilesForUnit(unit.unit_id)[constraint.name]"
+                              class="mt-3 flex items-center gap-1 text-xs font-medium text-emerald-600"
+                            >
+                              <CheckCircle2 class="h-3.5 w-3.5" />
+                              {{ qualificationUploadSuccessText(qualificationFilesForUnit(unit.unit_id)[constraint.name].name) }}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div class="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                          <button
+                            type="button"
+                            class="btn btn-outline"
+                            :disabled="qualificationSubmittingUnitId === unit.unit_id"
+                            @click="closeQualificationEditor(unit.unit_id)"
+                          >
+                            {{ t.common?.cancel || "取消" }}
+                          </button>
+                          <button
+                            type="button"
+                            class="btn bg-emerald-600 text-white hover:bg-emerald-700"
+                            :disabled="Boolean(qualificationUploadingKey) || qualificationSubmittingUnitId === unit.unit_id"
+                            @click="submitQualificationApplication(unit)"
+                          >
+                            <Loader2 v-if="qualificationSubmittingUnitId === unit.unit_id" class="h-4 w-4 animate-spin" />
+                            {{ qualificationSubmittingUnitId === unit.unit_id
+                              ? (t.credentialsPage?.submitting || "提交中...")
+                              : (t.credentialsPage?.submitApplication || "提交资格申请") }}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1070,7 +1386,11 @@ async function confirmAndPay() {
                     {{ t.checkoutWizard?.baseTotal || "基础总额" }} {{ formatMoney(paymentPreview.total, paymentPreview.currency) }}
                   </template>
                 </div>
-                <button class="btn bg-emerald-600 text-white shadow-md hover:bg-emerald-700 rounded-full px-8 py-3" @click="nextFromStep1">
+                <button
+                  class="btn rounded-full bg-emerald-600 px-8 py-3 text-white shadow-md hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  :disabled="Boolean(expandedQualificationUnitId) || Boolean(qualificationSubmittingUnitId)"
+                  @click="nextFromStep1"
+                >
                   {{ t.checkoutWizard?.saveAndContinue || "保存并继续 ->" }}
                 </button>
               </div>
