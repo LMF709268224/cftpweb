@@ -198,7 +198,7 @@ function serializePricing(value: PricingState) {
     })
   }
 
-  /* 
+  
   const unlocks: Record<string, unknown> = {}
   for (const unlock of value.unlocks) {
     const targetId = unlock.target_id.trim()
@@ -211,7 +211,7 @@ function serializePricing(value: PricingState) {
     }
   }
   if (Object.keys(unlocks).length) out.unlocks = unlocks
-  */
+  
 
   if (value.memberships.length) {
     out.memberships = value.memberships.map((membership) => ({
@@ -462,7 +462,7 @@ function unlockOptionDisabled(optionId: string, currentKey: number) {
       </div>
     </section>
 
-    <section v-if="false" class="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+    <section class="rounded-2xl border border-amber-200 bg-amber-50 p-4">
       <div class="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-amber-200 pb-3">
         <div>
           <h4 class="font-black text-amber-950">{{ copy.unlocksTitle }}</h4>
