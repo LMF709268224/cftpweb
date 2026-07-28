@@ -285,6 +285,8 @@ function openFileEditor(file: JsonRecord) {
 }
 
 function closeFileDetail() {
+  detailRequestId += 1
+  detailLoading.value = false
   detailOpen.value = false
 }
 

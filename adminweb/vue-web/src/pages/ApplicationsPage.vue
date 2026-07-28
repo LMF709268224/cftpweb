@@ -244,6 +244,8 @@ function selectApplication(app: JsonRecord) {
 }
 
 function closeDetail() {
+  detailRequestId += 1
+  detailLoading.value = false
   detailOpen.value = false
 }
 

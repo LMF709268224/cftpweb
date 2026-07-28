@@ -233,6 +233,8 @@ function openPackEditor(pack: JsonRecord) {
 }
 
 function closePackDetail() {
+  detailRequestId += 1
+  detailLoading.value = false
   detailOpen.value = false
 }
 
