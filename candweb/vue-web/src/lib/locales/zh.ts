@@ -945,7 +945,6 @@ export const zh = {
   courseCard: {
     ready: "可购买认证",
     readyMembership: "可购买会员",
-    unlock: "可购买认证",
     blocked: "暂不可购买",
     checking: "检查中",
     missingQualification: "缺少报名资格",
@@ -958,7 +957,6 @@ export const zh = {
     membershipCenter: "进入会员",
     enterCertification: "进入认证",
     continuePayment: "继续支付",
-    unlockAction: "去购买",
     buyNow: "去购买",
     unavailable: "暂不可购买",
     checkStatus: "查看购买状态"

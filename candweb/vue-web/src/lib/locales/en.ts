@@ -947,7 +947,6 @@ export const en: AppTranslations = {
   courseCard: {
     ready: "Ready to buy",
     readyMembership: "Ready to subscribe",
-    unlock: "Ready to buy",
     blocked: "Unavailable",
     checking: "Checking",
     missingQualification: "Missing qualification",
@@ -960,7 +959,6 @@ export const en: AppTranslations = {
     membershipCenter: "Membership",
     enterCertification: "Enter Certification",
     continuePayment: "Continue Payment",
-    unlockAction: "Buy Now",
     buyNow: "Buy Now",
     unavailable: "Unavailable",
     checkStatus: "Check Status"
