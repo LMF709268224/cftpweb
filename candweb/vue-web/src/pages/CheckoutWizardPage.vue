@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from "vue"
-import { useRoute } from "vue-router"
+import { useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
 import { ClipboardList, Loader2, Send, Check, CheckCircle2, Clock, ShoppingCart, UploadCloud, FileCheck } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
@@ -13,6 +13,7 @@ import { GENDER_OPTIONS, PROFILE_TEXT_LIMITS, isValidEmail, isValidInternational
 import { sha256Hex, uploadWithTimeout } from "@/lib/upload"
 
 const route = useRoute()
+const router = useRouter()
 const { t, lang } = useTranslation()
 const { currentUser, fetchUser } = useUser()
 const bundleId = String(route.params.bundleId || route.query.bundleId || "")
@@ -23,6 +24,7 @@ const paymentPreview = ref<any>(null)
 const exemptionStages = ref<any[]>([])
 const selectedExemptionUnitIds = ref<Record<string, boolean>>({})
 const activeOrderId = ref("")
+const activeOrderAction = ref<"purchase" | "unlock">("purchase")
 const levelPlaceholder = "{" + "{level}}"
 
 const isMultiStage = computed(() => {
@@ -36,11 +38,26 @@ const uploadingUnitId = ref("")
 
 const isMembershipBundle = computed(() => {
   if (!bundleData.value) return false
-  const itemTypes = bundleData.value.item_types || []
+  const itemTypes = bundleData.value.bundle_item_types || bundleData.value.item_types || []
   return itemTypes.some((type: string) => String(type).includes("membership"))
 })
 
 const loading = ref(false)
+const pipelineId = computed(() =>
+  String(bundleData.value?.pipeline_id || bundleData.value?.pipeline_cc_ulid || "").trim()
+)
+const paymentBizType = computed(() =>
+  activeOrderAction.value === "unlock" ? "PIPELINE_UNLOCK" : "BUNDLE_PURCHASE"
+)
+const paymentReturnPath = computed(() =>
+  activeOrderAction.value === "unlock"
+    ? "/my-certifications"
+    : `/checkout/success/${activeOrderId.value}`
+)
+const paymentReturnParams = computed(() => ({
+  bundle_id: bundleId,
+  pipeline_id: pipelineId.value,
+}))
 const selectedCountryCode = ref("")
 const selectedProvinceCode = ref("")
 const countryOptions = ref<CountryOption[]>([])
@@ -385,21 +402,32 @@ async function syncSignupToProfile() {
   }
 }
 
+function applyBundleInfo(response: any) {
+  bundleData.value = response
+  const purchaseState = response?.purchase_state || response
+  paymentPreview.value = purchaseState?.payment_preview || null
+
+  const stages = purchaseState?.exemption_options?.stages || []
+  exemptionStages.value = stages.filter((stage: any) => (stage.units?.length || 0) > 0)
+
+  if (exemptionStages.value.length === 0 && currentStep.value === 1) {
+    currentStep.value = 2
+  }
+}
+
+async function loadBundleInfo() {
+  const response = await apiClient(`/api/mall/bundles/${encodeURIComponent(bundleId)}`, {
+    suppressErrorToast: true,
+  })
+  applyBundleInfo(response)
+  return response
+}
+
 async function fetchBundleInfo() {
   if (!bundleId) return
   loading.value = true
   try {
-    const res = await apiClient(`/api/mall/bundles/${encodeURIComponent(bundleId)}`)
-    bundleData.value = res
-    const ps = res?.purchase_state || res
-    paymentPreview.value = ps?.payment_preview || null
-    
-    const stages = ps?.exemption_options?.stages || []
-    exemptionStages.value = stages.filter((stage: any) => (stage.units?.length || 0) > 0)
-    
-    if (exemptionStages.value.length === 0 && currentStep.value === 1) {
-      currentStep.value = 2
-    }
+    await loadBundleInfo()
   } catch (err) {
     console.error(err)
     toast.error(t.value.common?.error || "Error loading bundle")
@@ -557,40 +585,157 @@ async function nextFromStep2() {
   }
 }
 
+function normalizedOrderStatus(status: unknown) {
+  const value = String(status || "").trim().toUpperCase()
+  switch (value) {
+    case "1":
+      return "PENDING_CREATE"
+    case "2":
+      return "PENDING_PAYMENT"
+    case "3":
+      return "COMPLETED"
+    case "4":
+      return "CANCELLED"
+    case "5":
+      return "FAILED"
+    default:
+      return value
+  }
+}
+
+function isCompletedStatus(status: unknown) {
+  return normalizedOrderStatus(status).includes("COMPLETED")
+}
+
+function isFailedStatus(status: unknown) {
+  const value = normalizedOrderStatus(status)
+  return value.includes("FAILED") || value.includes("CANCEL") || value.includes("REJECT")
+}
+
+function getEligibility(response: any) {
+  return response?.purchase_state?.eligibility || response?.eligibility || {}
+}
+
+function cacheExemptionEvidence(orderId: string) {
+  if (Object.keys(uploadedExemptionFiles.value).length === 0) return
+  try {
+    sessionStorage.setItem(`bundle_evidence_${orderId}`, JSON.stringify({
+      files: uploadedExemptionFiles.value,
+      reasons: exemptionReasons.value,
+      unitQualMap: exemptionStages.value.flatMap(stage => stage.units || []).reduce((acc: any, unit: any) => {
+        if (unit.unit_id && unit.exemption_quals?.[0]?.qual_id) {
+          acc[unit.unit_id] = unit.exemption_quals[0].qual_id
+        }
+        return acc
+      }, {})
+    }))
+  } catch (error) {
+    console.warn("Failed to cache exemption evidence", error)
+  }
+}
+
+async function createPurchaseOrder() {
+  const response = await apiClient(`/api/mall/bundles/${encodeURIComponent(bundleId)}/purchase`, {
+    method: "POST",
+    suppressErrorToast: true,
+    body: JSON.stringify({
+      payment_mode: paymentMode.value,
+      selected_exemptions_json: buildSelectedExemptionsJson(),
+    }),
+  })
+  const orderId = String(response?.bundle_order_ulid || response?.order_id || "").trim()
+  const orderStatus = response?.order_status || response?.status
+
+  if (isFailedStatus(orderStatus)) {
+    throw new Error(response?.message || t.value.checkoutWizard?.orderCreationFailed || "Order creation failed")
+  }
+  if (!orderId) {
+    throw new Error(t.value.checkoutWizard?.orderCreationFailed || "Order creation failed")
+  }
+
+  cacheExemptionEvidence(orderId)
+  if (isCompletedStatus(orderStatus)) {
+    toast.success(t.value.checkoutWizard?.purchaseCompleted || "Purchase completed")
+    await router.push(`/checkout/success/${encodeURIComponent(orderId)}`)
+    return
+  }
+
+  activeOrderAction.value = "purchase"
+  activeOrderId.value = orderId
+  currentStep.value = 4
+}
+
+async function createUnlockOrder() {
+  if (!pipelineId.value) {
+    throw new Error(t.value.checkoutWizard?.missingPipeline || "The product has no linked certification")
+  }
+
+  const hadExemptionOptions = exemptionStages.value.length > 0
+  const response = await apiClient(`/api/mall/bundles/${encodeURIComponent(bundleId)}/unlock`, {
+    method: "POST",
+    suppressErrorToast: true,
+    body: JSON.stringify({
+      pipeline_cc_ulid: pipelineId.value,
+    }),
+  })
+  const orderId = String(response?.pipeline_unlock_order_ulid || response?.order_id || "").trim()
+  const orderStatus = response?.order_status || response?.status
+
+  if (isFailedStatus(orderStatus)) {
+    throw new Error(response?.message || t.value.checkoutWizard?.orderCreationFailed || "Order creation failed")
+  }
+
+  if (isCompletedStatus(orderStatus)) {
+    toast.success(t.value.checkoutWizard?.unlockCompleted || "Certification unlocked")
+    const refreshedBundle = await loadBundleInfo()
+    if (!getEligibility(refreshedBundle)?.can_purchase) {
+      return
+    }
+
+    if (!hadExemptionOptions && exemptionStages.value.length > 0) {
+      currentStep.value = 1
+      return
+    }
+
+    await createPurchaseOrder()
+    return
+  }
+
+  if (!orderId) {
+    throw new Error(t.value.checkoutWizard?.orderCreationFailed || "Order creation failed")
+  }
+
+  activeOrderAction.value = "unlock"
+  activeOrderId.value = orderId
+  currentStep.value = 4
+}
+
 async function confirmAndPay() {
   loading.value = true
   try {
-    const body = {
-      bundle_id: bundleId,
-      payment_mode: paymentMode.value,
-      selected_exemptions_json: buildSelectedExemptionsJson()
+    const latestBundle = await loadBundleInfo()
+    const eligibility = getEligibility(latestBundle)
+
+    if (eligibility?.can_unlock) {
+      await createUnlockOrder()
+      return
     }
-    const res = await apiClient("/api/mall/orders", {
-      method: "POST",
-      body: JSON.stringify(body)
-    })
-    activeOrderId.value = res.bundle_order_ulid || res.order_id || ""
-    if (activeOrderId.value) {
-      // Store evidence files for success page to submit
-      if (Object.keys(uploadedExemptionFiles.value).length > 0) {
-        sessionStorage.setItem(`bundle_evidence_${activeOrderId.value}`, JSON.stringify({
-          files: uploadedExemptionFiles.value,
-          reasons: exemptionReasons.value,
-          unitQualMap: exemptionStages.value.flatMap(s => s.units || []).reduce((acc: any, u: any) => {
-            if (u.unit_id && u.exemption_quals?.[0]?.qual_id) {
-              acc[u.unit_id] = u.exemption_quals[0].qual_id
-            }
-            return acc
-          }, {})
-        }))
-      }
-      currentStep.value = 4
-    } else {
-      toast.error(t.value.common?.error || "Order creation failed")
+    if (eligibility?.can_purchase) {
+      await createPurchaseOrder()
+      return
     }
+    if (latestBundle?.purchase_state?.active_order) {
+      toast.info(t.value.checkoutWizard?.continueExistingOrder || "Opening your unfinished order")
+      await router.push("/orders")
+      return
+    }
+
+    throw new Error(t.value.checkoutWizard?.purchaseUnavailable || "The product is not available for purchase")
   } catch (err) {
     console.error(err)
-    toast.error(t.value.common?.error || "Order creation failed")
+    toast.error(err instanceof Error && err.message
+      ? err.message
+      : t.value.checkoutWizard?.orderCreationFailed || t.value.common?.error || "Order creation failed")
   } finally {
     loading.value = false
   }
@@ -876,11 +1021,12 @@ async function confirmAndPay() {
             <h2 class="text-xl font-semibold">{{ t.checkoutWizard?.payment || "Payment" }}</h2>
             <PaymentSessionPanel
               v-if="activeOrderId"
-              :biz-type="'BUNDLE_PURCHASE'"
+              :biz-type="paymentBizType"
               :biz-ref-ulid="activeOrderId"
               :order-id="activeOrderId"
-              :source="'purchase'"
-              :return-path="`/checkout/success/${activeOrderId}`"
+              :source="activeOrderAction"
+              :return-path="paymentReturnPath"
+              :extra-return-params="paymentReturnParams"
               min-height-class="min-h-[420px]"
             />
           </div>
