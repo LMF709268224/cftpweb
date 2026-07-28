@@ -1265,7 +1265,7 @@ onMounted(load)
           <RefreshCw class="h-4 w-4" :class="syncingDisplayPricing ? 'animate-spin' : ''" />
           {{ copy.syncDisplayPricing }}
         </button>
-        <button class="inline-flex h-10 items-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold shadow-sm" type="button" @click="load">
+        <button class="inline-flex h-10 items-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold shadow-sm disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="loading" @click="load">
           <RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
           {{ copy.refresh }}
         </button>
