@@ -833,7 +833,7 @@ export const zh = {
   },
   paymentReturnHandler: {
     title: "支付结果",
-    paymentFailed: "支付未能完成，或已被取消。你可以重新发起支付。",
+    purchaseSuccess: "购买成功",
     unlockSuccess: "购买成功，认证列表已刷新。",
     cancelled: "支付已取消，你可以稍后继续处理订单。",
     failed: "支付失败，请稍后重试。"
@@ -868,6 +868,7 @@ export const zh = {
     inProgressPurchaseDesc: "你已有未完成订单，可以继续查看价格并完成支付。",
     pipelineNotFound: "该认证已不可用",
     unknownBlocker: "暂时不能继续",
+    createPurchaseOrder: "创建购买订单",
     createOrderFailed: "创建订单失败，请稍后重试。",
     createUnlockOrder: "创建报名订单",
     relinkFailed: "重新关联订单失败，请稍后重试。",
