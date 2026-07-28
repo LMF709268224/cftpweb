@@ -537,6 +537,7 @@ export const en: AppTranslations = {
     unlockCompleted: "Certification unlocked. Continue by selecting exemptions or confirming the purchase.",
     purchaseCompleted: "The order is complete and the certification is now active.",
     orderCreationFailed: "The order could not be created. Refresh the product status and try again.",
+    implicitUnlockFailed: "Your existing CFtA certification could not be verified automatically. Refresh the page and try again.",
     purchaseUnavailable: "This product cannot currently be unlocked or purchased. Return to the store and refresh its status.",
     missingPipeline: "This product has no linked certification, so an unlock order cannot be created.",
     continueExistingOrder: "An unfinished order was found. Opening the orders page so you can continue.",

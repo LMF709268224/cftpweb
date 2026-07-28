@@ -535,6 +535,7 @@ export const zh = {
     unlockCompleted: "认证解锁已完成，请继续选择免考项目或确认购买。",
     purchaseCompleted: "订单已完成，认证已开通。",
     orderCreationFailed: "创建订单失败，请重新检查商品状态后再试。",
+    implicitUnlockFailed: "未能根据已有的 CFtA 认证自动完成购买资格验证，请刷新页面后重试。",
     purchaseUnavailable: "当前商品暂时不能解锁或购买，请返回商城刷新状态。",
     missingPipeline: "当前商品缺少关联认证，无法创建解锁订单。",
     continueExistingOrder: "检测到未完成订单，正在前往订单页面继续处理。",

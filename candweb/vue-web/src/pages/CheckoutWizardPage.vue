@@ -17,6 +17,7 @@ const router = useRouter()
 const { t, lang } = useTranslation()
 const { currentUser, fetchUser } = useUser()
 const bundleId = String(route.params.bundleId || route.query.bundleId || "")
+const TEMPORARY_IMPLICIT_UNLOCK_BUNDLE_GPATH = "/gcc/pipeline/core/cftp"
 const currentStep = ref(1)
 const bundleData = ref<any>(null)
 const paymentMode = ref("FULL_PIPELINE")
@@ -415,22 +416,68 @@ function applyBundleInfo(response: any) {
   }
 }
 
-async function loadBundleInfo() {
-  const response = await apiClient(`/api/mall/bundles/${encodeURIComponent(bundleId)}`, {
+async function fetchBundlePayload() {
+  return apiClient(`/api/mall/bundles/${encodeURIComponent(bundleId)}`, {
     suppressErrorToast: true,
   })
+}
+
+function bundlePipelineId(response: any) {
+  return String(response?.pipeline_id || response?.pipeline_cc_ulid || "").trim()
+}
+
+function shouldImplicitlyUnlockCftp(response: any) {
+  return String(response?.bundle_gpath || "").trim() === TEMPORARY_IMPLICIT_UNLOCK_BUNDLE_GPATH
+    && Boolean(getEligibility(response)?.can_unlock)
+    && Boolean(bundlePipelineId(response))
+}
+
+async function completeTemporaryCftpUnlock(response: any) {
+  if (!shouldImplicitlyUnlockCftp(response)) return response
+
+  // TEMP: Remove after gmall makes qualification-only CFtP bundles directly purchasable.
+  const unlockResponse = await apiClient(`/api/mall/bundles/${encodeURIComponent(bundleId)}/unlock`, {
+    method: "POST",
+    suppressErrorToast: true,
+    body: JSON.stringify({
+      pipeline_cc_ulid: bundlePipelineId(response),
+    }),
+  })
+  const orderStatus = unlockResponse?.order_status || unlockResponse?.status
+  if (!isCompletedStatus(orderStatus)) {
+    throw new Error(t.value.checkoutWizard?.implicitUnlockFailed || "Certification verification could not be completed")
+  }
+
+  const refreshedBundle = await fetchBundlePayload()
+  if (!getEligibility(refreshedBundle)?.can_purchase) {
+    throw new Error(t.value.checkoutWizard?.implicitUnlockFailed || "Certification verification could not be completed")
+  }
+  return refreshedBundle
+}
+
+async function loadBundleInfo() {
+  const response = await fetchBundlePayload()
   applyBundleInfo(response)
   return response
+}
+
+async function loadPurchaseReadyBundleInfo() {
+  const response = await fetchBundlePayload()
+  const purchaseReadyBundle = await completeTemporaryCftpUnlock(response)
+  applyBundleInfo(purchaseReadyBundle)
+  return purchaseReadyBundle
 }
 
 async function fetchBundleInfo() {
   if (!bundleId) return
   loading.value = true
   try {
-    await loadBundleInfo()
+    await loadPurchaseReadyBundleInfo()
   } catch (err) {
     console.error(err)
-    toast.error(t.value.common?.error || "Error loading bundle")
+    toast.error(err instanceof Error && err.message
+      ? err.message
+      : t.value.common?.error || "Error loading bundle")
   } finally {
     loading.value = false
   }
@@ -713,7 +760,7 @@ async function createUnlockOrder() {
 async function confirmAndPay() {
   loading.value = true
   try {
-    const latestBundle = await loadBundleInfo()
+    const latestBundle = await loadPurchaseReadyBundleInfo()
     const eligibility = getEligibility(latestBundle)
 
     if (eligibility?.can_unlock) {
