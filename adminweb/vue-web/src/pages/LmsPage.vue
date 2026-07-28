@@ -191,6 +191,8 @@ const courseView = ref<"list" | "detail">("list")
 const courseCreateOpen = ref(false)
 const courseCreateContext = ref<CourseCreateContext | null>(null)
 const courseDetailDialogOpen = ref(false)
+const courseDetailDialogLoading = ref(false)
+const courseDetailDialogError = ref("")
 const courseDetailTarget = ref<JsonRecord | null>(null)
 const courseDetailDialogDetail = ref<JsonRecord | null>(null)
 const courseDetailDialogComplete = ref<JsonRecord | null>(null)
@@ -1112,6 +1114,8 @@ function resetContent() {
 }
 
 let courseListRequestId = 0
+let courseDetailDialogRequestId = 0
+let courseDetailDialogRequestController: AbortController | null = null
 
 async function loadCourses(pageToken = "") {
   const requestId = ++courseListRequestId
@@ -1147,23 +1151,54 @@ async function selectCourse(course: JsonRecord) {
 async function openCourseDetailDialog(course: JsonRecord) {
   const id = courseId(course)
   if (!id) return
+
+  courseDetailDialogRequestController?.abort()
+  const requestId = ++courseDetailDialogRequestId
+  const controller = new AbortController()
+  courseDetailDialogRequestController = controller
   courseDetailTarget.value = course
   courseDetailDialogDetail.value = null
   courseDetailDialogComplete.value = null
+  courseDetailDialogError.value = ""
+  courseDetailDialogLoading.value = true
   courseDetailDialogOpen.value = true
-  const [detailResult, completeResult] = await Promise.allSettled([
-    apiClient<JsonRecord>(`/api/lms/courses/${encodeURIComponent(id)}/detail`),
-    apiClient<JsonRecord>(`/api/lms/courses/${encodeURIComponent(id)}/complete`),
-  ])
-  if (courseDetailDialogCourseId.value !== id) return
-  if (detailResult.status === "fulfilled") courseDetailDialogDetail.value = detailResult.value
-  else console.error(detailResult.reason)
-  if (completeResult.status === "fulfilled") courseDetailDialogComplete.value = completeResult.value
-  else console.error(completeResult.reason)
+
+  try {
+    const [detailResult, completeResult] = await Promise.allSettled([
+      apiClient<JsonRecord>(`/api/lms/courses/${encodeURIComponent(id)}/detail`, { signal: controller.signal }),
+      apiClient<JsonRecord>(`/api/lms/courses/${encodeURIComponent(id)}/complete`, { signal: controller.signal }),
+    ])
+    if (requestId !== courseDetailDialogRequestId || controller.signal.aborted || !courseDetailDialogOpen.value || courseDetailDialogCourseId.value !== id) return
+
+    if (detailResult.status === "fulfilled") courseDetailDialogDetail.value = detailResult.value
+    if (completeResult.status === "fulfilled") courseDetailDialogComplete.value = completeResult.value
+
+    const failures = [detailResult, completeResult].filter((result) => result.status === "rejected")
+    if (failures.length) {
+      failures.forEach((result) => {
+        if (result.status === "rejected") console.error(result.reason)
+      })
+      const firstFailure = failures[0]
+      courseDetailDialogError.value = apiErrorMessage(
+        firstFailure?.status === "rejected" ? firstFailure.reason : null,
+        copy.value.toasts.courseDetailLoadFailed,
+      )
+    }
+  } finally {
+    if (requestId === courseDetailDialogRequestId && courseDetailDialogRequestController === controller) {
+      courseDetailDialogRequestController = null
+      courseDetailDialogLoading.value = false
+    }
+  }
 }
 
 function closeCourseDetailDialog() {
+  courseDetailDialogRequestId += 1
+  courseDetailDialogRequestController?.abort()
+  courseDetailDialogRequestController = null
   courseDetailDialogOpen.value = false
+  courseDetailDialogLoading.value = false
+  courseDetailDialogError.value = ""
   courseDetailTarget.value = null
   courseDetailDialogDetail.value = null
   courseDetailDialogComplete.value = null
@@ -3024,30 +3059,40 @@ onMounted(() => {
           </div>
 
           <div class="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
-            <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <div class="rounded-xl bg-slate-50 p-3">
-                <div class="text-xs font-black uppercase text-slate-400">{{ copy.stats.chapters }}</div>
-                <div class="mt-1 text-xl font-black">{{ courseDetailDialogChapterCount }}</div>
-              </div>
-              <div class="rounded-xl bg-slate-50 p-3">
-                <div class="text-xs font-black uppercase text-slate-400">{{ copy.stats.lessons }}</div>
-                <div class="mt-1 text-xl font-black">{{ courseDetailDialogLessonCount }}</div>
-              </div>
-              <div class="rounded-xl bg-slate-50 p-3">
-                <div class="text-xs font-black uppercase text-slate-400">{{ copy.stats.quizzes }}</div>
-                <div class="mt-1 text-xl font-black">{{ courseDetailDialogQuizCount }}</div>
-              </div>
-              <div class="rounded-xl bg-slate-50 p-3">
-                <div class="text-xs font-black uppercase text-slate-400">{{ copy.stats.materials }}</div>
-                <div class="mt-1 text-xl font-black">{{ courseDetailDialogMaterialCount }}</div>
-              </div>
+            <div v-if="courseDetailDialogLoading" class="flex min-h-64 flex-col items-center justify-center gap-3 text-sm font-semibold text-slate-500" role="status" aria-live="polite">
+              <Loader2 class="h-7 w-7 animate-spin text-blue-600" />
+              <span>{{ copy.loading }}</span>
             </div>
+            <template v-else>
+              <div v-if="courseDetailDialogError" class="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700" role="alert">
+                {{ courseDetailDialogError }}
+              </div>
 
-            <div class="mt-4 rounded-xl border border-slate-200 p-4">
-              <div class="max-h-[56vh] space-y-3 overflow-y-auto overscroll-contain pr-0 md:pr-2">
-                <ReadonlyField v-for="entry in courseRecordEntries(courseDetailTarget)" :key="`course-dialog-${entry.key}`" :label="courseReadonlyFieldLabel(entry.key)" :text="entry.value" min-height="48px" />
+              <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div class="rounded-xl bg-slate-50 p-3">
+                  <div class="text-xs font-black uppercase text-slate-400">{{ copy.stats.chapters }}</div>
+                  <div class="mt-1 text-xl font-black">{{ courseDetailDialogChapterCount }}</div>
+                </div>
+                <div class="rounded-xl bg-slate-50 p-3">
+                  <div class="text-xs font-black uppercase text-slate-400">{{ copy.stats.lessons }}</div>
+                  <div class="mt-1 text-xl font-black">{{ courseDetailDialogLessonCount }}</div>
+                </div>
+                <div class="rounded-xl bg-slate-50 p-3">
+                  <div class="text-xs font-black uppercase text-slate-400">{{ copy.stats.quizzes }}</div>
+                  <div class="mt-1 text-xl font-black">{{ courseDetailDialogQuizCount }}</div>
+                </div>
+                <div class="rounded-xl bg-slate-50 p-3">
+                  <div class="text-xs font-black uppercase text-slate-400">{{ copy.stats.materials }}</div>
+                  <div class="mt-1 text-xl font-black">{{ courseDetailDialogMaterialCount }}</div>
+                </div>
               </div>
-            </div>
+
+              <div class="mt-4 rounded-xl border border-slate-200 p-4">
+                <div class="max-h-[56vh] space-y-3 overflow-y-auto overscroll-contain pr-0 md:pr-2">
+                  <ReadonlyField v-for="entry in courseRecordEntries(courseDetailTarget)" :key="`course-dialog-${entry.key}`" :label="courseReadonlyFieldLabel(entry.key)" :text="entry.value" min-height="48px" />
+                </div>
+              </div>
+            </template>
           </div>
         </div>
       </section>

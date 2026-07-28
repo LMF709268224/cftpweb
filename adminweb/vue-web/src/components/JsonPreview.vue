@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Check, Copy } from "lucide-vue-next"
-import { computed, ref } from "vue"
+import { computed, onUnmounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { copyTextToClipboard } from "@/lib/clipboard"
 
@@ -29,6 +29,7 @@ async function copyJson() {
     if (props.copiedMessage) toast.success(props.copiedMessage)
     if (copiedTimer) window.clearTimeout(copiedTimer)
     copiedTimer = window.setTimeout(() => {
+      copiedTimer = undefined
       copied.value = false
     }, 1600)
   } catch (err) {
@@ -36,6 +37,11 @@ async function copyJson() {
     if (props.copyErrorMessage) toast.error(props.copyErrorMessage)
   }
 }
+
+onUnmounted(() => {
+  if (copiedTimer) window.clearTimeout(copiedTimer)
+  copiedTimer = undefined
+})
 </script>
 
 <template>
