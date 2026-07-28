@@ -713,7 +713,7 @@ onUnmounted(() => {
             <div v-if="mode === 'detail'" class="readonly-field readonly-field--long">{{ displayValue(form.file_object_key) }}</div>
             <div v-else class="mt-2 flex flex-col gap-3 sm:flex-row">
               <input v-model="form.file_object_key" class="w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.fileObjectKey" />
-              <button type="button" class="flex items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 py-2 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50 sm:shrink-0" :disabled="uploadingFile || !form.file_id" :title="!form.file_id ? 'Please save to get an ID first' : ''" @click="fileInput?.click()">
+              <button type="button" class="flex items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 py-2 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50 sm:shrink-0" :disabled="uploadingFile || !form.file_id" :title="!form.file_id ? copy.toasts.fileSaveFirst : ''" @click="fileInput?.click()">
                 <Loader2 v-if="uploadingFile" class="h-4 w-4 animate-spin" />
                 <UploadCloud v-else class="h-4 w-4" />
                 {{ uploadingFile ? (copy as any).uploading : (copy as any).uploadFile }}
@@ -731,7 +731,7 @@ onUnmounted(() => {
             <div v-else class="mt-2 flex flex-col gap-3 sm:flex-row">
               <input type="file" ref="thumbnailFileInput" class="hidden" accept="image/*" @change="handleThumbnailFileUpload" />
               <input v-model="form.thumbnail_object_key" class="w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.thumbnailObjectKey" />
-              <button type="button" class="flex items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 py-2 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50 sm:shrink-0" :disabled="uploadingThumbnail || !form.file_id" :title="!form.file_id ? 'Please save to get an ID first' : ''" @click="thumbnailFileInput?.click()">
+              <button type="button" class="flex items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 py-2 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50 sm:shrink-0" :disabled="uploadingThumbnail || !form.file_id" :title="!form.file_id ? copy.toasts.fileSaveFirst : ''" @click="thumbnailFileInput?.click()">
                 <Loader2 v-if="uploadingThumbnail" class="h-4 w-4 animate-spin" />
                 <UploadCloud v-else class="h-4 w-4" />
                 {{ uploadingThumbnail ? (copy as any).uploading : (copy as any).uploadFile }}
