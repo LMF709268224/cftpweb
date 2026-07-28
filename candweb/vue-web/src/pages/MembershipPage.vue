@@ -558,7 +558,6 @@ onMounted(() => {
               :total-pages="historyTotalPages"
               :page-size-options="pageSizeOptions"
               :disabled="loading"
-              :locale="lang"
               cursor-mode
               :has-more="historyHasMore"
               @page-change="handleHistoryPaginationChange"
@@ -582,7 +581,6 @@ onMounted(() => {
               :total-pages="billingTotalPages"
               :page-size-options="pageSizeOptions"
               :disabled="loading"
-              :locale="lang"
               cursor-mode
               :has-more="billingHasMore"
               @page-change="handleBillingPaginationChange"

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-vue-next"
+import { useTranslation } from "@/lib/language"
 
 const props = withDefaults(defineProps<{
   page: number
@@ -9,7 +10,6 @@ const props = withDefaults(defineProps<{
   totalPages?: number
   pageSizeOptions?: number[]
   disabled?: boolean
-  locale?: "zh" | "en"
   cursorMode?: boolean
   hasMore?: boolean
   totalLabel?: string
@@ -17,7 +17,6 @@ const props = withDefaults(defineProps<{
   totalPages: 0,
   pageSizeOptions: () => [30, 50, 100],
   disabled: false,
-  locale: "zh",
   cursorMode: false,
   hasMore: false,
   totalLabel: "",
@@ -35,21 +34,12 @@ const paginationRef = ref<HTMLElement | null>(null)
 const pageSizeWrapRef = ref<HTMLElement | null>(null)
 const menuPlacement = ref<"top" | "bottom">("bottom")
 const menuStyle = ref<Record<string, string>>({})
+const { t } = useTranslation()
 
-const labels = computed(() => {
-  const zh = props.locale === "zh"
-  return {
-    total: zh ? "共" : "Total",
-    goTo: zh ? "跳转到" : "Go to",
-    pageSize: zh ? "每页条数" : "Page size",
-    pageNumber: zh ? "页码" : "Page number",
-    previous: zh ? "上一页" : "Previous page",
-    next: zh ? "下一页" : "Next page",
-  }
-})
+const labels = computed(() => t.value.pagination)
 
 function pageSizeLabel(value: number) {
-  return props.locale === "zh" ? `${value}条/页` : `${value}/page`
+  return labels.value.pageSizeValue.replace("{{value}}", String(value))
 }
 
 const normalizedTotalPages = computed(() => {

@@ -14,7 +14,7 @@ import { usePolling } from "@/lib/polling"
 
 type TabId = "current" | "history" | "exemption" | "records"
 
-const { t, lang } = useTranslation()
+const { t } = useTranslation()
 const route = useRoute()
 const router = useRouter()
 const activeTab = ref<TabId>("current")
@@ -565,7 +565,6 @@ onBeforeUnmount(() => {
           :total-label="totalLabel"
           :page-size-options="pageSizeOptions"
           :disabled="loading"
-          :locale="lang"
           cursor-mode
           :has-more="hasMore"
           @page-change="handlePaginationChange"

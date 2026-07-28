@@ -12,7 +12,7 @@ import { formatBackendDateOnly } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
 import { toast } from "vue-sonner"
 
-const { t, lang } = useTranslation()
+const { t } = useTranslation()
 const route = useRoute()
 const definitions = ref<any[]>([])
 const applications = ref<any[]>([])
@@ -144,7 +144,7 @@ function uploadSuccessText(fileName: string) {
 
 function getFormatHint(constraint: any) {
   const info = getFileConstraintInfo(constraint.type)
-  const extText = info.extLabel === "Any" ? (lang.value === 'zh' ? '不限' : 'Any') : info.extLabel
+  const extText = info.extLabel === "Any" ? t.value.credentialsPage.anyFileType : info.extLabel
   return t.value.credentialsPage.supportedFormats.replace("{{exts}}", extText).replace("{{limit}}", info.maxLabel)
 }
 
@@ -449,7 +449,6 @@ onMounted(fetchData)
             :page-size-options="applicationPageSizeOptions"
             cursor-mode
             :has-more="applicationHasMore"
-            :locale="lang"
             @page-change="handleApplicationPageChange"
           />
         </div>

@@ -467,12 +467,12 @@ async function completeTemporaryCftpUnlock(response: any) {
   })
   const orderStatus = unlockResponse?.order_status || unlockResponse?.status
   if (!isCompletedStatus(orderStatus)) {
-    throw new Error(t.value.checkoutWizard?.implicitUnlockFailed || "Certification verification could not be completed")
+    throw new Error(t.value.checkoutWizard.implicitUnlockFailed)
   }
 
   const refreshedBundle = await fetchBundlePayload()
   if (!getEligibility(refreshedBundle)?.can_purchase) {
-    throw new Error(t.value.checkoutWizard?.implicitUnlockFailed || "Certification verification could not be completed")
+    throw new Error(t.value.checkoutWizard.implicitUnlockFailed)
   }
   return refreshedBundle
 }
@@ -501,7 +501,7 @@ async function fetchBundleInfo() {
     console.error(err)
     toast.error(err instanceof Error && err.message
       ? err.message
-      : t.value.common?.error || "Error loading bundle")
+      : t.value.common.error)
   } finally {
     loading.value = false
   }
@@ -630,7 +630,7 @@ async function loadQualificationDefinition(qualId: string) {
   const definitions = Array.isArray(response?.definitions) ? response.definitions : []
   const definition = definitions.find((item: any) => qualificationDefinitionId(item) === qualId) || definitions[0]
   if (!definition) {
-    throw new Error(t.value.credentialsPage?.materialRequirementsUnavailable || "Qualification material requirements are unavailable")
+    throw new Error(t.value.credentialsPage.materialRequirementsUnavailable)
   }
   qualificationDefinitions.value = {
     ...qualificationDefinitions.value,
@@ -668,7 +668,7 @@ function triggerQualificationFileInput(unitId: string, constraintName: string) {
 
 function qualificationFormatHint(constraint: any) {
   const info = getFileConstraintInfo(constraint?.type)
-  const extText = info.extLabel === "Any" ? (lang.value === "zh" ? "不限" : "Any") : info.extLabel
+  const extText = info.extLabel === "Any" ? t.value.credentialsPage.anyFileType : info.extLabel
   return t.value.credentialsPage.supportedFormats
     .replace("{{exts}}", extText)
     .replace("{{limit}}", info.maxLabel)
@@ -816,7 +816,7 @@ async function resumeQualificationUploadAfterPayment() {
       await openQualificationEditor(unit, qualId)
     } catch (error) {
       console.error(error)
-      toast.error(t.value.checkoutWizard?.qualificationApplicationFailed || "Unable to open qualification materials")
+      toast.error(t.value.checkoutWizard.qualificationApplicationFailed)
     }
   }
   const nextQuery = { ...route.query }
@@ -847,7 +847,7 @@ function isCredentialApplicationResolvedStatus(status: unknown) {
 async function startQualificationApplication(unit: any) {
   const qualId = qualificationIdsForUnit(unit)[0] || ""
   if (!unit?.unit_id || !qualId || !pipelineId.value || !bundleId) {
-    toast.error(t.value.checkoutWizard?.qualificationApplicationFailed || "Unable to start qualification application")
+    toast.error(t.value.checkoutWizard.qualificationApplicationFailed)
     return
   }
 
@@ -860,11 +860,11 @@ async function startQualificationApplication(unit: any) {
         [qualId]: existingApplication,
       }
       if (isApplicationPendingStatus(existingApplication.status)) {
-        toast.info(t.value.checkoutWizard?.qualificationUnderReview || "Qualification application is under review")
+        toast.info(t.value.checkoutWizard.qualificationUnderReview)
         return
       }
       if (isApplicationApprovedStatus(existingApplication.status)) {
-        toast.success(t.value.checkoutWizard?.qualificationAlreadyApproved || "Qualification application approved")
+        toast.success(t.value.checkoutWizard.qualificationAlreadyApproved)
         await loadPurchaseReadyBundleInfo()
         return
       }
@@ -891,7 +891,7 @@ async function startQualificationApplication(unit: any) {
         : error instanceof Error ? error.message : ""
       if (message.includes("in-progress credential application") || message.includes("进行中") || message.includes("请先处理")) {
         await refreshQualificationApplications()
-        toast.info(t.value.checkoutWizard?.qualificationUnderReview || "Qualification application is under review")
+        toast.info(t.value.checkoutWizard.qualificationUnderReview)
         return
       }
       throw error
@@ -900,13 +900,13 @@ async function startQualificationApplication(unit: any) {
     const orderId = String(order?.application_order_ulid || "").trim()
     const orderStatus = String(order?.order_status || "")
     if (isUploadReadyStatus(orderStatus)) {
-      toast.info(t.value.checkoutWizard?.qualificationUploadReady || "Qualification application created. Opening material upload below.")
+      toast.info(t.value.checkoutWizard.qualificationUploadReady)
       await openQualificationEditor(unit, qualId)
       return
     }
     if (isCredentialApplicationUnderReviewStatus(orderStatus)) {
       await refreshQualificationApplications()
-      toast.info(t.value.checkoutWizard?.qualificationUnderReview || "Qualification application is under review")
+      toast.info(t.value.checkoutWizard.qualificationUnderReview)
       return
     }
     if (isCredentialApplicationResolvedStatus(orderStatus)) {
@@ -915,7 +915,7 @@ async function startQualificationApplication(unit: any) {
     }
     if (isCredentialApplicationPaymentStatus(orderStatus) || order?.payment_key) {
       if (!orderId) {
-        throw new Error(t.value.checkoutWizard?.qualificationApplicationFailed || "Unable to start qualification application")
+        throw new Error(t.value.checkoutWizard.qualificationApplicationFailed)
       }
       activeCredentialQualIds.value = [qualId]
       activeCredentialUnitId.value = unit.unit_id
@@ -924,12 +924,12 @@ async function startQualificationApplication(unit: any) {
       currentStep.value = 4
       return
     }
-    toast.info(t.value.checkoutWizard?.qualificationApplicationCreated || "Qualification application created")
+    toast.info(t.value.checkoutWizard.qualificationApplicationCreated)
   } catch (error) {
     console.error(error)
     toast.error(error instanceof Error && error.message
       ? error.message
-      : t.value.checkoutWizard?.qualificationApplicationFailed || "Unable to start qualification application")
+      : t.value.checkoutWizard.qualificationApplicationFailed)
   } finally {
     credentialApplicationLoadingUnitId.value = ""
   }
@@ -986,21 +986,21 @@ function exemptionCredentialState(unit: any): ExemptionCredentialState {
 function exemptionCredentialLabel(unit: any) {
   switch (exemptionCredentialState(unit)) {
     case "active":
-      return t.value.checkoutWizard?.statusApproved || "Approved"
+      return t.value.checkoutWizard.statusApproved
     case "pending":
-      return t.value.checkoutWizard?.statusPending || "Under review"
+      return t.value.checkoutWizard.statusPending
     case "resubmit":
-      return t.value.checkoutWizard?.statusResubmit || "More materials required"
+      return t.value.checkoutWizard.statusResubmit
     case "rejected":
-      return t.value.checkoutWizard?.statusRejected || "Qualification application rejected"
+      return t.value.checkoutWizard.statusRejected
     case "expired":
-      return t.value.checkoutWizard?.statusExpired || "Qualification expired"
+      return t.value.checkoutWizard.statusExpired
     case "revoked":
-      return t.value.checkoutWizard?.statusRevoked || "Qualification revoked"
+      return t.value.checkoutWizard.statusRevoked
     case "missing":
-      return t.value.checkoutWizard?.statusMissing || "Qualification not held"
+      return t.value.checkoutWizard.statusMissing
     default:
-      return t.value.checkoutWizard?.statusUnavailable || "Qualification status unavailable"
+      return t.value.checkoutWizard.statusUnavailable
   }
 }
 
@@ -1026,17 +1026,17 @@ function exemptionCredentialBadgeClass(unit: any) {
 function qualificationActionLabel(unit: any) {
   switch (exemptionCredentialState(unit)) {
     case "pending":
-      return t.value.checkoutWizard?.statusPending || "Under review"
+      return t.value.checkoutWizard.statusPending
     case "resubmit":
-      return t.value.checkoutWizard?.resubmitQualification || "Add qualification materials"
+      return t.value.checkoutWizard.resubmitQualification
     default:
-      return t.value.checkoutWizard?.applyQualification || "Apply for qualification"
+      return t.value.checkoutWizard.applyQualification
   }
 }
 
 async function nextFromStep2() {
   if (!isMembershipBundle.value && !formData.agreement) {
-    toast.error(t.value.examSignup?.agreementRequired || "我已阅读并同意隐私政策")
+    toast.error(t.value.examSignup.agreementRequired)
     return
   }
   sanitizeSignupForm()
@@ -1125,14 +1125,14 @@ async function createPurchaseOrder() {
   const orderStatus = response?.order_status || response?.status
 
   if (isFailedStatus(orderStatus)) {
-    throw new Error(response?.message || t.value.checkoutWizard?.orderCreationFailed || "Order creation failed")
+    throw new Error(response?.message || t.value.checkoutWizard.orderCreationFailed)
   }
   if (!orderId) {
-    throw new Error(t.value.checkoutWizard?.orderCreationFailed || "Order creation failed")
+    throw new Error(t.value.checkoutWizard.orderCreationFailed)
   }
 
   if (isCompletedStatus(orderStatus)) {
-    toast.success(t.value.checkoutWizard?.purchaseCompleted || "Purchase completed")
+    toast.success(t.value.checkoutWizard.purchaseCompleted)
     await router.push(`/checkout/success/${encodeURIComponent(orderId)}`)
     return
   }
@@ -1144,7 +1144,7 @@ async function createPurchaseOrder() {
 
 async function createUnlockOrder() {
   if (!pipelineId.value) {
-    throw new Error(t.value.checkoutWizard?.missingPipeline || "The product has no linked certification")
+    throw new Error(t.value.checkoutWizard.missingPipeline)
   }
 
   const hadExemptionOptions = exemptionStages.value.length > 0
@@ -1159,11 +1159,11 @@ async function createUnlockOrder() {
   const orderStatus = response?.order_status || response?.status
 
   if (isFailedStatus(orderStatus)) {
-    throw new Error(response?.message || t.value.checkoutWizard?.orderCreationFailed || "Order creation failed")
+    throw new Error(response?.message || t.value.checkoutWizard.orderCreationFailed)
   }
 
   if (isCompletedStatus(orderStatus)) {
-    toast.success(t.value.checkoutWizard?.unlockCompleted || "Certification unlocked")
+    toast.success(t.value.checkoutWizard.unlockCompleted)
     const refreshedBundle = await loadBundleInfo()
     if (!getEligibility(refreshedBundle)?.can_purchase) {
       return
@@ -1179,7 +1179,7 @@ async function createUnlockOrder() {
   }
 
   if (!orderId) {
-    throw new Error(t.value.checkoutWizard?.orderCreationFailed || "Order creation failed")
+    throw new Error(t.value.checkoutWizard.orderCreationFailed)
   }
 
   activeOrderAction.value = "unlock"
@@ -1202,17 +1202,17 @@ async function confirmAndPay() {
       return
     }
     if (latestBundle?.purchase_state?.active_order) {
-      toast.info(t.value.checkoutWizard?.continueExistingOrder || "Opening your unfinished order")
+      toast.info(t.value.checkoutWizard.continueExistingOrder)
       await router.push("/orders")
       return
     }
 
-    throw new Error(t.value.checkoutWizard?.purchaseUnavailable || "The product is not available for purchase")
+    throw new Error(t.value.checkoutWizard.purchaseUnavailable)
   } catch (err) {
     console.error(err)
     toast.error(err instanceof Error && err.message
       ? err.message
-      : t.value.checkoutWizard?.orderCreationFailed || t.value.common?.error || "Order creation failed")
+      : t.value.checkoutWizard.orderCreationFailed)
   } finally {
     loading.value = false
   }
@@ -1224,17 +1224,17 @@ async function confirmAndPay() {
     <div class="page-panel">
       <header class="flex h-16 items-center border-b border-border bg-white px-5">
         <ClipboardList class="mr-4 h-4 w-4 text-slate-700" />
-        <span class="text-sm font-medium text-foreground">{{ t.checkoutWizard?.checkoutTitle || "Checkout" }}</span>
+        <span class="text-sm font-medium text-foreground">{{ t.checkoutWizard.checkoutTitle }}</span>
       </header>
 
       <main class="px-5 py-8 md:px-8 lg:px-10">
         <div class="mb-8 max-w-2xl">
-          <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.checkoutWizard?.checkoutTitle || "Checkout" }}</h1>
+          <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.checkoutWizard.checkoutTitle }}</h1>
           <div class="mt-4 flex gap-4 text-sm">
-            <span :class="currentStep === 1 ? 'font-bold text-primary' : 'text-muted-foreground'">{{ t.checkoutWizard?.step1 || "1 选择" }}</span>
-            <span :class="currentStep === 2 ? 'font-bold text-primary' : 'text-muted-foreground'">{{ t.checkoutWizard?.step2 || "2 登记" }}</span>
-            <span :class="currentStep === 3 ? 'font-bold text-primary' : 'text-muted-foreground'">{{ t.checkoutWizard?.step3 || "3 审查" }}</span>
-            <span :class="currentStep === 4 ? 'font-bold text-primary' : 'text-muted-foreground'">{{ t.checkoutWizard?.step4 || "4 支付" }}</span>
+            <span :class="currentStep === 1 ? 'font-bold text-primary' : 'text-muted-foreground'">{{ t.checkoutWizard.step1 }}</span>
+            <span :class="currentStep === 2 ? 'font-bold text-primary' : 'text-muted-foreground'">{{ t.checkoutWizard.step2 }}</span>
+            <span :class="currentStep === 3 ? 'font-bold text-primary' : 'text-muted-foreground'">{{ t.checkoutWizard.step3 }}</span>
+            <span :class="currentStep === 4 ? 'font-bold text-primary' : 'text-muted-foreground'">{{ t.checkoutWizard.step4 }}</span>
           </div>
         </div>
         
@@ -1242,7 +1242,7 @@ async function confirmAndPay() {
           <!-- Step 1: Selection -->
           <div v-if="currentStep === 1" class="space-y-8">
             <div class="mb-4">
-              <h2 class="text-2xl font-bold">{{ t.checkoutWizard?.yourLevel1Paper?.replace(levelPlaceholder, "1") || "你的1级试卷" }}</h2>
+              <h2 class="text-2xl font-bold">{{ t.checkoutWizard.yourLevel1Paper.replace(levelPlaceholder, "1") }}</h2>
             </div>
             
             <div v-if="exemptionStages.length > 0" class="space-y-6">
@@ -1289,7 +1289,7 @@ async function confirmAndPay() {
                           <Check v-else class="pointer-events-none absolute h-4 w-4 text-white opacity-0 transition-opacity peer-checked:opacity-100" />
                         </div>
                         <span class="font-medium text-slate-700">
-                          {{ unit.qualified ? (t.checkoutWizard?.applyForExemption || "申请豁免") : qualificationActionLabel(unit) }}
+                          {{ unit.qualified ? t.checkoutWizard.applyForExemption : qualificationActionLabel(unit) }}
                         </span>
                       </label>
                     </div>
@@ -1305,7 +1305,7 @@ async function confirmAndPay() {
                           </div>
                           <div>
                             <h4 class="font-semibold text-slate-900">
-                              {{ qualificationDefinitionForUnit(unit)?.name || (t.credentialsPage?.uploadMaterials || "上传资格材料") }}
+                              {{ qualificationDefinitionForUnit(unit)?.name || t.credentialsPage.uploadMaterials }}
                             </h4>
                             <p class="mt-1 text-sm leading-6 text-slate-600">
                               {{ qualificationDefinitionForUnit(unit)?.description || t.credentialsPage?.description }}
@@ -1339,13 +1339,13 @@ async function confirmAndPay() {
                                   class="h-4 w-4 animate-spin"
                                 />
                                 <UploadCloud v-else class="h-4 w-4" />
-                                {{ t.credentialsPage?.chooseFile || "选择文件" }}
+                                {{ t.credentialsPage.chooseFile }}
                               </button>
                               <span
                                 class="max-w-[260px] truncate text-sm text-slate-500"
                                 :title="qualificationFilesForUnit(unit.unit_id)[constraint.name]?.name || ''"
                               >
-                                {{ qualificationFilesForUnit(unit.unit_id)[constraint.name]?.name || (t.credentialsPage?.noFileChosen || "未选择文件") }}
+                                {{ qualificationFilesForUnit(unit.unit_id)[constraint.name]?.name || t.credentialsPage.noFileChosen }}
                               </span>
                               <input
                                 :id="qualificationConstraintInputId(unit.unit_id, constraint.name)"
@@ -1372,7 +1372,7 @@ async function confirmAndPay() {
                             :disabled="qualificationSubmittingUnitId === unit.unit_id"
                             @click="closeQualificationEditor(unit.unit_id)"
                           >
-                            {{ t.common?.cancel || "取消" }}
+                            {{ t.common.cancel }}
                           </button>
                           <button
                             type="button"
@@ -1382,8 +1382,8 @@ async function confirmAndPay() {
                           >
                             <Loader2 v-if="qualificationSubmittingUnitId === unit.unit_id" class="h-4 w-4 animate-spin" />
                             {{ qualificationSubmittingUnitId === unit.unit_id
-                              ? (t.credentialsPage?.submitting || "提交中...")
-                              : (t.credentialsPage?.submitApplication || "提交资格申请") }}
+                              ? t.credentialsPage.submitting
+                              : t.credentialsPage.submitApplication }}
                           </button>
                         </div>
                       </div>
@@ -1395,7 +1395,7 @@ async function confirmAndPay() {
               <div v-if="bundleData" class="mt-8 flex flex-col items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 p-6 sm:flex-row shadow-sm">
                 <div class="text-lg font-bold text-slate-900">
                   <template v-if="paymentPreview">
-                    {{ t.checkoutWizard?.baseTotal || "基础总额" }} {{ formatMoney(paymentPreview.total, paymentPreview.currency) }}
+                    {{ t.checkoutWizard.baseTotal }} {{ formatMoney(paymentPreview.total, paymentPreview.currency) }}
                   </template>
                 </div>
                 <button
@@ -1403,7 +1403,7 @@ async function confirmAndPay() {
                   :disabled="hasExpandedQualificationEditors || Boolean(qualificationSubmittingUnitId)"
                   @click="nextFromStep1"
                 >
-                  {{ t.checkoutWizard?.saveAndContinue || "保存并继续 ->" }}
+                  {{ t.checkoutWizard.saveAndContinue }}
                 </button>
               </div>
             </div>
@@ -1479,80 +1479,80 @@ async function confirmAndPay() {
             <div v-if="!isMembershipBundle" class="mt-6 border-t border-border pt-6">
               <label class="flex items-center gap-3">
                 <input v-model="formData.agreement" type="checkbox" class="h-4 w-4 shrink-0 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500" :required="!isMembershipBundle" />
-                <span class="text-sm font-medium text-foreground">{{ t.examSignup?.agreementRequired || "我已阅读并同意 CFtP 用户协议及隐私政策" }}</span>
+                <span class="text-sm font-medium text-foreground">{{ t.examSignup.agreement }}</span>
               </label>
             </div>
 
             <div class="flex items-center justify-between border-t pt-6 mt-6">
-              <button type="button" class="btn btn-outline" @click="currentStep = 1" v-if="exemptionStages.length > 0">{{ t.checkoutWizard?.back || "Back" }}</button>
+              <button type="button" class="btn btn-outline" @click="currentStep = 1" v-if="exemptionStages.length > 0">{{ t.checkoutWizard.back }}</button>
               <div v-else></div>
               <button type="submit" class="btn bg-emerald-600 text-white hover:bg-emerald-700 rounded-full px-8" :disabled="loading">
                 <template v-if="loading"><Loader2 class="h-4 w-4 animate-spin" /> {{ t.examSignup.submitting }}</template>
-                <template v-else>{{ t.checkoutWizard?.next || "Next" }} <Send class="ml-2 h-4 w-4" /></template>
+                <template v-else>{{ t.checkoutWizard.next }} <Send class="ml-2 h-4 w-4" /></template>
               </button>
             </div>
           </form>
 
           <!-- Step 3: Review -->
           <div v-if="currentStep === 3" class="space-y-6">
-            <h2 class="text-xl font-semibold">{{ t.checkoutWizard?.review || "Review" }}</h2>
+            <h2 class="text-xl font-semibold">{{ t.checkoutWizard.review }}</h2>
             <div class="rounded-lg border border-border p-4 text-sm space-y-2">
               <div class="grid grid-cols-3 gap-2">
-                <div class="text-muted-foreground">Name:</div>
+                <div class="text-muted-foreground">{{ t.checkoutWizard.reviewName }}</div>
                 <div class="col-span-2 font-medium">{{ formData.first_name }} {{ formData.last_name }}</div>
                 
-                <div class="text-muted-foreground">Email:</div>
+                <div class="text-muted-foreground">{{ t.checkoutWizard.reviewEmail }}</div>
                 <div class="col-span-2 font-medium">{{ formData.email }}</div>
                 
-                <div class="text-muted-foreground">Location:</div>
+                <div class="text-muted-foreground">{{ t.checkoutWizard.reviewLocation }}</div>
                 <div class="col-span-2 font-medium">{{ formData.city }}, {{ formData.province }}, {{ formData.country }}</div>
               </div>
             </div>
 
             <!-- PAYMENT MODE SELECTION -->
             <div v-if="isMultiStage" class="rounded-lg border border-border p-4 text-sm space-y-4">
-              <div class="mb-2 text-sm font-semibold">{{ t.checkoutWizard?.paymentModeTitle || "Payment Mode" }}</div>
+              <div class="mb-2 text-sm font-semibold">{{ t.checkoutWizard.paymentModeTitle }}</div>
               
               <label class="flex items-start gap-3 rounded-lg border p-4 transition-colors hover:bg-slate-50 cursor-pointer" :class="{ 'border-emerald-500 bg-emerald-50/30': paymentMode === 'FULL_PIPELINE', 'border-border': paymentMode !== 'FULL_PIPELINE' }">
                 <input type="radio" v-model="paymentMode" value="FULL_PIPELINE" class="mt-1 h-4 w-4 text-emerald-600 focus:ring-emerald-500" />
                 <div>
-                  <div class="font-medium text-slate-900">{{ t.checkoutWizard?.modeFullPipeline || "Pay in Full" }}</div>
-                  <div class="text-xs text-slate-500 mt-1">{{ t.checkoutWizard?.modeFullPipelineDesc || "Pay for the entire program upfront and enjoy uninterrupted learning." }}</div>
+                  <div class="font-medium text-slate-900">{{ t.checkoutWizard.modeFullPipeline }}</div>
+                  <div class="text-xs text-slate-500 mt-1">{{ t.checkoutWizard.modeFullPipelineDesc }}</div>
                 </div>
               </label>
 
               <label class="flex items-start gap-3 rounded-lg border p-4 transition-colors hover:bg-slate-50 cursor-pointer" :class="{ 'border-emerald-500 bg-emerald-50/30': paymentMode === 'BY_STAGE', 'border-border': paymentMode !== 'BY_STAGE' }">
                 <input type="radio" v-model="paymentMode" value="BY_STAGE" class="mt-1 h-4 w-4 text-emerald-600 focus:ring-emerald-500" />
                 <div>
-                  <div class="font-medium text-slate-900">{{ t.checkoutWizard?.modeByStage || "Pay by Stage" }}</div>
-                  <div class="text-xs text-slate-500 mt-1">{{ t.checkoutWizard?.modeByStageDesc || "Pay only for the first stage now. Unlock subsequent stages as you progress." }}</div>
+                  <div class="font-medium text-slate-900">{{ t.checkoutWizard.modeByStage }}</div>
+                  <div class="text-xs text-slate-500 mt-1">{{ t.checkoutWizard.modeByStageDesc }}</div>
                 </div>
               </label>
             </div>
 
             <div v-if="paymentPreview && paymentMode === 'FULL_PIPELINE'" class="rounded-lg bg-muted/30 p-4 border border-border">
-              <div class="mb-3 text-sm font-semibold">{{ t.checkoutWizard?.priceSummary || "Price Summary" }}</div>
+              <div class="mb-3 text-sm font-semibold">{{ t.checkoutWizard.priceSummary }}</div>
               <div class="space-y-2 text-sm">
                 <div class="flex justify-between">
-                  <span class="text-muted-foreground">{{ t.checkoutWizard?.subtotal || "Subtotal" }}</span>
+                  <span class="text-muted-foreground">{{ t.checkoutWizard.subtotal }}</span>
                   <span class="font-medium">{{ paymentPreview.amount_label || formatMoney(paymentPreview.subtotal, paymentPreview.currency) }}</span>
                 </div>
                 <div v-if="paymentPreview.discount_total" class="flex justify-between">
-                  <span class="text-muted-foreground">{{ t.checkoutWizard?.discount || "Discount" }}</span>
+                  <span class="text-muted-foreground">{{ t.checkoutWizard.discount }}</span>
                   <span class="font-medium">-{{ formatMoney(paymentPreview.discount_total, paymentPreview.currency) }}</span>
                 </div>
                 <div class="mt-2 flex justify-between border-t border-border pt-2">
-                  <span class="font-semibold text-foreground">{{ t.checkoutWizard?.total || "Total" }}</span>
+                  <span class="font-semibold text-foreground">{{ t.checkoutWizard.total }}</span>
                   <span class="text-lg font-bold text-foreground">{{ paymentPreview.pay_amount_label || formatMoney(paymentPreview.total, paymentPreview.currency) }}</span>
                 </div>
               </div>
             </div>
 
             <div class="flex justify-between pt-4">
-              <button type="button" class="btn btn-outline" @click="currentStep = 2" :disabled="loading">{{ t.checkoutWizard?.back || "Back" }}</button>
+              <button type="button" class="btn btn-outline" @click="currentStep = 2" :disabled="loading">{{ t.checkoutWizard.back }}</button>
               <button class="btn btn-primary" :disabled="loading" @click="confirmAndPay">
-                <template v-if="loading"><Loader2 class="h-4 w-4 animate-spin" /> {{ t.checkoutWizard?.processing || "Processing..." }}</template>
-                <template v-else>{{ t.checkoutWizard?.confirmAndPay || "Confirm & Pay" }} <ShoppingCart class="ml-2 h-4 w-4" /></template>
+                <template v-if="loading"><Loader2 class="h-4 w-4 animate-spin" /> {{ t.checkoutWizard.processing }}</template>
+                <template v-else>{{ t.checkoutWizard.confirmAndPay }} <ShoppingCart class="ml-2 h-4 w-4" /></template>
               </button>
             </div>
           </div>
@@ -1562,11 +1562,11 @@ async function confirmAndPay() {
             <div>
               <h2 class="text-xl font-semibold">
                 {{ activeOrderAction === "credential_application"
-                  ? (t.checkoutWizard?.qualificationPaymentTitle || "Qualification review payment")
-                  : (t.checkoutWizard?.payment || "Payment") }}
+                  ? t.checkoutWizard.qualificationPaymentTitle
+                  : t.checkoutWizard.payment }}
               </h2>
               <p v-if="activeOrderAction === 'credential_application'" class="mt-2 text-sm text-muted-foreground">
-                {{ t.checkoutWizard?.qualificationPaymentDesc || "After payment, continue to upload your qualification materials." }}
+                {{ t.checkoutWizard.qualificationPaymentDesc }}
               </p>
             </div>
             <PaymentSessionPanel

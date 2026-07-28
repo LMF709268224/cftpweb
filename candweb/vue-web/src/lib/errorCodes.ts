@@ -1,132 +1,24 @@
-export const ErrorMessages: Record<string, { zh: string; en: string }> = {
-  // 通用错误
-  INTERNAL_ERROR: {
-    zh: "服务器开小差了，请稍后再试",
-    en: "Internal server error. Please try again later.",
-  },
-  INVALID_REQUEST: {
-    zh: "请求参数错误",
-    en: "Invalid request parameters.",
-  },
-  UNAUTHORIZED: {
-    zh: "登录已过期，请重新登录",
-    en: "Session expired, please login again.",
-  },
-  FORBIDDEN: {
-    zh: "您没有权限执行此操作",
-    en: "You do not have permission to perform this action.",
-  },
-  NOT_FOUND: {
-    zh: "请求的资源不存在",
-    en: "The requested resource was not found.",
-  },
-  NOT_IMPLEMENTED: {
-    zh: "该功能暂未开放",
-    en: "This feature is not available yet.",
-  },
-  PRECONDITION_FAILED: {
-    zh: "当前操作条件不满足，请先补齐必要信息。",
-    en: "The operation requirements are not met. Please complete the required information first.",
-  },
-  SERVICE_UNAVAILABLE: {
-    zh: "依赖服务暂时不可用，请稍后再试。",
-    en: "A dependent service is temporarily unavailable. Please try again later.",
-  },
-  AUTH_FAILED: {
-    zh: "认证失败，请重新登录",
-    en: "Authentication failed. Please log in again.",
-  },
-  NON_STUDENT_LOGIN_DENIED: {
-    zh: "当前账号不是考生账号，无法登录考生门户。若您是工作人员，请前往管理后台登录。",
-    en: "This account is not a candidate account and cannot log in to the candidate portal. If you are a staff member, please log in to the admin portal.",
-  },
-  TOKEN_EXPIRED: {
-    zh: "登录已过期，请重新登录",
-    en: "Session expired, please log in again.",
-  },
-  INVALID_TOKEN: {
-    zh: "登录状态无效，请重新登录",
-    en: "Invalid session. Please log in again.",
-  },
+import { en } from "./locales/en"
+import { zh } from "./locales/zh"
 
-  // 用户与设置相关
-  PASSWORD_INCORRECT: {
-    zh: "原密码不正确或不符合要求",
-    en: "Incorrect old password or password does not meet requirements.",
-  },
-  PROFILE_UPDATE_FAILED: {
-    zh: "个人资料更新失败，请检查输入",
-    en: "Failed to update profile. Please check your input.",
-  },
-  PIPELINE_NOT_FOUND: {
-    zh: "未找到对应认证流程",
-    en: "Certification flow not found.",
-  },
-  ALREADY_PURCHASED: {
-    zh: "您已购买该项目",
-    en: "You have already purchased this item.",
-  },
-  IN_PROGRESS_PURCHASE: {
-    zh: "您有正在进行中的相关订单，请先完成或取消现有订单",
-    en: "You have an in-progress order. Please complete or cancel the existing order first.",
-  },
-  INVALID_PIPELINE: {
-    zh: "认证流程信息无效",
-    en: "Invalid certification flow.",
-  },
-  EXAM_NOT_FOUND: {
-    zh: "未找到对应考试",
-    en: "Exam not found.",
-  },
-  NOT_ELIGIBLE: {
-    zh: "当前不满足操作条件",
-    en: "You are not eligible for this action.",
-  },
-  SIGNUP_FAILED: {
-    zh: "报名失败，请稍后再试",
-    en: "Signup failed. Please try again later.",
-  },
-  RETAKE_DENIED: {
-    zh: "暂不满足补考条件",
-    en: "Retake request was denied.",
-  },
-  PAYMENT_FAILED: {
-    zh: "支付失败，请稍后再试",
-    en: "Payment failed. Please try again later.",
-  },
-  ORDER_NOT_FOUND: {
-    zh: "未找到对应订单",
-    en: "Order not found.",
-  },
-  INVALID_AMOUNT: {
-    zh: "金额信息无效",
-    en: "Invalid amount.",
-  },
-  MEMBERSHIP_EXPIRED: {
-    zh: "会员资格已过期",
-    en: "Membership has expired.",
-  },
-  RECORD_REJECTED: {
-    zh: "档案已被驳回",
-    en: "Record was rejected.",
-  },
+type Language = "zh" | "en"
+type LocalizedCatalog = typeof zh
 
-  // 兜底未知错误
-  UNKNOWN_ERROR: {
-    zh: "发生未知错误，请稍后重试",
-    en: "An unknown error occurred. Please try again later.",
-  },
-  REQUEST_TIMEOUT: {
-    zh: "请求超时，请稍后重试",
-    en: "Request timed out. Please try again.",
-  },
-  NETWORK_ERROR: {
-    zh: "网络请求失败，请检查网络后重试",
-    en: "Network request failed. Please check your connection and try again.",
-  },
+function catalogFor(lang: Language): LocalizedCatalog {
+  return lang === "zh" ? zh : en
 }
 
-export function getErrorMessage(errorCode: string | undefined | null, lang: "zh" | "en" = "zh"): string {
+export const ErrorMessages: Record<string, { zh: string; en: string }> = Object.fromEntries(
+  Object.keys(zh.apiErrors).map((code) => [
+    code,
+    {
+      zh: zh.apiErrors[code as keyof typeof zh.apiErrors],
+      en: en.apiErrors[code as keyof typeof en.apiErrors],
+    },
+  ]),
+)
+
+export function getErrorMessage(errorCode: string | undefined | null, lang: Language = "zh"): string {
   if (!errorCode) return ErrorMessages["UNKNOWN_ERROR"][lang]
   const tip = ErrorMessages[errorCode]
   if (tip) {
@@ -135,104 +27,61 @@ export function getErrorMessage(errorCode: string | undefined | null, lang: "zh"
   return ErrorMessages["UNKNOWN_ERROR"][lang]
 }
 
-const FieldLabels: Record<string, { zh: string; en: string }> = {
-  application_id: { zh: "申请 ID", en: "application ID" },
-  body: { zh: "文本内容", en: "body" },
-  candidate_id: { zh: "考生 ID", en: "candidate ID" },
-  category_id: { zh: "分类 ID", en: "category ID" },
-  chapter_id: { zh: "章节 ID", en: "chapter ID" },
-  code: { zh: "授权码", en: "authorization code" },
-  course_id: { zh: "课程 ID", en: "course ID" },
-  course_unit_ulid: { zh: "课程单元 ID", en: "course unit ID" },
-  cred_def_id: { zh: "资格定义 ID", en: "credential definition ID" },
-  entity_id: { zh: "关联实体 ID", en: "entity ID" },
-  entity_type: { zh: "关联实体类型", en: "entity type" },
-  external_url: { zh: "外部链接", en: "external URL" },
-  file_name: { zh: "文件名", en: "file name" },
-  file_object_key: { zh: "文件 Object Key", en: "file object key" },
-  items: { zh: "排序项", en: "items" },
-  lesson_id: { zh: "课时 ID", en: "lesson ID" },
-  lesson_type: { zh: "课时类型", en: "lesson type" },
-  mail_id: { zh: "邮件 ID", en: "mail ID" },
-  material_id: { zh: "资料 ID", en: "material ID" },
-  material_type: { zh: "资料类型", en: "material type" },
-  media_object_key: { zh: "媒体 Object Key", en: "media object key" },
-  name: { zh: "名称", en: "name" },
-  object_key: { zh: "Object Key", en: "object key" },
-  option_id: { zh: "选项 ID", en: "option ID" },
-  option_text: { zh: "选项内容", en: "option text" },
-  pipeline_id: { zh: "认证流程 ID", en: "certification flow ID" },
-  question_id: { zh: "题目 ID", en: "question ID" },
-  question_text: { zh: "题目内容", en: "question text" },
-  question_type: { zh: "题目类型", en: "question type" },
-  quiz_id: { zh: "测验 ID", en: "quiz ID" },
-  quizzable_id: { zh: "测验对象 ID", en: "quizzable ID" },
-  quizzable_type: { zh: "测验对象类型", en: "quizzable type" },
-  refresh_token: { zh: "刷新令牌", en: "refresh token" },
-  required_entity_id: { zh: "前置实体 ID", en: "required entity ID" },
-  required_entity_type: { zh: "前置实体类型", en: "required entity type" },
-  required_result: { zh: "前置结果", en: "required result" },
-  state: { zh: "登录状态", en: "login state" },
-  target_entity_id: { zh: "目标实体 ID", en: "target entity ID" },
-  target_entity_type: { zh: "目标实体类型", en: "target entity type" },
-  template_id: { zh: "模板 ID", en: "template ID" },
-  title: { zh: "标题", en: "title" },
-  upload_type: { zh: "上传类型", en: "upload type" },
-  version: { zh: "版本号", en: "version" },
+function getFieldLabel(field: string, lang: Language): string {
+  const normalized = field.replace(/\[\d+\]/g, "")
+  const labels = catalogFor(lang).apiFieldLabels as Record<string, string>
+  return labels[field] || labels[normalized] || field
 }
 
-function getFieldLabel(field: string, lang: "zh" | "en"): string {
-  const normalized = field.replace(/\[\d+\]/g, "")
-  return FieldLabels[field]?.[lang] || FieldLabels[normalized]?.[lang] || field
+function formatMessage(template: string, values: Record<string, string>) {
+  return Object.entries(values).reduce(
+    (message, [key, value]) => message.replace(`{{${key}}}`, value),
+    template,
+  )
 }
 
 export function localizeApiErrorMessage(
   errorCode: string | undefined | null,
   message: string | undefined | null,
-  lang: "zh" | "en" = "zh"
+  lang: Language = "zh"
 ): string {
   if (!message) return getErrorMessage(errorCode, lang)
+  const validation = catalogFor(lang).apiValidation
 
   let match = message.match(/^(.+) is required$/)
   if (match) {
-    return lang === "zh" ? `请填写${getFieldLabel(match[1], lang)}` : `${getFieldLabel(match[1], lang)} is required.`
+    return formatMessage(validation.fieldRequired, { field: getFieldLabel(match[1], lang) })
   }
 
   match = message.match(/^(.+) are required$/)
   if (match) {
     const fields = match[1].split(/\s+and\s+/).map((field) => getFieldLabel(field, lang))
-    return lang === "zh" ? `请填写${fields.join("和")}` : `${fields.join(" and ")} are required.`
+    return formatMessage(validation.fieldsRequired, { fields: fields.join(validation.fieldsJoiner) })
   }
 
   match = message.match(/^(.+) must be greater than 0$/)
   if (match) {
-    return lang === "zh" ? `${getFieldLabel(match[1], lang)}必须大于 0` : `${getFieldLabel(match[1], lang)} must be greater than 0.`
+    return formatMessage(validation.greaterThanZero, { field: getFieldLabel(match[1], lang) })
   }
 
   match = message.match(/^(.+) is invalid$/)
   if (match) {
-    return lang === "zh" ? `${getFieldLabel(match[1], lang)}无效` : `${getFieldLabel(match[1], lang)} is invalid.`
+    return formatMessage(validation.invalid, { field: getFieldLabel(match[1], lang) })
   }
 
   match = message.match(/^course "([^"]+)" must contain at least one chapter before publishing$/)
   if (match) {
-    return lang === "zh"
-      ? `课程 ${match[1]} 发布前至少需要创建 1 个章节`
-      : `Course ${match[1]} must contain at least one chapter before publishing.`
+    return formatMessage(validation.courseNeedsChapter, { name: match[1] })
   }
 
   match = message.match(/^chapter "([^"]+)" must contain at least one lesson or quiz before publishing$/)
   if (match) {
-    return lang === "zh"
-      ? `章节 ${match[1]} 发布前至少需要包含 1 个课时或测验`
-      : `Chapter ${match[1]} must contain at least one lesson or quiz before publishing.`
+    return formatMessage(validation.chapterNeedsContent, { name: match[1] })
   }
 
   match = message.match(/^published course "([^"]+)" cannot be modified$/)
   if (match) {
-    return lang === "zh"
-      ? `已发布课程 ${match[1]} 不能直接修改，请创建新版本或编辑草稿版本`
-      : `Published course ${match[1]} cannot be modified. Please create a new version or edit a draft version.`
+    return formatMessage(validation.publishedCourseImmutable, { name: match[1] })
   }
 
   const isGenericMessage = /^(Bad Request|Unauthorized|Forbidden|Not Found|Method Not Allowed|Internal Server Error|Bad Gateway|Service Unavailable|Error)$/i.test(message || "")

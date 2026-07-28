@@ -155,7 +155,6 @@ const nextUnitStatus = computed(() => nextStep.value?.status || currentUnitStatu
 const nextStepAction = computed(() =>
   nextStep.value?.action || courseUnitNextStepActionFromStatus(nextUnitStatus.value, Boolean(nextStep.value?.allow_retake)),
 )
-const isPipelineTerminal = computed(() => pipelineIsTerminal(pipelineStatus.value))
 const finalQualifications = computed(() => {
   const quals = pipeline.value?.final_quals || []
   return Array.isArray(quals)
@@ -239,9 +238,18 @@ const certificateIssuedDate = computed(() =>
     ),
   ) || "-",
 )
-const firstCourseId = computed(() =>
-  stages.value.flatMap((stage) => visibleStageUnits(stage)).find((unit) => unit.glms_course_id)?.glms_course_id || "",
+const visibleCourseIds = computed(() =>
+  Array.from(
+    new Set(
+      stages.value
+        .flatMap((stage) => visibleStageUnits(stage))
+        .map((unit) => unit.glms_course_id)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ),
 )
+const visibleCourseIdsKey = computed(() => visibleCourseIds.value.join(","))
+const firstCourseId = computed(() => visibleCourseIds.value[0] || "")
 const stageListLoading = computed(() => courseSummariesLoading.value)
 
 const activeStageIndex = computed(() => {
@@ -357,14 +365,7 @@ async function loadCourseSummaries() {
     courseSummaries.value = {}
     return
   }
-  const courseIds = Array.from(
-    new Set(
-      stages.value
-        .flatMap((stage) => visibleStageUnits(stage))
-        .map((unit) => unit.glms_course_id)
-        .filter((id): id is string => Boolean(id)),
-    ),
-  )
+  const courseIds = visibleCourseIds.value
   if (courseIds.length === 0) {
     courseSummariesLoading.value = false
     courseSummaries.value = {}
@@ -564,15 +565,22 @@ async function handleFinalQualificationApplication() {
 
 const detailPolling = usePolling(
   () => loadDetail(false, true),
-  { shouldPoll: () => Boolean(pipelineId.value && purchased.value && !isPipelineTerminal.value) },
+  { shouldPoll: () => Boolean(pipelineId.value && pipelineIssuingCertificate.value) },
 )
 
 onMounted(() => {
   void loadDetail()
-  detailPolling.start()
 })
-watch(pipelineId, () => void loadDetail())
-watch([stages, purchased], () => void loadCourseSummaries(), { deep: true })
+watch(pipelineId, () => {
+  detailPolling.stop()
+  detail.value = null
+  void loadDetail()
+})
+watch(pipelineIssuingCertificate, (issuing) => {
+  if (issuing && pipelineId.value) detailPolling.start()
+  else detailPolling.stop()
+})
+watch(visibleCourseIdsKey, () => void loadCourseSummaries(), { immediate: true })
 watch(finalQualificationIdsKey, () => void loadCredentialDefinitions(), { immediate: true })
 watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
 </script>

@@ -75,7 +75,7 @@ const statusConfig = {
   cancelled: { labelKey: "statusCancelled", statusValue: "CANCEL" },
 } as const
 
-const { t, lang } = useTranslation()
+const { t } = useTranslation()
 
 const orders = ref<OrderItem[]>([])
 const loading = ref(true)
@@ -439,53 +439,51 @@ function orderAmountDisplay(amount: number, currency: string, orderStatus: strin
 
 function orderTypeLabel(bizType?: string) {
   const normalized = String(bizType || "").toUpperCase()
-  const zh = lang.value === "zh"
   switch (normalized) {
     case "PIPELINE_PAYMENT":
-      return zh ? "\u8ba4\u8bc1\u8ba2\u5355" : "Certification Order"
+      return t.value.orders.typeCertification
     case "STAGE_PAYMENT":
-      return zh ? "\u9636\u6bb5\u8ba2\u5355" : "Stage Order"
+      return t.value.orders.typeStage
     case "COURSE_RETAKE_PAYMENT":
-      return zh ? "\u91cd\u8003\u8ba2\u5355" : "Retake Order"
+      return t.value.orders.typeRetake
     case "PIPELINE_UNLOCK":
-      return zh ? "\u8ba4\u8bc1\u89e3\u9501\u8ba2\u5355" : "Certification Unlock Order"
+      return t.value.orders.typeCertificationUnlock
     case "CREDENTIAL_APPLICATION":
-      return zh ? "\u8d44\u683c\u7533\u8bf7\u8ba2\u5355" : "Credential Application Order"
+      return t.value.orders.typeCredentialApplication
     case "BUNDLE_PURCHASE":
-      return zh ? "\u8ba4\u8bc1\u5957\u9910\u8ba2\u5355" : "Bundle Purchase Order"
+      return t.value.orders.typeBundlePurchase
     default:
-      return normalized || (zh ? "\u5176\u4ed6\u8ba2\u5355" : "Other Order")
+      return normalized || t.value.orders.typeOther
   }
 }
 
 function orderStatusFilterLabel(status?: string) {
   const normalized = String(status || "").toUpperCase()
-  const zh = lang.value === "zh"
   switch (normalized) {
     case "WAIT_PIPELINE_PAYMENT":
-      return zh ? "\u8ba4\u8bc1\u5f85\u652f\u4ed8" : "Certification Payment Pending"
+      return t.value.orders.filterCertificationPaymentPending
     case "WAIT_STAGE_PAYMENT":
-      return zh ? "\u9636\u6bb5\u5f85\u652f\u4ed8" : "Stage Payment Pending"
+      return t.value.orders.filterStagePaymentPending
     case "WAIT_RETAKE_PAYMENT":
-      return zh ? "\u91cd\u8003\u5f85\u652f\u4ed8" : "Retake Payment Pending"
+      return t.value.orders.filterRetakePaymentPending
     case "WAIT_UNLOCK_PAYMENT":
-      return zh ? "\u89e3\u9501\u5f85\u652f\u4ed8" : "Unlock Payment Pending"
+      return t.value.orders.filterUnlockPaymentPending
     case "WAIT_BUNDLE_PAYMENT":
-      return zh ? "\u5957\u9910\u5f85\u652f\u4ed8" : "Bundle Payment Pending"
+      return t.value.orders.filterBundlePaymentPending
     case "WAIT_REVIEW_FEE_PAYMENT":
-      return zh ? "\u5ba1\u6838\u8d39\u5f85\u652f\u4ed8" : "Review Fee Payment Pending"
+      return t.value.orders.filterReviewFeePaymentPending
     case "WAIT_PAYMENT":
-      return zh ? "\u5f85\u652f\u4ed8" : "Wait Payment"
+      return t.value.orders.statusWaitPayment
     case "PENDING":
-      return zh ? "\u5904\u7406\u4e2d" : "Pending"
+      return t.value.orders.statusPending
     case "COMPLETED":
-      return zh ? "\u5df2\u5b8c\u6210" : "Completed"
+      return t.value.orders.statusCompleted
     case "CANCELLED":
-      return zh ? "\u5df2\u53d6\u6d88" : "Cancelled"
+      return t.value.orders.statusCancelled
     case "CLOSED":
-      return zh ? "\u5df2\u5173\u95ed" : "Closed"
+      return t.value.orders.statusClosed
     default:
-      return normalized || (zh ? "\u5168\u90e8\u72b6\u6001" : "All Statuses")
+      return normalized || t.value.orders.allStatuses
   }
 }
 
@@ -760,7 +758,6 @@ onBeforeUnmount(() => {
           :total-label="totalLabel"
           :page-size-options="pageSizeOptions"
           :disabled="loading"
-          :locale="lang"
           cursor-mode
           :has-more="hasMore"
           @page-change="handlePaginationChange"

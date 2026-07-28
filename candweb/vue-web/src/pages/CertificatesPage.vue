@@ -57,10 +57,9 @@ function downloadFeaturedCertificate() {
   openCertificate(featuredCertificate.value?.pdfUrl)
 }
 
-const SOURCE_CONFIG: Record<string, { labelKey: "sourceApplication" | "sourceSystem"; fallback: string; icon: typeof ClipboardCheck | typeof ShieldCheck; cls: string; iconCls: string; accent: string }> = {
+const SOURCE_CONFIG: Record<string, { labelKey: "sourceApplication" | "sourceSystem"; icon: typeof ClipboardCheck | typeof ShieldCheck; cls: string; iconCls: string; accent: string }> = {
   application: {
     labelKey: "sourceApplication",
-    fallback: "Application",
     icon: ClipboardCheck,
     cls: "border-amber-200 text-amber-800",
     iconCls: "bg-amber-100 text-amber-700",
@@ -68,7 +67,6 @@ const SOURCE_CONFIG: Record<string, { labelKey: "sourceApplication" | "sourceSys
   },
   pdf_cert: {
     labelKey: "sourceSystem",
-    fallback: "System Issued",
     icon: ShieldCheck,
     cls: "border-cyan-200 text-cyan-800",
     iconCls: "bg-cyan-100 text-cyan-700",
@@ -79,7 +77,7 @@ const SOURCE_CONFIG: Record<string, { labelKey: "sourceApplication" | "sourceSys
 function certificateSourceLabel(source?: string) {
   const cfg = SOURCE_CONFIG[source ?? ""]
   if (!cfg) return ""
-  return (t.value.certificatesPage as any)[cfg.labelKey] || cfg.fallback
+  return t.value.certificatesPage[cfg.labelKey]
 }
 function certificateSourceIcon(source?: string) {
   return SOURCE_CONFIG[source ?? ""]?.icon ?? ShieldCheck

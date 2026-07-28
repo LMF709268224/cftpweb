@@ -293,7 +293,7 @@ async function loadLegacyDialogState() {
   eligibility.value = {
     can_purchase: false,
     can_unlock: false,
-    blockers: [{ blocker_type: "BUNDLE_NOT_FOUND", description: "product bundle is unavailable" }],
+    blockers: [{ blocker_type: "BUNDLE_NOT_FOUND", description: copy.value.bundleUnavailable }],
   }
   activeOrder.value = null
   paymentPreview.value = null

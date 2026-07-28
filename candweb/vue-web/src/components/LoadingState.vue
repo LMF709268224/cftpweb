@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import { computed } from "vue"
 import { Loader2 } from "lucide-vue-next"
+import { useTranslation } from "@/lib/language"
 
 const props = withDefaults(defineProps<{
   label?: string
   variant?: "page" | "section" | "inline"
   rows?: number
 }>(), {
-  label: "Loading...",
   variant: "section",
   rows: 3,
 })
 
+const { t } = useTranslation()
+const displayLabel = computed(() => props.label || t.value.common.loading)
 const skeletonRows = computed(() => Array.from({ length: Math.max(1, props.rows) }, (_, index) => index))
 </script>
 
@@ -23,7 +25,7 @@ const skeletonRows = computed(() => Array.from({ length: Math.max(1, props.rows)
     aria-live="polite"
   >
     <Loader2 class="h-4 w-4 animate-spin text-primary" />
-    <span>{{ label }}</span>
+    <span>{{ displayLabel }}</span>
   </div>
 
   <div
@@ -36,7 +38,7 @@ const skeletonRows = computed(() => Array.from({ length: Math.max(1, props.rows)
     aria-live="polite"
     aria-busy="true"
   >
-    <span class="sr-only">{{ label }}</span>
+    <span class="sr-only">{{ displayLabel }}</span>
     <div class="animate-pulse">
       <div class="flex items-start gap-4">
         <div
