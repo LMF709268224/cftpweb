@@ -952,7 +952,7 @@ export const zh = {
     membershipCenter: "进入会员",
     enterCertification: "进入认证",
     continuePayment: "继续支付",
-    unlockAction: "去解锁",
+    unlockAction: "去购买",
     buyNow: "去购买",
     unavailable: "暂不可购买",
     checkStatus: "查看购买状态"

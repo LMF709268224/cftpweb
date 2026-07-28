@@ -954,7 +954,7 @@ export const en: AppTranslations = {
     membershipCenter: "Membership",
     enterCertification: "Enter Certification",
     continuePayment: "Continue Payment",
-    unlockAction: "Unlock",
+    unlockAction: "Buy Now",
     buyNow: "Buy Now",
     unavailable: "Unavailable",
     checkStatus: "Check Status"
