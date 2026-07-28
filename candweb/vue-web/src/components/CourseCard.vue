@@ -2,7 +2,7 @@
 import { computed, ref } from "vue"
 import { RouterLink, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
-import { AlertCircle, BookOpen, CheckCircle2, Clock, Lock, ShoppingCart, Users } from "lucide-vue-next"
+import { AlertCircle, BookOpen, CheckCircle2, Clock, ShoppingCart, Users } from "lucide-vue-next"
 import { CANDIDATE_PIPELINE_STATUS_LABELS, statusLabel } from "@/lib/status-labels"
 import { useTranslation } from "@/lib/language"
 import { apiClient } from "@/lib/apiClient"
@@ -80,8 +80,7 @@ const actionCopy = computed(() => {
   if (effectivePurchased.value) return isPipelineProduct.value ? cardCopy.value.enterCertification : cardCopy.value.membershipCenter
   if (statusRefreshing.value) return cardCopy.value.checking
   if (hasInProgressOrder.value) return cardCopy.value.continuePayment
-  if (currentEligibility.value?.can_unlock) return cardCopy.value.unlockAction
-  if (currentEligibility.value?.can_purchase) return cardCopy.value.buyNow
+  if (currentEligibility.value?.can_purchase || currentEligibility.value?.can_unlock) return cardCopy.value.buyNow
   if (currentEligibility.value) return cardCopy.value.unavailable
   return cardCopy.value.checkStatus
 })
@@ -109,11 +108,8 @@ const accessState = computed(() => {
   if (statusRefreshing.value) {
     return { label: cardCopy.value.checking, icon: Clock, className: "border-slate-200 bg-slate-50 text-slate-700", hint: "" }
   }
-  if (currentEligibility.value?.can_purchase || hasInProgressOrder.value) {
+  if (currentEligibility.value?.can_purchase || currentEligibility.value?.can_unlock || hasInProgressOrder.value) {
     return { label: isMembershipOnlyProduct.value ? cardCopy.value.readyMembership : cardCopy.value.ready, icon: ShoppingCart, className: "border-emerald-200 bg-emerald-50 text-emerald-700", hint: "" }
-  }
-  if (currentEligibility.value?.can_unlock) {
-    return { label: cardCopy.value.unlock, icon: Lock, className: "border-blue-200 bg-blue-50 text-blue-700", hint: "" }
   }
   if (currentEligibility.value) {
     return { label: cardCopy.value.blocked, icon: AlertCircle, className: "border-amber-200 bg-amber-50 text-amber-800", hint: blockerText(blockers.value[0]) }
