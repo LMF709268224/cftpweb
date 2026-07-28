@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Loader2, RefreshCw, Save, Shield, UserRound } from "lucide-vue-next"
-import { computed, onMounted, ref } from "vue"
+import { computed, onMounted, onUnmounted, ref } from "vue"
 import { useRouter } from "vue-router"
 import { toast } from "vue-sonner"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
@@ -36,6 +36,7 @@ const profileLoading = ref(false)
 const profileSaving = ref(false)
 const passwordSaving = ref(false)
 const profileBaseline = ref<string | null>(null)
+let loginRedirectTimer: number | undefined
 
 const profile = ref<ProfileForm>({
   name: "",
@@ -201,7 +202,11 @@ async function savePassword() {
     })
     toast.success(copy.value.toasts.passwordUpdated)
     clearAuthSession()
-    setTimeout(() => router.push("/login"), 800)
+    if (loginRedirectTimer) window.clearTimeout(loginRedirectTimer)
+    loginRedirectTimer = window.setTimeout(() => {
+      loginRedirectTimer = undefined
+      void router.push("/login")
+    }, 800)
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.passwordUpdateFailed))
@@ -214,6 +219,11 @@ onMounted(() => {
   const params = new URLSearchParams(window.location.search)
   if (params.get("tab") === "password" || params.get("tab") === "account") activeSection.value = "password"
   void loadProfile()
+})
+
+onUnmounted(() => {
+  if (loginRedirectTimer) window.clearTimeout(loginRedirectTimer)
+  loginRedirectTimer = undefined
 })
 </script>
 

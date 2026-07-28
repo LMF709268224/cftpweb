@@ -3244,6 +3244,7 @@ export const en: AdminTranslations = {
             judgementMaxOptions: "Judgement questions can have a maximum of 2 options",
             singleCorrectOptionLimit: "This question type can only have one correct option. Please unmark other options first.",
             courseListLoadFailed: "Failed to load course list",
+            courseDetailLoadFailed: "Failed to load course details",
             courseTitleRequired: "Please fill in course title",
             respathRequired: "Please fill in Respath",
             courseUpdated: "Course updated",

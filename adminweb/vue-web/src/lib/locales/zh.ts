@@ -3242,6 +3242,7 @@ export const zh = {
             judgementMaxOptions: "判断题最多只能有 2 个选项",
             singleCorrectOptionLimit: "该题型只能有一个正确选项，请先取消其他选项的正确答案状态",
             courseListLoadFailed: "课程列表加载失败",
+            courseDetailLoadFailed: "课程详情加载失败",
             courseTitleRequired: "请填写课程标题",
             respathRequired: "请填写 Respath",
             courseUpdated: "课程已更新",
