@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
-import { ClipboardList, Loader2, Send, Check, CheckCircle2, Clock, ShoppingCart, UploadCloud, FileCheck } from "lucide-vue-next"
+import { ClipboardList, Loader2, Send, Check, CheckCircle2, CircleAlert, Clock, ShoppingCart, UploadCloud, FileCheck } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import PaymentSessionPanel from "@/components/PaymentSessionPanel.vue"
 import { apiClient } from "@/lib/apiClient"
@@ -568,7 +568,7 @@ async function nextFromStep1() {
   for (const stage of exemptionStages.value) {
     for (const unit of stage.units || []) {
       if (selectedExemptionUnitIds.value[unit.unit_id]) {
-        if (unit.exemption_quals?.[0]?.credential_status !== 'CREDENTIAL_STATUS_ACTIVE') {
+        if (!unit.qualified) {
           if (!exemptionDeclarations.value[unit.unit_id]) {
             toast.error(t.value.checkoutWizard?.declareEvidenceValidError || "请声明证据真实有效")
             return
@@ -583,6 +583,53 @@ async function nextFromStep1() {
 function formatMoney(amount?: number, currency = "usd") {
   if (typeof amount !== "number") return "-"
   return new Intl.NumberFormat(undefined, { style: "currency", currency: currency || "usd" }).format(amount / 100)
+}
+
+type ExemptionCredentialState = "active" | "expired" | "revoked" | "missing" | "unavailable"
+
+function exemptionCredentialState(unit: any): ExemptionCredentialState {
+  const qualifications = unit?.exemption_quals || []
+  if (unit?.qualified || qualifications.some((qual: any) =>
+    qual?.eligible || String(qual?.credential_status || "").toUpperCase() === "CREDENTIAL_STATUS_ACTIVE"
+  )) {
+    return "active"
+  }
+
+  const statuses = qualifications
+    .map((qual: any) => String(qual?.credential_status || "").trim().toUpperCase())
+    .filter(Boolean)
+  if (statuses.includes("CREDENTIAL_STATUS_EXPIRED")) return "expired"
+  if (statuses.includes("CREDENTIAL_STATUS_REVOKED")) return "revoked"
+  if (statuses.includes("CREDENTIAL_STATUS_UNSPECIFIED")) return "missing"
+  return "unavailable"
+}
+
+function exemptionCredentialLabel(unit: any) {
+  switch (exemptionCredentialState(unit)) {
+    case "active":
+      return t.value.checkoutWizard?.statusApproved || "Approved"
+    case "expired":
+      return t.value.checkoutWizard?.statusExpired || "Qualification expired"
+    case "revoked":
+      return t.value.checkoutWizard?.statusRevoked || "Qualification revoked"
+    case "missing":
+      return t.value.checkoutWizard?.statusMissing || "Qualification not held"
+    default:
+      return t.value.checkoutWizard?.statusUnavailable || "Qualification status unavailable"
+  }
+}
+
+function exemptionCredentialBadgeClass(unit: any) {
+  switch (exemptionCredentialState(unit)) {
+    case "active":
+      return "bg-emerald-100 text-emerald-800"
+    case "expired":
+      return "bg-amber-100 text-amber-800"
+    case "revoked":
+      return "bg-rose-100 text-rose-800"
+    default:
+      return "bg-slate-100 text-slate-700"
+  }
 }
 
 async function nextFromStep2() {
@@ -835,11 +882,11 @@ async function confirmAndPay() {
                       <h3 class="text-xl font-bold text-slate-800">{{ unit.unit_name || unit.unit_id }}</h3>
                       <p v-if="unit.exemption_quals?.[0]?.description" class="mt-2 text-sm text-slate-500">{{ unit.exemption_quals[0].description }}</p>
                       
-                      <div v-if="unit.exemption_quals?.[0]?.credential_status === 'CREDENTIAL_STATUS_ACTIVE'" class="mt-3 inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-800">
-                        <CheckCircle2 class="mr-1 h-3.5 w-3.5" /> {{ t.checkoutWizard?.statusApproved || "已通过" }}
-                      </div>
-                      <div v-else-if="unit.exemption_quals?.[0]?.credential_status" class="mt-3 inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
-                        <Clock class="mr-1 h-3.5 w-3.5" /> {{ t.checkoutWizard?.statusPending || "审核中" }}
+                      <div :class="['mt-3 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium', exemptionCredentialBadgeClass(unit)]">
+                        <CheckCircle2 v-if="exemptionCredentialState(unit) === 'active'" class="mr-1 h-3.5 w-3.5" />
+                        <Clock v-else-if="exemptionCredentialState(unit) === 'expired'" class="mr-1 h-3.5 w-3.5" />
+                        <CircleAlert v-else class="mr-1 h-3.5 w-3.5" />
+                        {{ exemptionCredentialLabel(unit) }}
                       </div>
                     </div>
                     
@@ -850,7 +897,7 @@ async function confirmAndPay() {
                             type="checkbox"
                             class="peer sr-only"
                             :checked="Boolean(selectedExemptionUnitIds[unit.unit_id])"
-                            :disabled="!unit.qualified || (unit.exemption_quals?.[0]?.credential_status && unit.exemption_quals?.[0]?.credential_status !== 'CREDENTIAL_STATUS_ACTIVE')"
+                            :disabled="!unit.qualified"
                             @change="onExemptionToggle(unit, $event)"
                           />
                           <div class="h-6 w-6 rounded-md border-2 border-slate-300 bg-white transition-all peer-checked:border-emerald-500 peer-checked:bg-emerald-500"></div>
@@ -860,7 +907,7 @@ async function confirmAndPay() {
                       </label>
                     </div>
                     
-                    <div v-if="selectedExemptionUnitIds[unit.unit_id] && unit.exemption_quals?.[0]?.credential_status !== 'CREDENTIAL_STATUS_ACTIVE'" class="mt-6 animate-in slide-in-from-top-2 fade-in duration-300">
+                    <div v-if="selectedExemptionUnitIds[unit.unit_id] && !unit.qualified" class="mt-6 animate-in slide-in-from-top-2 fade-in duration-300">
                       <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm">
                         <button
                           type="button"
