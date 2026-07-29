@@ -56,7 +56,7 @@ const dynamicPaymentPreview = computed(() => {
 
     // 1. Unlocks
     if (detail.unlocks) {
-      for (const [ulid, priceObj] of Object.entries(detail.unlocks)) {
+      for (const priceObj of Object.values(detail.unlocks)) {
         const p = priceObj as { amount: number, currency: string }
         total += p.amount
         subtotal += p.amount
