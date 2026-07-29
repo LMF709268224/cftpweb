@@ -78,9 +78,9 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 					r.Get("/{bundleId}", h.GetBundleDetail)
 					r.Get("/{bundleId}/thumbnail-url", h.GetBundleThumbnailURL)
 				})
+				r.Get("/courses/{courseId}", h.GetMallCourseSummary)
+				r.Get("/courses/{courseId}/thumbnail-url", h.GetMallCourseThumbnailURL)
 			})
-			r.Get("/mall/courses/{courseId}", h.GetMallCourseSummary)
-			r.Get("/mall/courses/{courseId}/thumbnail-url", h.GetMallCourseThumbnailURL)
 		})
 
 		// 严格鉴权组（必须登录）
