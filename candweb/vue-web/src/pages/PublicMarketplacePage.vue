@@ -103,7 +103,7 @@ async function fetchData() {
   loading.value = true
   loadError.value = false
   try {
-    const response = await apiClient("/api/public/mall/bundles", { suppressErrorToast: true })
+    const response = await apiClient("/api/mall/bundles", { suppressErrorToast: true })
     const bundles = Array.isArray(response?.bundles) ? response.bundles : []
     allCourses.value = bundles.map((bundle: any) => {
       const stages = Array.isArray(bundle?.stages) ? bundle.stages : []
