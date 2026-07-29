@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue"
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useRoute } from "vue-router"
 import { ChevronDown, Languages, Menu, X } from "lucide-vue-next"
+import { isAuthenticated } from "@/lib/authStorage"
 import { useTranslation } from "@/lib/language"
 import { gfiNavGroups, localize } from "@/lib/gfiSite"
 
@@ -16,6 +17,7 @@ const { lang, changeLanguage } = useTranslation()
 const openMenu = ref<number | null>(null)
 const languageOpen = ref(false)
 const mobileOpen = ref(false)
+const authenticated = ref(isAuthenticated())
 
 const logo = "/gfi/gfi-logo-blue.svg"
 const currentLanguage = computed(() => (lang.value === "zh" ? "CN" : "EN"))
@@ -35,9 +37,24 @@ function selectLanguage(next: "zh" | "en") {
   mobileOpen.value = false
 }
 
+function syncAuthentication() {
+  authenticated.value = isAuthenticated()
+}
+
+onMounted(() => {
+  window.addEventListener("storage", syncAuthentication)
+  window.addEventListener("focus", syncAuthentication)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener("storage", syncAuthentication)
+  window.removeEventListener("focus", syncAuthentication)
+})
+
 watch(
   () => route.fullPath,
   () => {
+    syncAuthentication()
     openMenu.value = null
     languageOpen.value = false
     mobileOpen.value = false
@@ -87,13 +104,18 @@ watch(
           </div>
         </div>
         <span />
-        <RouterLink :to="props.authTarget" :target="props.authNewTab ? '_blank' : undefined" :rel="props.authNewTab ? 'noopener noreferrer' : undefined">
-          {{ lang === "zh" ? "登录" : "Log In" }}
+        <RouterLink v-if="authenticated" to="/dashboard" class="gfi-console-link">
+          {{ lang === "zh" ? "控制台" : "Dashboard" }}
         </RouterLink>
-        <span />
-        <RouterLink :to="props.authTarget" :target="props.authNewTab ? '_blank' : undefined" :rel="props.authNewTab ? 'noopener noreferrer' : undefined">
-          {{ lang === "zh" ? "注册" : "Register" }}
-        </RouterLink>
+        <template v-else>
+          <RouterLink :to="props.authTarget" :target="props.authNewTab ? '_blank' : undefined" :rel="props.authNewTab ? 'noopener noreferrer' : undefined">
+            {{ lang === "zh" ? "登录" : "Log In" }}
+          </RouterLink>
+          <span />
+          <RouterLink :to="props.authTarget" :target="props.authNewTab ? '_blank' : undefined" :rel="props.authNewTab ? 'noopener noreferrer' : undefined">
+            {{ lang === "zh" ? "注册" : "Register" }}
+          </RouterLink>
+        </template>
       </div>
 
       <button class="gfi-menu-toggle" :aria-expanded="mobileOpen" :aria-label="mobileOpen ? 'Close menu' : 'Open menu'" @click="mobileOpen = !mobileOpen">
@@ -117,12 +139,12 @@ watch(
         <button :class="{ selected: lang === 'en' }" @click="selectLanguage('en')">English</button>
       </div>
       <RouterLink
-        :to="props.authTarget"
+        :to="authenticated ? '/dashboard' : props.authTarget"
         class="gfi-mobile-login"
-        :target="props.authNewTab ? '_blank' : undefined"
-        :rel="props.authNewTab ? 'noopener noreferrer' : undefined"
+        :target="!authenticated && props.authNewTab ? '_blank' : undefined"
+        :rel="!authenticated && props.authNewTab ? 'noopener noreferrer' : undefined"
       >
-        {{ lang === "zh" ? "登录 / 注册" : "Log In / Register" }}
+        {{ authenticated ? (lang === "zh" ? "控制台" : "Dashboard") : (lang === "zh" ? "登录 / 注册" : "Log In / Register") }}
       </RouterLink>
     </nav>
   </header>
@@ -151,6 +173,11 @@ watch(
 .gfi-header-actions { position: absolute; top: 0; right: 40px; display: flex; height: 94px; align-items: center; gap: 13px; font-size: 15px; white-space: nowrap; }
 .gfi-header-actions > span { width: 1px; height: 18px; background: rgba(255,255,255,.4); }
 .gfi-header--light .gfi-header-actions > span { background: #cbd2df; }
+.gfi-console-link { color:#9fc5ff; font-weight:600; transition:color .2s ease; }
+.gfi-console-link:hover { color:#fff; text-decoration:underline; text-underline-offset:4px; }
+.gfi-console-link:focus-visible { outline:2px solid #9fc5ff; outline-offset:5px; border-radius:2px; }
+.gfi-header--light .gfi-console-link { color:#2058b5; }
+.gfi-header--light .gfi-console-link:hover { color:#174796; }
 .gfi-language { position: relative; height: 100%; }
 .gfi-language > button { padding: 0; font-size: 15px; }
 .gfi-language svg:first-child { width: 16px; height: 16px; }
