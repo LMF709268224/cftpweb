@@ -2,7 +2,14 @@ import { createRouter, createWebHistory } from "vue-router"
 import { isAuthenticated, rememberPostLoginRedirect } from "@/lib/authStorage"
 import { useUser } from "@/lib/user"
 
-const HomePage = () => import("@/pages/HomePage.vue")
+const GfiLandingPage = () => import("@/pages/GfiLandingPage.vue")
+const GfiAboutPages = () => import("@/pages/GfiAboutPages.vue")
+const GfiOfficialAboutPage = () => import("@/pages/GfiOfficialAboutPage.vue")
+const GfiCertificationPage = () => import("@/pages/GfiCertificationPage.vue")
+const GfiEcosystemPage = () => import("@/pages/GfiEcosystemPage.vue")
+const GfiPublicationsPage = () => import("@/pages/GfiPublicationsPage.vue")
+const GfiEventsPage = () => import("@/pages/GfiEventsPage.vue")
+const GfiContentPage = () => import("@/pages/GfiContentPage.vue")
 const LoginPage = () => import("@/pages/LoginPage.vue")
 const CallbackPage = () => import("@/pages/CallbackPage.vue")
 const CoursesPage = () => import("@/pages/CoursesPage.vue")
@@ -81,7 +88,32 @@ export const router = createRouter({
     return { left: 0, top: 0 }
   },
   routes: [
-    { path: "/", component: HomePage, meta: { titleKey: "home", requiresAuth: true } },
+    { path: "/", redirect: "/gfi" },
+    { path: "/gfi", component: GfiLandingPage, meta: { titleKey: "gfiLanding" } },
+    { path: "/gfi/about", component: GfiAboutPages, meta: { titleKey: "gfiLanding" } },
+    { path: "/gfi/about/board-of-directors", component: GfiOfficialAboutPage, meta: { titleKey: "gfiLanding" } },
+    { path: "/gfi/about/team", component: GfiOfficialAboutPage, meta: { titleKey: "gfiLanding" } },
+    { path: "/gfi/subcommittees", component: GfiOfficialAboutPage, meta: { titleKey: "gfiLanding" } },
+    { path: "/gfi/industry-fellow", component: GfiOfficialAboutPage, meta: { titleKey: "gfiLanding" } },
+    { path: "/gfi/youth-wing", component: GfiOfficialAboutPage, meta: { titleKey: "gfiLanding" } },
+    { path: "/gfi/career", component: GfiOfficialAboutPage, meta: { titleKey: "gfiLanding" } },
+    { path: "/gfi/contact", component: GfiOfficialAboutPage, meta: { titleKey: "gfiLanding" } },
+    { path: "/gfi/certifications", component: GfiCertificationPage, meta: { titleKey: "gfiLanding" } },
+    { path: "/gfi/certifications/pathway", component: GfiCertificationPage, meta: { titleKey: "gfiLanding" } },
+    { path: "/gfi/programmes/cfta", component: GfiCertificationPage, meta: { titleKey: "gfiLanding" } },
+    { path: "/gfi/programmes/cftp", component: GfiCertificationPage, meta: { titleKey: "gfiLanding" } },
+    { path: "/gfi/programmes", component: GfiEcosystemPage, meta: { titleKey: "gfiLanding" } },
+    { path: "/gfi/partnerships", component: GfiEcosystemPage, meta: { titleKey: "gfiLanding" } },
+    { path: "/gfi/membership/benefits", component: GfiEcosystemPage, meta: { titleKey: "gfiLanding" } },
+    { path: "/gfi/membership/corporate", component: GfiEcosystemPage, meta: { titleKey: "gfiLanding" } },
+    { path: "/gfi/publications/reports", component: GfiPublicationsPage, meta: { titleKey: "gfiLanding" } },
+    { path: "/gfi/publications/insights", component: GfiPublicationsPage, meta: { titleKey: "gfiLanding" } },
+    { path: "/gfi/publications/news", component: GfiPublicationsPage, meta: { titleKey: "gfiLanding" } },
+    { path: "/gfi/publications/journals", component: GfiPublicationsPage, meta: { titleKey: "gfiLanding" } },
+    { path: "/gfi/events/all-events", component: GfiEventsPage, meta: { titleKey: "gfiLanding" } },
+    { path: "/gfi/events/webinar-recordings", component: GfiEventsPage, meta: { titleKey: "gfiLanding" } },
+    { path: "/gfi/events/conferences", component: GfiEventsPage, meta: { titleKey: "gfiLanding" } },
+    { path: "/gfi/:pathMatch(.*)+", component: GfiContentPage, meta: { titleKey: "gfiLanding" } },
     { path: "/login", component: LoginPage, meta: { titleKey: "login" } },
     { path: "/callback", component: CallbackPage, meta: { titleKey: "callback" } },
     { path: "/certifications", component: CoursesPage, meta: { titleKey: "marketplace", requiresAuth: true } },

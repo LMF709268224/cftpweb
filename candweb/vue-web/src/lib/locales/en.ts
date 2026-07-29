@@ -129,6 +129,7 @@ export const en: AppTranslations = {
     reload: "Reload",
   },
   pageTitles: {
+    gfiLanding: "Global Fintech Institute",
     home: "Member Dashboard",
     login: "Login",
     callback: "Login Callback",

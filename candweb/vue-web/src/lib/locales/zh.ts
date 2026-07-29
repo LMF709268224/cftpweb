@@ -127,6 +127,7 @@ export const zh = {
     reload: "重新加载",
   },
   pageTitles: {
+    gfiLanding: "全球金融科技学院",
     home: "首页",
     login: "登录",
     callback: "登录回调",
