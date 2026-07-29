@@ -705,6 +705,7 @@ export const en: AppTranslations = {
     qualificationPaymentTitle: "Qualification review payment",
     qualificationPaymentDesc: "After payment, you will return to this checkout page and the material upload section will open automatically.",
     declareEvidenceValidError: "Please declare your evidence is true and valid",
+    declarationText: "I declare my evidence is authentic and consent to verification with issuing bodies, referees and employers, and to audit.",
     reviewName: "Name:",
     reviewEmail: "Email:",
     reviewLocation: "Location:",

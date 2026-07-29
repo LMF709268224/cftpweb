@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from "vue"
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
 import { ClipboardList, Loader2, Send, Check, CheckCircle2, CircleAlert, Clock, ShoppingCart, UploadCloud } from "lucide-vue-next"
@@ -38,7 +38,8 @@ const qualificationUploadedFiles = ref<Record<string, Record<string, { name: str
 const qualificationUploadingKey = ref("")
 const qualificationSubmittingUnitId = ref("")
 const levelPlaceholder = "{" + "{level}}"
-
+const exemptionDeclarationChecked = ref(false)
+const isExemptionSelected = computed(() => Object.values(selectedExemptionUnitIds.value).some(Boolean))
 const isMultiStage = computed(() => {
   return (bundleData.value?.stages?.length || 0) > 1
 })
@@ -607,6 +608,43 @@ async function refreshQualificationApplications() {
   }))
   qualificationApplications.value = next
 }
+
+let pollingTimer: ReturnType<typeof setInterval> | null = null
+
+function checkPolling() {
+  const needsPolling = exemptionStages.value.some((stage: any) =>
+    (stage.units || []).some((unit: any) => exemptionCredentialState(unit) === "pending")
+  )
+
+  if (needsPolling && !pollingTimer && currentStep.value === 1) {
+    pollingTimer = setInterval(async () => {
+      if (currentStep.value !== 1) {
+        stopPolling()
+        return
+      }
+      try {
+        await loadPurchaseReadyBundleInfo()
+      } catch (e) {
+        // ignore polling errors
+      }
+    }, 5000)
+  } else if (!needsPolling && pollingTimer) {
+    stopPolling()
+  }
+}
+
+function stopPolling() {
+  if (pollingTimer) {
+    clearInterval(pollingTimer)
+    pollingTimer = null
+  }
+}
+
+onUnmounted(() => {
+  stopPolling()
+})
+
+watch([qualificationApplications, currentStep], checkPolling, { deep: true })
 
 function qualificationDefinitionId(definition: any) {
   return String(definition?.cred_def_id || definition?.cred_def_ulid || "").trim()
@@ -1405,8 +1443,24 @@ async function confirmAndPay() {
                   </div>
                 </div>
               </div>
-              
-              <div v-if="bundleData" class="mt-8 flex flex-col items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 p-6 sm:flex-row shadow-sm">
+              <div v-if="isExemptionSelected" class="mt-8 rounded-xl border border-blue-200 bg-blue-50/50 p-5 transition-all">
+                <label class="flex cursor-pointer items-start gap-3">
+                  <div class="relative mt-0.5 flex shrink-0 items-center justify-center">
+                    <input
+                      v-model="exemptionDeclarationChecked"
+                      type="checkbox"
+                      class="peer sr-only"
+                    />
+                    <div class="h-5 w-5 rounded border border-slate-300 bg-white transition-all peer-checked:border-emerald-500 peer-checked:bg-emerald-500"></div>
+                    <Check class="pointer-events-none absolute h-3.5 w-3.5 text-white opacity-0 transition-opacity peer-checked:opacity-100" />
+                  </div>
+                  <span class="text-sm font-medium leading-relaxed text-slate-700">
+                    {{ t.checkoutWizard.declarationText }}
+                  </span>
+                </label>
+              </div>
+
+              <div v-if="bundleData" class="mt-6 flex flex-col items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 p-6 shadow-sm sm:flex-row">
                 <div class="text-lg font-bold text-slate-900">
                   <template v-if="paymentPreview">
                     {{ t.checkoutWizard.baseTotal }} {{ formatMoney(paymentPreview.total, paymentPreview.currency) }}
@@ -1414,7 +1468,7 @@ async function confirmAndPay() {
                 </div>
                 <button
                   class="btn rounded-full bg-emerald-600 px-8 py-3 text-white shadow-md hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
-                  :disabled="hasExpandedQualificationEditors || Boolean(qualificationSubmittingUnitId)"
+                  :disabled="hasExpandedQualificationEditors || Boolean(qualificationSubmittingUnitId) || (isExemptionSelected && !exemptionDeclarationChecked)"
                   @click="nextFromStep1"
                 >
                   {{ t.checkoutWizard.saveAndContinue }}
