@@ -315,28 +315,28 @@ function firstFilled(...values: unknown[]) {
   return ""
 }
 
-function fillOnlyWhenEmpty(current: unknown, next: unknown) {
-  const currentValue = firstFilled(current)
-  return currentValue || firstFilled(next)
+function takeFormValue(current: unknown, formValue: unknown) {
+  const fv = firstFilled(formValue)
+  return fv || firstFilled(current)
 }
 
 function buildProfilePayload(current: any) {
   const currentAddress = normalizeAddress(current.address_text, current.address)
   return {
     display_name: firstFilled(current.display_name),
-    email: fillOnlyWhenEmpty(current.email, formData.email),
-    first_name: fillOnlyWhenEmpty(current.first_name, formData.first_name),
-    last_name: fillOnlyWhenEmpty(current.last_name, formData.last_name),
+    email: takeFormValue(current.email, formData.email),
+    first_name: takeFormValue(current.first_name, formData.first_name),
+    last_name: takeFormValue(current.last_name, formData.last_name),
     home_phone: current.home_phone || current.phone || "",
-    phone_country_code: fillOnlyWhenEmpty(current.phone_country_code, formData.phone_country_code),
-    phone: fillOnlyWhenEmpty(current.phone, formData.phone),
-    gender: fillOnlyWhenEmpty(current.gender, formData.gender),
-    birthday: fillOnlyWhenEmpty(normalizeDate(current.birthday), formData.birthdate),
-    country: fillOnlyWhenEmpty(current.country || current.region, formData.country),
-    province: fillOnlyWhenEmpty(current.province, formData.province),
-    city: fillOnlyWhenEmpty(current.city || current.location, formData.city),
-    address: fillOnlyWhenEmpty(currentAddress, formData.address),
-    postal_code: fillOnlyWhenEmpty(current.postal_code, formData.postal_code),
+    phone_country_code: takeFormValue(current.phone_country_code, formData.phone_country_code),
+    phone: takeFormValue(current.phone, formData.phone),
+    gender: takeFormValue(current.gender, formData.gender),
+    birthday: takeFormValue(normalizeDate(current.birthday), formData.birthdate),
+    country: takeFormValue(current.country || current.region, formData.country),
+    province: takeFormValue(current.province, formData.province),
+    city: takeFormValue(current.city || current.location, formData.city),
+    address: takeFormValue(currentAddress, formData.address),
+    postal_code: takeFormValue(current.postal_code, formData.postal_code),
     affiliation: current.affiliation || "",
     title: current.title || "",
     real_name: current.real_name || "",
