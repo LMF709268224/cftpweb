@@ -4,6 +4,7 @@ import { useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
 import { ArrowLeft, ArrowRight, ClipboardList, Loader2, Send, Check, CheckCircle2, CircleAlert, Clock, UploadCloud } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
+import LoadingState from "@/components/LoadingState.vue"
 import PaymentSessionPanel from "@/components/PaymentSessionPanel.vue"
 import { ApiClientError, apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
@@ -117,37 +118,47 @@ const dynamicPaymentPreview = computed(() => {
   }
 })
 
-function unitSavings(unitId: string) {
-  if (!pricingDetail.value) return 0
-  
+const unitPriceDisplay = computed<Record<string, { accessAmount?: number, exemptionAmount?: number, currency: string }>>(() => {
+  if (!pricingDetail.value) return {}
+
   try {
     const detail = typeof pricingDetail.value === "string" ? JSON.parse(pricingDetail.value) : pricingDetail.value
-    let accessPrice = 0
-    let qualReviewPrice = 0
-    
-    if (Array.isArray(detail.units)) {
-      const u = detail.units.find((u: any) => u.unit_id === unitId)
-      if (u && u.access) {
-        accessPrice = u.access.amount || 0
-      }
-    }
-    
-    const unitData = exemptionStages.value.flatMap((s: any) => s.units || []).find((x: any) => x.unit_id === unitId)
-    if (unitData && Array.isArray(unitData.exemption_quals)) {
-      for (const q of unitData.exemption_quals) {
-        const qualId = String(q.qual_id || "").trim()
-        const qualReview = Array.isArray(detail.qual_reviews) ? detail.qual_reviews.find((qr: any) => qr.qual_id === qualId) : null
-        if (qualReview && qualReview.price) {
-          qualReviewPrice += qualReview.price.amount || 0
+    const display: Record<string, { accessAmount?: number, exemptionAmount?: number, currency: string }> = {}
+
+    for (const stage of exemptionStages.value) {
+      for (const unit of stage.units || []) {
+        const pricingUnit = Array.isArray(detail.units)
+          ? detail.units.find((item: any) => item.unit_id === unit.unit_id)
+          : null
+        let exemptionAmount = 0
+        let hasExemptionAmount = false
+        let currency = pricingUnit?.access?.currency || "USD"
+
+        for (const qualification of unit.exemption_quals || []) {
+          const qualificationId = String(qualification.qual_id || "").trim()
+          const review = Array.isArray(detail.qual_reviews)
+            ? detail.qual_reviews.find((item: any) => item.qual_id === qualificationId)
+            : null
+          if (typeof review?.price?.amount === "number") {
+            exemptionAmount += review.price.amount
+            hasExemptionAmount = true
+            currency = review.price.currency || currency
+          }
+        }
+
+        display[unit.unit_id] = {
+          accessAmount: typeof pricingUnit?.access?.amount === "number" ? pricingUnit.access.amount : undefined,
+          exemptionAmount: hasExemptionAmount ? exemptionAmount : undefined,
+          currency,
         }
       }
     }
-    
-    return accessPrice - qualReviewPrice
+
+    return display
   } catch {
-    return 0
+    return {}
   }
-}
+})
 
 const isMultiStage = computed(() => {
   return (bundleData.value?.stages?.length || 0) > 1
@@ -163,6 +174,7 @@ const isMembershipBundle = computed(() => {
 })
 
 const loading = ref(false)
+const initialLoading = ref(true)
 const pipelineId = computed(() =>
   String(bundleData.value?.pipeline_id || bundleData.value?.pipeline_cc_ulid || "").trim()
 )
@@ -613,7 +625,10 @@ async function loadPurchaseReadyBundleInfo() {
 }
 
 async function fetchBundleInfo() {
-  if (!bundleId) return
+  if (!bundleId) {
+    initialLoading.value = false
+    return
+  }
   loading.value = true
   try {
     await loadPurchaseReadyBundleInfo()
@@ -624,6 +639,7 @@ async function fetchBundleInfo() {
       : t.value.common.error)
   } finally {
     loading.value = false
+    initialLoading.value = false
   }
 }
 
@@ -1421,6 +1437,15 @@ async function confirmAndPay() {
           </div>
         </div>
         
+        <LoadingState
+          v-if="initialLoading"
+          class="checkout-loading-state"
+          :label="t.common.loading"
+          variant="section"
+          :rows="4"
+        />
+
+        <template v-else>
         <div class="checkout-card max-w-5xl rounded-[16px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
           <!-- Step 1: Selection -->
           <div v-if="currentStep === 1" class="checkout-step-one space-y-8">
@@ -1458,7 +1483,7 @@ async function confirmAndPay() {
                     </div>
                     
                     <div class="checkout-unit-footer mt-auto pt-4 flex items-center justify-between border-t border-slate-100">
-                      <label class="flex cursor-pointer items-center gap-3">
+                      <label class="checkout-unit-option cursor-pointer">
                         <div class="relative flex items-center justify-center">
                           <input
                             type="checkbox"
@@ -1471,12 +1496,21 @@ async function confirmAndPay() {
                           <Loader2 v-if="credentialApplicationLoadingUnitId === unit.unit_id" class="pointer-events-none absolute h-4 w-4 animate-spin text-blue-600" />
                           <Check v-else class="pointer-events-none absolute h-4 w-4 text-white opacity-0 transition-opacity peer-checked:opacity-100" />
                         </div>
-                        <span class="checkout-unit-action flex items-center gap-2 font-medium text-slate-700">
-                          <span>{{ unit.qualified ? t.checkoutWizard.applyForExemption : qualificationActionLabel(unit) }}</span>
-                          <span v-if="unit.qualified && unitSavings(unit.unit_id) > 0" class="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-600">
-                            -{{ formatMoney(unitSavings(unit.unit_id), dynamicPaymentPreview?.currency || 'USD') }}
-                          </span>
+                        <span class="checkout-unit-action font-medium text-slate-700">
+                          {{ unit.qualified ? t.checkoutWizard.applyForExemption : qualificationActionLabel(unit) }}
                         </span>
+                        <span
+                          v-if="selectedExemptionUnitIds[unit.unit_id] && (unitPriceDisplay[unit.unit_id]?.exemptionAmount !== undefined || unitPriceDisplay[unit.unit_id]?.accessAmount !== undefined)"
+                          class="checkout-unit-selected-price"
+                        >
+                          {{ formatMoney(unitPriceDisplay[unit.unit_id]?.exemptionAmount ?? unitPriceDisplay[unit.unit_id]?.accessAmount, unitPriceDisplay[unit.unit_id]?.currency) }}
+                        </span>
+                        <strong
+                          v-else-if="unitPriceDisplay[unit.unit_id]?.accessAmount !== undefined"
+                          class="checkout-unit-default-price"
+                        >
+                          {{ formatMoney(unitPriceDisplay[unit.unit_id]?.accessAmount, unitPriceDisplay[unit.unit_id]?.currency) }}
+                        </strong>
                       </label>
                     </div>
 
@@ -1594,25 +1628,18 @@ async function confirmAndPay() {
                 </label>
               </div>
 
-              <div v-if="bundleData" class="checkout-step-actions mt-6 flex flex-col items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 p-6 shadow-sm sm:flex-row">
+              <div v-if="bundleData" class="checkout-step-actions mt-6 flex items-center justify-end">
                 <div class="checkout-total text-lg font-bold text-slate-900">
                   <template v-if="dynamicPaymentPreview">
                     {{ t.checkoutWizard.baseTotal }} {{ formatMoney(dynamicPaymentPreview.total, dynamicPaymentPreview.currency) }}
                   </template>
                 </div>
-                <button
-                  class="checkout-next-button btn rounded-full bg-emerald-600 px-8 py-3 text-white shadow-md hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
-                  :disabled="hasExpandedQualificationEditors || Boolean(qualificationSubmittingUnitId) || (isExemptionSelected && !exemptionDeclarationChecked)"
-                  @click="nextFromStep1"
-                >
-                  {{ t.checkoutWizard.saveAndContinue }}
-                </button>
               </div>
             </div>
           </div>
 
           <!-- Step 2: Registration -->
-          <form v-if="currentStep === 2" class="space-y-6" novalidate @submit.prevent="nextFromStep2">
+          <form id="checkout-registration-form" v-if="currentStep === 2" class="space-y-6" novalidate @submit.prevent="nextFromStep2">
             <div class="grid gap-4 sm:grid-cols-2">
               <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formFirstName }}</span><input v-model="formData.first_name" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" required /></label>
               <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formLastName }}</span><input v-model="formData.last_name" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" required /></label>
@@ -1685,17 +1712,6 @@ async function confirmAndPay() {
               </label>
             </div>
 
-            <div class="checkout-form-actions flex items-center justify-between border-t pt-6 mt-6">
-              <button type="button" class="checkout-back-button btn btn-outline" @click="currentStep = 1" v-if="exemptionStages.length > 0">
-                <ArrowLeft class="h-4 w-4" />
-                {{ t.checkoutWizard.back }}
-              </button>
-              <div v-else></div>
-              <button type="submit" class="checkout-form-next-button btn bg-emerald-600 text-white hover:bg-emerald-700 rounded-full px-8" :disabled="loading">
-                <template v-if="loading"><Loader2 class="h-4 w-4 animate-spin" /> {{ t.examSignup.submitting }}</template>
-                <template v-else>{{ t.checkoutWizard.next }} <Send class="ml-2 h-4 w-4" /></template>
-              </button>
-            </div>
           </form>
 
           <!-- Step 3: Review -->
@@ -1753,16 +1769,6 @@ async function confirmAndPay() {
               </div>
             </div>
 
-            <div class="checkout-review-actions flex justify-between pt-4">
-              <button type="button" class="checkout-back-button btn btn-outline" @click="currentStep = 2" :disabled="loading">
-                <ArrowLeft class="h-4 w-4" />
-                {{ t.checkoutWizard.back }}
-              </button>
-              <button class="checkout-form-next-button btn btn-primary" :disabled="loading" @click="confirmAndPay">
-                <template v-if="loading"><Loader2 class="h-4 w-4 animate-spin" /> {{ t.checkoutWizard.processing }}</template>
-                <template v-else>{{ t.checkoutWizard.confirmAndPay }} <ArrowRight class="h-4 w-4" /></template>
-              </button>
-            </div>
           </div>
 
           <!-- Step 4: Payment -->
@@ -1789,6 +1795,42 @@ async function confirmAndPay() {
             />
           </div>
         </div>
+
+        <div
+          v-if="currentStep === 1 && exemptionStages.length > 0 && bundleData"
+          class="checkout-step-footer"
+        >
+          <button
+            class="checkout-next-button btn rounded-full px-8 py-3 text-white disabled:cursor-not-allowed disabled:opacity-50"
+            :disabled="hasExpandedQualificationEditors || Boolean(qualificationSubmittingUnitId) || (isExemptionSelected && !exemptionDeclarationChecked)"
+            @click="nextFromStep1"
+          >
+            {{ t.checkoutWizard.saveAndContinue }}
+          </button>
+        </div>
+
+        <div v-else-if="currentStep === 2" class="checkout-step-footer checkout-form-actions flex items-center">
+          <button v-if="exemptionStages.length > 0" type="button" class="checkout-back-button btn btn-outline" @click="currentStep = 1">
+            <ArrowLeft class="h-4 w-4" />
+            {{ t.checkoutWizard.back }}
+          </button>
+          <button form="checkout-registration-form" type="submit" class="checkout-form-next-button btn rounded-full px-8 text-white" :disabled="loading">
+            <template v-if="loading"><Loader2 class="h-4 w-4 animate-spin" /> {{ t.examSignup.submitting }}</template>
+            <template v-else>{{ t.checkoutWizard.next }} <Send class="ml-2 h-4 w-4" /></template>
+          </button>
+        </div>
+
+        <div v-else-if="currentStep === 3" class="checkout-step-footer checkout-review-actions flex items-center">
+          <button type="button" class="checkout-back-button btn btn-outline" @click="currentStep = 2" :disabled="loading">
+            <ArrowLeft class="h-4 w-4" />
+            {{ t.checkoutWizard.back }}
+          </button>
+          <button class="checkout-form-next-button btn btn-primary" :disabled="loading" @click="confirmAndPay">
+            <template v-if="loading"><Loader2 class="h-4 w-4 animate-spin" /> {{ t.checkoutWizard.processing }}</template>
+            <template v-else>{{ t.checkoutWizard.confirmAndPay }} <ArrowRight class="h-4 w-4" /></template>
+          </button>
+        </div>
+        </template>
       </main>
     </div>
   </AppShell>
@@ -1807,9 +1849,15 @@ async function confirmAndPay() {
 }
 
 .checkout-heading,
-.checkout-card {
+.checkout-card,
+.checkout-loading-state,
+.checkout-step-footer {
   width: 100%;
   max-width: none;
+}
+
+.checkout-loading-state {
+  min-height: 320px;
 }
 
 .checkout-heading {
@@ -1943,19 +1991,23 @@ async function confirmAndPay() {
 }
 
 .checkout-unit-description {
-  display: -webkit-box;
-  margin-top: 4px;
-  overflow: hidden;
-  font-size: 12px;
-  line-height: 1.45;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  display: none;
 }
 
 .checkout-unit-badge {
   margin-top: 7px;
   padding: 2px 9px;
+  border-color: transparent;
   font-size: 11px;
+}
+
+.checkout-unit-badge.bg-emerald-100 {
+  color: #9a6500;
+  background: #fff3d8;
+}
+
+.checkout-unit-badge.bg-emerald-100 svg {
+  display: none;
 }
 
 .checkout-unit-footer {
@@ -1963,8 +2015,12 @@ async function confirmAndPay() {
   border-top: 0;
 }
 
-.checkout-unit-footer label {
-  gap: 8px;
+.checkout-unit-option {
+  display: grid;
+  align-items: center;
+  grid-template-columns: 17px minmax(0, 1fr);
+  column-gap: 8px;
+  row-gap: 6px;
 }
 
 .checkout-unit-checkbox {
@@ -1984,6 +2040,28 @@ async function confirmAndPay() {
   font-size: 13px;
 }
 
+.checkout-unit-default-price,
+.checkout-unit-selected-price {
+  grid-column: 1 / -1;
+  width: fit-content;
+  line-height: 1.35;
+}
+
+.checkout-unit-default-price {
+  color: #0b2347;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.checkout-unit-selected-price {
+  padding: 3px 11px;
+  border-radius: 999px;
+  color: #078653;
+  background: #e2f5eb;
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .checkout-declaration {
   margin-top: 16px;
   padding: 14px 16px;
@@ -1997,8 +2075,9 @@ async function confirmAndPay() {
 
 .checkout-step-actions {
   margin-top: 20px;
-  padding: 0;
+  padding: 13px 0 0;
   border: 0;
+  border-top: 2px solid #102f59;
   border-radius: 0;
   background: transparent;
   box-shadow: none;
@@ -2008,10 +2087,19 @@ async function confirmAndPay() {
   display: none;
 }
 
+.checkout-total {
+  color: #0b2347;
+  font-size: 18px;
+  line-height: 1.4;
+}
+
+.checkout-step-footer {
+  margin-top: 18px;
+}
+
 .checkout-next-button {
   min-width: 136px;
   min-height: 44px;
-  order: -1;
   padding: 10px 24px;
   background: #0d4c83;
   box-shadow: none;
@@ -2095,7 +2183,7 @@ async function confirmAndPay() {
   }
 
   .checkout-step-actions {
-    align-items: stretch;
+    justify-content: flex-start;
   }
 
   .checkout-form-actions,
@@ -2110,7 +2198,7 @@ async function confirmAndPay() {
   }
 
   .checkout-next-button {
-    width: 100%;
+    width: auto;
   }
 }
 </style>

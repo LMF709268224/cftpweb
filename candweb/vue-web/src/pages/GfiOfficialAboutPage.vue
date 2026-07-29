@@ -95,14 +95,44 @@ onBeforeUnmount(() => revealObserver?.disconnect())
       <section class="page-title patterned"><div data-reveal><h1>{{ l(peoplePage.title) }}</h1><nav><RouterLink to="/gfi">Home</RouterLink><i>/</i><RouterLink to="/gfi">Cn</RouterLink><i>/</i><RouterLink to="/gfi/about">About</RouterLink><i>/</i><b>{{ peoplePage.title.en }}</b></nav></div></section>
       <section class="overlap-intro container" data-reveal><img src="https://globalfintechinstitute.org/assets/gfi-about-1.BPJKq5hL_1NRqCB.webp" :alt="l(peoplePage.introTitle)"><div><h2>{{ l(peoplePage.introTitle) }}</h2><p>{{ l(peoplePage.intro) }}</p></div></section>
       <section class="people-section"><div class="container"><header data-reveal><span>{{ l(peoplePage.eyebrow) }}</span><h2>{{ l(peoplePage.membersTitle) }}</h2></header><article v-for="person in peoplePage.members" :key="person.name" class="person-row" data-reveal><img :src="person.image" :alt="person.name"><div><h3>{{ person.name }}</h3><strong>{{ person.role.en }}</strong><p :class="{ clamped: !expandedPeople.includes(person.name) }">{{ person.bio.en }}</p><button @click="togglePerson(person.name)">{{ expandedPeople.includes(person.name) ? "Read less" : "Read more" }} <ChevronDown :class="{ rotated: expandedPeople.includes(person.name) }" /></button></div></article></div></section>
-      <section class="round-cta" data-reveal><div class="container"><div><h2>{{ lang === "zh" ? "从治理到集体领导" : "From Governance to Collective Leadership" }}</h2><p>{{ lang === "zh" ? "除了董事会，GFI的工作还通过其委员会和理事会推进——这些由实践者领导的团体贡献专业知识，指导标准，并在教育、政策和行业参与方面塑造项目。" : "Beyond the Board, GFI's work advances through committees and councils led by practitioners." }}</p><RouterLink to="/gfi/subcommittees">{{ lang === "zh" ? "探索小组委员会" : "Explore SubCommittees" }} <ArrowUpRight /></RouterLink></div><span></span></div></section>
+      <section class="round-cta" :class="{ 'portrait-cta': pageKey === 'about/board-of-directors' }" data-reveal>
+        <div class="container">
+          <div>
+            <h2>{{ lang === "zh" ? "从治理到集体领导" : "From Governance to Collective Leadership" }}</h2>
+            <p>{{ lang === "zh" ? "除了董事会，GFI的工作还通过其委员会和理事会推进——这些由实践者领导的团体贡献专业知识，指导标准，并在教育、政策和行业参与方面塑造项目。" : "Beyond the Board, GFI's work advances through committees and councils led by practitioners." }}</p>
+            <RouterLink v-if="pageKey === 'about/board-of-directors'" class="portrait-cta-link" to="/gfi/subcommittees">
+              <span>{{ lang === "zh" ? "探索小组委员会" : "Explore SubCommittees" }}</span>
+              <i><ArrowUpRight /></i>
+            </RouterLink>
+            <RouterLink v-else to="/gfi/subcommittees">{{ lang === "zh" ? "探索小组委员会" : "Explore SubCommittees" }} <ArrowUpRight /></RouterLink>
+          </div>
+          <div v-if="pageKey === 'about/board-of-directors'" class="portrait-cta-visual">
+            <img src="https://globalfintechinstitute.org/assets/image.Aw2I5NvI_1JP4zj.webp" alt="">
+          </div>
+          <span v-else></span>
+        </div>
+      </section>
     </main>
 
     <main v-else-if="pageKey === 'subcommittees'">
       <section class="page-title patterned"><div data-reveal><h1>{{ lang === "zh" ? "子委员会" : "SubCommittees" }}</h1><nav><RouterLink to="/gfi">Home</RouterLink><i>/</i><RouterLink to="/gfi">Cn</RouterLink><i>/</i><b>Subcommittees</b></nav></div></section>
       <section class="overlap-intro container" data-reveal><img src="https://globalfintechinstitute.org/assets/gfi-about-1.BPJKq5hL_1NRqCB.webp" alt="GFI"><div><h2>{{ lang === "zh" ? "支持GFI使命的专业专长" : "Specialist Expertise Supporting GFI's Mission" }}</h2><p>{{ lang === "zh" ? "GFI子委员会是在GFI委员会下设立的特定领域工作组，旨在解决金融科技生态系统中新兴、复杂和高影响力的领域。它们汇聚高级从业者和主题专家，以开发见解、指导项目发展并支持知情的行业对话。在GFI的治理框架内运作，子委员会将战略方向转化为与不断发展的技术和监管现实相一致的专注、应用性工作。" : "GFI SubCommittees are domain-specific working groups established to address emerging, complex and high-impact areas across the fintech ecosystem." }}</p></div></section>
       <section class="committee-section"><div class="container"><header data-reveal><span>{{ lang === "zh" ? "子委员会" : "SubCommittees" }}</span><h2>{{ lang === "zh" ? "GFI子委员会" : "GFI SubCommittees" }}</h2></header><div class="committee-grid"><article data-reveal><b>01</b><h3>{{ lang === "zh" ? "新兴技术融合（人工智能、区块链与量子计算）" : "Emerging Technology Convergence (AI, Blockchain & Quantum Computing)" }}</h3><p>{{ lang === "zh" ? "本子委员会探讨人工智能、区块链和量子计算等先进技术如何融合以重塑金融服务。重点关注治理、风险、安全与监管考量，支持金融科技生态系统内的知情采用与负责任创新。" : "This SubCommittee explores how advanced technologies converge to reshape financial services." }}</p><a href="https://globalfintechinstitute.org/cn/subcommittees/convergence-emerging-technologies/" target="_blank" rel="noopener noreferrer">{{ lang === "zh" ? "了解更多" : "Learn more" }} <ArrowUpRight /></a></article><article data-reveal><b>02</b><h3>{{ lang === "zh" ? "数字资产安全与合规子委员会" : "Digital Assets Security & Compliance SubCommittee" }}</h3><p>{{ lang === "zh" ? "本子委员会致力于加强数字资产生态系统的安全性、合规性与运营韧性。它涵盖托管、基础设施风险、监管预期与治理等关键议题，为在复杂且高度监管环境中运营的机构提供支持。" : "This SubCommittee strengthens security, compliance and operational resilience across digital asset ecosystems." }}</p><a href="https://globalfintechinstitute.org/cn/subcommittees/digital-assets-security-compliance/" target="_blank" rel="noopener noreferrer">{{ lang === "zh" ? "了解更多" : "Learn more" }} <ArrowUpRight /></a></article></div></div></section>
-      <section class="round-cta" data-reveal><div class="container"><div><h2>{{ lang === "zh" ? "有兴趣参与？" : "Interested in Contributing?" }}</h2><p>{{ lang === "zh" ? "若您希望探讨贡献专业能力的机会，欢迎与我们联系或进一步了解我们的治理机构。" : "Contact us to explore opportunities to contribute your expertise." }}</p><RouterLink to="/gfi/contact">{{ lang === "zh" ? "联系我们" : "Contact Us" }} <ArrowUpRight /></RouterLink></div><span></span></div></section>
+      <section class="round-cta portrait-cta" data-reveal>
+        <div class="container">
+          <div>
+            <h2>{{ lang === "zh" ? "有兴趣参与？" : "Interested in Contributing?" }}</h2>
+            <p>{{ lang === "zh" ? "若您希望探讨贡献专业能力的机会，欢迎与我们联系或进一步了解我们的治理机构。" : "Contact us to explore opportunities to contribute your expertise." }}</p>
+            <RouterLink class="portrait-cta-link" to="/gfi/contact">
+              <span>{{ lang === "zh" ? "联系我们" : "Contact Us" }}</span>
+              <i><ArrowUpRight /></i>
+            </RouterLink>
+          </div>
+          <div class="portrait-cta-visual">
+            <img src="https://globalfintechinstitute.org/assets/image.Aw2I5NvI_1JP4zj.webp" alt="">
+          </div>
+        </div>
+      </section>
     </main>
 
     <main v-else-if="pageKey === 'industry-fellow'">
@@ -183,6 +213,16 @@ h1,h2,h3 { color:#101c3a; font-weight:500; }
 .round-cta h2 { margin:0 0 16px; font-size:36px; }
 .round-cta p { margin:0; line-height:1.75; }
 .round-cta .container > span { position:absolute; right:40px; bottom:-250px; width:480px; height:480px; border-radius:50%; background:#4c79ee; }
+.portrait-cta { min-height:565px; }
+.portrait-cta .container { display:grid; min-height:565px; grid-template-columns:minmax(0,1fr) minmax(440px,1fr); gap:56px; }
+.portrait-cta .container > div:first-child { max-width:720px; }
+.portrait-cta .portrait-cta-visual { position:relative; z-index:0; width:100%; max-width:none; min-height:565px; align-self:stretch; }
+.portrait-cta-visual::before { content:""; position:absolute; bottom:-250px; left:50%; width:574px; height:574px; border-radius:50%; background:#4c79ee; opacity:.8; transform:translateX(-50%); }
+.portrait-cta-visual img { position:absolute; right:50%; bottom:0; z-index:1; display:block; width:min(456px,100%); height:auto; transform:translateX(50%); }
+.round-cta .portrait-cta-link { display:inline-flex; margin-top:30px; align-items:center; gap:0; color:#2864ff; }
+.portrait-cta-link > span { display:inline-flex; height:48px; padding:0 28px; align-items:center; justify-content:center; border:1px solid #2864ff; border-radius:999px; background:#fff; }
+.portrait-cta-link > i { display:inline-flex; width:48px; height:48px; margin-left:-2px; align-items:center; justify-content:center; border-radius:50%; background:#2864ff; font-style:normal; }
+.round-cta .portrait-cta-link > i svg { width:15px; height:15px; color:#fff; }
 .committee-section { padding:105px 0; background:#fff; }
 .committee-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
 .committee-grid article { display:flex; min-height:370px; flex-direction:column; padding:44px; border:1px solid #dce2ec; background:#fff; }
@@ -306,6 +346,9 @@ h1,h2,h3 { color:#101c3a; font-weight:500; }
 
 @media (max-width:900px) {
   .container { width:calc(100% - 40px); }
+  .portrait-cta .container { grid-template-columns:minmax(0,1fr) minmax(360px,.9fr); gap:24px; }
+  .portrait-cta-visual::before { width:500px; height:500px; }
+  .portrait-cta-visual img { width:min(420px,100%); }
   .program-layout,.youth-benefits .container,.cfta-section .container { grid-template-columns:1fr; }
   .overlap-intro > div { left:50px; width:calc(100% - 100px); }
   .committee-grid,.youth-grid { grid-template-columns:1fr; }
@@ -316,6 +359,11 @@ h1,h2,h3 { color:#101c3a; font-weight:500; }
 }
 @media (max-width:650px) {
   .container { width:calc(100% - 32px); }
+  .portrait-cta { min-height:0; padding-top:70px; }
+  .portrait-cta .container { min-height:0; grid-template-columns:1fr; gap:30px; }
+  .portrait-cta .portrait-cta-visual { min-height:430px; }
+  .portrait-cta-visual::before { display:none; }
+  .portrait-cta-visual img { width:min(400px,100%); }
   .page-title { min-height:260px; }
   .page-title h1,.career-title h1 { font-size:34px; }
   .page-title nav { gap:11px; padding:0 14px; font-size:11px; }
