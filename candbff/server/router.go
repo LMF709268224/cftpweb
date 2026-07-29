@@ -56,46 +56,62 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 
 	r.Route("/api", func(r chi.Router) {
 		r.Use(normalTimeout)
-		r.Use(s.authMiddleware)
 
-		r.Route("/user", func(r chi.Router) {
-			r.Get("/me", h.GetUserMe)
-			r.Put("/profile", h.UpdateUserProfile)
-			r.Post("/profile/email/send-code", h.SendEmailCode)
-			r.Put("/profile/email", h.UpdateUserEmail)
-			r.Put("/password", h.UpdateUserPassword)
+		// 弹性鉴权组（允许未登录访问，但若登录会注入用户信息）
+		r.Group(func(r chi.Router) {
+			r.Use(s.optionalAuthMiddleware)
+
+			r.Route("/membership", func(r chi.Router) {
+				r.Get("/plans", h.ListMembershipPlans)
+			})
+
+			r.Route("/mall", func(r chi.Router) {
+				r.Route("/pipelines", func(r chi.Router) {
+					r.Get("/", h.ListPipelines)
+					r.Get("/{pipelineId}", h.GetPipelineDetail)
+					r.Get("/{pipelineId}/thumbnail-url", h.GetMallPipelineThumbnailURL)
+					r.Get("/{pipelineId}/runtime", h.GetPipelineRuntime)
+					r.Get("/{pipelineId}/timeline", h.GetPipelineTimeline)
+				})
+				r.Route("/bundles", func(r chi.Router) {
+					r.Get("/", h.ListBundles)
+					r.Get("/{bundleId}", h.GetBundleDetail)
+					r.Get("/{bundleId}/thumbnail-url", h.GetBundleThumbnailURL)
+				})
+			})
+			r.Get("/mall/courses/{courseId}", h.GetMallCourseSummary)
+			r.Get("/mall/courses/{courseId}/thumbnail-url", h.GetMallCourseThumbnailURL)
 		})
 
-		r.Route("/membership", func(r chi.Router) {
-			r.Get("/plans", h.ListMembershipPlans)
-			r.Get("/active", h.GetActiveMembership)
-			r.Get("/history", h.ListUserMemberships)
-			r.Get("/billings", h.ListMembershipBillings)
-			r.Post("/cancel", h.CancelMembership)
-		})
+		// 严格鉴权组（必须登录）
+		r.Group(func(r chi.Router) {
+			r.Use(s.authMiddleware)
 
-		r.Route("/mall", func(r chi.Router) {
-			r.Route("/pipelines", func(r chi.Router) {
-				r.Get("/", h.ListPipelines)
-				r.Get("/{pipelineId}", h.GetPipelineDetail)
-				r.Get("/{pipelineId}/thumbnail-url", h.GetMallPipelineThumbnailURL)
-				r.Get("/{pipelineId}/runtime", h.GetPipelineRuntime)
-				r.Get("/{pipelineId}/timeline", h.GetPipelineTimeline)
+			r.Route("/user", func(r chi.Router) {
+				r.Get("/me", h.GetUserMe)
+				r.Put("/profile", h.UpdateUserProfile)
+				r.Post("/profile/email/send-code", h.SendEmailCode)
+				r.Put("/profile/email", h.UpdateUserEmail)
+				r.Put("/password", h.UpdateUserPassword)
 			})
-			r.Route("/bundles", func(r chi.Router) {
-				r.Get("/", h.ListBundles)
-				r.Get("/{bundleId}", h.GetBundleDetail)
-				r.Get("/{bundleId}/thumbnail-url", h.GetBundleThumbnailURL)
-				r.Post("/{bundleId}/purchase", h.CreateBundleOrder)
-				r.Post("/{bundleId}/unlock", h.UnlockPipelineInBundle)
+
+			r.Route("/membership", func(r chi.Router) {
+				r.Get("/active", h.GetActiveMembership)
+				r.Get("/history", h.ListUserMemberships)
+				r.Get("/billings", h.ListMembershipBillings)
+				r.Post("/cancel", h.CancelMembership)
 			})
-			r.Route("/payments", func(r chi.Router) {
-				r.Post("/preview", h.PreviewPayment)
-				r.Post("/initiate", h.InitiatePayment)
+
+			r.Route("/mall", func(r chi.Router) {
+				r.Route("/bundles", func(r chi.Router) {
+					r.Post("/{bundleId}/purchase", h.CreateBundleOrder)
+					r.Post("/{bundleId}/unlock", h.UnlockPipelineInBundle)
+				})
+				r.Route("/payments", func(r chi.Router) {
+					r.Post("/preview", h.PreviewPayment)
+					r.Post("/initiate", h.InitiatePayment)
+				})
 			})
-		})
-		r.Get("/mall/courses/{courseId}", h.GetMallCourseSummary)
-		r.Get("/mall/courses/{courseId}/thumbnail-url", h.GetMallCourseThumbnailURL)
 
 		r.Route("/pipeline", func(r chi.Router) {
 			r.Get("/", h.ListMyPipelines)
@@ -199,6 +215,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 		})
 
 		r.Post("/telemetry", h.ReportTelemetry)
+		}) // 结束严格鉴权组
 	})
 
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {

@@ -144,3 +144,63 @@ func (s *Server) authMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
+
+// optionalAuthMiddleware 尝试验证 Casdoor JWT 并将用户信息注入 context，如果缺失或无效则跳过，不阻断请求。
+func (s *Server) optionalAuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tokenStr, err := handler.ReadAccessTokenCookie(r)
+		if err != nil || tokenStr == "" {
+			// 后退策略：从 Header 读取
+			authHeader := r.Header.Get("Authorization")
+			if authHeader != "" {
+				tokenStr = strings.TrimPrefix(authHeader, "Bearer ")
+				if tokenStr == authHeader {
+					tokenStr = ""
+				}
+			}
+		}
+
+		if tokenStr == "" {
+			// 没有提供 token，直接放行（无身份信息）
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		// 使用 Casdoor SDK 验证 JWT 签名和有效期
+		claims, err := casdoorsdk.ParseJwtToken(tokenStr)
+		if err != nil {
+			slog.Debug("optionalAuthMiddleware: invalid token, continuing as guest", "path", r.URL.Path, "error", err)
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		casdoorCfg := s.config.SecretConfig.Casdoor
+		if !handler.IsExpectedCasdoorApplication(tokenStr, claims, casdoorCfg.ClientID, casdoorCfg.AppName) {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		if !handler.IsCftpStudent(&claims.User) {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		// 调用 gmid 服务进行 UID 解析
+		resp, err := s.grpcPool.Gmid.GetUlidByUUID(r.Context(), &gmidpb.GetUlidByUUIDRequest{
+			UserUuid: claims.User.Id,
+		})
+
+		if err != nil {
+			slog.Debug("optionalAuthMiddleware: gmid resolution failed, continuing as guest", "casdoor_user_id", claims.User.Id)
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		candidateID := resp.UserUlid
+		
+		// 注入 context
+		ctx := handler.WithCandidate(r.Context(), candidateID, claims.Email, claims.Name, tokenStr)
+
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
