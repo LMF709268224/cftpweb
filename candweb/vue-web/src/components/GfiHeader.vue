@@ -46,7 +46,7 @@ watch(
 <template>
   <header class="gfi-header" :class="`gfi-header--${theme}`">
     <div class="gfi-header-inner">
-      <RouterLink to="/gfi" class="gfi-brand" aria-label="Global Fintech Institute">
+      <RouterLink to="/" class="gfi-brand" aria-label="Global Fintech Institute">
         <img :src="logo" alt="Global Fintech Institute" />
       </RouterLink>
 

@@ -88,8 +88,8 @@ export const router = createRouter({
     return { left: 0, top: 0 }
   },
   routes: [
-    { path: "/", redirect: "/gfi" },
-    { path: "/gfi", component: GfiLandingPage, meta: { titleKey: "gfiLanding" } },
+    { path: "/", component: GfiLandingPage, meta: { titleKey: "gfiLanding" } },
+    { path: "/gfi", redirect: "/" },
     { path: "/gfi/about", component: GfiAboutPages, meta: { titleKey: "gfiLanding" } },
     { path: "/gfi/about/board-of-directors", component: GfiOfficialAboutPage, meta: { titleKey: "gfiLanding" } },
     { path: "/gfi/about/team", component: GfiOfficialAboutPage, meta: { titleKey: "gfiLanding" } },
