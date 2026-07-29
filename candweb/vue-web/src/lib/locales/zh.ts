@@ -704,6 +704,7 @@ export const zh = {
     qualificationPaymentTitle: "支付资格审核费",
     qualificationPaymentDesc: "完成支付后将返回当前结账页，并自动展开资格材料上传区域。",
     declareEvidenceValidError: "请声明证据真实有效",
+    declarationText: "我声明我的证据真实有效，并同意向签发机构、推荐人和雇主进行核实，并接受审计。",
     reviewName: "姓名：",
     reviewEmail: "邮箱：",
     reviewLocation: "所在地：",

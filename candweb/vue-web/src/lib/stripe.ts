@@ -1,4 +1,4 @@
-type StripeFactory = (publishableKey: string) => any
+type StripeFactory = (publishableKey: string, options?: any) => any
 
 declare global {
   interface Window {

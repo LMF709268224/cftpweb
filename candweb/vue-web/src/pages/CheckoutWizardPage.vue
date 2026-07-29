@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from "vue"
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
 import { ClipboardList, Loader2, Send, Check, CheckCircle2, CircleAlert, Clock, ShoppingCart, UploadCloud } from "lucide-vue-next"
@@ -38,7 +38,8 @@ const qualificationUploadedFiles = ref<Record<string, Record<string, { name: str
 const qualificationUploadingKey = ref("")
 const qualificationSubmittingUnitId = ref("")
 const levelPlaceholder = "{" + "{level}}"
-
+const exemptionDeclarationChecked = ref(false)
+const isExemptionSelected = computed(() => Object.values(selectedExemptionUnitIds.value).some(Boolean))
 const isMultiStage = computed(() => {
   return (bundleData.value?.stages?.length || 0) > 1
 })
@@ -315,28 +316,28 @@ function firstFilled(...values: unknown[]) {
   return ""
 }
 
-function fillOnlyWhenEmpty(current: unknown, next: unknown) {
-  const currentValue = firstFilled(current)
-  return currentValue || firstFilled(next)
+function takeFormValue(current: unknown, formValue: unknown) {
+  const fv = firstFilled(formValue)
+  return fv || firstFilled(current)
 }
 
 function buildProfilePayload(current: any) {
   const currentAddress = normalizeAddress(current.address_text, current.address)
   return {
     display_name: firstFilled(current.display_name),
-    email: fillOnlyWhenEmpty(current.email, formData.email),
-    first_name: fillOnlyWhenEmpty(current.first_name, formData.first_name),
-    last_name: fillOnlyWhenEmpty(current.last_name, formData.last_name),
+    email: takeFormValue(current.email, formData.email),
+    first_name: takeFormValue(current.first_name, formData.first_name),
+    last_name: takeFormValue(current.last_name, formData.last_name),
     home_phone: current.home_phone || current.phone || "",
-    phone_country_code: fillOnlyWhenEmpty(current.phone_country_code, formData.phone_country_code),
-    phone: fillOnlyWhenEmpty(current.phone, formData.phone),
-    gender: fillOnlyWhenEmpty(current.gender, formData.gender),
-    birthday: fillOnlyWhenEmpty(normalizeDate(current.birthday), formData.birthdate),
-    country: fillOnlyWhenEmpty(current.country || current.region, formData.country),
-    province: fillOnlyWhenEmpty(current.province, formData.province),
-    city: fillOnlyWhenEmpty(current.city || current.location, formData.city),
-    address: fillOnlyWhenEmpty(currentAddress, formData.address),
-    postal_code: fillOnlyWhenEmpty(current.postal_code, formData.postal_code),
+    phone_country_code: takeFormValue(current.phone_country_code, formData.phone_country_code),
+    phone: takeFormValue(current.phone, formData.phone),
+    gender: takeFormValue(current.gender, formData.gender),
+    birthday: takeFormValue(normalizeDate(current.birthday), formData.birthdate),
+    country: takeFormValue(current.country || current.region, formData.country),
+    province: takeFormValue(current.province, formData.province),
+    city: takeFormValue(current.city || current.location, formData.city),
+    address: takeFormValue(currentAddress, formData.address),
+    postal_code: takeFormValue(current.postal_code, formData.postal_code),
     affiliation: current.affiliation || "",
     title: current.title || "",
     real_name: current.real_name || "",
@@ -558,6 +559,19 @@ function qualificationIdsForUnit(unit: any) {
     .filter(Boolean)
 }
 
+function qualificationOrderQualIds(primaryQualId: string) {
+  const allQualIds = Array.from(new Set(
+    exemptionStages.value
+      .flatMap((stage: any) => stage.units || [])
+      .filter((unit: any) => !unit?.qualified)
+      .flatMap((unit: any) => qualificationIdsForUnit(unit)),
+  ))
+  return [
+    primaryQualId,
+    ...allQualIds.filter((qualId) => qualId !== primaryQualId),
+  ].filter(Boolean)
+}
+
 function qualificationApplicationForUnit(unit: any) {
   const applications = qualificationIdsForUnit(unit)
     .map((qualId: string) => qualificationApplications.value[qualId])
@@ -594,6 +608,43 @@ async function refreshQualificationApplications() {
   }))
   qualificationApplications.value = next
 }
+
+let pollingTimer: ReturnType<typeof setInterval> | null = null
+
+function checkPolling() {
+  const needsPolling = exemptionStages.value.some((stage: any) =>
+    (stage.units || []).some((unit: any) => exemptionCredentialState(unit) === "pending")
+  )
+
+  if (needsPolling && !pollingTimer && currentStep.value === 1) {
+    pollingTimer = setInterval(async () => {
+      if (currentStep.value !== 1) {
+        stopPolling()
+        return
+      }
+      try {
+        await loadPurchaseReadyBundleInfo()
+      } catch (e) {
+        // ignore polling errors
+      }
+    }, 5000)
+  } else if (!needsPolling && pollingTimer) {
+    stopPolling()
+  }
+}
+
+function stopPolling() {
+  if (pollingTimer) {
+    clearInterval(pollingTimer)
+    pollingTimer = null
+  }
+}
+
+onUnmounted(() => {
+  stopPolling()
+})
+
+watch([qualificationApplications, currentStep], checkPolling, { deep: true })
 
 function qualificationDefinitionId(definition: any) {
   return String(definition?.cred_def_id || definition?.cred_def_ulid || "").trim()
@@ -846,7 +897,8 @@ function isCredentialApplicationResolvedStatus(status: unknown) {
 
 async function startQualificationApplication(unit: any) {
   const qualId = qualificationIdsForUnit(unit)[0] || ""
-  if (!unit?.unit_id || !qualId || !pipelineId.value || !bundleId) {
+  const orderQualIds = qualificationOrderQualIds(qualId)
+  if (!unit?.unit_id || !qualId || orderQualIds.length === 0 || !pipelineId.value || !bundleId) {
     toast.error(t.value.checkoutWizard.qualificationApplicationFailed)
     return
   }
@@ -882,7 +934,7 @@ async function startQualificationApplication(unit: any) {
         body: JSON.stringify({
           pipeline_cc_ulid: pipelineId.value,
           bundle_ulid: bundleId,
-          qual_ulids: [qualId],
+          qual_ulids: orderQualIds,
         }),
       })
     } catch (error) {
@@ -917,7 +969,7 @@ async function startQualificationApplication(unit: any) {
       if (!orderId) {
         throw new Error(t.value.checkoutWizard.qualificationApplicationFailed)
       }
-      activeCredentialQualIds.value = [qualId]
+      activeCredentialQualIds.value = orderQualIds
       activeCredentialUnitId.value = unit.unit_id
       activeOrderAction.value = "credential_application"
       activeOrderId.value = orderId
@@ -1391,8 +1443,24 @@ async function confirmAndPay() {
                   </div>
                 </div>
               </div>
-              
-              <div v-if="bundleData" class="mt-8 flex flex-col items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 p-6 sm:flex-row shadow-sm">
+              <div v-if="isExemptionSelected" class="mt-8 rounded-xl border border-blue-200 bg-blue-50/50 p-5 transition-all">
+                <label class="flex cursor-pointer items-start gap-3">
+                  <div class="relative mt-0.5 flex shrink-0 items-center justify-center">
+                    <input
+                      v-model="exemptionDeclarationChecked"
+                      type="checkbox"
+                      class="peer sr-only"
+                    />
+                    <div class="h-5 w-5 rounded border border-slate-300 bg-white transition-all peer-checked:border-emerald-500 peer-checked:bg-emerald-500"></div>
+                    <Check class="pointer-events-none absolute h-3.5 w-3.5 text-white opacity-0 transition-opacity peer-checked:opacity-100" />
+                  </div>
+                  <span class="text-sm font-medium leading-relaxed text-slate-700">
+                    {{ t.checkoutWizard.declarationText }}
+                  </span>
+                </label>
+              </div>
+
+              <div v-if="bundleData" class="mt-6 flex flex-col items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 p-6 shadow-sm sm:flex-row">
                 <div class="text-lg font-bold text-slate-900">
                   <template v-if="paymentPreview">
                     {{ t.checkoutWizard.baseTotal }} {{ formatMoney(paymentPreview.total, paymentPreview.currency) }}
@@ -1400,7 +1468,7 @@ async function confirmAndPay() {
                 </div>
                 <button
                   class="btn rounded-full bg-emerald-600 px-8 py-3 text-white shadow-md hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
-                  :disabled="hasExpandedQualificationEditors || Boolean(qualificationSubmittingUnitId)"
+                  :disabled="hasExpandedQualificationEditors || Boolean(qualificationSubmittingUnitId) || (isExemptionSelected && !exemptionDeclarationChecked)"
                   @click="nextFromStep1"
                 >
                   {{ t.checkoutWizard.saveAndContinue }}

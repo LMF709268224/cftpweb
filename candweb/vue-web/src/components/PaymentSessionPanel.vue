@@ -31,7 +31,7 @@ const emit = defineEmits<{
   complete: []
 }>()
 
-const { t } = useTranslation()
+const { t, lang } = useTranslation()
 const status = ref<"loading" | "redirecting" | "embedded" | "error">("loading")
 const errorMessage = ref("")
 const checkoutUrl = ref("")
@@ -121,7 +121,7 @@ async function mountStripeCheckout(secret: string) {
     if (!pk) throw new Error("Missing Stripe publishable key")
 
     await nextTick()
-    const stripe = stripeFactory(pk)
+    const stripe = stripeFactory(pk, { locale: lang.value === "zh" ? "zh" : "en" })
     const checkout = await stripe.initEmbeddedCheckout({
       fetchClientSecret: async () => secret,
       onComplete: handleCheckoutComplete,
