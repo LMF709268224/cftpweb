@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
-import { ClipboardList, Loader2, Send, Check, CheckCircle2, CircleAlert, Clock, ShoppingCart, UploadCloud } from "lucide-vue-next"
+import { ArrowLeft, ArrowRight, ClipboardList, Loader2, Send, Check, CheckCircle2, CircleAlert, Clock, UploadCloud } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import PaymentSessionPanel from "@/components/PaymentSessionPanel.vue"
 import { ApiClientError, apiClient } from "@/lib/apiClient"
@@ -1273,38 +1273,50 @@ async function confirmAndPay() {
 
 <template>
   <AppShell content-class="p-0">
-    <div class="page-panel">
+    <div class="checkout-page page-panel">
       <header class="flex h-16 items-center border-b border-border bg-white px-5">
         <ClipboardList class="mr-4 h-4 w-4 text-slate-700" />
         <span class="text-sm font-medium text-foreground">{{ t.checkoutWizard.checkoutTitle }}</span>
       </header>
 
-      <main class="px-5 py-8 md:px-8 lg:px-10">
-        <div class="mb-8 max-w-2xl">
+      <main class="checkout-content px-5 py-8 md:px-8 lg:px-10">
+        <div class="checkout-heading mb-8 max-w-5xl">
           <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.checkoutWizard.checkoutTitle }}</h1>
-          <div class="mt-4 flex gap-4 text-sm">
-            <span :class="currentStep === 1 ? 'font-bold text-primary' : 'text-muted-foreground'">{{ t.checkoutWizard.step1 }}</span>
-            <span :class="currentStep === 2 ? 'font-bold text-primary' : 'text-muted-foreground'">{{ t.checkoutWizard.step2 }}</span>
-            <span :class="currentStep === 3 ? 'font-bold text-primary' : 'text-muted-foreground'">{{ t.checkoutWizard.step3 }}</span>
-            <span :class="currentStep === 4 ? 'font-bold text-primary' : 'text-muted-foreground'">{{ t.checkoutWizard.step4 }}</span>
+          <div class="checkout-progress" aria-label="Checkout progress">
+            <div class="checkout-progress-step" :class="{ active: currentStep === 1 }" :aria-current="currentStep === 1 ? 'step' : undefined">
+              <span class="checkout-progress-node">1</span>
+              <span class="checkout-progress-label">{{ t.checkoutWizard.step1.replace(/^\d+\s*/, "") }}</span>
+            </div>
+            <div class="checkout-progress-step" :class="{ active: currentStep === 2 }" :aria-current="currentStep === 2 ? 'step' : undefined">
+              <span class="checkout-progress-node">2</span>
+              <span class="checkout-progress-label">{{ t.checkoutWizard.step2.replace(/^\d+\s*/, "") }}</span>
+            </div>
+            <div class="checkout-progress-step" :class="{ active: currentStep === 3 }" :aria-current="currentStep === 3 ? 'step' : undefined">
+              <span class="checkout-progress-node">3</span>
+              <span class="checkout-progress-label">{{ t.checkoutWizard.step3.replace(/^\d+\s*/, "") }}</span>
+            </div>
+            <div class="checkout-progress-step" :class="{ active: currentStep === 4 }" :aria-current="currentStep === 4 ? 'step' : undefined">
+              <span class="checkout-progress-node">4</span>
+              <span class="checkout-progress-label">{{ t.checkoutWizard.step4.replace(/^\d+\s*/, "") }}</span>
+            </div>
           </div>
         </div>
         
-        <div class="max-w-2xl rounded-[16px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+        <div class="checkout-card max-w-5xl rounded-[16px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
           <!-- Step 1: Selection -->
-          <div v-if="currentStep === 1" class="space-y-8">
-            <div class="mb-4">
+          <div v-if="currentStep === 1" class="checkout-step-one space-y-8">
+            <div class="checkout-step-one-title mb-4">
               <h2 class="text-2xl font-bold">{{ t.checkoutWizard.yourLevel1Paper.replace(levelPlaceholder, "1") }}</h2>
             </div>
             
-            <div v-if="exemptionStages.length > 0" class="space-y-6">
-              <div v-for="stage in exemptionStages" :key="stage.stage_id || stage.index" class="space-y-6">
-                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div v-if="exemptionStages.length > 0" class="checkout-stage-list space-y-6">
+              <div v-for="stage in exemptionStages" :key="stage.stage_id || stage.index" class="checkout-stage space-y-6">
+                <div class="checkout-unit-grid grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div
                     v-for="unit in stage.units"
                     :key="unit.unit_id"
                     :class="[
-                      'group relative flex flex-col justify-between overflow-hidden rounded-2xl border p-5 transition-all duration-300',
+                      'checkout-unit-card group relative flex flex-col justify-between overflow-hidden rounded-2xl border p-5 transition-all duration-300',
                       isQualificationEditorExpanded(unit.unit_id) ? 'md:col-span-2' : '',
                       selectedExemptionUnitIds[unit.unit_id]
                         ? 'border-emerald-400 bg-emerald-50/40 shadow-md ring-1 ring-emerald-400'
@@ -1313,12 +1325,12 @@ async function confirmAndPay() {
                           : 'cursor-pointer border-border bg-slate-50/70 hover:border-blue-200 hover:shadow-sm',
                     ]"
                   >
-                    <div class="mb-4">
-                      <div class="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{{ unit.unit_id }}</div>
-                      <h3 class="text-xl font-bold text-slate-800">{{ unit.unit_name || unit.unit_id }}</h3>
-                      <p v-if="unit.exemption_quals?.[0]?.description" class="mt-2 text-sm text-slate-500">{{ unit.exemption_quals[0].description }}</p>
+                    <div class="checkout-unit-main mb-4">
+                      <div class="checkout-unit-id mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{{ unit.unit_id }}</div>
+                      <h3 class="checkout-unit-title text-xl font-bold text-slate-800">{{ unit.unit_name || unit.unit_id }}</h3>
+                      <p v-if="unit.exemption_quals?.[0]?.description" class="checkout-unit-description mt-2 text-sm text-slate-500">{{ unit.exemption_quals[0].description }}</p>
                       
-                      <div :class="['mt-3 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium', exemptionCredentialBadgeClass(unit)]">
+                      <div :class="['checkout-unit-badge mt-3 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium', exemptionCredentialBadgeClass(unit)]">
                         <CheckCircle2 v-if="exemptionCredentialState(unit) === 'active'" class="mr-1 h-3.5 w-3.5" />
                         <Clock v-else-if="['pending', 'expired'].includes(exemptionCredentialState(unit))" class="mr-1 h-3.5 w-3.5" />
                         <CircleAlert v-else class="mr-1 h-3.5 w-3.5" />
@@ -1326,7 +1338,7 @@ async function confirmAndPay() {
                       </div>
                     </div>
                     
-                    <div class="mt-auto pt-4 flex items-center justify-between border-t border-slate-100">
+                    <div class="checkout-unit-footer mt-auto pt-4 flex items-center justify-between border-t border-slate-100">
                       <label class="flex cursor-pointer items-center gap-3">
                         <div class="relative flex items-center justify-center">
                           <input
@@ -1336,11 +1348,11 @@ async function confirmAndPay() {
                             :disabled="credentialApplicationLoadingUnitId === unit.unit_id || (!unit.qualified && exemptionCredentialState(unit) === 'pending')"
                             @change="onExemptionToggle(unit, $event)"
                           />
-                          <div class="h-6 w-6 rounded-md border-2 border-slate-300 bg-white transition-all peer-checked:border-emerald-500 peer-checked:bg-emerald-500"></div>
+                          <div class="checkout-unit-checkbox h-6 w-6 rounded-md border-2 border-slate-300 bg-white transition-all peer-checked:border-emerald-500 peer-checked:bg-emerald-500"></div>
                           <Loader2 v-if="credentialApplicationLoadingUnitId === unit.unit_id" class="pointer-events-none absolute h-4 w-4 animate-spin text-blue-600" />
                           <Check v-else class="pointer-events-none absolute h-4 w-4 text-white opacity-0 transition-opacity peer-checked:opacity-100" />
                         </div>
-                        <span class="font-medium text-slate-700">
+                        <span class="checkout-unit-action font-medium text-slate-700">
                           {{ unit.qualified ? t.checkoutWizard.applyForExemption : qualificationActionLabel(unit) }}
                         </span>
                       </label>
@@ -1443,7 +1455,7 @@ async function confirmAndPay() {
                   </div>
                 </div>
               </div>
-              <div v-if="isExemptionSelected" class="mt-8 rounded-xl border border-blue-200 bg-blue-50/50 p-5 transition-all">
+              <div v-if="isExemptionSelected" class="checkout-declaration mt-8 rounded-xl border border-blue-200 bg-blue-50/50 p-5 transition-all">
                 <label class="flex cursor-pointer items-start gap-3">
                   <div class="relative mt-0.5 flex shrink-0 items-center justify-center">
                     <input
@@ -1460,14 +1472,14 @@ async function confirmAndPay() {
                 </label>
               </div>
 
-              <div v-if="bundleData" class="mt-6 flex flex-col items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 p-6 shadow-sm sm:flex-row">
-                <div class="text-lg font-bold text-slate-900">
+              <div v-if="bundleData" class="checkout-step-actions mt-6 flex flex-col items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 p-6 shadow-sm sm:flex-row">
+                <div class="checkout-total text-lg font-bold text-slate-900">
                   <template v-if="paymentPreview">
                     {{ t.checkoutWizard.baseTotal }} {{ formatMoney(paymentPreview.total, paymentPreview.currency) }}
                   </template>
                 </div>
                 <button
-                  class="btn rounded-full bg-emerald-600 px-8 py-3 text-white shadow-md hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  class="checkout-next-button btn rounded-full bg-emerald-600 px-8 py-3 text-white shadow-md hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
                   :disabled="hasExpandedQualificationEditors || Boolean(qualificationSubmittingUnitId) || (isExemptionSelected && !exemptionDeclarationChecked)"
                   @click="nextFromStep1"
                 >
@@ -1551,10 +1563,13 @@ async function confirmAndPay() {
               </label>
             </div>
 
-            <div class="flex items-center justify-between border-t pt-6 mt-6">
-              <button type="button" class="btn btn-outline" @click="currentStep = 1" v-if="exemptionStages.length > 0">{{ t.checkoutWizard.back }}</button>
+            <div class="checkout-form-actions flex items-center justify-between border-t pt-6 mt-6">
+              <button type="button" class="checkout-back-button btn btn-outline" @click="currentStep = 1" v-if="exemptionStages.length > 0">
+                <ArrowLeft class="h-4 w-4" />
+                {{ t.checkoutWizard.back }}
+              </button>
               <div v-else></div>
-              <button type="submit" class="btn bg-emerald-600 text-white hover:bg-emerald-700 rounded-full px-8" :disabled="loading">
+              <button type="submit" class="checkout-form-next-button btn bg-emerald-600 text-white hover:bg-emerald-700 rounded-full px-8" :disabled="loading">
                 <template v-if="loading"><Loader2 class="h-4 w-4 animate-spin" /> {{ t.examSignup.submitting }}</template>
                 <template v-else>{{ t.checkoutWizard.next }} <Send class="ml-2 h-4 w-4" /></template>
               </button>
@@ -1616,11 +1631,14 @@ async function confirmAndPay() {
               </div>
             </div>
 
-            <div class="flex justify-between pt-4">
-              <button type="button" class="btn btn-outline" @click="currentStep = 2" :disabled="loading">{{ t.checkoutWizard.back }}</button>
-              <button class="btn btn-primary" :disabled="loading" @click="confirmAndPay">
+            <div class="checkout-review-actions flex justify-between pt-4">
+              <button type="button" class="checkout-back-button btn btn-outline" @click="currentStep = 2" :disabled="loading">
+                <ArrowLeft class="h-4 w-4" />
+                {{ t.checkoutWizard.back }}
+              </button>
+              <button class="checkout-form-next-button btn btn-primary" :disabled="loading" @click="confirmAndPay">
                 <template v-if="loading"><Loader2 class="h-4 w-4 animate-spin" /> {{ t.checkoutWizard.processing }}</template>
-                <template v-else>{{ t.checkoutWizard.confirmAndPay }} <ShoppingCart class="ml-2 h-4 w-4" /></template>
+                <template v-else>{{ t.checkoutWizard.confirmAndPay }} <ArrowRight class="h-4 w-4" /></template>
               </button>
             </div>
           </div>
@@ -1653,3 +1671,324 @@ async function confirmAndPay() {
     </div>
   </AppShell>
 </template>
+
+<style scoped>
+.checkout-page {
+  background-color: #f2f6fc !important;
+}
+
+.checkout-content {
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 24px 32px 64px !important;
+}
+
+.checkout-heading,
+.checkout-card {
+  width: 100%;
+  max-width: none;
+}
+
+.checkout-heading {
+  margin-bottom: 18px;
+}
+
+.checkout-heading h1 {
+  font-size: 28px;
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+
+.checkout-progress {
+  display: grid;
+  width: min(460px, 100%);
+  margin: 18px auto 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.checkout-progress-step {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  flex-direction: column;
+  gap: 7px;
+  color: #52617a;
+}
+
+.checkout-progress-step:not(:last-child)::after {
+  position: absolute;
+  z-index: 0;
+  top: 14px;
+  left: calc(50% + 19px);
+  width: calc(100% - 38px);
+  border-top: 2px dotted #cbd8e9;
+  content: "";
+}
+
+.checkout-progress-node {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #52617a;
+  background: #e4ebf5;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.checkout-progress-label {
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.checkout-progress-step.active {
+  color: #0d3f72;
+}
+
+.checkout-progress-step.active .checkout-progress-node {
+  color: #fff;
+  background: #104d84;
+}
+
+.checkout-card {
+  padding: 26px;
+  border: 1px solid #d5e0ef;
+  border-radius: 14px;
+  box-shadow: none;
+}
+
+.checkout-step-one > :not([hidden]) ~ :not([hidden]),
+.checkout-stage-list > :not([hidden]) ~ :not([hidden]),
+.checkout-stage > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 18px;
+}
+
+.checkout-step-one-title {
+  margin-bottom: 0;
+}
+
+.checkout-step-one-title h2 {
+  color: #0b2347;
+  font-size: 20px;
+  line-height: 1.35;
+}
+
+.checkout-unit-grid {
+  gap: 12px;
+}
+
+.checkout-unit-card {
+  min-height: 132px;
+  padding: 14px;
+  border-color: #cfdaea;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: none;
+}
+
+.checkout-unit-card:hover {
+  border-color: #9eb5d3;
+  box-shadow: none;
+}
+
+.checkout-unit-card.ring-1 {
+  border-color: #cfdaea;
+  background: #fff;
+  box-shadow: none;
+}
+
+.checkout-unit-main {
+  margin-bottom: 7px;
+}
+
+.checkout-unit-id {
+  display: none;
+}
+
+.checkout-unit-title {
+  color: #0b2347;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.checkout-unit-description {
+  display: -webkit-box;
+  margin-top: 4px;
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.checkout-unit-badge {
+  margin-top: 7px;
+  padding: 2px 9px;
+  font-size: 11px;
+}
+
+.checkout-unit-footer {
+  padding-top: 5px;
+  border-top: 0;
+}
+
+.checkout-unit-footer label {
+  gap: 8px;
+}
+
+.checkout-unit-checkbox {
+  width: 17px;
+  height: 17px;
+  border-width: 1px;
+  border-radius: 3px;
+}
+
+.checkout-unit-footer input.peer:checked + .checkout-unit-checkbox {
+  border-color: #2d6cdf;
+  background: #2d6cdf;
+}
+
+.checkout-unit-action {
+  color: #243b60;
+  font-size: 13px;
+}
+
+.checkout-declaration {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 8px;
+}
+
+.checkout-declaration input.peer:checked + div {
+  border-color: #2d6cdf;
+  background: #2d6cdf;
+}
+
+.checkout-step-actions {
+  margin-top: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.checkout-total:empty {
+  display: none;
+}
+
+.checkout-next-button {
+  min-width: 136px;
+  min-height: 44px;
+  order: -1;
+  padding: 10px 24px;
+  background: #0d4c83;
+  box-shadow: none;
+}
+
+.checkout-next-button:hover {
+  background: #083b68;
+}
+
+.checkout-form-actions {
+  margin-top: 22px;
+  padding-top: 0;
+  justify-content: flex-start;
+  gap: 10px;
+  border-top: 0;
+}
+
+.checkout-review-actions {
+  margin-top: 22px;
+  padding-top: 0;
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+.checkout-back-button,
+.checkout-form-next-button {
+  min-height: 44px;
+  padding: 10px 24px;
+  border-radius: 999px;
+  box-shadow: none;
+  font-weight: 600;
+}
+
+.checkout-back-button {
+  min-width: 96px;
+  border-color: #0d4c83;
+  color: #0d4c83;
+  background: #fff;
+}
+
+.checkout-back-button:hover {
+  border-color: #083b68;
+  color: #083b68;
+  background: #f3f7fc;
+}
+
+.checkout-form-next-button {
+  min-width: 136px;
+  background: #0d4c83;
+}
+
+.checkout-form-next-button:hover {
+  background: #083b68;
+}
+
+@media (max-width: 767px) {
+  .checkout-content {
+    padding: 20px 16px 48px !important;
+  }
+
+  .checkout-card {
+    padding: 18px;
+  }
+
+  .checkout-heading h1 {
+    font-size: 25px;
+  }
+
+  .checkout-progress {
+    width: 100%;
+    margin-top: 16px;
+  }
+
+  .checkout-progress-step:not(:last-child)::after {
+    left: calc(50% + 17px);
+    width: calc(100% - 34px);
+  }
+
+  .checkout-progress-label {
+    font-size: 11px;
+  }
+
+  .checkout-step-actions {
+    align-items: stretch;
+  }
+
+  .checkout-form-actions,
+  .checkout-review-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .checkout-back-button,
+  .checkout-form-next-button {
+    width: 100%;
+  }
+
+  .checkout-next-button {
+    width: 100%;
+  }
+}
+</style>
