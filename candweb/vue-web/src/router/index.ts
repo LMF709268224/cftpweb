@@ -13,6 +13,7 @@ const GfiContentPage = () => import("@/pages/GfiContentPage.vue")
 const PublicMarketplacePage = () => import("@/pages/PublicMarketplacePage.vue")
 const LoginPage = () => import("@/pages/LoginPage.vue")
 const CallbackPage = () => import("@/pages/CallbackPage.vue")
+const HomePage = () => import("@/pages/HomePage.vue")
 const CoursesPage = () => import("@/pages/CoursesPage.vue")
 const MyCertificationsPage = () => import("@/pages/MyCertificationsPage.vue")
 const CourseDetailPage = () => import("@/pages/CourseDetailPage.vue")
@@ -118,6 +119,7 @@ export const router = createRouter({
     { path: "/marketplace", component: PublicMarketplacePage, meta: { titleKey: "marketplace" } },
     { path: "/login", component: LoginPage, meta: { titleKey: "login" } },
     { path: "/callback", component: CallbackPage, meta: { titleKey: "callback" } },
+    { path: "/dashboard", component: HomePage, meta: { titleKey: "home", requiresAuth: true } },
     { path: "/certifications", component: CoursesPage, meta: { titleKey: "marketplace" } },
     { path: "/my-certifications", component: MyCertificationsPage, meta: { titleKey: "myCertifications", requiresAuth: true } },
     { path: "/certifications/detail", redirect: redirectCertificationDetail },

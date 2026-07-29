@@ -17,7 +17,6 @@ const programKey = computed(() => pageKey.value.endsWith("cftp") ? "cftp" : "cft
 const program = computed(() => pageKey.value.startsWith("programmes/") ? certificationPrograms[programKey.value] : null)
 const activeTabKey = ref("overview")
 const activeTab = computed(() => program.value?.tabs.find((item) => item.key === activeTabKey.value) ?? program.value?.tabs[0])
-const handbookUrl = computed(() => program.value && "handbookUrl" in program.value ? program.value.handbookUrl : "")
 const stats = ref([0, 0, 0])
 const statTargets = [1, 50, 10]
 let revealObserver: IntersectionObserver | null = null
@@ -200,7 +199,7 @@ onBeforeUnmount(() => {
             </section>
           </div>
         </div>
-        <aside class="purchase-card" data-reveal><strong><small>USD</small> {{ program.price }}</strong><a :href="program.registerUrl" target="_blank" rel="noopener noreferrer">{{ lang === "zh" ? "立即注册" : "Register Now" }}</a><a v-if="handbookUrl" class="secondary" :href="handbookUrl" target="_blank" rel="noopener noreferrer">{{ lang === "zh" ? "下载手册" : "Download Brochure" }}</a></aside>
+        <aside class="purchase-card" data-reveal><strong><small>USD</small> {{ program.price }}</strong><a :href="program.registerUrl" target="_blank" rel="noopener noreferrer">{{ lang === "zh" ? "立即注册" : "Register Now" }}</a></aside>
       </div></section>
     </main>
 
@@ -324,7 +323,6 @@ h1,h2,h3,h4,p { overflow-wrap:anywhere; letter-spacing:0; }
 .purchase-card strong { display:block; margin-bottom:26px; color:#050505; font-size:37px; text-align:center; }
 .purchase-card strong small { color:#394050; font-size:16px; }
 .purchase-card a { display:block; padding:14px; border:1px solid #2764f4; border-radius:6px; background:#2764f4; color:#fff; font-weight:600; text-align:center; }
-.purchase-card a.secondary { margin-top:12px; border-color:#cbd2dc; background:#fff; color:#252a32; font-weight:400; }
 @media (max-width:1000px) {
   .impact-grid,.why-grid,.pathway-intro .cert-container { grid-template-columns:1fr; gap:55px; }
   .flagship-grid { grid-template-columns:1fr; }

@@ -187,14 +187,14 @@ onBeforeUnmount(() => revealObserver?.disconnect())
         <div class="post-grid">
           <article v-for="post in filteredPosts" :key="post.slug" class="post-card" data-reveal>
             <div class="post-image">
-              <a v-if="kind !== 'news'" href="https://portal.globalfintechinstitute.org/" target="_blank" rel="noopener noreferrer" :aria-label="post.title"><img :src="post.image" :alt="post.title" loading="lazy" decoding="async"></a>
+              <a v-if="kind !== 'news'" href="/marketplace" target="_blank" rel="noopener noreferrer" :aria-label="post.title"><img :src="post.image" :alt="post.title" loading="lazy" decoding="async"></a>
               <RouterLink v-else :to="`/gfi${post.slug}`" :aria-label="post.title"><img :src="post.image" :alt="post.title" loading="lazy" decoding="async"></RouterLink>
             </div>
             <div class="post-copy">
               <div class="post-meta"><span>{{ formatDate(post.date) }}</span><i></i><b>{{ visibleCategory(post) }}</b></div>
               <h2>{{ post.title }}</h2>
               <p>{{ post.description }}</p>
-              <a v-if="kind !== 'news'" href="https://portal.globalfintechinstitute.org/" target="_blank" rel="noopener noreferrer">Access Full Report <ArrowUpRight /></a>
+              <a v-if="kind !== 'news'" href="/marketplace" target="_blank" rel="noopener noreferrer">Access Full Report <ArrowUpRight /></a>
               <RouterLink v-else :to="`/gfi${post.slug}`">Read More <ArrowUpRight /></RouterLink>
             </div>
           </article>

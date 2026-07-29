@@ -31,7 +31,7 @@ let stopActionableCredentialListener: (() => void) | null = null
 let initialBadgeTimer: number | null = null
 
 const navRouteGroups: Record<string, string[]> = {
-  "/": ["/"],
+  "/dashboard": ["/dashboard"],
   "/certifications": [
     "/certifications",
     "/courses",
@@ -71,7 +71,7 @@ function isNavItemActive(href: string) {
 }
 
 const navItems = computed(() => [
-  { href: "/", label: t.value.sidebar.home, group: "" },
+  { href: "/dashboard", label: t.value.sidebar.home, group: "" },
   { href: "/certifications", label: t.value.sidebar.courses, group: t.value.sidebar.groupLearning },
   { href: "/my-certifications", label: t.value.sidebar.myCertifications, group: t.value.sidebar.groupLearning },
   { href: "/exams", label: t.value.sidebar.exams, group: t.value.sidebar.groupLearning },
@@ -84,7 +84,7 @@ const navItems = computed(() => [
 ])
 
 const navIconByHref = {
-  "/": LayoutDashboard,
+  "/dashboard": LayoutDashboard,
   "/certifications": Store,
   "/my-certifications": BookOpen,
   "/exams": ClipboardList,
@@ -189,7 +189,7 @@ async function handleLogout() {
         <Menu class="h-5 w-5" />
       </button>
 
-      <RouterLink to="/" class="flex items-center gap-3">
+      <RouterLink to="/dashboard" class="flex items-center gap-3">
         <img :src="brandLogo" :alt="t.common.instituteName" class="h-8 w-8 rounded-lg object-contain" />
         <span class="text-[14px] font-semibold text-[#003A70]">{{ t.common.instituteName }}</span>
       </RouterLink>
@@ -209,7 +209,7 @@ async function handleLogout() {
     <div class="absolute inset-0 bg-slate-950/35" @click="mobileMenuOpen = false" />
     <aside class="app-side-card absolute left-0 top-0 flex h-full w-[280px] max-w-[82vw] max-h-none flex-col overflow-y-auto rounded-none border-r border-sidebar-border bg-sidebar shadow-2xl shadow-slate-950/20">
       <div class="flex h-20 items-center justify-between px-5">
-        <RouterLink to="/" class="flex items-center gap-3" @click="mobileMenuOpen = false">
+        <RouterLink to="/dashboard" class="flex items-center gap-3" @click="mobileMenuOpen = false">
           <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white shadow-sm">
             <img :src="brandLogo" :alt="t.common.instituteName" class="h-7 w-7 rounded-md object-contain" />
           </span>
@@ -283,7 +283,7 @@ async function handleLogout() {
     ]"
   >
     <RouterLink
-      to="/"
+      to="/dashboard"
       :class="[
         'flex items-center transition-all duration-300',
         isSidebarCollapsed ? 'h-14' : 'h-20',

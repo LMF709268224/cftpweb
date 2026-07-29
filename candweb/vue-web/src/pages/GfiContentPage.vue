@@ -83,7 +83,7 @@ const page = computed(() => {
             <span>{{ lang === "zh" ? "迈出下一步" : "Take the Next Step" }}</span>
             <h2>{{ lang === "zh" ? "加入全球金融科技专业社群" : "Join the Global Fintech Professional Community" }}</h2>
           </div>
-          <a href="https://portal.globalfintechinstitute.org" target="_blank" rel="noopener noreferrer">
+          <a href="/marketplace" target="_blank" rel="noopener noreferrer">
             {{ lang === "zh" ? "访问学习门户" : "Access Learning Portal" }} <ArrowUpRight />
           </a>
         </div>

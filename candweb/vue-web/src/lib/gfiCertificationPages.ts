@@ -240,7 +240,7 @@ export const certificationPrograms = {
     title: certText("特许金融科技助理 (CFtA)", "Chartered Fintech Associate (CFtA)"),
     type: certText("在线项目", "Online Program"),
     price: "600",
-    registerUrl: "https://portal.globalfintechinstitute.org/certifications/881fd904-683f-400f-b261-83c80fdd5137",
+    registerUrl: "/marketplace",
     tabs: cftaTabs,
   },
   cftp: {
@@ -250,8 +250,7 @@ export const certificationPrograms = {
     title: certText("特许金融科技专业人士 (CFtP®)", "Chartered Fintech Professional (CFtP®)"),
     type: certText("高级项目", "Advanced Program"),
     price: "3,300",
-    registerUrl: "https://airtable.com/app3CG0QruzsNSzMI/pagG1uk0ML2BmgDMv/form",
-    handbookUrl: "https://app-na1.hubspotdocuments.com/documents/9495468/view/1284480747?accessId=4d3fe2",
+    registerUrl: "/marketplace",
     tabs: cftpTabs,
   },
 } as const
