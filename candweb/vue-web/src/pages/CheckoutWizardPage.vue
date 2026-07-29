@@ -117,6 +117,38 @@ const dynamicPaymentPreview = computed(() => {
   }
 })
 
+function unitSavings(unitId: string) {
+  if (!pricingDetail.value) return 0
+  
+  try {
+    const detail = typeof pricingDetail.value === "string" ? JSON.parse(pricingDetail.value) : pricingDetail.value
+    let accessPrice = 0
+    let qualReviewPrice = 0
+    
+    if (Array.isArray(detail.units)) {
+      const u = detail.units.find((u: any) => u.unit_id === unitId)
+      if (u && u.access) {
+        accessPrice = u.access.amount || 0
+      }
+    }
+    
+    const unitData = exemptionStages.value.flatMap((s: any) => s.units || []).find((x: any) => x.unit_id === unitId)
+    if (unitData && Array.isArray(unitData.exemption_quals)) {
+      for (const q of unitData.exemption_quals) {
+        const qualId = String(q.qual_id || "").trim()
+        const qualReview = Array.isArray(detail.qual_reviews) ? detail.qual_reviews.find((qr: any) => qr.qual_id === qualId) : null
+        if (qualReview && qualReview.price) {
+          qualReviewPrice += qualReview.price.amount || 0
+        }
+      }
+    }
+    
+    return accessPrice - qualReviewPrice
+  } catch {
+    return 0
+  }
+}
+
 const isMultiStage = computed(() => {
   return (bundleData.value?.stages?.length || 0) > 1
 })
@@ -1439,8 +1471,11 @@ async function confirmAndPay() {
                           <Loader2 v-if="credentialApplicationLoadingUnitId === unit.unit_id" class="pointer-events-none absolute h-4 w-4 animate-spin text-blue-600" />
                           <Check v-else class="pointer-events-none absolute h-4 w-4 text-white opacity-0 transition-opacity peer-checked:opacity-100" />
                         </div>
-                        <span class="checkout-unit-action font-medium text-slate-700">
-                          {{ unit.qualified ? t.checkoutWizard.applyForExemption : qualificationActionLabel(unit) }}
+                        <span class="checkout-unit-action flex items-center gap-2 font-medium text-slate-700">
+                          <span>{{ unit.qualified ? t.checkoutWizard.applyForExemption : qualificationActionLabel(unit) }}</span>
+                          <span v-if="unit.qualified && unitSavings(unit.unit_id) > 0" class="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-600">
+                            -{{ formatMoney(unitSavings(unit.unit_id), dynamicPaymentPreview?.currency || 'USD') }}
+                          </span>
                         </span>
                       </label>
                     </div>
