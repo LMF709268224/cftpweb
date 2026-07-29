@@ -1209,9 +1209,12 @@ func (h *Handler) bundlePurchaseState(ctx context.Context, state *bundleEnrichme
 	if state == nil || strings.TrimSpace(state.candidateID) == "" {
 		return out
 	}
-	if activeOrder, preview := h.activeBundleOrder(ctx, state.candidateID, bundleID, bundleGpath, eligibility); activeOrder != nil {
+	activeOrder, preview := h.activeBundleOrder(ctx, state.candidateID, bundleID, bundleGpath, eligibility)
+	if activeOrder != nil {
 		out.ActiveOrder = activeOrder
 		out.PaymentPreview = preview
+	} else if eligibility.CanPurchase {
+		out.PaymentPreview = h.previewPaymentSummary(ctx, orderBizBundlePurchase, bundleID)
 	}
 	if pipelineID != "" && (eligibility.CanPurchase || out.ActiveOrder != nil) {
 		out.ExemptionOptions = h.pipelineExemptionOptions(ctx, state.candidateID, pipelineID)
