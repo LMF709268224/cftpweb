@@ -95,23 +95,15 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 				r.Put("/password", h.UpdateUserPassword)
 			})
 
-			r.Route("/membership", func(r chi.Router) {
-				r.Get("/active", h.GetActiveMembership)
-				r.Get("/history", h.ListUserMemberships)
-				r.Get("/billings", h.ListMembershipBillings)
-				r.Post("/cancel", h.CancelMembership)
-			})
+			r.Get("/membership/active", h.GetActiveMembership)
+			r.Get("/membership/history", h.ListUserMemberships)
+			r.Get("/membership/billings", h.ListMembershipBillings)
+			r.Post("/membership/cancel", h.CancelMembership)
 
-			r.Route("/mall", func(r chi.Router) {
-				r.Route("/bundles", func(r chi.Router) {
-					r.Post("/{bundleId}/purchase", h.CreateBundleOrder)
-					r.Post("/{bundleId}/unlock", h.UnlockPipelineInBundle)
-				})
-				r.Route("/payments", func(r chi.Router) {
-					r.Post("/preview", h.PreviewPayment)
-					r.Post("/initiate", h.InitiatePayment)
-				})
-			})
+			r.Post("/mall/bundles/{bundleId}/purchase", h.CreateBundleOrder)
+			r.Post("/mall/bundles/{bundleId}/unlock", h.UnlockPipelineInBundle)
+			r.Post("/mall/payments/preview", h.PreviewPayment)
+			r.Post("/mall/payments/initiate", h.InitiatePayment)
 
 		r.Route("/pipeline", func(r chi.Router) {
 			r.Get("/", h.ListMyPipelines)
