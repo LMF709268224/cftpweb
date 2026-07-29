@@ -10,6 +10,7 @@ const GfiEcosystemPage = () => import("@/pages/GfiEcosystemPage.vue")
 const GfiPublicationsPage = () => import("@/pages/GfiPublicationsPage.vue")
 const GfiEventsPage = () => import("@/pages/GfiEventsPage.vue")
 const GfiContentPage = () => import("@/pages/GfiContentPage.vue")
+const PublicMarketplacePage = () => import("@/pages/PublicMarketplacePage.vue")
 const LoginPage = () => import("@/pages/LoginPage.vue")
 const CallbackPage = () => import("@/pages/CallbackPage.vue")
 const CoursesPage = () => import("@/pages/CoursesPage.vue")
@@ -114,6 +115,7 @@ export const router = createRouter({
     { path: "/gfi/events/webinar-recordings", component: GfiEventsPage, meta: { titleKey: "gfiLanding" } },
     { path: "/gfi/events/conferences", component: GfiEventsPage, meta: { titleKey: "gfiLanding" } },
     { path: "/gfi/:pathMatch(.*)+", component: GfiContentPage, meta: { titleKey: "gfiLanding" } },
+    { path: "/marketplace", component: PublicMarketplacePage, meta: { titleKey: "marketplace" } },
     { path: "/login", component: LoginPage, meta: { titleKey: "login" } },
     { path: "/callback", component: CallbackPage, meta: { titleKey: "callback" } },
     { path: "/certifications", component: CoursesPage, meta: { titleKey: "marketplace", requiresAuth: true } },

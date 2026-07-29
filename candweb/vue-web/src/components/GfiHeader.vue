@@ -5,8 +5,10 @@ import { ChevronDown, Languages, Menu, X } from "lucide-vue-next"
 import { useTranslation } from "@/lib/language"
 import { gfiNavGroups, localize } from "@/lib/gfiSite"
 
-withDefaults(defineProps<{ theme?: "dark" | "light" }>(), {
+const props = withDefaults(defineProps<{ theme?: "dark" | "light"; authTarget?: string; authNewTab?: boolean }>(), {
   theme: "dark",
+  authTarget: "/marketplace",
+  authNewTab: true,
 })
 
 const route = useRoute()
@@ -85,9 +87,13 @@ watch(
           </div>
         </div>
         <span />
-        <RouterLink to="/login">{{ lang === "zh" ? "登录" : "Log In" }}</RouterLink>
+        <RouterLink :to="props.authTarget" :target="props.authNewTab ? '_blank' : undefined" :rel="props.authNewTab ? 'noopener noreferrer' : undefined">
+          {{ lang === "zh" ? "登录" : "Log In" }}
+        </RouterLink>
         <span />
-        <RouterLink to="/login">{{ lang === "zh" ? "注册" : "Register" }}</RouterLink>
+        <RouterLink :to="props.authTarget" :target="props.authNewTab ? '_blank' : undefined" :rel="props.authNewTab ? 'noopener noreferrer' : undefined">
+          {{ lang === "zh" ? "注册" : "Register" }}
+        </RouterLink>
       </div>
 
       <button class="gfi-menu-toggle" :aria-expanded="mobileOpen" :aria-label="mobileOpen ? 'Close menu' : 'Open menu'" @click="mobileOpen = !mobileOpen">
@@ -110,7 +116,14 @@ watch(
         <button :class="{ selected: lang === 'zh' }" @click="selectLanguage('zh')">中文</button>
         <button :class="{ selected: lang === 'en' }" @click="selectLanguage('en')">English</button>
       </div>
-      <RouterLink to="/login" class="gfi-mobile-login">{{ lang === "zh" ? "登录 / 注册" : "Log In / Register" }}</RouterLink>
+      <RouterLink
+        :to="props.authTarget"
+        class="gfi-mobile-login"
+        :target="props.authNewTab ? '_blank' : undefined"
+        :rel="props.authNewTab ? 'noopener noreferrer' : undefined"
+      >
+        {{ lang === "zh" ? "登录 / 注册" : "Log In / Register" }}
+      </RouterLink>
     </nav>
   </header>
 </template>

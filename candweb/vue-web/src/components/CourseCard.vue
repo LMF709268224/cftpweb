@@ -41,6 +41,7 @@ const props = defineProps<{
   paymentPreview?: PaymentPreview | null
   exemptionOptions?: ExemptionOptions | null
   activeMembership?: Record<string, unknown> | null
+  loginRequired?: boolean
 }>()
 
 const { t } = useTranslation()
@@ -77,6 +78,7 @@ const purchasedTarget = computed(() => isPipelineProduct.value ? `/certification
 const cardCopy = computed(() => t.value.courseCard)
 
 const actionCopy = computed(() => {
+  if (props.loginRequired) return cardCopy.value.loginToPurchase
   if (effectivePurchased.value) return isPipelineProduct.value ? cardCopy.value.enterCertification : cardCopy.value.membershipCenter
   if (statusRefreshing.value) return cardCopy.value.checking
   if (hasInProgressOrder.value) return cardCopy.value.continuePayment
@@ -86,6 +88,7 @@ const actionCopy = computed(() => {
 })
 
 const actionClass = computed(() => {
+  if (props.loginRequired) return "bg-primary text-white shadow-sm shadow-primary/20 group-hover:bg-primary/90"
   if (statusRefreshing.value) return "bg-slate-200 text-slate-500"
   if (currentEligibility.value && !effectivePurchased.value && !currentEligibility.value.can_purchase && !currentEligibility.value.can_unlock && !hasInProgressOrder.value) {
     return "bg-slate-200 text-slate-500"
@@ -104,6 +107,9 @@ function blockerText(blocker?: EligibilityBlocker) {
 }
 
 const accessState = computed(() => {
+  if (props.loginRequired) {
+    return { label: cardCopy.value.loginRequired, icon: ShoppingCart, className: "border-primary/20 bg-primary/10 text-primary", hint: "" }
+  }
   if (effectivePurchased.value) return null
   if (statusRefreshing.value) {
     return { label: cardCopy.value.checking, icon: Clock, className: "border-slate-200 bg-slate-50 text-slate-700", hint: "" }
@@ -132,6 +138,10 @@ async function refreshBundleState() {
 }
 
 async function handleCardClick() {
+  if (props.loginRequired) {
+    router.push("/login")
+    return
+  }
   if (effectivePurchased.value || statusRefreshing.value) return
   await refreshBundleState()
   if (effectivePurchased.value) return

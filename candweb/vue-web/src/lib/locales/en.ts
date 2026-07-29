@@ -1157,7 +1157,9 @@ export const en: AppTranslations = {
     continuePayment: "Continue Payment",
     buyNow: "Buy Now",
     unavailable: "Unavailable",
-    checkStatus: "Check Status"
+    checkStatus: "Check Status",
+    loginRequired: "Log in to check eligibility",
+    loginToPurchase: "Log In / Register to Purchase"
   }
 }
 

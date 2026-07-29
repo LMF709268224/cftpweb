@@ -1155,7 +1155,9 @@ export const zh = {
     continuePayment: "继续支付",
     buyNow: "去购买",
     unavailable: "暂不可购买",
-    checkStatus: "查看购买状态"
+    checkStatus: "查看购买状态",
+    loginRequired: "登录后查看购买资格",
+    loginToPurchase: "登录 / 注册后购买"
   }
 }
 
