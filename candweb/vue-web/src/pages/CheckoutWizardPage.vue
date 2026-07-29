@@ -22,6 +22,7 @@ const bundleId = String(route.params.bundleId || route.query.bundleId || "")
 const TEMPORARY_IMPLICIT_UNLOCK_BUNDLE_GPATH = "/gcc/pipeline/core/cftp"
 const currentStep = ref(1)
 const bundleData = ref<any>(null)
+const pricingDetail = ref<any>(null)
 const paymentMode = ref("FULL_PIPELINE")
 const paymentPreview = ref<any>(null)
 const exemptionStages = ref<any[]>([])
@@ -40,6 +41,82 @@ const qualificationSubmittingUnitId = ref("")
 const levelPlaceholder = "{" + "{level}}"
 const exemptionDeclarationChecked = ref(false)
 const isExemptionSelected = computed(() => Object.values(selectedExemptionUnitIds.value).some(Boolean))
+
+const dynamicPaymentPreview = computed(() => {
+  if (!pricingDetail.value) {
+    return paymentPreview.value
+  }
+
+  try {
+    const detail = typeof pricingDetail.value === "string" ? JSON.parse(pricingDetail.value) : pricingDetail.value
+
+    let total = 0
+    let currency = "USD"
+    let subtotal = 0
+
+    // 1. Unlocks
+    if (detail.unlocks) {
+      for (const [ulid, priceObj] of Object.entries(detail.unlocks)) {
+        const p = priceObj as { amount: number, currency: string }
+        total += p.amount
+        subtotal += p.amount
+        if (p.currency) currency = p.currency
+      }
+    }
+
+    // 2. Units (or Exemption qual reviews)
+    if (Array.isArray(detail.units)) {
+      for (const u of detail.units) {
+        if (selectedExemptionUnitIds.value[u.unit_id]) {
+          // Add qual_review prices
+          const unitData = exemptionStages.value.flatMap((s: any) => s.units || []).find((x: any) => x.unit_id === u.unit_id)
+          if (unitData && Array.isArray(unitData.exemption_quals)) {
+             for (const q of unitData.exemption_quals) {
+                const qualId = String(q.qual_id || "").trim()
+                const qualReview = Array.isArray(detail.qual_reviews) ? detail.qual_reviews.find((qr: any) => qr.qual_id === qualId) : null
+                if (qualReview && qualReview.price) {
+                  total += qualReview.price.amount
+                  subtotal += qualReview.price.amount
+                }
+             }
+          }
+        } else {
+          // Add unit access price
+          if (u.access) {
+             total += u.access.amount
+             subtotal += u.access.amount
+             if (u.access.currency) currency = u.access.currency
+          }
+        }
+      }
+    }
+
+    // 3. Memberships
+    if (Array.isArray(detail.memberships)) {
+       for (const m of detail.memberships) {
+          if (m.price) {
+             total += m.price.amount
+             subtotal += m.price.amount
+             if (m.price.currency) currency = m.price.currency
+          }
+       }
+    }
+
+    return {
+      total,
+      subtotal,
+      currency,
+      pay_amount_label: "",
+      amount_label: "",
+      discount_total: 0 // Assume no complex discounts for dynamic preview on this page if not provided
+    }
+
+  } catch (err) {
+    console.error("Failed to calculate dynamic pricing", err)
+    return paymentPreview.value
+  }
+})
+
 const isMultiStage = computed(() => {
   return (bundleData.value?.stages?.length || 0) > 1
 })
@@ -489,6 +566,16 @@ async function loadPurchaseReadyBundleInfo() {
   const response = await fetchBundlePayload()
   const purchaseReadyBundle = await completeTemporaryCftpUnlock(response)
   applyBundleInfo(purchaseReadyBundle)
+
+  try {
+    const pricingRes = await apiClient(`/api/mall/bundles/${encodeURIComponent(bundleId)}/pricing-detail`, { suppressErrorToast: true })
+    if (pricingRes && pricingRes.pricing_detail_json) {
+      pricingDetail.value = pricingRes.pricing_detail_json
+    }
+  } catch (e) {
+    console.error("Failed to load pricing detail", e)
+  }
+
   await refreshQualificationApplications()
   return purchaseReadyBundle
 }
@@ -1474,8 +1561,8 @@ async function confirmAndPay() {
 
               <div v-if="bundleData" class="checkout-step-actions mt-6 flex flex-col items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 p-6 shadow-sm sm:flex-row">
                 <div class="checkout-total text-lg font-bold text-slate-900">
-                  <template v-if="paymentPreview">
-                    {{ t.checkoutWizard.baseTotal }} {{ formatMoney(paymentPreview.total, paymentPreview.currency) }}
+                  <template v-if="dynamicPaymentPreview">
+                    {{ t.checkoutWizard.baseTotal }} {{ formatMoney(dynamicPaymentPreview.total, dynamicPaymentPreview.currency) }}
                   </template>
                 </div>
                 <button
@@ -1613,20 +1700,20 @@ async function confirmAndPay() {
               </label>
             </div>
 
-            <div v-if="paymentPreview && paymentMode === 'FULL_PIPELINE'" class="rounded-lg bg-muted/30 p-4 border border-border">
+            <div v-if="dynamicPaymentPreview && paymentMode === 'FULL_PIPELINE'" class="rounded-lg bg-muted/30 p-4 border border-border">
               <div class="mb-3 text-sm font-semibold">{{ t.checkoutWizard.priceSummary }}</div>
               <div class="space-y-2 text-sm">
                 <div class="flex justify-between">
                   <span class="text-muted-foreground">{{ t.checkoutWizard.subtotal }}</span>
-                  <span class="font-medium">{{ paymentPreview.amount_label || formatMoney(paymentPreview.subtotal, paymentPreview.currency) }}</span>
+                  <span class="font-medium">{{ dynamicPaymentPreview.amount_label || formatMoney(dynamicPaymentPreview.subtotal, dynamicPaymentPreview.currency) }}</span>
                 </div>
-                <div v-if="paymentPreview.discount_total" class="flex justify-between">
+                <div v-if="dynamicPaymentPreview.discount_total" class="flex justify-between">
                   <span class="text-muted-foreground">{{ t.checkoutWizard.discount }}</span>
-                  <span class="font-medium">-{{ formatMoney(paymentPreview.discount_total, paymentPreview.currency) }}</span>
+                  <span class="font-medium">-{{ formatMoney(dynamicPaymentPreview.discount_total, dynamicPaymentPreview.currency) }}</span>
                 </div>
                 <div class="mt-2 flex justify-between border-t border-border pt-2">
                   <span class="font-semibold text-foreground">{{ t.checkoutWizard.total }}</span>
-                  <span class="text-lg font-bold text-foreground">{{ paymentPreview.pay_amount_label || formatMoney(paymentPreview.total, paymentPreview.currency) }}</span>
+                  <span class="text-lg font-bold text-foreground">{{ dynamicPaymentPreview.pay_amount_label || formatMoney(dynamicPaymentPreview.total, dynamicPaymentPreview.currency) }}</span>
                 </div>
               </div>
             </div>

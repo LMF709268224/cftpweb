@@ -477,6 +477,25 @@ func (h *Handler) GetBundleDetail(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, h.enrichBundle(r.Context(), resp.GetBundle(), h.newBundleEnrichmentState(r.Context(), CandidateID(r))))
 }
 
+// GetBundlePricingDetail GET /api/mall/bundles/{bundleId}/pricing-detail
+func (h *Handler) GetBundlePricingDetail(w http.ResponseWriter, r *http.Request) {
+	bundleId := strings.TrimSpace(chi.URLParam(r, "bundleId"))
+	if !requireRequestField(w, bundleId, "bundle_id") {
+		return
+	}
+	resp, err := h.Mall.GetBundlePricingDetail(r.Context(), &mallpb.GetBundlePricingDetailRequest{
+		Query: &mallpb.GetBundlePricingDetailRequest_BundleUlid{BundleUlid: bundleId},
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, map[string]interface{}{
+		"bundle": h.enrichBundle(r.Context(), resp.GetBundle(), h.newBundleEnrichmentState(r.Context(), CandidateID(r))),
+		"pricing_detail_json": resp.GetPricingDetailJson(),
+	})
+}
+
 func (h *Handler) extractPipelineID(bundle *mallpb.BundleInfo) string {
 	if bundle == nil {
 		return ""
