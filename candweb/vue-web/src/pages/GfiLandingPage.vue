@@ -125,19 +125,19 @@ const zhStories = [
     name: "Jag Foo、CFtP、CPP、PSP、PCI",
     date: "October 1, 2025",
     path: "/gfi/gfi-stories/jag-foo-cftp-cpp-psp-pci",
-    image: homeAsset("story-jag.png"),
+    image: homeAsset("story-jag.webp"),
   },
   {
     name: "达妍叶，CFtP",
     date: "October 1, 2025",
     path: "/gfi/gfi-stories/tat-yeen-yap-cftp",
-    image: homeAsset("story-tat.png"),
+    image: homeAsset("story-tat.webp"),
   },
   {
     name: "丁亚伦，CFtP",
     date: "October 1, 2025",
     path: "/gfi/gfi-stories/aaron-ting-cftp",
-    image: homeAsset("story-aaron.jpg"),
+    image: homeAsset("story-aaron.webp"),
   },
 ]
 
@@ -213,21 +213,21 @@ const zhNews = [
     path: "/gfi/news/global-fintech-institute-and-solusfutura-sign-mou-to-bring-chartered-fintech-professional-certification-to-hong-kong-and-the-greater-bay-area",
     title: "Global Fintech Institute and SolusFutura Sign MOU to Bring Chartered Fintech Professional Certification to Hong Kong and the Greater Bay Area",
     description: "SINGAPORE, 13 July 2026. Fintech capital and technology move across borders in an instant, but professional standards travel only as fast as the institutions that carry them. This week, the Global Fintech Institute takes a step toward carrying them further.",
-    image: homeAsset("news-1.jpg"),
+    image: homeAsset("news-1.webp"),
   },
   {
     date: "July 10, 2026",
     path: "/gfi/news/cfta-is-now-live-enhanced-curriculum-for-a-fast-moving-fintech-industry",
     title: "CFtA is Now Live: Enhanced Curriculum for a Fast-Moving Fintech Industry",
     description: "10 July 2026，Singapore — The Global Fintech Institute is pleased to announce that the Chartered Fintech Associate (CFtA) is now live with an enhanced curriculum, broader partner ecosystem, and a continued commitment to credible fintech education.",
-    image: homeAsset("news-2.jpg"),
+    image: homeAsset("news-2.webp"),
   },
   {
     date: "July 3, 2026",
     path: "/gfi/news/introducing-the-digital-assets-security-and-compliance-subcommittee",
     title: "Introducing the Digital Assets Security and Compliance Subcommittee",
     description: "The Global Fintech Institute is convening the Digital Assets Security and Compliance Subcommittee to advance institutional thinking on cybersecurity, compliance, and operational resilience within digital asset ecosystems.",
-    image: homeAsset("news-3.png"),
+    image: homeAsset("news-3.webp"),
   },
 ]
 

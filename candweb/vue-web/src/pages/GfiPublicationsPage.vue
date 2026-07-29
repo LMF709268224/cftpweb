@@ -90,7 +90,7 @@ const journals = [
   {
     title: "World Scientific Annual Review of Fintech",
     url: "https://www.worldscientific.com/toc/wsarft/03",
-    image: "/gfi/publications/journal-annual-review.jpg",
+    image: "/gfi/publications/journal-annual-review.webp",
     paragraphs: [
       "World Scientific Annual Review of Fintech is a leading publication dedicated to high-quality survey and review papers across major areas of fintech and sustainable development. Covering topics such as AI, blockchain, financial inclusion, green finance, regulation, governance, and other emerging trends, the journal brings together insights that matter to both academia and industry.",
       "Published annually around a contemporary theme in sustainable fintech, the journal serves a global audience of researchers, regulators, central bankers, policy makers, and practitioners. With an esteemed international editorial team, it aims to bridge academic research and real-world application through rigorous article selection, meaningful interdisciplinary perspectives, and a timely review process.",
@@ -99,7 +99,7 @@ const journals = [
   {
     title: "The Journal of FinTech",
     url: "https://www.worldscientific.com/worldscinet/JFT",
-    image: "/gfi/publications/journal-fintech.jpg",
+    image: "/gfi/publications/journal-fintech.webp",
     paragraphs: [
       "The Journal of FinTech explores how technology is reshaping the world of finance. From banking, insurance, and investments to credit analysis and digital assets, the journal provides a broad platform for research and discussion on the trends, technologies, and challenges defining this fast-evolving field.",
       "The journal welcomes work across key areas such as artificial intelligence, blockchain, crypto, data, energy, quantum, regulation, security, and technology. It also covers interdisciplinary topics including automated trading, reg-tech, large language models, differential privacy, tokenomics, cybersecurity, data infrastructure, and other innovations at the intersection of finance and technology.",

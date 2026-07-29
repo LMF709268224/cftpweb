@@ -256,7 +256,7 @@ onBeforeUnmount(() => revealObserver?.disconnect())
           <p v-else>GFI members enjoy 50% off the Industry Pass, with full access to all stages, roundtables, and premier networking sessions at Black Swan Summit 2026. This member rate is valid until 9 January 2026. Use the code BSSAU26-IND-PTNR-EARLYBIRD at checkout to redeem the discount.</p>
           <a href="https://australia.blackswansummit.com/passes" target="_blank" rel="noopener noreferrer">{{ lang === "zh" ? "获取早鸟优惠" : "Get Early Access" }} <ArrowUpRight /></a>
         </div>
-        <img src="/gfi/events/black-swan-summit-2026.png" :alt="lang === 'zh' ? '2026年黑天鹅峰会珀斯站 - GFI会员早鸟优惠' : '2026 Black Swan Summit in Perth - Early Bird Access for GFI Members'" loading="lazy" decoding="async">
+        <img src="/gfi/events/black-swan-summit-2026.webp" :alt="lang === 'zh' ? '2026年黑天鹅峰会珀斯站 - GFI会员早鸟优惠' : '2026 Black Swan Summit in Perth - Early Bird Access for GFI Members'" loading="lazy" decoding="async">
       </section>
     </main>
     <GfiFooter />
