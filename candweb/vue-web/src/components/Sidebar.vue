@@ -177,7 +177,7 @@ async function handleLogout() {
     // apiClient already shows localized errors.
   } finally {
     clearAuthSession()
-    window.location.href = "/login"
+    window.location.href = "/"
   }
 }
 </script>
