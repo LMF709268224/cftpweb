@@ -173,6 +173,16 @@ const isMembershipBundle = computed(() => {
   return itemTypes.some((type: string) => String(type).includes("membership"))
 })
 
+const registrationTitle = computed(() => {
+  if (!bundleData.value) return t.value.checkoutWizard.checkoutTitle
+
+  const bundleName = String(bundleData.value.name || "").trim()
+  const subject = /CFtP/i.test(bundleName) ? "CFtP®Level 1" : bundleName
+  if (!subject) return t.value.checkoutWizard.examRegistrationTitle
+
+  return t.value.checkoutWizard.namedExamRegistrationTitle.replace("{{name}}", subject)
+})
+
 const loading = ref(false)
 const initialLoading = ref(true)
 const pipelineId = computed(() =>
@@ -1443,12 +1453,24 @@ async function confirmAndPay() {
     <div class="checkout-page page-panel">
       <header class="flex h-16 items-center border-b border-border bg-white px-5">
         <ClipboardList class="mr-4 h-4 w-4 text-slate-700" />
-        <span class="text-sm font-medium text-foreground">{{ t.checkoutWizard.checkoutTitle }}</span>
+        <span
+          class="checkout-header-title text-sm font-medium text-foreground"
+          :aria-busy="initialLoading"
+        >
+          <span v-if="initialLoading" class="checkout-header-title-skeleton" aria-hidden="true"></span>
+          <span v-else>{{ registrationTitle }}</span>
+        </span>
       </header>
 
       <main class="checkout-content px-5 py-8 md:px-8 lg:px-10">
         <div class="checkout-heading mb-8 max-w-5xl">
-          <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.checkoutWizard.checkoutTitle }}</h1>
+          <h1
+            class="checkout-page-title text-3xl font-bold tracking-tight text-foreground"
+            :aria-busy="initialLoading"
+          >
+            <span v-if="initialLoading" class="checkout-title-skeleton" aria-hidden="true"></span>
+            <span v-else>{{ registrationTitle }}</span>
+          </h1>
           <div class="checkout-progress" aria-label="Checkout progress">
             <div class="checkout-progress-step" :class="{ active: currentStep === 1 }" :aria-current="currentStep === 1 ? 'step' : undefined">
               <span class="checkout-progress-node">1</span>
@@ -1900,6 +1922,52 @@ async function confirmAndPay() {
   font-size: 28px;
   line-height: 1.25;
   letter-spacing: 0;
+}
+
+.checkout-page-title {
+  min-height: 35px;
+}
+
+.checkout-header-title {
+  display: inline-flex;
+  min-height: 20px;
+  align-items: center;
+}
+
+.checkout-header-title-skeleton {
+  display: block;
+  width: 112px;
+  height: 14px;
+  border-radius: 3px;
+  background: #e2e7ef;
+  animation: checkout-title-pulse 1.2s ease-in-out infinite;
+}
+
+.checkout-title-skeleton {
+  display: block;
+  width: min(220px, 60vw);
+  height: 35px;
+  border-radius: 4px;
+  background: #e2e7ef;
+  animation: checkout-title-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes checkout-title-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .checkout-header-title-skeleton,
+  .checkout-title-skeleton {
+    animation: none;
+  }
 }
 
 .checkout-progress {

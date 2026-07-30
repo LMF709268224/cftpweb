@@ -666,6 +666,9 @@ export const en: AppTranslations = {
   },
   checkoutWizard: {
     checkoutTitle: "Checkout",
+    examRegistrationTitle: "Exam Registration",
+    membershipRegistrationTitle: "Membership Registration",
+    namedExamRegistrationTitle: "{{name}} Exam Registration",
     step1: "1 Select",
     step2: "2 Register",
     step3: "3 Review",

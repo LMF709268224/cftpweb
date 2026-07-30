@@ -664,6 +664,9 @@ export const zh = {
   },
   checkoutWizard: {
     checkoutTitle: "结账",
+    examRegistrationTitle: "考试注册",
+    membershipRegistrationTitle: "会员注册",
+    namedExamRegistrationTitle: "{{name}} 考试注册",
     step1: "1 选择",
     step2: "2 注册",
     step3: "3 审查",
