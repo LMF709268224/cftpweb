@@ -10,7 +10,7 @@
         </div>
         <template v-if="paymentPreview.breakdown && paymentPreview.breakdown.length > 0">
           <div v-for="(item, idx) in paymentPreview.breakdown" :key="idx" class="flex justify-between text-emerald-600 text-sm">
-            <span class="text-emerald-600/80">{{ item.description || item.name || item.code || t.checkoutWizard?.discount || 'Discount' }}</span>
+            <span class="text-emerald-600/80">{{ getDiscountLabel(item) }}</span>
             <span class="font-medium">-{{ formatMoney(item.discount, paymentPreview.currency) }}</span>
           </div>
         </template>
@@ -104,6 +104,12 @@ const cannotPayReason = computed(() => hasInvalidCouponCodes.value ? (t.value.pu
 function formatMoney(amount?: number, currency = "usd") {
   if (typeof amount !== "number") return "-"
   return new Intl.NumberFormat(undefined, { style: "currency", currency: currency || "usd" }).format(amount / 100)
+}
+
+function getDiscountLabel(item: any) {
+  let label = item.name || item.description || item.code || t.value.checkoutWizard?.discount || 'Discount'
+  // Remove backend's unformatted minor units from label if present (e.g. ": -75000 usd")
+  return label.replace(/:\s*-\d+(\.\d+)?\s*[a-zA-Z]*$/i, '')
 }
 
 function normalizeCouponCodes(codes: string[]) {
