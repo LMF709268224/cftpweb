@@ -889,6 +889,8 @@ function initiatePayment() {
   }
 }
 
+
+
 async function handlePaymentSessionError() {
   paymentLoading.value = false
   activePaymentSession.value = null

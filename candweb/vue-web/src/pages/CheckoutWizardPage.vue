@@ -5,7 +5,7 @@ import { toast } from "vue-sonner"
 import { ArrowLeft, ArrowRight, ClipboardList, Loader2, Send, Check, CheckCircle2, CircleAlert, Clock, UploadCloud } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import LoadingState from "@/components/LoadingState.vue"
-import PaymentSessionPanel from "@/components/PaymentSessionPanel.vue"
+import CheckoutPaymentPanel from "@/components/CheckoutPaymentPanel.vue"
 import { ApiClientError, apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
 import { useUser } from "@/lib/user"
@@ -1783,7 +1783,7 @@ async function confirmAndPay() {
                 {{ t.checkoutWizard.qualificationPaymentDesc }}
               </p>
             </div>
-            <PaymentSessionPanel
+            <CheckoutPaymentPanel
               v-if="activeOrderId"
               :biz-type="paymentBizType"
               :biz-ref-ulid="activeOrderId"
