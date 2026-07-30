@@ -132,15 +132,15 @@ const orderStatusOptions = computed(() => [
 ])
 
 const actionableOrderStatuses = new Set([
-  "wait_payment",
-  "pending",
-  "pending_payment",
-  "wait_pipeline_payment",
-  "wait_stage_payment",
-  "wait_retake_payment",
-  "wait_unlock_payment",
-  "wait_bundle_payment",
-  "wait_review_fee_payment",
+  "WAIT_PAYMENT",
+  "PENDING",
+  "PENDING_PAYMENT",
+  "WAIT_PIPELINE_PAYMENT",
+  "WAIT_STAGE_PAYMENT",
+  "WAIT_RETAKE_PAYMENT",
+  "WAIT_UNLOCK_PAYMENT",
+  "WAIT_BUNDLE_PAYMENT",
+  "WAIT_REVIEW_FEE_PAYMENT",
 ])
 const paidPaymentStatuses = new Set(["PAID"])
 const paymentReturnSyncAttempts = 6
