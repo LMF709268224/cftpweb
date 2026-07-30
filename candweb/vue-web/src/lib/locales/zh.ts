@@ -823,6 +823,7 @@ export const zh = {
     statusPendingPayment: "支付处理中",
     statusPaymentSyncing: "正在确认支付",
     cancelOrder: "取消订单",
+    cancelPayment: "取消支付",
     cancelOrderConfirm: "确定要取消这个未完成订单吗？取消后可以重新选择免考并重新创建订单。",
     cancelOrderSuccess: "订单已取消",
     cancelOrderFailed: "取消订单失败，请稍后重试",

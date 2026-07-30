@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue"
 import { useRoute } from "vue-router"
 import { toast } from "vue-sonner"
-import { ChevronRight, Loader2, Package, Receipt, X, XCircle } from "lucide-vue-next"
+import { ChevronRight, Loader2, Package, Receipt, X } from "lucide-vue-next"
 import { timelineStatusBadgeClassForStatus, timelineStatusLabelWithDiagnostics } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
 import AppPagination from "@/components/AppPagination.vue"
@@ -648,7 +648,7 @@ onBeforeUnmount(() => {
               <p class="text-sm text-muted-foreground">{{ order.date }}</p>
             </div>
           </div>
-          <div class="flex w-full flex-wrap items-center justify-end gap-x-3 gap-y-3 pl-16 md:grid md:w-auto md:shrink-0 md:grid-cols-[130px_148px_36px_112px_24px] md:gap-x-5 md:pl-0">
+          <div class="flex w-full flex-wrap items-center justify-end gap-x-3 gap-y-3 pl-16 md:grid md:w-auto md:shrink-0 md:grid-cols-[130px_148px_112px_112px_24px] md:gap-x-5 md:pl-0">
             <div class="mr-auto flex justify-start md:mr-0 md:justify-center">
               <span class="badge text-xs" :class="orderStatusBadgeClass(order)">
                 {{ orderStatusLabel(order) }}
@@ -660,12 +660,11 @@ onBeforeUnmount(() => {
               </button>
               <p v-else class="text-lg font-semibold text-card-foreground">{{ order.amount }}</p>
             </div>
-            <button v-if="canCancelOrder(order)" @click.stop="cancelOrder(order)" class="flex h-9 w-9 items-center justify-center rounded-lg text-red-600 transition-colors hover:bg-red-50" :title="t.orders.cancelOrder">
+            <button v-if="canCancelOrder(order)" @click.stop="cancelOrder(order)" class="inline-flex h-8 w-full items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-600 transition-colors hover:border-red-300 hover:bg-red-100">
               <Loader2 v-if="cancelLoading === order.bizRefUlid" class="h-4 w-4 animate-spin" />
-              <XCircle v-else class="h-4 w-4" />
-              <span class="sr-only">{{ t.orders.cancelOrder }}</span>
+              {{ t.orders.cancelPayment }}
             </button>
-            <span v-else class="h-9 w-9" />
+            <span v-else class="h-8 w-[112px]" />
             <button v-if="order.canViewInvoice" @click.stop="viewInvoice(order.invoiceOrderId)" class="inline-flex h-9 w-[112px] items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-primary/10 px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/20">
               <Loader2 v-if="invoiceLoading === order.invoiceOrderId" class="h-4 w-4 animate-spin" />
               {{ t.orders.viewInvoice }}
