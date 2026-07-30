@@ -47,6 +47,7 @@ type PipelineConfig = {
   package_stripe_price_id?: string
   stages?: StageConfig[]
   final_quals?: Qualification[]
+  has_certificate?: boolean
 }
 
 type StageConfig = {
