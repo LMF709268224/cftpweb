@@ -5,7 +5,7 @@ import { toast } from "vue-sonner"
 import { ArrowLeft, ArrowRight, ClipboardList, Loader2, Send, Check, CheckCircle2, CircleAlert, Clock, UploadCloud } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import LoadingState from "@/components/LoadingState.vue"
-import PaymentSessionPanel from "@/components/PaymentSessionPanel.vue"
+import CheckoutPaymentPanel from "@/components/CheckoutPaymentPanel.vue"
 import { ApiClientError, apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
 import { useUser } from "@/lib/user"
@@ -755,6 +755,13 @@ async function latestCredentialApplication(qualId: string) {
   return (response?.applications || [])[0] || null
 }
 
+async function hasQualificationUploadPermission(qualId: string) {
+  const response = await apiClient(`/api/credentials/upload-permission?cred_def_ulid=${encodeURIComponent(qualId)}`, {
+    suppressErrorToast: true,
+  })
+  return response?.granted === true
+}
+
 async function refreshQualificationApplications() {
   const qualIds = Array.from(new Set(
     exemptionStages.value
@@ -1088,6 +1095,12 @@ async function startQualificationApplication(unit: any) {
         await openQualificationEditor(unit, qualId)
         return
       }
+    }
+
+    if (await hasQualificationUploadPermission(qualId)) {
+      toast.info(t.value.checkoutWizard.qualificationUploadReady)
+      await openQualificationEditor(unit, qualId)
+      return
     }
 
     let order
@@ -1824,7 +1837,7 @@ async function confirmAndPay() {
                 {{ t.checkoutWizard.qualificationPaymentDesc }}
               </p>
             </div>
-            <PaymentSessionPanel
+            <CheckoutPaymentPanel
               v-if="activeOrderId"
               :biz-type="paymentBizType"
               :biz-ref-ulid="activeOrderId"

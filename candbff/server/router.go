@@ -103,6 +103,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Get("/mall/bundles/{bundleId}/pricing-detail", h.GetBundlePricingDetail)
 			r.Post("/mall/bundles/{bundleId}/purchase", h.CreateBundleOrder)
 			r.Post("/mall/bundles/{bundleId}/unlock", h.UnlockPipelineInBundle)
+			r.Post("/mall/pipelines/{pipelineId}/stages/{stageId}/purchase", h.CreateStageOrder)
 			r.Post("/mall/payments/preview", h.PreviewPayment)
 			r.Post("/mall/payments/initiate", h.InitiatePayment)
 

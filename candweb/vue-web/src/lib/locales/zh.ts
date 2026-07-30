@@ -456,7 +456,7 @@ export const zh = {
     statusExamScheduled: "已预约考试",
     statusExamFailed: "考试未通过",
     actionContinueLearning: "继续学习",
-    actionWaitCandidate: "查看认证流程进度",
+    actionWaitCandidate: "解锁当前阶段",
     actionSignupExam: "去报名考试",
     actionScheduleExam: "去预约考试",
     actionViewExamSchedule: "查看考试安排",

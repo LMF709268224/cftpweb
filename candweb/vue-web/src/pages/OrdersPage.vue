@@ -2,12 +2,11 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue"
 import { useRoute } from "vue-router"
 import { toast } from "vue-sonner"
-import { ChevronRight, CreditCard, Loader2, Package, Receipt, X, XCircle } from "lucide-vue-next"
+import { ChevronRight, Loader2, Package, Receipt, X, XCircle } from "lucide-vue-next"
 import { timelineStatusBadgeClassForStatus, timelineStatusLabelWithDiagnostics } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
 import AppPagination from "@/components/AppPagination.vue"
 import PaymentSessionDialog from "@/components/PaymentSessionDialog.vue"
-import CouponInputBlock from "@/components/CouponInputBlock.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useBodyScrollLock } from "@/lib/bodyScrollLock"
 import { formatBackendDateMinute } from "@/lib/utils"
@@ -95,7 +94,7 @@ const route = useRoute()
 const selectedBizType = ref("")
 const selectedOrderStatus = ref((route.query.status as string) || "")
 const invoiceLoading = ref<string | null>(null)
-const paymentLoading = ref<string | null>(null)
+
 const cancelLoading = ref<string | null>(null)
 const detailLoading = ref(false)
 const detailLoadingOrderId = ref<string | null>(null)
@@ -116,12 +115,11 @@ const orderPaymentSession = ref<{
 
 const couponInput = ref("")
 const appliedCouponCodes = ref<string[]>([])
-const couponPreviewLoading = ref(false)
+
 const couponError = ref("")
 
-const activeCouponCodes = computed(() => appliedCouponCodes.value.map((code) => code.trim()).filter(Boolean))
-const hasInvalidCouponCodes = computed(() => Boolean(detailPaymentPreview.value?.invalid?.length))
-const cannotPayReason = computed(() => hasInvalidCouponCodes.value ? (t.value.purchaseDialog?.couponInvalidPaymentBlocked || "Invalid coupon. Cannot proceed.") : "")
+
+
 
 const invoiceOpeningLabel = computed(() => t.value.orders.invoiceOpening)
 const orderStatusOptions = computed(() => [
@@ -211,49 +209,6 @@ function orderStatusBadgeClass(order: OrderItem) {
   return timelineStatusBadgeClassForStatus("MALL_ORDER", status)
 }
 
-function normalizeCouponCodes(codes: string[]) {
-  return Array.from(new Set(codes.map((c) => String(c || "").trim()).filter(Boolean)))
-}
-
-function couponInputCodes() {
-  return normalizeCouponCodes(couponInput.value.split(/[\s,，;；]+/))
-}
-
-async function refreshPaymentPreviewWithCoupons(codes = activeCouponCodes.value) {
-  if (!selectedOrderItem.value || !selectedOrderItem.value.bizType || !selectedOrderItem.value.bizRefUlid) return
-  couponPreviewLoading.value = true
-  couponError.value = ""
-  try {
-    detailPaymentPreview.value = await apiClient("/api/mall/payments/preview", {
-      method: "POST",
-      body: JSON.stringify({
-        biz_type: selectedOrderItem.value.bizType,
-        biz_ref_ulid: selectedOrderItem.value.bizRefUlid,
-        promo_codes: normalizeCouponCodes(codes),
-        coupon_codes: [],
-      }),
-      suppressErrorToast: true,
-    })
-  } catch (err) {
-    console.error(err)
-    couponError.value = t.value.common?.error || "Error"
-  } finally {
-    couponPreviewLoading.value = false
-  }
-}
-
-async function applyCouponCodes() {
-  const nextCodes = couponInputCodes()
-  appliedCouponCodes.value = nextCodes
-  await refreshPaymentPreviewWithCoupons(nextCodes)
-}
-
-async function clearCouponCodes() {
-  couponInput.value = ""
-  appliedCouponCodes.value = []
-  await refreshPaymentPreviewWithCoupons([])
-}
-
 async function openOrderDetail(order: OrderItem) {
   if (!order.id || detailLoading.value) return
   detailLoading.value = true
@@ -265,13 +220,7 @@ async function openOrderDetail(order: OrderItem) {
   try {
     const detail = await apiClient(`/api/orders/${encodeURIComponent(order.id)}`)
     selectedOrderDetail.value = detail
-    const latestOrder = applyOrderDetail(detail, order.id) || order
-    couponInput.value = ""
-    appliedCouponCodes.value = []
-    couponError.value = ""
-    if (canContinuePayment(latestOrder)) {
-      await refreshPaymentPreviewWithCoupons([])
-    }
+    applyOrderDetail(detail, order.id)
   } catch (error) {
     console.error(error)
     detailError.value = t.value.orders.detailLoadFailed
@@ -371,39 +320,6 @@ function applyOrderDetail(detail: OrderDetail, fallbackOrderId = "") {
     selectedOrderItem.value = latestOrder
   }
   return latestOrder
-}
-
-async function continuePayment(order: OrderItem) {
-  if (!canContinuePayment(order) || paymentLoading.value) return
-  paymentLoading.value = order.id
-  try {
-    const detail = await apiClient(`/api/orders/${encodeURIComponent(order.id)}`, {
-      suppressErrorToast: true,
-    })
-    if (selectedOrderItem.value?.id === order.id) selectedOrderDetail.value = detail
-    const latestOrder = applyOrderDetail(detail, order.id) || order
-    if (!canContinuePayment(latestOrder)) {
-      orderPaymentDialogOpen.value = false
-      orderPaymentSession.value = null
-      toast.info(t.value.orders.paymentNoLongerRequired)
-      return
-    }
-
-    orderPaymentSession.value = {
-      orderId: latestOrder.id,
-      bizType: latestOrder.bizType,
-      bizRefUlid: latestOrder.bizRefUlid,
-      source: "orders",
-      returnPath: "/orders",
-      couponCodes: activeCouponCodes.value,
-    }
-    orderPaymentDialogOpen.value = true
-  } catch (error) {
-    console.error(error)
-    toast.error(t.value.orders.detailLoadFailed)
-  } finally {
-    if (paymentLoading.value === order.id) paymentLoading.value = null
-  }
 }
 
 async function viewInvoice(orderId: string) {
@@ -863,22 +779,17 @@ onBeforeUnmount(() => {
           </div>
         </div>
         <div v-if="selectedOrderItem && canContinuePayment(selectedOrderItem)" class="border-t border-slate-100 bg-slate-50 px-5 py-4 sm:px-6">
-          <CouponInputBlock
+          <CheckoutPaymentPanel
+            v-if="selectedOrderItem && canContinuePayment(selectedOrderItem)"
             class="mb-4"
-            v-model="couponInput"
-            :active-coupon-codes="activeCouponCodes"
-            :loading="couponPreviewLoading"
-            :disabled="paymentLoading != null"
-            :error="couponError"
-            :cannot-pay-reason="cannotPayReason"
-            @apply="applyCouponCodes"
-            @clear="clearCouponCodes"
+            :biz-type="selectedOrderItem.bizType"
+            :biz-ref-ulid="selectedOrderItem.bizRefUlid"
+            :order-id="selectedOrderItem.id"
+            source="orders"
+            return-path="/orders"
+            :initial-payment-preview="detailPaymentPreview"
+            @complete="handleOrderPaymentComplete"
           />
-          <button @click="continuePayment(selectedOrderItem)" :disabled="!!cannotPayReason" class="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50">
-            <CreditCard class="h-5 w-5" />
-            <Loader2 v-if="paymentLoading === selectedOrderItem.id" class="h-5 w-5 animate-spin" />
-            {{ t.orders.continuePayment }}
-          </button>
         </div>
       </div>
     </div>
