@@ -1419,6 +1419,7 @@ func toPipelineConfig(p *gccpb.PipelineConfig, certQuals []*gccpb.Qualification)
 		IsCurrent:             p.GetIsCurrent(),
 		CreatedAt:             p.GetCreatedAt(),
 		FinalQuals:            toUnlockQuals(finalQuals),
+		HasCertificate:        len(p.GetCerts()) > 0 || len(p.GetCertsQuals()) > 0 || len(finalQuals) > 0,
 	}
 }
 

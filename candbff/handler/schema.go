@@ -115,6 +115,7 @@ type PipelineConfig struct {
 	IsCurrent              bool            `json:"is_current,omitempty"`       // 是否为当前版本 [required]
 	CreatedAt              string          `json:"created_at,omitempty"`       // 创建时间 RFC3339 格式字符串 [optional]
 	FinalQuals             []Qualification `json:"final_quals,omitempty"`      // 结业资格 [required]
+	HasCertificate         bool            `json:"has_certificate"`            // 是否颁发证书
 	PurchaseCount          *int32          `json:"purchase_count,omitempty"`
 }
 
