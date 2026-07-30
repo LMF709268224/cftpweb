@@ -320,22 +320,24 @@ function unitStatusLabel(status?: string | number | null) {
 }
 
 function stageStateText(index: number) {
-  if (!purchased.value) return t.value.courses.positionNotPurchased
-  return stageStatusLabel(stages.value[index]?.runtime_status)
+  const status = stages.value[index]?.runtime_status
+  if (!purchased.value || !status) return t.value.courses.positionNotPurchased
+  return stageStatusLabel(status)
 }
 
 function stageStateClass(index: number) {
-  if (!purchased.value) return "border-slate-200 bg-slate-50 text-slate-600"
-  return timelineStatusBadgeClassForStatus("STAGE", stages.value[index]?.runtime_status)
+  const status = stages.value[index]?.runtime_status
+  if (!purchased.value || !status) return "border-slate-200 bg-slate-50 text-slate-600"
+  return timelineStatusBadgeClassForStatus("STAGE", status)
 }
 
 function unitStateText(unit: UnitConfig) {
-  if (!purchased.value) return t.value.courses.positionNotPurchased
+  if (!purchased.value || !unit.runtime_status) return t.value.courses.positionNotPurchased
   return unitStatusLabel(unit.runtime_status)
 }
 
 function unitStateClass(unit: UnitConfig) {
-  if (!purchased.value) return "border-slate-200 bg-slate-50 text-slate-600"
+  if (!purchased.value || !unit.runtime_status) return "border-slate-200 bg-slate-50 text-slate-600"
   return timelineStatusBadgeClassForStatus("COURSE_UNIT", unit.runtime_status)
 }
 
