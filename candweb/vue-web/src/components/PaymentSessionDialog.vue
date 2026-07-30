@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue"
 import { CreditCard, X } from "lucide-vue-next"
-import PaymentSessionPanel from "@/components/PaymentSessionPanel.vue"
+import CheckoutPaymentPanel from "@/components/CheckoutPaymentPanel.vue"
 import { useBodyScrollLock } from "@/lib/bodyScrollLock"
 import { useTranslation } from "@/lib/language"
 
@@ -62,15 +62,15 @@ function close() {
         <div class="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
           {{ copy.testHint }}
         </div>
-        <PaymentSessionPanel
-          :payment-key="paymentKey"
+        <CheckoutPaymentPanel
+          v-if="bizType && bizRefUlid"
           :biz-type="bizType"
           :biz-ref-ulid="bizRefUlid"
           :order-id="orderId"
           :source="source"
           :return-path="returnPath"
           :extra-return-params="extraReturnParams"
-          :coupon-codes="couponCodes"
+          :initial-coupon-codes="couponCodes"
           :redirect-on-complete="redirectOnComplete"
           min-height-class="min-h-[420px]"
           @complete="emit('complete')"

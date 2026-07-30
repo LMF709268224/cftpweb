@@ -458,7 +458,7 @@ export const en: AppTranslations = {
     statusExamScheduled: "Exam Scheduled",
     statusExamFailed: "Exam failed",
     actionContinueLearning: "Continue learning",
-    actionWaitCandidate: "View certification flow progress",
+    actionWaitCandidate: "Unlock Stage",
     actionSignupExam: "Go to sign up for exam",
     actionScheduleExam: "Go to schedule exam",
     actionViewExamSchedule: "View exam schedule",

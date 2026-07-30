@@ -189,15 +189,26 @@ const courseExamsLoading = ref(false)
 const courseExamsLoaded = ref(false)
 const courseExams = ref<any[]>([])
 const retakePaymentSession = ref<{
-  paymentKey?: string
-  orderId?: string
-  bizType: string
-  bizRefUlid: string
-  source: string
-  returnPath: string
-  extraReturnParams?: Record<string, string>
+	paymentKey?: string
+	orderId?: string
+	bizType: string
+	bizRefUlid: string
+	source: string
+	returnPath: string
+	extraReturnParams?: Record<string, string>
 } | null>(null)
 const retakePaymentDialogOpen = ref(false)
+
+const stagePaymentSession = ref<{
+	paymentKey?: string
+	orderId?: string
+	bizType: string
+	bizRefUlid: string
+	source: string
+	returnPath: string
+} | null>(null)
+const stagePaymentDialogOpen = ref(false)
+const stagePaymentLoading = ref(false)
 const paymentDialogTitle = computed(() =>
   retakePaymentSession.value?.source === "credential_application"
     ? t.value.learning.finalQualificationPaymentTitle
@@ -1079,6 +1090,46 @@ async function handleInlineScheduleExam(exam: any) {
   }
 }
 
+async function handleStagePaymentClick() {
+  if (stagePaymentLoading.value) return
+  if (!nextStep.value?.stage_id || !pipelineId.value) return
+  
+  stagePaymentLoading.value = true
+  try {
+    // 1. Create Stage Order
+    const orderResp = await apiClient(`/api/mall/pipelines/${encodeURIComponent(pipelineId.value)}/stages/${encodeURIComponent(nextStep.value.stage_id)}/purchase`, {
+      method: "POST"
+    })
+    
+    // 2. Initiate Payment
+    const initResp = await apiClient("/api/mall/payments/initiate", {
+      method: "POST",
+      body: JSON.stringify({
+        biz_type: "STAGE_PAYMENT",
+        biz_ref_ulid: orderResp.stage_order_ulid,
+        success_url: window.location.href,
+        cancel_url: window.location.href,
+      })
+    })
+
+    if (initResp?.payment_key) {
+      stagePaymentSession.value = {
+        paymentKey: initResp.payment_key,
+        orderId: orderResp.stage_order_ulid,
+        bizType: "STAGE_PAYMENT",
+        bizRefUlid: orderResp.stage_order_ulid,
+        source: "stage",
+        returnPath: window.location.href,
+      }
+      stagePaymentDialogOpen.value = true
+    }
+  } catch (err: any) {
+    toast.error(err.message || t.value.common.error)
+  } finally {
+    stagePaymentLoading.value = false
+  }
+}
+
 async function handleInlineApplyRetake(exam: any) {
   if (!canApplyRetake(exam) || retakeLoadingUnitId.value) return
   if (!exam.bundle_order_ulid) {
@@ -1553,6 +1604,16 @@ watch(selectedMaterial, () => {
             <AlertCircle class="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
             <h3 class="font-semibold text-foreground">{{ nextStepState.label }}</h3>
             <p class="mt-2 text-sm text-muted-foreground">{{ nextStepState.desc }}</p>
+            <button
+              v-if="nextStepState.action === 'wait_candidate'"
+              class="btn btn-primary mx-auto mt-4 w-fit rounded-lg"
+              :disabled="stagePaymentLoading"
+              @click="handleStagePaymentClick"
+            >
+              <Loader2 v-if="stagePaymentLoading" class="mr-2 h-4 w-4 animate-spin" />
+              <Lock v-else class="mr-2 h-4 w-4" />
+              {{ nextStepState.label }}
+            </button>
           </div>
           <div v-else-if="courseExams.length === 0" class="rounded-md border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
             <CalendarClock class="mx-auto mb-3 h-8 w-8 text-primary" />
@@ -2040,8 +2101,20 @@ watch(selectedMaterial, () => {
       :return-path="retakePaymentSession.returnPath"
       :extra-return-params="retakePaymentSession.extraReturnParams"
     />
-      </main>
-    </div>
+      <PaymentSessionDialog
+        v-if="stagePaymentSession"
+        v-model:open="stagePaymentDialogOpen"
+        :title="t.learning.actionWaitCandidate"
+        :subtitle="stagePaymentSession.orderId"
+        :payment-key="stagePaymentSession.paymentKey"
+        :biz-type="stagePaymentSession.bizType"
+        :biz-ref-ulid="stagePaymentSession.bizRefUlid"
+        :order-id="stagePaymentSession.orderId"
+        :source="stagePaymentSession.source"
+        :return-path="stagePaymentSession.returnPath"
+      />
+    </main>
+  </div>
   </AppShell>
 </template>
 
