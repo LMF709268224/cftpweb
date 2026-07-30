@@ -8,10 +8,18 @@
           <span class="text-muted-foreground">{{ t.checkoutWizard?.subtotal || 'Subtotal' }}</span>
           <span class="font-medium">{{ paymentPreview.amount_label || formatMoney(paymentPreview.subtotal, paymentPreview.currency) }}</span>
         </div>
-        <div v-if="paymentPreview.discount_total" class="flex justify-between text-emerald-600">
-          <span class="text-emerald-600/80">{{ t.checkoutWizard?.discount || 'Discount' }}</span>
-          <span class="font-medium">-{{ formatMoney(paymentPreview.discount_total, paymentPreview.currency) }}</span>
-        </div>
+        <template v-if="paymentPreview.breakdown && paymentPreview.breakdown.length > 0">
+          <div v-for="(item, idx) in paymentPreview.breakdown" :key="idx" class="flex justify-between text-emerald-600 text-sm">
+            <span class="text-emerald-600/80">{{ getDiscountLabel(item) }}</span>
+            <span class="font-medium">-{{ formatMoney(item.discount, paymentPreview.currency) }}</span>
+          </div>
+        </template>
+        <template v-else-if="paymentPreview.discount_total">
+          <div class="flex justify-between text-emerald-600 text-sm">
+            <span class="text-emerald-600/80">{{ t.checkoutWizard?.discount || 'Discount' }}</span>
+            <span class="font-medium">-{{ formatMoney(paymentPreview.discount_total, paymentPreview.currency) }}</span>
+          </div>
+        </template>
         <div class="mt-2 flex justify-between border-t border-border pt-2">
           <span class="font-semibold text-foreground">{{ t.checkoutWizard?.total || 'Total' }}</span>
           <span class="text-lg font-bold text-foreground">{{ paymentPreview.pay_amount_label || formatMoney(paymentPreview.total, paymentPreview.currency) }}</span>
@@ -96,6 +104,12 @@ const cannotPayReason = computed(() => hasInvalidCouponCodes.value ? (t.value.pu
 function formatMoney(amount?: number, currency = "usd") {
   if (typeof amount !== "number") return "-"
   return new Intl.NumberFormat(undefined, { style: "currency", currency: currency || "usd" }).format(amount / 100)
+}
+
+function getDiscountLabel(item: any) {
+  let label = item.name || item.description || item.code || t.value.checkoutWizard?.discount || 'Discount'
+  // Remove backend's unformatted minor units from label if present (e.g. ": -75000 usd")
+  return label.replace(/:\s*-\d+(\.\d+)?\s*[a-zA-Z]*$/i, '')
 }
 
 function normalizeCouponCodes(codes: string[]) {

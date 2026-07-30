@@ -131,7 +131,17 @@ const orderStatusOptions = computed(() => [
   { value: "CLOSED", label: orderStatusFilterLabel("CLOSED") },
 ])
 
-const actionableOrderStatuses = new Set(["WAIT_PAYMENT", "PENDING"])
+const actionableOrderStatuses = new Set([
+  "wait_payment",
+  "pending",
+  "pending_payment",
+  "wait_pipeline_payment",
+  "wait_stage_payment",
+  "wait_retake_payment",
+  "wait_unlock_payment",
+  "wait_bundle_payment",
+  "wait_review_fee_payment",
+])
 const paidPaymentStatuses = new Set(["PAID"])
 const paymentReturnSyncAttempts = 6
 const paymentReturnSyncIntervalMs = 1500
