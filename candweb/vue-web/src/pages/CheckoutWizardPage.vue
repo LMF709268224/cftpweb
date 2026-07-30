@@ -726,6 +726,13 @@ async function latestCredentialApplication(qualId: string) {
   return (response?.applications || [])[0] || null
 }
 
+async function hasQualificationUploadPermission(qualId: string) {
+  const response = await apiClient(`/api/credentials/upload-permission?cred_def_ulid=${encodeURIComponent(qualId)}`, {
+    suppressErrorToast: true,
+  })
+  return response?.granted === true
+}
+
 async function refreshQualificationApplications() {
   const qualIds = Array.from(new Set(
     exemptionStages.value
@@ -1059,6 +1066,12 @@ async function startQualificationApplication(unit: any) {
         await openQualificationEditor(unit, qualId)
         return
       }
+    }
+
+    if (await hasQualificationUploadPermission(qualId)) {
+      toast.info(t.value.checkoutWizard.qualificationUploadReady)
+      await openQualificationEditor(unit, qualId)
+      return
     }
 
     let order
