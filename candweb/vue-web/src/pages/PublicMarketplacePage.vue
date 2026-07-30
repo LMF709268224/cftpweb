@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useRouter } from "vue-router"
+import { toast } from "vue-sonner"
 import { AlertCircle, ArrowRight, BookOpen, Clock, Search } from "lucide-vue-next"
 import GfiFooter from "@/components/GfiFooter.vue"
 import GfiHeader from "@/components/GfiHeader.vue"
 import { apiClient } from "@/lib/apiClient"
-import { isAuthenticated, rememberPostLoginRedirect } from "@/lib/authStorage"
+import { isAuthenticated } from "@/lib/authStorage"
+import { startGfiLogin } from "@/lib/gfiLogin"
 import { useTranslation } from "@/lib/language"
 
 type ProductCategory = "all" | "certification" | "bundle" | "membership"
@@ -179,15 +181,19 @@ function syncAuthentication() {
   authenticated.value = isAuthenticated()
 }
 
-function openCourse() {
+async function openCourse() {
   syncAuthentication()
   if (authenticated.value) {
     void router.push("/certifications")
     return
   }
 
-  rememberPostLoginRedirect("/certifications")
-  void router.push("/login")
+  try {
+    await startGfiLogin("/certifications")
+  } catch (error) {
+    console.error("Unable to start GFI login:", error)
+    toast.error(t.value.loginPage.errorTitle)
+  }
 }
 
 watch(lang, () => {

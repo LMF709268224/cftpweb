@@ -4,6 +4,7 @@ import { RouterLink, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
 import { AlertCircle, BookOpen, CheckCircle2, Clock, ShoppingCart, Users } from "lucide-vue-next"
 import { CANDIDATE_PIPELINE_STATUS_LABELS, statusLabel } from "@/lib/status-labels"
+import { startGfiLogin } from "@/lib/gfiLogin"
 import { useTranslation } from "@/lib/language"
 import { apiClient } from "@/lib/apiClient"
 
@@ -139,7 +140,12 @@ async function refreshBundleState() {
 
 async function handleCardClick() {
   if (props.loginRequired) {
-    router.push("/login")
+    try {
+      await startGfiLogin()
+    } catch (error) {
+      console.error("Unable to start GFI login:", error)
+      toast.error(t.value.loginPage.errorTitle)
+    }
     return
   }
   if (effectivePurchased.value || statusRefreshing.value) return

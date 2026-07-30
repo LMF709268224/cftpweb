@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref } from "vue"
 import { AlertCircle, ArrowRight, LockKeyhole, ShieldCheck } from "lucide-vue-next"
-import { apiClient } from "@/lib/apiClient"
+import { startGfiLogin } from "@/lib/gfiLogin"
 import { useTranslation } from "@/lib/language"
 
 type LoginState = "idle" | "loading" | "error"
@@ -31,13 +31,7 @@ async function loginWithGfi() {
   }, 3000)
 
   try {
-    const callbackUrl = encodeURIComponent(`${window.location.origin}/callback`)
-    const resData = await apiClient(`/api/auth/login-url?callback=${callbackUrl}`, {
-      timeoutMs: 10000,
-      suppressErrorToast: true,
-    })
-    if (!resData?.url) throw new Error("AUTH_LOGIN_URL_MISSING")
-    window.location.assign(resData.url)
+    await startGfiLogin()
   } catch (error) {
     console.error("Unable to start GFI login:", error)
     clearSlowHintTimer()

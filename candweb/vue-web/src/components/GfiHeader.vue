@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useRoute } from "vue-router"
+import { toast } from "vue-sonner"
 import { ChevronDown, Languages, Menu, X } from "lucide-vue-next"
 import { isAuthenticated } from "@/lib/authStorage"
+import { startGfiLogin } from "@/lib/gfiLogin"
 import { useTranslation } from "@/lib/language"
 import { gfiNavGroups, localize } from "@/lib/gfiSite"
 
@@ -13,14 +15,28 @@ const props = withDefaults(defineProps<{ theme?: "dark" | "light"; authTarget?: 
 })
 
 const route = useRoute()
-const { lang, changeLanguage } = useTranslation()
+const { t, lang, changeLanguage } = useTranslation()
 const openMenu = ref<number | null>(null)
 const languageOpen = ref(false)
 const mobileOpen = ref(false)
 const authenticated = ref(isAuthenticated())
+const authStarting = ref(false)
 
 const logo = "/gfi/gfi-logo-blue.svg"
 const currentLanguage = computed(() => (lang.value === "zh" ? "CN" : "EN"))
+const usesDirectThirdPartyLogin = computed(() => props.authTarget === "/login")
+
+async function beginAuthentication() {
+  if (authStarting.value) return
+  authStarting.value = true
+  try {
+    await startGfiLogin()
+  } catch (error) {
+    console.error("Unable to start GFI login:", error)
+    toast.error(t.value.loginPage.errorTitle)
+    authStarting.value = false
+  }
+}
 
 function isGroupActive(index: number) {
   return gfiNavGroups[index].items.some((item) => route.path === item.to || route.path.startsWith(`${item.to}/`))
@@ -107,6 +123,15 @@ watch(
         <RouterLink v-if="authenticated" to="/dashboard" class="gfi-console-link">
           {{ lang === "zh" ? "控制台" : "Dashboard" }}
         </RouterLink>
+        <template v-else-if="usesDirectThirdPartyLogin">
+          <button type="button" class="gfi-auth-link" :disabled="authStarting" :aria-busy="authStarting" @click="beginAuthentication">
+            {{ lang === "zh" ? "登录" : "Log In" }}
+          </button>
+          <span />
+          <button type="button" class="gfi-auth-link" :disabled="authStarting" :aria-busy="authStarting" @click="beginAuthentication">
+            {{ lang === "zh" ? "注册" : "Register" }}
+          </button>
+        </template>
         <template v-else>
           <RouterLink :to="props.authTarget" :target="props.authNewTab ? '_blank' : undefined" :rel="props.authNewTab ? 'noopener noreferrer' : undefined">
             {{ lang === "zh" ? "登录" : "Log In" }}
@@ -138,7 +163,18 @@ watch(
         <button :class="{ selected: lang === 'zh' }" @click="selectLanguage('zh')">中文</button>
         <button :class="{ selected: lang === 'en' }" @click="selectLanguage('en')">English</button>
       </div>
+      <button
+        v-if="!authenticated && usesDirectThirdPartyLogin"
+        type="button"
+        class="gfi-mobile-login"
+        :disabled="authStarting"
+        :aria-busy="authStarting"
+        @click="beginAuthentication"
+      >
+        {{ lang === "zh" ? "登录 / 注册" : "Log In / Register" }}
+      </button>
       <RouterLink
+        v-else
         :to="authenticated ? '/dashboard' : props.authTarget"
         class="gfi-mobile-login"
         :target="!authenticated && props.authNewTab ? '_blank' : undefined"
@@ -173,6 +209,8 @@ watch(
 .gfi-header-actions { position: absolute; top: 0; right: 40px; display: flex; height: 94px; align-items: center; gap: 13px; font-size: 15px; white-space: nowrap; }
 .gfi-header-actions > span { width: 1px; height: 18px; background: rgba(255,255,255,.4); }
 .gfi-header--light .gfi-header-actions > span { background: #cbd2df; }
+.gfi-auth-link { padding:0; border:0; background:transparent; color:inherit; cursor:pointer; font:inherit; }
+.gfi-auth-link:disabled { cursor:wait; opacity:.65; }
 .gfi-console-link { color:#9fc5ff; font-weight:600; transition:color .2s ease; }
 .gfi-console-link:hover { color:#fff; text-decoration:underline; text-underline-offset:4px; }
 .gfi-console-link:focus-visible { outline:2px solid #9fc5ff; outline-offset:5px; border-radius:2px; }
@@ -196,7 +234,8 @@ watch(
 .gfi-mobile-language { display: flex !important; gap: 8px; padding: 18px 0 10px; }
 .gfi-mobile-language button { width: auto !important; padding: 8px 14px !important; border: 1px solid rgba(255,255,255,.22) !important; border-radius: 18px; }
 .gfi-mobile-language button.selected { background: #fff !important; color: #101f47 !important; }
-.gfi-mobile-login { display: block; margin-top: 10px; padding: 13px; border-radius: 4px; background: #2864ff; text-align: center; font-weight: 600; }
+.gfi-mobile-login { display:block; width:100%; margin-top:10px; padding:13px; border:0; border-radius:4px; background:#2864ff; color:#fff; cursor:pointer; text-align:center; font:inherit; font-weight:600; }
+.gfi-mobile-login:disabled { cursor:wait; opacity:.75; }
 
 @media (max-width: 1180px) {
   .gfi-nav-group > button { padding: 0 10px; font-size: 15px; }
