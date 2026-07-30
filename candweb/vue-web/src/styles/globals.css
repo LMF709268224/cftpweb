@@ -574,16 +574,14 @@
   .candidate-portal .resource-pack-card,
   .candidate-portal .certificate-card,
   .candidate-portal .checkout-card,
-  .candidate-portal .checkout-unit-card,
-  .candidate-portal .order-row {
+  .candidate-portal .checkout-unit-card {
     border: 1px solid rgba(0, 42, 102, 0.16);
     border-radius: 0.5rem !important;
     box-shadow: none !important;
   }
 
   .candidate-portal .resource-pack-card:hover,
-  .candidate-portal .certificate-card:hover,
-  .candidate-portal .order-row:hover {
+  .candidate-portal .certificate-card:hover {
     border-color: #0957f9;
     box-shadow: none !important;
   }
