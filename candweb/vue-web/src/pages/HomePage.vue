@@ -129,49 +129,59 @@ const showDashboardSkeleton = computed(() => dashboardLoading.value && !dashboar
 
 const cardStyles = {
   orange: {
-    panel: "bg-white",
-    border: "border-[#ccd7e8]",
-    hoverBorder: "hover:border-[#0957f9]",
-    text: "text-[#002a66]",
-    number: "text-[#002a66]",
-    accent: "#0957f9",
-    glow: "rgba(9, 87, 249, 0.12)",
+    panel: "bg-[#fffaf0]",
+    border: "border-[#f1d69a]",
+    hoverBorder: "hover:border-[#d9a52e]",
+    text: "text-[#704000]",
+    number: "text-[#9b5200]",
+    iconPanel: "bg-[#fff0c7]",
+    iconText: "text-[#b86600]",
+    accent: "#d99a13",
+    glow: "rgba(217, 154, 19, 0.24)",
   },
   purple: {
-    panel: "bg-white",
-    border: "border-[#ccd7e8]",
-    hoverBorder: "hover:border-[#0957f9]",
-    text: "text-[#002a66]",
-    number: "text-[#002a66]",
-    accent: "#0957f9",
-    glow: "rgba(9, 87, 249, 0.12)",
+    panel: "bg-[#f8f5ff]",
+    border: "border-[#d9cff5]",
+    hoverBorder: "hover:border-[#7657c8]",
+    text: "text-[#463079]",
+    number: "text-[#59399d]",
+    iconPanel: "bg-[#ece5ff]",
+    iconText: "text-[#6847b7]",
+    accent: "#7657c8",
+    glow: "rgba(118, 87, 200, 0.22)",
   },
   blue: {
-    panel: "bg-white",
-    border: "border-[#ccd7e8]",
+    panel: "bg-[#f3f7ff]",
+    border: "border-[#cbd9f3]",
     hoverBorder: "hover:border-[#0957f9]",
     text: "text-[#002a66]",
     number: "text-[#002a66]",
+    iconPanel: "bg-[#e3edff]",
+    iconText: "text-[#0957f9]",
     accent: "#0957f9",
-    glow: "rgba(9, 87, 249, 0.12)",
+    glow: "rgba(9, 87, 249, 0.22)",
   },
   teal: {
-    panel: "bg-white",
-    border: "border-[#ccd7e8]",
-    hoverBorder: "hover:border-[#0957f9]",
-    text: "text-[#002a66]",
-    number: "text-[#002a66]",
-    accent: "#0957f9",
-    glow: "rgba(9, 87, 249, 0.12)",
+    panel: "bg-[#f1fbf9]",
+    border: "border-[#bfe5dc]",
+    hoverBorder: "hover:border-[#168a78]",
+    text: "text-[#075e53]",
+    number: "text-[#087568]",
+    iconPanel: "bg-[#d9f3ed]",
+    iconText: "text-[#0a8b79]",
+    accent: "#14917d",
+    glow: "rgba(20, 145, 125, 0.22)",
   },
   green: {
-    panel: "bg-white",
-    border: "border-[#ccd7e8]",
-    hoverBorder: "hover:border-[#0957f9]",
-    text: "text-[#002a66]",
-    number: "text-[#002a66]",
-    accent: "#0957f9",
-    glow: "rgba(9, 87, 249, 0.12)",
+    panel: "bg-[#f2fbf4]",
+    border: "border-[#c3e4ca]",
+    hoverBorder: "hover:border-[#318a4a]",
+    text: "text-[#175f2b]",
+    number: "text-[#1b7133]",
+    iconPanel: "bg-[#ddf2e2]",
+    iconText: "text-[#278342]",
+    accent: "#328b4b",
+    glow: "rgba(50, 139, 75, 0.22)",
   },
 } as const
 
@@ -217,18 +227,19 @@ onMounted(async () => {
       </header>
 
       <main class="dashboard-main px-5 py-10 md:px-8 lg:px-12">
-        <section class="mx-auto w-full max-w-[1180px] border-b border-[#002a66]/15 pb-8 text-left">
-          <h1 class="text-[32px] font-bold leading-tight text-[#002a66]">{{ guideCopy.title }}</h1>
-          <p class="mt-3 max-w-3xl text-base leading-7 text-[#5b6b87]">{{ guideCopy.subtitle }}</p>
+        <section class="mx-auto w-full max-w-[1280px] border-b border-[#002a66]/15 pb-8 text-center">
+          <span class="mx-auto mb-4 block h-1 w-12 rounded-full bg-[#0957f9]" aria-hidden="true" />
+          <h1 class="text-[34px] font-bold leading-tight text-[#002a66] md:text-[38px]">{{ guideCopy.title }}</h1>
+          <p class="mx-auto mt-4 max-w-4xl text-base leading-7 text-[#5b6b87] md:text-lg">{{ guideCopy.subtitle }}</p>
         </section>
 
-        <section class="portal-card-section mx-auto mt-8 w-full max-w-[1180px]">
+        <section class="portal-card-section mx-auto mt-9 w-full max-w-[1280px]">
           <div v-if="showDashboardSkeleton" class="flex flex-col gap-8" role="status" :aria-label="t.common.loading" aria-live="polite">
             <div class="portal-card-row portal-card-featured-row grid grid-cols-1 gap-5 md:grid-cols-2">
               <div
                 v-for="item in 2"
                 :key="`featured-skeleton-${item}`"
-                class="portal-stat-card portal-card-featured portal-card-skeleton min-h-[190px] w-full rounded-lg border border-[#ccd7e8] bg-white p-6"
+                class="portal-stat-card portal-card-featured portal-card-skeleton min-h-[220px] w-full rounded-lg border border-[#ccd7e8] bg-white p-7"
               >
                 <div class="mx-auto h-9 w-9 rounded-full bg-slate-100" />
                 <div class="mx-auto mt-6 h-5 w-32 rounded-full bg-slate-100" />
@@ -241,7 +252,7 @@ onMounted(async () => {
               <div
                 v-for="item in 3"
                 :key="`secondary-skeleton-${item}`"
-                class="portal-stat-card portal-card-secondary portal-card-skeleton min-h-[190px] w-full rounded-lg border border-[#ccd7e8] bg-white p-6"
+                class="portal-stat-card portal-card-secondary portal-card-skeleton min-h-[205px] w-full rounded-lg border border-[#ccd7e8] bg-white p-7"
               >
                 <div class="mx-auto h-9 w-9 rounded-full bg-slate-100" />
                 <div class="mx-auto mt-6 h-5 w-28 rounded-full bg-slate-100" />
@@ -258,21 +269,22 @@ onMounted(async () => {
                 :key="card.key"
                 :to="card.href"
                 :class="[
-                  'portal-stat-card portal-card-featured group relative flex min-h-[190px] w-full flex-col items-start rounded-lg border p-6 text-left transition-[border-color,box-shadow] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
+                  'portal-stat-card portal-card-featured group relative flex min-h-[220px] w-full flex-col items-center overflow-hidden rounded-lg border p-7 text-center shadow-[0_8px_20px_rgba(0,42,102,0.07)] transition-[transform,border-color,box-shadow] duration-300 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
                   cardStyles[card.color].panel,
                   cardStyles[card.color].border,
                   cardStyles[card.color].hoverBorder,
                 ]"
                 :style="{ '--portal-card-accent': cardStyles[card.color].accent, '--portal-card-glow': cardStyles[card.color].glow }"
               >
-                <div class="portal-card-icon relative flex h-10 w-10 items-center justify-center rounded-lg bg-[#edf2ff] text-[#0957f9]">
-                  <component :is="card.icon" class="h-6 w-6 text-[#0957f9]" :stroke-width="2.1" />
+                <span class="portal-card-accent absolute inset-x-0 top-0 h-1 origin-left" aria-hidden="true" />
+                <div :class="['portal-card-icon relative flex h-12 w-12 items-center justify-center rounded-lg transition-transform duration-300 group-hover:scale-105', cardStyles[card.color].iconPanel]">
+                  <component :is="card.icon" :class="['h-6 w-6', cardStyles[card.color].iconText]" :stroke-width="2.1" />
                 </div>
-                <h2 :class="['relative mt-5 text-base font-semibold', cardStyles[card.color].text]">{{ card.title }}</h2>
-                <p :class="['relative mt-auto pt-6 text-4xl font-bold', cardStyles[card.color].number]">
+                <h2 :class="['relative mt-5 text-lg font-semibold', cardStyles[card.color].text]">{{ card.title }}</h2>
+                <p :class="['relative mt-auto pt-5 text-5xl font-bold tracking-tight', cardStyles[card.color].number]">
                   <span>{{ card.value }}</span>
                 </p>
-                <p class="relative mt-2 text-sm font-medium text-[#0957f9] transition-colors group-hover:text-[#002a66]">{{ card.action }} <span aria-hidden="true">→</span></p>
+                <p :class="['relative mt-3 text-sm font-medium transition-opacity group-hover:opacity-75', cardStyles[card.color].text]">{{ card.action }} <span aria-hidden="true">→</span></p>
               </RouterLink>
             </div>
 
@@ -282,21 +294,22 @@ onMounted(async () => {
                 :key="card.key"
                 :to="card.href"
                 :class="[
-                  'portal-stat-card portal-card-secondary group relative flex min-h-[190px] w-full flex-col items-start rounded-lg border p-6 text-left transition-[border-color,box-shadow] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
+                  'portal-stat-card portal-card-secondary group relative flex min-h-[205px] w-full flex-col items-center overflow-hidden rounded-lg border p-7 text-center shadow-[0_8px_20px_rgba(0,42,102,0.06)] transition-[transform,border-color,box-shadow] duration-300 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
                   cardStyles[card.color].panel,
                   cardStyles[card.color].border,
                   cardStyles[card.color].hoverBorder,
                 ]"
                 :style="{ '--portal-card-accent': cardStyles[card.color].accent, '--portal-card-glow': cardStyles[card.color].glow }"
               >
-                <div class="portal-card-icon relative flex h-10 w-10 items-center justify-center rounded-lg bg-[#edf2ff] text-[#0957f9]">
-                  <component :is="card.icon" class="h-6 w-6 text-[#0957f9]" :stroke-width="2.1" />
+                <span class="portal-card-accent absolute inset-x-0 top-0 h-1 origin-left" aria-hidden="true" />
+                <div :class="['portal-card-icon relative flex h-12 w-12 items-center justify-center rounded-lg transition-transform duration-300 group-hover:scale-105', cardStyles[card.color].iconPanel]">
+                  <component :is="card.icon" :class="['h-6 w-6', cardStyles[card.color].iconText]" :stroke-width="2.1" />
                 </div>
                 <h2 :class="['relative mt-5 text-base font-semibold', cardStyles[card.color].text]">{{ card.title }}</h2>
-                <p :class="['relative mt-auto pt-6 text-4xl font-bold', cardStyles[card.color].number]">
+                <p :class="['relative mt-auto pt-4 text-[42px] font-bold tracking-tight', cardStyles[card.color].number]">
                   <span>{{ card.value }}</span>
                 </p>
-                <p class="relative mt-2 text-sm font-medium text-[#0957f9] transition-colors group-hover:text-[#002a66]">{{ card.action }} <span aria-hidden="true">→</span></p>
+                <p :class="['relative mt-3 text-sm font-medium transition-opacity group-hover:opacity-75', cardStyles[card.color].text]">{{ card.action }} <span aria-hidden="true">→</span></p>
               </RouterLink>
             </div>
           </div>
@@ -330,7 +343,21 @@ onMounted(async () => {
 }
 
 .portal-stat-card:hover {
-  box-shadow: 0 10px 24px -18px var(--portal-card-glow);
+  box-shadow: 0 18px 34px -18px var(--portal-card-glow), 0 12px 26px rgba(0, 42, 102, 0.1);
+}
+
+.portal-card-accent {
+  background: var(--portal-card-accent);
+  transform: scaleX(0.35);
+  transition: transform 300ms ease;
+}
+
+.portal-stat-card:hover .portal-card-accent {
+  transform: scaleX(1);
+}
+
+.portal-card-icon {
+  box-shadow: 0 8px 18px -12px var(--portal-card-glow);
 }
 
 .portal-card-skeleton {
