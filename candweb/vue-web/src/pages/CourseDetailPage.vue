@@ -18,6 +18,8 @@ import {
   stageStatusHintLabel,
   timelineStatusBadgeClassForStatus,
   timelineStatusLabelWithDiagnostics,
+  statusEnumNameForStatus,
+  STAGE_STATUS_ENUM_NAMES,
 } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
 import LoadingState from "@/components/LoadingState.vue"
@@ -326,6 +328,10 @@ function canShowUnit(unit: UnitConfig) {
 
 function visibleStageUnits(stage: StageConfig) {
   return (stage.units || []).filter(canShowUnit)
+}
+
+function isStageWaitCandidate(stage: StageConfig) {
+  return statusEnumNameForStatus(STAGE_STATUS_ENUM_NAMES, stage.runtime_status) === "STAGE_STATUS_WAIT_CANDIDATE"
 }
 
 function stageStatusLabel(status?: string | number | null) {
@@ -920,7 +926,7 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
               </div>
             </component>
           </div>
-          <div v-else-if="String(stage.runtime_status) === '1' || String(stage.runtime_status) === 'STAGE_STATUS_WAIT_CANDIDATE'" class="flex justify-center border-t border-slate-100 p-6">
+          <div v-else-if="isStageWaitCandidate(stage)" class="flex justify-center border-t border-slate-100 p-6">
             <button
               class="btn btn-primary rounded-lg"
               :disabled="stagePaymentLoading"
