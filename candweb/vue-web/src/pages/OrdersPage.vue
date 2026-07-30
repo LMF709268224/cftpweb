@@ -795,7 +795,7 @@ onBeforeUnmount(() => {
           </div>
           <div v-else-if="selectedOrderDetail" class="space-y-4">
             <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/60">
-              <div class="border-b border-primary/10 bg-gradient-to-r from-primary/10 via-white to-emerald-50 px-4 py-4 sm:px-5">
+              <div class="border-b border-primary/10 bg-[#f4f6fa] px-4 py-4 sm:px-5">
                 <div class="mb-4 flex items-start justify-between gap-3">
                   <h3 class="font-semibold text-slate-950">{{ t.orders.detailSummary }}</h3>
                   <span v-if="selectedOrderDetail.summary?.order_status" class="badge shrink-0 text-xs" :class="timelineStatusBadgeClassForStatus('MALL_ORDER', selectedOrderDetail.summary.order_status)">

@@ -205,11 +205,11 @@ onMounted(async () => {
                   <Award class="h-5 w-5" />
                 </div>
                 <div class="min-w-0 flex-1">
-                  <p class="text-xs font-semibold uppercase tracking-[0.14em] text-primary/70">{{ t.certificatesPage.certificateName }}</p>
+                  <p class="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{{ t.certificatesPage.certificateName }}</p>
                   <p class="mt-1 break-words text-xl font-bold leading-snug text-slate-950 md:text-2xl">{{ featuredCertificate.name }}</p>
                   <p class="mt-2 flex flex-wrap items-center gap-2 text-sm font-medium text-slate-600">
                     <span class="inline-flex items-center gap-1.5">
-                      <Calendar class="h-4 w-4 text-primary/70" />
+                      <Calendar class="h-4 w-4 text-primary" />
                       {{ featuredCertificate.issueDate }}
                     </span>
                     <span class="text-slate-300">|</span>
@@ -263,8 +263,7 @@ onMounted(async () => {
         <span class="certificate-card-sheen pointer-events-none absolute left-0 top-0 z-20 h-1 w-full" />
         <span class="certificate-card-orb pointer-events-none absolute -right-12 -top-12 z-10 h-36 w-36 rounded-full opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
         <div class="absolute inset-x-0 top-0 z-10 h-1" :class="certificateSourceAccentClass(cert.source)" />
-        <div class="relative bg-[linear-gradient(135deg,rgb(11,31,69)_0%,rgb(27,69,141)_55%,rgb(58,111,192)_100%)] p-4 text-white">
-          <div class="absolute inset-0 bg-[radial-gradient(circle_at_18%_12%,rgba(255,255,255,0.22),transparent_32%)] opacity-70" />
+        <div class="relative bg-[#002a66] p-4 text-white">
           <div class="relative flex items-start justify-between">
             <div class="min-w-0">
               <div class="mb-3 flex flex-wrap items-center gap-2">
@@ -284,7 +283,7 @@ onMounted(async () => {
               <h3 class="mb-1 text-xl font-bold">{{ cert.name }}</h3>
               <p class="text-sm text-white/80">{{ cert.description }}</p>
             </div>
-            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/20 ring-1 ring-white/15 backdrop-blur-sm transition-transform duration-300 group-hover:scale-105"><Award class="h-6 w-6" /></div>
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-white/20 bg-white/10"><Award class="h-6 w-6" /></div>
           </div>
         </div>
         <div class="relative p-4">
@@ -325,8 +324,8 @@ onMounted(async () => {
 
 <style scoped>
 .certificate-card {
-  --certificate-card-accent: #38bdf8;
-  --certificate-card-glow: rgba(37, 99, 235, 0.2);
+  --certificate-card-accent: var(--gfi-vivid, #0957f9);
+  --certificate-card-glow: rgba(9, 87, 249, 0.16);
 }
 
 .certificate-card:hover {
@@ -345,7 +344,7 @@ onMounted(async () => {
 }
 
 .certificate-card-orb {
-  background: radial-gradient(circle, rgba(56, 189, 248, 0.2), transparent 68%);
+  background: radial-gradient(circle, rgba(9, 87, 249, 0.16), transparent 68%);
 }
 
 .certificate-modal-primary {

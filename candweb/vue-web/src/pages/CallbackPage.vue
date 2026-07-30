@@ -31,9 +31,10 @@ onMounted(async () => {
       body: JSON.stringify({ code, state }),
     })
     setAuthSession(payload.user?.name)
-    consumePostLoginRedirect()
+    const postLoginRedirect = consumePostLoginRedirect()
+    const redirectPath = postLoginRedirect === "/certifications" ? postLoginRedirect : "/dashboard"
     status.value = "success"
-    setTimeout(() => router.replace("/dashboard"), 1000)
+    setTimeout(() => router.replace(redirectPath), 1000)
   } catch (err: any) {
     status.value = "error"
     errorMsg.value = getErrorMessage(err instanceof ApiClientError ? err.errorCode || "AUTH_FAILED" : err?.message || "AUTH_FAILED", currentLang)

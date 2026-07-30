@@ -158,7 +158,7 @@ async function handleCardClick() {
   <component
     :is="effectivePurchased ? RouterLink : 'div'"
     :to="effectivePurchased ? purchasedTarget : undefined"
-    class="group flex h-full flex-col overflow-hidden rounded-[16px] border-2 border-[#dfe4ea] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all duration-300 hover:-translate-y-0.5 hover:border-primary hover:shadow-[0_18px_42px_rgba(16,30,67,0.16)]"
+    class="group flex h-full flex-col overflow-hidden rounded-lg border border-[#ccd7e8] bg-white transition-colors duration-200 hover:border-primary"
     :class="!effectivePurchased && 'cursor-pointer'"
     @click="handleCardClick"
   >
@@ -202,10 +202,10 @@ async function handleCardClick() {
 
         <div class="min-h-[52px]">
           <div v-if="priceLabel" class="space-y-0.5">
-            <div class="text-sm font-medium leading-5 text-[#4a4f59]">
+            <div class="text-sm font-medium leading-5 text-muted-foreground">
               {{ cardCopy.estimatedPrice }}
             </div>
-            <div class="whitespace-nowrap text-[22px] font-bold leading-tight tracking-tight text-[#101114] xl:text-[24px] 2xl:text-[26px]">
+            <div class="whitespace-nowrap text-[22px] font-bold leading-tight text-[#002a66] xl:text-[24px] 2xl:text-[26px]">
               {{ priceLabel }}
             </div>
           </div>
@@ -230,7 +230,7 @@ async function handleCardClick() {
         </div>
       </div>
 
-      <div v-if="stats?.length" class="mb-3 grid grid-cols-3 gap-2 rounded-lg bg-[#f6fafb] p-2 text-center">
+      <div v-if="stats?.length" class="mb-3 grid grid-cols-3 gap-2 rounded-lg border border-border bg-muted p-2 text-center">
         <div v-for="stat in stats" :key="stat.label" class="rounded-lg bg-white px-2 py-2">
           <div class="text-sm font-semibold text-foreground">{{ stat.value }}</div>
           <div class="truncate text-[11px] text-muted-foreground">{{ stat.label }}</div>

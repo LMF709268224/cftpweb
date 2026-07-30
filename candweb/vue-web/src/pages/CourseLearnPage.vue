@@ -552,20 +552,20 @@ const nextStepState = computed(() => {
   return nextStepDisplay(nextUnitStatus.value, Boolean(nextLearningLessonId.value), Boolean(nextStep.value?.allow_retake), hasPendingQuizzes.value)
 })
 function flowStepRingClass(step: { id: CertificationStepKey; status: FlowStepStatus }) {
-  if (step.status === "done") return "border-emerald-500 bg-emerald-50 text-emerald-700"
-  if (step.id === visibleCertificationStepId.value || step.status === "current") return "border-primary bg-blue-50 text-primary shadow-[0_0_0_6px_rgba(37,99,235,0.08)]"
-  return "border-slate-300 bg-white text-slate-500"
+  if (step.status === "done") return "border-primary bg-primary text-white"
+  if (step.id === visibleCertificationStepId.value || step.status === "current") return "border-[#002a66] bg-[#002a66] text-white shadow-[0_0_0_4px_rgba(193,206,246,0.55)]"
+  return "border-[#c1cef6] bg-[#edeef2] text-[#5b6b87]"
 }
 
 function flowConnectorClass(step: { status: FlowStepStatus }) {
-  return step.status === "done" ? "bg-emerald-500" : "bg-[repeating-linear-gradient(to_right,#cbd5e1_0,#cbd5e1_6px,transparent_6px,transparent_12px)]"
+  return step.status === "done" ? "bg-primary" : "bg-[repeating-linear-gradient(to_right,#c1cef6_0,#c1cef6_5px,transparent_5px,transparent_10px)]"
 }
 
 function flowStepBadgeClass(step: { status: FlowStepStatus }) {
-  if (step.status === "done") return "border-emerald-200 bg-emerald-50 text-emerald-700"
-  if (step.status === "current") return "border-primary/25 bg-primary/10 text-primary"
-  if (step.status === "locked") return "border-slate-200 bg-slate-50 text-slate-500"
-  return "border-slate-200 bg-white text-slate-600"
+  if (step.status === "done") return "border-primary/20 bg-primary/10 text-primary"
+  if (step.status === "current") return "border-[#002a66]/20 bg-[#c1cef6]/40 text-[#002a66]"
+  if (step.status === "locked") return "border-[#002a66]/10 bg-white text-[#5b6b87]"
+  return "border-[#c1cef6] bg-white text-[#2a4575]"
 }
 
 function canSelectFlowStep(step: { id: CertificationStepKey; actionable: boolean; status: FlowStepStatus }) {
@@ -1414,7 +1414,7 @@ watch(selectedMaterial, () => {
           </div>
         </div>
 
-        <div class="grid w-full grid-cols-[minmax(72px,auto)_minmax(0,1fr)_minmax(72px,auto)_minmax(0,1fr)_minmax(72px,auto)] items-start">
+        <div class="course-flow-panel grid w-full grid-cols-[minmax(72px,auto)_minmax(0,1fr)_minmax(72px,auto)_minmax(0,1fr)_minmax(72px,auto)] items-start">
           <template v-for="(step, index) in certificationFlowSteps" :key="step.id">
             <button
               type="button"
@@ -1422,14 +1422,14 @@ watch(selectedMaterial, () => {
               class="group flex min-w-0 flex-col items-center gap-2 disabled:cursor-not-allowed"
               @click="selectHeaderFlowStep(step)"
             >
-              <span :class="['flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all sm:h-11 sm:w-11', flowStepRingClass(step)]">
-                <CheckCircle2 v-if="step.status === 'done'" class="h-4 w-4 sm:h-5 sm:w-5" />
-                <component :is="step.icon" v-else class="h-4 w-4 sm:h-5 sm:w-5" />
+              <span :class="['flex h-9 w-9 items-center justify-center rounded-full border-2 transition-all sm:h-10 sm:w-10', flowStepRingClass(step)]">
+                <CheckCircle2 v-if="step.status === 'done'" class="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
+                <component :is="step.icon" v-else class="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
               </span>
               <span class="text-xs font-bold text-foreground sm:text-sm">{{ step.label }}</span>
               <span :class="['max-w-[76px] rounded-full border px-2 py-0.5 text-center text-[11px] font-semibold leading-tight sm:max-w-none sm:px-2.5', flowStepBadgeClass(step)]">{{ step.statusText }}</span>
             </button>
-            <div v-if="index < certificationFlowSteps.length - 1" :class="['mx-2 mt-5 h-0.5 sm:mx-4 sm:mt-5', flowConnectorClass(step)]" />
+            <div v-if="index < certificationFlowSteps.length - 1" :class="['mx-2 mt-[18px] h-0.5 sm:mx-4 sm:mt-5', flowConnectorClass(step)]" />
           </template>
         </div>
 
@@ -1487,10 +1487,10 @@ watch(selectedMaterial, () => {
               :class="[
                 'flex w-full items-center gap-3 rounded-md px-4 py-3 text-left text-sm transition-all disabled:cursor-not-allowed',
                 visibleCertificationStepId === step.id
-                  ? 'bg-blue-50 text-primary'
+                  ? 'bg-primary/10 text-primary'
                   : step.status === 'locked'
-                    ? 'text-slate-500 hover:bg-slate-50'
-                    : 'text-slate-700 hover:bg-slate-50',
+                    ? 'text-slate-500 hover:bg-muted'
+                    : 'text-slate-700 hover:bg-muted',
               ]"
               @click="selectFlowStep(step)"
             >
@@ -1498,15 +1498,18 @@ watch(selectedMaterial, () => {
               <span class="min-w-0 flex-1 font-medium">{{ step.label }}</span>
               <span
                 :class="[
-                  'h-4 w-4 shrink-0 rounded-full border',
+                  'flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors',
                   step.status === 'done'
-                    ? 'border-emerald-500 bg-emerald-500 shadow-[inset_0_0_0_3px_white]'
+                    ? 'border-primary bg-primary text-white'
                     : visibleCertificationStepId === step.id
-                      ? 'border-primary bg-primary shadow-[inset_0_0_0_3px_white]'
-                      : 'border-slate-400 bg-white',
+                      ? 'border-[#002a66] bg-[#002a66] text-white'
+                      : 'border-[#c1cef6] bg-white text-transparent',
                 ]"
                 aria-hidden="true"
-              />
+              >
+                <CheckCircle2 v-if="step.status === 'done'" class="h-3.5 w-3.5" />
+                <span v-else-if="visibleCertificationStepId === step.id" class="h-1.5 w-1.5 rounded-full bg-white" />
+              </span>
             </button>
           </div>
           <div class="mt-6 border-t border-slate-100 pt-5">
@@ -1518,7 +1521,7 @@ watch(selectedMaterial, () => {
                 type="button"
                 :class="[
                   'flex w-full items-center gap-3 rounded-md px-4 py-3 text-left text-sm transition-all',
-                  activeContentTab === tab.id ? 'bg-blue-50 text-primary' : 'text-slate-700 hover:bg-slate-50',
+                  activeContentTab === tab.id ? 'bg-primary/10 text-primary' : 'text-slate-700 hover:bg-muted',
                 ]"
                 @click="activeContentTab = tab.id"
               >
@@ -1660,7 +1663,7 @@ watch(selectedMaterial, () => {
               <span class="font-bold text-foreground">{{ t.learning.quizAttemptsUnlimited }}</span>
             </div>
             <button
-              class="btn mx-auto mt-5 rounded-md bg-[#165DFF] px-7 py-2 text-sm font-semibold text-white hover:bg-[#0f4fd8]"
+              class="btn btn-vivid mx-auto mt-5 rounded-md px-7 py-2 text-sm font-semibold"
               :disabled="quizTasks.length === 0"
               @click="quizChoicesExpanded = true"
             >
@@ -2043,6 +2046,13 @@ watch(selectedMaterial, () => {
 </template>
 
 <style scoped>
+.course-flow-panel {
+  padding: 1.25rem clamp(0.75rem, 2vw, 2rem);
+  border: 1px solid transparent;
+  border-radius: var(--gfi-radius-md, 8px);
+  background: color-mix(in srgb, var(--gfi-lightblue, #c1cef6) 20%, #ffffff);
+}
+
 .learn-sync-btn {
   border-color: #e2e8f0;
   background: #ffffff;

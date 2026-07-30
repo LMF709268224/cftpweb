@@ -5,7 +5,7 @@ import { AlertCircle, ArrowRight, BookOpen, Clock, Search } from "lucide-vue-nex
 import GfiFooter from "@/components/GfiFooter.vue"
 import GfiHeader from "@/components/GfiHeader.vue"
 import { apiClient } from "@/lib/apiClient"
-import { isAuthenticated } from "@/lib/authStorage"
+import { isAuthenticated, rememberPostLoginRedirect } from "@/lib/authStorage"
 import { useTranslation } from "@/lib/language"
 
 type ProductCategory = "all" | "certification" | "bundle" | "membership"
@@ -181,7 +181,13 @@ function syncAuthentication() {
 
 function openCourse() {
   syncAuthentication()
-  void router.push(authenticated.value ? "/certifications" : "/login")
+  if (authenticated.value) {
+    void router.push("/certifications")
+    return
+  }
+
+  rememberPostLoginRedirect("/certifications")
+  void router.push("/login")
 }
 
 watch(lang, () => {
@@ -306,11 +312,17 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .public-marketplace {
+  --marketplace-navy: #002a66;
+  --marketplace-vivid: #0957f9;
+  --marketplace-vivid-hover: #0045d8;
+  --marketplace-light-grey: #edeef2;
+  --marketplace-slate: #5b6b87;
+  --marketplace-border: rgba(0, 42, 102, .16);
   min-height: 100vh;
   overflow-x: hidden;
-  color: #101828;
-  background: #f6f8fb;
-  font-family: Inter, "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+  color: var(--marketplace-navy);
+  background: var(--marketplace-light-grey);
+  font-family: "DM Sans GFI", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
 }
 
 .public-marketplace * {
@@ -318,7 +330,7 @@ onBeforeUnmount(() => {
 }
 
 .marketplace-hero {
-  border-bottom: 1px solid #e4e8ef;
+  border-bottom: 1px solid var(--marketplace-border);
   background: #fff;
 }
 
@@ -331,7 +343,7 @@ onBeforeUnmount(() => {
 
 .marketplace-eyebrow {
   margin: 0 0 12px;
-  color: #225edf;
+  color: var(--marketplace-vivid);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0;
@@ -342,8 +354,10 @@ onBeforeUnmount(() => {
   max-width: 820px;
   margin: 0 auto;
   overflow-wrap: anywhere;
-  color: #0d1730;
+  color: var(--marketplace-navy);
+  font-family: "Syne GFI", "DM Sans GFI", "Noto Sans SC", sans-serif;
   font-size: 34px;
+  font-weight: 700;
   line-height: 1.25;
   letter-spacing: 0;
 }
@@ -352,7 +366,7 @@ onBeforeUnmount(() => {
   max-width: 720px;
   margin: 16px auto 0;
   overflow-wrap: anywhere;
-  color: #5c667a;
+  color: var(--marketplace-slate);
   font-size: 16px;
   line-height: 1.75;
 }
@@ -371,7 +385,7 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  border-bottom: 1px solid #dfe4ec;
+  border-bottom: 1px solid var(--marketplace-border);
 }
 
 .category-filter {
@@ -379,8 +393,8 @@ onBeforeUnmount(() => {
   min-width: 0;
   padding: 3px;
   overflow-x: auto;
-  border: 1px solid #d7deea;
-  border-radius: 6px;
+  border: 1px solid var(--marketplace-border);
+  border-radius: 8px;
   background: #fff;
 }
 
@@ -389,7 +403,7 @@ onBeforeUnmount(() => {
   padding: 0 16px;
   border: 0;
   border-radius: 4px;
-  color: #44506a;
+  color: var(--marketplace-navy);
   background: transparent;
   cursor: pointer;
   font-size: 14px;
@@ -399,13 +413,13 @@ onBeforeUnmount(() => {
 }
 
 .category-filter button:hover {
-  color: #174eb9;
-  background: #eef4ff;
+  color: var(--marketplace-vivid);
+  background: rgba(193, 206, 246, .28);
 }
 
 .category-filter button.active {
   color: #fff;
-  background: #1e55b3;
+  background: var(--marketplace-vivid);
 }
 
 .catalog-search {
@@ -416,22 +430,22 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 10px;
   padding: 0 14px;
-  border: 1px solid #ccd5e3;
-  border-radius: 6px;
+  border: 1px solid var(--marketplace-border);
+  border-radius: 8px;
   background: #fff;
   transition: border-color .2s ease, box-shadow .2s ease;
 }
 
 .catalog-search:focus-within {
-  border-color: #2864d7;
-  box-shadow: 0 0 0 3px rgba(40, 100, 215, .12);
+  border-color: var(--marketplace-vivid);
+  box-shadow: 0 0 0 3px rgba(9, 87, 249, .12);
 }
 
 .catalog-search svg {
   width: 18px;
   height: 18px;
   flex: none;
-  color: #69758a;
+  color: var(--marketplace-slate);
 }
 
 .catalog-search input {
@@ -439,7 +453,7 @@ onBeforeUnmount(() => {
   min-width: 0;
   border: 0;
   outline: 0;
-  color: #17213a;
+  color: var(--marketplace-navy);
   background: transparent;
   font-size: 14px;
 }
@@ -457,17 +471,17 @@ onBeforeUnmount(() => {
   min-width: 0;
   min-height: 570px;
   overflow: hidden;
-  border: 2px solid #e1e5eb;
-  border-radius: 12px;
+  border: 1px solid var(--marketplace-border);
+  border-radius: 8px;
   flex-direction: column;
   background: #fff;
-  box-shadow: 0 1px 3px rgba(18, 38, 75, .08);
+  box-shadow: none;
   transition: border-color .2s ease, box-shadow .2s ease;
 }
 
 .product-card:not(.product-card--loading):hover {
-  border-color: #07579b;
-  box-shadow: 0 2px 6px rgba(7, 87, 155, .12);
+  border-color: var(--marketplace-vivid);
+  box-shadow: 0 4px 14px rgba(0, 42, 102, .08);
 }
 
 .product-visual {
@@ -478,7 +492,7 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  border-bottom: 1px solid #e5e8ee;
+  border-bottom: 1px solid var(--marketplace-border);
   background: #fff;
 }
 
@@ -495,7 +509,7 @@ onBeforeUnmount(() => {
   left: 20px;
   max-width: calc(100% - 40px);
   overflow: hidden;
-  color: #41608f;
+  color: var(--marketplace-vivid);
   font-size: 12px;
   font-weight: 700;
   text-overflow: ellipsis;
@@ -506,7 +520,7 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: 16px;
-  color: #174f9f;
+  color: var(--marketplace-navy);
   font-size: 42px;
   font-weight: 700;
 }
@@ -528,7 +542,8 @@ onBeforeUnmount(() => {
 .product-copy h2 {
   margin: 0 0 12px;
   overflow-wrap: anywhere;
-  color: #101828;
+  color: var(--marketplace-navy);
+  font-family: "Syne GFI", "DM Sans GFI", "Noto Sans SC", sans-serif;
   font-size: 20px;
   line-height: 1.35;
   letter-spacing: 0;
@@ -539,7 +554,7 @@ onBeforeUnmount(() => {
   min-height: 66px;
   margin: 0;
   overflow: hidden;
-  color: #566176;
+  color: var(--marketplace-slate);
   font-size: 14px;
   line-height: 1.6;
   -webkit-box-orient: vertical;
@@ -557,14 +572,15 @@ onBeforeUnmount(() => {
 }
 
 .product-price strong {
-  color: #0b1223;
-  font-size: 30px;
+  color: var(--marketplace-navy);
+  font-size: 26px;
   line-height: 1.2;
+  white-space: nowrap;
 }
 
 .product-price span {
   margin-top: 4px;
-  color: #677287;
+  color: var(--marketplace-slate);
   font-size: 13px;
 }
 
@@ -575,10 +591,10 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   gap: 9px;
-  border: 1px solid #2058b5;
-  border-radius: 5px;
+  border: 1px solid var(--marketplace-vivid);
+  border-radius: 999px;
   color: #fff;
-  background: #2058b5;
+  background: var(--marketplace-vivid);
   cursor: pointer;
   font-size: 14px;
   font-weight: 700;
@@ -587,8 +603,15 @@ onBeforeUnmount(() => {
 
 .product-action:hover,
 .catalog-state > button:hover {
-  border-color: #174796;
-  background: #174796;
+  border-color: var(--marketplace-vivid-hover);
+  background: var(--marketplace-vivid-hover);
+}
+
+.category-filter button:focus-visible,
+.product-action:focus-visible,
+.catalog-state > button:focus-visible {
+  outline: 3px solid rgba(9, 87, 249, .24);
+  outline-offset: 2px;
 }
 
 .product-action svg,
@@ -606,8 +629,8 @@ onBeforeUnmount(() => {
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 20px;
-  border: 1px solid #d8dee8;
-  border-radius: 6px;
+  border: 1px solid var(--marketplace-border);
+  border-radius: 8px;
   background: #fff;
 }
 
@@ -629,14 +652,15 @@ onBeforeUnmount(() => {
 
 .catalog-state h2 {
   margin: 0;
-  color: #17213a;
+  color: var(--marketplace-navy);
+  font-family: "Syne GFI", "DM Sans GFI", "Noto Sans SC", sans-serif;
   font-size: 18px;
 }
 
 .catalog-state p {
   margin: 6px 0 0;
   overflow-wrap: anywhere;
-  color: #647086;
+  color: var(--marketplace-slate);
   font-size: 14px;
   line-height: 1.55;
 }
@@ -647,13 +671,13 @@ onBeforeUnmount(() => {
 }
 
 .catalog-state--empty .catalog-state-icon {
-  color: #2058b5;
-  background: #edf3ff;
+  color: var(--marketplace-vivid);
+  background: rgba(193, 206, 246, .28);
 }
 
 .skeleton {
   border-radius: 4px;
-  background: linear-gradient(90deg, #eef1f5 25%, #f7f8fa 50%, #eef1f5 75%);
+  background: linear-gradient(90deg, #e2e5eb 25%, #f5f6f8 50%, #e2e5eb 75%);
   background-size: 200% 100%;
   animation: skeleton-loading 1.4s ease infinite;
 }

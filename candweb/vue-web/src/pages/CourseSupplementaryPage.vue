@@ -128,7 +128,7 @@ onMounted(loadCourse)
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#eef8f7]">
+  <div class="candidate-portal min-h-screen bg-background">
     <header class="sticky top-0 z-10 border-b border-slate-200 bg-white/95 backdrop-blur">
       <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
         <button class="inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition-colors hover:text-slate-900" @click="goBack">
@@ -144,21 +144,21 @@ onMounted(loadCourse)
     </header>
 
     <main class="mx-auto max-w-6xl px-4 py-6">
-      <div v-if="loading" class="flex items-center justify-center gap-2 rounded-2xl bg-white py-16 text-slate-500">
-        <Loader2 class="h-5 w-5 animate-spin text-emerald-500" />
+      <div v-if="loading" class="flex items-center justify-center gap-2 rounded-lg border border-border bg-white py-16 text-slate-500">
+        <Loader2 class="h-5 w-5 animate-spin text-primary" />
         {{ t.learning.supplementaryMaterialsLoading }}
       </div>
 
-      <div v-else-if="items.length === 0" class="flex flex-col items-center justify-center gap-3 rounded-2xl bg-white py-16 text-center text-slate-500">
+      <div v-else-if="items.length === 0" class="flex flex-col items-center justify-center gap-3 rounded-lg border border-border bg-white py-16 text-center text-slate-500">
         <AlertTriangle class="h-10 w-10 text-amber-500" />
         <div class="text-base font-semibold text-slate-900">{{ t.learning.supplementaryMaterialsEmpty }}</div>
         <p class="text-sm">{{ t.learning.supplementaryMaterialsEmptyDesc }}</p>
       </div>
 
-      <div v-else class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_30px_rgba(15,74,82,0.08)]">
+      <div v-else class="overflow-hidden rounded-lg border border-border bg-white">
         <div class="border-b border-slate-100 bg-slate-50 px-5 py-4">
           <div class="flex items-center gap-2 text-base font-bold text-slate-950">
-            <BookOpen class="h-5 w-5 text-emerald-500" />
+            <BookOpen class="h-5 w-5 text-primary" />
             {{ t.learning.supplementaryMaterialsTitle }}
           </div>
           <p class="mt-1 text-sm text-slate-500">{{ t.learning.supplementaryMaterialsDesc }}</p>
@@ -178,7 +178,7 @@ onMounted(loadCourse)
             class="grid gap-3 px-5 py-4 text-sm md:grid-cols-[minmax(180px,0.9fr)_120px_minmax(260px,2fr)_120px]"
           >
             <div class="font-medium text-slate-700">
-              <span class="md:hidden text-xs text-slate-400">{{ t.learning.supplementaryChapterPrefix }} </span>
+              <span class="md:hidden text-xs text-muted-foreground">{{ t.learning.supplementaryChapterPrefix }} </span>
               {{ supplementaryChapterLabel(item, index) }}
             </div>
             <div>
@@ -190,18 +190,18 @@ onMounted(loadCourse)
             <div>
               <div class="font-semibold text-slate-950">{{ item.title }}</div>
               <p v-if="item.description" class="mt-1 text-xs leading-relaxed text-slate-500">{{ item.description }}</p>
-              <p v-if="item.url" class="mt-1 truncate text-xs text-emerald-600">{{ item.url }}</p>
+              <p v-if="item.url" class="mt-1 truncate text-xs text-primary">{{ item.url }}</p>
             </div>
             <div>
               <button
                 v-if="item.url"
-                class="inline-flex items-center gap-1 rounded-lg bg-emerald-500 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-600"
+                class="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-primary/90"
                 @click="openResource(item)"
               >
                 <ExternalLink class="h-3.5 w-3.5" />
                 {{ t.learning.supplementaryPreview }}
               </button>
-              <span v-else class="text-xs text-slate-400">{{ t.learning.supplementaryNoUrl }}</span>
+              <span v-else class="text-xs text-muted-foreground">{{ t.learning.supplementaryNoUrl }}</span>
             </div>
           </div>
         </div>

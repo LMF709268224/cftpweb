@@ -403,8 +403,8 @@ onMounted(() => {
         <span class="text-sm font-medium text-foreground">{{ t.messagesPage.title }}</span>
       </header>
 
-      <main class="px-4 py-6 md:px-8 md:py-8 lg:px-10">
-        <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <main class="messages-main w-full max-w-none py-6 md:py-8">
+        <div class="mb-6 flex flex-col gap-4 px-4 md:px-8 lg:flex-row lg:items-start lg:justify-between lg:px-10">
           <div>
             <h1 class="text-2xl font-bold tracking-tight text-foreground md:text-3xl">{{ t.messagesPage.title }}</h1>
             <p class="mt-2 text-muted-foreground">{{ unreadCountText() }}</p>
@@ -418,13 +418,13 @@ onMounted(() => {
           </div>
         </div>
 
-    <div class="overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-      <div class="bg-white px-3 pt-3 md:px-6 md:pt-4">
-        <div class="grid grid-cols-3 gap-1 rounded-xl bg-slate-100 p-1 md:flex md:flex-wrap md:gap-x-8 md:gap-y-2 md:rounded-none md:border-b md:border-[#edf0f2] md:bg-transparent md:p-0">
+    <div class="w-full overflow-hidden rounded-t-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+      <div class="w-full bg-white">
+        <div class="grid min-h-[60px] w-full grid-cols-3 items-stretch gap-1 rounded-t-xl bg-slate-100 p-1 md:flex md:min-h-[68px] md:flex-wrap md:items-stretch md:gap-x-8 md:gap-y-0 md:rounded-none md:border-b md:border-border md:bg-transparent md:p-0 md:pl-4">
           <button
             v-for="tab in statusTabs"
             :key="tab.value || 'all'"
-            :class="['relative inline-flex cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-2 py-2.5 text-sm font-semibold transition-colors duration-200 md:justify-start md:gap-2 md:rounded-none md:px-1 md:pb-5 md:pt-0 md:text-base md:font-medium', selectedStatus === tab.value ? 'bg-white text-primary shadow-sm md:bg-transparent md:shadow-none' : 'text-slate-600 hover:text-primary md:text-[#111827]']"
+            :class="['relative inline-flex min-h-12 cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-2 py-3 text-sm font-semibold transition-colors duration-200 md:min-h-[68px] md:justify-start md:gap-2 md:rounded-none md:px-1 md:py-0 md:text-base md:font-medium', selectedStatus === tab.value ? 'bg-white text-primary shadow-sm md:bg-transparent md:shadow-none' : 'text-slate-600 hover:text-primary md:text-foreground']"
             @click="selectStatus(tab.value)"
           >
             <component :is="tab.icon" class="h-4 w-4" />
@@ -527,6 +527,10 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.messages-main {
+  max-width: none !important;
+}
+
 .message-detail-content :deep(p:first-child) {
   margin-top: 0;
 }

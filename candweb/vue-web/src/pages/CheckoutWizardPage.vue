@@ -1825,7 +1825,7 @@ async function confirmAndPay() {
             <ArrowLeft class="h-4 w-4" />
             {{ t.checkoutWizard.back }}
           </button>
-          <button class="checkout-form-next-button btn btn-primary" :disabled="loading" @click="confirmAndPay">
+          <button class="checkout-form-next-button btn btn-vivid" :disabled="loading" @click="confirmAndPay">
             <template v-if="loading"><Loader2 class="h-4 w-4 animate-spin" /> {{ t.checkoutWizard.processing }}</template>
             <template v-else>{{ t.checkoutWizard.confirmAndPay }} <ArrowRight class="h-4 w-4" /></template>
           </button>
@@ -1838,7 +1838,7 @@ async function confirmAndPay() {
 
 <style scoped>
 .checkout-page {
-  background-color: #f2f6fc !important;
+  background-color: #edeef2 !important;
 }
 
 .checkout-content {
@@ -1921,18 +1921,18 @@ async function confirmAndPay() {
 }
 
 .checkout-progress-step.active {
-  color: #0d3f72;
+  color: #002a66;
 }
 
 .checkout-progress-step.active .checkout-progress-node {
   color: #fff;
-  background: #104d84;
+  background: #0957f9;
 }
 
 .checkout-card {
   padding: 26px;
-  border: 1px solid #d5e0ef;
-  border-radius: 14px;
+  border: 1px solid rgba(0, 42, 102, 0.16);
+  border-radius: 8px;
   box-shadow: none;
 }
 
@@ -1947,7 +1947,7 @@ async function confirmAndPay() {
 }
 
 .checkout-step-one-title h2 {
-  color: #0b2347;
+  color: #002a66;
   font-size: 20px;
   line-height: 1.35;
 }
@@ -1959,19 +1959,19 @@ async function confirmAndPay() {
 .checkout-unit-card {
   min-height: 132px;
   padding: 14px;
-  border-color: #cfdaea;
-  border-radius: 12px;
+  border-color: rgba(0, 42, 102, 0.18);
+  border-radius: 8px;
   background: #fff;
   box-shadow: none;
 }
 
 .checkout-unit-card:hover {
-  border-color: #9eb5d3;
+  border-color: #0957f9;
   box-shadow: none;
 }
 
 .checkout-unit-card.ring-1 {
-  border-color: #cfdaea;
+  border-color: #0957f9;
   background: #fff;
   box-shadow: none;
 }
@@ -1985,7 +1985,7 @@ async function confirmAndPay() {
 }
 
 .checkout-unit-title {
-  color: #0b2347;
+  color: #002a66;
   font-size: 15px;
   line-height: 1.4;
 }
@@ -2031,12 +2031,12 @@ async function confirmAndPay() {
 }
 
 .checkout-unit-footer input.peer:checked + .checkout-unit-checkbox {
-  border-color: #2d6cdf;
-  background: #2d6cdf;
+  border-color: #0957f9;
+  background: #0957f9;
 }
 
 .checkout-unit-action {
-  color: #243b60;
+  color: var(--gfi-ink-soft, #2a4575);
   font-size: 13px;
 }
 
@@ -2048,7 +2048,7 @@ async function confirmAndPay() {
 }
 
 .checkout-unit-default-price {
-  color: #0b2347;
+  color: #002a66;
   font-size: 15px;
   font-weight: 700;
 }
@@ -2069,15 +2069,15 @@ async function confirmAndPay() {
 }
 
 .checkout-declaration input.peer:checked + div {
-  border-color: #2d6cdf;
-  background: #2d6cdf;
+  border-color: #0957f9;
+  background: #0957f9;
 }
 
 .checkout-step-actions {
   margin-top: 20px;
   padding: 13px 0 0;
   border: 0;
-  border-top: 2px solid #102f59;
+  border-top: 1px solid rgba(0, 42, 102, 0.18);
   border-radius: 0;
   background: transparent;
   box-shadow: none;
@@ -2088,7 +2088,7 @@ async function confirmAndPay() {
 }
 
 .checkout-total {
-  color: #0b2347;
+  color: #002a66;
   font-size: 18px;
   line-height: 1.4;
 }
@@ -2101,12 +2101,13 @@ async function confirmAndPay() {
   min-width: 136px;
   min-height: 44px;
   padding: 10px 24px;
-  background: #0d4c83;
+  border-radius: 8px;
+  background: #0957f9;
   box-shadow: none;
 }
 
 .checkout-next-button:hover {
-  background: #083b68;
+  background: #0045d8;
 }
 
 .checkout-form-actions {
@@ -2128,31 +2129,31 @@ async function confirmAndPay() {
 .checkout-form-next-button {
   min-height: 44px;
   padding: 10px 24px;
-  border-radius: 999px;
+  border-radius: 8px;
   box-shadow: none;
   font-weight: 600;
 }
 
 .checkout-back-button {
   min-width: 96px;
-  border-color: #0d4c83;
-  color: #0d4c83;
+  border-color: #002a66;
+  color: #002a66;
   background: #fff;
 }
 
 .checkout-back-button:hover {
-  border-color: #083b68;
-  color: #083b68;
+  border-color: #0957f9;
+  color: #0957f9;
   background: #f3f7fc;
 }
 
 .checkout-form-next-button {
   min-width: 136px;
-  background: #0d4c83;
+  background: #0957f9;
 }
 
 .checkout-form-next-button:hover {
-  background: #083b68;
+  background: #0045d8;
 }
 
 @media (max-width: 767px) {

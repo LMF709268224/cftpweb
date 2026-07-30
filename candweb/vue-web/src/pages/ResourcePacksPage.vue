@@ -92,9 +92,8 @@ onMounted(() => {
       >
         <span class="resource-pack-sheen pointer-events-none absolute left-0 top-0 z-20 h-1 w-full" />
         <span class="resource-pack-orb pointer-events-none absolute -right-12 -top-12 z-10 h-36 w-36 rounded-full opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-        <div class="relative flex h-24 items-end overflow-hidden px-4 pb-3 text-white bg-[linear-gradient(135deg,rgb(11,31,69)_0%,rgb(27,69,141)_55%,rgb(58,111,192)_100%)]">
-          <div class="absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.24),transparent_30%)] opacity-70" />
-          <div class="absolute right-4 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/15 transition-transform duration-300 group-hover:scale-105">
+        <div class="relative flex h-24 items-end overflow-hidden bg-[#002a66] px-4 pb-3 text-white">
+          <div class="absolute right-4 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-lg border border-white/20 bg-white/10">
             <PackageOpen class="h-7 w-7 text-white/70" />
           </div>
         </div>
@@ -151,10 +150,10 @@ onMounted(() => {
 }
 
 .resource-refresh-btn:hover {
-  border-color: rgba(37, 99, 235, 0.28);
-  background: rgba(37, 99, 235, 0.08);
-  color: #1d4ed8;
-  box-shadow: 0 14px 28px -18px rgba(37, 99, 235, 0.42);
+  border-color: rgba(9, 87, 249, 0.28);
+  background: rgba(9, 87, 249, 0.08);
+  color: var(--gfi-vivid, #0957f9);
+  box-shadow: 0 14px 28px -18px rgba(9, 87, 249, 0.32);
   transform: scale(1.02);
 }
 
@@ -164,12 +163,12 @@ onMounted(() => {
 
 .resource-refresh-btn:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16), 0 14px 28px -18px rgba(37, 99, 235, 0.42);
+  box-shadow: 0 0 0 3px rgba(9, 87, 249, 0.16), 0 14px 28px -18px rgba(9, 87, 249, 0.32);
 }
 
 .resource-pack-card {
-  --resource-pack-accent: #38bdf8;
-  --resource-pack-glow: rgba(37, 99, 235, 0.2);
+  --resource-pack-accent: var(--gfi-vivid, #0957f9);
+  --resource-pack-glow: rgba(9, 87, 249, 0.16);
 }
 
 .resource-pack-card:hover {
@@ -188,6 +187,6 @@ onMounted(() => {
 }
 
 .resource-pack-orb {
-  background: radial-gradient(circle, rgba(56, 189, 248, 0.2), transparent 68%);
+  background: radial-gradient(circle, rgba(9, 87, 249, 0.16), transparent 68%);
 }
 </style>

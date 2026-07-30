@@ -1216,12 +1216,12 @@ async function handlePaymentSessionError() {
           <Loader2 v-if="eligibilityLoading" class="h-4 w-4 animate-spin" />
           {{ copy.refreshEligibility }}
         </button>
-        <button v-if="canUnlock && !activeOrder" class="btn btn-primary min-h-11 w-full px-3 text-center leading-tight sm:min-h-0 sm:w-auto sm:px-4" :disabled="actionLoading" @click="createUnlockOrder">
+        <button v-if="canUnlock && !activeOrder" class="btn btn-vivid min-h-11 w-full px-3 text-center leading-tight sm:min-h-0 sm:w-auto sm:px-4" :disabled="actionLoading" @click="createUnlockOrder">
           <Loader2 v-if="actionLoading" class="h-4 w-4 animate-spin" />
           <Lock v-else class="h-4 w-4" />
           {{ copy.createUnlockOrder }}
         </button>
-        <button v-if="canPurchase && !activeOrder" class="btn btn-primary min-h-11 w-full px-3 text-center leading-tight sm:min-h-0 sm:w-auto sm:px-4" :disabled="actionLoading" @click="createPurchaseOrder">
+        <button v-if="canPurchase && !activeOrder" class="btn btn-vivid min-h-11 w-full px-3 text-center leading-tight sm:min-h-0 sm:w-auto sm:px-4" :disabled="actionLoading" @click="createPurchaseOrder">
           <Loader2 v-if="actionLoading" class="h-4 w-4 animate-spin" />
           <ShoppingCart v-else class="h-4 w-4" />
           {{ copy.createPurchaseOrder }}
@@ -1233,7 +1233,7 @@ async function handlePaymentSessionError() {
           <Loader2 v-if="cancelOrderLoading" class="h-4 w-4 animate-spin" />
           {{ copy.cancelOrder }}
         </button>
-        <button v-if="activeOrder && paymentPreview && !activePaymentSession" class="btn btn-primary min-h-11 w-full px-3 text-center leading-tight sm:min-h-0 sm:w-auto sm:px-4" :disabled="paymentLoading || hasInvalidCouponCodes" @click="initiatePayment">
+        <button v-if="activeOrder && paymentPreview && !activePaymentSession" class="btn btn-vivid min-h-11 w-full px-3 text-center leading-tight sm:min-h-0 sm:w-auto sm:px-4" :disabled="paymentLoading || hasInvalidCouponCodes" @click="initiatePayment">
           <Loader2 v-if="paymentLoading" class="h-4 w-4 animate-spin" />
           <CreditCard v-else class="h-4 w-4" />
           {{ copy.payNow }}

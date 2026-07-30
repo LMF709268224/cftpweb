@@ -118,11 +118,11 @@ onMounted(() => {
             class="group flex min-h-[320px] flex-col rounded-[18px] border-2 border-[#dfe4ea] bg-white p-5 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all duration-300 hover:-translate-y-0.5 hover:border-primary hover:shadow-[0_18px_42px_rgba(16,30,67,0.16)]"
           >
             <div class="flex-1">
-              <h3 class="line-clamp-2 text-xl font-bold leading-tight tracking-tight text-[#111827] transition-colors group-hover:text-primary">
+              <h3 class="line-clamp-2 text-xl font-bold leading-tight tracking-tight text-foreground transition-colors group-hover:text-primary">
                 {{ course.title || t.common.unknownCourse }}
               </h3>
 
-              <div class="mt-6 space-y-5 text-base text-[#4b5563]">
+              <div class="mt-6 space-y-5 text-base text-muted-foreground">
                 <div class="flex items-center justify-between gap-4">
                   <span>{{ copy.status }}:</span>
                   <span :class="['rounded-lg px-3 py-1.5 text-sm font-semibold', timelineStatusBadgeClassForStatus('PIPELINE', course.statusValue)]">

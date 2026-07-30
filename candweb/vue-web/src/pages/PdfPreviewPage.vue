@@ -210,7 +210,7 @@ onErrorCaptured((err) => {
 </script>
 
 <template>
-  <div v-if="isResourcePackPreview" class="flex h-screen flex-col overflow-hidden bg-slate-50">
+  <div v-if="isResourcePackPreview" class="candidate-portal flex h-screen flex-col overflow-hidden bg-background">
     <header class="shrink-0 px-4 pb-8 pt-4 sm:px-8 sm:pb-16 sm:pt-8">
       <button class="inline-flex h-10 items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm transition-colors hover:bg-slate-100" @click="goBackFromResourcePack">
         <ArrowLeft class="h-4 w-4" />
@@ -235,7 +235,7 @@ onErrorCaptured((err) => {
           />
           <div v-if="!viewerReady && !viewerFailed" class="absolute inset-0 z-10 flex items-center justify-center bg-white/90 text-sm text-slate-600 backdrop-blur-[1px]">
             <div class="flex max-w-sm flex-col items-center gap-4 rounded-2xl border border-slate-200 bg-white px-6 py-5 text-center shadow-[0_16px_40px_rgba(15,74,82,0.12)]">
-              <Loader2 class="h-5 w-5 animate-spin text-blue-500" />
+              <Loader2 class="h-5 w-5 animate-spin text-primary" />
               <div class="space-y-1">
                 <div class="font-semibold text-slate-900">{{ t.preview.pdfViewerLoading }}</div>
                 <p v-if="slowPreview" class="text-xs leading-5 text-slate-500">
@@ -253,7 +253,7 @@ onErrorCaptured((err) => {
         </div>
         <div v-else class="flex h-full items-center justify-center text-sm text-slate-500">
           <div v-if="loading" class="flex items-center gap-2">
-            <Loader2 class="h-5 w-5 animate-spin text-blue-500" />
+            <Loader2 class="h-5 w-5 animate-spin text-primary" />
             {{ t.preview.pdfPreviewLoading }}
           </div>
           <div v-else class="flex max-w-md flex-col items-center gap-3 px-6 text-center">
@@ -262,7 +262,7 @@ onErrorCaptured((err) => {
             </div>
             <div class="text-base font-semibold text-slate-900">{{ t.preview.pdfFailedTitle }}</div>
             <p>{{ errorMessage || t.preview.pdfNoResource }}</p>
-            <button class="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-600" @click="loadPdf">
+            <button class="btn btn-vivid px-4 py-2 text-sm font-semibold" @click="loadPdf">
               {{ t.preview.reload }}
             </button>
           </div>
@@ -281,13 +281,13 @@ onErrorCaptured((err) => {
     </main>
   </div>
 
-  <div v-else class="flex h-screen flex-col bg-[#eef8f7]">
+  <div v-else class="candidate-portal flex h-screen flex-col bg-background">
     <header class="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 shadow-sm">
       <!-- The back button is removed because the page opens in a new window -->
       <div class="w-[88px]"></div>
       <div class="min-w-0 flex-1 px-4 text-center">
-        <div class="inline-flex max-w-full items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-slate-900">
-          <FileText class="h-4 w-4 shrink-0 text-emerald-500" />
+        <div class="inline-flex max-w-full items-center gap-2 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-foreground">
+          <FileText class="h-4 w-4 shrink-0 text-primary" />
           <span class="truncate">{{ title }}</span>
         </div>
       </div>
@@ -310,7 +310,7 @@ onErrorCaptured((err) => {
         />
         <div v-if="!viewerReady && !viewerFailed" class="absolute inset-0 z-10 flex items-center justify-center bg-white/90 text-sm text-slate-600 backdrop-blur-[1px]">
           <div class="flex max-w-sm flex-col items-center gap-4 rounded-2xl border border-slate-200 bg-white px-6 py-5 text-center shadow-[0_16px_40px_rgba(15,74,82,0.12)]">
-            <Loader2 class="h-5 w-5 animate-spin text-emerald-500" />
+            <Loader2 class="h-5 w-5 animate-spin text-primary" />
             <div class="space-y-1">
               <div class="font-semibold text-slate-900">{{ t.preview.pdfViewerLoading }}</div>
               <p v-if="slowPreview" class="text-xs leading-5 text-slate-500">
@@ -328,7 +328,7 @@ onErrorCaptured((err) => {
       </div>
       <div v-else class="flex h-full items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white text-sm text-slate-500">
         <div v-if="loading" class="flex items-center gap-2">
-          <Loader2 class="h-5 w-5 animate-spin text-emerald-500" />
+          <Loader2 class="h-5 w-5 animate-spin text-primary" />
           {{ t.preview.pdfPreviewLoading }}
         </div>
         <div v-else class="flex max-w-md flex-col items-center gap-3 text-center">
@@ -337,7 +337,7 @@ onErrorCaptured((err) => {
           </div>
           <div class="text-base font-semibold text-slate-900">{{ t.preview.pdfFailedTitle }}</div>
           <p>{{ errorMessage || t.preview.pdfNoResource }}</p>
-          <button class="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-600" @click="loadPdf">
+          <button class="btn btn-vivid px-4 py-2 text-sm font-semibold" @click="loadPdf">
             {{ t.preview.reload }}
           </button>
         </div>

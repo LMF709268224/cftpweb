@@ -401,8 +401,8 @@ onMounted(() => {
 
         <template v-else>
           <section class="mb-5 overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_10px_28px_rgba(15,74,82,0.06)]">
-            <div class="relative bg-gradient-to-br from-[#0b4ea2] via-[#1976c9] to-[#12b886] p-6 text-white">
-              <div class="absolute right-6 top-6 opacity-20">
+            <div class="relative bg-[#002a66] p-6 text-white">
+              <div class="absolute right-6 top-6 opacity-15">
                 <Crown class="h-24 w-24" />
               </div>
               <div class="relative">
@@ -447,11 +447,11 @@ onMounted(() => {
               <ChevronDown class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             </div>
 
-            <div class="hidden flex-wrap gap-x-8 gap-y-2 border-b border-[#edf0f2] md:flex">
+            <div class="hidden flex-wrap gap-x-8 gap-y-2 border-b border-border md:flex">
               <button
                 v-for="tab in tabs"
                 :key="tab.id"
-                :class="['relative inline-flex cursor-pointer items-center whitespace-nowrap px-1 pb-5 text-base font-medium transition-colors duration-200', activeTab === tab.id ? 'text-primary' : 'text-[#111827] hover:text-primary']"
+                :class="['relative inline-flex cursor-pointer items-center whitespace-nowrap px-1 pb-5 text-base font-medium transition-colors duration-200', activeTab === tab.id ? 'text-primary' : 'text-foreground hover:text-primary']"
                 @click="activeTab = tab.id"
               >
                 {{ tab.label }}
@@ -545,7 +545,7 @@ onMounted(() => {
               <div>
                 <div class="break-words text-base font-black leading-6 text-slate-950 md:truncate" :title="membershipDisplayName(item, t.membership.membershipRecord)">{{ membershipDisplayName(item, t.membership.membershipRecord) }}</div>
                 <div class="mt-1 text-sm font-medium text-slate-600">{{ formatDate(item.started_at) }} - {{ formatDate(item.expires_at) }}</div>
-                <div class="mt-1 break-words text-xs text-slate-400 md:truncate">{{ membershipRecordSummary(item) }}</div>
+                <div class="mt-1 break-words text-xs text-muted-foreground md:truncate">{{ membershipRecordSummary(item) }}</div>
               </div>
               <span class="inline-flex h-fit min-w-[76px] items-center justify-center justify-self-start rounded-full border px-3 py-1 text-xs font-black md:justify-self-end" :class="badgeClass(item.status)">{{ statusLabel(item.status) }}</span>
             </div>

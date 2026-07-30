@@ -65,9 +65,9 @@ onBeforeUnmount(clearRedirectTimer)
 </script>
 
 <template>
-  <main class="flex min-h-screen items-center justify-center bg-[#eef8f7] px-4 py-10 text-slate-900">
+  <main class="candidate-portal flex min-h-screen items-center justify-center bg-background px-4 py-10 text-foreground">
     <section class="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-[0_18px_55px_rgba(15,74,82,0.12)]">
-      <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-500">
+      <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-accent text-primary">
         <Receipt v-if="status !== 'error'" class="h-8 w-8" />
         <AlertTriangle v-else class="h-8 w-8 text-rose-500" />
       </div>
@@ -80,7 +80,7 @@ onBeforeUnmount(clearRedirectTimer)
       </p>
 
       <div v-if="status !== 'error'" class="mt-6 flex flex-col items-center gap-3">
-        <Loader2 class="h-7 w-7 animate-spin text-emerald-500" />
+        <Loader2 class="h-7 w-7 animate-spin text-primary" />
         <p class="text-xs leading-5 text-slate-500">{{ copy.hint }}</p>
       </div>
 
@@ -88,7 +88,7 @@ onBeforeUnmount(clearRedirectTimer)
         <a
           v-if="status === 'redirecting' && invoiceUrl"
           :href="invoiceUrl"
-          class="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-600"
+          class="btn btn-vivid inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold"
           rel="noopener noreferrer"
         >
           <ExternalLink class="h-4 w-4" />
@@ -96,7 +96,7 @@ onBeforeUnmount(clearRedirectTimer)
         </a>
         <button
           v-if="status === 'error'"
-          class="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-600"
+          class="btn btn-vivid inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold"
           @click="loadInvoice"
         >
           <Loader2 class="h-4 w-4" />

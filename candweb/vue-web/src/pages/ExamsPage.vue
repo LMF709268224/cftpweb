@@ -440,11 +440,11 @@ onBeforeUnmount(() => {
     </div>
 
     <div class="mb-4 hidden rounded-[14px] bg-white px-5 pt-4 shadow-[0_10px_24px_rgba(15,74,82,0.04)] md:px-6">
-      <div class="flex flex-wrap gap-x-8 gap-y-2 border-b border-[#edf0f2]">
+      <div class="flex flex-wrap gap-x-8 gap-y-2 border-b border-border">
         <button
           v-for="tab in tabs"
           :key="tab.id"
-          :class="['relative inline-flex cursor-pointer items-center gap-2 whitespace-nowrap px-1 pb-5 text-base font-medium transition-colors duration-200', activeTab === tab.id ? 'text-primary' : 'text-[#111827] hover:text-primary']"
+          :class="['relative inline-flex cursor-pointer items-center gap-2 whitespace-nowrap px-1 pb-5 text-base font-medium transition-colors duration-200', activeTab === tab.id ? 'text-primary' : 'text-foreground hover:text-primary']"
           @click="activeTab = tab.id"
         >
           <component :is="tab.icon" class="h-4 w-4" /> {{ tab.label }}

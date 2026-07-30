@@ -44,11 +44,11 @@ onMounted(hydrateSession)
 </script>
 
 <template>
-  <main class="flex min-h-screen items-center justify-center bg-[#eef8f7] px-4 py-10 text-slate-900">
+  <main class="candidate-portal flex min-h-screen items-center justify-center bg-background px-4 py-10 text-foreground">
     <section class="w-full max-w-6xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_18px_55px_rgba(15,74,82,0.12)]">
       <div class="flex items-center justify-between gap-4 border-b border-slate-200 px-6 py-5">
         <div class="flex items-center gap-3">
-          <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-500">
+          <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent text-primary">
             <Wallet class="h-6 w-6" />
           </div>
           <div>

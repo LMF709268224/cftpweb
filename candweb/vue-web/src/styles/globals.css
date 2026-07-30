@@ -1,6 +1,22 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+@font-face {
+  font-family: "DM Sans GFI";
+  src: url("/gfi/fonts/dm-sans.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Syne GFI";
+  src: url("/gfi/fonts/syne-700.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 :root {
@@ -265,6 +281,368 @@
     .page-main h1.text-2xl {
       font-size: 1.25rem !important;
       line-height: 1.75rem !important;
+    }
+  }
+
+  .candidate-portal {
+    --gfi-darkblue: #002a66;
+    --gfi-vivid: #0957f9;
+    --gfi-lightblue: #c1cef6;
+    --gfi-lightgrey: #edeef2;
+    --gfi-paper: #ffffff;
+    --gfi-ink-soft: #2a4575;
+    --gfi-slate: #5b6b87;
+    --gfi-error: #b3372f;
+    --gfi-disabled: #c9cdd6;
+    --gfi-hairline: rgba(0, 42, 102, 0.14);
+    --gfi-hairline-strong: rgba(0, 42, 102, 0.32);
+    --gfi-space-1: 0.25rem;
+    --gfi-space-2: 0.5rem;
+    --gfi-space-3: 0.75rem;
+    --gfi-space-4: 1rem;
+    --gfi-space-6: 1.5rem;
+    --gfi-space-8: 2rem;
+    --gfi-space-12: 3rem;
+    --gfi-radius-sm: 0.25rem;
+    --gfi-radius-md: 0.5rem;
+    --gfi-radius-lg: 0.875rem;
+    --gfi-radius-pill: 999px;
+    --background: #edeef2;
+    --foreground: #002a66;
+    --card: #ffffff;
+    --card-foreground: #002a66;
+    --popover: #ffffff;
+    --popover-foreground: #002a66;
+    --primary: #0957f9;
+    --primary-foreground: #ffffff;
+    --secondary: #c1cef6;
+    --secondary-foreground: #002a66;
+    --muted: #edeef2;
+    --muted-foreground: #5b6b87;
+    --accent: #c1cef6;
+    --accent-foreground: #002a66;
+    --destructive: #b3372f;
+    --destructive-foreground: #ffffff;
+    --border: rgba(0, 42, 102, 0.14);
+    --input: rgba(0, 42, 102, 0.22);
+    --ring: #0957f9;
+    --radius: var(--gfi-radius-md);
+    --sidebar: #002a66;
+    --sidebar-foreground: rgba(255, 255, 255, 0.82);
+    --sidebar-accent: #0957f9;
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: rgba(255, 255, 255, 0.14);
+    min-height: 100vh;
+    color: var(--foreground);
+    font-family: "DM Sans GFI", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+  }
+
+  .candidate-portal .page-panel {
+    background-color: var(--gfi-lightgrey) !important;
+    border-color: rgba(0, 42, 102, 0.14) !important;
+    border-radius: var(--gfi-radius-lg);
+  }
+
+  .candidate-portal .page-panel > header {
+    border-bottom-color: rgba(0, 42, 102, 0.14) !important;
+  }
+
+  .candidate-portal .page-panel > header > svg:first-child {
+    color: var(--gfi-darkblue) !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23002a66' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='18' height='18' x='3' y='3' rx='2'/%3E%3Cpath d='M9 3v18'/%3E%3C/svg%3E");
+  }
+
+  .candidate-portal .page-panel > header > svg:first-child:hover {
+    background-color: var(--gfi-vivid);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='18' height='18' x='3' y='3' rx='2'/%3E%3Cpath d='M9 3v18'/%3E%3C/svg%3E");
+  }
+
+  .candidate-portal .app-side-card {
+    scrollbar-color: rgba(193, 206, 246, 0.5) transparent;
+  }
+
+  .candidate-portal .app-side-card::-webkit-scrollbar-thumb {
+    background: rgba(193, 206, 246, 0.5);
+  }
+
+  .candidate-portal .app-side-card svg {
+    stroke-width: 1.5;
+  }
+
+  .candidate-portal .page-panel > main {
+    width: 100%;
+    max-width: 1280px;
+    margin-inline: auto;
+  }
+
+  .candidate-portal .page-main h1,
+  .candidate-portal .page-main h2,
+  .candidate-portal .page-main h3 {
+    color: var(--gfi-darkblue) !important;
+    font-family: "Syne GFI", "DM Sans GFI", "Noto Sans SC", "Microsoft YaHei", sans-serif !important;
+    font-weight: 700;
+    letter-spacing: 0;
+  }
+
+  .candidate-portal .text-slate-950,
+  .candidate-portal .text-slate-900,
+  .candidate-portal .text-slate-800 {
+    color: var(--gfi-darkblue) !important;
+  }
+
+  .candidate-portal .text-slate-700,
+  .candidate-portal .text-slate-600 {
+    color: var(--gfi-ink-soft) !important;
+  }
+
+  .candidate-portal .text-slate-500,
+  .candidate-portal .text-slate-400 {
+    color: var(--gfi-slate) !important;
+  }
+
+  .candidate-portal .font-black {
+    font-weight: 700 !important;
+  }
+
+  .candidate-portal .bg-slate-50,
+  .candidate-portal .bg-gray-50 {
+    background-color: color-mix(in srgb, var(--gfi-lightgrey) 52%, var(--gfi-paper)) !important;
+  }
+
+  .candidate-portal .bg-slate-100,
+  .candidate-portal .bg-gray-100 {
+    background-color: var(--gfi-lightgrey) !important;
+  }
+
+  .candidate-portal .border-slate-100,
+  .candidate-portal .border-gray-100,
+  .candidate-portal .border-slate-200,
+  .candidate-portal .border-gray-200 {
+    border-color: var(--gfi-hairline) !important;
+  }
+
+  .candidate-portal .btn {
+    border-radius: var(--gfi-radius-pill) !important;
+    padding-inline: 1.375rem;
+    box-shadow: none;
+    transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
+  }
+
+  .candidate-portal .btn-primary {
+    border-color: var(--gfi-darkblue);
+    color: #ffffff !important;
+    background-color: var(--gfi-darkblue);
+  }
+
+  .candidate-portal .btn-primary:hover:not(:disabled) {
+    border-color: var(--gfi-darkblue);
+    background-color: var(--gfi-darkblue);
+  }
+
+  .candidate-portal .btn-outline {
+    border-color: rgba(0, 42, 102, 0.26);
+    color: #002a66;
+    background-color: #ffffff;
+  }
+
+  .candidate-portal .btn-outline:hover:not(:disabled) {
+    border-color: var(--gfi-darkblue);
+    color: var(--gfi-darkblue);
+    background-color: var(--gfi-lightgrey);
+  }
+
+  .candidate-portal .btn-ghost {
+    border-radius: var(--gfi-radius-pill) !important;
+    color: var(--gfi-darkblue);
+  }
+
+  .candidate-portal .btn-ghost:hover:not(:disabled) {
+    background-color: var(--gfi-lightgrey);
+  }
+
+  .candidate-portal .btn-emphasis,
+  .candidate-portal .btn-vivid {
+    border-color: var(--gfi-vivid);
+    color: #ffffff !important;
+    background-color: var(--gfi-vivid);
+  }
+
+  .candidate-portal .btn-emphasis:hover:not(:disabled),
+  .candidate-portal .btn-vivid:hover:not(:disabled) {
+    border-color: var(--gfi-vivid);
+    background-color: var(--gfi-vivid);
+  }
+
+  .candidate-portal .btn:focus-visible,
+  .candidate-portal a:focus-visible,
+  .candidate-portal button:focus-visible,
+  .candidate-portal [role="button"]:focus-visible {
+    outline: 2px solid var(--gfi-vivid);
+    outline-offset: 2px;
+  }
+
+  .candidate-portal .btn-primary:disabled,
+  .candidate-portal .btn-emphasis:disabled,
+  .candidate-portal .btn-vivid:disabled {
+    border-color: var(--gfi-disabled) !important;
+    color: var(--gfi-darkblue) !important;
+    background-color: var(--gfi-disabled) !important;
+    box-shadow: none !important;
+  }
+
+  .candidate-portal .card {
+    border-color: rgba(0, 42, 102, 0.14);
+    border-radius: 0.5rem;
+    box-shadow: none;
+  }
+
+  .candidate-portal .input,
+  .candidate-portal .textarea,
+  .candidate-portal input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  .candidate-portal select,
+  .candidate-portal textarea {
+    border-color: rgba(0, 42, 102, 0.2);
+    border-radius: 0.5rem;
+    color: #002a66;
+    background-color: #ffffff;
+    box-shadow: none;
+  }
+
+  .candidate-portal input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
+  .candidate-portal select:focus,
+  .candidate-portal textarea:focus {
+    border-color: #0957f9;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(9, 87, 249, 0.12);
+  }
+
+  .candidate-portal input[type="checkbox"],
+  .candidate-portal input[type="radio"] {
+    accent-color: #0957f9;
+  }
+
+  .candidate-portal table {
+    border-color: rgba(0, 42, 102, 0.14);
+  }
+
+  .candidate-portal thead {
+    color: #002a66;
+    background-color: var(--gfi-lightgrey);
+  }
+
+  .candidate-portal th,
+  .candidate-portal td {
+    border-color: rgba(0, 42, 102, 0.12);
+  }
+
+  .candidate-portal .rounded-xl,
+  .candidate-portal [class*="rounded-[12px]"] {
+    border-radius: var(--gfi-radius-md) !important;
+  }
+
+  .candidate-portal .rounded-2xl,
+  .candidate-portal .rounded-3xl,
+  .candidate-portal [class*="rounded-[14px]"],
+  .candidate-portal [class*="rounded-[16px]"],
+  .candidate-portal [class*="rounded-[18px]"],
+  .candidate-portal [class*="rounded-[20px]"],
+  .candidate-portal [class*="rounded-[22px]"],
+  .candidate-portal [class*="rounded-[24px]"] {
+    border-radius: var(--gfi-radius-lg) !important;
+  }
+
+  .candidate-portal [class*="rounded-[14px]"][class*="bg-white"],
+  .candidate-portal [class*="rounded-[16px]"][class*="bg-white"],
+  .candidate-portal [class*="rounded-[18px]"][class*="bg-white"],
+  .candidate-portal [class*="rounded-[20px]"][class*="bg-white"],
+  .candidate-portal [class*="rounded-[22px]"][class*="bg-white"],
+  .candidate-portal [class*="rounded-[24px]"][class*="bg-white"] {
+    border: 1px solid rgba(0, 42, 102, 0.14) !important;
+    box-shadow: none !important;
+  }
+
+  .candidate-portal [class*="hover:-translate-y"]:hover {
+    transform: none !important;
+  }
+
+  .candidate-portal .btn:hover:not(:disabled) {
+    transform: translateY(-1px) !important;
+  }
+
+  .candidate-portal .resource-pack-card,
+  .candidate-portal .certificate-card,
+  .candidate-portal .checkout-card,
+  .candidate-portal .checkout-unit-card,
+  .candidate-portal .order-row {
+    border: 1px solid rgba(0, 42, 102, 0.16);
+    border-radius: 0.5rem !important;
+    box-shadow: none !important;
+  }
+
+  .candidate-portal .resource-pack-card:hover,
+  .candidate-portal .certificate-card:hover,
+  .candidate-portal .order-row:hover {
+    border-color: #0957f9;
+    box-shadow: none !important;
+  }
+
+  .candidate-portal .resource-pack-sheen,
+  .candidate-portal .resource-pack-orb,
+  .candidate-portal .certificate-card-sheen,
+  .candidate-portal .certificate-card-orb {
+    display: none;
+  }
+
+  .candidate-portal .resource-refresh-btn,
+  .candidate-portal .exam-refresh-btn,
+  .candidate-portal .membership-refresh-btn,
+  .candidate-portal .resource-detail-refresh-btn,
+  .candidate-portal .learn-sync-btn {
+    border-radius: var(--gfi-radius-pill) !important;
+    border-color: var(--gfi-hairline-strong) !important;
+    color: var(--gfi-darkblue) !important;
+    background: var(--gfi-paper) !important;
+    box-shadow: none !important;
+  }
+
+  .candidate-portal .resource-refresh-btn:hover:not(:disabled),
+  .candidate-portal .exam-refresh-btn:hover:not(:disabled),
+  .candidate-portal .membership-refresh-btn:hover:not(:disabled),
+  .candidate-portal .resource-detail-refresh-btn:hover:not(:disabled),
+  .candidate-portal .learn-sync-btn:hover:not(:disabled) {
+    border-color: var(--gfi-darkblue) !important;
+    color: var(--gfi-darkblue) !important;
+    background: var(--gfi-lightgrey) !important;
+    box-shadow: none !important;
+    transform: translateY(-1px) !important;
+  }
+
+  .candidate-portal .resource-refresh-btn:focus-visible,
+  .candidate-portal .exam-refresh-btn:focus-visible,
+  .candidate-portal .membership-refresh-btn:focus-visible,
+  .candidate-portal .resource-detail-refresh-btn:focus-visible,
+  .candidate-portal .learn-sync-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(9, 87, 249, 0.14) !important;
+  }
+
+  .candidate-portal .certificate-modal-primary {
+    border-radius: var(--gfi-radius-pill) !important;
+    border-color: var(--gfi-darkblue) !important;
+    color: #ffffff !important;
+    background: var(--gfi-darkblue) !important;
+    box-shadow: none !important;
+  }
+
+  @media (max-width: 767px) {
+    .candidate-portal .page-panel {
+      border-radius: 0;
+    }
+
+    .candidate-portal .page-panel > main {
+      padding-inline: 1rem;
     }
   }
 }

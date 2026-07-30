@@ -483,16 +483,16 @@ async function handleUpdateEmail() {
         </div>
     <div class="space-y-4">
       <div class="rounded-[14px] bg-white px-5 pt-4 shadow-[0_10px_24px_rgba(15,74,82,0.04)] md:px-6">
-        <div class="flex flex-wrap gap-x-8 gap-y-2 border-b border-[#edf0f2]">
+        <div class="flex flex-wrap gap-x-8 gap-y-2 border-b border-border">
           <button
-            :class="['relative inline-flex cursor-pointer items-center whitespace-nowrap px-1 pb-5 text-base font-medium transition-colors duration-200', activeTab === 'profile' ? 'text-primary' : 'text-[#111827] hover:text-primary']"
+            :class="['relative inline-flex cursor-pointer items-center whitespace-nowrap px-1 pb-5 text-base font-medium transition-colors duration-200', activeTab === 'profile' ? 'text-primary' : 'text-foreground hover:text-primary']"
             @click="setActiveTab('profile')"
           >
             {{ t.settings.profileTab }}
             <span v-if="activeTab === 'profile'" class="absolute bottom-[-1px] left-0 h-0.5 w-full rounded-full bg-primary" />
           </button>
           <button
-            :class="['relative inline-flex cursor-pointer items-center whitespace-nowrap px-1 pb-5 text-base font-medium transition-colors duration-200', activeTab === 'account' ? 'text-primary' : 'text-[#111827] hover:text-primary']"
+            :class="['relative inline-flex cursor-pointer items-center whitespace-nowrap px-1 pb-5 text-base font-medium transition-colors duration-200', activeTab === 'account' ? 'text-primary' : 'text-foreground hover:text-primary']"
             @click="setActiveTab('account')"
           >
             {{ t.settings.accountTab }}
