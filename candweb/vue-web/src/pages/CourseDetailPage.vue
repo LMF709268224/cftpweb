@@ -920,7 +920,7 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
               </div>
             </component>
           </div>
-          <div v-else-if="stage.runtime_status === 'WAIT_CANDIDATE'" class="flex justify-center border-t border-slate-100 p-6">
+          <div v-else-if="String(stage.runtime_status) === '1' || String(stage.runtime_status) === 'STAGE_STATUS_WAIT_CANDIDATE'" class="flex justify-center border-t border-slate-100 p-6">
             <button
               class="btn btn-primary rounded-lg"
               :disabled="stagePaymentLoading"
