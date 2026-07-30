@@ -9,6 +9,7 @@ import {
   Clock,
   ExternalLink,
   Loader2,
+  Lock,
   Play,
   Sparkles,
 } from "lucide-vue-next"
@@ -132,6 +133,18 @@ const finalQualificationPaymentSession = ref<{
   returnPath: string
   extraReturnParams?: Record<string, string>
 } | null>(null)
+
+const stagePaymentSession = ref<{
+  paymentKey?: string
+  orderId?: string
+  bizType: string
+  bizRefUlid: string
+  source: string
+  returnPath: string
+} | null>(null)
+const stagePaymentDialogOpen = ref(false)
+const stagePaymentLoading = ref(false)
+const stagePaymentStageId = ref("")
 
 function formatCourseDuration(minutes?: number) {
   const normalized = Number(minutes || 0)
@@ -569,6 +582,46 @@ async function handleFinalQualificationApplication() {
   }
 }
 
+async function handleStagePaymentClick(stage: StageConfig) {
+  if (stagePaymentLoading.value) return
+  if (!stage.stage_id || !pipelineId.value) return
+  
+  stagePaymentLoading.value = true
+  stagePaymentStageId.value = stage.stage_id
+  try {
+    const orderResp = await apiClient(`/api/mall/pipelines/${encodeURIComponent(pipelineId.value)}/stages/${encodeURIComponent(stage.stage_id)}/purchase`, {
+      method: "POST"
+    })
+    
+    const initResp = await apiClient("/api/mall/payments/initiate", {
+      method: "POST",
+      body: JSON.stringify({
+        biz_type: "STAGE_PAYMENT",
+        biz_ref_ulid: orderResp.stage_order_ulid,
+        success_url: window.location.href,
+        cancel_url: window.location.href,
+      })
+    })
+
+    if (initResp?.payment_key) {
+      stagePaymentSession.value = {
+        paymentKey: initResp.payment_key,
+        orderId: orderResp.stage_order_ulid,
+        bizType: "STAGE_PAYMENT",
+        bizRefUlid: orderResp.stage_order_ulid,
+        source: "stage",
+        returnPath: window.location.href,
+      }
+      stagePaymentDialogOpen.value = true
+    }
+  } catch (err: any) {
+    toast.error(err.message || t.value.common.error)
+  } finally {
+    stagePaymentLoading.value = false
+    stagePaymentStageId.value = ""
+  }
+}
+
 const detailPolling = usePolling(
   () => loadDetail(false, true),
   { shouldPoll: () => Boolean(pipelineId.value && pipelineIssuingCertificate.value) },
@@ -867,6 +920,17 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
               </div>
             </component>
           </div>
+          <div v-else-if="stage.runtime_status === 'WAIT_CANDIDATE'" class="flex justify-center border-t border-slate-100 p-6">
+            <button
+              class="btn btn-primary rounded-lg"
+              :disabled="stagePaymentLoading"
+              @click="handleStagePaymentClick(stage)"
+            >
+              <Loader2 v-if="stagePaymentLoading && stagePaymentStageId === stage.stage_id" class="mr-2 h-4 w-4 animate-spin" />
+              <Lock v-else class="mr-2 h-4 w-4" />
+              {{ t.learning.actionWaitCandidate }}
+            </button>
+          </div>
           </div>
         </div>
       </section>
@@ -883,6 +947,21 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
         :source="finalQualificationPaymentSession.source"
         :return-path="finalQualificationPaymentSession.returnPath"
         :extra-return-params="finalQualificationPaymentSession.extraReturnParams"
+        @complete="loadDetail(false)"
+      />
+
+      <PaymentSessionDialog
+        v-if="stagePaymentSession"
+        v-model:open="stagePaymentDialogOpen"
+        :title="t.learning.actionWaitCandidate"
+        :subtitle="stagePaymentSession.orderId"
+        :payment-key="stagePaymentSession.paymentKey"
+        :biz-type="stagePaymentSession.bizType"
+        :biz-ref-ulid="stagePaymentSession.bizRefUlid"
+        :order-id="stagePaymentSession.orderId"
+        :source="stagePaymentSession.source"
+        :return-path="stagePaymentSession.returnPath"
+        @complete="loadDetail(false)"
       />
     </template>
       </main>
