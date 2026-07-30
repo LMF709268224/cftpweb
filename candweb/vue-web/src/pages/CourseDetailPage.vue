@@ -47,6 +47,7 @@ type PipelineConfig = {
   package_stripe_price_id?: string
   stages?: StageConfig[]
   final_quals?: Qualification[]
+  has_certificate?: boolean
 }
 
 type StageConfig = {
@@ -184,7 +185,10 @@ const finalQualificationIds = computed(() => {
     : []
 })
 const finalQualificationIdsKey = computed(() => finalQualificationIds.value.join(","))
-const pipelineHasCertificate = computed(() => finalQualificationIds.value.length > 0)
+const pipelineHasCertificate = computed(() => {
+  if (pipeline.value?.has_certificate) return true
+  return finalQualificationIds.value.length > 0 || nextStepAction.value === "view_certificate"
+})
 const pipelineWaitsFinalEligibility = computed(() => {
   const raw = String(pipelineStatus.value ?? "").trim()
   return raw === "2" || raw.toUpperCase().includes("WAIT_FINAL_ELIG")
