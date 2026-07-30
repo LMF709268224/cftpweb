@@ -554,10 +554,29 @@ function applyBundleInfo(response: any) {
 
   const stages = purchaseState?.exemption_options?.stages || []
   exemptionStages.value = stages.filter((stage: any) => (stage.units?.length || 0) > 0)
+  syncQualifiedExemptionSelections(exemptionStages.value)
 
   if (exemptionStages.value.length === 0 && currentStep.value === 1) {
     currentStep.value = 2
   }
+}
+
+function syncQualifiedExemptionSelections(stages: any[]) {
+  const previousSelections = selectedExemptionUnitIds.value
+  const nextSelections: Record<string, boolean> = {}
+
+  for (const stage of stages) {
+    for (const unit of stage.units || []) {
+      const unitId = String(unit?.unit_id || "").trim()
+      if (!unitId || !unit?.qualified) continue
+
+      nextSelections[unitId] = Object.prototype.hasOwnProperty.call(previousSelections, unitId)
+        ? Boolean(previousSelections[unitId])
+        : true
+    }
+  }
+
+  selectedExemptionUnitIds.value = nextSelections
 }
 
 async function fetchBundlePayload() {

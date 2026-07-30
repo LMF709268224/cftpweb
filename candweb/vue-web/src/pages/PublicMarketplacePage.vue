@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useRouter } from "vue-router"
 import { toast } from "vue-sonner"
-import { AlertCircle, ArrowRight, BookOpen, Clock, Search } from "lucide-vue-next"
+import { AlertCircle, ArrowRight, BookOpen, Clock, LoaderCircle, Search } from "lucide-vue-next"
 import GfiFooter from "@/components/GfiFooter.vue"
 import GfiHeader from "@/components/GfiHeader.vue"
 import { apiClient } from "@/lib/apiClient"
@@ -31,6 +31,7 @@ const allCourses = ref<PublicCourse[]>([])
 const loading = ref(false)
 const loadError = ref(false)
 const authenticated = ref(isAuthenticated())
+const loginProductId = ref("")
 
 const pageCopy = computed(() => lang.value === "zh"
   ? {
@@ -181,16 +182,20 @@ function syncAuthentication() {
   authenticated.value = isAuthenticated()
 }
 
-async function openCourse() {
+async function openCourse(productId: string) {
   syncAuthentication()
   if (authenticated.value) {
     void router.push("/certifications")
     return
   }
 
+  if (loginProductId.value) return
+  loginProductId.value = productId
+
   try {
     await startGfiLogin("/certifications")
   } catch (error) {
+    loginProductId.value = ""
     console.error("Unable to start GFI login:", error)
     toast.error(t.value.loginPage.errorTitle)
   }
@@ -291,9 +296,24 @@ onBeforeUnmount(() => {
                 <strong>{{ course.priceLabel || t.courseCard.free }}</strong>
                 <span>{{ pageCopy.oneTimeFee }}</span>
               </div>
-              <button class="product-action" type="button" @click="openCourse">
-                <span>{{ authenticated ? pageCopy.memberAction : pageCopy.loginAction }}</span>
-                <ArrowRight />
+              <button
+                class="product-action"
+                type="button"
+                :disabled="Boolean(loginProductId)"
+                :aria-busy="loginProductId === course.id"
+                @click="openCourse(course.id)"
+              >
+                <LoaderCircle v-if="loginProductId === course.id" class="login-spinner" />
+                <span>
+                  {{
+                    loginProductId === course.id
+                      ? t.loginPage.loading
+                      : authenticated
+                        ? pageCopy.memberAction
+                        : pageCopy.loginAction
+                  }}
+                </span>
+                <ArrowRight v-if="loginProductId !== course.id" />
               </button>
             </div>
           </article>
@@ -613,6 +633,11 @@ onBeforeUnmount(() => {
   background: var(--marketplace-vivid-hover);
 }
 
+.product-action:disabled {
+  cursor: wait;
+  opacity: 0.88;
+}
+
 .category-filter button:focus-visible,
 .product-action:focus-visible,
 .catalog-state > button:focus-visible {
@@ -624,6 +649,16 @@ onBeforeUnmount(() => {
 .catalog-state > button svg {
   width: 17px;
   height: 17px;
+}
+
+.product-action .login-spinner {
+  animation: marketplace-login-spin 0.8s linear infinite;
+}
+
+@keyframes marketplace-login-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .catalog-state {
@@ -779,6 +814,10 @@ onBeforeUnmount(() => {
   .product-action,
   .skeleton {
     transition: none;
+    animation: none;
+  }
+
+  .product-action .login-spinner {
     animation: none;
   }
 }
