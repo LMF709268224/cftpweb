@@ -1806,7 +1806,7 @@ watch(selectedMaterial, () => {
               <div class="flex justify-start gap-2 2xl:justify-end">
                 <button
                   :class="[
-                    'btn',
+                    'btn whitespace-nowrap',
                     currentLessonCompleted ? 'border border-emerald-200 bg-emerald-50 text-emerald-700 disabled:opacity-100' : 'btn-primary',
                   ]"
                   :disabled="currentLessonCompleted || markingLessonComplete"
