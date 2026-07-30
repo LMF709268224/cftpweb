@@ -1548,6 +1548,7 @@ func buildPipelineNextStep(runtime *gprogpb.GetPipelineDetailRsp, config *gccpb.
 				continue
 			}
 			if stage.GetStage().GetStatus() == gprog.StageStatus_STAGE_STATUS_WAIT_CANDIDATE {
+				out.StageCcUlid = stage.GetStage().GetStageCcUlid()
 				if firstUnit != nil {
 					fillNextStepFromUnit(&out, stage, firstUnit, stageConfigNameByID(config, stage.GetStage().GetStageCcUlid()))
 				} else {
@@ -1744,6 +1745,7 @@ func fillNextStepFromUnit(out *PipelineNextStep, stage *gprogpb.StageDetail, uni
 	out.FormCode = unit.GetFormCode()
 	if stage != nil && stage.GetStage() != nil {
 		out.StageUlid = stage.GetStage().GetStageUlid()
+		out.StageCcUlid = stage.GetStage().GetStageCcUlid()
 		out.StageName = stageName
 	}
 }

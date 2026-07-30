@@ -96,6 +96,8 @@ type CredentialDefinition = {
 
 type PipelineNextStep = {
   action?: string
+  stage_id?: string
+  stage_cc_ulid?: string
   stage_name?: string
   course_unit_ulid?: string
   course_unit_cc_ulid?: string
@@ -590,13 +592,17 @@ async function handleFinalQualificationApplication() {
 
 async function handleStagePaymentClick(stage: StageConfig) {
   if (stagePaymentLoading.value) return
-  if (!stage.stage_id || !pipelineId.value) return
+  if (!stage.stage_id || !pipelineId.value || !instancePipelineId.value || !nextStep.value?.stage_id) return
   
   stagePaymentLoading.value = true
   stagePaymentStageId.value = stage.stage_id
   try {
     const orderResp = await apiClient(`/api/mall/pipelines/${encodeURIComponent(pipelineId.value)}/stages/${encodeURIComponent(stage.stage_id)}/purchase`, {
-      method: "POST"
+      method: "POST",
+      body: JSON.stringify({
+        pipeline_ulid: instancePipelineId.value,
+        stage_ulid: nextStep.value.stage_id,
+      }),
     })
     
     const initResp = await apiClient("/api/mall/payments/initiate", {

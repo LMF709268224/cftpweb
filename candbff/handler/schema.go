@@ -205,6 +205,7 @@ type PipelineNextStep struct {
 	Action           string `json:"action,omitempty"`
 	Message          string `json:"message,omitempty"`
 	StageUlid        string `json:"stage_id,omitempty"`
+	StageCcUlid      string `json:"stage_cc_ulid,omitempty"`
 	StageName        string `json:"stage_name,omitempty"`
 	CourseUnitUlid   string `json:"course_unit_ulid,omitempty"`
 	CourseUnitCcUlid string `json:"course_unit_cc_ulid,omitempty"`

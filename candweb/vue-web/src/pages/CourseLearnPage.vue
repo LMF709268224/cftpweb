@@ -1092,13 +1092,20 @@ async function handleInlineScheduleExam(exam: any) {
 
 async function handleStagePaymentClick() {
   if (stagePaymentLoading.value) return
-  if (!nextStep.value?.stage_id || !pipelineId.value) return
+  const pipelineUlid = firstString(runtime.value?.instance?.pipeline_ulid)
+  const stageUlid = firstString(nextStep.value?.stage_id)
+  const stageCcUlid = firstString(nextStep.value?.stage_cc_ulid)
+  if (!pipelineId.value || !pipelineUlid || !stageUlid || !stageCcUlid) return
   
   stagePaymentLoading.value = true
   try {
     // 1. Create Stage Order
-    const orderResp = await apiClient(`/api/mall/pipelines/${encodeURIComponent(pipelineId.value)}/stages/${encodeURIComponent(nextStep.value.stage_id)}/purchase`, {
-      method: "POST"
+    const orderResp = await apiClient(`/api/mall/pipelines/${encodeURIComponent(pipelineId.value)}/stages/${encodeURIComponent(stageCcUlid)}/purchase`, {
+      method: "POST",
+      body: JSON.stringify({
+        pipeline_ulid: pipelineUlid,
+        stage_ulid: stageUlid,
+      }),
     })
     
     // 2. Initiate Payment
