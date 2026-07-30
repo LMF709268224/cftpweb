@@ -198,7 +198,10 @@ onBeforeUnmount(() => revealObserver?.disconnect())
               <RouterLink v-else :to="`/gfi${post.slug}`">Read More <ArrowUpRight /></RouterLink>
             </div>
           </article>
-          <p v-if="!filteredPosts.length" class="no-results">{{ lang === "zh" ? "没有符合条件的内容" : "No matching content" }}</p>
+          <div v-if="!filteredPosts.length" class="no-results" role="status">
+            <img src="/gfi/events/404.svg" alt="" aria-hidden="true">
+            <p>No News Found</p>
+          </div>
         </div>
 
         <aside class="publication-sidebar" data-reveal>
@@ -269,7 +272,9 @@ onBeforeUnmount(() => revealObserver?.disconnect())
 .post-copy p { display:-webkit-box; min-height:66px; margin:0 0 24px; overflow:hidden; color:#4f5664; font-size:14px; line-height:1.58; white-space:pre-line; -webkit-box-orient:vertical; -webkit-line-clamp:3; }
 .post-copy > a { display:inline-flex; padding-bottom:7px; align-items:center; gap:7px; border-bottom:1px solid var(--primary); color:var(--primary); font-size:14px; }
 .post-copy > a svg { width:14px; height:14px; }
-.no-results { grid-column:1/-1; padding:70px 0; text-align:center; color:#6b7280; }
+.no-results { display:flex; min-height:560px; padding:68px 24px 48px; grid-column:1/-1; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center; }
+.no-results img { display:block; width:min(100%,620px); height:auto; }
+.no-results p { margin:26px 0 0; color:#071539; font-size:46px; font-weight:700; line-height:1.15; }
 .publication-sidebar { padding:0 20px 20px; background:#fff; }
 .publication-sidebar > section { margin-bottom:30px; }
 .publication-sidebar h2 { margin:0; padding:20px 0; border-bottom:1px solid #e7e9ed; font-size:21px; font-weight:500; }
@@ -313,6 +318,8 @@ onBeforeUnmount(() => revealObserver?.disconnect())
   .post-grid { grid-template-columns:1fr; }
   .post-image { height:230px; }
   .publication-content { padding-bottom:85px; }
+  .no-results { min-height:430px; padding:48px 0 32px; }
+  .no-results p { margin-top:18px; font-size:32px; }
   .journal-list { margin-top:-40px; }
   .journal-list article { grid-template-columns:1fr; padding:18px; border-radius:16px; }
   .journal-cover { max-width:240px; }
