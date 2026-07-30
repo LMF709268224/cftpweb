@@ -403,8 +403,8 @@ onMounted(() => {
         <span class="text-sm font-medium text-foreground">{{ t.messagesPage.title }}</span>
       </header>
 
-      <main class="messages-main w-full max-w-none py-6 md:py-8">
-        <div class="mb-6 flex flex-col gap-4 px-4 md:px-8 lg:flex-row lg:items-start lg:justify-between lg:px-10">
+      <main class="messages-main w-full px-5 py-8 md:px-8 lg:px-10">
+        <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <h1 class="text-2xl font-bold tracking-tight text-foreground md:text-3xl">{{ t.messagesPage.title }}</h1>
             <p class="mt-2 text-muted-foreground">{{ unreadCountText() }}</p>
@@ -464,10 +464,10 @@ onMounted(() => {
             </div>
             <span class="text-xs text-muted-foreground">{{ message.time }}</span>
           </div>
-          <div :class="['flex items-center gap-1 transition-opacity md:gap-2 md:group-hover:opacity-100', detailLoadingId === message.id ? 'opacity-100' : 'opacity-100 md:opacity-0']">
+          <div class="flex shrink-0 items-center gap-1 md:gap-2">
             <div class="relative">
-              <button class="btn btn-ghost h-8 rounded-lg px-2" :disabled="messageActionLoadingId === message.id || detailLoadingId === message.id" @click.stop="openMenuId = openMenuId === message.id ? null : message.id">
-                <MoreHorizontal class="h-4 w-4" />
+              <button class="btn btn-ghost h-9 w-9 rounded-lg border border-transparent p-0 text-slate-500 transition-colors hover:border-primary/20 hover:bg-primary/10 hover:text-primary" :disabled="messageActionLoadingId === message.id || detailLoadingId === message.id" @click.stop="openMenuId = openMenuId === message.id ? null : message.id">
+                <MoreHorizontal class="h-5 w-5" />
               </button>
               <div v-if="openMenuId === message.id" class="absolute right-0 top-9 z-50 min-w-36 overflow-hidden rounded-lg bg-white p-1 shadow-md" @click.stop>
                 <button v-if="message.isUnread" class="flex w-full items-center rounded-lg px-2 py-1.5 text-sm hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60" :disabled="messageActionLoadingId === message.id" @click="markAsRead(message.id)">
@@ -483,7 +483,7 @@ onMounted(() => {
               </div>
             </div>
             <Loader2 v-if="detailLoadingId === message.id" class="h-5 w-5 animate-spin text-primary" />
-            <ChevronRight v-else class="h-5 w-5 text-muted-foreground" />
+            <ChevronRight v-else class="h-5 w-5 text-slate-500 transition-colors group-hover:text-primary" />
           </div>
         </div>
         <div class="flex items-center justify-between px-4 py-3 text-sm text-muted-foreground">
@@ -527,10 +527,6 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.messages-main {
-  max-width: none !important;
-}
-
 .message-detail-content :deep(p:first-child) {
   margin-top: 0;
 }
