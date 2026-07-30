@@ -180,8 +180,8 @@ async function handleCardClick() {
     </div>
 
     <div class="flex flex-1 flex-col p-4 sm:p-5">
-      <div class="mb-3 min-h-[78px]">
-        <h3 class="mb-2 line-clamp-1 text-lg font-semibold text-card-foreground transition-colors group-hover:text-primary">{{ title }}</h3>
+      <div class="mb-3 min-h-[104px]">
+        <h3 class="mb-2 min-h-12 break-words text-lg font-semibold leading-6 text-card-foreground transition-colors group-hover:text-primary">{{ title }}</h3>
         <p class="line-clamp-2 min-h-10 text-sm leading-5 text-muted-foreground">{{ description }}</p>
       </div>
 
