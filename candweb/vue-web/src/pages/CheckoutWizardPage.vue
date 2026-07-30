@@ -1571,10 +1571,10 @@ async function confirmAndPay() {
                           {{ unit.qualified ? t.checkoutWizard.applyForExemption : qualificationActionLabel(unit) }}
                         </span>
                         <span
-                          v-if="selectedExemptionUnitIds[unit.unit_id] && (unitPriceDisplay[unit.unit_id]?.exemptionAmount !== undefined || unitPriceDisplay[unit.unit_id]?.accessAmount !== undefined)"
+                          v-if="selectedExemptionUnitIds[unit.unit_id]"
                           class="checkout-unit-selected-price"
                         >
-                          {{ formatMoney(unitPriceDisplay[unit.unit_id]?.exemptionAmount ?? unitPriceDisplay[unit.unit_id]?.accessAmount, unitPriceDisplay[unit.unit_id]?.currency) }}
+                          {{ formatMoney(unitPriceDisplay[unit.unit_id]?.exemptionAmount ?? 0, unitPriceDisplay[unit.unit_id]?.currency) }}
                         </span>
                         <strong
                           v-else-if="unitPriceDisplay[unit.unit_id]?.accessAmount !== undefined"
