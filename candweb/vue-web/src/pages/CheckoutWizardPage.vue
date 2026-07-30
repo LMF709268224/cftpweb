@@ -65,9 +65,26 @@ const dynamicPaymentPreview = computed(() => {
       }
     }
 
+    // Determine which units to include based on paymentMode
+    const includedUnitIds = new Set<string>()
+    if (paymentMode.value === "BY_STAGE" && exemptionStages.value.length > 0) {
+      const firstStage = exemptionStages.value[0]
+      for (const unit of firstStage.units || []) {
+        if (unit.unit_id) includedUnitIds.add(unit.unit_id)
+      }
+    } else {
+      for (const stage of exemptionStages.value) {
+        for (const unit of stage.units || []) {
+          if (unit.unit_id) includedUnitIds.add(unit.unit_id)
+        }
+      }
+    }
+
     // 2. Units (or Exemption qual reviews)
     if (Array.isArray(detail.units)) {
       for (const u of detail.units) {
+        if (includedUnitIds.size > 0 && !includedUnitIds.has(u.unit_id)) continue
+
         if (selectedExemptionUnitIds.value[u.unit_id]) {
           // Add qual_review prices
           const unitData = exemptionStages.value.flatMap((s: any) => s.units || []).find((x: any) => x.unit_id === u.unit_id)
@@ -1805,7 +1822,7 @@ async function confirmAndPay() {
               </label>
             </div>
 
-            <div v-if="dynamicPaymentPreview && paymentMode === 'FULL_PIPELINE'" class="rounded-lg bg-muted/30 p-4 border border-border">
+              <div v-if="dynamicPaymentPreview" class="rounded-lg bg-muted/30 p-4 border border-border">
               <div class="mb-3 text-sm font-semibold">{{ t.checkoutWizard.priceSummary }}</div>
               <div class="space-y-2 text-sm">
                 <div class="flex justify-between">
