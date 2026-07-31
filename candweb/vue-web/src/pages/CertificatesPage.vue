@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import { RouterLink } from "vue-router"
-import { Award, Calendar, CheckCircle2, ClipboardCheck, Download, Eye, Loader2, ShieldCheck, Sparkles, X } from "lucide-vue-next"
+import { AlertCircle, Award, Calendar, CheckCircle2, ClipboardCheck, Download, Eye, Loader2, RefreshCw, ShieldCheck, Sparkles, X } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import rewGif from "@/assets/rew.gif"
 import { apiClient } from "@/lib/apiClient"
@@ -13,6 +13,7 @@ import { usePolling } from "@/lib/polling"
 const { t } = useTranslation()
 const certificates = ref<any[]>([])
 const loading = ref(false)
+const loadError = ref(false)
 const celebrationVisible = ref(false)
 const CERTIFICATE_PREVIEW_TIMEOUT_MS = 20000
 const CERTIFICATE_BLOB_URL_REVOKE_DELAY_MS = 60000
@@ -134,7 +135,10 @@ function normalizeCertificates(list: any[]) {
 }
 
 async function loadCertificates(showLoading = true, showCelebration = false, suppressErrorToast = false) {
-  if (showLoading) loading.value = true
+  if (showLoading) {
+    loading.value = true
+    loadError.value = false
+  }
   try {
     const res = await apiClient("/api/certificates", { suppressErrorToast })
     if (res?.certificates) {
@@ -151,8 +155,10 @@ async function loadCertificates(showLoading = true, showCelebration = false, sup
         }
       }
     }
+    loadError.value = false
   } catch (e) {
     console.error(e)
+    if (showLoading && !suppressErrorToast) loadError.value = true
   } finally {
     if (showLoading) loading.value = false
   }
@@ -253,6 +259,17 @@ onMounted(async () => {
     <div v-if="loading" class="flex items-center justify-center gap-2 rounded-[16px] bg-white py-16 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <Loader2 class="h-5 w-5 animate-spin" />
       <span>{{ t.common.loading }}</span>
+    </div>
+    <div v-else-if="loadError" class="flex flex-col items-center justify-center rounded-[16px] bg-white px-4 py-16 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+      <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-red-50">
+        <AlertCircle class="h-8 w-8 text-red-600" />
+      </div>
+      <h3 class="mb-2 text-lg font-semibold text-foreground">{{ t.certificatesPage.loadFailed }}</h3>
+      <p class="mb-5 max-w-md text-muted-foreground">{{ t.certificatesPage.loadFailedDesc }}</p>
+      <button type="button" class="btn btn-primary min-w-32 justify-center" @click="loadCertificates(true, false)">
+        <RefreshCw class="h-4 w-4" />
+        {{ t.certificatesPage.retry }}
+      </button>
     </div>
     <div v-else-if="certificates.length" class="grid gap-4 lg:grid-cols-2">
       <div

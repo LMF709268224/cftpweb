@@ -19,6 +19,7 @@ const route = useRoute()
 const router = useRouter()
 const activeTab = ref<TabId>("current")
 const loading = ref(false)
+const loadError = ref(false)
 const scheduleLoadingExamId = ref<string | null>(null)
 const pendingScheduleExamIds = ref<Record<string, number>>({})
 const retakeLoadingUnitId = ref<string | null>(null)
@@ -255,6 +256,7 @@ function handleVisibilityChange() {
 
 async function loadExams(tab: TabId = activeTab.value, keyword = search.value, showLoading = true, suppressErrorToast = false) {
   if (tab === "exemption" || tab === "records") {
+    loadError.value = false
     exams.value = []
     total.value = 0
     totalPages.value = 0
@@ -263,7 +265,10 @@ async function loadExams(tab: TabId = activeTab.value, keyword = search.value, s
     nextCursor.value = ""
     return
   }
-  if (showLoading) loading.value = true
+  if (showLoading) {
+    loading.value = true
+    loadError.value = false
+  }
   try {
     const params = new URLSearchParams()
     params.set("page_size", String(pageSize.value))
@@ -291,13 +296,10 @@ async function loadExams(tab: TabId = activeTab.value, keyword = search.value, s
 nextCursor.value = String(res?.next_cursor || "")
     prevCursor.value = String(res?.prev_cursor || "")
     lastPage.value = page.value
-} catch {
-    exams.value = []
-    total.value = 0
-    totalPages.value = 0
-    totalLabel.value = "0"
-    hasMore.value = false
-    nextCursor.value = ""
+    loadError.value = false
+  } catch (error) {
+    console.error("Failed to load exams:", error)
+    if (showLoading && !suppressErrorToast) loadError.value = true
   } finally {
     if (showLoading) loading.value = false
   }
@@ -457,6 +459,17 @@ onBeforeUnmount(() => {
       <div v-if="loading" class="flex items-center justify-center gap-2 py-16 text-muted-foreground">
         <Loader2 class="h-5 w-5 animate-spin" />
         <span>{{ t.common.loading }}</span>
+      </div>
+      <div v-else-if="loadError" class="flex flex-col items-center justify-center px-4 py-16 text-center">
+        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-red-50">
+          <AlertCircle class="h-8 w-8 text-red-600" />
+        </div>
+        <h3 class="mb-2 text-lg font-semibold text-foreground">{{ t.examsPage.loadFailed }}</h3>
+        <p class="mb-5 max-w-md text-muted-foreground">{{ t.examsPage.loadFailedDesc }}</p>
+        <button type="button" class="btn btn-primary min-w-32 justify-center" @click="loadExams()">
+          <RefreshCw class="h-4 w-4" />
+          {{ t.examsPage.retry }}
+        </button>
       </div>
       <div v-else-if="filtered.length === 0" class="flex flex-col items-center justify-center py-12 text-center">
         <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10">

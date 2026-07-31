@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue"
 import { useRoute } from "vue-router"
 import { toast } from "vue-sonner"
-import { ChevronRight, Loader2, Package, Receipt, X } from "lucide-vue-next"
+import { AlertCircle, ChevronRight, Loader2, Package, Receipt, RefreshCw, X } from "lucide-vue-next"
 import { timelineStatusBadgeClassForStatus, timelineStatusLabelWithDiagnostics } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
 import AppPagination from "@/components/AppPagination.vue"
@@ -78,6 +78,7 @@ const { t } = useTranslation()
 
 const orders = ref<OrderItem[]>([])
 const loading = ref(true)
+const loadError = ref(false)
 const page = ref(1)
 const lastPage = ref(1)
 const pageSize = ref(10)
@@ -414,7 +415,10 @@ function orderStatusFilterLabel(status?: string) {
 }
 
 async function fetchOrders(showLoading = true, suppressErrorToast = false) {
-  if (showLoading) loading.value = true
+  if (showLoading) {
+    loading.value = true
+    loadError.value = false
+  }
   try {
     if (page.value > lastPage.value) {
       currentCursor.value = nextCursor.value
@@ -463,14 +467,10 @@ async function fetchOrders(showLoading = true, suppressErrorToast = false) {
     } else {
       orders.value = []
     }
+    loadError.value = false
   } catch (err) {
     console.error("Failed to fetch orders:", err)
-    orders.value = []
-    totalOrders.value = 0
-    totalPages.value = 0
-    totalLabel.value = "0"
-    hasMore.value = false
-    nextCursor.value = ""
+    if (showLoading && !suppressErrorToast) loadError.value = true
   } finally {
     if (showLoading) loading.value = false
   }
@@ -632,6 +632,17 @@ onBeforeUnmount(() => {
       </div>
 
       <div v-if="loading" class="flex items-center justify-center gap-2 py-16 text-muted-foreground"><Loader2 class="h-5 w-5 animate-spin" /> {{ t.common.loading }}</div>
+      <div v-else-if="loadError" class="flex flex-col items-center justify-center px-4 py-16 text-center">
+        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-red-50">
+          <AlertCircle class="h-8 w-8 text-red-600" />
+        </div>
+        <h3 class="mb-2 text-lg font-semibold text-foreground">{{ t.orders.loadFailed }}</h3>
+        <p class="mb-5 max-w-md text-muted-foreground">{{ t.orders.loadFailedDesc }}</p>
+        <button type="button" class="btn btn-primary min-w-32 justify-center" @click="fetchOrders()">
+          <RefreshCw class="h-4 w-4" />
+          {{ t.orders.retry }}
+        </button>
+      </div>
       <div v-else-if="orders.length === 0" class="flex flex-col items-center justify-center px-4 py-14 text-center">
         <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10"><Package class="h-8 w-8 text-primary" /></div>
         <h3 class="mb-2 text-lg font-semibold text-foreground">{{ t.orders.noOrders }}</h3>
