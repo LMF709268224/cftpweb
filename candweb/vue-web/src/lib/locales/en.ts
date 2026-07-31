@@ -18,6 +18,7 @@ export const en: AppTranslations = {
         purchaseDialogStripeBadge: "Recommended · Instant",
         permanent: "Permanent",
         systemNotification: "System Notification",
+        locationDataLoadFailed: "Failed to load country, state/province, and city data. Please refresh the page and try again.",
         genderOptions: {
             Male: "Male",
             Female: "Female",

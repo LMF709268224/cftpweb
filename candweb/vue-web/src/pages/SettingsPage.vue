@@ -261,7 +261,10 @@ onMounted(async () => {
     .then(() => {
       refreshCountryOptions()
     })
-    .catch((err) => console.error("Failed to load location data", err))
+    .catch((err: unknown) => {
+      console.error("Failed to load location data", err)
+      toast.error(t.value.common.locationDataLoadFailed, { id: "location-data-load-failed" })
+    })
 
   try {
     const payload = await apiClient("/api/user/me")

@@ -358,7 +358,10 @@ onMounted(() => {
       syncLocationSelectionFromForm()
       void fetchOrgConfig()
     })
-    .catch((err: any) => console.error("Failed to load location data", err))
+    .catch((err: unknown) => {
+      console.error("Failed to load location data", err)
+      toast.error(t.value.common.locationDataLoadFailed, { id: "location-data-load-failed" })
+    })
 })
 
 watch(lang, () => {

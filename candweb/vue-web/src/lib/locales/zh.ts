@@ -16,6 +16,7 @@ export const zh = {
     purchaseDialogStripeBadge: "推荐 · 即时生效",
     permanent: "永久有效",
     systemNotification: "系统通知",
+    locationDataLoadFailed: "国家、省市数据加载失败，请刷新页面后重试。",
     genderOptions: {
       Male: "男",
       Female: "女",
