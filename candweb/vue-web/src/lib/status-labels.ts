@@ -27,7 +27,10 @@ export const statusEnumNameForStatus = (
   status?: StatusValue,
 ) => {
   const normalized = normalizeEnumValue(status)
-  return enumNameMap[normalized] || ""
+  if (enumNameMap[normalized]) {
+    return enumNameMap[normalized]
+  }
+  return Object.values(enumNameMap).includes(normalized) ? normalized : ""
 }
 
 export const statusLabel = (t: TranslationTree, map: StatusLabelMap, status?: StatusValue, fallbackPath = "common.unknown") => {

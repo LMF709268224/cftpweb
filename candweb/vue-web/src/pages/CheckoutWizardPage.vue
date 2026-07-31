@@ -43,6 +43,33 @@ const levelPlaceholder = "{" + "{level}}"
 const exemptionDeclarationChecked = ref(false)
 const isExemptionSelected = computed(() => Object.values(selectedExemptionUnitIds.value).some(Boolean))
 
+function selectedExemptedUnitIds() {
+  return new Set(
+    Object.entries(selectedExemptionUnitIds.value)
+      .filter(([, selected]) => selected)
+      .map(([unitId]) => unitId),
+  )
+}
+
+function includedPurchaseUnitIds() {
+  const stages = [...(bundleData.value?.stages || [])]
+    .sort((left: any, right: any) => Number(left?.sort_order || 0) - Number(right?.sort_order || 0))
+  const exemptedUnitIds = selectedExemptedUnitIds()
+  const includedStages = paymentMode.value === "BY_STAGE"
+    ? stages.slice(0, stages.findIndex((stage: any) =>
+      (stage?.units || []).some((unit: any) => !exemptedUnitIds.has(String(unit?.unit_id || ""))),
+    ) + 1)
+    : stages
+
+  return new Set(
+    includedStages.flatMap((stage: any) =>
+      (stage?.units || [])
+        .map((unit: any) => String(unit?.unit_id || "").trim())
+        .filter(Boolean),
+    ),
+  )
+}
+
 const dynamicPaymentPreview = computed(() => {
   if (!pricingDetail.value) {
     return paymentPreview.value
@@ -55,61 +82,25 @@ const dynamicPaymentPreview = computed(() => {
     let currency = "USD"
     let subtotal = 0
 
-    // 1. Unlocks
-    if (detail.unlocks) {
-      for (const priceObj of Object.values(detail.unlocks)) {
-        const p = priceObj as { amount: number, currency: string }
-        total += p.amount
-        subtotal += p.amount
-        if (p.currency) currency = p.currency
-      }
-    }
+    // Match gmall bundle line-item selection: unlock and qualification review
+    // orders are separate, while bundle purchases charge non-exempted units.
+    const includedUnitIds = includedPurchaseUnitIds()
+    const exemptedUnitIds = selectedExemptedUnitIds()
 
-    // Determine which units to include based on paymentMode
-    const includedUnitIds = new Set<string>()
-    if (paymentMode.value === "BY_STAGE" && exemptionStages.value.length > 0) {
-      const firstStage = exemptionStages.value[0]
-      for (const unit of firstStage.units || []) {
-        if (unit.unit_id) includedUnitIds.add(unit.unit_id)
-      }
-    } else {
-      for (const stage of exemptionStages.value) {
-        for (const unit of stage.units || []) {
-          if (unit.unit_id) includedUnitIds.add(unit.unit_id)
-        }
-      }
-    }
-
-    // 2. Units (or Exemption qual reviews)
+    // 1. Units
     if (Array.isArray(detail.units)) {
       for (const u of detail.units) {
-        if (includedUnitIds.size > 0 && !includedUnitIds.has(u.unit_id)) continue
-
-        if (selectedExemptionUnitIds.value[u.unit_id]) {
-          // Add qual_review prices
-          const unitData = exemptionStages.value.flatMap((s: any) => s.units || []).find((x: any) => x.unit_id === u.unit_id)
-          if (unitData && Array.isArray(unitData.exemption_quals)) {
-             for (const q of unitData.exemption_quals) {
-                const qualId = String(q.qual_id || "").trim()
-                const qualReview = Array.isArray(detail.qual_reviews) ? detail.qual_reviews.find((qr: any) => qr.qual_id === qualId) : null
-                if (qualReview && qualReview.price) {
-                  total += qualReview.price.amount
-                  subtotal += qualReview.price.amount
-                }
-             }
-          }
-        } else {
-          // Add unit access price
-          if (u.access) {
-             total += u.access.amount
-             subtotal += u.access.amount
-             if (u.access.currency) currency = u.access.currency
-          }
+        const unitId = String(u?.unit_id || "").trim()
+        if (!includedUnitIds.has(unitId) || exemptedUnitIds.has(unitId)) continue
+        if (u.access) {
+          total += u.access.amount
+          subtotal += u.access.amount
+          if (u.access.currency) currency = u.access.currency
         }
       }
     }
 
-    // 3. Memberships
+    // 2. Memberships
     if (Array.isArray(detail.memberships)) {
        for (const m of detail.memberships) {
           if (m.price) {
@@ -1571,10 +1562,10 @@ async function confirmAndPay() {
                           {{ unit.qualified ? t.checkoutWizard.applyForExemption : qualificationActionLabel(unit) }}
                         </span>
                         <span
-                          v-if="selectedExemptionUnitIds[unit.unit_id] && (unitPriceDisplay[unit.unit_id]?.exemptionAmount !== undefined || unitPriceDisplay[unit.unit_id]?.accessAmount !== undefined)"
+                          v-if="selectedExemptionUnitIds[unit.unit_id]"
                           class="checkout-unit-selected-price"
                         >
-                          {{ formatMoney(unitPriceDisplay[unit.unit_id]?.exemptionAmount ?? unitPriceDisplay[unit.unit_id]?.accessAmount, unitPriceDisplay[unit.unit_id]?.currency) }}
+                          {{ formatMoney(unitPriceDisplay[unit.unit_id]?.exemptionAmount ?? 0, unitPriceDisplay[unit.unit_id]?.currency) }}
                         </span>
                         <strong
                           v-else-if="unitPriceDisplay[unit.unit_id]?.accessAmount !== undefined"
