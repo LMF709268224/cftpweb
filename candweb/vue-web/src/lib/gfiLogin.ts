@@ -8,6 +8,7 @@ export async function startGfiLogin(postLoginRedirect?: string) {
   const response = await apiClient(`/api/auth/login-url?callback=${callbackUrl}`, {
     timeoutMs: 10000,
     suppressErrorToast: true,
+    suppressAuthRedirect: true,
   })
 
   if (!response?.url) throw new Error("AUTH_LOGIN_URL_MISSING")

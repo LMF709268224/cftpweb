@@ -6,6 +6,7 @@ import { telemetry } from "./telemetry"
 type ApiClientOptions = RequestInit & {
   timeoutMs?: number
   suppressErrorToast?: boolean
+  suppressAuthRedirect?: boolean
 }
 
 const DEFAULT_API_TIMEOUT_MS = 60000
@@ -107,6 +108,7 @@ async function requestApi(endpoint: string, options: ApiClientOptions, allowRefr
   const {
     timeoutMs = DEFAULT_API_TIMEOUT_MS,
     suppressErrorToast = isSilentResourceEndpoint(endpoint),
+    suppressAuthRedirect = false,
     signal,
     ...fetchOptions
   } = options
@@ -154,7 +156,7 @@ async function requestApi(endpoint: string, options: ApiClientOptions, allowRefr
       return requestApi(endpoint, options, false)
     }
 
-    clearSessionAndRedirect(showErrorToast, currentLang)
+    if (!suppressAuthRedirect) clearSessionAndRedirect(showErrorToast, currentLang)
     telemetry.track("api_error", { url: endpoint, error_code: "UNAUTHORIZED", status: res.status })
     throw new ApiClientError(getErrorMessage("UNAUTHORIZED", currentLang), { errorCode: "UNAUTHORIZED", status: res.status })
   }

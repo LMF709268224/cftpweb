@@ -1,5 +1,8 @@
 import { createRouter, createWebHistory } from "vue-router"
-import { isAuthenticated, rememberPostLoginRedirect } from "@/lib/authStorage"
+import { toast } from "vue-sonner"
+import { getErrorMessage } from "@/lib/errorCodes"
+import { isAuthenticated } from "@/lib/authStorage"
+import { startGfiLogin } from "@/lib/gfiLogin"
 import { useUser } from "@/lib/user"
 
 const GfiLandingPage = () => import("@/pages/GfiLandingPage.vue")
@@ -11,7 +14,6 @@ const GfiPublicationsPage = () => import("@/pages/GfiPublicationsPage.vue")
 const GfiEventsPage = () => import("@/pages/GfiEventsPage.vue")
 const GfiContentPage = () => import("@/pages/GfiContentPage.vue")
 const PublicMarketplacePage = () => import("@/pages/PublicMarketplacePage.vue")
-const LoginPage = () => import("@/pages/LoginPage.vue")
 const CallbackPage = () => import("@/pages/CallbackPage.vue")
 const HomePage = () => import("@/pages/HomePage.vue")
 const CoursesPage = () => import("@/pages/CoursesPage.vue")
@@ -117,7 +119,7 @@ export const router = createRouter({
     { path: "/gfi/events/conferences", component: GfiEventsPage, meta: { titleKey: "gfiLanding" } },
     { path: "/gfi/:pathMatch(.*)+", component: GfiContentPage, meta: { titleKey: "gfiLanding" } },
     { path: "/marketplace", component: PublicMarketplacePage, meta: { titleKey: "marketplace" } },
-    { path: "/login", component: LoginPage, meta: { titleKey: "login" } },
+    { path: "/login", component: GfiLandingPage, meta: { titleKey: "login" } },
     { path: "/callback", component: CallbackPage, meta: { titleKey: "callback" } },
     { path: "/dashboard", component: HomePage, meta: { titleKey: "home", requiresAuth: true } },
     { path: "/certifications", component: CoursesPage, meta: { titleKey: "marketplace" } },
@@ -163,13 +165,31 @@ export const router = createRouter({
   ],
 })
 
-router.beforeEach((to) => {
-  if (to.meta.requiresAuth && !isAuthenticated()) {
-    rememberPostLoginRedirect(to.fullPath)
-    return { path: "/login", replace: true }
+async function redirectToGfiLogin(postLoginRedirect?: string) {
+  try {
+    await startGfiLogin(postLoginRedirect)
+    return false
+  } catch (error) {
+    console.error("Unable to start GFI login:", error)
+    const currentLang = localStorage.getItem("app_lang") === "en" ? "en" : "zh"
+    toast.error(getErrorMessage("AUTH_FAILED", currentLang), { id: "gfi-login-start-failed" })
+    return { path: "/", replace: true }
+  }
+}
+
+router.beforeEach(async (to) => {
+  const authenticated = isAuthenticated()
+
+  if (to.path === "/login") {
+    if (authenticated) return { path: "/dashboard", replace: true }
+    return redirectToGfiLogin()
   }
 
-  if (to.path === "/exams/signup" && isAuthenticated()) {
+  if (to.meta.requiresAuth && !authenticated) {
+    return redirectToGfiLogin(to.fullPath)
+  }
+
+  if (to.path === "/exams/signup" && authenticated) {
     void useUser().fetchUser()
   }
 })

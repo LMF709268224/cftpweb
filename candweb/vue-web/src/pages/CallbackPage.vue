@@ -21,7 +21,8 @@ onMounted(async () => {
   if (!code || !state) {
     status.value = "error"
     errorMsg.value = getErrorMessage("INVALID_REQUEST", currentLang)
-    setTimeout(() => router.push("/login"), 3000)
+    consumePostLoginRedirect()
+    setTimeout(() => router.replace("/"), 3000)
     return
   }
 
@@ -29,16 +30,18 @@ onMounted(async () => {
     const payload = await apiClient("/api/auth/login", {
       method: "POST",
       body: JSON.stringify({ code, state }),
+      suppressAuthRedirect: true,
     })
     setAuthSession(payload.user?.name)
     const postLoginRedirect = consumePostLoginRedirect()
-    const redirectPath = postLoginRedirect === "/certifications" ? postLoginRedirect : "/dashboard"
+    const redirectPath = postLoginRedirect || "/dashboard"
     status.value = "success"
     setTimeout(() => router.replace(redirectPath), 1000)
   } catch (err: any) {
     status.value = "error"
     errorMsg.value = getErrorMessage(err instanceof ApiClientError ? err.errorCode || "AUTH_FAILED" : err?.message || "AUTH_FAILED", currentLang)
-    setTimeout(() => router.push("/login"), 3000)
+    consumePostLoginRedirect()
+    setTimeout(() => router.replace("/"), 3000)
   }
 })
 </script>
