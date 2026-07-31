@@ -310,7 +310,7 @@ onMounted(() => {
 
           <div v-if="file.updated_at" class="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
             <CalendarDays class="h-4 w-4 shrink-0" />
-            <span class="truncate">{{ formatBackendDateOnly(file.updated_at) }}</span>
+            <span class="gfi-meta-label gfi-meta-time truncate">{{ formatBackendDateOnly(file.updated_at) }}</span>
           </div>
         </button>
 
@@ -357,7 +357,7 @@ onMounted(() => {
             <div class="mt-3 flex items-center justify-between gap-4 text-sm text-muted-foreground">
               <span v-if="file.updated_at" class="inline-flex min-w-0 items-center gap-2">
                 <CalendarDays class="h-4 w-4 shrink-0" />
-                <span class="truncate">{{ formatBackendDateOnly(file.updated_at) }}</span>
+                <span class="gfi-meta-label gfi-meta-time truncate">{{ formatBackendDateOnly(file.updated_at) }}</span>
               </span>
               <span v-else />
               <span v-if="normalizedType(file.file_type) === 1" class="inline-flex min-w-0 items-center gap-2">

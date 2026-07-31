@@ -210,7 +210,7 @@ async function handleLogout() {
     <aside class="app-side-card absolute left-0 top-0 flex h-full w-[280px] max-w-[82vw] max-h-none flex-col overflow-y-auto rounded-none border-r border-sidebar-border bg-sidebar shadow-2xl shadow-slate-950/20">
       <div class="flex h-20 items-center justify-between border-b border-white/10 px-5">
         <RouterLink to="/dashboard" class="flex min-w-0 items-center" @click="mobileMenuOpen = false">
-          <img src="/gfi/gfi-logo-blue.svg" :alt="t.common.instituteName" class="max-h-14 w-[132px] object-contain brightness-0 invert" />
+          <img src="/gfi/gfi-logo-blue.svg" :alt="t.common.instituteName" class="max-h-14 w-[112px] object-contain brightness-0 invert" />
         </RouterLink>
         <button class="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white" @click="mobileMenuOpen = false">
           <X class="h-5 w-5" />
@@ -291,7 +291,7 @@ async function handleLogout() {
       <span v-if="isSidebarCollapsed" class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white">
         <img :src="brandLogo" :alt="t.common.instituteName" class="h-7 w-7 rounded-md object-contain" />
       </span>
-      <img v-else src="/gfi/gfi-logo-blue.svg" :alt="t.common.instituteName" class="max-h-14 w-[132px] object-contain brightness-0 invert" />
+      <img v-else src="/gfi/gfi-logo-blue.svg" :alt="t.common.instituteName" class="max-h-14 w-[112px] object-contain brightness-0 invert" />
     </RouterLink>
 
     <nav :class="['flex-1 space-y-1 text-[14px] text-sidebar-foreground', isSidebarCollapsed ? 'px-0 py-0' : 'px-4 py-3']">

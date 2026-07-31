@@ -57,13 +57,13 @@ export const membershipTiers = [
   {
     title: { zh: "附属会员", en: "Affiliate Member" }, price: 49,
     description: { zh: "附属会员是进入GFI生态系统的入口。专为探索金融科技、建立基础知识或寻求全球行业洞察和网络接触的个人而设计。", en: "Affiliate Membership is the entry point into the GFI ecosystem. It is designed for individuals exploring fintech, building foundational knowledge, or seeking exposure to global industry insights and networks." },
-    benefits: { zh: ["访问网络研讨会录像和回放", "优先邀请参加GFI活动", "访问GFI报告和白皮书", "GFI通讯", "使用CFtA称号的权利", "GFI学习门户短期课程享10%折扣"], en: ["Access to webinar recordings and replays", "Priority invitations to GFI events", "Access to GFI reports and whitepapers", "GFI newsletter", "Right to use the CFtA designation", "10% discount on short courses on the GFI Learning Portal"] },
+    benefits: { zh: ["访问网络研讨会录像和回放", "优先邀请参加GFI活动", "访问GFI报告和白皮书", "GFI通讯", "GFI学习门户短期课程享10%折扣"], en: ["Access to webinar recordings and replays", "Priority invitations to GFI events", "Access to GFI reports and whitepapers", "GFI newsletter", "10% discount on short courses on the GFI Learning Portal"] },
     best: { zh: "学生、早期职业专业人士和探索金融科技基础知识和全球行业接触的职业转换者。", en: "Students, early-career professionals, and career switchers exploring fintech fundamentals and global industry exposure." },
   },
   {
     title: { zh: "准会员", en: "Associate Member" }, price: 129,
     description: { zh: "准会员认可正在积极建立金融科技能力并朝着正式认证方向发展的专业人士。它支持更深入的学习、实践接触以及与GFI社区更紧密的互动。", en: "Associate Membership recognises professionals who are actively building fintech capability and progressing towards formal certification. It supports deeper learning, practical exposure, and closer engagement with the GFI community." },
-    benefits: { zh: ["附属会员全部福利，以及", "访问GFI精选资源和洞察", "通过GFI合作网络获得职业机会", "GFI学习门户短期课程享15%折扣"], en: ["All Affiliate Member benefits, plus", "Access to curated GFI resources and insights", "Career opportunities through GFI's partner network", "15% discount on short courses on the GFI Learning Portal"] },
+    benefits: { zh: ["附属会员全部福利，以及", "使用CFtA称号的权利", "访问GFI精选资源和洞察", "通过GFI合作网络获得职业机会", "GFI学习门户短期课程享15%折扣"], en: ["All Affiliate Member benefits, plus", "Right to use the CFtA designation", "Access to curated GFI resources and insights", "Career opportunities through GFI's partner network", "15% discount on short courses on the GFI Learning Portal"] },
     best: { zh: "积极建立结构化金融科技专业知识并朝着认证方向发展的CFtP候选人和CFtA持有者。", en: "CFtP candidates and CFtA holders actively building structured fintech expertise and progressing towards certification." },
   },
   {

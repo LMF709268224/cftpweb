@@ -416,15 +416,15 @@ onMounted(() => {
             <div class="grid gap-3 p-5 md:grid-cols-4">
               <div class="rounded-2xl bg-slate-50 p-4">
                 <div class="text-xs font-bold text-slate-500">{{ t.membership.started }}</div>
-                <div class="mt-2 text-sm font-black text-slate-900">{{ formatDate(currentRecord.started_at) }}</div>
+                <div class="gfi-meta-label membership-date-value mt-2">{{ formatDate(currentRecord.started_at) }}</div>
               </div>
               <div class="rounded-2xl bg-slate-50 p-4">
                 <div class="text-xs font-bold text-slate-500">{{ t.membership.expires }}</div>
-                <div class="mt-2 text-sm font-black text-slate-900">{{ formatDate(currentRecord.expires_at) }}</div>
+                <div class="gfi-meta-label membership-date-value mt-2">{{ formatDate(currentRecord.expires_at) }}</div>
               </div>
               <div class="rounded-2xl bg-slate-50 p-4">
                 <div class="text-xs font-bold text-slate-500">{{ t.membership.nextBilling }}</div>
-                <div class="mt-2 text-sm font-black text-slate-900">{{ formatDate(currentRecord.next_billing_at) }}</div>
+                <div class="gfi-meta-label membership-date-value mt-2">{{ formatDate(currentRecord.next_billing_at) }}</div>
               </div>
               <div class="rounded-2xl bg-slate-50 p-4">
                 <div class="text-xs font-bold text-slate-500">{{ t.membership.autoRenew }}</div>
@@ -544,7 +544,7 @@ onMounted(() => {
             <div v-for="item in history" :key="item.membership_record_ulid || item.membership_order_ulid" class="mb-3 grid gap-4 rounded-[14px] border border-slate-100 bg-slate-50/70 p-4 transition-all last:mb-0 hover:-translate-y-0.5 hover:border-primary/20 hover:bg-white hover:shadow-[0_12px_28px_rgba(15,74,82,0.08)] md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
               <div>
                 <div class="break-words text-base font-black leading-6 text-slate-950 md:truncate" :title="membershipDisplayName(item, t.membership.membershipRecord)">{{ membershipDisplayName(item, t.membership.membershipRecord) }}</div>
-                <div class="mt-1 text-sm font-medium text-slate-600">{{ formatDate(item.started_at) }} - {{ formatDate(item.expires_at) }}</div>
+                <div class="gfi-meta-label gfi-meta-time mt-1">{{ formatDate(item.started_at) }} - {{ formatDate(item.expires_at) }}</div>
                 <div class="mt-1 break-words text-xs text-muted-foreground md:truncate">{{ membershipRecordSummary(item) }}</div>
               </div>
               <span class="inline-flex h-fit min-w-[76px] items-center justify-center justify-self-start rounded-full border px-3 py-1 text-xs font-black md:justify-self-end" :class="badgeClass(item.status)">{{ statusLabel(item.status) }}</span>
@@ -593,6 +593,13 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.membership-date-value {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+}
+
 .membership-refresh-btn {
   border-color: #e2e8f0;
   background: #ffffff;

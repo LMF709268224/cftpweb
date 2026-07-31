@@ -462,7 +462,7 @@ onMounted(() => {
               <h3 :class="['line-clamp-2 text-sm leading-snug text-card-foreground md:text-base', message.isUnread ? 'font-bold' : 'font-semibold']">{{ localizedMessageTitle(message.rawTitle, configFor(message.type).label) }}</h3>
               <span class="badge">{{ configFor(message.type).label }}</span>
             </div>
-            <span class="text-xs text-muted-foreground">{{ message.time }}</span>
+            <span class="gfi-meta-label gfi-meta-time">{{ message.time }}</span>
           </div>
           <div class="flex shrink-0 items-center gap-1 md:gap-2">
             <div class="relative">
@@ -512,7 +512,7 @@ onMounted(() => {
               <h2 class="min-w-0 flex-1 text-xl font-bold leading-snug text-slate-950 sm:text-2xl">{{ localizedMessageTitle(selectedMessageDetail?.rawTitle || '', t.messagesPage.systemNotice) }}</h2>
               <span v-if="selectedMessageDetail?.typeLabel" class="badge shrink-0 border-primary/15 bg-primary/5 text-primary">{{ selectedMessageDetail.typeLabel }}</span>
             </div>
-            <p class="text-sm font-medium text-slate-500">{{ selectedMessageDetail?.time }}</p>
+            <p class="gfi-meta-label gfi-meta-time">{{ selectedMessageDetail?.time }}</p>
           </div>
           <button class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-500 transition hover:border-primary/25 hover:text-primary" @click="detailModalOpen = false">
             <X class="h-5 w-5" />

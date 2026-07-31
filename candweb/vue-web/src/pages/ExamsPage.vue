@@ -499,8 +499,8 @@ onBeforeUnmount(() => {
                     <span class="font-medium text-foreground">{{ t.examsPage.site }}:</span>
                     <span class="break-words"> {{ exam.site_name }}</span>
                   </div>
-                  <div v-if="shouldShowStoredExamDetails(exam) && hasText(exam.appointment_start_time)" class="min-w-0"><span class="font-medium text-foreground">{{ t.examsPage.appointmentStart }}:</span> {{ formatBackendDate(exam.appointment_start_time) }}</div>
-                  <div v-if="shouldShowStoredExamDetails(exam) && hasText(exam.appointment_end_time)" class="min-w-0"><span class="font-medium text-foreground">{{ t.examsPage.appointmentEnd }}:</span> {{ formatBackendDate(exam.appointment_end_time) }}</div>
+                  <div v-if="shouldShowStoredExamDetails(exam) && hasText(exam.appointment_start_time)" class="min-w-0"><span class="font-medium text-foreground">{{ t.examsPage.appointmentStart }}:</span> <span class="gfi-meta-label gfi-meta-time">{{ formatBackendDate(exam.appointment_start_time) }}</span></div>
+                  <div v-if="shouldShowStoredExamDetails(exam) && hasText(exam.appointment_end_time)" class="min-w-0"><span class="font-medium text-foreground">{{ t.examsPage.appointmentEnd }}:</span> <span class="gfi-meta-label gfi-meta-time">{{ formatBackendDate(exam.appointment_end_time) }}</span></div>
                   <div v-if="isWaitingScheduleSync(exam)" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800 sm:col-span-2">
                     <div class="flex items-start gap-2">
                       <CalendarClock class="mt-0.5 h-4 w-4 shrink-0" />

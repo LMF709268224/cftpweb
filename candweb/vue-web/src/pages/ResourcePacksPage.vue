@@ -103,7 +103,7 @@ onMounted(() => {
           <div class="mt-4 space-y-2 text-xs text-muted-foreground">
             <p v-if="pack.updated_at" class="flex items-center gap-1.5">
               <CalendarClock class="h-3.5 w-3.5" />
-              <span>{{ copy.updated }}: {{ formatBackendDateOnly(pack.updated_at) }}</span>
+              <span>{{ copy.updated }}: <span class="gfi-meta-label gfi-meta-time">{{ formatBackendDateOnly(pack.updated_at) }}</span></span>
             </p>
           </div>
           <div class="mt-4 flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white shadow-sm shadow-primary/20 transition-all duration-300 group-hover:bg-primary/90 group-hover:shadow-primary/30">

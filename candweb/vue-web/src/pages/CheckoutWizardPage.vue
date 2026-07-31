@@ -2209,7 +2209,7 @@ async function confirmAndPay() {
 }
 
 .checkout-unit-action {
-  color: var(--gfi-ink-soft, #2a4575);
+  color: var(--gfi-ink-soft, #525e70);
   font-size: 13px;
 }
 

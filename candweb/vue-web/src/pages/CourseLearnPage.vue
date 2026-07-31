@@ -576,7 +576,7 @@ function flowStepBadgeClass(step: { status: FlowStepStatus }) {
   if (step.status === "done") return "border-primary/20 bg-primary/10 text-primary"
   if (step.status === "current") return "border-[#002a66]/20 bg-[#c1cef6]/40 text-[#002a66]"
   if (step.status === "locked") return "border-[#002a66]/10 bg-white text-[#5b6b87]"
-  return "border-[#c1cef6] bg-white text-[#2a4575]"
+  return "border-[#c1cef6] bg-white text-slate-600"
 }
 
 function canSelectFlowStep(step: { id: CertificationStepKey; actionable: boolean; status: FlowStepStatus }) {
@@ -1654,8 +1654,8 @@ watch(selectedMaterial, () => {
                   <div class="grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
                     <div v-if="shouldShowStoredExamDetails(exam) && hasText(exam.confirmation_number)"><span class="font-medium text-foreground">{{ t.examsPage.confirmationNumber }}:</span> {{ exam.confirmation_number }}</div>
                     <div v-if="shouldShowStoredExamDetails(exam) && hasText(exam.site_name)"><span class="font-medium text-foreground">{{ t.examsPage.site }}:</span> {{ exam.site_name }}</div>
-                    <div v-if="shouldShowStoredExamDetails(exam) && hasText(exam.appointment_start_time)"><span class="font-medium text-foreground">{{ t.examsPage.appointmentStart }}:</span> {{ formatBackendDate(exam.appointment_start_time) }}</div>
-                    <div v-if="shouldShowStoredExamDetails(exam) && hasText(exam.appointment_end_time)"><span class="font-medium text-foreground">{{ t.examsPage.appointmentEnd }}:</span> {{ formatBackendDate(exam.appointment_end_time) }}</div>
+                    <div v-if="shouldShowStoredExamDetails(exam) && hasText(exam.appointment_start_time)"><span class="font-medium text-foreground">{{ t.examsPage.appointmentStart }}:</span> <span class="gfi-meta-label gfi-meta-time">{{ formatBackendDate(exam.appointment_start_time) }}</span></div>
+                    <div v-if="shouldShowStoredExamDetails(exam) && hasText(exam.appointment_end_time)"><span class="font-medium text-foreground">{{ t.examsPage.appointmentEnd }}:</span> <span class="gfi-meta-label gfi-meta-time">{{ formatBackendDate(exam.appointment_end_time) }}</span></div>
                     <div v-if="isWaitingScheduleSync(exam)" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800 sm:col-span-2">
                       <div class="flex items-start gap-2">
                         <CalendarClock class="mt-0.5 h-4 w-4 shrink-0" />

@@ -210,10 +210,10 @@ onMounted(async () => {
                   <p class="mt-2 flex flex-wrap items-center gap-2 text-sm font-medium text-slate-600">
                     <span class="inline-flex items-center gap-1.5">
                       <Calendar class="h-4 w-4 text-primary" />
-                      {{ featuredCertificate.issueDate }}
+                      <span class="gfi-meta-label gfi-meta-time">{{ featuredCertificate.issueDate }}</span>
                     </span>
                     <span class="text-slate-300">|</span>
-                    <span>{{ featuredCertificate.expiryDate }}</span>
+                    <span class="gfi-meta-label gfi-meta-time">{{ featuredCertificate.expiryDate }}</span>
                   </p>
                 </div>
               </div>
@@ -288,13 +288,13 @@ onMounted(async () => {
         </div>
         <div class="relative p-4">
           <div class="mb-4 grid grid-cols-2 gap-3">
-            <div class="rounded-[14px] bg-[#eef3f8] p-3">
+            <div class="rounded-[14px] bg-slate-50 p-3">
               <p class="mb-1 text-xs text-muted-foreground">{{ t.certificatesPage.issueDate }}</p>
-              <p class="flex items-center gap-1.5 font-medium text-card-foreground"><Calendar class="h-4 w-4 text-muted-foreground" /> {{ cert.issueDate }}</p>
+              <p class="flex items-center gap-1.5 font-medium text-card-foreground"><Calendar class="h-4 w-4 text-muted-foreground" /> <span class="gfi-meta-label gfi-meta-time">{{ cert.issueDate }}</span></p>
             </div>
-            <div class="rounded-[14px] bg-[#eef3f8] p-3">
+            <div class="rounded-[14px] bg-slate-50 p-3">
               <p class="mb-1 text-xs text-muted-foreground">{{ t.certificatesPage.expiryDate }}</p>
-              <p class="flex items-center gap-1.5 font-medium text-card-foreground"><Calendar class="h-4 w-4 text-muted-foreground" /> {{ cert.expiryDate }}</p>
+              <p class="flex items-center gap-1.5 font-medium text-card-foreground"><Calendar class="h-4 w-4 text-muted-foreground" /> <span class="gfi-meta-label gfi-meta-time">{{ cert.expiryDate }}</span></p>
             </div>
           </div>
           <div class="flex gap-3">

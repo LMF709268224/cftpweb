@@ -290,8 +290,10 @@
     --gfi-lightblue: #c1cef6;
     --gfi-lightgrey: #edeef2;
     --gfi-paper: #ffffff;
-    --gfi-ink-soft: #2a4575;
+    --gfi-body-text: #1a2233;
+    --gfi-ink-soft: #525e70;
     --gfi-slate: #5b6b87;
+    --gfi-gold: #c49335;
     --gfi-error: #b3372f;
     --gfi-disabled: #c9cdd6;
     --gfi-hairline: rgba(0, 42, 102, 0.14);
@@ -308,11 +310,11 @@
     --gfi-radius-lg: 0.875rem;
     --gfi-radius-pill: 999px;
     --background: #edeef2;
-    --foreground: #002a66;
+    --foreground: #1a2233;
     --card: #ffffff;
-    --card-foreground: #002a66;
+    --card-foreground: #1a2233;
     --popover: #ffffff;
-    --popover-foreground: #002a66;
+    --popover-foreground: #1a2233;
     --primary: #0957f9;
     --primary-foreground: #ffffff;
     --secondary: #c1cef6;
@@ -389,7 +391,7 @@
   .candidate-portal .text-slate-950,
   .candidate-portal .text-slate-900,
   .candidate-portal .text-slate-800 {
-    color: var(--gfi-darkblue) !important;
+    color: var(--gfi-body-text) !important;
   }
 
   .candidate-portal .text-slate-700,
@@ -404,6 +406,25 @@
 
   .candidate-portal .font-black {
     font-weight: 700 !important;
+  }
+
+  .candidate-portal .gfi-meta-label {
+    color: var(--gfi-slate);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    line-height: 1.45;
+    text-transform: uppercase;
+  }
+
+  .candidate-portal .gfi-meta-time {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    line-height: 1.5;
+    text-transform: none;
   }
 
   .candidate-portal .bg-slate-50,
@@ -431,9 +452,9 @@
   }
 
   .candidate-portal .btn-primary {
-    border-color: var(--gfi-darkblue);
+    border-color: var(--gfi-vivid);
     color: #ffffff !important;
-    background-color: var(--gfi-darkblue);
+    background-color: var(--gfi-vivid);
   }
 
   .candidate-portal .btn-primary:hover:not(:disabled) {
@@ -505,7 +526,7 @@
   .candidate-portal textarea {
     border-color: rgba(0, 42, 102, 0.2);
     border-radius: 0.5rem;
-    color: #002a66;
+    color: var(--gfi-body-text);
     background-color: #ffffff;
     box-shadow: none;
   }

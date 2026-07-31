@@ -227,7 +227,7 @@ onMounted(() => {
 
         <div class="mb-4 flex flex-col gap-3 rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] lg:flex-row lg:items-center lg:justify-between">
           <div class="overflow-x-auto">
-            <div class="inline-flex min-w-max rounded-lg bg-[#f6fafb] p-1">
+            <div class="inline-flex min-w-max rounded-lg bg-slate-50 p-1">
               <button
                 v-for="option in categoryOptions"
                 :key="option.key"

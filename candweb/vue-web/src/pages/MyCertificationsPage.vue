@@ -143,8 +143,8 @@ onMounted(() => {
 
               <div v-if="course.currentStage || course.startedAt || course.completedAt" class="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-sm text-muted-foreground">
                 <span v-if="course.currentStage">{{ t.courses.stage }}: {{ course.currentStage }}</span>
-                <span v-if="course.startedAt">{{ copy.startedAt }}: {{ course.startedAt }}</span>
-                <span v-if="course.completedAt">{{ copy.completedAt }}: {{ course.completedAt }}</span>
+                <span v-if="course.startedAt">{{ copy.startedAt }}: <span class="gfi-meta-label gfi-meta-time">{{ course.startedAt }}</span></span>
+                <span v-if="course.completedAt">{{ copy.completedAt }}: <span class="gfi-meta-label gfi-meta-time">{{ course.completedAt }}</span></span>
               </div>
             </div>
 

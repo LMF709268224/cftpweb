@@ -32,11 +32,11 @@ const candUlid = computed(() => currentUser.value?.cand_ulid || currentUser.valu
           <div class="flex flex-col gap-4">
             <div>
               <div class="text-sm font-medium text-slate-500">{{ t.checkoutSuccess.orderId }}</div>
-              <div class="mt-1 font-mono text-slate-900">{{ orderId }}</div>
+              <div class="gfi-meta-label mt-1 break-all">{{ orderId }}</div>
             </div>
             <div v-if="candUlid">
               <div class="text-sm font-medium text-slate-500">{{ t.checkoutSuccess.candidateId }}</div>
-              <div class="mt-1 font-mono text-slate-900 font-semibold">{{ candUlid }}</div>
+              <div class="gfi-meta-label mt-1 break-all">{{ candUlid }}</div>
             </div>
           </div>
         </div>

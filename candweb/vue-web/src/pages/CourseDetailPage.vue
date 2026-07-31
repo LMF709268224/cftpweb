@@ -795,7 +795,7 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
               </div>
               <div>
                 <p class="text-sm text-muted-foreground">{{ t.certificatesPage.issueDate }}</p>
-                <p class="mt-2 text-sm font-medium text-foreground">{{ certificateIssuedDate }}</p>
+                <p class="gfi-meta-label gfi-meta-time mt-2">{{ certificateIssuedDate }}</p>
               </div>
             </div>
           </div>

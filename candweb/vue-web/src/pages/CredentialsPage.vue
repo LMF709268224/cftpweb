@@ -381,7 +381,7 @@ onMounted(fetchData)
           <p class="ml-12 text-sm text-muted-foreground">{{ t.credentialsPage.availableQualificationsDesc }}</p>
         </div>
         <div class="grid gap-4 md:grid-cols-3">
-          <div v-for="def in definitions" :key="credentialDefinitionId(def)" class="group relative flex flex-col overflow-hidden rounded-[16px] bg-white text-card-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:bg-[#f4fbfc] hover:shadow-md hover:shadow-primary/10">
+          <div v-for="def in definitions" :key="credentialDefinitionId(def)" class="group relative flex flex-col overflow-hidden rounded-[16px] bg-white text-card-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:bg-muted/40 hover:shadow-md hover:shadow-primary/10">
             <div class="absolute left-0 top-0 h-full w-1 bg-primary/45" />
             <div class="flex flex-col space-y-3 p-4">
               <div class="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform group-hover:scale-105">
@@ -436,7 +436,7 @@ onMounted(fetchData)
               </span>
               <div class="col-span-2 min-w-0 rounded-lg bg-slate-50 px-3 py-2 text-sm leading-5 text-muted-foreground md:col-span-2 md:bg-transparent md:px-0 md:py-0 md:truncate lg:col-span-1" :title="app.audit_remark ? `${t.credentialsPage.auditRemark}: ${app.audit_remark}` : t.common.na">{{ app.audit_remark ? `${t.credentialsPage.auditRemark}: ${app.audit_remark}` : t.common.na }}</div>
               <button v-if="canResubmit(app.status)" class="btn btn-primary col-span-2 h-9 w-full cursor-pointer rounded-lg py-1 text-sm shadow-sm shadow-primary/20 md:col-span-1 md:w-auto md:justify-self-end" @click="handleApplyClick(definitionForApplication(app), applicationId(app))">{{ t.credentialsPage.appStatusResubmit }}</button>
-              <span v-else class="col-span-2 justify-self-start whitespace-nowrap text-sm text-muted-foreground md:col-span-1 md:justify-self-end">{{ formatBackendDateOnly(app.created_at) || t.common.na }}</span>
+              <span v-else class="gfi-meta-label gfi-meta-time col-span-2 justify-self-start whitespace-nowrap md:col-span-1 md:justify-self-end">{{ formatBackendDateOnly(app.created_at) || t.common.na }}</span>
             </div>
           </div>
           <AppPagination

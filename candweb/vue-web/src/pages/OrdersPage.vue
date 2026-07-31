@@ -645,7 +645,7 @@ onBeforeUnmount(() => {
                 <h3 class="order-title-mobile min-w-0 max-w-full font-medium text-card-foreground">{{ order.items.join(", ") }}</h3>
                 <span class="rounded-full border border-primary/15 bg-primary/5 px-2 py-0.5 text-xs font-semibold text-primary">{{ orderTypeLabel(order.bizType) }}</span>
               </div>
-              <p class="text-sm text-muted-foreground">{{ order.date }}</p>
+              <p class="gfi-meta-label gfi-meta-time mt-1">{{ order.date }}</p>
             </div>
           </div>
           <div class="flex w-full flex-wrap items-center justify-end gap-x-3 gap-y-3 pl-16 md:grid md:w-auto md:shrink-0 md:grid-cols-[130px_148px_112px_112px_24px] md:gap-x-5 md:pl-0">
@@ -702,7 +702,7 @@ onBeforeUnmount(() => {
             </div>
             <div class="min-w-0">
               <h2 class="text-xl font-bold text-slate-950">{{ t.orders.detailTitle }}</h2>
-              <p class="mt-1 break-all text-sm text-muted-foreground">{{ selectedOrderDetail?.summary?.order_id || t.orders.detailSubtitle }}</p>
+              <p class="gfi-meta-label mt-1 break-all">{{ selectedOrderDetail?.summary?.order_id || t.orders.detailSubtitle }}</p>
             </div>
           </div>
           <button class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-500 transition hover:border-primary/25 hover:text-primary" @click="closeOrderDetail">
@@ -720,7 +720,7 @@ onBeforeUnmount(() => {
           </div>
           <div v-else-if="selectedOrderDetail" class="space-y-4">
             <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/60">
-              <div class="border-b border-primary/10 bg-[#f4f6fa] px-4 py-4 sm:px-5">
+              <div class="border-b border-primary/10 bg-slate-50 px-4 py-4 sm:px-5">
                 <div class="mb-4 flex items-start justify-between gap-3">
                   <h3 class="font-semibold text-slate-950">{{ t.orders.detailSummary }}</h3>
                   <span v-if="selectedOrderDetail.summary?.order_status" class="badge shrink-0 text-xs" :class="timelineStatusBadgeClassForStatus('MALL_ORDER', selectedOrderDetail.summary.order_status)">
@@ -748,7 +748,7 @@ onBeforeUnmount(() => {
               <dl class="divide-y divide-slate-100 px-4 sm:px-5">
                 <div class="grid gap-1 py-3 sm:grid-cols-[140px_1fr] sm:gap-4">
                   <dt class="text-xs font-semibold text-slate-500">{{ t.orders.detailOrderId }}</dt>
-                  <dd class="break-all text-sm font-semibold text-slate-950">{{ selectedOrderDetail.summary?.order_id || "-" }}</dd>
+                  <dd class="gfi-meta-label break-all">{{ selectedOrderDetail.summary?.order_id || "-" }}</dd>
                 </div>
                 <div class="grid gap-1 py-3 sm:grid-cols-[140px_1fr] sm:gap-4">
                   <dt class="text-xs font-semibold text-slate-500">{{ t.orders.detailType }}</dt>
@@ -756,11 +756,11 @@ onBeforeUnmount(() => {
                 </div>
                 <div class="grid gap-1 py-3 sm:grid-cols-[140px_1fr] sm:gap-4">
                   <dt class="text-xs font-semibold text-slate-500">{{ t.orders.detailPaidAt }}</dt>
-                  <dd class="break-words text-sm font-semibold text-slate-950">{{ selectedOrderDetail.paid_at || "-" }}</dd>
+                  <dd class="gfi-meta-label gfi-meta-time break-words">{{ selectedOrderDetail.paid_at || "-" }}</dd>
                 </div>
                 <div class="grid gap-1 py-3 sm:grid-cols-[140px_1fr] sm:gap-4">
                   <dt class="text-xs font-semibold text-slate-500">{{ t.orders.detailCreatedAt }}</dt>
-                  <dd class="break-words text-sm font-semibold text-slate-950">{{ selectedOrderDetail.summary?.created_at || "-" }}</dd>
+                  <dd class="gfi-meta-label gfi-meta-time break-words">{{ selectedOrderDetail.summary?.created_at || "-" }}</dd>
                 </div>
               </dl>
             </section>
