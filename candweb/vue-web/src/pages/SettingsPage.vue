@@ -4,11 +4,12 @@ import { useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
 import { Loader2, Settings } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
+import LocalizedDatePicker from "@/components/LocalizedDatePicker.vue"
 import { apiClient } from "@/lib/apiClient"
 import { clearAuthSession } from "@/lib/authStorage"
 import { getMessage } from "@/lib/messages"
 import { useTranslation } from "@/lib/language"
-import { getCachedCountries, getCountryCityOptions, getCountryOptions, getProvinceOptions, getStateCityOptions, loadLocationData, type CountryOption } from "@/lib/locationOptions"
+import { countryUsesCityField, getCachedCountries, getCountryCityOptions, getCountryOptions, getProvinceOptions, getStateCityOptions, loadLocationData, type CountryOption } from "@/lib/locationOptions"
 import { GENDER_OPTIONS, PROFILE_TEXT_LIMITS, isValidEmail, isValidInternationalPhone, isValidPostalCode, normalizeGender, normalizeInternationalPhone, normalizePostalCode, trimToMax } from "@/lib/profileFormValidation"
 import { useUser } from "@/lib/user"
 
@@ -39,7 +40,6 @@ const profile = reactive({
   bio: "",
   education: "",
 })
-const birthdayDisplay = ref("")
 const password = reactive({ oldPassword: "", newPassword: "", confirmPassword: "" })
 const emailUpdate = reactive({ newEmail: "", verificationCode: "" })
 const isProfileLoading = ref(false)
@@ -55,6 +55,8 @@ const orgPhonePrefixes = ref<{ code: string, dialCode: string, name: string }[]>
 const countryOptions = ref<CountryOption[]>([])
 const provinceOptions = ref<any[]>([])
 const cityOptions = ref<any[]>([])
+const showProvinceField = computed(() => !selectedCountryCode.value || provinceOptions.value.length > 0)
+const showCityField = computed(() => !selectedCountryCode.value || countryUsesCityField(selectedCountryCode.value))
 const genderOptions = GENDER_OPTIONS
 
 const CN_STATE_LABELS: Record<string, string> = {
@@ -103,44 +105,6 @@ const CN_CITY_OPTIONS_BY_STATE: Record<string, string[]> = {
 
 function normalizeDate(value: unknown) {
   return typeof value === "string" ? value.split("T")[0] : ""
-}
-
-function parseBirthdayDisplay(value: string) {
-  const normalized = value.trim()
-  const compactMatch = normalized.match(/^(\d{2})(\d{2})(\d{4})$/)
-  const separatedMatch = normalized.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
-  const match = separatedMatch || compactMatch
-  if (!match) return ""
-
-  const day = Number(match[1])
-  const month = Number(match[2])
-  const year = Number(match[3])
-  const date = new Date(Date.UTC(year, month - 1, day))
-  if (
-    date.getUTCFullYear() !== year
-    || date.getUTCMonth() !== month - 1
-    || date.getUTCDate() !== day
-  ) return ""
-
-  return `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`
-}
-
-function formatBirthdayDisplay(value: string) {
-  const match = normalizeDate(value).match(/^(\d{4})-(\d{2})-(\d{2})$/)
-  return match ? `${match[3]}/${match[2]}/${match[1]}` : ""
-}
-
-function handleBirthdayInput(event: Event) {
-  const input = event.target as HTMLInputElement
-  birthdayDisplay.value = input.value.replace(/[^\d/]/g, "").slice(0, 10)
-  profile.birthday = parseBirthdayDisplay(birthdayDisplay.value)
-}
-
-function handleBirthdayBlur() {
-  const birthday = parseBirthdayDisplay(birthdayDisplay.value)
-  if (!birthday) return
-  profile.birthday = birthday
-  birthdayDisplay.value = formatBirthdayDisplay(birthday)
 }
 
 function normalizeAddress(value: unknown, fallback: unknown) {
@@ -201,6 +165,10 @@ function refreshCityOptions() {
     cityOptions.value = []
     return
   }
+  if (!countryUsesCityField(selectedCountryCode.value)) {
+    cityOptions.value = []
+    return
+  }
   if (selectedProvinceCode.value) {
     if (lang.value === "zh" && selectedCountryCode.value === "CN" && CN_CITY_OPTIONS_BY_STATE[selectedProvinceCode.value]) {
       cityOptions.value = CN_CITY_OPTIONS_BY_STATE[selectedProvinceCode.value].map((name) => ({ name, localizedName: name }))
@@ -223,12 +191,18 @@ function syncLocationSelectionFromProfile() {
   )
   selectedCountryCode.value = matchedCountry?.isoCode || ""
   refreshProvinceOptions()
+  if (selectedCountryCode.value && provinceOptions.value.length === 0) {
+    profile.province = ""
+  }
 
   const provinceText = normalizeLocationText(profile.province)
   const matchedProvince = selectedCountryCode.value
     ? provinceOptions.value.find((state) => provinceMatchValues(state).some((value) => normalizeProvinceText(value) === normalizeProvinceText(provinceText)))
     : undefined
   selectedProvinceCode.value = matchedProvince?.isoCode || ""
+  if (selectedCountryCode.value && !countryUsesCityField(selectedCountryCode.value)) {
+    profile.city = ""
+  }
   refreshCityOptions()
   ensureCurrentCityOption()
 }
@@ -302,7 +276,6 @@ onMounted(async () => {
       profile.phone = payload.phone || ""
       profile.gender = normalizeGender(payload.gender)
       profile.birthday = normalizeDate(payload.birthday)
-      birthdayDisplay.value = formatBirthdayDisplay(profile.birthday)
       profile.country = payload.country || payload.region || ""
       profile.province = payload.province || ""
       profile.city = payload.city || payload.location || ""
@@ -351,11 +324,6 @@ watch(lang, () => {
 async function handleUpdateProfile() {
   sanitizeProfileForm()
 
-  if (birthdayDisplay.value.trim() && !profile.birthday) {
-    toast.error(t.value.settings.validationInvalidBirthday)
-    return
-  }
-
   const requiredFields = [
     [profile.email, t.value.settings.email],
     [profile.firstName, t.value.settings.firstName],
@@ -363,8 +331,8 @@ async function handleUpdateProfile() {
     [profile.gender, t.value.settings.gender],
     [profile.birthday, t.value.settings.birthday],
     [profile.country, t.value.settings.country],
-    [profile.province, t.value.settings.province],
-    [profile.city, t.value.settings.city],
+    ...(showProvinceField.value ? [[profile.province, t.value.settings.province] as const] : []),
+    ...(showCityField.value ? [[profile.city, t.value.settings.city] as const] : []),
     [profile.address, t.value.settings.address],
     [profile.postalCode, t.value.settings.postalCode],
   ] as const
@@ -572,17 +540,11 @@ async function handleUpdateEmail() {
             </label>
             <label class="space-y-2">
               <span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.birthday }}</span>
-              <input
-                :value="birthdayDisplay"
-                class="input"
-                type="text"
-                inputmode="numeric"
-                autocomplete="bday"
-                maxlength="10"
+              <LocalizedDatePicker
+                v-model="profile.birthday"
+                :language="lang"
                 :placeholder="t.settings.birthdayPlaceholder"
-                required
-                @input="handleBirthdayInput"
-                @blur="handleBirthdayBlur"
+                :aria-label="t.settings.birthday"
               />
             </label>
 
@@ -611,7 +573,7 @@ async function handleUpdateEmail() {
                 <option v-for="country in countryOptions" :key="country.code" :value="country.code">{{ country.displayName }}</option>
               </select>
             </label>
-            <label class="space-y-2">
+            <label v-if="showProvinceField" class="space-y-2">
               <span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.province }}</span>
               <select v-if="provinceOptions.length > 0" v-model="selectedProvinceCode" class="input cursor-pointer" required @change="handleProvinceChange">
                 <option value="">{{ t.settings.provincePlaceholder }}</option>
@@ -619,7 +581,7 @@ async function handleUpdateEmail() {
               </select>
               <input v-else v-model="profile.province" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" :placeholder="t.settings.provincePlaceholder" required />
             </label>
-            <label class="space-y-2">
+            <label v-if="showCityField" class="space-y-2">
               <span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.city }}</span>
               <select v-if="cityOptions.length > 0" v-model="profile.city" class="input cursor-pointer" required>
                 <option value="">{{ t.settings.cityPlaceholder }}</option>

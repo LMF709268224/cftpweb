@@ -928,7 +928,6 @@ export const en: AppTranslations = {
     updateEmailBtn: "Update Email",
     validationRequired: "Please fill in required field: {{field}}",
     validationInvalidEmail: "Please enter a valid email address",
-    validationInvalidBirthday: "Birthday is invalid. Use DD/MM/YYYY",
     validationInvalidPhone: "{{field}} is invalid. Start with + and a country/region code, using 7-15 digits in total",
     validationInvalidPostalCode: "Postal code is invalid. Use 2-16 letters, digits, spaces, or hyphens",
     currentPassword: "Current Password",

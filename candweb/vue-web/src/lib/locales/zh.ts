@@ -926,7 +926,6 @@ export const zh = {
     updateEmailBtn: "更新邮箱",
     validationRequired: "必填字段: {{field}}",
     validationInvalidEmail: "邮箱格式不正确，请填写有效的邮箱地址",
-    validationInvalidBirthday: "生日格式不正确，请按日/月/年填写",
     validationInvalidPhone: "{{field}} 格式不正确，请以 + 和国家/地区码开头，并填写共 7-15 位数字",
     validationInvalidPostalCode: "邮政编码格式不正确，请使用 2-16 位字母、数字、空格或连字符",
     currentPassword: "当前密码",

@@ -4,10 +4,11 @@ import { RouterLink, useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
 import { ArrowLeft, ClipboardList, Loader2, Send } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
+import LocalizedDatePicker from "@/components/LocalizedDatePicker.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
 import { useUser } from "@/lib/user"
-import { getCachedCountries, getCountryCityOptions, getCountryOptions, getProvinceOptions, getStateCityOptions, loadLocationData, type CountryOption } from "@/lib/locationOptions"
+import { countryUsesCityField, getCachedCountries, getCountryCityOptions, getCountryOptions, getProvinceOptions, getStateCityOptions, loadLocationData, type CountryOption } from "@/lib/locationOptions"
 import { GENDER_OPTIONS, PROFILE_TEXT_LIMITS, isValidEmail, isValidInternationalPhone, isValidPostalCode, normalizeGender, normalizeInternationalPhone, normalizePostalCode, trimToMax } from "@/lib/profileFormValidation"
 
 const route = useRoute()
@@ -23,6 +24,12 @@ const selectedProvinceCode = ref("")
 const countryOptions = ref<CountryOption[]>([])
 const provinceOptions = ref<any[]>([])
 const cityOptions = ref<any[]>([])
+const showProvinceField = computed(() => !selectedCountryCode.value || provinceOptions.value.length > 0)
+const showCityField = computed(() => !selectedCountryCode.value || countryUsesCityField(selectedCountryCode.value))
+const locationGridClass = computed(() => {
+  const fieldCount = 1 + Number(showProvinceField.value) + Number(showCityField.value)
+  return fieldCount === 3 ? "sm:grid-cols-3" : fieldCount === 2 ? "sm:grid-cols-2" : "sm:grid-cols-1"
+})
 const orgPhonePrefixes = ref<{ code: string, dialCode: string, name: string }[]>([])
 const genderOptions = GENDER_OPTIONS
 const formData = reactive({
@@ -161,6 +168,10 @@ function refreshCityOptions() {
     cityOptions.value = []
     return
   }
+  if (!countryUsesCityField(selectedCountryCode.value)) {
+    cityOptions.value = []
+    return
+  }
   if (selectedProvinceCode.value) {
     if (lang.value === "zh" && selectedCountryCode.value === "CN" && CN_CITY_OPTIONS_BY_STATE[selectedProvinceCode.value]) {
       cityOptions.value = CN_CITY_OPTIONS_BY_STATE[selectedProvinceCode.value].map((name) => ({ name, localizedName: name }))
@@ -183,12 +194,18 @@ function syncLocationSelectionFromForm() {
   )
   selectedCountryCode.value = matchedCountry?.isoCode || ""
   refreshProvinceOptions()
+  if (selectedCountryCode.value && provinceOptions.value.length === 0) {
+    formData.province = ""
+  }
 
   const provinceText = normalizeLocationText(formData.province)
   const matchedProvince = selectedCountryCode.value
     ? provinceOptions.value.find((state) => provinceMatchValues(state).some((value) => normalizeProvinceText(value) === normalizeProvinceText(provinceText)))
     : undefined
   selectedProvinceCode.value = matchedProvince?.isoCode || ""
+  if (selectedCountryCode.value && !countryUsesCityField(selectedCountryCode.value)) {
+    formData.city = ""
+  }
   refreshCityOptions()
   ensureCurrentCityOption()
 }
@@ -389,8 +406,8 @@ async function handleSubmit() {
     ["gender", t.value.examSignup.formGender],
     ["birthdate", t.value.examSignup.formBirthdate],
     ["country", t.value.examSignup.formCountry],
-    ["province", t.value.examSignup.formProvince],
-    ["city", t.value.examSignup.formCity],
+    ...(showProvinceField.value ? [["province", t.value.examSignup.formProvince] as const] : []),
+    ...(showCityField.value ? [["city", t.value.examSignup.formCity] as const] : []),
     ["address", t.value.examSignup.formAddress],
     ["postal_code", t.value.examSignup.formPostalCode],
   ] as const
@@ -460,8 +477,16 @@ async function handleSubmit() {
             </select>
           </label>
         </div>
-        <label class="block space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formBirthdate }}</span><input v-model="formData.birthdate" class="input" type="date" required /></label>
-        <div class="grid gap-4 sm:grid-cols-3">
+        <label class="block space-y-2">
+          <span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formBirthdate }}</span>
+          <LocalizedDatePicker
+            v-model="formData.birthdate"
+            :language="lang"
+            :placeholder="lang === 'zh' ? '日/月/年' : 'DD/MM/YYYY'"
+            :aria-label="t.examSignup.formBirthdate"
+          />
+        </label>
+        <div class="grid gap-4" :class="locationGridClass">
           <label class="space-y-2">
             <span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formCountry }}</span>
             <select v-model="selectedCountryCode" class="input cursor-pointer" required @change="handleCountryChange">
@@ -469,7 +494,7 @@ async function handleSubmit() {
               <option v-for="country in countryOptions" :key="country.code" :value="country.code">{{ country.displayName }}</option>
             </select>
           </label>
-          <label class="space-y-2">
+          <label v-if="showProvinceField" class="space-y-2">
             <span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formProvince }}</span>
             <select v-if="provinceOptions.length > 0" v-model="selectedProvinceCode" class="input cursor-pointer" required @change="handleProvinceChange">
               <option value="" disabled>{{ t.examSignup.formProvince }}</option>
@@ -477,7 +502,7 @@ async function handleSubmit() {
             </select>
             <input v-else v-model="formData.province" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" required />
           </label>
-          <label class="space-y-2">
+          <label v-if="showCityField" class="space-y-2">
             <span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formCity }}</span>
             <select v-if="cityOptions.length > 0" v-model="formData.city" class="input cursor-pointer" required>
               <option value="" disabled>{{ t.examSignup.formCity }}</option>
