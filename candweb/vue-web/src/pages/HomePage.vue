@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import type { Component } from "vue"
-import { Award, BookOpen, CheckCircle2, ClipboardList, PackageOpen, PanelLeft, Receipt } from "lucide-vue-next"
+import { AlertCircle, Award, BookOpen, CheckCircle2, ClipboardList, PackageOpen, PanelLeft, Receipt, RefreshCw } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
 import { isAuthenticated } from "@/lib/authStorage"
@@ -17,6 +17,14 @@ const counts = ref({
   exams: 0,
   resourcePacks: 0,
   orders: 0,
+})
+type DashboardCountKey = "certifications" | "certificates" | "exams" | "resourcePacks" | "orders"
+const countErrors = ref<Record<DashboardCountKey, boolean>>({
+  certifications: false,
+  certificates: false,
+  exams: false,
+  resourcePacks: false,
+  orders: false,
 })
 
 
@@ -35,6 +43,7 @@ type PortalCard = {
   icon: Component
   color: CardColor
   featured: boolean
+  unavailable: boolean
 }
 
 const portalCards = computed<PortalCard[]>(() => {
@@ -48,6 +57,7 @@ const portalCards = computed<PortalCard[]>(() => {
       icon: Award,
       color: "orange",
       featured: true,
+      unavailable: countErrors.value.certifications,
     },
     {
       key: "courses",
@@ -58,6 +68,7 @@ const portalCards = computed<PortalCard[]>(() => {
       icon: BookOpen,
       color: "purple",
       featured: true,
+      unavailable: false,
     },
     {
       key: "exams",
@@ -68,6 +79,7 @@ const portalCards = computed<PortalCard[]>(() => {
       icon: ClipboardList,
       color: "blue",
       featured: false,
+      unavailable: countErrors.value.exams,
     },
     {
       key: "resourcePacks",
@@ -78,6 +90,7 @@ const portalCards = computed<PortalCard[]>(() => {
       icon: PackageOpen,
       color: "teal",
       featured: false,
+      unavailable: countErrors.value.resourcePacks,
     },
     {
       key: "orders",
@@ -88,6 +101,7 @@ const portalCards = computed<PortalCard[]>(() => {
       icon: Receipt,
       color: "green",
       featured: false,
+      unavailable: countErrors.value.orders,
     },
   ]
 
@@ -119,6 +133,7 @@ const portalCards = computed<PortalCard[]>(() => {
       icon: CheckCircle2,
       color: "purple",
       featured: true,
+      unavailable: countErrors.value.certificates,
     },
     ...visibleCards.slice(1),
   ]
@@ -126,6 +141,7 @@ const portalCards = computed<PortalCard[]>(() => {
 const featuredCards = computed(() => portalCards.value.filter((card) => card.featured))
 const secondaryCards = computed(() => portalCards.value.filter((card) => !card.featured))
 const showDashboardSkeleton = computed(() => dashboardLoading.value && !dashboardLoaded.value)
+const hasDashboardError = computed(() => Object.values(countErrors.value).some(Boolean))
 
 const cardStyles = {
   orange: {
@@ -175,21 +191,23 @@ const cardStyles = {
   },
 } as const
 
-async function countFromRequest(endpoint: string, listKey: string) {
+async function countFromRequest(endpoint: string, listKey: string): Promise<number | null> {
   try {
     const res = await apiClient(endpoint)
-    return Array.isArray(res?.[listKey]) ? res[listKey].length : 0
+    const list = res?.[listKey]
+    if (!Array.isArray(list)) {
+      console.error(`Invalid dashboard response from ${endpoint}: expected array at ${listKey}`)
+      return null
+    }
+    return list.length
   } catch (err) {
     console.error(`Failed to load ${endpoint}:`, err)
-    return 0
+    return null
   }
 }
 
-onMounted(async () => {
-  if (!isAuthenticated()) {
-    return
-  }
-
+async function loadDashboardStats() {
+  if (dashboardLoading.value) return
   dashboardLoading.value = true
   try {
     const [certifications, certificates, exams, resourcePacks, orders] = await Promise.all([
@@ -200,11 +218,30 @@ onMounted(async () => {
       countFromRequest("/api/orders?page=1&page_size=50", "orders"),
     ])
 
-    counts.value = { certifications, certificates, courses: 0, exams, resourcePacks, orders }
+    countErrors.value = {
+      certifications: certifications === null,
+      certificates: certificates === null,
+      exams: exams === null,
+      resourcePacks: resourcePacks === null,
+      orders: orders === null,
+    }
+    counts.value = {
+      certifications: certifications ?? counts.value.certifications,
+      certificates: certificates ?? counts.value.certificates,
+      courses: counts.value.courses,
+      exams: exams ?? counts.value.exams,
+      resourcePacks: resourcePacks ?? counts.value.resourcePacks,
+      orders: orders ?? counts.value.orders,
+    }
   } finally {
     dashboardLoaded.value = true
     dashboardLoading.value = false
   }
+}
+
+onMounted(() => {
+  if (!isAuthenticated()) return
+  void loadDashboardStats()
 })
 </script>
 
@@ -223,6 +260,30 @@ onMounted(async () => {
         </section>
 
         <section class="portal-card-section mx-auto mt-12 w-full max-w-[1380px]">
+          <div
+            v-if="hasDashboardError"
+            class="mb-6 flex flex-col gap-4 rounded-lg border border-amber-200 bg-amber-50 px-5 py-4 text-left sm:flex-row sm:items-center sm:justify-between"
+            role="alert"
+            aria-live="polite"
+          >
+            <div class="flex min-w-0 items-start gap-3">
+              <AlertCircle class="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
+              <div class="min-w-0">
+                <p class="text-sm font-semibold text-amber-950">{{ t.home.statsLoadFailed }}</p>
+                <p class="mt-1 text-sm leading-5 text-amber-800">{{ t.home.statsLoadFailedDesc }}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-md border border-amber-300 bg-white px-4 text-sm font-semibold text-amber-900 transition-colors hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40 disabled:cursor-not-allowed disabled:opacity-60"
+              :disabled="dashboardLoading"
+              @click="loadDashboardStats"
+            >
+              <RefreshCw :class="['h-4 w-4', { 'animate-spin': dashboardLoading }]" />
+              {{ t.home.reloadStats }}
+            </button>
+          </div>
+
           <div v-if="showDashboardSkeleton" class="flex flex-col gap-8" role="status" :aria-label="t.common.loading" aria-live="polite">
             <div class="portal-card-row portal-card-featured-row flex flex-col items-center justify-center gap-6 lg:flex-row">
               <div
@@ -271,7 +332,7 @@ onMounted(async () => {
                 </div>
                 <h2 :class="['relative mt-6 text-lg font-semibold', cardStyles[card.color].text]">{{ card.title }}</h2>
                 <p :class="['relative mt-12 text-5xl font-bold tracking-tight', cardStyles[card.color].number]">
-                  <span>{{ card.value }}</span>
+                  <span>{{ card.unavailable ? "--" : card.value }}</span>
                 </p>
                 <p :class="['relative mt-3 text-base', cardStyles[card.color].text]">{{ card.action }}</p>
               </RouterLink>
@@ -296,7 +357,7 @@ onMounted(async () => {
                 </div>
                 <h2 :class="['relative mt-6 text-lg font-semibold', cardStyles[card.color].text]">{{ card.title }}</h2>
                 <p :class="['relative mt-12 text-5xl font-bold tracking-tight', cardStyles[card.color].number]">
-                  <span>{{ card.value }}</span>
+                  <span>{{ card.unavailable ? "--" : card.value }}</span>
                 </p>
                 <p :class="['relative mt-3 text-base', cardStyles[card.color].text]">{{ card.action }}</p>
               </RouterLink>

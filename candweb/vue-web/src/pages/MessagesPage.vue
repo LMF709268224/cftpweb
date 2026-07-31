@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
-import { Bell, CheckCheck, ChevronRight, Circle, CreditCard, FileText, Gift, Loader2, Megaphone, MessageSquare, MoreHorizontal, Trash2, X } from "lucide-vue-next"
+import { AlertCircle, Bell, CheckCheck, ChevronRight, Circle, CreditCard, FileText, Gift, Loader2, Megaphone, MessageSquare, MoreHorizontal, RefreshCw, Trash2, X } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useBodyScrollLock } from "@/lib/bodyScrollLock"
@@ -20,6 +20,7 @@ const selectedMessageDetail = ref<any>(null)
 const messageList = ref<Message[]>([])
 const openMenuId = ref<string | null>(null)
 const loading = ref(true)
+const loadError = ref(false)
 const markAllLoading = ref(false)
 const messageActionLoadingId = ref<string | null>(null)
 const detailLoadingId = ref<string | null>(null)
@@ -245,7 +246,10 @@ function formatPayloadSummary(payload: unknown) {
 }
 
 async function fetchMessages(showLoading = true, suppressErrorToast = false) {
-  if (showLoading) loading.value = true
+  if (showLoading) {
+    loading.value = true
+    loadError.value = false
+  }
   try {
     const params = new URLSearchParams({
       page_size: String(pageSize),
@@ -302,8 +306,10 @@ async function fetchMessages(showLoading = true, suppressErrorToast = false) {
         }
       })
     }
+    loadError.value = false
   } catch (e) {
     console.error(e)
+    if (showLoading) loadError.value = true
   } finally {
     if (showLoading) loading.value = false
   }
@@ -438,6 +444,17 @@ onMounted(() => {
       <div v-if="loading" class="flex items-center justify-center gap-2 px-4 py-16 text-muted-foreground">
         <Loader2 class="h-5 w-5 animate-spin text-primary" />
         <span>{{ t.common.loading }}</span>
+      </div>
+      <div v-else-if="loadError" class="flex flex-col items-center justify-center px-4 py-16 text-center">
+        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-red-50">
+          <AlertCircle class="h-8 w-8 text-red-600" />
+        </div>
+        <h3 class="mb-2 text-lg font-semibold text-foreground">{{ t.messagesPage.loadFailed }}</h3>
+        <p class="mb-5 max-w-md text-muted-foreground">{{ t.messagesPage.loadFailedDesc }}</p>
+        <button class="btn btn-primary min-w-32 justify-center" @click="fetchMessages()">
+          <RefreshCw class="h-4 w-4" />
+          {{ t.messagesPage.retry }}
+        </button>
       </div>
       <div v-else-if="messageList.length === 0" class="flex flex-col items-center justify-center px-4 py-16 text-center">
         <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10"><MessageSquare class="h-8 w-8 text-primary" /></div>
