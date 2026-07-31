@@ -690,7 +690,7 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
         </div>
 
         <div>
-          <h1 class="mb-2 text-2xl font-bold text-foreground">{{ pipeline.name || t.common.unknownCourse }}</h1>
+          <h1 class="gfi-product-title mb-2 text-2xl font-bold text-foreground">{{ pipeline.name || t.common.unknownCourse }}</h1>
           <p v-if="pipeline.description" class="mb-4 max-w-3xl text-sm leading-6 text-muted-foreground">{{ pipeline.description }}</p>
 
           <div class="mb-5 flex flex-wrap gap-6 text-sm text-muted-foreground">

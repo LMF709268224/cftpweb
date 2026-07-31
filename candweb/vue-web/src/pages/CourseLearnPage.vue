@@ -1450,7 +1450,7 @@ watch(selectedMaterial, () => {
               <BookOpen class="h-5 w-5" />
             </div>
             <div class="min-w-0">
-              <h1 class="text-xl font-bold text-foreground">{{ certificationTitle }}</h1>
+              <h1 class="gfi-product-title text-xl font-bold text-foreground">{{ certificationTitle }}</h1>
               <p class="mt-1.5 text-sm text-muted-foreground">{{ course.description || t.learning.certificationDefaultDesc }}</p>
               <div class="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                 <span class="inline-flex items-center gap-1"><BookOpen class="h-3.5 w-3.5" />{{ chapters.length }} {{ t.learning.chapters }}</span>

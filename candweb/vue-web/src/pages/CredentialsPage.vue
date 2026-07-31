@@ -387,7 +387,7 @@ onMounted(fetchData)
               <div class="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform group-hover:scale-105">
                 <Award class="h-5 w-5" />
               </div>
-              <h3 class="text-xl font-semibold leading-tight tracking-tight">{{ def.name }}</h3>
+              <h3 class="gfi-product-title text-xl font-semibold leading-tight tracking-tight">{{ def.name }}</h3>
               <span class="badge w-fit border-primary/20 bg-primary/10 text-primary">{{ def.category }}</span>
             </div>
             <div class="flex flex-1 flex-col p-4 pt-0">

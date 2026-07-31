@@ -206,7 +206,7 @@ onMounted(async () => {
                 </div>
                 <div class="min-w-0 flex-1">
                   <p class="text-xs font-semibold uppercase tracking-[0.14em] text-primary">{{ t.certificatesPage.certificateName }}</p>
-                  <p class="mt-1 break-words text-xl font-bold leading-snug text-slate-950 md:text-2xl">{{ featuredCertificate.name }}</p>
+                  <p class="gfi-product-title mt-1 break-words text-xl font-bold leading-snug text-slate-950 md:text-2xl">{{ featuredCertificate.name }}</p>
                   <p class="mt-2 flex flex-wrap items-center gap-2 text-sm font-medium text-slate-600">
                     <span class="inline-flex items-center gap-1.5">
                       <Calendar class="h-4 w-4 text-primary" />
@@ -280,7 +280,7 @@ onMounted(async () => {
                   </span>
                 </span>
               </div>
-              <h3 class="mb-1 text-xl font-bold">{{ cert.name }}</h3>
+              <h3 class="gfi-product-title mb-1 text-xl font-bold">{{ cert.name }}</h3>
               <p class="text-sm text-white/80">{{ cert.description }}</p>
             </div>
             <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-white/20 bg-white/10"><Award class="h-6 w-6" /></div>
