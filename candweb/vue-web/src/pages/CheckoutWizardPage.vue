@@ -1271,6 +1271,30 @@ function qualificationActionLabel(unit: any) {
   }
 }
 
+function qualificationStatusHint(unit: any) {
+  switch (exemptionCredentialState(unit)) {
+    case "active":
+      return ""
+    case "pending":
+      return t.value.checkoutWizard.qualificationPendingHint
+    case "resubmit":
+      return t.value.checkoutWizard.qualificationResubmitHint
+    default:
+      return t.value.checkoutWizard.qualificationSubmitHint
+  }
+}
+
+function qualificationStatusHintClass(unit: any) {
+  switch (exemptionCredentialState(unit)) {
+    case "pending":
+      return "border-blue-200 bg-blue-50 text-blue-800"
+    case "resubmit":
+      return "border-amber-200 bg-amber-50 text-amber-800"
+    default:
+      return "border-slate-200 bg-white text-slate-700"
+  }
+}
+
 async function nextFromStep2() {
   if (!isMembershipBundle.value && !formData.agreement) {
     toast.error(t.value.examSignup.agreementRequired)
@@ -1541,6 +1565,22 @@ async function confirmAndPay() {
                         <Clock v-else-if="['pending', 'expired'].includes(exemptionCredentialState(unit))" class="mr-1 h-3.5 w-3.5" />
                         <CircleAlert v-else class="mr-1 h-3.5 w-3.5" />
                         {{ exemptionCredentialLabel(unit) }}
+                      </div>
+
+                      <div
+                        v-if="qualificationStatusHint(unit)"
+                        :class="['mt-3 flex items-start gap-2 rounded-xl border px-3 py-2.5 text-sm leading-5', qualificationStatusHintClass(unit)]"
+                      >
+                        <Clock
+                          v-if="exemptionCredentialState(unit) === 'pending'"
+                          class="mt-0.5 h-4 w-4 shrink-0"
+                        />
+                        <CircleAlert
+                          v-else-if="exemptionCredentialState(unit) === 'resubmit'"
+                          class="mt-0.5 h-4 w-4 shrink-0"
+                        />
+                        <UploadCloud v-else class="mt-0.5 h-4 w-4 shrink-0" />
+                        <span>{{ qualificationStatusHint(unit) }}</span>
                       </div>
                     </div>
                     
