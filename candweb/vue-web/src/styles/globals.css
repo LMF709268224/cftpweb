@@ -298,6 +298,10 @@
     --gfi-disabled: #c9cdd6;
     --gfi-hairline: rgba(0, 42, 102, 0.14);
     --gfi-hairline-strong: rgba(0, 42, 102, 0.32);
+    --gfi-surface: #f7f9fc;
+    --gfi-surface-blue: #f2f6ff;
+    --gfi-shadow-sm: 0 6px 18px rgba(0, 42, 102, 0.07);
+    --gfi-shadow-md: 0 14px 36px rgba(0, 42, 102, 0.1);
     --gfi-space-1: 0.25rem;
     --gfi-space-2: 0.5rem;
     --gfi-space-3: 0.75rem;
@@ -342,13 +346,17 @@
   }
 
   .candidate-portal .page-panel {
-    background-color: var(--gfi-lightgrey) !important;
+    background-color: var(--gfi-surface) !important;
     border-color: rgba(0, 42, 102, 0.14) !important;
     border-radius: var(--gfi-radius-lg);
+    box-shadow: var(--gfi-shadow-md);
   }
 
   .candidate-portal .page-panel > header {
+    min-height: 4rem;
+    padding-inline: 1.5rem !important;
     border-bottom-color: rgba(0, 42, 102, 0.14) !important;
+    background-color: rgba(255, 255, 255, 0.96);
   }
 
   .candidate-portal .page-panel > header > svg:first-child {
@@ -363,6 +371,7 @@
 
   .candidate-portal .app-side-card {
     scrollbar-color: rgba(193, 206, 246, 0.5) transparent;
+    box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.12), 10px 0 28px rgba(0, 42, 102, 0.08);
   }
 
   .candidate-portal .app-side-card::-webkit-scrollbar-thumb {
@@ -373,10 +382,33 @@
     stroke-width: 1.5;
   }
 
+  .candidate-portal .app-side-card nav > div > div:not(:empty) {
+    letter-spacing: 0.06em;
+  }
+
+  .candidate-portal .app-side-card nav a {
+    min-height: 2.625rem;
+    border: 1px solid transparent;
+    transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  }
+
+  .candidate-portal .app-side-card nav a.bg-sidebar-accent,
+  .candidate-portal .app-side-card nav a.router-link-active.bg-sidebar-accent {
+    border-color: rgba(255, 255, 255, 0.16);
+    box-shadow: inset 3px 0 0 #ffffff, 0 8px 18px rgba(0, 18, 54, 0.22);
+  }
+
+  .candidate-portal .app-side-card nav a:not(.bg-sidebar-accent):hover {
+    border-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.09) !important;
+    transform: translateX(2px);
+  }
+
   .candidate-portal .page-panel > main {
     width: 100%;
     max-width: 1280px;
     margin-inline: auto;
+    padding: 2rem !important;
   }
 
   .candidate-portal .page-main h1,
@@ -386,6 +418,25 @@
     font-family: "Syne GFI", "DM Sans GFI", "Noto Sans SC", "Microsoft YaHei", sans-serif !important;
     font-weight: 700;
     letter-spacing: 0;
+  }
+
+  .candidate-portal .page-panel > main h1 {
+    position: relative;
+  }
+
+  .candidate-portal .page-panel > main h1::after {
+    display: block;
+    width: 2.75rem;
+    height: 0.1875rem;
+    margin-top: 0.75rem;
+    border-radius: var(--gfi-radius-pill);
+    background-color: var(--gfi-vivid);
+    content: "";
+  }
+
+  .candidate-portal .page-panel > main h1.text-center::after,
+  .candidate-portal .page-panel > main .text-center > h1::after {
+    margin-inline: auto;
   }
 
   .candidate-portal .text-slate-950,
@@ -447,19 +498,21 @@
   .candidate-portal .btn {
     border-radius: var(--gfi-radius-pill) !important;
     padding-inline: 1.375rem;
-    box-shadow: none;
-    transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
+    box-shadow: 0 5px 12px rgba(0, 42, 102, 0.08);
+    transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
   }
 
   .candidate-portal .btn-primary {
     border-color: var(--gfi-vivid);
     color: #ffffff !important;
     background-color: var(--gfi-vivid);
+    box-shadow: 0 7px 16px rgba(9, 87, 249, 0.22);
   }
 
   .candidate-portal .btn-primary:hover:not(:disabled) {
     border-color: var(--gfi-darkblue);
     background-color: var(--gfi-darkblue);
+    box-shadow: 0 9px 20px rgba(0, 42, 102, 0.24);
   }
 
   .candidate-portal .btn-outline {
@@ -516,7 +569,8 @@
   .candidate-portal .card {
     border-color: rgba(0, 42, 102, 0.14);
     border-radius: 0.5rem;
-    box-shadow: none;
+    box-shadow: var(--gfi-shadow-sm);
+    transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
   }
 
   .candidate-portal .input,
@@ -528,7 +582,14 @@
     border-radius: 0.5rem;
     color: var(--gfi-body-text);
     background-color: #ffffff;
-    box-shadow: none;
+    box-shadow: inset 0 1px 2px rgba(0, 42, 102, 0.025);
+    transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+  }
+
+  .candidate-portal input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):hover,
+  .candidate-portal select:hover,
+  .candidate-portal textarea:hover {
+    border-color: rgba(0, 42, 102, 0.36);
   }
 
   .candidate-portal input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
@@ -558,6 +619,14 @@
     border-color: rgba(0, 42, 102, 0.12);
   }
 
+  .candidate-portal tbody tr {
+    transition: background-color 160ms ease;
+  }
+
+  .candidate-portal tbody tr:hover {
+    background-color: var(--gfi-surface-blue);
+  }
+
   .candidate-portal .rounded-xl,
   .candidate-portal [class*="rounded-[12px]"] {
     border-radius: var(--gfi-radius-md) !important;
@@ -581,11 +650,11 @@
   .candidate-portal [class*="rounded-[22px]"][class*="bg-white"],
   .candidate-portal [class*="rounded-[24px]"][class*="bg-white"] {
     border: 1px solid rgba(0, 42, 102, 0.14) !important;
-    box-shadow: none !important;
+    box-shadow: var(--gfi-shadow-sm) !important;
   }
 
   .candidate-portal [class*="hover:-translate-y"]:hover {
-    transform: none !important;
+    transform: translateY(-2px) !important;
   }
 
   .candidate-portal .btn:hover:not(:disabled) {
@@ -598,13 +667,15 @@
   .candidate-portal .checkout-unit-card {
     border: 1px solid rgba(0, 42, 102, 0.16);
     border-radius: 0.5rem !important;
-    box-shadow: none !important;
+    box-shadow: var(--gfi-shadow-sm) !important;
+    transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
   }
 
   .candidate-portal .resource-pack-card:hover,
   .candidate-portal .certificate-card:hover {
     border-color: #0957f9;
-    box-shadow: none !important;
+    box-shadow: 0 12px 28px rgba(0, 42, 102, 0.13) !important;
+    transform: translateY(-2px);
   }
 
   .candidate-portal .resource-pack-sheen,
@@ -623,7 +694,7 @@
     border-color: var(--gfi-hairline-strong) !important;
     color: var(--gfi-darkblue) !important;
     background: var(--gfi-paper) !important;
-    box-shadow: none !important;
+    box-shadow: 0 5px 12px rgba(0, 42, 102, 0.07) !important;
   }
 
   .candidate-portal .resource-refresh-btn:hover:not(:disabled),
@@ -633,9 +704,19 @@
   .candidate-portal .learn-sync-btn:hover:not(:disabled) {
     border-color: var(--gfi-darkblue) !important;
     color: var(--gfi-darkblue) !important;
-    background: var(--gfi-lightgrey) !important;
-    box-shadow: none !important;
+    background: var(--gfi-surface-blue) !important;
+    box-shadow: 0 7px 16px rgba(0, 42, 102, 0.1) !important;
     transform: translateY(-1px) !important;
+  }
+
+  @media (min-width: 1024px) {
+    .candidate-portal .page-main {
+      padding: 1rem 1rem 1rem 296px;
+    }
+
+    body.sidebar-collapsed .candidate-portal .page-main {
+      padding-left: 72px;
+    }
   }
 
   .candidate-portal .resource-refresh-btn:focus-visible,
@@ -658,10 +739,20 @@
   @media (max-width: 767px) {
     .candidate-portal .page-panel {
       border-radius: 0;
+      box-shadow: none;
     }
 
     .candidate-portal .page-panel > main {
-      padding-inline: 1rem;
+      padding: 1.25rem 1rem !important;
+    }
+
+    .candidate-portal .page-panel > header {
+      padding-inline: 1rem !important;
+    }
+
+    .candidate-portal .page-panel > main h1::after {
+      width: 2.25rem;
+      margin-top: 0.5rem;
     }
   }
 }
