@@ -39,6 +39,7 @@ const profile = reactive({
   bio: "",
   education: "",
 })
+const birthdayDisplay = ref("")
 const password = reactive({ oldPassword: "", newPassword: "", confirmPassword: "" })
 const emailUpdate = reactive({ newEmail: "", verificationCode: "" })
 const isProfileLoading = ref(false)
@@ -102,6 +103,44 @@ const CN_CITY_OPTIONS_BY_STATE: Record<string, string[]> = {
 
 function normalizeDate(value: unknown) {
   return typeof value === "string" ? value.split("T")[0] : ""
+}
+
+function parseBirthdayDisplay(value: string) {
+  const normalized = value.trim()
+  const compactMatch = normalized.match(/^(\d{2})(\d{2})(\d{4})$/)
+  const separatedMatch = normalized.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
+  const match = separatedMatch || compactMatch
+  if (!match) return ""
+
+  const day = Number(match[1])
+  const month = Number(match[2])
+  const year = Number(match[3])
+  const date = new Date(Date.UTC(year, month - 1, day))
+  if (
+    date.getUTCFullYear() !== year
+    || date.getUTCMonth() !== month - 1
+    || date.getUTCDate() !== day
+  ) return ""
+
+  return `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+}
+
+function formatBirthdayDisplay(value: string) {
+  const match = normalizeDate(value).match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : ""
+}
+
+function handleBirthdayInput(event: Event) {
+  const input = event.target as HTMLInputElement
+  birthdayDisplay.value = input.value.replace(/[^\d/]/g, "").slice(0, 10)
+  profile.birthday = parseBirthdayDisplay(birthdayDisplay.value)
+}
+
+function handleBirthdayBlur() {
+  const birthday = parseBirthdayDisplay(birthdayDisplay.value)
+  if (!birthday) return
+  profile.birthday = birthday
+  birthdayDisplay.value = formatBirthdayDisplay(birthday)
 }
 
 function normalizeAddress(value: unknown, fallback: unknown) {
@@ -263,6 +302,7 @@ onMounted(async () => {
       profile.phone = payload.phone || ""
       profile.gender = normalizeGender(payload.gender)
       profile.birthday = normalizeDate(payload.birthday)
+      birthdayDisplay.value = formatBirthdayDisplay(profile.birthday)
       profile.country = payload.country || payload.region || ""
       profile.province = payload.province || ""
       profile.city = payload.city || payload.location || ""
@@ -310,6 +350,11 @@ watch(lang, () => {
 
 async function handleUpdateProfile() {
   sanitizeProfileForm()
+
+  if (birthdayDisplay.value.trim() && !profile.birthday) {
+    toast.error(t.value.settings.validationInvalidBirthday)
+    return
+  }
 
   const requiredFields = [
     [profile.email, t.value.settings.email],
@@ -525,7 +570,21 @@ async function handleUpdateEmail() {
                 <option v-for="option in genderOptions" :key="option" :value="option">{{ t.common.genderOptions[option] }}</option>
               </select>
             </label>
-            <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.birthday }}</span><input v-model="profile.birthday" class="input" type="date" required /></label>
+            <label class="space-y-2">
+              <span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.birthday }}</span>
+              <input
+                :value="birthdayDisplay"
+                class="input"
+                type="text"
+                inputmode="numeric"
+                autocomplete="bday"
+                maxlength="10"
+                :placeholder="t.settings.birthdayPlaceholder"
+                required
+                @input="handleBirthdayInput"
+                @blur="handleBirthdayBlur"
+              />
+            </label>
 
             <label class="space-y-2">
               <span class="text-sm font-medium">{{ t.settings.workPhone }}</span>
