@@ -8,7 +8,6 @@ import { apiClient } from "@/lib/apiClient"
 import { useBodyScrollLock } from "@/lib/bodyScrollLock"
 import { formatBackendDateOnly } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
-import { usePolling } from "@/lib/polling"
 
 const { t } = useTranslation()
 const certificates = ref<any[]>([])
@@ -164,11 +163,8 @@ async function loadCertificates(showLoading = true, showCelebration = false, sup
   }
 }
 
-const certificatesPolling = usePolling(() => loadCertificates(false, false, true))
-
 onMounted(async () => {
   await loadCertificates(true, true)
-  certificatesPolling.start()
 })
 </script>
 

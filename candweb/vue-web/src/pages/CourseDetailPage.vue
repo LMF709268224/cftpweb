@@ -605,13 +605,15 @@ async function handleStagePaymentClick(stage: StageConfig) {
       }),
     })
     
+    const returnPath = `${window.location.pathname}${window.location.search}${window.location.hash}`
+    const returnUrl = new URL(returnPath, window.location.origin).toString()
     const initResp = await apiClient("/api/mall/payments/initiate", {
       method: "POST",
       body: JSON.stringify({
         biz_type: "STAGE_PAYMENT",
         biz_ref_ulid: orderResp.stage_order_ulid,
-        success_url: window.location.href,
-        cancel_url: window.location.href,
+        success_url: returnUrl,
+        cancel_url: returnUrl,
       })
     })
 
@@ -622,7 +624,7 @@ async function handleStagePaymentClick(stage: StageConfig) {
         bizType: "STAGE_PAYMENT",
         bizRefUlid: orderResp.stage_order_ulid,
         source: "stage",
-        returnPath: window.location.href,
+        returnPath,
       }
       stagePaymentDialogOpen.value = true
     }
@@ -632,6 +634,12 @@ async function handleStagePaymentClick(stage: StageConfig) {
     stagePaymentLoading.value = false
     stagePaymentStageId.value = ""
   }
+}
+
+async function handleStagePaymentComplete() {
+  stagePaymentDialogOpen.value = false
+  stagePaymentSession.value = null
+  await loadDetail(false)
 }
 
 const detailPolling = usePolling(
@@ -973,7 +981,8 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
         :order-id="stagePaymentSession.orderId"
         :source="stagePaymentSession.source"
         :return-path="stagePaymentSession.returnPath"
-        @complete="loadDetail(false)"
+        :redirect-on-complete="false"
+        @complete="handleStagePaymentComplete"
       />
     </template>
       </main>

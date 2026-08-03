@@ -562,6 +562,10 @@ const nextStepState = computed(() => {
   if (nextStep.value?.action) return nextStepDisplayFromAction(nextStep.value.action)
   return nextStepDisplay(nextUnitStatus.value, Boolean(nextLearningLessonId.value), Boolean(nextStep.value?.allow_retake), hasPendingQuizzes.value)
 })
+const pipelineIssuingCertificate = computed(() => {
+  const status = normalizeEnumValueUpper(pipelineStatus.value).replace(/^PIPELINE_STATUS_/, "")
+  return status === "4" || status.includes("ISSUING_CERT") || nextStepState.value.action === "issuing_certificate"
+})
 function flowStepRingClass(step: { id: CertificationStepKey; status: FlowStepStatus }) {
   if (step.status === "done") return "border-primary bg-primary text-white"
   if (step.id === visibleCertificationStepId.value || step.status === "current") return "border-[#002a66] bg-[#002a66] text-white shadow-[0_0_0_4px_rgba(193,206,246,0.55)]"
@@ -1109,13 +1113,15 @@ async function handleStagePaymentClick() {
     })
     
     // 2. Initiate Payment
+    const returnPath = `${window.location.pathname}${window.location.search}${window.location.hash}`
+    const returnUrl = new URL(returnPath, window.location.origin).toString()
     const initResp = await apiClient("/api/mall/payments/initiate", {
       method: "POST",
       body: JSON.stringify({
         biz_type: "STAGE_PAYMENT",
         biz_ref_ulid: orderResp.stage_order_ulid,
-        success_url: window.location.href,
-        cancel_url: window.location.href,
+        success_url: returnUrl,
+        cancel_url: returnUrl,
       })
     })
 
@@ -1126,7 +1132,7 @@ async function handleStagePaymentClick() {
         bizType: "STAGE_PAYMENT",
         bizRefUlid: orderResp.stage_order_ulid,
         source: "stage",
-        returnPath: window.location.href,
+        returnPath,
       }
       stagePaymentDialogOpen.value = true
     }
@@ -1135,6 +1141,13 @@ async function handleStagePaymentClick() {
   } finally {
     stagePaymentLoading.value = false
   }
+}
+
+async function handleStagePaymentComplete() {
+  stagePaymentDialogOpen.value = false
+  stagePaymentSession.value = null
+  await loadRuntime()
+  if (activeContentTab.value === "exam") await loadCourseExams(false)
 }
 
 async function handleInlineApplyRetake(exam: any) {
@@ -1341,11 +1354,8 @@ function nextStepLink() {
 }
 
 const courseStatusPolling = usePolling(
-  async () => {
-    await loadRuntime(true)
-    if (activeContentTab.value === "exam") await loadCourseExams(false, true)
-  },
-  { shouldPoll: () => Boolean(pipelineId.value && courseId.value && !isPipelineTerminal.value && !pipelineCancelled.value) },
+  () => loadRuntime(true),
+  { shouldPoll: () => Boolean(pipelineId.value && courseId.value && pipelineIssuingCertificate.value) },
 )
 
 onMounted(async () => {
@@ -1394,6 +1404,7 @@ watch([runtime, courseId], async () => {
     activeContentTab.value = "lesson"
     return
   }
+  if (pipelineIssuingCertificate.value || isPipelineTerminal.value) return
   const showLoading = !syncing.value
   if (activeContentTab.value === "exam") await loadCourseExams(showLoading)
 })
@@ -2119,6 +2130,8 @@ watch(selectedMaterial, () => {
         :order-id="stagePaymentSession.orderId"
         :source="stagePaymentSession.source"
         :return-path="stagePaymentSession.returnPath"
+        :redirect-on-complete="false"
+        @complete="handleStagePaymentComplete"
       />
     </main>
   </div>
