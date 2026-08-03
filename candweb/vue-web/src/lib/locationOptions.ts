@@ -62,6 +62,23 @@ export const CN_CITY_OPTIONS_BY_STATE: Record<string, string[]> = {
   MO: ["澳门"],
 }
 
+const CHINA_SUBREGION_CODES = new Set(["HK", "MO", "TW"])
+const CN_SPECIAL_REGION_CITY_OPTIONS: Record<string, Array<{ name: string; zhName: string }>> = {
+  HK: [{ name: "Hong Kong", zhName: "香港" }],
+  MO: [{ name: "Macau", zhName: "澳门" }],
+  TW: [
+    { name: "Taipei", zhName: "台北" },
+    { name: "New Taipei", zhName: "新北" },
+    { name: "Taoyuan", zhName: "桃园" },
+    { name: "Taichung", zhName: "台中" },
+    { name: "Tainan", zhName: "台南" },
+    { name: "Kaohsiung", zhName: "高雄" },
+    { name: "Keelung", zhName: "基隆" },
+    { name: "Hsinchu", zhName: "新竹" },
+    { name: "Chiayi", zhName: "嘉义" },
+  ],
+}
+
 let locationApi: LocationApi | null = null
 let locationApiPromise: Promise<LocationApi> | null = null
 let allCountriesCache: any[] = []
@@ -93,6 +110,27 @@ export function countryUsesProvinceField(countryCode: string) {
 
 export function countryUsesCityField(countryCode: string) {
   return countryUsesProvinceField(countryCode)
+}
+
+export function normalizeAddressCountryCode(countryCode: string) {
+  return CHINA_SUBREGION_CODES.has(countryCode)
+    ? { countryCode: "CN", provinceCode: countryCode }
+    : { countryCode, provinceCode: "" }
+}
+
+export function getChinaCityOptions(provinceCode: string, locale: string) {
+  const specialRegionOptions = CN_SPECIAL_REGION_CITY_OPTIONS[provinceCode]
+  if (specialRegionOptions) {
+    const useChinese = locale.toLowerCase().startsWith("zh")
+    return specialRegionOptions.map((item) => ({
+      name: item.name,
+      localizedName: useChinese ? item.zhName : item.name,
+    }))
+  }
+
+  if (!locale.toLowerCase().startsWith("zh")) return null
+  const names = CN_CITY_OPTIONS_BY_STATE[provinceCode]
+  return names?.map((name) => ({ name, localizedName: name })) || null
 }
 
 export function normalizeLocationForSubmission(countryCode: string, country: string, province: string, city: string) {
@@ -143,6 +181,7 @@ export function getCountryOptions(locale: string) {
 
   const displayNames = new Intl.DisplayNames([locale], { type: "region" })
   const options = allCountriesCache
+    .filter((country) => !CHINA_SUBREGION_CODES.has(country.isoCode))
     .map((country) => {
       const localizedName = displayNames.of(country.isoCode) || country.name
       const shouldShowEnglishName = locale.toLowerCase().startsWith("zh")

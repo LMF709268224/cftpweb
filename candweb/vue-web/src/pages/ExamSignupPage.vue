@@ -10,16 +10,17 @@ import { useTranslation } from "@/lib/language"
 import { useUser } from "@/lib/user"
 import {
   CN_CITY_LABELS,
-  CN_CITY_OPTIONS_BY_STATE,
   CN_STATE_LABELS,
   countryUsesCityField,
   countryUsesProvinceField,
   getCachedCountries,
+  getChinaCityOptions,
   getCountryCityOptions,
   getCountryOptions,
   getProvinceOptions,
   getStateCityOptions,
   loadLocationData,
+  normalizeAddressCountryCode,
   normalizeLocationForSubmission,
   type CountryOption,
 } from "@/lib/locationOptions"
@@ -133,8 +134,11 @@ function refreshCityOptions() {
     return
   }
   if (selectedProvinceCode.value) {
-    if (lang.value === "zh" && selectedCountryCode.value === "CN" && CN_CITY_OPTIONS_BY_STATE[selectedProvinceCode.value]) {
-      cityOptions.value = CN_CITY_OPTIONS_BY_STATE[selectedProvinceCode.value].map((name) => ({ name, localizedName: name }))
+    const chinaCityOptions = selectedCountryCode.value === "CN"
+      ? getChinaCityOptions(selectedProvinceCode.value, lang.value)
+      : null
+    if (chinaCityOptions) {
+      cityOptions.value = chinaCityOptions
       return
     }
     cityOptions.value = getStateCityOptions(selectedCountryCode.value, selectedProvinceCode.value)
@@ -152,7 +156,11 @@ function syncLocationSelectionFromForm() {
     [country.name, country.isoCode, country.phonecode].some((value) => normalizeLocationText(value) === countryText) ||
     normalizeLocationText(zhRegionNames.of(country.isoCode)) === countryText,
   )
-  selectedCountryCode.value = matchedCountry?.isoCode || ""
+  const normalizedCountry = normalizeAddressCountryCode(matchedCountry?.isoCode || "")
+  selectedCountryCode.value = normalizedCountry.countryCode
+  if (normalizedCountry.provinceCode) {
+    formData.country = allCountries.find((country: any) => country.isoCode === "CN")?.name || "China"
+  }
   refreshProvinceOptions()
   if (selectedCountryCode.value && !countryUsesProvinceField(selectedCountryCode.value)) {
     formData.province = ""
@@ -160,9 +168,15 @@ function syncLocationSelectionFromForm() {
 
   const provinceText = normalizeLocationText(formData.province)
   const matchedProvince = selectedCountryCode.value
-    ? provinceOptions.value.find((state) => provinceMatchValues(state).some((value) => normalizeProvinceText(value) === normalizeProvinceText(provinceText)))
+    ? provinceOptions.value.find((state) =>
+        state.isoCode === normalizedCountry.provinceCode ||
+        provinceMatchValues(state).some((value) => normalizeProvinceText(value) === normalizeProvinceText(provinceText)),
+      )
     : undefined
   selectedProvinceCode.value = matchedProvince?.isoCode || ""
+  if (normalizedCountry.provinceCode && matchedProvince) {
+    formData.province = localizedProvinceName(matchedProvince)
+  }
   if (selectedCountryCode.value && !countryUsesCityField(selectedCountryCode.value)) {
     formData.city = ""
   }
