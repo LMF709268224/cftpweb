@@ -491,7 +491,7 @@ func (h *Handler) GetBundlePricingDetail(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	WriteJSON(w, http.StatusOK, map[string]interface{}{
-		"bundle": h.enrichBundle(r.Context(), resp.GetBundle(), h.newBundleEnrichmentState(r.Context(), CandidateID(r))),
+		"bundle":              h.enrichBundle(r.Context(), resp.GetBundle(), h.newBundleEnrichmentState(r.Context(), CandidateID(r))),
 		"pricing_detail_json": resp.GetPricingDetailJson(),
 	})
 }
@@ -1232,8 +1232,6 @@ func (h *Handler) bundlePurchaseState(ctx context.Context, state *bundleEnrichme
 	if activeOrder != nil {
 		out.ActiveOrder = activeOrder
 		out.PaymentPreview = preview
-	} else if eligibility.CanPurchase {
-		out.PaymentPreview = h.previewPaymentSummary(ctx, orderBizBundlePurchase, bundleID)
 	}
 	if pipelineID != "" && (eligibility.CanPurchase || out.ActiveOrder != nil) {
 		out.ExemptionOptions = h.pipelineExemptionOptions(ctx, state.candidateID, pipelineID)

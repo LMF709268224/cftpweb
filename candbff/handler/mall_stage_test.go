@@ -17,12 +17,12 @@ import (
 
 type stageOrderMallClientStub struct {
 	mallpb.MallServiceClient
-	listReq    *mallpb.ListPipelineOrdersRequest
-	detailReq  *mallpb.GetPipelineOrderDetailRequest
-	createReq  *mallpb.CreateStageOrderRequest
-	listResp   *mallpb.ListPipelineOrdersResponse
-	detailResp *mallpb.GetPipelineOrderDetailResponse
-	createResp *mallpb.CreateStageOrderResponse
+	listReqs    []*mallpb.ListPipelineOrdersRequest
+	detailReqs  []*mallpb.GetPipelineOrderDetailRequest
+	createReq   *mallpb.CreateStageOrderRequest
+	listResps   []*mallpb.ListPipelineOrdersResponse
+	detailResps map[string]*mallpb.GetPipelineOrderDetailResponse
+	createResp  *mallpb.CreateStageOrderResponse
 }
 
 func (s *stageOrderMallClientStub) ListPipelineOrders(
@@ -30,8 +30,12 @@ func (s *stageOrderMallClientStub) ListPipelineOrders(
 	req *mallpb.ListPipelineOrdersRequest,
 	_ ...grpc.CallOption,
 ) (*mallpb.ListPipelineOrdersResponse, error) {
-	s.listReq = req
-	return s.listResp, nil
+	s.listReqs = append(s.listReqs, req)
+	index := len(s.listReqs) - 1
+	if index >= len(s.listResps) {
+		return &mallpb.ListPipelineOrdersResponse{}, nil
+	}
+	return s.listResps[index], nil
 }
 
 func (s *stageOrderMallClientStub) GetPipelineOrderDetail(
@@ -39,8 +43,8 @@ func (s *stageOrderMallClientStub) GetPipelineOrderDetail(
 	req *mallpb.GetPipelineOrderDetailRequest,
 	_ ...grpc.CallOption,
 ) (*mallpb.GetPipelineOrderDetailResponse, error) {
-	s.detailReq = req
-	return s.detailResp, nil
+	s.detailReqs = append(s.detailReqs, req)
+	return s.detailResps[req.GetPipelineOrderUlid()], nil
 }
 
 func (s *stageOrderMallClientStub) CreateStageOrder(
@@ -80,23 +84,25 @@ func TestCreateStageOrderUsesCompletedByStageOrderContext(t *testing.T) {
 	)
 
 	mall := &stageOrderMallClientStub{
-		listResp: &mallpb.ListPipelineOrdersResponse{
+		listResps: []*mallpb.ListPipelineOrdersResponse{{
 			Items: []*mallpb.PipelineOrderSummary{{
 				PipelineOrderUlid: pipelineOrderID,
 			}},
-		},
-		detailResp: &mallpb.GetPipelineOrderDetailResponse{
-			Found: true,
-			Detail: &mallpb.PipelineOrderDetail{
-				Summary: &mallpb.PipelineOrderSummary{
-					PipelineOrderUlid: pipelineOrderID,
-					CandidateUlid:     candidateID,
-					PipelineCcUlid:    pipelineCcUlid,
-					PaymentMode:       "BY_STAGE",
-					OrderStatus:       "COMPLETED",
-					BundleOrderUlid:   bundleOrderID,
+		}},
+		detailResps: map[string]*mallpb.GetPipelineOrderDetailResponse{
+			pipelineOrderID: {
+				Found: true,
+				Detail: &mallpb.PipelineOrderDetail{
+					Summary: &mallpb.PipelineOrderSummary{
+						PipelineOrderUlid: pipelineOrderID,
+						CandidateUlid:     candidateID,
+						PipelineCcUlid:    pipelineCcUlid,
+						PaymentMode:       "BY_STAGE",
+						OrderStatus:       "COMPLETED",
+						BundleOrderUlid:   bundleOrderID,
+					},
+					InstantiatedPipelineUlid: pipelineUlid,
 				},
-				InstantiatedPipelineUlid: pipelineUlid,
 			},
 		},
 		createResp: &mallpb.CreateStageOrderResponse{
@@ -142,15 +148,18 @@ func TestCreateStageOrderUsesCompletedByStageOrderContext(t *testing.T) {
 	if prog.detailReq.GetPipelineUlid() != pipelineUlid {
 		t.Fatalf("runtime lookup = %+v, want pipeline_ulid %q", prog.detailReq, pipelineUlid)
 	}
-	filters := mall.listReq.GetFilters()
+	if len(mall.listReqs) != 1 {
+		t.Fatalf("list requests = %d, want 1", len(mall.listReqs))
+	}
+	filters := mall.listReqs[0].GetFilters()
 	if filters.GetCandidateUlid() != candidateID ||
 		filters.GetPipelineCcUlid() != pipelineCcUlid ||
 		filters.GetOrderStatus() != "COMPLETED" ||
 		filters.GetPaymentMode() != "BY_STAGE" {
 		t.Fatalf("pipeline order filters = %+v", filters)
 	}
-	if mall.detailReq.GetPipelineOrderUlid() != pipelineOrderID {
-		t.Fatalf("pipeline order detail request = %+v", mall.detailReq)
+	if len(mall.detailReqs) != 1 || mall.detailReqs[0].GetPipelineOrderUlid() != pipelineOrderID {
+		t.Fatalf("pipeline order detail requests = %+v", mall.detailReqs)
 	}
 	if mall.createReq.GetCandidateUlid() != candidateID ||
 		mall.createReq.GetPipelineCcUlid() != pipelineCcUlid ||
@@ -159,6 +168,75 @@ func TestCreateStageOrderUsesCompletedByStageOrderContext(t *testing.T) {
 		mall.createReq.GetStageCcUlid() != stageCcUlid ||
 		mall.createReq.GetBundleOrderUlid() != bundleOrderID {
 		t.Fatalf("create stage order request = %+v", mall.createReq)
+	}
+}
+
+func TestCompletedByStagePipelineOrderFollowsPagination(t *testing.T) {
+	const (
+		candidateID       = "01KYN000000000000000000011"
+		pipelineCcUlid    = "01KYN000000000000000000012"
+		targetPipelineID  = "01KYN000000000000000000013"
+		firstOrderID      = "01KYN000000000000000000014"
+		targetOrderID     = "01KYN000000000000000000015"
+		targetBundleOrder = "01KYN000000000000000000016"
+	)
+
+	mall := &stageOrderMallClientStub{
+		listResps: []*mallpb.ListPipelineOrdersResponse{
+			{
+				Items: []*mallpb.PipelineOrderSummary{{
+					PipelineOrderUlid: firstOrderID,
+				}},
+				HasMore:    true,
+				NextCursor: "next-page",
+			},
+			{
+				Items: []*mallpb.PipelineOrderSummary{{
+					PipelineOrderUlid: targetOrderID,
+				}},
+			},
+		},
+		detailResps: map[string]*mallpb.GetPipelineOrderDetailResponse{
+			firstOrderID: {
+				Found: true,
+				Detail: &mallpb.PipelineOrderDetail{
+					Summary: &mallpb.PipelineOrderSummary{
+						PipelineOrderUlid: firstOrderID,
+					},
+					InstantiatedPipelineUlid: "different-runtime-pipeline",
+				},
+			},
+			targetOrderID: {
+				Found: true,
+				Detail: &mallpb.PipelineOrderDetail{
+					Summary: &mallpb.PipelineOrderSummary{
+						PipelineOrderUlid: targetOrderID,
+						BundleOrderUlid:   targetBundleOrder,
+					},
+					InstantiatedPipelineUlid: targetPipelineID,
+				},
+			},
+		},
+	}
+	h := &Handler{Mall: mall}
+
+	got, err := h.completedByStagePipelineOrder(
+		context.Background(),
+		candidateID,
+		pipelineCcUlid,
+		targetPipelineID,
+	)
+	if err != nil {
+		t.Fatalf("completedByStagePipelineOrder() error = %v", err)
+	}
+	if got == nil || got.GetPipelineOrderUlid() != targetOrderID || got.GetBundleOrderUlid() != targetBundleOrder {
+		t.Fatalf("completedByStagePipelineOrder() = %+v", got)
+	}
+	if len(mall.listReqs) != 2 {
+		t.Fatalf("list requests = %d, want 2", len(mall.listReqs))
+	}
+	if mall.listReqs[0].GetCursor() != "" || mall.listReqs[1].GetCursor() != "next-page" {
+		t.Fatalf("list cursors = %q, %q", mall.listReqs[0].GetCursor(), mall.listReqs[1].GetCursor())
 	}
 }
 

@@ -89,7 +89,8 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 
 	token, err := casdoorsdk.GetOAuthToken(input.Code, input.State)
 	if err != nil {
-		WriteError(w, http.StatusUnauthorized, ErrAuthFailed, "failed to exchange token: "+err.Error())
+		slog.Warn("Failed to exchange OAuth token", "error", err)
+		WriteError(w, http.StatusUnauthorized, ErrAuthFailed, "authentication failed")
 		return
 	}
 
@@ -120,7 +121,8 @@ func (h *Handler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 
 	token, err := casdoorsdk.RefreshOAuthToken(refreshToken)
 	if err != nil {
-		WriteError(w, http.StatusUnauthorized, ErrAuthFailed, "failed to refresh token: "+err.Error())
+		slog.Warn("Failed to refresh OAuth token", "error", err)
+		WriteError(w, http.StatusUnauthorized, ErrAuthFailed, "authentication refresh failed")
 		return
 	}
 
@@ -132,7 +134,8 @@ func (h *Handler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) handleTokenExchange(w http.ResponseWriter, r *http.Request, token *oauth2.Token, currentRefreshToken string) {
 	claims, err := casdoorsdk.ParseJwtToken(token.AccessToken)
 	if err != nil {
-		WriteError(w, http.StatusUnauthorized, ErrInvalidToken, "failed to parse token: "+err.Error())
+		slog.Warn("Failed to parse OAuth access token", "error", err)
+		WriteError(w, http.StatusUnauthorized, ErrInvalidToken, "invalid access token")
 		return
 	}
 

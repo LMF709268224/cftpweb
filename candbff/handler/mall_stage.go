@@ -117,40 +117,51 @@ func (h *Handler) completedByStagePipelineOrder(
 	pipelineCcUlid string,
 	pipelineUlid string,
 ) (*mallpb.PipelineOrderSummary, error) {
-	ordersResp, err := h.Mall.ListPipelineOrders(ctx, &mallpb.ListPipelineOrdersRequest{
-		Filters: &mallpb.PipelineOrderFilters{
-			CandidateUlid:  candidateID,
-			PipelineCcUlid: pipelineCcUlid,
-			OrderStatus:    "COMPLETED",
-			PaymentMode:    "BY_STAGE",
-		},
-		PageSize: 20,
-	})
-	if err != nil {
-		return nil, err
+	const pageSize uint32 = 100
+	filters := &mallpb.PipelineOrderFilters{
+		CandidateUlid:  candidateID,
+		PipelineCcUlid: pipelineCcUlid,
+		OrderStatus:    "COMPLETED",
+		PaymentMode:    "BY_STAGE",
 	}
-
-	for _, order := range ordersResp.GetItems() {
-		if order == nil || strings.TrimSpace(order.GetPipelineOrderUlid()) == "" {
-			continue
-		}
-		detailResp, detailErr := h.Mall.GetPipelineOrderDetail(ctx, &mallpb.GetPipelineOrderDetailRequest{
-			PipelineOrderUlid: order.GetPipelineOrderUlid(),
+	cursor := ""
+	for {
+		ordersResp, err := h.Mall.ListPipelineOrders(ctx, &mallpb.ListPipelineOrdersRequest{
+			Filters:  filters,
+			Cursor:   cursor,
+			PageSize: pageSize,
 		})
-		if detailErr != nil {
-			return nil, detailErr
+		if err != nil {
+			return nil, err
 		}
-		if !detailResp.GetFound() || detailResp.GetDetail() == nil {
-			continue
+
+		for _, order := range ordersResp.GetItems() {
+			if order == nil || strings.TrimSpace(order.GetPipelineOrderUlid()) == "" {
+				continue
+			}
+			detailResp, detailErr := h.Mall.GetPipelineOrderDetail(ctx, &mallpb.GetPipelineOrderDetailRequest{
+				PipelineOrderUlid: order.GetPipelineOrderUlid(),
+			})
+			if detailErr != nil {
+				return nil, detailErr
+			}
+			if !detailResp.GetFound() || detailResp.GetDetail() == nil {
+				continue
+			}
+			if strings.TrimSpace(detailResp.GetDetail().GetInstantiatedPipelineUlid()) != pipelineUlid {
+				continue
+			}
+			summary := detailResp.GetDetail().GetSummary()
+			if summary == nil {
+				continue
+			}
+			return summary, nil
 		}
-		if strings.TrimSpace(detailResp.GetDetail().GetInstantiatedPipelineUlid()) != pipelineUlid {
-			continue
+
+		nextCursor := strings.TrimSpace(ordersResp.GetNextCursor())
+		if !ordersResp.GetHasMore() || nextCursor == "" || nextCursor == cursor {
+			return nil, nil
 		}
-		summary := detailResp.GetDetail().GetSummary()
-		if summary == nil {
-			continue
-		}
-		return summary, nil
+		cursor = nextCursor
 	}
-	return nil, nil
 }
