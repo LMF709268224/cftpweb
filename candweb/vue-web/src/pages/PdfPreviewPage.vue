@@ -4,12 +4,16 @@ import { useRoute, useRouter } from "vue-router"
 import { AlertTriangle, ArrowLeft, Calendar, FileText, Loader2, RotateCw } from "lucide-vue-next"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
+import { useUser } from "@/lib/user"
 
 const SLOW_PREVIEW_NOTICE_MS =  60 * 1000
+const ANNOTATION_SAVE_DEBOUNCE_MS = 800
+const ANNOTATION_STORAGE_VERSION = 1
 
 const route = useRoute()
 const router = useRouter()
 const { t } = useTranslation()
+const { currentUser, fetchUser } = useUser()
 const viewerSrc = ref("")
 const loading = ref(false)
 const viewerReady = ref(false)
@@ -24,10 +28,30 @@ const PDFViewer = defineAsyncComponent(
   () => import("@embedpdf/vue-pdf-viewer").then((module) => module.PDFViewer),
 )
 let slowPreviewTimer: number | undefined
+let annotationSaveTimer: number | undefined
+let annotationCapability: any = null
+let annotationEventCleanup: (() => void) | undefined
+let activeAnnotationStorageKey = ""
+let restoringAnnotations = false
 
 const routeFileId = computed(() => String(route.params.fileId || ""))
 const routeLessonId = computed(() => String(route.params.lessonId || route.query.lessonId || ""))
 const routeResourceKey = computed(() => String(route.params.resourceKey || ""))
+const pdfDocumentKey = computed(() => {
+  if (routeFileId.value) return `resource-pack-file:${routeFileId.value}`
+  if (routeLessonId.value) return `lesson:${routeLessonId.value}`
+  if (routeResourceKey.value) return `external-resource:${routeResourceKey.value}`
+
+  const src = String(route.query.src || "")
+  return src ? `external-src:${src}` : ""
+})
+const currentUserStorageKey = computed(() => String(
+  currentUser.value?.cand_ulid
+    || currentUser.value?.ulid
+    || currentUser.value?.id
+    || currentUser.value?.email
+    || "",
+))
 const storedResourceTitle = computed(() =>
   routeFileId.value ? sessionStorage.getItem(`resource-pack-file-preview-title:${routeFileId.value}`) || "" : "",
 )
@@ -77,7 +101,23 @@ const viewerConfig = computed(() => ({
     },
   },
   tabBar: "never",
-  disabledCategories: ["annotation", "insert", "form", "redaction", "panel-comment"],
+  annotations: {
+    annotationAuthor: currentUser.value?.display_name
+      || currentUser.value?.name
+      || currentUser.value?.email
+      || "",
+  },
+  disabledCategories: [
+    "insert",
+    "form",
+    "redaction",
+    "annotation-shape",
+    "annotation-insert-text",
+    "annotation-replace-text",
+    "annotation-link",
+    "annotation-widget-edit",
+    "annotation-redaction",
+  ],
 }))
 
 function clearSlowPreviewTimer() {
@@ -97,6 +137,125 @@ function startSlowPreviewTimer() {
 function syncViewerLocale() {
   const i18n = pdfViewerRegistry.value?.getPlugin?.("i18n")?.provides?.()
   i18n?.setLocale?.(viewerLocale.value)
+}
+
+function getPluginCapability(registry: any, pluginName: string) {
+  const plugin = registry?.getPlugin?.(pluginName)
+  return plugin?.provides?.() || plugin?.capability || null
+}
+
+function getAnnotationStorageKey() {
+  if (!currentUserStorageKey.value || !pdfDocumentKey.value) return ""
+
+  return [
+    "pdf-annotations",
+    `v${ANNOTATION_STORAGE_VERSION}`,
+    encodeURIComponent(currentUserStorageKey.value),
+    encodeURIComponent(pdfDocumentKey.value),
+  ].join(":")
+}
+
+function clearAnnotationSaveTimer() {
+  if (annotationSaveTimer) {
+    window.clearTimeout(annotationSaveTimer)
+    annotationSaveTimer = undefined
+  }
+}
+
+async function resolveEmbedPdfTask(task: any) {
+  if (!task) return undefined
+  if (typeof task.toPromise === "function") return task.toPromise()
+  if (typeof task.then === "function") return task
+
+  if (typeof task.wait === "function") {
+    return new Promise((resolve, reject) => {
+      task.wait(resolve, reject)
+    })
+  }
+
+  return task
+}
+
+async function persistAnnotations() {
+  clearAnnotationSaveTimer()
+
+  const capability = annotationCapability
+  const storageKey = activeAnnotationStorageKey
+  if (!capability || !storageKey || restoringAnnotations) return
+
+  try {
+    const exportTask = capability.exportAnnotations?.()
+    const annotations = await resolveEmbedPdfTask(exportTask)
+
+    localStorage.setItem(storageKey, JSON.stringify({
+      version: ANNOTATION_STORAGE_VERSION,
+      savedAt: new Date().toISOString(),
+      annotations: Array.isArray(annotations) ? annotations : [],
+    }))
+  } catch (err) {
+    console.warn("Failed to persist PDF annotations locally:", err)
+  }
+}
+
+function scheduleAnnotationSave() {
+  if (restoringAnnotations) return
+
+  clearAnnotationSaveTimer()
+  annotationSaveTimer = window.setTimeout(() => {
+    void persistAnnotations()
+  }, ANNOTATION_SAVE_DEBOUNCE_MS)
+}
+
+function normalizeAnnotationEventCleanup(subscription: any) {
+  if (typeof subscription === "function") return subscription
+  if (typeof subscription?.unsubscribe === "function") {
+    return () => subscription.unsubscribe()
+  }
+  return undefined
+}
+
+function cleanupAnnotationPersistence(saveBeforeCleanup = false) {
+  if (saveBeforeCleanup) {
+    void persistAnnotations()
+  } else {
+    clearAnnotationSaveTimer()
+  }
+
+  annotationEventCleanup?.()
+  annotationEventCleanup = undefined
+  annotationCapability = null
+  activeAnnotationStorageKey = ""
+  restoringAnnotations = false
+}
+
+async function setupAnnotationPersistence(registry: any) {
+  cleanupAnnotationPersistence()
+
+  const capability = getPluginCapability(registry, "annotation")
+  const storageKey = getAnnotationStorageKey()
+  if (!capability || !storageKey) return
+
+  annotationCapability = capability
+  activeAnnotationStorageKey = storageKey
+  restoringAnnotations = true
+
+  try {
+    const storedValue = localStorage.getItem(storageKey)
+    if (storedValue) {
+      const stored = JSON.parse(storedValue)
+      const annotations = Array.isArray(stored) ? stored : stored?.annotations
+      if (Array.isArray(annotations) && annotations.length > 0) {
+        capability.importAnnotations?.(annotations)
+      }
+    }
+  } catch (err) {
+    console.warn("Failed to restore PDF annotations from local storage:", err)
+  } finally {
+    restoringAnnotations = false
+  }
+
+  const subscription = capability.onAnnotationEvent?.(scheduleAnnotationSave)
+  annotationEventCleanup = normalizeAnnotationEventCleanup(subscription)
 }
 
 function padDatePart(value: number) {
@@ -124,6 +283,7 @@ function formatPreviewDate(value: string) {
 
 async function loadPdf() {
   clearSlowPreviewTimer()
+  cleanupAnnotationPersistence(true)
   viewerSrc.value = ""
   viewerReady.value = false
   viewerFailed.value = false
@@ -139,6 +299,10 @@ async function loadPdf() {
 
   loading.value = true
   try {
+    if (!currentUser.value) {
+      await fetchUser()
+    }
+
     const res = await apiClient(source.value, { timeoutMs: 60000 })
     if (!res?.url) {
       errorMessageKey.value = "pdfNoResource"
@@ -160,6 +324,7 @@ function handleViewerReady(registry?: any) {
   if (registry) {
     pdfViewerRegistry.value = registry
     syncViewerLocale()
+    void setupAnnotationPersistence(registry)
 
     if (typeof registry.getPlugin === 'function') {
       const scrollPlugin = registry.getPlugin('scroll')
@@ -198,7 +363,10 @@ function goBackFromResourcePack() {
 
 watch(source, loadPdf, { immediate: true })
 watch(viewerLocale, syncViewerLocale)
-onBeforeUnmount(clearSlowPreviewTimer)
+onBeforeUnmount(() => {
+  clearSlowPreviewTimer()
+  cleanupAnnotationPersistence(true)
+})
 
 onErrorCaptured((err) => {
   console.error("PDF viewer failed:", err)
