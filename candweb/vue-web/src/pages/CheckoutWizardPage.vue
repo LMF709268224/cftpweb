@@ -15,12 +15,14 @@ import {
   CN_CITY_OPTIONS_BY_STATE,
   CN_STATE_LABELS,
   countryUsesCityField,
+  countryUsesProvinceField,
   getCachedCountries,
   getCountryCityOptions,
   getCountryOptions,
   getProvinceOptions,
   getStateCityOptions,
   loadLocationData,
+  normalizeLocationForSubmission,
   type CountryOption,
 } from "@/lib/locationOptions"
 import { GENDER_OPTIONS, PROFILE_TEXT_LIMITS, isValidEmail, isValidInternationalPhone, isValidPostalCode, normalizeGender, normalizeInternationalPhone, normalizePostalCode, trimToMax } from "@/lib/profileFormValidation"
@@ -236,7 +238,7 @@ const selectedProvinceCode = ref("")
 const countryOptions = ref<CountryOption[]>([])
 const provinceOptions = ref<any[]>([])
 const cityOptions = ref<any[]>([])
-const showProvinceField = computed(() => !selectedCountryCode.value || provinceOptions.value.length > 0)
+const showProvinceField = computed(() => !selectedCountryCode.value || countryUsesProvinceField(selectedCountryCode.value))
 const showCityField = computed(() => !selectedCountryCode.value || countryUsesCityField(selectedCountryCode.value))
 const locationGridClass = computed(() => {
   const fieldCount = 1 + Number(showProvinceField.value) + Number(showCityField.value)
@@ -337,7 +339,7 @@ function syncLocationSelectionFromForm() {
   )
   selectedCountryCode.value = matchedCountry?.isoCode || ""
   refreshProvinceOptions()
-  if (selectedCountryCode.value && provinceOptions.value.length === 0) {
+  if (selectedCountryCode.value && !countryUsesProvinceField(selectedCountryCode.value)) {
     formData.province = ""
   }
 
@@ -1279,6 +1281,12 @@ async function nextFromStep2() {
     return
   }
   sanitizeSignupForm()
+  Object.assign(formData, normalizeLocationForSubmission(
+    selectedCountryCode.value,
+    formData.country,
+    formData.province,
+    formData.city,
+  ))
   const requiredFields = [
     ["first_name", t.value.examSignup.formFirstName],
     ["last_name", t.value.examSignup.formLastName],

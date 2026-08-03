@@ -13,12 +13,14 @@ import {
   CN_CITY_OPTIONS_BY_STATE,
   CN_STATE_LABELS,
   countryUsesCityField,
+  countryUsesProvinceField,
   getCachedCountries,
   getCountryCityOptions,
   getCountryOptions,
   getProvinceOptions,
   getStateCityOptions,
   loadLocationData,
+  normalizeLocationForSubmission,
   type CountryOption,
 } from "@/lib/locationOptions"
 import { GENDER_OPTIONS, PROFILE_TEXT_LIMITS, isValidEmail, isValidInternationalPhone, isValidPostalCode, normalizeGender, normalizeInternationalPhone, normalizePostalCode, trimToMax } from "@/lib/profileFormValidation"
@@ -66,7 +68,7 @@ const orgPhonePrefixes = ref<{ code: string, dialCode: string, name: string }[]>
 const countryOptions = ref<CountryOption[]>([])
 const provinceOptions = ref<any[]>([])
 const cityOptions = ref<any[]>([])
-const showProvinceField = computed(() => !selectedCountryCode.value || provinceOptions.value.length > 0)
+const showProvinceField = computed(() => !selectedCountryCode.value || countryUsesProvinceField(selectedCountryCode.value))
 const showCityField = computed(() => !selectedCountryCode.value || countryUsesCityField(selectedCountryCode.value))
 const genderOptions = GENDER_OPTIONS
 
@@ -158,7 +160,7 @@ function syncLocationSelectionFromProfile() {
   )
   selectedCountryCode.value = matchedCountry?.isoCode || ""
   refreshProvinceOptions()
-  if (selectedCountryCode.value && provinceOptions.value.length === 0) {
+  if (selectedCountryCode.value && !countryUsesProvinceField(selectedCountryCode.value)) {
     profile.province = ""
   }
 
@@ -293,6 +295,12 @@ watch(lang, () => {
 
 async function handleUpdateProfile() {
   sanitizeProfileForm()
+  Object.assign(profile, normalizeLocationForSubmission(
+    selectedCountryCode.value,
+    profile.country,
+    profile.province,
+    profile.city,
+  ))
 
   const requiredFields = [
     [profile.email, t.value.settings.email],

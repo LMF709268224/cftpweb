@@ -71,13 +71,36 @@ const provinceOptionsCache = new Map<string, any[]>()
 const stateCityOptionsCache = new Map<string, any[]>()
 const countryCityOptionsCache = new Map<string, any[]>()
 
-// Singapore is a city-state; these address forms do not require separate
-// State / Province or City values for it.
-const COUNTRIES_WITHOUT_PROVINCE_FIELD = new Set(["SG"])
-const COUNTRIES_WITHOUT_CITY_FIELD = new Set(["SG"])
+// City-states only show the country selector, but downstream contracts still
+// require country, province, and city to contain the canonical country name.
+const COUNTRY_ONLY_LOCATION_NAMES = new Map([
+  ["SG", "Singapore"],
+])
+const COUNTRIES_WITHOUT_PROVINCE_FIELD = new Set(COUNTRY_ONLY_LOCATION_NAMES.keys())
+const COUNTRIES_WITHOUT_CITY_FIELD = new Set(COUNTRY_ONLY_LOCATION_NAMES.keys())
+
+export function countryUsesProvinceField(countryCode: string) {
+  return !COUNTRIES_WITHOUT_PROVINCE_FIELD.has(countryCode)
+}
 
 export function countryUsesCityField(countryCode: string) {
   return !COUNTRIES_WITHOUT_CITY_FIELD.has(countryCode)
+}
+
+export function normalizeLocationForSubmission(countryCode: string, country: string, province: string, city: string) {
+  const countryOnlyName = COUNTRY_ONLY_LOCATION_NAMES.get(countryCode)
+  if (countryOnlyName) {
+    return {
+      country: countryOnlyName,
+      province: countryOnlyName,
+      city: countryOnlyName,
+    }
+  }
+  return {
+    country: country.trim(),
+    province: province.trim(),
+    city: city.trim(),
+  }
 }
 
 export async function loadLocationData() {
