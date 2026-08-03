@@ -52,7 +52,7 @@ const navRouteGroups: Record<string, string[]> = {
 }
 
 function badgeCountLabel(count: number) {
-  return count >= 99 ? "99+" : String(count)
+  return String(Math.min(Math.max(Math.trunc(count), 0), 99))
 }
 
 function isNavItemActive(href: string) {
@@ -241,7 +241,7 @@ async function handleLogout() {
               <component :is="navIconFor(item.href)" class="h-4 w-4 shrink-0 text-current" :stroke-width="1.5" />
               <span class="truncate">{{ item.label }}</span>
             </span>
-            <span v-if="item.badge" class="rounded-full bg-white px-1.5 py-0.5 text-xs font-semibold text-[#002a66]">{{ item.badge }}</span>
+            <span v-if="item.badge" class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white text-[10px] font-bold leading-none text-[#002a66]">{{ item.badge }}</span>
           </RouterLink>
         </div>
       </nav>
@@ -319,8 +319,8 @@ async function handleLogout() {
             <component :is="navIconFor(item.href)" class="h-4 w-4 shrink-0 text-current" :stroke-width="1.5" />
             <span v-if="!isSidebarCollapsed" class="truncate">{{ item.label }}</span>
           </span>
-          <span v-if="item.badge && !isSidebarCollapsed" class="rounded-full bg-white px-1.5 py-0.5 text-xs font-semibold text-[#002a66]">{{ item.badge }}</span>
-          <span v-if="item.badge && isSidebarCollapsed" class="absolute right-0 top-0 min-w-4 rounded-full bg-white px-1 text-center text-[10px] font-bold leading-4 text-[#002a66]">{{ item.badge }}</span>
+          <span v-if="item.badge && !isSidebarCollapsed" class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white text-[10px] font-bold leading-none text-[#002a66]">{{ item.badge }}</span>
+          <span v-if="item.badge && isSidebarCollapsed" class="absolute right-0 top-0 inline-flex h-5 w-5 items-center justify-center rounded-full bg-white text-[10px] font-bold leading-none text-[#002a66]">{{ item.badge }}</span>
         </RouterLink>
       </div>
     </nav>
