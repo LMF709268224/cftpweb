@@ -71,29 +71,37 @@ const provinceOptionsCache = new Map<string, any[]>()
 const stateCityOptionsCache = new Map<string, any[]>()
 const countryCityOptionsCache = new Map<string, any[]>()
 
-// City-states only show the country selector, but downstream contracts still
-// require country, province, and city to contain the canonical country name.
-const COUNTRY_ONLY_LOCATION_NAMES = new Map([
-  ["SG", "Singapore"],
-])
-const COUNTRIES_WITHOUT_PROVINCE_FIELD = new Set(COUNTRY_ONLY_LOCATION_NAMES.keys())
-const COUNTRIES_WITHOUT_CITY_FIELD = new Set(COUNTRY_ONLY_LOCATION_NAMES.keys())
+// These city-states have subdivision data in some datasets, but the product
+// treats their postal address as country-level only.
+const COUNTRY_LEVEL_ONLY_CODES = new Set(["SG", "MC", "VA"])
+
+function rawProvinceOptions(countryCode: string) {
+  if (!countryCode || !locationApi) return []
+
+  const cached = provinceOptionsCache.get(countryCode)
+  if (cached) return cached
+
+  const options = locationApi.State.getStatesOfCountry(countryCode) || []
+  provinceOptionsCache.set(countryCode, options)
+  return options
+}
 
 export function countryUsesProvinceField(countryCode: string) {
-  return !COUNTRIES_WITHOUT_PROVINCE_FIELD.has(countryCode)
+  if (!countryCode || !locationApi) return true
+  return !COUNTRY_LEVEL_ONLY_CODES.has(countryCode) && rawProvinceOptions(countryCode).length > 0
 }
 
 export function countryUsesCityField(countryCode: string) {
-  return !COUNTRIES_WITHOUT_CITY_FIELD.has(countryCode)
+  return countryUsesProvinceField(countryCode)
 }
 
 export function normalizeLocationForSubmission(countryCode: string, country: string, province: string, city: string) {
-  const countryOnlyName = COUNTRY_ONLY_LOCATION_NAMES.get(countryCode)
-  if (countryOnlyName) {
+  if (countryCode && !countryUsesProvinceField(countryCode)) {
+    const canonicalCountryName = allCountriesCache.find((item) => item.isoCode === countryCode)?.name || country.trim()
     return {
-      country: countryOnlyName,
-      province: countryOnlyName,
-      city: countryOnlyName,
+      country: canonicalCountryName,
+      province: canonicalCountryName,
+      city: canonicalCountryName,
     }
   }
   return {
@@ -154,14 +162,8 @@ export function getCountryOptions(locale: string) {
 
 export function getProvinceOptions(countryCode: string) {
   if (!countryCode || !locationApi) return []
-  if (COUNTRIES_WITHOUT_PROVINCE_FIELD.has(countryCode)) return []
-
-  const cached = provinceOptionsCache.get(countryCode)
-  if (cached) return cached
-
-  const options = locationApi.State.getStatesOfCountry(countryCode) || []
-  provinceOptionsCache.set(countryCode, options)
-  return options
+  if (!countryUsesProvinceField(countryCode)) return []
+  return rawProvinceOptions(countryCode)
 }
 
 export function getStateCityOptions(countryCode: string, provinceCode: string) {
