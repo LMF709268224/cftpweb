@@ -858,6 +858,7 @@ export const en: AppTranslations = {
         statusPaymentSyncing: "Confirming payment",
         cancelOrder: "Cancel order",
         cancelPayment: "Cancel payment",
+        keepOrder: "Keep order",
         cancelOrderConfirm: "Cancel this unfinished order? After cancelling, you can reselect exemptions and create a new order.",
         cancelOrderSuccess: "Order cancelled",
         cancelOrderFailed: "Failed to cancel order. Please try again later.",

@@ -98,6 +98,10 @@ const selectedOrderStatus = ref((route.query.status as string) || "")
 const invoiceLoading = ref<string | null>(null)
 
 const cancelLoading = ref<string | null>(null)
+const cancelConfirmOrder = ref<OrderItem | null>(null)
+const cancelConfirmOpen = computed(() => Boolean(cancelConfirmOrder.value))
+const cancelConfirmDialogRef = ref<HTMLElement | null>(null)
+useBodyScrollLock(() => cancelConfirmOpen.value)
 const detailLoading = ref(false)
 const detailLoadingOrderId = ref<string | null>(null)
 const detailError = ref("")
@@ -289,10 +293,26 @@ function canCancelOrder(order: OrderItem) {
   )
 }
 
+function openCancelConfirm(order: OrderItem) {
+  if (!canCancelOrder(order)) return
+  cancelConfirmOrder.value = order
+}
+
+function closeCancelConfirm() {
+  cancelConfirmOrder.value = null
+}
+
+function confirmCancelOrder() {
+  const order = cancelConfirmOrder.value
+  if (!order) return
+  closeCancelConfirm()
+  void cancelOrder(order)
+}
+
+useDialogAccessibility(() => cancelConfirmOpen.value, cancelConfirmDialogRef, closeCancelConfirm)
+
 async function cancelOrder(order: OrderItem) {
   if (!canCancelOrder(order)) return
-  const confirmed = window.confirm(t.value.orders.cancelOrderConfirm)
-  if (!confirmed) return
   cancelLoading.value = order.bizRefUlid
   try {
     const res = await apiClient("/api/orders/cancel", {
@@ -690,7 +710,7 @@ onBeforeUnmount(() => {
               </button>
               <p v-else class="text-lg font-semibold text-card-foreground">{{ order.amount }}</p>
             </div>
-            <button v-if="canCancelOrder(order)" @click.stop="cancelOrder(order)" class="inline-flex h-8 w-full items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-600 transition-colors hover:border-red-300 hover:bg-red-100">
+            <button v-if="canCancelOrder(order)" type="button" class="inline-flex h-8 w-full items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-600 transition-colors hover:border-red-300 hover:bg-red-100" @click.stop="openCancelConfirm(order)">
               <Loader2 v-if="cancelLoading === order.bizRefUlid" class="h-4 w-4 animate-spin" />
               {{ t.orders.cancelPayment }}
             </button>
@@ -721,6 +741,57 @@ onBeforeUnmount(() => {
     </div>
 
       </main>
+    </div>
+
+    <div v-if="cancelConfirmOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
+      <div
+        ref="cancelConfirmDialogRef"
+        class="w-full max-w-md overflow-hidden rounded-[16px] bg-white shadow-[0_24px_60px_rgba(15,23,42,0.24)]"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="order-cancel-confirm-title"
+        aria-describedby="order-cancel-confirm-description"
+        tabindex="-1"
+      >
+        <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+          <div class="flex min-w-0 items-center gap-3">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-600">
+              <AlertCircle class="h-5 w-5" />
+            </div>
+            <h2 id="order-cancel-confirm-title" class="text-lg font-semibold text-slate-950">
+              {{ t.orders.cancelOrder }}
+            </h2>
+          </div>
+          <button
+            type="button"
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/30"
+            :aria-label="t.common.close"
+            :title="t.common.close"
+            @click="closeCancelConfirm"
+          >
+            <X class="h-5 w-5" />
+          </button>
+        </div>
+
+        <div class="px-5 py-5">
+          <p id="order-cancel-confirm-description" class="text-sm leading-6 text-slate-600">
+            {{ t.orders.cancelOrderConfirm }}
+          </p>
+        </div>
+
+        <div class="flex justify-end gap-3 border-t border-slate-200 bg-slate-50 px-5 py-4">
+          <button type="button" class="btn btn-outline min-w-24 rounded-lg" @click="closeCancelConfirm">
+            {{ t.orders.keepOrder }}
+          </button>
+          <button
+            type="button"
+            class="btn min-w-24 rounded-lg border-red-600 bg-red-600 text-white shadow-sm shadow-red-200 hover:border-red-700 hover:bg-red-700 focus-visible:ring-red-500/40"
+            @click="confirmCancelOrder"
+          >
+            {{ t.orders.cancelOrder }}
+          </button>
+        </div>
+      </div>
     </div>
 
     <div v-if="detailLoading || detailError || selectedOrderDetail" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-3 py-4 backdrop-blur-[2px] sm:px-4 sm:py-6">
