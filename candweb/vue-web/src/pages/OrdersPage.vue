@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue"
 import { useRoute } from "vue-router"
 import { toast } from "vue-sonner"
-import { AlertCircle, ChevronRight, Loader2, Package, Receipt, RefreshCw, X } from "lucide-vue-next"
+import { AlertCircle, ChevronRight, CreditCard, Loader2, Package, Receipt, RefreshCw, X } from "lucide-vue-next"
 import { timelineStatusBadgeClassForStatus, timelineStatusLabelWithDiagnostics } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
 import AppPagination from "@/components/AppPagination.vue"
@@ -103,7 +103,6 @@ const detailError = ref("")
 const selectedOrderDetail = ref<OrderDetail | null>(null)
 const selectedOrderItem = ref<OrderItem | null>(null)
 useBodyScrollLock(() => detailLoading.value || Boolean(detailError.value) || Boolean(selectedOrderDetail.value))
-const detailPaymentPreview = ref<any>(null)
 const orderPaymentDialogOpen = ref(false)
 const orderPaymentSession = ref<{
   orderId: string
@@ -113,14 +112,6 @@ const orderPaymentSession = ref<{
   returnPath: string
   couponCodes: string[]
 } | null>(null)
-
-const couponInput = ref("")
-const appliedCouponCodes = ref<string[]>([])
-
-const couponError = ref("")
-
-
-
 
 const invoiceOpeningLabel = computed(() => t.value.orders.invoiceOpening)
 const orderStatusOptions = computed(() => [
@@ -227,7 +218,6 @@ async function openOrderDetail(order: OrderItem) {
   detailError.value = ""
   selectedOrderDetail.value = null
   selectedOrderItem.value = order
-  detailPaymentPreview.value = null
   try {
     const detail = await apiClient(`/api/orders/${encodeURIComponent(order.id)}`)
     selectedOrderDetail.value = detail
@@ -245,7 +235,6 @@ function closeOrderDetail() {
   if (detailLoading.value) return
   selectedOrderDetail.value = null
   selectedOrderItem.value = null
-  detailPaymentPreview.value = null
   detailError.value = ""
 }
 
@@ -253,6 +242,27 @@ function canContinuePayment(order: OrderItem) {
   if (!order.bizType || !order.bizRefUlid) return false
   if (paymentSyncingOrderId.value === order.id || isPaidPaymentStatus(order.payment_status)) return false
   return actionableOrderStatuses.has(normalizedStatus(order.order_status))
+}
+
+function continueOrderPayment(order: OrderItem) {
+  if (!canContinuePayment(order)) return
+  selectedOrderDetail.value = null
+  selectedOrderItem.value = null
+  detailError.value = ""
+  orderPaymentSession.value = {
+    orderId: order.id,
+    bizType: order.bizType,
+    bizRefUlid: order.bizRefUlid,
+    source: "orders",
+    returnPath: "/orders",
+    couponCodes: [],
+  }
+  orderPaymentDialogOpen.value = true
+}
+
+function handlePaymentDialogOpenChange(open: boolean) {
+  orderPaymentDialogOpen.value = open
+  if (!open) orderPaymentSession.value = null
 }
 
 function canCancelOrder(order: OrderItem) {
@@ -536,10 +546,6 @@ async function handleOrderPaymentComplete() {
   orderPaymentSession.value = null
   selectedOrderDetail.value = null
   selectedOrderItem.value = null
-  detailPaymentPreview.value = null
-  couponInput.value = ""
-  appliedCouponCodes.value = []
-  couponError.value = ""
 
   if (!orderId) {
     await fetchOrders(false, true)
@@ -666,7 +672,7 @@ onBeforeUnmount(() => {
               </span>
             </div>
             <div class="text-right">
-              <button v-if="canContinuePayment(order)" @click.stop="openOrderDetail(order)" class="inline-flex h-8 min-w-[148px] items-center justify-center whitespace-nowrap rounded-lg bg-primary/10 px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/20 md:w-full">
+              <button v-if="canContinuePayment(order)" @click.stop="continueOrderPayment(order)" class="inline-flex h-8 min-w-[148px] items-center justify-center whitespace-nowrap rounded-lg bg-primary/10 px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/20 md:w-full">
                 {{ t.orders.continuePayment }}
               </button>
               <p v-else class="text-lg font-semibold text-card-foreground">{{ order.amount }}</p>
@@ -747,10 +753,7 @@ onBeforeUnmount(() => {
                   </div>
                   <div class="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 shadow-sm sm:min-w-44 sm:text-right">
                     <p class="text-xs font-semibold text-slate-500">{{ t.orders.detailAmount }}</p>
-                    <p v-if="detailPaymentPreview" class="mt-1 text-2xl font-black tracking-tight text-primary">
-                      {{ detailPaymentPreview.total === 0 ? t.orders.free : formatMoney(detailPaymentPreview.total / 100, detailPaymentPreview.currency) }}
-                    </p>
-                    <p v-else class="mt-1 text-2xl font-black tracking-tight text-primary">
+                    <p class="mt-1 text-2xl font-black tracking-tight text-primary">
                       {{ orderAmountDisplay(Number(selectedOrderDetail.summary?.amount || 0), selectedOrderDetail.summary?.currency || "USD", selectedOrderDetail.summary?.order_status || "", t.orders.free) }}
                     </p>
                   </div>
@@ -799,24 +802,19 @@ onBeforeUnmount(() => {
           </div>
         </div>
         <div v-if="selectedOrderItem && canContinuePayment(selectedOrderItem)" class="border-t border-slate-100 bg-slate-50 px-5 py-4 sm:px-6">
-          <CheckoutPaymentPanel
-            v-if="selectedOrderItem && canContinuePayment(selectedOrderItem)"
-            class="mb-4"
-            :biz-type="selectedOrderItem.bizType"
-            :biz-ref-ulid="selectedOrderItem.bizRefUlid"
-            :order-id="selectedOrderItem.id"
-            source="orders"
-            return-path="/orders"
-            :initial-payment-preview="detailPaymentPreview"
-            @complete="handleOrderPaymentComplete"
-          />
+          <div class="flex justify-end">
+            <button type="button" class="btn btn-primary min-w-36 justify-center" @click="continueOrderPayment(selectedOrderItem)">
+              <CreditCard class="h-4 w-4" />
+              {{ t.orders.continuePayment }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
 
     <PaymentSessionDialog
       v-if="orderPaymentSession"
-      v-model:open="orderPaymentDialogOpen"
+      :open="orderPaymentDialogOpen"
       :title="t.orders.continuePayment"
       :subtitle="orderPaymentSession.orderId"
       :biz-type="orderPaymentSession.bizType"
@@ -826,6 +824,7 @@ onBeforeUnmount(() => {
       :return-path="orderPaymentSession.returnPath"
       :coupon-codes="orderPaymentSession.couponCodes"
       :redirect-on-complete="false"
+      @update:open="handlePaymentDialogOpenChange"
       @complete="handleOrderPaymentComplete"
     />
   </AppShell>
