@@ -1,4 +1,4 @@
-git pull
+git pull --ff-only
 bash image_build.sh
 kubectl delete pods -l app=adminbff -n cftp-test
 
