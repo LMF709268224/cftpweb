@@ -25,6 +25,15 @@ type bundleEligibilityBlocker struct {
 	Details     []string `json:"details,omitempty"`
 }
 
+type pipelineCourseSelection struct {
+	Stages []pipelineStageCourseSelection `json:"stages"`
+}
+
+type pipelineStageCourseSelection struct {
+	StageCcUlid string `json:"stage_cc_ulid"`
+	IsPaid      *bool  `json:"is_paid"`
+}
+
 type bundleEligibilitySummary struct {
 	Eligible    bool                       `json:"eligible"`
 	CanUnlock   bool                       `json:"can_unlock"`
@@ -282,6 +291,25 @@ func mergeRuntimeStatuses(config *PipelineConfig, runtime *gprog.GetPipelineDeta
 			continue
 		}
 		stageIndexes[stageID] = index
+	}
+
+	if pipeline := runtime.GetPipeline(); pipeline != nil {
+		rawSelection := strings.TrimSpace(pipeline.GetCourseSelectionJson())
+		if rawSelection != "" {
+			var selection pipelineCourseSelection
+			if err := json.Unmarshal([]byte(rawSelection), &selection); err != nil {
+				slog.Warn("failed to parse pipeline course selection", "error", err)
+			} else {
+				for _, selectedStage := range selection.Stages {
+					stageIndex, ok := stageIndexes[strings.TrimSpace(selectedStage.StageCcUlid)]
+					if !ok || selectedStage.IsPaid == nil {
+						continue
+					}
+					isPaid := *selectedStage.IsPaid
+					config.Stages[stageIndex].IsPaid = &isPaid
+				}
+			}
+		}
 	}
 
 	for _, stageDetail := range runtime.GetStages() {

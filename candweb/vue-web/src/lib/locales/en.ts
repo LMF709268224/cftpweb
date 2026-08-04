@@ -352,6 +352,7 @@ export const en: AppTranslations = {
         noStagesTitle: "No stages yet",
         noStagesDesc: "This certification does not have stages or course units configured yet. Please check back later.",
         positionNotPurchased: "Not purchased",
+        positionNotStarted: "Not started",
         backToPipelines: "Back to certifications",
         purchased: "Purchased",
         certificationPath: "Certification Path",

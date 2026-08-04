@@ -59,6 +59,7 @@ type StageConfig = {
   name?: string
   sort_order?: number
   runtime_status?: string | number
+  is_paid?: boolean
   units?: UnitConfig[]
 }
 
@@ -362,14 +363,19 @@ function unitStatusLabel(status?: string | number | null) {
 }
 
 function stageStateText(index: number) {
-  const status = stages.value[index]?.runtime_status
-  if (!purchased.value || !status) return t.value.courses.positionNotPurchased
+  const stage = stages.value[index]
+  const status = stage?.runtime_status
+  if (!purchased.value) return t.value.courses.positionNotPurchased
+  if (!hasRuntimeStatus(status)) {
+    return stage?.is_paid ? t.value.courses.positionNotStarted : t.value.courses.positionNotPurchased
+  }
   return stageStatusLabel(status)
 }
 
 function stageStateClass(index: number) {
-  const status = stages.value[index]?.runtime_status
-  if (!purchased.value || !status) return "border-slate-200 bg-slate-50 text-slate-600"
+  const stage = stages.value[index]
+  const status = stage?.runtime_status
+  if (!purchased.value || !hasRuntimeStatus(status)) return "border-slate-200 bg-slate-50 text-slate-600"
   return timelineStatusBadgeClassForStatus("STAGE", status)
 }
 

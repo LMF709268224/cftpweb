@@ -350,6 +350,7 @@ export const zh = {
     noStagesTitle: "暂无阶段内容",
     noStagesDesc: "当前认证还没有配置阶段或课程单元，稍后再来查看。",
     positionNotPurchased: "未购买",
+    positionNotStarted: "待开始",
     backToPipelines: "返回认证列表",
     purchased: "已购买",
     certificationPath: "认证路径",

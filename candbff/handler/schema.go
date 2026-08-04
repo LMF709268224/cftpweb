@@ -126,6 +126,7 @@ type Qualification struct {
 
 type StageConfig struct {
 	RuntimeStatus string       `json:"runtime_status,omitempty"`
+	IsPaid        *bool        `json:"is_paid,omitempty"`
 	StageUlid     string       `json:"stage_id,omitempty"`   // 管线阶段的 ULID [required]
 	Name          string       `json:"name,omitempty"`       // 资格类别名称 [required]
 	SortOrder     int32        `json:"sort_order,omitempty"` // 排序顺序 [required]

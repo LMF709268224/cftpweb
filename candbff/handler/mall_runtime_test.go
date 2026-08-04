@@ -129,3 +129,55 @@ func TestGetPipelineRuntimeKeepsNotPurchasedStateWhenLookupSucceeds(t *testing.T
 		t.Fatalf("status = %d, want %d; body = %s", rec.Code, http.StatusOK, rec.Body.String())
 	}
 }
+
+func TestMergeRuntimeStatusesIncludesStagePaymentState(t *testing.T) {
+	config := &PipelineConfig{
+		Stages: []StageConfig{
+			{StageUlid: "stage-config-1"},
+			{StageUlid: "stage-config-2"},
+		},
+	}
+	runtime := &gprogpb.GetPipelineDetailRsp{
+		Pipeline: &gprogpb.PipelineDetail{
+			CourseSelectionJson: `{"stages":[{"stage_cc_ulid":"stage-config-1","is_paid":true},{"stage_cc_ulid":"stage-config-2","is_paid":true}]}`,
+		},
+		Stages: []*gprogpb.StageDetail{{
+			Stage: &gprogpb.StageSummary{
+				StageCcUlid: "stage-config-1",
+				Status:      gprogpb.StageStatus_STAGE_STATUS_RUNNING,
+			},
+		}},
+	}
+
+	mergeRuntimeStatuses(config, runtime)
+
+	if config.Stages[0].IsPaid == nil || !*config.Stages[0].IsPaid {
+		t.Fatalf("first stage is_paid = %v, want true", config.Stages[0].IsPaid)
+	}
+	if config.Stages[1].IsPaid == nil || !*config.Stages[1].IsPaid {
+		t.Fatalf("future stage is_paid = %v, want true", config.Stages[1].IsPaid)
+	}
+	if config.Stages[0].RuntimeStatus != "STAGE_STATUS_RUNNING" {
+		t.Fatalf("first stage runtime_status = %q, want STAGE_STATUS_RUNNING", config.Stages[0].RuntimeStatus)
+	}
+	if config.Stages[1].RuntimeStatus != "" {
+		t.Fatalf("future stage runtime_status = %q, want empty before instantiation", config.Stages[1].RuntimeStatus)
+	}
+}
+
+func TestMergeRuntimeStatusesPreservesUnpaidFutureStage(t *testing.T) {
+	config := &PipelineConfig{
+		Stages: []StageConfig{{StageUlid: "stage-config-2"}},
+	}
+	runtime := &gprogpb.GetPipelineDetailRsp{
+		Pipeline: &gprogpb.PipelineDetail{
+			CourseSelectionJson: `{"stages":[{"stage_cc_ulid":"stage-config-2","is_paid":false}]}`,
+		},
+	}
+
+	mergeRuntimeStatuses(config, runtime)
+
+	if config.Stages[0].IsPaid == nil || *config.Stages[0].IsPaid {
+		t.Fatalf("future stage is_paid = %v, want false", config.Stages[0].IsPaid)
+	}
+}
