@@ -9,6 +9,7 @@ import AppPagination from "@/components/AppPagination.vue"
 import PaymentSessionDialog from "@/components/PaymentSessionDialog.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useBodyScrollLock } from "@/lib/bodyScrollLock"
+import { useDialogAccessibility } from "@/lib/dialogAccessibility"
 import { formatBackendDateMinute } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
 
@@ -102,7 +103,9 @@ const detailLoadingOrderId = ref<string | null>(null)
 const detailError = ref("")
 const selectedOrderDetail = ref<OrderDetail | null>(null)
 const selectedOrderItem = ref<OrderItem | null>(null)
-useBodyScrollLock(() => detailLoading.value || Boolean(detailError.value) || Boolean(selectedOrderDetail.value))
+const orderDetailDialogOpen = computed(() => detailLoading.value || Boolean(detailError.value) || Boolean(selectedOrderDetail.value))
+const orderDetailDialogRef = ref<HTMLElement | null>(null)
+useBodyScrollLock(() => orderDetailDialogOpen.value)
 const detailPaymentPreview = ref<any>(null)
 const orderPaymentDialogOpen = ref(false)
 const orderPaymentSession = ref<{
@@ -148,6 +151,7 @@ const paymentReturnSyncAttempts = 6
 const paymentReturnSyncIntervalMs = 1500
 const paymentSyncingOrderId = ref("")
 let paymentSyncCancelled = false
+let detailRequestSequence = 0
 
 const detailExtraFields = computed<DetailField[]>(() => {
   const detail = selectedOrderDetail.value
@@ -222,6 +226,7 @@ function orderStatusBadgeClass(order: OrderItem) {
 
 async function openOrderDetail(order: OrderItem) {
   if (!order.id || detailLoading.value) return
+  const requestSequence = ++detailRequestSequence
   detailLoading.value = true
   detailLoadingOrderId.value = order.id
   detailError.value = ""
@@ -230,24 +235,32 @@ async function openOrderDetail(order: OrderItem) {
   detailPaymentPreview.value = null
   try {
     const detail = await apiClient(`/api/orders/${encodeURIComponent(order.id)}`)
+    if (requestSequence !== detailRequestSequence) return
     selectedOrderDetail.value = detail
     applyOrderDetail(detail, order.id)
   } catch (error) {
+    if (requestSequence !== detailRequestSequence) return
     console.error(error)
     detailError.value = t.value.orders.detailLoadFailed
   } finally {
-    detailLoading.value = false
-    detailLoadingOrderId.value = null
+    if (requestSequence === detailRequestSequence) {
+      detailLoading.value = false
+      detailLoadingOrderId.value = null
+    }
   }
 }
 
 function closeOrderDetail() {
-  if (detailLoading.value) return
+  detailRequestSequence += 1
+  detailLoading.value = false
+  detailLoadingOrderId.value = null
   selectedOrderDetail.value = null
   selectedOrderItem.value = null
   detailPaymentPreview.value = null
   detailError.value = ""
 }
+
+useDialogAccessibility(() => orderDetailDialogOpen.value, orderDetailDialogRef, closeOrderDetail)
 
 function canContinuePayment(order: OrderItem) {
   if (!order.bizType || !order.bizRefUlid) return false
@@ -705,18 +718,25 @@ onBeforeUnmount(() => {
     </div>
 
     <div v-if="detailLoading || detailError || selectedOrderDetail" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-3 py-4 backdrop-blur-[2px] sm:px-4 sm:py-6">
-      <div class="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-[22px] bg-white shadow-[0_28px_90px_rgba(15,23,42,0.28)]">
+      <div
+        ref="orderDetailDialogRef"
+        class="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-[22px] bg-white shadow-[0_28px_90px_rgba(15,23,42,0.28)]"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="order-detail-dialog-title"
+        tabindex="-1"
+      >
         <header class="flex items-start justify-between gap-4 border-b border-slate-100 bg-white px-5 py-4 sm:px-6 sm:py-5">
           <div class="flex min-w-0 items-start gap-3">
             <div class="hidden h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary sm:flex">
               <Receipt class="h-5 w-5" />
             </div>
             <div class="min-w-0">
-              <h2 class="text-xl font-bold text-slate-950">{{ t.orders.detailTitle }}</h2>
+              <h2 id="order-detail-dialog-title" class="text-xl font-bold text-slate-950">{{ t.orders.detailTitle }}</h2>
               <p class="mt-1 break-all text-sm text-muted-foreground">{{ selectedOrderDetail?.summary?.order_id || t.orders.detailSubtitle }}</p>
             </div>
           </div>
-          <button class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-500 transition hover:border-primary/25 hover:text-primary" @click="closeOrderDetail">
+          <button type="button" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-500 transition hover:border-primary/25 hover:text-primary" :aria-label="t.common.close" :title="t.common.close" @click="closeOrderDetail">
             <X class="h-5 w-5" />
           </button>
         </header>

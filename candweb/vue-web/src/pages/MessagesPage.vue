@@ -5,6 +5,7 @@ import { AlertCircle, Bell, CheckCheck, ChevronRight, Circle, CreditCard, FileTe
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useBodyScrollLock } from "@/lib/bodyScrollLock"
+import { useDialogAccessibility } from "@/lib/dialogAccessibility"
 import { formatBackendDate } from "@/lib/utils"
 import { fetchUnreadCount } from "@/lib/unreadCountCache"
 import { useTranslation } from "@/lib/language"
@@ -16,6 +17,7 @@ const { t, lang } = useTranslation()
 const selectedStatus = ref<MessageStatusFilter | null>(null)
 const detailModalOpen = ref(false)
 useBodyScrollLock(() => detailModalOpen.value)
+const messageDetailDialogRef = ref<HTMLElement | null>(null)
 const selectedMessageDetail = ref<any>(null)
 const messageList = ref<Message[]>([])
 const openMenuId = ref<string | null>(null)
@@ -386,6 +388,12 @@ async function handleViewDetail(message: Message) {
   }
 }
 
+function closeMessageDetail() {
+  detailModalOpen.value = false
+}
+
+useDialogAccessibility(() => detailModalOpen.value, messageDetailDialogRef, closeMessageDetail)
+
 const messagesPolling = usePolling(
   async () => {
     await fetchMessages(false, true)
@@ -483,7 +491,7 @@ onMounted(() => {
           </div>
           <div class="flex shrink-0 items-center gap-1 md:gap-2">
             <div class="relative">
-              <button class="btn btn-ghost h-9 w-9 rounded-lg border border-transparent p-0 text-slate-500 transition-colors hover:border-primary/20 hover:bg-primary/10 hover:text-primary" :disabled="messageActionLoadingId === message.id || detailLoadingId === message.id" @click.stop="openMenuId = openMenuId === message.id ? null : message.id">
+              <button type="button" class="btn btn-ghost h-9 w-9 rounded-lg border border-transparent p-0 text-slate-500 transition-colors hover:border-primary/20 hover:bg-primary/10 hover:text-primary" :aria-label="t.messagesPage.moreActions" :title="t.messagesPage.moreActions" :disabled="messageActionLoadingId === message.id || detailLoadingId === message.id" @click.stop="openMenuId = openMenuId === message.id ? null : message.id">
                 <MoreHorizontal class="h-5 w-5" />
               </button>
               <div v-if="openMenuId === message.id" class="absolute right-0 top-9 z-50 min-w-36 overflow-hidden rounded-lg bg-white p-1 shadow-md" @click.stop>
@@ -522,16 +530,23 @@ onMounted(() => {
     </div>
 
     <div v-if="detailModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-[2px]">
-      <div class="flex max-h-[86vh] w-full max-w-2xl flex-col overflow-hidden rounded-[20px] bg-white shadow-[0_24px_70px_rgba(15,23,42,0.28)]">
+      <div
+        ref="messageDetailDialogRef"
+        class="flex max-h-[86vh] w-full max-w-2xl flex-col overflow-hidden rounded-[20px] bg-white shadow-[0_24px_70px_rgba(15,23,42,0.28)]"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="message-detail-dialog-title"
+        tabindex="-1"
+      >
         <div class="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-5 sm:px-6">
           <div class="min-w-0">
             <div class="mb-2 flex flex-wrap items-center gap-2">
-              <h2 class="min-w-0 flex-1 text-xl font-bold leading-snug text-slate-950 sm:text-2xl">{{ localizedMessageTitle(selectedMessageDetail?.rawTitle || '', t.messagesPage.systemNotice) }}</h2>
+              <h2 id="message-detail-dialog-title" class="min-w-0 flex-1 text-xl font-bold leading-snug text-slate-950 sm:text-2xl">{{ localizedMessageTitle(selectedMessageDetail?.rawTitle || '', t.messagesPage.systemNotice) }}</h2>
               <span v-if="selectedMessageDetail?.typeLabel" class="badge shrink-0 border-primary/15 bg-primary/5 text-primary">{{ selectedMessageDetail.typeLabel }}</span>
             </div>
             <p class="text-sm font-medium text-slate-500">{{ selectedMessageDetail?.time }}</p>
           </div>
-          <button class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-500 transition hover:border-primary/25 hover:text-primary" @click="detailModalOpen = false">
+          <button type="button" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-500 transition hover:border-primary/25 hover:text-primary" :aria-label="t.common.close" :title="t.common.close" @click="closeMessageDetail">
             <X class="h-5 w-5" />
           </button>
         </div>

@@ -95,11 +95,6 @@ function clearSessionAndRedirect(showErrorToast: (message: string, id?: string) 
   }, 1500)
 }
 
-function redirectNotFoundToHome() {
-  if (window.location.pathname === "/" && !window.location.search && !window.location.hash) return
-  window.location.replace("/")
-}
-
 export async function apiClient(endpoint: string, options: ApiClientOptions = {}) {
   return requestApi(endpoint, options, true)
 }
@@ -159,10 +154,6 @@ async function requestApi(endpoint: string, options: ApiClientOptions, allowRefr
     if (!suppressAuthRedirect) clearSessionAndRedirect(showErrorToast, currentLang)
     telemetry.track("api_error", { url: endpoint, error_code: "UNAUTHORIZED", status: res.status })
     throw new ApiClientError(getErrorMessage("UNAUTHORIZED", currentLang), { errorCode: "UNAUTHORIZED", status: res.status })
-  }
-
-  if (res.status === 404) {
-    redirectNotFoundToHome()
   }
 
   let data: any
