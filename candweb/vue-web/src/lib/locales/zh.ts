@@ -2,6 +2,7 @@ export const zh = {
   common: {
     save: "保存更改",
     cancel: "取消",
+    close: "关闭",
     back: "返回",
     loading: "加载中...",
     success: "操作成功",
@@ -985,6 +986,7 @@ export const zh = {
     statusRead: "已读",
     previous: "上一页",
     next: "下一页",
+    moreActions: "更多操作",
     detailLoadFailed: "消息详情加载失败",
   },
   credentialsPage: {

@@ -4,6 +4,7 @@ export const en: AppTranslations = {
     common: {
         save: "Save Changes",
         cancel: "Cancel",
+        close: "Close",
         back: "Back",
         loading: "Loading...",
         success: "Success",
@@ -987,6 +988,7 @@ export const en: AppTranslations = {
         statusRead: "Read",
         previous: "Previous",
         next: "Next",
+        moreActions: "More actions",
         detailLoadFailed: "Failed to load message detail",
     },
     credentialsPage: {

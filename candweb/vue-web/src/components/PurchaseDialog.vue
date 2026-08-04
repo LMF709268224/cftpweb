@@ -7,6 +7,7 @@ import PaymentSessionPanel from "@/components/PaymentSessionPanel.vue"
 import CouponInputBlock from "@/components/CouponInputBlock.vue"
 import { ApiClientError, apiClient } from "@/lib/apiClient"
 import { useBodyScrollLock } from "@/lib/bodyScrollLock"
+import { useDialogAccessibility } from "@/lib/dialogAccessibility"
 import { useTranslation } from "@/lib/language"
 
 type PaymentMethod = "stripe" | "bank"
@@ -125,6 +126,7 @@ const props = defineProps<{
 const emit = defineEmits<{ "update:open": [value: boolean]; cancelled: [] }>()
 const { t } = useTranslation()
 useBodyScrollLock(() => props.open)
+const dialogRef = ref<HTMLElement | null>(null)
 const paymentMethod = ref<PaymentMethod>("stripe")
 const eligibilityLoading = ref(false)
 const dialogStateLoading = ref(false)
@@ -333,6 +335,8 @@ function close() {
   cancelOrderLoading.value = false
   emit("update:open", false)
 }
+
+useDialogAccessibility(() => props.open, dialogRef, close)
 
 function normalizedStatus(status: unknown) {
   return String(status || "").trim().toUpperCase()
@@ -923,13 +927,20 @@ async function handlePaymentSessionError() {
 
 <template>
   <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-    <div class="flex max-h-[86vh] w-full max-w-[620px] flex-col overflow-hidden rounded-xl bg-card shadow-2xl">
+    <div
+      ref="dialogRef"
+      class="flex max-h-[86vh] w-full max-w-[620px] flex-col overflow-hidden rounded-xl bg-card shadow-2xl"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="purchase-dialog-title"
+      tabindex="-1"
+    >
       <div class="flex shrink-0 items-start justify-between gap-4 border-b border-border px-6 pb-4 pt-6">
         <div class="min-w-0">
-          <h2 class="text-xl font-semibold">{{ courseName }}</h2>
+          <h2 id="purchase-dialog-title" class="text-xl font-semibold">{{ courseName }}</h2>
           <p v-if="description" class="mt-2 text-sm leading-6 text-muted-foreground">{{ description }}</p>
         </div>
-        <button class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-500 transition hover:border-primary/25 hover:text-primary" @click="close">
+        <button type="button" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-500 transition hover:border-primary/25 hover:text-primary" :aria-label="t.common.close" :title="t.common.close" @click="close">
           <X class="h-5 w-5" />
         </button>
       </div>
