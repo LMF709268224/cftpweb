@@ -782,25 +782,47 @@ async function refreshQualificationApplications() {
   qualificationApplications.value = next
 }
 
+const QUALIFICATION_POLL_INTERVAL_MS = 30_000
 let pollingTimer: ReturnType<typeof setInterval> | null = null
+let qualificationPollingInFlight = false
 
-function checkPolling() {
-  const needsPolling = exemptionStages.value.some((stage: any) =>
+function hasPendingQualificationApplications() {
+  return exemptionStages.value.some((stage: any) =>
     (stage.units || []).some((unit: any) => exemptionCredentialState(unit) === "pending")
   )
+}
+
+async function pollQualificationApplications() {
+  if (qualificationPollingInFlight || currentStep.value !== 1 || document.visibilityState === "hidden") return
+
+  qualificationPollingInFlight = true
+  const hadPendingApplications = hasPendingQualificationApplications()
+  try {
+    await refreshQualificationApplications()
+
+    if (hadPendingApplications && !hasPendingQualificationApplications()) {
+      const response = await fetchBundlePayload()
+      const purchaseReadyBundle = await completeTemporaryCftpUnlock(response)
+      applyBundleInfo(purchaseReadyBundle)
+    }
+  } catch {
+    // Ignore background polling errors. The next interval will retry.
+  } finally {
+    qualificationPollingInFlight = false
+  }
+}
+
+function checkPolling() {
+  const needsPolling = hasPendingQualificationApplications()
 
   if (needsPolling && !pollingTimer && currentStep.value === 1) {
-    pollingTimer = setInterval(async () => {
+    pollingTimer = setInterval(() => {
       if (currentStep.value !== 1) {
         stopPolling()
         return
       }
-      try {
-        await loadPurchaseReadyBundleInfo()
-      } catch (e) {
-        // ignore polling errors
-      }
-    }, 5000)
+      void pollQualificationApplications()
+    }, QUALIFICATION_POLL_INTERVAL_MS)
   } else if (!needsPolling && pollingTimer) {
     stopPolling()
   }

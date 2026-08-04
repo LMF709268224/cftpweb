@@ -27,6 +27,8 @@ type codeCacheItem struct {
 	expireTime time.Time
 }
 
+// TODO: Move verification codes to shared storage before running multiple candbff
+// pods. Process-local state fails when send and verify requests reach different pods.
 var emailVerificationCodes sync.Map
 
 // GetUserMe GET /api/user/me
@@ -145,7 +147,7 @@ func (h *Handler) UpdateUserPassword(w http.ResponseWriter, r *http.Request) {
 	_, err = casdoorsdk.SetPassword(owner, name, input.OldPassword, input.NewPassword)
 	if err != nil {
 		slog.Error("Failed to set password", "error", err)
-		WriteError(w, http.StatusBadRequest, ErrPasswordIncorrect, "failed to change password: "+err.Error())
+		WriteError(w, http.StatusBadRequest, ErrPasswordIncorrect, "current password is incorrect or the password change was rejected")
 		return
 	}
 

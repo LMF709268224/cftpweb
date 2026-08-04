@@ -146,6 +146,7 @@ const couponInput = ref("")
 const appliedCouponCodes = ref<string[]>([])
 const couponPreviewLoading = ref(false)
 const couponError = ref("")
+let paymentPreviewRequestToken = 0
 const selectedExemptionUnitIds = ref<Record<string, boolean>>({})
 const resolvedBundleId = ref(props.bundleId || "")
 const activePaymentSession = ref<{
@@ -303,6 +304,7 @@ async function loadLegacyDialogState() {
 }
 
 watch(() => props.open, async (open) => {
+  paymentPreviewRequestToken += 1
   if (open) {
     resolvedBundleId.value = props.bundleId || ""
     if (hasInitialActiveOrderState()) {
@@ -325,6 +327,7 @@ watch(() => props.open, async (open) => {
 })
 
 function close() {
+  paymentPreviewRequestToken += 1
   activePaymentSession.value = null
   credentialApplicationOrder.value = null
   orderCreatedInSession.value = false
@@ -563,9 +566,15 @@ async function refreshEligibility() {
   }
 }
 
-async function refreshPaymentPreviewWithCoupons(codes = activeCouponCodes.value) {
+function sameCouponCodes(left: string[], right: string[]) {
+  return left.length === right.length && left.every((code, index) => code === right[index])
+}
+
+async function refreshPaymentPreviewWithCoupons(codes = activeCouponCodes.value, commitCodes = false) {
   const orderId = activeOrder.value?.orderId
-  if (!orderId || activeOrder.value?.action !== "purchase") return
+  if (!orderId || activeOrder.value?.action !== "purchase") return false
+  const normalizedCodes = normalizeCouponCodes(codes)
+  const requestToken = ++paymentPreviewRequestToken
   couponPreviewLoading.value = true
   couponError.value = ""
   try {
@@ -574,29 +583,43 @@ async function refreshPaymentPreviewWithCoupons(codes = activeCouponCodes.value)
       body: JSON.stringify({
         biz_type: "BUNDLE_PURCHASE",
         biz_ref_ulid: orderId,
-        promo_codes: normalizeCouponCodes(codes),
+        promo_codes: normalizedCodes,
       }),
+      suppressErrorToast: true,
     })
+    if (requestToken !== paymentPreviewRequestToken) return false
+    const invalid = Array.isArray(preview?.invalid) ? preview.invalid : []
+    if (invalid.length > 0) {
+      couponError.value = invalid.map(invalidCouponText).filter(Boolean).join("; ")
+        || copy.value.couponInvalidPaymentBlocked
+      return false
+    }
     paymentPreview.value = preview
+    if (commitCodes && !sameCouponCodes(appliedCouponCodes.value, normalizedCodes)) {
+      appliedCouponCodes.value = normalizedCodes
+    }
     previewError.value = ""
+    return true
   } catch (error) {
+    if (requestToken !== paymentPreviewRequestToken) return false
     console.error(error)
     couponError.value = copy.value.couponPreviewFailed || copy.value.pricePreviewFailed || t.value.common.error
+    return false
   } finally {
-    couponPreviewLoading.value = false
+    if (requestToken === paymentPreviewRequestToken) {
+      couponPreviewLoading.value = false
+    }
   }
 }
 
 async function applyCouponCodes() {
   const nextCodes = couponInputCodes()
-  appliedCouponCodes.value = nextCodes
-  await refreshPaymentPreviewWithCoupons(nextCodes)
+  await refreshPaymentPreviewWithCoupons(nextCodes, true)
 }
 
 async function clearCouponCodes() {
   couponInput.value = ""
-  appliedCouponCodes.value = []
-  await refreshPaymentPreviewWithCoupons([])
+  await refreshPaymentPreviewWithCoupons([], true)
 }
 
 async function cancelActiveOrder() {
@@ -853,7 +876,7 @@ function rememberPendingMallPayment() {
 
 function initiatePayment() {
   if (paymentLoading.value || activePaymentSession.value || !activeOrder.value?.orderId) return
-  if (hasInvalidCouponCodes.value) {
+  if (couponPreviewLoading.value || couponError.value || hasInvalidCouponCodes.value) {
     toast.error(copy.value.couponInvalidPaymentBlocked)
     return
   }
@@ -1246,7 +1269,7 @@ async function handlePaymentSessionError() {
           <Loader2 v-if="cancelOrderLoading" class="h-4 w-4 animate-spin" />
           {{ copy.cancelOrder }}
         </button>
-        <button v-if="activeOrder && paymentPreview && !activePaymentSession" class="btn btn-vivid min-h-11 w-full px-3 text-center leading-tight sm:min-h-0 sm:w-auto sm:px-4" :disabled="paymentLoading || hasInvalidCouponCodes" @click="initiatePayment">
+        <button v-if="activeOrder && paymentPreview && !activePaymentSession" class="btn btn-vivid min-h-11 w-full px-3 text-center leading-tight sm:min-h-0 sm:w-auto sm:px-4" :disabled="paymentLoading || couponPreviewLoading || Boolean(couponError) || hasInvalidCouponCodes" @click="initiatePayment">
           <Loader2 v-if="paymentLoading" class="h-4 w-4 animate-spin" />
           <CreditCard v-else class="h-4 w-4" />
           {{ copy.payNow }}

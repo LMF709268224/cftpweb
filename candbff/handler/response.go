@@ -72,7 +72,8 @@ func HandleGrpcError(w http.ResponseWriter, err error) {
 
 	st, ok := status.FromError(err)
 	if !ok {
-		WriteError(w, http.StatusInternalServerError, ErrInternal, err.Error())
+		slog.Error("Non-gRPC handler error", "error", err)
+		WriteError(w, http.StatusInternalServerError, ErrInternal, "internal server error")
 		return
 	}
 
@@ -124,7 +125,49 @@ func HandleGrpcError(w http.ResponseWriter, err error) {
 		errorCode = ErrNotEligible
 	}
 
-	WriteError(w, httpStatus, errorCode, st.Message())
+	slog.Error("Downstream gRPC request failed", "grpc_code", st.Code(), "error", err)
+	WriteError(w, httpStatus, errorCode, grpcPublicMessage(st, errorCode))
+}
+
+func grpcPublicMessage(st *status.Status, errorCode ErrorCode) string {
+	if st == nil {
+		return "internal server error"
+	}
+	switch errorCode {
+	case "IN_PROGRESS_PURCHASE", ErrAlreadyPurchased, ErrNotEligible:
+		return st.Message()
+	}
+	switch st.Code() {
+	case codes.InvalidArgument, codes.AlreadyExists, codes.FailedPrecondition:
+		return st.Message()
+	case codes.ResourceExhausted:
+		return "too many requests"
+	case codes.Unavailable:
+		return "service temporarily unavailable"
+	case codes.DeadlineExceeded:
+		return "request timed out"
+	default:
+		return http.StatusText(httpStatusForGRPCCode(st.Code()))
+	}
+}
+
+func httpStatusForGRPCCode(code codes.Code) int {
+	switch code {
+	case codes.NotFound:
+		return http.StatusNotFound
+	case codes.PermissionDenied:
+		return http.StatusForbidden
+	case codes.Unauthenticated:
+		return http.StatusUnauthorized
+	case codes.ResourceExhausted:
+		return http.StatusTooManyRequests
+	case codes.Unavailable:
+		return http.StatusServiceUnavailable
+	case codes.DeadlineExceeded:
+		return http.StatusGatewayTimeout
+	default:
+		return http.StatusInternalServerError
+	}
 }
 
 // nopResponseWriter is a dummy ResponseWriter used solely to satisfy http.MaxBytesReader

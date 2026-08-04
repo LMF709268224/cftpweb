@@ -27,6 +27,8 @@ import {
   EXAM_STATUS_LABELS,
   courseUnitNextStepActionFromStatus,
   normalizeEnumValueUpper,
+  statusEnumNameForStatus,
+  STAGE_STATUS_ENUM_NAMES,
   statusBadgeClassForStatusValue,
   statusLabel,
   timelineStatusBadgeClassForStatus,
@@ -35,6 +37,7 @@ import {
 import AppShell from "@/components/AppShell.vue"
 import LoadingState from "@/components/LoadingState.vue"
 import PaymentSessionDialog from "@/components/PaymentSessionDialog.vue"
+import StageExemptionDialog from "@/components/StageExemptionDialog.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
 import { formatBackendDate } from "@/lib/utils"
@@ -53,6 +56,27 @@ type CourseCompleteResponse = {
   supplementary_material?: SupplementaryMaterial | SupplementaryMaterial[]
   supplementaryMaterial?: SupplementaryMaterial | SupplementaryMaterial[]
   quiz_progress?: Record<string, QuizProgressItem>
+}
+
+type StagePaymentConfig = {
+  stage_id?: string
+  stage_cc_ulid?: string
+  name?: string
+  stage_name?: string
+  units?: Array<{
+    unit_id?: string
+    name?: string
+    unit_name?: string
+    allow_exemption?: boolean
+    exemption_quals?: Array<string | {
+      qual_id?: string
+      cred_def_ulid?: string
+      name?: string
+      name_hint?: string
+      eligible?: boolean
+      credential_status?: string
+    }>
+  }>
 }
 
 type CompleteCourse = {
@@ -202,6 +226,7 @@ const retakePaymentDialogOpen = ref(false)
 const stagePaymentSession = ref<{
 	paymentKey?: string
 	orderId?: string
+	stageId: string
 	bizType: string
 	bizRefUlid: string
 	source: string
@@ -209,6 +234,12 @@ const stagePaymentSession = ref<{
 } | null>(null)
 const stagePaymentDialogOpen = ref(false)
 const stagePaymentLoading = ref(false)
+const stageExemptionDialogOpen = ref(false)
+const stageExemptionSubmitting = ref(false)
+const stageExemptionOrderId = ref("")
+const stageExemptionStage = ref<StagePaymentConfig | null>(null)
+const stagePaymentSyncAttempts = 20
+const stagePaymentSyncIntervalMs = 1000
 const paymentDialogTitle = computed(() =>
   retakePaymentSession.value?.source === "credential_application"
     ? t.value.learning.finalQualificationPaymentTitle
@@ -561,6 +592,10 @@ const nextStepState = computed(() => {
   if (pipelineCancelled.value) return { action: "", label: t.value.learning.statusCancelled, desc: t.value.learning.statusCancelled }
   if (nextStep.value?.action) return nextStepDisplayFromAction(nextStep.value.action)
   return nextStepDisplay(nextUnitStatus.value, Boolean(nextLearningLessonId.value), Boolean(nextStep.value?.allow_retake), hasPendingQuizzes.value)
+})
+const pipelineIssuingCertificate = computed(() => {
+  const status = normalizeEnumValueUpper(pipelineStatus.value).replace(/^PIPELINE_STATUS_/, "")
+  return status === "4" || status.includes("ISSUING_CERT") || nextStepState.value.action === "issuing_certificate"
 })
 function flowStepRingClass(step: { id: CertificationStepKey; status: FlowStepStatus }) {
   if (step.status === "done") return "border-primary bg-primary text-white"
@@ -1090,48 +1125,167 @@ async function handleInlineScheduleExam(exam: any) {
   }
 }
 
+function normalizeStageOrderStatus(value: unknown) {
+  return String(value || "").trim().toUpperCase()
+}
+
+function stageConfigForNextStep(): StagePaymentConfig {
+  const stageCcUlid = firstString(nextStep.value?.stage_cc_ulid)
+  const stages = Array.isArray(runtime.value?.config?.stages) ? runtime.value.config.stages : []
+  return stages.find((stage: any) =>
+    firstString(stage?.stage_id, stage?.stage_cc_ulid) === stageCcUlid,
+  ) || {
+    stage_id: stageCcUlid,
+    name: firstString(nextStep.value?.stage_name, currentStageName.value),
+    units: [],
+  }
+}
+
+function resetStageExemptionSelection() {
+  stageExemptionDialogOpen.value = false
+  stageExemptionOrderId.value = ""
+  stageExemptionStage.value = null
+}
+
+async function openStagePayment(stageOrderId: string, stage: StagePaymentConfig) {
+  const returnPath = `${window.location.pathname}${window.location.search}${window.location.hash}`
+  const returnUrl = new URL(returnPath, window.location.origin).toString()
+  const initResp = await apiClient("/api/mall/payments/initiate", {
+    method: "POST",
+    body: JSON.stringify({
+      biz_type: "STAGE_PAYMENT",
+      biz_ref_ulid: stageOrderId,
+      success_url: returnUrl,
+      cancel_url: returnUrl,
+    }),
+  })
+
+  stagePaymentSession.value = {
+    paymentKey: initResp?.payment_key,
+    orderId: stageOrderId,
+    stageId: firstString(stage.stage_id, stage.stage_cc_ulid),
+    bizType: "STAGE_PAYMENT",
+    bizRefUlid: stageOrderId,
+    source: "stage",
+    returnPath,
+  }
+  stagePaymentDialogOpen.value = true
+}
+
+async function continueStageOrder(orderResponse: any, stage: StagePaymentConfig) {
+  const stageOrderId = firstString(orderResponse?.stage_order_ulid)
+  const orderStatus = normalizeStageOrderStatus(orderResponse?.order_status)
+  if (!stageOrderId || !orderStatus) {
+    throw new Error(t.value.learning.stageOrderUnexpectedStatus)
+  }
+
+  if (orderStatus === "COMPLETED") {
+    resetStageExemptionSelection()
+    toast.success(t.value.learning.stageUnlockCompleted)
+    await loadRuntime()
+    if (activeContentTab.value === "exam") await loadCourseExams(false)
+    return
+  }
+  if (orderStatus === "WAIT_EXEMPTION_SELECTION") {
+    stageExemptionOrderId.value = stageOrderId
+    stageExemptionStage.value = stage
+    stageExemptionDialogOpen.value = true
+    return
+  }
+  if (orderStatus === "WAIT_STAGE_PAYMENT") {
+    resetStageExemptionSelection()
+    await openStagePayment(stageOrderId, stage)
+    return
+  }
+  throw new Error(t.value.learning.stageOrderUnexpectedStatus)
+}
+
 async function handleStagePaymentClick() {
   if (stagePaymentLoading.value) return
   const pipelineUlid = firstString(runtime.value?.instance?.pipeline_ulid)
   const stageUlid = firstString(nextStep.value?.stage_id)
   const stageCcUlid = firstString(nextStep.value?.stage_cc_ulid)
   if (!pipelineId.value || !pipelineUlid || !stageUlid || !stageCcUlid) return
-  
+
   stagePaymentLoading.value = true
   try {
-    // 1. Create Stage Order
-    const orderResp = await apiClient(`/api/mall/pipelines/${encodeURIComponent(pipelineId.value)}/stages/${encodeURIComponent(stageCcUlid)}/purchase`, {
+    const orderResponse = await apiClient(`/api/mall/pipelines/${encodeURIComponent(pipelineId.value)}/stages/${encodeURIComponent(stageCcUlid)}/purchase`, {
       method: "POST",
       body: JSON.stringify({
         pipeline_ulid: pipelineUlid,
         stage_ulid: stageUlid,
       }),
     })
-    
-    // 2. Initiate Payment
-    const initResp = await apiClient("/api/mall/payments/initiate", {
-      method: "POST",
-      body: JSON.stringify({
-        biz_type: "STAGE_PAYMENT",
-        biz_ref_ulid: orderResp.stage_order_ulid,
-        success_url: window.location.href,
-        cancel_url: window.location.href,
-      })
-    })
-
-    if (initResp?.payment_key) {
-      stagePaymentSession.value = {
-        paymentKey: initResp.payment_key,
-        orderId: orderResp.stage_order_ulid,
-        bizType: "STAGE_PAYMENT",
-        bizRefUlid: orderResp.stage_order_ulid,
-        source: "stage",
-        returnPath: window.location.href,
-      }
-      stagePaymentDialogOpen.value = true
-    }
+    await continueStageOrder(orderResponse, stageConfigForNextStep())
   } catch (err: any) {
     toast.error(err.message || t.value.common.error)
+  } finally {
+    stagePaymentLoading.value = false
+  }
+}
+
+async function handleStageExemptionSubmit(selectedUnitIds: string[]) {
+  const stageOrderId = stageExemptionOrderId.value
+  const stage = stageExemptionStage.value
+  const stageCcUlid = firstString(stage?.stage_id, stage?.stage_cc_ulid)
+  if (!stageOrderId || !stage || !stageCcUlid || stageExemptionSubmitting.value) return
+
+  stageExemptionSubmitting.value = true
+  try {
+    const response = await apiClient(`/api/mall/stage-orders/${encodeURIComponent(stageOrderId)}/exemptions`, {
+      method: "POST",
+      body: JSON.stringify({
+        stage_cc_ulid: stageCcUlid,
+        exempted_unit_cc_ulids: selectedUnitIds,
+      }),
+    })
+    await continueStageOrder(response, stage)
+  } catch (err: any) {
+    toast.error(err.message || t.value.common.error)
+  } finally {
+    stageExemptionSubmitting.value = false
+  }
+}
+
+function runtimeStageStillWaitsForCandidate(stageId: string) {
+  const runtimeStages = Array.isArray(runtime.value?.config?.stages) ? runtime.value.config.stages : []
+  const stage = runtimeStages.find((item: any) =>
+    firstString(item?.stage_id, item?.stage_cc_ulid) === stageId,
+  )
+  if (!stageId || !stage) return nextStepState.value.action === "wait_candidate"
+  return statusEnumNameForStatus(STAGE_STATUS_ENUM_NAMES, stage.runtime_status) === "STAGE_STATUS_WAIT_CANDIDATE"
+}
+
+function waitForStagePaymentSync() {
+  return new Promise<void>((resolve) => window.setTimeout(resolve, stagePaymentSyncIntervalMs))
+}
+
+async function refreshRuntimeAfterStagePayment(stageId: string) {
+  for (let attempt = 0; attempt < stagePaymentSyncAttempts; attempt += 1) {
+    try {
+      const nextRuntime = await apiClient(`/api/mall/pipelines/${pipelineId.value}/runtime`, {
+        suppressErrorToast: true,
+      })
+      runtime.value = nextRuntime
+      if (!runtimeStageStillWaitsForCandidate(stageId)) return true
+    } catch (error) {
+      console.error("Failed to synchronize stage payment", error)
+    }
+    if (attempt < stagePaymentSyncAttempts - 1) await waitForStagePaymentSync()
+  }
+  return false
+}
+
+async function handleStagePaymentComplete() {
+  const stageId = stagePaymentSession.value?.stageId || ""
+  stagePaymentDialogOpen.value = false
+  stagePaymentSession.value = null
+  stagePaymentLoading.value = true
+  try {
+    const synchronized = await refreshRuntimeAfterStagePayment(stageId)
+    if (activeContentTab.value === "exam") await loadCourseExams(false)
+    if (synchronized) toast.success(t.value.learning.stageUnlockCompleted)
+    else toast.info(t.value.learning.stagePaymentSyncDelayed)
   } finally {
     stagePaymentLoading.value = false
   }
@@ -1341,11 +1495,8 @@ function nextStepLink() {
 }
 
 const courseStatusPolling = usePolling(
-  async () => {
-    await loadRuntime(true)
-    if (activeContentTab.value === "exam") await loadCourseExams(false, true)
-  },
-  { shouldPoll: () => Boolean(pipelineId.value && courseId.value && !isPipelineTerminal.value && !pipelineCancelled.value) },
+  () => loadRuntime(true),
+  { shouldPoll: () => Boolean(pipelineId.value && courseId.value && pipelineIssuingCertificate.value) },
 )
 
 onMounted(async () => {
@@ -1394,6 +1545,7 @@ watch([runtime, courseId], async () => {
     activeContentTab.value = "lesson"
     return
   }
+  if (pipelineIssuingCertificate.value || isPipelineTerminal.value) return
   const showLoading = !syncing.value
   if (activeContentTab.value === "exam") await loadCourseExams(showLoading)
 })
@@ -2108,6 +2260,12 @@ watch(selectedMaterial, () => {
       :return-path="retakePaymentSession.returnPath"
       :extra-return-params="retakePaymentSession.extraReturnParams"
     />
+      <StageExemptionDialog
+        v-model:open="stageExemptionDialogOpen"
+        :stage="stageExemptionStage"
+        :submitting="stageExemptionSubmitting"
+        @submit="handleStageExemptionSubmit"
+      />
       <PaymentSessionDialog
         v-if="stagePaymentSession"
         v-model:open="stagePaymentDialogOpen"
@@ -2119,6 +2277,8 @@ watch(selectedMaterial, () => {
         :order-id="stagePaymentSession.orderId"
         :source="stagePaymentSession.source"
         :return-path="stagePaymentSession.returnPath"
+        :redirect-on-complete="false"
+        @complete="handleStagePaymentComplete"
       />
     </main>
   </div>

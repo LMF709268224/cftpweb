@@ -41,9 +41,11 @@ const showStripeConnectionHint = ref(false)
 const checkoutContainerId = `stripe-checkout-${Math.random().toString(36).slice(2)}`
 let stripeCheckoutInstance: any = null
 let stripeCheckoutMountToken = 0
+let paymentStartToken = 0
 let paymentCompletionHandled = false
 
 const copy = computed(() => t.value.paymentSession)
+const couponCodesKey = computed(() => normalizedCouponCodes().join("\u001f"))
 
 function setStatus(nextStatus: typeof status.value) {
   status.value = nextStatus
@@ -96,6 +98,18 @@ function fail(message?: string) {
   emit("error", finalMessage)
 }
 
+function normalizedCouponCodes() {
+  return Array.from(new Set(
+    props.couponCodes
+      .map((code) => String(code || "").trim())
+      .filter(Boolean),
+  ))
+}
+
+function isCurrentPaymentStart(token: number) {
+  return token === paymentStartToken
+}
+
 function handleCheckoutComplete() {
   if (paymentCompletionHandled) return
   paymentCompletionHandled = true
@@ -106,7 +120,7 @@ function handleCheckoutComplete() {
   emit("complete")
 }
 
-async function mountStripeCheckout(secret: string) {
+async function mountStripeCheckout(secret: string, paymentToken: number) {
   destroyStripeCheckout(false)
   embeddedLoading.value = true
   showStripeConnectionHint.value = false
@@ -140,6 +154,7 @@ async function mountStripeCheckout(secret: string) {
       if (mountToken === stripeCheckoutMountToken && status.value === "embedded") showStripeConnectionHint.value = true
     }, 2500)
   } catch (error: any) {
+    if (!isCurrentPaymentStart(paymentToken)) return
     console.error(error)
     fail(copy.value.stripeConnectionFailed)
   } finally {
@@ -147,7 +162,8 @@ async function mountStripeCheckout(secret: string) {
   }
 }
 
-async function startPayment() {
+async function startPayment(forceInitiate = false) {
+  const startToken = ++paymentStartToken
   destroyStripeCheckout(true)
   paymentCompletionHandled = false
   errorMessage.value = ""
@@ -156,12 +172,12 @@ async function startPayment() {
   showStripeConnectionHint.value = false
   setStatus("loading")
 
-  const paymentKey = String(props.paymentKey || "").trim()
+  const paymentKey = forceInitiate ? "" : String(props.paymentKey || "").trim()
   const bizType = String(props.bizType || "").trim()
   const bizRefUlid = String(props.bizRefUlid || "").trim()
 
   if (!paymentKey && (!bizType || !bizRefUlid)) {
-    fail(copy.value.missing)
+    if (isCurrentPaymentStart(startToken)) fail(copy.value.missing)
     return
   }
 
@@ -169,7 +185,9 @@ async function startPayment() {
   if (hosted) {
     checkoutUrl.value = hosted
     setStatus("redirecting")
-    window.setTimeout(() => window.location.assign(hosted), 600)
+    window.setTimeout(() => {
+      if (isCurrentPaymentStart(startToken)) window.location.assign(hosted)
+    }, 600)
     return
   }
 
@@ -177,7 +195,7 @@ async function startPayment() {
   if (secret) {
     clientSecret.value = secret
     setStatus("embedded")
-    await mountStripeCheckout(secret)
+    await mountStripeCheckout(secret, startToken)
     return
   }
 
@@ -189,9 +207,10 @@ async function startPayment() {
         biz_ref_ulid: bizRefUlid,
         success_url: paymentReturnUrl("success"),
         cancel_url: paymentReturnUrl("cancelled"),
-        promo_codes: props.couponCodes.map((code) => String(code || "").trim()).filter(Boolean),
+        promo_codes: normalizedCouponCodes(),
       }),
     })
+    if (!isCurrentPaymentStart(startToken)) return
     const nextKey = String(res?.payment_key || "").trim()
     if (!nextKey) throw new Error("payment_key is empty")
 
@@ -199,7 +218,9 @@ async function startPayment() {
     if (nextHosted) {
       checkoutUrl.value = nextHosted
       setStatus("redirecting")
-      window.setTimeout(() => window.location.assign(nextHosted), 600)
+      window.setTimeout(() => {
+        if (isCurrentPaymentStart(startToken)) window.location.assign(nextHosted)
+      }, 600)
       return
     }
 
@@ -207,21 +228,25 @@ async function startPayment() {
     if (nextSecret) {
       clientSecret.value = nextSecret
       setStatus("embedded")
-      await mountStripeCheckout(nextSecret)
+      await mountStripeCheckout(nextSecret, startToken)
       return
     }
 
     throw new Error("unsupported payment key")
   } catch (error: any) {
+    if (!isCurrentPaymentStart(startToken)) return
     console.error(error)
     fail(copy.value.failed)
   }
 }
 
 watch(
-  () => [props.paymentKey, props.bizType, props.bizRefUlid, props.orderId, props.returnPath, props.source, props.extraReturnParams, props.couponCodes],
-  () => {
-    if (props.autoStart) void startPayment()
+  () => [props.paymentKey, props.bizType, props.bizRefUlid, props.orderId, props.returnPath, props.source, props.extraReturnParams, couponCodesKey.value] as const,
+  (next, previous) => {
+    if (props.autoStart) {
+      const couponCodesChanged = Boolean(previous && next[7] !== previous[7])
+      void startPayment(couponCodesChanged)
+    }
   },
 )
 
@@ -229,7 +254,10 @@ onMounted(() => {
   if (props.autoStart) void startPayment()
 })
 
-onBeforeUnmount(() => destroyStripeCheckout(true))
+onBeforeUnmount(() => {
+  paymentStartToken += 1
+  destroyStripeCheckout(true)
+})
 </script>
 
 <template>
@@ -267,7 +295,7 @@ onBeforeUnmount(() => destroyStripeCheckout(true))
         <AlertTriangle class="h-8 w-8" />
       </div>
       <p class="max-w-lg text-sm leading-6 text-slate-600">{{ errorMessage || copy.failed }}</p>
-      <button class="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-600" @click="startPayment">
+      <button class="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-600" @click="startPayment(false)">
         <Loader2 class="h-4 w-4" />
         {{ copy.retry }}
       </button>
