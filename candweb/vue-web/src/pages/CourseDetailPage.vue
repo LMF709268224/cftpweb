@@ -3,9 +3,11 @@ import { computed, onMounted, ref, watch } from "vue"
 import { RouterLink, useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
 import {
+  AlertCircle,
   ArrowLeft,
   Award,
   BookOpen,
+  CheckCircle,
   Clock,
   ExternalLink,
   Loader2,
@@ -15,8 +17,10 @@ import {
 } from "lucide-vue-next"
 import {
   CANDIDATE_APPLICATION_STATUS_ENUM_NAMES,
+  CANDIDATE_APPLICATION_STATUS_LABELS,
   courseUnitNextStepActionFromStatus,
   stageStatusHintLabel,
+  statusLabel,
   timelineStatusBadgeClassForStatus,
   timelineStatusLabelWithDiagnostics,
   statusEnumNameForStatus,
@@ -104,6 +108,17 @@ type CredentialDefinition = {
   description?: string
   file_constraints?: CredentialFileConstraint[]
   fileConstraints?: CredentialFileConstraint[]
+  latest_application?: CredentialApplicationSummary | null
+}
+
+type CredentialApplicationSummary = {
+  app_ulid?: string
+  app_id?: string
+  cred_def_ulid?: string
+  cred_def_id?: string
+  status?: string | number
+  audit_remark?: string
+  created_at?: string
 }
 
 type PipelineNextStep = {
@@ -208,6 +223,7 @@ const finalQualifications = computed(() => {
             name: firstString(definition?.name, qual.name),
             description: firstString(definition?.description),
             constraints: fileConstraintsOfDefinition(definition),
+            application: definition?.latest_application || null,
           }
         })
         .filter((qual) => qual.qualId)
@@ -239,6 +255,58 @@ const finalQualificationRequired = computed(() =>
   finalQualificationIds.value.length > 0 &&
   !pipelineCancelled.value &&
   (pipelineWaitsFinalEligibility.value || nextStepAction.value === "final_qualification"),
+)
+type FinalQualificationActionState = "loading" | "submit" | "pending" | "approved" | "resubmit" | "rejected"
+
+const finalQualificationActionState = computed<FinalQualificationActionState>(() => {
+  if (credentialDefinitionsLoading.value) return "loading"
+
+  const applications = finalQualifications.value.map((qual) => qual.application)
+  if (applications.some((application) => isApplicationResubmitStatus(application?.status))) return "resubmit"
+  if (applications.some((application) => !application)) return "submit"
+  if (applications.some((application) => isApplicationPendingStatus(application?.status))) return "pending"
+  if (applications.length > 0 && applications.every((application) => isApplicationApprovedStatus(application?.status))) {
+    return "approved"
+  }
+  if (applications.some((application) => isApplicationRejectedStatus(application?.status))) return "rejected"
+  return "submit"
+})
+
+const finalQualificationPanelDescription = computed(() => {
+  switch (finalQualificationActionState.value) {
+    case "pending":
+      return t.value.learning.finalQualificationPendingDesc
+    case "approved":
+      return t.value.learning.finalQualificationApprovedDesc
+    case "resubmit":
+      return t.value.learning.finalQualificationResubmitDesc
+    case "rejected":
+      return t.value.learning.finalQualificationRejectedDesc
+    default:
+      return t.value.learning.finalQualificationDesc
+  }
+})
+
+const finalQualificationActionLabel = computed(() => {
+  switch (finalQualificationActionState.value) {
+    case "loading":
+      return t.value.common.loading
+    case "pending":
+      return t.value.credentialsPage.applicationPendingHint
+    case "approved":
+      return t.value.credentialsPage.applicationApprovedHint
+    case "resubmit":
+      return t.value.credentialsPage.appStatusResubmit
+    case "rejected":
+      return t.value.credentialsPage.appStatusRejected
+    default:
+      return t.value.learning.finalQualificationSubmitButton
+  }
+})
+
+const finalQualificationActionDisabled = computed(() =>
+  finalQualificationLoading.value ||
+  ["loading", "pending", "approved", "rejected"].includes(finalQualificationActionState.value),
 )
 const pipelineIssuingCertificate = computed(() => {
   const raw = String(pipelineStatus.value ?? "").trim().toUpperCase()
@@ -537,6 +605,47 @@ function isApplicationApprovedStatus(status: unknown) {
 function isApplicationResubmitStatus(status: unknown) {
   const value = normalizedCredentialApplicationStatus(status)
   return value === "APPLICATION_STATUS_RESUBMIT" || value === "APPLICATION_STATUS_REUPLOAD"
+}
+
+function isApplicationRejectedStatus(status: unknown) {
+  return normalizedCredentialApplicationStatus(status) === "APPLICATION_STATUS_REJECTED"
+}
+
+function finalQualificationApplicationStatusLabel(status: unknown) {
+  return statusLabel(
+    t.value,
+    CANDIDATE_APPLICATION_STATUS_LABELS,
+    status as string | number,
+    "credentialsPage.appStatusUnknown",
+  )
+}
+
+function finalQualificationApplicationStatusClass(status: unknown) {
+  const value = normalizedCredentialApplicationStatus(status)
+  if (value === "APPLICATION_STATUS_APPROVED") return "border-emerald-200 bg-emerald-50 text-emerald-700"
+  if (value === "APPLICATION_STATUS_REJECTED") return "border-red-200 bg-red-50 text-red-700"
+  if (value === "APPLICATION_STATUS_RESUBMIT" || value === "APPLICATION_STATUS_REUPLOAD") {
+    return "border-amber-200 bg-amber-50 text-amber-700"
+  }
+  if (value === "APPLICATION_STATUS_PENDING") return "border-blue-200 bg-blue-50 text-blue-700"
+  return "border-slate-200 bg-slate-50 text-slate-600"
+}
+
+function finalQualificationApplicationStatusIcon(status: unknown) {
+  const value = normalizedCredentialApplicationStatus(status)
+  if (value === "APPLICATION_STATUS_APPROVED") return CheckCircle
+  if (
+    value === "APPLICATION_STATUS_REJECTED" ||
+    value === "APPLICATION_STATUS_RESUBMIT" ||
+    value === "APPLICATION_STATUS_REUPLOAD"
+  ) {
+    return AlertCircle
+  }
+  return Clock
+}
+
+function shouldShowFinalQualificationRequirements(qual: { application?: CredentialApplicationSummary | null }) {
+  return !qual.application || isApplicationResubmitStatus(qual.application.status)
 }
 
 function finalQualificationUploadPath(qualIds = finalQualificationIds.value) {
@@ -1008,12 +1117,35 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
               <Award class="h-5 w-5 text-blue-700" />
               <h2 class="text-lg font-semibold">{{ t.learning.finalQualificationTitle }}</h2>
             </div>
-            <p class="mt-2 max-w-3xl text-sm leading-6 text-blue-800">{{ t.learning.finalQualificationDesc }}</p>
+            <p class="mt-2 max-w-3xl text-sm leading-6 text-blue-800">{{ finalQualificationPanelDescription }}</p>
             <div class="mt-4 grid gap-2 md:grid-cols-2">
               <div v-for="qual in finalQualifications" :key="qual.qualId" class="rounded-lg border border-blue-100 bg-white px-4 py-3">
                 <div class="font-semibold text-blue-950">{{ qual.name || t.credentialsPage.availableQualifications }}</div>
                 <p v-if="qual.description" class="mt-2 text-xs leading-5 text-slate-600">{{ qual.description }}</p>
-                <div v-if="qual.constraints.length > 0" class="mt-3 space-y-2">
+                <div v-if="qual.application" class="mt-3 flex flex-wrap items-center gap-2">
+                  <span
+                    :class="[
+                      'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold',
+                      finalQualificationApplicationStatusClass(qual.application.status),
+                    ]"
+                  >
+                    <component :is="finalQualificationApplicationStatusIcon(qual.application.status)" class="h-3.5 w-3.5" />
+                    {{ finalQualificationApplicationStatusLabel(qual.application.status) }}
+                  </span>
+                  <span v-if="qual.application.created_at" class="text-xs text-slate-500">
+                    {{ t.credentialsPage.submittedAt }} {{ formatBackendDateOnly(qual.application.created_at) }}
+                  </span>
+                </div>
+                <p
+                  v-if="qual.application?.audit_remark"
+                  class="mt-2 rounded-md bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600"
+                >
+                  {{ t.credentialsPage.auditRemark }}: {{ qual.application.audit_remark }}
+                </p>
+                <div
+                  v-if="shouldShowFinalQualificationRequirements(qual) && qual.constraints.length > 0"
+                  class="mt-3 space-y-2"
+                >
                   <div class="text-xs font-semibold uppercase tracking-wide text-blue-900">{{ t.credentialsPage.uploadMaterials }}</div>
                   <div v-for="constraint in qual.constraints" :key="constraintName(constraint) || String(constraint.type)" class="flex items-center gap-1 rounded-md bg-blue-50 px-3 py-2">
                     <span v-if="constraintRequired(constraint)" class="text-sm font-bold text-destructive">*</span>
@@ -1027,10 +1159,23 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
               </div>
             </div>
           </div>
-          <button class="btn btn-primary shrink-0 rounded-lg" :disabled="finalQualificationLoading" @click="handleFinalQualificationApplication">
-            <Loader2 v-if="finalQualificationLoading" class="h-4 w-4 animate-spin" />
+          <button
+            class="btn btn-primary shrink-0 rounded-lg"
+            :disabled="finalQualificationActionDisabled"
+            @click="handleFinalQualificationApplication"
+          >
+            <Loader2
+              v-if="finalQualificationLoading || finalQualificationActionState === 'loading'"
+              class="h-4 w-4 animate-spin"
+            />
+            <Clock v-else-if="finalQualificationActionState === 'pending'" class="h-4 w-4" />
+            <CheckCircle v-else-if="finalQualificationActionState === 'approved'" class="h-4 w-4" />
+            <AlertCircle
+              v-else-if="finalQualificationActionState === 'resubmit' || finalQualificationActionState === 'rejected'"
+              class="h-4 w-4"
+            />
             <Award v-else class="h-4 w-4" />
-            {{ t.learning.finalQualificationSubmitButton }}
+            {{ finalQualificationActionLabel }}
           </button>
         </div>
       </section>
