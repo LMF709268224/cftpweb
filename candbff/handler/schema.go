@@ -162,7 +162,7 @@ type UnitConfig struct {
 }
 
 type ListMyPipelinesRsp struct {
-	List []PipelineSummary `json:"list,omitempty"` // pipeline 摘要列表 [required]
+	List []PipelineSummary `json:"list"` // pipeline 摘要列表 [required]
 }
 
 // PipelineSummary pipeline 閹芥顩?
