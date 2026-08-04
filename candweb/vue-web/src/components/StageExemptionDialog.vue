@@ -83,6 +83,9 @@ const exemptionUnits = computed(() =>
 const selectedCount = computed(() =>
   exemptionUnits.value.filter((unit) => unit.unit_id && selectedUnitIds.value[unit.unit_id]).length,
 )
+const selectedCountText = computed(() =>
+  t.value.learning.stageExemptionSelected.replace("{{count}}", String(selectedCount.value)),
+)
 
 function unitIsEligible(unit: StageExemptionUnit) {
   return (unit.exemption_quals || []).some(qualificationIsEligible)
@@ -275,7 +278,7 @@ watch(
 
       <div class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-6 py-4">
         <span class="text-sm text-slate-500">
-          {{ t.learning.stageExemptionSelected.replace("{{count}}", String(selectedCount)) }}
+          {{ selectedCountText }}
         </span>
         <div class="flex flex-wrap justify-end gap-2">
           <button type="button" class="btn btn-outline rounded-lg" :disabled="submitting" @click="close">
