@@ -229,9 +229,6 @@ export const en: AppTranslations = {
         viewExams: "Click to explore exams",
         viewResourcePacks: "Click to explore resource packs",
         viewOrders: "Click to view orders",
-        statsLoadFailed: "Some dashboard statistics could not be loaded",
-        statsLoadFailedDesc: "Unavailable statistics are shown as “--”. Reload before confirming the data.",
-        reloadStats: "Reload",
     },
     loginPage: {
         brandAria: "GFI brand presentation",

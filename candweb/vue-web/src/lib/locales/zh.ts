@@ -227,9 +227,6 @@ export const zh = {
     viewExams: "点击查看考试",
     viewResourcePacks: "点击查看资源包",
     viewOrders: "点击查看订单",
-    statsLoadFailed: "部分统计数据加载失败",
-    statsLoadFailedDesc: "未能获取的统计项已显示为“--”，请重新加载后再确认数据。",
-    reloadStats: "重新加载",
   },
   loginPage: {
     brandAria: "GFI 品牌区",
