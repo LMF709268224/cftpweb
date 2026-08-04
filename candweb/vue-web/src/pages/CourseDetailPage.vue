@@ -157,6 +157,7 @@ const stagePaymentSession = ref<{
   bizRefUlid: string
   source: string
   returnPath: string
+  extraReturnParams?: Record<string, string>
 } | null>(null)
 const stagePaymentDialogOpen = ref(false)
 const stagePaymentLoading = ref(false)
@@ -625,25 +626,34 @@ function resetStageExemptionSelection() {
 
 async function openStagePayment(stageOrderId: string, stage: StageConfig) {
   const returnPath = `${window.location.pathname}${window.location.search}${window.location.hash}`
-  const returnUrl = new URL(returnPath, window.location.origin).toString()
+  const stageId = firstString(stage.stage_id)
+  const paymentReturnUrl = (paymentStatus: "success" | "cancelled") => {
+    const returnUrl = new URL(returnPath, window.location.origin)
+    returnUrl.searchParams.set("payment_status", paymentStatus)
+    returnUrl.searchParams.set("payment_action", "stage")
+    returnUrl.searchParams.set("order_id", stageOrderId)
+    if (stageId) returnUrl.searchParams.set("stage_id", stageId)
+    return returnUrl.toString()
+  }
   const initResp = await apiClient("/api/mall/payments/initiate", {
     method: "POST",
     body: JSON.stringify({
       biz_type: "STAGE_PAYMENT",
       biz_ref_ulid: stageOrderId,
-      success_url: returnUrl,
-      cancel_url: returnUrl,
+      success_url: paymentReturnUrl("success"),
+      cancel_url: paymentReturnUrl("cancelled"),
     }),
   })
 
   stagePaymentSession.value = {
     paymentKey: initResp?.payment_key,
     orderId: stageOrderId,
-    stageId: firstString(stage.stage_id),
+    stageId,
     bizType: "STAGE_PAYMENT",
     bizRefUlid: stageOrderId,
     source: "stage",
     returnPath,
+    extraReturnParams: { stage_id: stageId },
   }
   stagePaymentDialogOpen.value = true
 }
@@ -760,13 +770,54 @@ async function handleStagePaymentComplete() {
   }
 }
 
+function stagePaymentReturnValue(name: string) {
+  const value = route.query[name]
+  return firstString(Array.isArray(value) ? value[0] : value)
+}
+
+async function clearStagePaymentReturnQuery() {
+  const nextQuery = { ...route.query }
+  delete nextQuery.payment_status
+  delete nextQuery.payment_action
+  delete nextQuery.order_id
+  delete nextQuery.stage_id
+  await router.replace({ path: route.path, query: nextQuery, hash: route.hash })
+}
+
+async function handleStagePaymentReturn() {
+  const paymentAction = stagePaymentReturnValue("payment_action")
+  const paymentStatus = stagePaymentReturnValue("payment_status").toLowerCase()
+  if (paymentAction !== "stage" || !paymentStatus) return
+
+  try {
+    if (paymentStatus === "success") {
+      const stageId = stagePaymentReturnValue("stage_id")
+        || firstString(stages.value.find(isStageWaitCandidate)?.stage_id)
+      stagePaymentLoading.value = true
+      stagePaymentStageId.value = stageId
+      const synchronized = await refreshAfterStagePayment(stageId)
+      if (synchronized) toast.success(t.value.learning.stageUnlockCompleted)
+      else toast.info(t.value.learning.stagePaymentSyncDelayed)
+    } else if (paymentStatus === "cancelled") {
+      toast.warning(t.value.paymentReturnHandler.cancelled)
+    } else if (paymentStatus === "failed") {
+      toast.error(t.value.paymentReturnHandler.failed)
+    }
+  } finally {
+    stagePaymentLoading.value = false
+    stagePaymentStageId.value = ""
+    await clearStagePaymentReturnQuery()
+  }
+}
+
 const detailPolling = usePolling(
   () => loadDetail(false, true),
   { shouldPoll: () => Boolean(pipelineId.value && pipelineIssuingCertificate.value) },
 )
 
-onMounted(() => {
-  void loadDetail()
+onMounted(async () => {
+  await loadDetail()
+  await handleStagePaymentReturn()
 })
 watch(pipelineId, () => {
   detailPolling.stop()
@@ -1106,6 +1157,7 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
         :order-id="stagePaymentSession.orderId"
         :source="stagePaymentSession.source"
         :return-path="stagePaymentSession.returnPath"
+        :extra-return-params="stagePaymentSession.extraReturnParams"
         :redirect-on-complete="false"
         @complete="handleStagePaymentComplete"
       />
