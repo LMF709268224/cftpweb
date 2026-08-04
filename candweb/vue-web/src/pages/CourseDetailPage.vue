@@ -151,6 +151,7 @@ const finalQualificationPaymentSession = ref<{
 const stagePaymentSession = ref<{
   paymentKey?: string
   orderId?: string
+  stageId: string
   bizType: string
   bizRefUlid: string
   source: string
@@ -163,6 +164,8 @@ const stageExemptionDialogOpen = ref(false)
 const stageExemptionSubmitting = ref(false)
 const stageExemptionOrderId = ref("")
 const stageExemptionStage = ref<StageConfig | null>(null)
+const stagePaymentSyncAttempts = 20
+const stagePaymentSyncIntervalMs = 1000
 
 function formatCourseDuration(minutes?: number) {
   const normalized = Number(minutes || 0)
@@ -614,7 +617,7 @@ function resetStageExemptionSelection() {
   stageExemptionStage.value = null
 }
 
-async function openStagePayment(stageOrderId: string) {
+async function openStagePayment(stageOrderId: string, stage: StageConfig) {
   const returnPath = `${window.location.pathname}${window.location.search}${window.location.hash}`
   const returnUrl = new URL(returnPath, window.location.origin).toString()
   const initResp = await apiClient("/api/mall/payments/initiate", {
@@ -630,6 +633,7 @@ async function openStagePayment(stageOrderId: string) {
   stagePaymentSession.value = {
     paymentKey: initResp?.payment_key,
     orderId: stageOrderId,
+    stageId: firstString(stage.stage_id),
     bizType: "STAGE_PAYMENT",
     bizRefUlid: stageOrderId,
     source: "stage",
@@ -659,7 +663,7 @@ async function continueStageOrder(orderResponse: any, stage: StageConfig) {
   }
   if (orderStatus === "WAIT_STAGE_PAYMENT") {
     resetStageExemptionSelection()
-    await openStagePayment(stageOrderId)
+    await openStagePayment(stageOrderId, stage)
     return
   }
   throw new Error(t.value.learning.stageOrderUnexpectedStatus)
@@ -711,10 +715,43 @@ async function handleStageExemptionSubmit(selectedUnitIds: string[]) {
   }
 }
 
+function stageStillWaitsForCandidate(stageId: string) {
+  if (!stageId) return stages.value.some(isStageWaitCandidate)
+  const stage = stages.value.find((item) => firstString(item.stage_id) === stageId)
+  return Boolean(stage && isStageWaitCandidate(stage))
+}
+
+function waitForStagePaymentSync() {
+  return new Promise<void>((resolve) => window.setTimeout(resolve, stagePaymentSyncIntervalMs))
+}
+
+async function refreshAfterStagePayment(stageId: string) {
+  for (let attempt = 0; attempt < stagePaymentSyncAttempts; attempt += 1) {
+    try {
+      await loadDetail(false, true)
+      if (!stageStillWaitsForCandidate(stageId)) return true
+    } catch (error) {
+      console.error("Failed to synchronize stage payment", error)
+    }
+    if (attempt < stagePaymentSyncAttempts - 1) await waitForStagePaymentSync()
+  }
+  return false
+}
+
 async function handleStagePaymentComplete() {
+  const stageId = stagePaymentSession.value?.stageId || ""
   stagePaymentDialogOpen.value = false
   stagePaymentSession.value = null
-  await loadDetail(false)
+  stagePaymentLoading.value = true
+  stagePaymentStageId.value = stageId
+  try {
+    const synchronized = await refreshAfterStagePayment(stageId)
+    if (synchronized) toast.success(t.value.learning.stageUnlockCompleted)
+    else toast.info(t.value.learning.stagePaymentSyncDelayed)
+  } finally {
+    stagePaymentLoading.value = false
+    stagePaymentStageId.value = ""
+  }
 }
 
 const detailPolling = usePolling(

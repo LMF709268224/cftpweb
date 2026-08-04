@@ -476,6 +476,7 @@ export const en: AppTranslations = {
         stageExemptionConfirm: "Confirm and continue",
         stageExemptionSubmitting: "Submitting...",
         stageUnlockCompleted: "The current stage has been unlocked.",
+        stagePaymentSyncDelayed: "Payment is complete, but the stage status is still synchronizing. Refresh shortly to see the latest status.",
         stageOrderUnexpectedStatus: "The stage order is in an unexpected state. Refresh and try again.",
         actionSignupExam: "Go to sign up for exam",
         actionScheduleExam: "Go to schedule exam",

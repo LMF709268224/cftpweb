@@ -27,6 +27,8 @@ import {
   EXAM_STATUS_LABELS,
   courseUnitNextStepActionFromStatus,
   normalizeEnumValueUpper,
+  statusEnumNameForStatus,
+  STAGE_STATUS_ENUM_NAMES,
   statusBadgeClassForStatusValue,
   statusLabel,
   timelineStatusBadgeClassForStatus,
@@ -224,6 +226,7 @@ const retakePaymentDialogOpen = ref(false)
 const stagePaymentSession = ref<{
 	paymentKey?: string
 	orderId?: string
+	stageId: string
 	bizType: string
 	bizRefUlid: string
 	source: string
@@ -235,6 +238,8 @@ const stageExemptionDialogOpen = ref(false)
 const stageExemptionSubmitting = ref(false)
 const stageExemptionOrderId = ref("")
 const stageExemptionStage = ref<StagePaymentConfig | null>(null)
+const stagePaymentSyncAttempts = 20
+const stagePaymentSyncIntervalMs = 1000
 const paymentDialogTitle = computed(() =>
   retakePaymentSession.value?.source === "credential_application"
     ? t.value.learning.finalQualificationPaymentTitle
@@ -1142,7 +1147,7 @@ function resetStageExemptionSelection() {
   stageExemptionStage.value = null
 }
 
-async function openStagePayment(stageOrderId: string) {
+async function openStagePayment(stageOrderId: string, stage: StagePaymentConfig) {
   const returnPath = `${window.location.pathname}${window.location.search}${window.location.hash}`
   const returnUrl = new URL(returnPath, window.location.origin).toString()
   const initResp = await apiClient("/api/mall/payments/initiate", {
@@ -1158,6 +1163,7 @@ async function openStagePayment(stageOrderId: string) {
   stagePaymentSession.value = {
     paymentKey: initResp?.payment_key,
     orderId: stageOrderId,
+    stageId: firstString(stage.stage_id, stage.stage_cc_ulid),
     bizType: "STAGE_PAYMENT",
     bizRefUlid: stageOrderId,
     source: "stage",
@@ -1188,7 +1194,7 @@ async function continueStageOrder(orderResponse: any, stage: StagePaymentConfig)
   }
   if (orderStatus === "WAIT_STAGE_PAYMENT") {
     resetStageExemptionSelection()
-    await openStagePayment(stageOrderId)
+    await openStagePayment(stageOrderId, stage)
     return
   }
   throw new Error(t.value.learning.stageOrderUnexpectedStatus)
@@ -1241,11 +1247,48 @@ async function handleStageExemptionSubmit(selectedUnitIds: string[]) {
   }
 }
 
+function runtimeStageStillWaitsForCandidate(stageId: string) {
+  const runtimeStages = Array.isArray(runtime.value?.config?.stages) ? runtime.value.config.stages : []
+  const stage = runtimeStages.find((item: any) =>
+    firstString(item?.stage_id, item?.stage_cc_ulid) === stageId,
+  )
+  if (!stageId || !stage) return nextStepState.value.action === "wait_candidate"
+  return statusEnumNameForStatus(STAGE_STATUS_ENUM_NAMES, stage.runtime_status) === "STAGE_STATUS_WAIT_CANDIDATE"
+}
+
+function waitForStagePaymentSync() {
+  return new Promise<void>((resolve) => window.setTimeout(resolve, stagePaymentSyncIntervalMs))
+}
+
+async function refreshRuntimeAfterStagePayment(stageId: string) {
+  for (let attempt = 0; attempt < stagePaymentSyncAttempts; attempt += 1) {
+    try {
+      const nextRuntime = await apiClient(`/api/mall/pipelines/${pipelineId.value}/runtime`, {
+        suppressErrorToast: true,
+      })
+      runtime.value = nextRuntime
+      if (!runtimeStageStillWaitsForCandidate(stageId)) return true
+    } catch (error) {
+      console.error("Failed to synchronize stage payment", error)
+    }
+    if (attempt < stagePaymentSyncAttempts - 1) await waitForStagePaymentSync()
+  }
+  return false
+}
+
 async function handleStagePaymentComplete() {
+  const stageId = stagePaymentSession.value?.stageId || ""
   stagePaymentDialogOpen.value = false
   stagePaymentSession.value = null
-  await loadRuntime()
-  if (activeContentTab.value === "exam") await loadCourseExams(false)
+  stagePaymentLoading.value = true
+  try {
+    const synchronized = await refreshRuntimeAfterStagePayment(stageId)
+    if (activeContentTab.value === "exam") await loadCourseExams(false)
+    if (synchronized) toast.success(t.value.learning.stageUnlockCompleted)
+    else toast.info(t.value.learning.stagePaymentSyncDelayed)
+  } finally {
+    stagePaymentLoading.value = false
+  }
 }
 
 async function handleInlineApplyRetake(exam: any) {

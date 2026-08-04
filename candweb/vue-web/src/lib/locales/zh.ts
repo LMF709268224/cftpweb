@@ -474,6 +474,7 @@ export const zh = {
     stageExemptionConfirm: "确认并继续",
     stageExemptionSubmitting: "正在提交...",
     stageUnlockCompleted: "当前阶段已解锁。",
+    stagePaymentSyncDelayed: "支付已完成，阶段状态仍在同步中，页面会在稍后刷新后显示最新状态。",
     stageOrderUnexpectedStatus: "阶段订单状态异常，请刷新后重试。",
     actionSignupExam: "去报名考试",
     actionScheduleExam: "去预约考试",
