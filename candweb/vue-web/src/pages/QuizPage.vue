@@ -2,9 +2,11 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue"
 import { onBeforeRouteLeave, useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
-import { AlertCircle, CheckCircle2, ChevronLeft, Clock, FileText, Loader2 } from "lucide-vue-next"
+import { AlertCircle, CheckCircle2, ChevronLeft, Clock, FileText, Loader2, X } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
+import { useBodyScrollLock } from "@/lib/bodyScrollLock"
+import { useDialogAccessibility } from "@/lib/dialogAccessibility"
 import { useTranslation } from "@/lib/language"
 
 const route = useRoute()
@@ -26,8 +28,12 @@ const answers = ref<Record<string, string[]>>({})
 const result = ref<any>(null)
 const detailedAnswers = ref<any[]>([])
 const showDetail = ref(false)
+const submitConfirmOpen = ref(false)
+const submitConfirmDialogRef = ref<HTMLElement | null>(null)
 const QUIZ_DRAFT_STORAGE_PREFIX = "cftp:quiz-draft:"
 const QUIZ_DRAFT_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 7
+
+useBodyScrollLock(() => submitConfirmOpen.value)
 
 const questions = computed(() => paper.value?.questions || [])
 const answeredCount = computed(() => questions.value.filter((q: any) => (answers.value[questionIdOf(q)]?.length || 0) > 0).length)
@@ -82,7 +88,7 @@ function startTimer() {
     if (remainingSeconds.value <= 0) {
       stopTimer()
       toast.error(t.value.learning.quizTimeUp)
-      submitQuiz(true)
+      void submitQuiz()
     }
   }, 1000)
 }
@@ -194,6 +200,22 @@ function quizSubmitConfirmMessage() {
   return t.value.learning?.quizSubmitConfirm || "Submit this quiz now? You cannot change your answers after submitting."
 }
 
+function openSubmitConfirm() {
+  if (!paper.value?.questions || submitting.value || !allAnswered.value) return
+  submitConfirmOpen.value = true
+}
+
+function closeSubmitConfirm() {
+  submitConfirmOpen.value = false
+}
+
+function confirmSubmitQuiz() {
+  closeSubmitConfirm()
+  void submitQuiz()
+}
+
+useDialogAccessibility(() => submitConfirmOpen.value, submitConfirmDialogRef, closeSubmitConfirm)
+
 function shouldConfirmLeavingQuiz() {
   return !result.value && answeredCount.value > 0
 }
@@ -258,9 +280,9 @@ function handleSelectOption(questionId: string, optionId: string, isMultipleChoi
   persistQuizDraft()
 }
 
-async function submitQuiz(autoSubmit = false) {
-  if (!paper.value?.questions) return
-  if (!autoSubmit && !window.confirm(quizSubmitConfirmMessage())) return
+async function submitQuiz() {
+  if (!paper.value?.questions || submitting.value) return
+  closeSubmitConfirm()
   const sanitizedAnswers = sanitizeAnswersForCurrentPaper(answers.value)
   const submissions = Object.entries(sanitizedAnswers).map(([questionId, selectedOptionIds]) => ({ question_id: questionId, selected_option_ids: selectedOptionIds }))
   submitting.value = true
@@ -472,7 +494,7 @@ onBeforeRouteLeave(() => {
 
       <div class="sticky bottom-4 flex flex-col items-center justify-between gap-4 rounded-md bg-white/95 p-4 shadow-sm backdrop-blur-md sm:flex-row sm:p-6">
         <div class="text-sm text-muted-foreground">{{ formatQuizAnsweredCount(answeredCount, questions.length) }}</div>
-        <button class="btn btn-primary w-full cursor-pointer px-8 disabled:cursor-not-allowed sm:w-auto" :disabled="submitting || !allAnswered" @click="() => submitQuiz(false)">
+        <button type="button" class="btn btn-primary w-full cursor-pointer px-8 disabled:cursor-not-allowed sm:w-auto" :disabled="submitting || !allAnswered" @click="openSubmitConfirm">
           <span v-if="submitting" class="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-r-transparent" />
           <FileText v-else class="h-4 w-4" />
           {{ submitting ? t.common.loading : t.learning?.quizSubmit }}
@@ -480,6 +502,53 @@ onBeforeRouteLeave(() => {
       </div>
     </div>
       </main>
+    </div>
+
+    <div v-if="submitConfirmOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
+      <div
+        ref="submitConfirmDialogRef"
+        class="w-full max-w-md overflow-hidden rounded-[16px] bg-white shadow-[0_24px_60px_rgba(15,23,42,0.24)]"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="quiz-submit-confirm-title"
+        aria-describedby="quiz-submit-confirm-description"
+        tabindex="-1"
+      >
+        <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+          <div class="flex min-w-0 items-center gap-3">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <FileText class="h-5 w-5" />
+            </div>
+            <h2 id="quiz-submit-confirm-title" class="text-lg font-semibold text-slate-950">
+              {{ t.learning?.quizSubmit }}
+            </h2>
+          </div>
+          <button
+            type="button"
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            :aria-label="t.common.close"
+            :title="t.common.close"
+            @click="closeSubmitConfirm"
+          >
+            <X class="h-5 w-5" />
+          </button>
+        </div>
+
+        <div class="px-5 py-5">
+          <p id="quiz-submit-confirm-description" class="text-sm leading-6 text-slate-600">
+            {{ quizSubmitConfirmMessage() }}
+          </p>
+        </div>
+
+        <div class="flex justify-end gap-3 border-t border-slate-200 bg-slate-50 px-5 py-4">
+          <button type="button" class="btn btn-outline min-w-20 rounded-lg" @click="closeSubmitConfirm">
+            {{ t.common.cancel }}
+          </button>
+          <button type="button" class="btn btn-primary min-w-24 rounded-lg shadow-sm shadow-primary/20" @click="confirmSubmitQuiz">
+            {{ t.learning?.quizSubmit }}
+          </button>
+        </div>
+      </div>
     </div>
   </AppShell>
 </template>
