@@ -642,6 +642,7 @@ export const en: AppTranslations = {
         finalQualificationPaymentTitle: "Complete final qualification review-fee payment",
         finalQualificationUploadReady: "The upload entry is ready. Opening the qualification application page.",
         finalQualificationUnderReview: "Final qualification materials have been submitted. Please wait for review.",
+        finalQualificationResubmit: "An administrator returned this qualification application. Opening the qualification page so you can update and resubmit the materials.",
         finalQualificationApproved: "Final qualification has been approved. Refreshing certification flow status.",
         finalQualificationOrderCreated: "Qualification application order created. Please continue with the next step.",
         finalQualificationBundleMissing: "Unable to find the certification bundle for this certification flow, so the qualification application order cannot be created yet.",

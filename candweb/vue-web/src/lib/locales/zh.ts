@@ -640,6 +640,7 @@ export const zh = {
     finalQualificationPaymentTitle: "完成资格申请审核费支付",
     finalQualificationUploadReady: "资料上传入口已开放，正在前往资格申请页面。",
     finalQualificationUnderReview: "资格申请材料已提交，请等待审核结果。",
+    finalQualificationResubmit: "管理员已退回本次资格申请，正在前往资格申请页面，请补充材料后重新提交。",
     finalQualificationApproved: "资格申请已审核通过，正在刷新认证流程状态。",
     finalQualificationOrderCreated: "资格申请订单已创建，请继续处理后续步骤。",
     finalQualificationBundleMissing: "未找到该认证流程对应的认证套餐，暂时无法创建资格申请订单。",

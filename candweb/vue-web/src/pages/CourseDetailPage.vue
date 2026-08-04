@@ -14,6 +14,7 @@ import {
   Sparkles,
 } from "lucide-vue-next"
 import {
+  CANDIDATE_APPLICATION_STATUS_ENUM_NAMES,
   courseUnitNextStepActionFromStatus,
   stageStatusHintLabel,
   timelineStatusBadgeClassForStatus,
@@ -25,7 +26,7 @@ import AppShell from "@/components/AppShell.vue"
 import LoadingState from "@/components/LoadingState.vue"
 import PaymentSessionDialog from "@/components/PaymentSessionDialog.vue"
 import StageExemptionDialog from "@/components/StageExemptionDialog.vue"
-import { apiClient } from "@/lib/apiClient"
+import { ApiClientError, apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
 import { usePolling } from "@/lib/polling"
 import { formatBackendDateOnly } from "@/lib/utils"
@@ -520,10 +521,56 @@ function isCredentialApplicationResolvedStatus(status: unknown) {
   return value.includes("RESOLVED") || value.includes("APPROVED") || value.includes("COMPLETED")
 }
 
+function normalizedCredentialApplicationStatus(status: unknown) {
+  const enumName = statusEnumNameForStatus(CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, status as string)
+  return firstString(enumName, status).toUpperCase()
+}
+
+function isApplicationPendingStatus(status: unknown) {
+  return normalizedCredentialApplicationStatus(status) === "APPLICATION_STATUS_PENDING"
+}
+
+function isApplicationApprovedStatus(status: unknown) {
+  return normalizedCredentialApplicationStatus(status) === "APPLICATION_STATUS_APPROVED"
+}
+
+function isApplicationResubmitStatus(status: unknown) {
+  const value = normalizedCredentialApplicationStatus(status)
+  return value === "APPLICATION_STATUS_RESUBMIT" || value === "APPLICATION_STATUS_REUPLOAD"
+}
+
 function finalQualificationUploadPath(qualIds = finalQualificationIds.value) {
   const params = new URLSearchParams()
   if (qualIds.length > 0) params.set("qual_ulids", qualIds.join(","))
   return `/credentials${params.toString() ? `?${params.toString()}` : ""}`
+}
+
+function openFinalQualificationUpload(qualIds: string[]) {
+  window.setTimeout(() => router.push(finalQualificationUploadPath(qualIds)), 300)
+}
+
+async function latestCredentialApplication(qualId: string) {
+  const response = await apiClient(`/api/credentials/applications?cred_def_ulid=${encodeURIComponent(qualId)}`, {
+    suppressErrorToast: true,
+  })
+  return (response?.applications || [])[0] || null
+}
+
+async function hasQualificationUploadPermission(qualId: string) {
+  const response = await apiClient(`/api/credentials/upload-permission?cred_def_ulid=${encodeURIComponent(qualId)}`, {
+    suppressErrorToast: true,
+  })
+  return response?.granted === true
+}
+
+function isInProgressCredentialApplicationError(error: unknown) {
+  if (!(error instanceof ApiClientError)) return false
+  const message = firstString(error.rawMessage, error.errorCode, error.message).toLowerCase()
+  return error.status === 409 && (
+    message.includes("in-progress credential application")
+    || message.includes("进行中")
+    || message.includes("请先处理")
+  )
 }
 
 async function resolveBundleIdForPipeline() {
@@ -558,30 +605,78 @@ async function handleFinalQualificationApplication() {
   }
   finalQualificationLoading.value = true
   try {
-    const missingQualIds = await missingFinalQualificationIds()
+    let missingQualIds = await missingFinalQualificationIds()
     if (missingQualIds.length === 0) {
       toast.success(t.value.learning.finalQualificationApproved)
       await loadDetail()
       return
     }
+
+    const existingApplications = await Promise.all(
+      missingQualIds.map(async (qualId) => ({
+        qualId,
+        application: await latestCredentialApplication(qualId),
+      })),
+    )
+    if (existingApplications.some(({ application }) => isApplicationPendingStatus(application?.status))) {
+      toast.info(t.value.learning.finalQualificationUnderReview)
+      openFinalQualificationUpload(missingQualIds)
+      return
+    }
+    if (existingApplications.some(({ application }) => isApplicationResubmitStatus(application?.status))) {
+      toast.info(t.value.learning.finalQualificationResubmit)
+      openFinalQualificationUpload(missingQualIds)
+      return
+    }
+
+    const approvedQualIds = new Set(
+      existingApplications
+        .filter(({ application }) => isApplicationApprovedStatus(application?.status))
+        .map(({ qualId }) => qualId),
+    )
+    missingQualIds = missingQualIds.filter((qualId) => !approvedQualIds.has(qualId))
+    if (missingQualIds.length === 0) {
+      toast.success(t.value.learning.finalQualificationApproved)
+      await loadDetail()
+      return
+    }
+
+    const uploadPermissions = await Promise.all(missingQualIds.map(hasQualificationUploadPermission))
+    if (uploadPermissions.some(Boolean)) {
+      toast.info(t.value.learning.finalQualificationUploadReady)
+      openFinalQualificationUpload(missingQualIds)
+      return
+    }
+
     const bundleId = await resolveBundleIdForPipeline()
     if (!bundleId) {
       toast.error(t.value.learning.finalQualificationBundleMissing)
       return
     }
-    const order = await apiClient("/api/credentials/application-orders", {
-      method: "POST",
-      body: JSON.stringify({
-        pipeline_cc_ulid: pipelineId.value,
-        bundle_ulid: bundleId,
-        qual_ulids: missingQualIds,
-      }),
-    })
+    let order
+    try {
+      order = await apiClient("/api/credentials/application-orders", {
+        method: "POST",
+        suppressErrorToast: true,
+        body: JSON.stringify({
+          pipeline_cc_ulid: pipelineId.value,
+          bundle_ulid: bundleId,
+          qual_ulids: missingQualIds,
+        }),
+      })
+    } catch (error) {
+      if (isInProgressCredentialApplicationError(error)) {
+        toast.info(t.value.learning.finalQualificationUnderReview)
+        openFinalQualificationUpload(missingQualIds)
+        return
+      }
+      throw error
+    }
     const orderId = firstString(order?.application_order_ulid, order?.application_order_id)
     const orderStatus = firstString(order?.order_status, order?.status)
     if (isUploadReadyStatus(orderStatus)) {
       toast.info(t.value.learning.finalQualificationUploadReady)
-      window.setTimeout(() => router.push(finalQualificationUploadPath(missingQualIds)), 300)
+      openFinalQualificationUpload(missingQualIds)
       return
     }
     if (isCredentialApplicationPaymentStatus(orderStatus) || order?.payment_key) {
@@ -607,8 +702,9 @@ async function handleFinalQualificationApplication() {
       return
     }
     toast.info(t.value.learning.finalQualificationOrderCreated)
-  } catch (error) {
+  } catch (error: any) {
     console.error(error)
+    toast.error(error?.message || t.value.common.error)
   } finally {
     finalQualificationLoading.value = false
   }
