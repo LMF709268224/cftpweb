@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"strings"
 
@@ -16,6 +17,11 @@ import (
 type createStageOrderReq struct {
 	PipelineUlid string `json:"pipeline_ulid"`
 	StageUlid    string `json:"stage_ulid"`
+}
+
+type selectStageExemptionsReq struct {
+	StageCcUlid         string   `json:"stage_cc_ulid"`
+	ExemptedUnitCcUlids []string `json:"exempted_unit_cc_ulids"`
 }
 
 // CreateStageOrder POST /api/mall/pipelines/{pipelineId}/stages/{stageId}/purchase
@@ -73,6 +79,80 @@ func (h *Handler) CreateStageOrder(w http.ResponseWriter, r *http.Request) {
 	}
 
 	WriteJSON(w, http.StatusOK, resp)
+}
+
+// SelectStageExemptions POST /api/mall/stage-orders/{stageOrderId}/exemptions
+func (h *Handler) SelectStageExemptions(w http.ResponseWriter, r *http.Request) {
+	candidateID := CandidateID(r)
+	stageOrderID := strings.TrimSpace(chi.URLParam(r, "stageOrderId"))
+
+	var input selectStageExemptionsReq
+	if err := ReadJSON(r, &input); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid request body: "+err.Error())
+		return
+	}
+	input.StageCcUlid = strings.TrimSpace(input.StageCcUlid)
+	input.ExemptedUnitCcUlids = compactStageExemptionUnitIDs(input.ExemptedUnitCcUlids)
+
+	if !requireRequestFields(
+		w,
+		candidateID, "candidate_id",
+		stageOrderID, "stage_order_ulid",
+		input.StageCcUlid, "stage_cc_ulid",
+	) {
+		return
+	}
+
+	order, err := h.stageCancelableOrder(r.Context(), stageOrderID)
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	if order == nil || order.Candidate != candidateID {
+		WriteError(w, http.StatusNotFound, ErrNotFound, "stage order not found or access denied")
+		return
+	}
+	if strings.ToUpper(strings.TrimSpace(order.Status)) != "WAIT_EXEMPTION_SELECTION" {
+		WriteError(w, http.StatusConflict, ErrPrecondition, "stage order is not waiting for exemption selection")
+		return
+	}
+
+	exemptionsJSON, err := json.Marshal(map[string]any{
+		"stage_cc_ulid":          input.StageCcUlid,
+		"exempted_unit_cc_ulids": input.ExemptedUnitCcUlids,
+	})
+	if err != nil {
+		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to encode stage exemptions")
+		return
+	}
+
+	resp, err := h.Mall.SelectStageExemptions(r.Context(), &mallpb.SelectStageExemptionsRequest{
+		StageOrderUlid: stageOrderID,
+		ExemptionsJson: string(exemptionsJSON),
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+func compactStageExemptionUnitIDs(values []string) []string {
+	result := make([]string, 0, len(values))
+	seen := make(map[string]struct{}, len(values))
+	for _, value := range values {
+		value = strings.TrimSpace(value)
+		if value == "" {
+			continue
+		}
+		if _, exists := seen[value]; exists {
+			continue
+		}
+		seen[value] = struct{}{}
+		result = append(result, value)
+	}
+	return result
 }
 
 func (h *Handler) validateStagePurchaseRuntime(

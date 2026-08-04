@@ -20,9 +20,13 @@ type stageOrderMallClientStub struct {
 	listReqs    []*mallpb.ListPipelineOrdersRequest
 	detailReqs  []*mallpb.GetPipelineOrderDetailRequest
 	createReq   *mallpb.CreateStageOrderRequest
+	summaryReq  *mallpb.GetStageOrderSummaryRequest
+	selectReq   *mallpb.SelectStageExemptionsRequest
 	listResps   []*mallpb.ListPipelineOrdersResponse
 	detailResps map[string]*mallpb.GetPipelineOrderDetailResponse
 	createResp  *mallpb.CreateStageOrderResponse
+	summaryResp *mallpb.GetStageOrderSummaryResponse
+	selectResp  *mallpb.SelectStageExemptionsResponse
 }
 
 func (s *stageOrderMallClientStub) ListPipelineOrders(
@@ -54,6 +58,24 @@ func (s *stageOrderMallClientStub) CreateStageOrder(
 ) (*mallpb.CreateStageOrderResponse, error) {
 	s.createReq = req
 	return s.createResp, nil
+}
+
+func (s *stageOrderMallClientStub) GetStageOrderSummary(
+	_ context.Context,
+	req *mallpb.GetStageOrderSummaryRequest,
+	_ ...grpc.CallOption,
+) (*mallpb.GetStageOrderSummaryResponse, error) {
+	s.summaryReq = req
+	return s.summaryResp, nil
+}
+
+func (s *stageOrderMallClientStub) SelectStageExemptions(
+	_ context.Context,
+	req *mallpb.SelectStageExemptionsRequest,
+	_ ...grpc.CallOption,
+) (*mallpb.SelectStageExemptionsResponse, error) {
+	s.selectReq = req
+	return s.selectResp, nil
 }
 
 type stageOrderProgClientStub struct {
@@ -168,6 +190,102 @@ func TestCreateStageOrderUsesCompletedByStageOrderContext(t *testing.T) {
 		mall.createReq.GetStageCcUlid() != stageCcUlid ||
 		mall.createReq.GetBundleOrderUlid() != bundleOrderID {
 		t.Fatalf("create stage order request = %+v", mall.createReq)
+	}
+}
+
+func TestSelectStageExemptionsVerifiesOwnershipAndForwardsSelection(t *testing.T) {
+	const (
+		candidateID  = "01KYN000000000000000000021"
+		stageOrderID = "01KYN000000000000000000022"
+		stageCcUlid  = "01KYN000000000000000000023"
+		firstUnitID  = "01KYN000000000000000000024"
+		secondUnitID = "01KYN000000000000000000025"
+	)
+
+	mall := &stageOrderMallClientStub{
+		summaryResp: &mallpb.GetStageOrderSummaryResponse{
+			Found: true,
+			Summary: &mallpb.StageOrderSummary{
+				StageOrderUlid: stageOrderID,
+				CandidateUlid:  candidateID,
+				StageCcUlid:    stageCcUlid,
+				OrderStatus:    "WAIT_EXEMPTION_SELECTION",
+			},
+		},
+		selectResp: &mallpb.SelectStageExemptionsResponse{
+			StageOrderUlid: stageOrderID,
+			OrderStatus:    "WAIT_STAGE_PAYMENT",
+		},
+	}
+	h := &Handler{Mall: mall}
+
+	req := httptest.NewRequest(
+		http.MethodPost,
+		"/api/mall/stage-orders/"+stageOrderID+"/exemptions",
+		strings.NewReader(`{"stage_cc_ulid":"`+stageCcUlid+`","exempted_unit_cc_ulids":["`+firstUnitID+`"," `+firstUnitID+` ","`+secondUnitID+`"]}`),
+	)
+	routeCtx := chi.NewRouteContext()
+	routeCtx.URLParams.Add("stageOrderId", stageOrderID)
+	ctx := context.WithValue(req.Context(), chi.RouteCtxKey, routeCtx)
+	req = req.WithContext(WithCandidate(ctx, candidateID, "", "", ""))
+	rec := httptest.NewRecorder()
+
+	h.SelectStageExemptions(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, body = %s", rec.Code, rec.Body.String())
+	}
+	if mall.summaryReq.GetStageOrderUlid() != stageOrderID {
+		t.Fatalf("stage order summary request = %+v", mall.summaryReq)
+	}
+	if mall.selectReq.GetStageOrderUlid() != stageOrderID {
+		t.Fatalf("select stage exemptions request = %+v", mall.selectReq)
+	}
+	const expectedJSON = `{"exempted_unit_cc_ulids":["01KYN000000000000000000024","01KYN000000000000000000025"],"stage_cc_ulid":"01KYN000000000000000000023"}`
+	if mall.selectReq.GetExemptionsJson() != expectedJSON {
+		t.Fatalf("exemptions json = %s, want %s", mall.selectReq.GetExemptionsJson(), expectedJSON)
+	}
+}
+
+func TestSelectStageExemptionsRejectsAnotherCandidateOrder(t *testing.T) {
+	const (
+		candidateID  = "01KYN000000000000000000031"
+		ownerID      = "01KYN000000000000000000032"
+		stageOrderID = "01KYN000000000000000000033"
+		stageCcUlid  = "01KYN000000000000000000034"
+	)
+
+	mall := &stageOrderMallClientStub{
+		summaryResp: &mallpb.GetStageOrderSummaryResponse{
+			Found: true,
+			Summary: &mallpb.StageOrderSummary{
+				StageOrderUlid: stageOrderID,
+				CandidateUlid:  ownerID,
+				StageCcUlid:    stageCcUlid,
+				OrderStatus:    "WAIT_EXEMPTION_SELECTION",
+			},
+		},
+	}
+	h := &Handler{Mall: mall}
+
+	req := httptest.NewRequest(
+		http.MethodPost,
+		"/api/mall/stage-orders/"+stageOrderID+"/exemptions",
+		strings.NewReader(`{"stage_cc_ulid":"`+stageCcUlid+`","exempted_unit_cc_ulids":[]}`),
+	)
+	routeCtx := chi.NewRouteContext()
+	routeCtx.URLParams.Add("stageOrderId", stageOrderID)
+	ctx := context.WithValue(req.Context(), chi.RouteCtxKey, routeCtx)
+	req = req.WithContext(WithCandidate(ctx, candidateID, "", "", ""))
+	rec := httptest.NewRecorder()
+
+	h.SelectStageExemptions(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("status = %d, body = %s", rec.Code, rec.Body.String())
+	}
+	if mall.selectReq != nil {
+		t.Fatalf("SelectStageExemptions should not be called for another candidate's order")
 	}
 }
 
