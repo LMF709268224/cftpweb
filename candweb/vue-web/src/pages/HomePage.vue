@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import type { Component } from "vue"
-import { AlertCircle, Award, BookOpen, CheckCircle2, ClipboardList, PackageOpen, PanelLeft, Receipt, RefreshCw } from "lucide-vue-next"
+import { Award, BookOpen, CheckCircle2, ClipboardList, PackageOpen, PanelLeft, Receipt } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
 import { isAuthenticated } from "@/lib/authStorage"
@@ -141,7 +141,6 @@ const portalCards = computed<PortalCard[]>(() => {
 const featuredCards = computed(() => portalCards.value.filter((card) => card.featured))
 const secondaryCards = computed(() => portalCards.value.filter((card) => !card.featured))
 const showDashboardSkeleton = computed(() => dashboardLoading.value && !dashboardLoaded.value)
-const hasDashboardError = computed(() => Object.values(countErrors.value).some(Boolean))
 
 const cardStyles = {
   orange: {
@@ -260,30 +259,6 @@ onMounted(() => {
         </section>
 
         <section class="portal-card-section mx-auto mt-12 w-full max-w-[1380px]">
-          <div
-            v-if="hasDashboardError"
-            class="mb-6 flex flex-col gap-4 rounded-lg border border-amber-200 bg-amber-50 px-5 py-4 text-left sm:flex-row sm:items-center sm:justify-between"
-            role="alert"
-            aria-live="polite"
-          >
-            <div class="flex min-w-0 items-start gap-3">
-              <AlertCircle class="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
-              <div class="min-w-0">
-                <p class="text-sm font-semibold text-amber-950">{{ t.home.statsLoadFailed }}</p>
-                <p class="mt-1 text-sm leading-5 text-amber-800">{{ t.home.statsLoadFailedDesc }}</p>
-              </div>
-            </div>
-            <button
-              type="button"
-              class="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-md border border-amber-300 bg-white px-4 text-sm font-semibold text-amber-900 transition-colors hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40 disabled:cursor-not-allowed disabled:opacity-60"
-              :disabled="dashboardLoading"
-              @click="loadDashboardStats"
-            >
-              <RefreshCw :class="['h-4 w-4', { 'animate-spin': dashboardLoading }]" />
-              {{ t.home.reloadStats }}
-            </button>
-          </div>
-
           <div v-if="showDashboardSkeleton" class="flex flex-col gap-8" role="status" :aria-label="t.common.loading" aria-live="polite">
             <div class="portal-card-row portal-card-featured-row flex flex-col items-center justify-center gap-6 lg:flex-row">
               <div
