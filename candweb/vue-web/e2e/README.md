@@ -35,3 +35,26 @@ behavior. New main pages should also be added to `portal-smoke.spec.ts`.
 
 Real Casdoor, Stripe test-mode, and exam-provider smoke tests belong in a
 separate staging suite so this fast regression suite remains repeatable.
+
+## Live read-only regression
+
+The separate `e2e-live` suite signs in through the real Casdoor test application
+and reads the candidate test environment. It does not replace this deterministic
+mock suite.
+
+Required environment variables:
+
+- `E2E_CANDIDATE_BASE_URL`
+- `E2E_CANDIDATE_USERNAME`
+- `E2E_CANDIDATE_PASSWORD`
+
+Run it only against the shared candidate test environment:
+
+```powershell
+npm run test:e2e:live
+```
+
+The suite blocks unexpected non-read API requests. Only session refresh and
+telemetry requests may use non-GET methods. Traces, videos, and automatic
+screenshots are disabled so authentication cookies and tokens are not placed in
+test artifacts.

@@ -12,6 +12,9 @@
     "preview": "vite preview",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
+    "test:e2e:typecheck": "tsc -p tsconfig.e2e.json",
+    "test:e2e:live": "playwright test --config playwright.live.config.ts",
+    "test:e2e:live:headed": "playwright test --config playwright.live.config.ts --headed",
     "test:e2e:install": "playwright install chromium",
     "test:e2e:report": "playwright show-report"
   },

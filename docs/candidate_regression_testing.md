@@ -151,8 +151,24 @@ through environment variables or GitHub Actions secrets:
 Credentials must never be stored in tracked files, workflow YAML, test output,
 screenshots, traces, or browser videos.
 
-Live read-only smoke tests may run on a schedule. Tests that create or mutate
-business data must be manually triggered until automatic cleanup is available.
+The `Candidate live read-only regression` job is the third regression layer. It
+is separate from the BFF and mocked Playwright jobs and runs only when
+`Candidate Portal Regression` is started manually with `run_live_readonly`
+enabled.
+
+It performs a real Casdoor account login, verifies `/health` and
+`/api/user/me`, and opens the 12 main candidate pages against the deployed test
+environment. It fails on unexpected candidate API errors, browser exceptions,
+console errors, or failed API requests.
+
+The live read-only suite blocks business API mutations in the browser. Only
+session refresh and telemetry requests are allowed to use non-GET methods.
+Traces, videos, and automatic screenshots are disabled so authentication data
+is not included in artifacts.
+
+Live read-only smoke tests may be scheduled after they have proved stable.
+Tests that create or mutate business data must remain manually triggered until
+automatic cleanup is available.
 
 ## Test Account Policy
 
