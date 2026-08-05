@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import { RouterLink } from "vue-router"
-import { AlertCircle, Check, ChevronDown, Crown, Loader2, Percent, RefreshCw, ShoppingBag, Star, XCircle } from "lucide-vue-next"
+import { AlertCircle, Check, ChevronDown, Crown, Loader2, Percent, RefreshCw, ShoppingBag, Star, X, XCircle } from "lucide-vue-next"
 import { toast } from "vue-sonner"
 import AppShell from "@/components/AppShell.vue"
 import AppPagination from "@/components/AppPagination.vue"
 import { apiClient } from "@/lib/apiClient"
+import { useBodyScrollLock } from "@/lib/bodyScrollLock"
+import { useDialogAccessibility } from "@/lib/dialogAccessibility"
 import { useTranslation } from "@/lib/language"
 
 type RecordData = Record<string, any>
@@ -14,6 +16,9 @@ const { t, lang } = useTranslation()
 const activeTab = ref("overview")
 const loading = ref(false)
 const cancelling = ref(false)
+const cancelRenewConfirmOpen = ref(false)
+const cancelRenewConfirmDialogRef = ref<HTMLElement | null>(null)
+useBodyScrollLock(() => cancelRenewConfirmOpen.value)
 const activeMembership = ref<RecordData | null>(null)
 const plans = ref<RecordData[]>([])
 const history = ref<RecordData[]>([])
@@ -310,11 +315,25 @@ async function loadActiveMembershipFromHistory(membershipHistory: RecordData[]) 
   }
 }
 
+function openCancelRenewConfirm() {
+  if (cancelling.value || !canCancelMembership.value) return
+  cancelRenewConfirmOpen.value = true
+}
+
+function closeCancelRenewConfirm() {
+  cancelRenewConfirmOpen.value = false
+}
+
+function confirmCancelMembership() {
+  closeCancelRenewConfirm()
+  void cancelMembership()
+}
+
+useDialogAccessibility(() => cancelRenewConfirmOpen.value, cancelRenewConfirmDialogRef, closeCancelRenewConfirm)
+
 async function cancelMembership() {
   const recordUlid = currentRecord.value?.membership_record_ulid
   if (!recordUlid || !canCancelMembership.value) return
-  const ok = window.confirm(t.value.membership.cancelAutoRenewConfirm)
-  if (!ok) return
   cancelling.value = true
   try {
     await apiClient("/api/membership/cancel", {
@@ -488,7 +507,7 @@ onMounted(() => {
                 class="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-300 bg-red-50 px-5 py-3 font-bold text-red-700 shadow-sm transition-colors hover:border-red-400 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 disabled:shadow-none"
                 :disabled="cancelling || !canCancelMembership"
                 type="button"
-                @click="cancelMembership"
+                @click="openCancelRenewConfirm"
               >
                 <Loader2 v-if="cancelling" class="h-4 w-4 animate-spin" />
                 <XCircle v-else class="h-5 w-5 shrink-0" :stroke-width="2.5" />
@@ -588,6 +607,57 @@ onMounted(() => {
           </section>
         </template>
       </main>
+    </div>
+
+    <div v-if="cancelRenewConfirmOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
+      <div
+        ref="cancelRenewConfirmDialogRef"
+        class="w-full max-w-md overflow-hidden rounded-[16px] bg-white shadow-[0_24px_60px_rgba(15,23,42,0.24)]"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="membership-cancel-renew-title"
+        aria-describedby="membership-cancel-renew-description"
+        tabindex="-1"
+      >
+        <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+          <div class="flex min-w-0 items-center gap-3">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-600">
+              <AlertCircle class="h-5 w-5" />
+            </div>
+            <h2 id="membership-cancel-renew-title" class="text-lg font-semibold text-slate-950">
+              {{ t.membership.cancelAutoRenew }}
+            </h2>
+          </div>
+          <button
+            type="button"
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/30"
+            :aria-label="t.common.close"
+            :title="t.common.close"
+            @click="closeCancelRenewConfirm"
+          >
+            <X class="h-5 w-5" />
+          </button>
+        </div>
+
+        <div class="px-5 py-5">
+          <p id="membership-cancel-renew-description" class="text-sm leading-6 text-slate-600">
+            {{ t.membership.cancelAutoRenewConfirm }}
+          </p>
+        </div>
+
+        <div class="flex justify-end gap-3 border-t border-slate-200 bg-slate-50 px-5 py-4">
+          <button type="button" class="btn btn-outline min-w-28 rounded-lg" @click="closeCancelRenewConfirm">
+            {{ t.membership.keepAutoRenew }}
+          </button>
+          <button
+            type="button"
+            class="btn min-w-28 rounded-lg border-red-600 bg-red-600 text-white shadow-sm shadow-red-200 hover:border-red-700 hover:bg-red-700 focus-visible:ring-red-500/40"
+            @click="confirmCancelMembership"
+          >
+            {{ t.membership.cancelAutoRenew }}
+          </button>
+        </div>
+      </div>
     </div>
   </AppShell>
 </template>

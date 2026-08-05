@@ -289,6 +289,7 @@ export const en: AppTranslations = {
         autoRenewEnabled: "Enabled",
         autoRenewDisabled: "Auto-renew disabled",
         cancelAutoRenew: "Cancel auto-renew",
+        keepAutoRenew: "Keep auto-renew",
         sourceInitial: "Initial subscription",
         sourceBundlePurchase: "Bundle Purchase",
         sourceAdminGrant: "Admin Grant",

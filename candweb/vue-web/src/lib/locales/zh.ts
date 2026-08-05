@@ -287,6 +287,7 @@ export const zh = {
     autoRenewEnabled: "已开启",
     autoRenewDisabled: "未开启自动续费",
     cancelAutoRenew: "取消续费",
+    keepAutoRenew: "保留自动续费",
     sourceInitial: "首次开通",
     sourceBundlePurchase: "套餐购买",
     sourceAdminGrant: "管理员发卡",
