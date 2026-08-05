@@ -15,10 +15,38 @@ permissions:
   contents: read
 
 concurrency:
-  group: candidate-e2e-${{ github.workflow }}-${{ github.ref }}
+  group: candidate-regression-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  backend:
+    name: Candidate BFF regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        working-directory: candbff
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: candbff/go.mod
+          cache-dependency-path: candbff/go.sum
+
+      - name: Download Go modules
+        run: go mod download
+
+      - name: Run Go vet
+        run: go vet ./...
+
+      - name: Run Go regression tests
+        run: go test ./...
+
   regression:
     name: Candidate Playwright regression
     runs-on: ubuntu-latest
