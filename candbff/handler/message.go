@@ -143,6 +143,9 @@ func (h *Handler) MarkMessagesRead(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid request body: "+err.Error())
 		return
 	}
+	if !normalizeMessageOperationInput(w, &input) {
+		return
+	}
 
 	_, err := h.Gmsg.MarkAsRead(r.Context(), &gmsgpb.MarkAsReadRequest{
 		UserUlid:   candidateID,
@@ -164,6 +167,9 @@ func (h *Handler) DeleteMessage(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid request body: "+err.Error())
 		return
 	}
+	if !normalizeMessageOperationInput(w, &input) {
+		return
+	}
 
 	_, err := h.Gmsg.DeleteMessages(r.Context(), &gmsgpb.DeleteMessagesRequest{
 		UserUlid:   candidateID,
@@ -175,6 +181,21 @@ func (h *Handler) DeleteMessage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	WriteJSON(w, http.StatusOK, nil)
+}
+
+func normalizeMessageOperationInput(w http.ResponseWriter, input *MessageOperationInput) bool {
+	messageIDs := make([]string, 0, len(input.MessageIDs))
+	for _, messageID := range input.MessageIDs {
+		if normalized := strings.TrimSpace(messageID); normalized != "" {
+			messageIDs = append(messageIDs, normalized)
+		}
+	}
+	if len(messageIDs) == 0 {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "field 'message_ids' is required")
+		return false
+	}
+	input.MessageIDs = messageIDs
+	return true
 }
 
 func (h *Handler) GetMessage(w http.ResponseWriter, r *http.Request) {

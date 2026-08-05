@@ -21,6 +21,26 @@ runs:
 These checks must not create orders, schedule exams, submit credential
 applications, or modify shared test accounts.
 
+## Test Locations
+
+Regression tests are grouped by layer instead of being placed throughout the
+application:
+
+- `candbff/handler/*_test.go` contains focused Handler business tests. Each
+  business module uses its corresponding test file, such as
+  `payment_test.go`, `invoice_test.go`, `membership_test.go`, and
+  `message_test.go`.
+- `candbff/server/router_test.go` contains the complete HTTP route contract,
+  authentication-boundary, CORS, health, and not-found tests.
+- `candweb/vue-web/e2e/*.spec.ts` contains deterministic browser regression
+  tests. Shared browser API mocks remain under `candweb/vue-web/e2e/support`.
+- `.github/workflows/candidate-e2e.yml` is the single GitHub Actions entry
+  point that runs the backend and frontend layers.
+
+Tests must not be added to unrelated production directories. A new business
+module should receive a focused `*_test.go` or `*.spec.ts` file in the
+appropriate location above rather than extending one global test file.
+
 ## Private Go Module Access
 
 `candbff` depends on the private repository
@@ -59,27 +79,28 @@ Coverage is tracked by route group so missing areas remain visible.
 
 | Route group                                     | Routes | Current automated coverage                                          |
 | ----------------------------------------------- | -----: | ------------------------------------------------------------------- |
-| Health, public config, webhook, telemetry, auth |      9 | Full route contract; callback, cookie, refresh, and logout coverage |
+| Health, public config, webhook, telemetry, auth |      9 | Full route contract; public config, callback, cookie, refresh, and logout coverage |
 | Protected preview endpoints                     |      4 | Full route and authentication boundary coverage                     |
 | Public membership and mall catalog              |     11 | Full route contract; partial pipeline and runtime coverage          |
-| User profile                                    |      5 | Authentication and cookie coverage; profile mutations pending       |
-| Membership                                      |      4 | Pending                                                             |
+| User profile                                    |      5 | Input validation, normalization, authentication, and cookie coverage |
+| Membership                                      |      4 | Plan filtering, candidate scope, pagination, and cancellation coverage |
 | Mall purchase and payment                       |      7 | Partial stage, return URL, and payment-state coverage               |
 | Pipeline and progress                           |     12 | Partial access, runtime, and progress coverage                      |
-| Enrollments                                     |      2 | Pending                                                             |
-| Resource packs and files                        |      5 | Pending                                                             |
-| Quizzes                                         |      6 | Partial downstream-error coverage                                   |
+| Enrollments                                     |      2 | Candidate scope, filters, pagination, detail, and validation coverage |
+| Resource packs and files                        |      5 | Candidate scope, ownership, pagination, preview, and view coverage  |
+| Quizzes                                         |      6 | Candidate forwarding, answer preservation, and validation coverage |
 | Exams                                           |     10 | History, retake, callback, and request-validation coverage          |
 | Credential applications                         |      9 | Candidate scope and request-validation coverage                     |
-| Certificates                                    |      1 | Pending                                                             |
-| Orders                                          |      3 | Status, ownership, and cancellation-state coverage                  |
-| Invoices                                        |      2 | URL validation and PDF extraction coverage                          |
-| Messages                                        |      5 | Partial pagination response coverage                                |
-| Dashboard                                       |      2 | Pending                                                             |
+| Certificates                                    |      1 | Candidate scope, credential enrichment, and file mapping coverage   |
+| Orders                                          |      3 | Filters, totals, detail ownership, status, and cancellation coverage |
+| Invoices                                        |      2 | Ownership, completed-state, query, trusted URL, and PDF coverage    |
+| Messages                                        |      5 | Candidate scope, rendering, pagination, unread, read, and delete coverage |
+| Dashboard                                       |      2 | Candidate-scoped aggregate response coverage                        |
 
-The first expansion priority is authentication, orders, payment, exams, and
-credential applications. Statement coverage is a supporting metric, not a
-replacement for business-flow assertions.
+The remaining isolated-test priorities are deeper successful flows for mall
+purchase, pipeline access, exams, and credential applications. Statement
+coverage is a supporting metric, not a replacement for business-flow
+assertions.
 
 ## Candidate UI Regression Scope
 

@@ -36,6 +36,12 @@ var stripeInvoicePDFPattern = regexp.MustCompile(`https://(?:pay\.stripe\.com/in
 var stripeRelativeInvoicePDFPattern = regexp.MustCompile(`/(?:invoice|i)/[A-Za-z0-9_/-]+/pdf(?:\?[^"' <]*)?`)
 
 func (h *Handler) verifyInvoiceableOrder(ctx context.Context, candidateID, orderID string) error {
+	candidateID = strings.TrimSpace(candidateID)
+	orderID = strings.TrimSpace(orderID)
+	if candidateID == "" || orderID == "" {
+		return NewError(http.StatusBadRequest, ErrInvalidRequest, "candidate_id and order_id are required")
+	}
+
 	const limit uint32 = 50
 	cursor := ""
 	for {
@@ -75,7 +81,7 @@ func writeInvoiceOrderVerificationError(w http.ResponseWriter, err error) {
 
 // QueryInvoice GET /api/invoices/{orderId}
 func (h *Handler) QueryInvoice(w http.ResponseWriter, r *http.Request) {
-	orderID := chi.URLParam(r, "orderId")
+	orderID := strings.TrimSpace(chi.URLParam(r, "orderId"))
 
 	if err := h.verifyInvoiceableOrder(r.Context(), CandidateID(r), orderID); err != nil {
 		writeInvoiceOrderVerificationError(w, err)
@@ -111,8 +117,8 @@ func (h *Handler) QueryInvoice(w http.ResponseWriter, r *http.Request) {
 
 // DownloadPdf GET /api/invoices/{orderId}/pdf
 func (h *Handler) DownloadPdf(w http.ResponseWriter, r *http.Request) {
-	orderID := chi.URLParam(r, "orderId")
-	if strings.TrimSpace(orderID) == "" {
+	orderID := strings.TrimSpace(chi.URLParam(r, "orderId"))
+	if orderID == "" {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "order_id is required")
 		return
 	}

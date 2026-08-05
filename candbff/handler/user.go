@@ -134,6 +134,10 @@ func (h *Handler) UpdateUserPassword(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
+	if input.OldPassword == "" || input.NewPassword == "" {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "old_password and new_password are required")
+		return
+	}
 
 	fullUser, err := casdoorsdk.GetUser(name)
 	if err != nil {
@@ -219,11 +223,11 @@ func (h *Handler) SendEmailCode(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
+	input.Email = strings.TrimSpace(input.Email)
 	if input.Email == "" {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "email required")
 		return
 	}
-	input.Email = strings.TrimSpace(input.Email)
 
 	fullUser, err := casdoorsdk.GetUser(name)
 	if err != nil {
@@ -289,6 +293,8 @@ func (h *Handler) UpdateUserEmail(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
+	input.Email = strings.TrimSpace(input.Email)
+	input.VerificationCode = strings.TrimSpace(input.VerificationCode)
 	if input.Email == "" || input.VerificationCode == "" {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "email and verification code are required")
 		return
@@ -313,7 +319,7 @@ func (h *Handler) UpdateUserEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fullUser.Email = strings.TrimSpace(input.Email)
+	fullUser.Email = input.Email
 
 	_, err = casdoorsdk.UpdateUser(fullUser)
 	if err != nil {

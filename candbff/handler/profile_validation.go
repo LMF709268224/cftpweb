@@ -131,7 +131,6 @@ func normalizeAndValidateUserProfileInput(input *UserProfileInput) error {
 	input.FirstName = trimProfileText(input.FirstName, profileNameTextMax)
 	input.LastName = trimProfileText(input.LastName, profileNameTextMax)
 	input.Phone = normalizeProfilePhone(input.Phone)
-	input.Phone = normalizeProfilePhone(input.Phone)
 	input.HomePhone = normalizeProfilePhone(input.HomePhone)
 	input.Country = trimProfileText(input.Country, profileShortTextMax)
 	input.Province = trimProfileText(input.Province, profileShortTextMax)

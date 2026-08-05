@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -12,10 +13,18 @@ import (
 
 type paymentOrderMallClientStub struct {
 	mallpb.MallServiceClient
-	listRequest    *mallpb.ListOrdersRequest
-	listResponse   *mallpb.ListOrdersResponse
-	cancelRequest  *mallpb.CancelBusinessOrderRequest
-	cancelResponse *mallpb.CancelBusinessOrderResponse
+	listRequest          *mallpb.ListOrdersRequest
+	listRequests         []*mallpb.ListOrdersRequest
+	listResponse         *mallpb.ListOrdersResponse
+	listResponses        []*mallpb.ListOrdersResponse
+	countRequest         *mallpb.GetOrderCountRequest
+	countResponse        *mallpb.GetOrderCountResponse
+	detailRequest        *mallpb.GetOrderDetailRequest
+	detailResponse       *mallpb.GetOrderDetailResponse
+	bundleDetailRequest  *mallpb.GetBundleOrderDetailRequest
+	bundleDetailResponse *mallpb.GetBundleOrderDetailResponse
+	cancelRequest        *mallpb.CancelBusinessOrderRequest
+	cancelResponse       *mallpb.CancelBusinessOrderResponse
 }
 
 func (s *paymentOrderMallClientStub) ListOrders(
@@ -24,7 +33,40 @@ func (s *paymentOrderMallClientStub) ListOrders(
 	_ ...grpc.CallOption,
 ) (*mallpb.ListOrdersResponse, error) {
 	s.listRequest = request
+	s.listRequests = append(s.listRequests, request)
+	if len(s.listResponses) > 0 {
+		response := s.listResponses[0]
+		s.listResponses = s.listResponses[1:]
+		return response, nil
+	}
 	return s.listResponse, nil
+}
+
+func (s *paymentOrderMallClientStub) GetOrderCount(
+	_ context.Context,
+	request *mallpb.GetOrderCountRequest,
+	_ ...grpc.CallOption,
+) (*mallpb.GetOrderCountResponse, error) {
+	s.countRequest = request
+	return s.countResponse, nil
+}
+
+func (s *paymentOrderMallClientStub) GetOrderDetail(
+	_ context.Context,
+	request *mallpb.GetOrderDetailRequest,
+	_ ...grpc.CallOption,
+) (*mallpb.GetOrderDetailResponse, error) {
+	s.detailRequest = request
+	return s.detailResponse, nil
+}
+
+func (s *paymentOrderMallClientStub) GetBundleOrderDetail(
+	_ context.Context,
+	request *mallpb.GetBundleOrderDetailRequest,
+	_ ...grpc.CallOption,
+) (*mallpb.GetBundleOrderDetailResponse, error) {
+	s.bundleDetailRequest = request
+	return s.bundleDetailResponse, nil
 }
 
 func (s *paymentOrderMallClientStub) CancelBusinessOrder(
@@ -79,6 +121,210 @@ func TestCanCancelCommonOrderStatus(t *testing.T) {
 				t.Fatalf("canCancelCommonOrderStatus(%q) = %v, want %v", tt.status, got, tt.want)
 			}
 		})
+	}
+}
+
+func TestListOrdersScopesFiltersAndCalculatesCompletedTotals(t *testing.T) {
+	mall := &paymentOrderMallClientStub{
+		listResponses: []*mallpb.ListOrdersResponse{
+			{
+				Items: []*mallpb.OrderSummary{
+					{
+						OrderUlid:     "order-1",
+						CandidateUlid: "candidate-1",
+						BizType:       orderBizBundlePurchase,
+						BizRefUlid:    "bundle-1",
+						CurrencyCode:  "USD",
+						AmountMinor:   2565,
+						OrderStatus:   " completed ",
+						PaymentStatus: "PAID",
+						CreatedAt:     "2026-08-05T01:02:03Z",
+						Meta:          &mallpb.OrderMeta{ProductName: "Candidate Bundle"},
+					},
+					nil,
+				},
+				NextCursor: "next-order",
+				PrevCursor: "prev-order",
+				HasMore:    true,
+			},
+			{
+				Items: []*mallpb.OrderSummary{
+					{
+						OrderUlid:   "order-1",
+						AmountMinor: 2565,
+						OrderStatus: "COMPLETED",
+					},
+					{
+						OrderUlid:   "order-2",
+						AmountMinor: 1000,
+						OrderStatus: "WAIT_PAYMENT",
+					},
+				},
+			},
+		},
+		countResponse: &mallpb.GetOrderCountResponse{Count: 2},
+	}
+	request := newCandidateHandlerRequest(
+		http.MethodGet,
+		"/api/orders?biz_type=bundle_purchase&status=completed&page_size=999",
+		"",
+		"candidate-1",
+		nil,
+	)
+	recorder := httptest.NewRecorder()
+
+	(&Handler{Mall: mall}).ListOrders(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body=%q", recorder.Code, http.StatusOK, recorder.Body.String())
+	}
+	if len(mall.listRequests) != 2 {
+		t.Fatalf("ListOrders calls = %d, want 2", len(mall.listRequests))
+	}
+	listRequest := mall.listRequests[0]
+	if listRequest.GetFilters().GetCandidateUlid() != "candidate-1" ||
+		listRequest.GetFilters().GetBizType() != orderBizBundlePurchase ||
+		listRequest.GetFilters().GetOrderStatus() != "COMPLETED" {
+		t.Fatalf("ListOrders filters = %+v", listRequest.GetFilters())
+	}
+	if listRequest.GetPageSize() != defaultCandidateOrderPageMax {
+		t.Fatalf("page_size = %d, want %d", listRequest.GetPageSize(), defaultCandidateOrderPageMax)
+	}
+	if mall.countRequest == nil || mall.countRequest.GetFilters().GetCandidateUlid() != "candidate-1" {
+		t.Fatalf("GetOrderCount request = %+v", mall.countRequest)
+	}
+
+	var response struct {
+		Data OrderListRsp `json:"data"`
+	}
+	if err := json.NewDecoder(recorder.Body).Decode(&response); err != nil {
+		t.Fatalf("decode response: %v; body=%q", err, recorder.Body.String())
+	}
+	if response.Data.TotalOrders != 2 ||
+		response.Data.Completed != 1 ||
+		response.Data.TotalAmount != 25.65 ||
+		response.Data.NextCursor != "next-order" ||
+		response.Data.PrevCursor != "prev-order" ||
+		!response.Data.HasMore {
+		t.Fatalf("order list response = %+v", response.Data)
+	}
+	if len(response.Data.Orders) != 1 {
+		t.Fatalf("orders = %d, want 1", len(response.Data.Orders))
+	}
+	order := response.Data.Orders[0]
+	if order.OrderID != "order-1" ||
+		order.ProductName != "Candidate Bundle" ||
+		order.OrderStatus != "COMPLETED" ||
+		order.Amount != 25.65 ||
+		!order.CanViewInvoice {
+		t.Fatalf("order response = %+v", order)
+	}
+}
+
+func TestListOrdersRejectsUnsupportedBusinessTypeBeforeCallingMall(t *testing.T) {
+	mall := &paymentOrderMallClientStub{}
+	request := newCandidateHandlerRequest(
+		http.MethodGet,
+		"/api/orders?biz_type=admin_order",
+		"",
+		"candidate-1",
+		nil,
+	)
+	recorder := httptest.NewRecorder()
+
+	(&Handler{Mall: mall}).ListOrders(recorder, request)
+
+	assertHandlerAPIError(t, recorder, http.StatusBadRequest, ErrInvalidRequest)
+	if len(mall.listRequests) != 0 {
+		t.Fatal("unsupported business type must not call ListOrders")
+	}
+}
+
+func TestGetOrderRejectsAnotherCandidatesOrder(t *testing.T) {
+	mall := &paymentOrderMallClientStub{
+		detailResponse: &mallpb.GetOrderDetailResponse{
+			Found: true,
+			Detail: &mallpb.OrderDetail{
+				Summary: &mallpb.OrderSummary{
+					OrderUlid:     "order-1",
+					CandidateUlid: "candidate-2",
+					BizType:       orderBizBundlePurchase,
+					BizRefUlid:    "bundle-order-1",
+				},
+			},
+		},
+	}
+	request := newCandidateHandlerRequest(
+		http.MethodGet,
+		"/api/orders/order-1",
+		"",
+		"candidate-1",
+		map[string]string{"orderId": "order-1"},
+	)
+	recorder := httptest.NewRecorder()
+
+	(&Handler{Mall: mall}).GetOrder(recorder, request)
+
+	assertHandlerAPIError(t, recorder, http.StatusNotFound, ErrNotFound)
+	if mall.bundleDetailRequest != nil {
+		t.Fatal("another candidate's order must not load business detail")
+	}
+}
+
+func TestGetOrderReturnsCandidateScopedBusinessDetail(t *testing.T) {
+	mall := &paymentOrderMallClientStub{
+		detailResponse: &mallpb.GetOrderDetailResponse{
+			Found: true,
+			Detail: &mallpb.OrderDetail{
+				Summary: &mallpb.OrderSummary{
+					OrderUlid:     "order-1",
+					CandidateUlid: "candidate-1",
+					BizType:       orderBizBundlePurchase,
+					BizRefUlid:    "bundle-order-1",
+					CurrencyCode:  "sgd",
+					AmountMinor:   5000,
+					OrderStatus:   "COMPLETED",
+					PaymentStatus: "PAID",
+					Meta:          &mallpb.OrderMeta{ProductName: "Membership Package"},
+				},
+				GpayOrderUlid: "pay-order-1",
+				PaymentKey:    "secret-value",
+			},
+		},
+		bundleDetailResponse: &mallpb.GetBundleOrderDetailResponse{Found: true},
+	}
+	request := newCandidateHandlerRequest(
+		http.MethodGet,
+		"/api/orders/order-1",
+		"",
+		"candidate-1",
+		map[string]string{"orderId": " order-1 "},
+	)
+	recorder := httptest.NewRecorder()
+
+	(&Handler{Mall: mall}).GetOrder(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body=%q", recorder.Code, http.StatusOK, recorder.Body.String())
+	}
+	if mall.detailRequest == nil || mall.detailRequest.GetOrderUlid() != "order-1" {
+		t.Fatalf("GetOrderDetail request = %+v", mall.detailRequest)
+	}
+	if mall.bundleDetailRequest == nil || mall.bundleDetailRequest.GetBundleOrderUlid() != "bundle-order-1" {
+		t.Fatalf("GetBundleOrderDetail request = %+v", mall.bundleDetailRequest)
+	}
+	var response struct {
+		Data OrderDetailRsp `json:"data"`
+	}
+	if err := json.NewDecoder(recorder.Body).Decode(&response); err != nil {
+		t.Fatalf("decode response: %v; body=%q", err, recorder.Body.String())
+	}
+	if response.Data.Summary.OrderID != "order-1" ||
+		response.Data.Summary.CandidateID != "candidate-1" ||
+		response.Data.Summary.Currency != "SGD" ||
+		response.Data.Summary.Amount != 50 ||
+		!response.Data.HasPaymentKey {
+		t.Fatalf("order detail response = %+v", response.Data)
 	}
 }
 
