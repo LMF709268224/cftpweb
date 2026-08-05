@@ -46,9 +46,6 @@ onMounted(async () => {
     <div v-else-if="!result || result.has_result === false" class="rounded-[16px] bg-white p-8 text-center text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">{{ t.examsPage.noScoreDetails }}</div>
     <div v-else>
       <section class="rounded-[16px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-        <div class="mb-4 flex flex-wrap items-center gap-2">
-          <span class="badge">{{ result.exam_id || examId }}</span>
-        </div>
         <h1 class="text-3xl font-bold text-foreground">{{ t.examsPage.resultTitle }}</h1>
         <p class="mt-2 text-muted-foreground">{{ t.examsPage.resultDesc }}</p>
         <div class="mt-6 grid gap-4 sm:grid-cols-2">
