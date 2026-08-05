@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test"
 import { installReadOnlyGuards, liveEnvironment } from "./support/live"
 
+test.setTimeout(90_000)
+
 const portalPages = [
   { path: "/dashboard", heading: "欢迎来到门户" },
   { path: "/certifications", heading: "商城" },
@@ -41,8 +43,7 @@ for (const portalPage of portalPages) {
       page.getByRole("heading", { name: portalPage.heading, exact: true }).first(),
     ).toBeVisible()
 
-    await page.waitForLoadState("networkidle", { timeout: 30_000 })
-    await page.waitForTimeout(250)
-    guards.assertClean()
+    await guards.waitForAPIIdle()
+    await guards.assertClean()
   })
 }
