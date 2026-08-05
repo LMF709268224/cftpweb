@@ -19,6 +19,21 @@ runs:
 These checks must not create orders, schedule exams, submit credential
 applications, or modify shared test accounts.
 
+## Private Go Module Access
+
+`candbff` depends on the private repository
+`github.com/afnandelfin620-star/cftptest`. GitHub Actions cannot download this
+module with the workflow repository's built-in token.
+
+Create the repository secret `CFTPTEST_READ_TOKEN` with a fine-grained token
+that can read only the `cftptest` repository. The token needs repository
+`Contents: Read-only` permission. Do not grant write, administration, Actions,
+or organization permissions.
+
+The workflow limits the authenticated Git URL rewrite to the single
+`cftptest` repository. The token must not be stored in source files, local test
+data, workflow YAML, or test artifacts.
+
 ## HTTP Regression Scope
 
 The `candbff/server` tests cover the HTTP boundary without connecting to real

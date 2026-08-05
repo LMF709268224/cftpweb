@@ -23,6 +23,8 @@ jobs:
     name: Candidate BFF regression
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      GOPRIVATE: github.com/afnandelfin620-star/cftptest
 
     defaults:
       run:
@@ -37,6 +39,18 @@ jobs:
         with:
           go-version-file: candbff/go.mod
           cache-dependency-path: candbff/go.sum
+
+      - name: Configure private Go module access
+        env:
+          CFTPTEST_READ_TOKEN: ${{ secrets.CFTPTEST_READ_TOKEN }}
+        run: |
+          if [ -z "$CFTPTEST_READ_TOKEN" ]; then
+            echo "::error::Repository secret CFTPTEST_READ_TOKEN is required to download the private cftptest Go module."
+            exit 1
+          fi
+          git config --global \
+            url."https://x-access-token:${CFTPTEST_READ_TOKEN}@github.com/afnandelfin620-star/cftptest".insteadOf \
+            "https://github.com/afnandelfin620-star/cftptest"
 
       - name: Download Go modules
         run: go mod download
