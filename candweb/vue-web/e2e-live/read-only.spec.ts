@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test"
 import { installReadOnlyGuards, liveEnvironment } from "./support/live"
 
-test.setTimeout(90_000)
+test.setTimeout(600_000)
 
 const portalPages = [
   { path: "/dashboard", heading: "欢迎来到门户" },
@@ -32,18 +32,21 @@ test("real candidate session can read health and current-user APIs", async ({ pa
   expect(String(payload.data.name || payload.data.id || "").trim()).not.toBe("")
 })
 
-for (const portalPage of portalPages) {
-  test(`${portalPage.heading}页面可以读取真实测试环境数据`, async ({ page }) => {
-    const guards = await installReadOnlyGuards(page)
+test("candidate main pages can read real test-environment data", async ({ page }) => {
+  const guards = await installReadOnlyGuards(page)
 
-    await page.goto(portalPage.path, { waitUntil: "domcontentloaded" })
+  for (const portalPage of portalPages) {
+    await test.step(`${portalPage.heading}页面`, async () => {
+      guards.reset()
+      await page.goto(portalPage.path, { waitUntil: "domcontentloaded" })
 
-    await expect(page).toHaveURL(new RegExp(`${portalPage.path.replaceAll("/", "\\/")}(?:[?#].*)?$`))
-    await expect(
-      page.getByRole("heading", { name: portalPage.heading, exact: true }).first(),
-    ).toBeVisible()
+      await expect(page).toHaveURL(new RegExp(`${portalPage.path.replaceAll("/", "\\/")}(?:[?#].*)?$`))
+      await expect(
+        page.getByRole("heading", { name: portalPage.heading, exact: true }).first(),
+      ).toBeVisible({ timeout: 45_000 })
 
-    await guards.waitForAPIIdle()
-    await guards.assertClean()
-  })
-}
+      await guards.waitForAPIIdle()
+      await guards.assertClean()
+    })
+  }
+})

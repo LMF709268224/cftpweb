@@ -70,15 +70,38 @@ async function openCasdoorLogin(page: Page, baseURL: string) {
   const loginURL = new URL("/api/auth/login-url", candidateOrigin)
   loginURL.searchParams.set("callback", callbackURL)
 
-  const response = await page.context().request.get(loginURL.toString())
-  if (response.status() !== 200) {
-    throw new Error(`Candidate login URL request returned HTTP ${response.status()}`)
+  await page.goto(candidateOrigin, { waitUntil: "domcontentloaded" })
+  const result = await page.evaluate(async (endpoint) => {
+    const response = await fetch(endpoint, {
+      credentials: "include",
+      headers: { Accept: "application/json" },
+    })
+    const contentType = response.headers.get("content-type") || "missing"
+    const text = await response.text()
+    let payload: unknown = null
+    try {
+      payload = JSON.parse(text)
+    } catch {
+      // The caller reports a sanitized shape instead of exposing the response body.
+    }
+    return { status: response.status, contentType, payload }
+  }, loginURL.toString())
+
+  if (result.status !== 200) {
+    throw new Error(`Candidate login URL request returned HTTP ${result.status}`)
   }
 
-  const payload = await response.json().catch(() => null)
+  const payload = result.payload as { code?: unknown, data?: { url?: unknown } } | null
   const rawCasdoorURL = payload?.data?.url
   if (payload?.code !== 200 || typeof rawCasdoorURL !== "string" || !rawCasdoorURL.trim()) {
-    throw new Error("Candidate login URL response was invalid")
+    const topLevelKeys = payload && typeof payload === "object" ? Object.keys(payload).sort().join(",") : "non-json"
+    const dataKeys = payload?.data && typeof payload.data === "object"
+      ? Object.keys(payload.data).sort().join(",")
+      : "none"
+    throw new Error(
+      `Candidate login URL response was invalid; content-type=${result.contentType}; `
+      + `keys=${topLevelKeys || "none"}; code-type=${typeof payload?.code}; data-keys=${dataKeys || "none"}`,
+    )
   }
 
   let casdoorURL: URL
@@ -240,6 +263,15 @@ export async function installReadOnlyGuards(page: Page) {
   })
 
   return {
+    reset() {
+      apiFailures.length = 0
+      pageErrors.length = 0
+      consoleErrors.length = 0
+      requestFailures.length = 0
+      requestedAPIPaths.clear()
+      completedAPIPaths.clear()
+      lastAPIActivityAt = Date.now()
+    },
     async waitForAPIIdle(timeout = 45_000) {
       const deadline = Date.now() + timeout
       let idleSince = Date.now()
