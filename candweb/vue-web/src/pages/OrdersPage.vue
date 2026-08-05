@@ -687,8 +687,17 @@ onBeforeUnmount(() => {
         <h3 class="mb-2 text-lg font-semibold text-foreground">{{ t.orders.noOrders }}</h3>
       </div>
       <div v-else>
-        <div v-for="order in orders" :key="order.id" @click="openOrderDetail(order)" class="order-row group flex cursor-pointer flex-col gap-3 border-b border-slate-100 px-4 py-4 transition-all duration-200 hover:bg-primary/10 md:flex-row md:items-center md:justify-between">
-          <div class="flex min-w-0 items-center gap-4">
+        <div
+          v-for="order in orders"
+          :key="order.id"
+          class="order-row group relative flex cursor-pointer flex-col gap-3 border-b border-slate-100 px-4 py-4 transition-all duration-200 hover:bg-primary/10 md:flex-row md:items-center md:justify-between"
+        >
+          <button
+            type="button"
+            :aria-label="`${t.orders.detailTitle}: ${order.items.join(', ')}`"
+            class="flex min-w-0 items-center gap-4 text-left focus-visible:outline-none after:absolute after:inset-0 after:z-0 focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-primary/50"
+            @click="openOrderDetail(order)"
+          >
             <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10"><Package class="h-6 w-6 text-primary" /></div>
             <div class="min-w-0">
               <div class="mb-1 flex min-w-0 flex-wrap items-center gap-2">
@@ -697,25 +706,25 @@ onBeforeUnmount(() => {
               </div>
               <p class="text-sm text-muted-foreground">{{ order.date }}</p>
             </div>
-          </div>
-          <div class="flex w-full flex-wrap items-center justify-end gap-x-3 gap-y-3 pl-16 md:grid md:w-auto md:shrink-0 md:grid-cols-[130px_148px_112px_112px_24px] md:gap-x-5 md:pl-0">
+          </button>
+          <div class="pointer-events-none relative z-10 flex w-full flex-wrap items-center justify-end gap-x-3 gap-y-3 pl-16 md:grid md:w-auto md:shrink-0 md:grid-cols-[130px_148px_112px_112px_24px] md:gap-x-5 md:pl-0">
             <div class="mr-auto flex justify-start md:mr-0 md:justify-center">
               <span class="badge text-xs" :class="orderStatusBadgeClass(order)">
                 {{ orderStatusLabel(order) }}
               </span>
             </div>
             <div class="text-right">
-              <button v-if="canContinuePayment(order)" @click.stop="continueOrderPayment(order)" class="inline-flex h-8 min-w-[148px] items-center justify-center whitespace-nowrap rounded-lg bg-primary/10 px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/20 md:w-full">
+              <button v-if="canContinuePayment(order)" @click.stop="continueOrderPayment(order)" class="pointer-events-auto inline-flex h-8 min-w-[148px] items-center justify-center whitespace-nowrap rounded-lg bg-primary/10 px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/20 md:w-full">
                 {{ t.orders.continuePayment }}
               </button>
               <p v-else class="text-lg font-semibold text-card-foreground">{{ order.amount }}</p>
             </div>
-            <button v-if="canCancelOrder(order)" type="button" class="inline-flex h-8 w-full items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-600 transition-colors hover:border-red-300 hover:bg-red-100" @click.stop="openCancelConfirm(order)">
+            <button v-if="canCancelOrder(order)" type="button" class="pointer-events-auto inline-flex h-8 w-full items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-600 transition-colors hover:border-red-300 hover:bg-red-100" @click.stop="openCancelConfirm(order)">
               <Loader2 v-if="cancelLoading === order.bizRefUlid" class="h-4 w-4 animate-spin" />
               {{ t.orders.cancelPayment }}
             </button>
             <span v-else class="h-8 w-[112px]" />
-            <button v-if="order.canViewInvoice" @click.stop="viewInvoice(order.invoiceOrderId)" class="inline-flex h-9 w-[112px] items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-primary/10 px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/20">
+            <button v-if="order.canViewInvoice" @click.stop="viewInvoice(order.invoiceOrderId)" class="pointer-events-auto inline-flex h-9 w-[112px] items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-primary/10 px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/20">
               <Loader2 v-if="invoiceLoading === order.invoiceOrderId" class="h-4 w-4 animate-spin" />
               {{ t.orders.viewInvoice }}
             </button>
