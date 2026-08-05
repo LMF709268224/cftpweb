@@ -1,5 +1,9 @@
 # Candidate Regression Testing
 
+For the Chinese task inventory, trigger matrix, maintenance rules, and change
+log, see
+[考生系统回归测试任务台账](./开发维护/考生系统回归测试任务台账.md).
+
 ## Purpose
 
 The candidate system uses layered regression tests. No single test layer is
