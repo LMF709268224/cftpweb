@@ -2,6 +2,8 @@ package handler
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
@@ -85,5 +87,89 @@ func TestLatestCredentialApplicationReturnsNilWhenNoApplicationExists(t *testing
 	}
 	if got != nil {
 		t.Fatalf("latest application = %#v, want nil", got)
+	}
+}
+
+func TestCredentialHandlersRejectInvalidRequestsBeforeCallingServices(t *testing.T) {
+	tests := []struct {
+		name   string
+		method string
+		target string
+		body   string
+		handle func(*Handler, http.ResponseWriter, *http.Request)
+	}{
+		{
+			name:   "qualification IDs are required",
+			method: http.MethodGet,
+			target: "/api/credentials/qualifications",
+			handle: func(h *Handler, w http.ResponseWriter, r *http.Request) {
+				h.CheckCandidateQualifications(w, r)
+			},
+		},
+		{
+			name:   "application order fields are required",
+			method: http.MethodPost,
+			target: "/api/credentials/application-orders",
+			body:   `{}`,
+			handle: func(h *Handler, w http.ResponseWriter, r *http.Request) {
+				h.CreateCredentialApplicationOrder(w, r)
+			},
+		},
+		{
+			name:   "upload fields are required",
+			method: http.MethodPost,
+			target: "/api/credentials/upload-url",
+			body:   `{}`,
+			handle: func(h *Handler, w http.ResponseWriter, r *http.Request) {
+				h.RequestUploadUrl(w, r)
+			},
+		},
+		{
+			name:   "credential definition is required for submission",
+			method: http.MethodPost,
+			target: "/api/credentials/submit",
+			body:   `{}`,
+			handle: func(h *Handler, w http.ResponseWriter, r *http.Request) {
+				h.SubmitApplication(w, r)
+			},
+		},
+		{
+			name:   "all submitted file fields are required",
+			method: http.MethodPost,
+			target: "/api/credentials/submit",
+			body:   `{"cred_def_ulid":"credential-1","files":[{"file_hash":"hash","file_name":"proof.pdf","file_ext":"pdf"}]}`,
+			handle: func(h *Handler, w http.ResponseWriter, r *http.Request) {
+				h.SubmitApplication(w, r)
+			},
+		},
+		{
+			name:   "application ID is required for update",
+			method: http.MethodPut,
+			target: "/api/credentials/update",
+			body:   `{}`,
+			handle: func(h *Handler, w http.ResponseWriter, r *http.Request) {
+				h.UpdateApplication(w, r)
+			},
+		},
+		{
+			name:   "all updated file fields are required",
+			method: http.MethodPut,
+			target: "/api/credentials/update",
+			body:   `{"app_ulid":"application-1","files":[{"file_hash":"hash","file_name":"proof.pdf","file_ext":"pdf"}]}`,
+			handle: func(h *Handler, w http.ResponseWriter, r *http.Request) {
+				h.UpdateApplication(w, r)
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			request := newCandidateHandlerRequest(test.method, test.target, test.body, "candidate-1", nil)
+			recorder := httptest.NewRecorder()
+
+			test.handle(&Handler{}, recorder, request)
+
+			assertHandlerAPIError(t, recorder, http.StatusBadRequest, ErrInvalidRequest)
+		})
 	}
 }

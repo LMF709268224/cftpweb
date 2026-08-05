@@ -19,7 +19,7 @@ npm run test:e2e
 Use `npm run test:e2e:headed` to watch the browser and
 `npm run test:e2e:report` to open the latest HTML report.
 
-## Initial coverage
+## Current coverage
 
 - Protected-route login redirect and return-path preservation
 - Expired access token refresh
@@ -27,6 +27,11 @@ Use `npm run test:e2e:headed` to watch the browser and
 - Order status and action consistency
 - Hosted payment return synchronization
 - Embedded Stripe completion without leaving the orders page
+- Empty-data rendering and JavaScript crash detection for the 12 main
+  candidate pages
+
+When a candidate UI behavior changes, add a test that fails against the old
+behavior. New main pages should also be added to `portal-smoke.spec.ts`.
 
 Real Casdoor, Stripe test-mode, and exam-provider smoke tests belong in a
 separate staging suite so this fast regression suite remains repeatable.

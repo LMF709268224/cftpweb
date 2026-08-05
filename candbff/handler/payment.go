@@ -242,7 +242,10 @@ func (h *Handler) CancelOrder(w http.ResponseWriter, r *http.Request) {
 		HandleGrpcError(w, err)
 		return
 	}
-	if order == nil {
+	if order == nil ||
+		order.Candidate != candidateID ||
+		order.BizType != req.BizType ||
+		order.BizRefUlid != req.BizRefUlid {
 		WriteError(w, http.StatusNotFound, ErrNotFound, "order not found or access denied")
 		return
 	}

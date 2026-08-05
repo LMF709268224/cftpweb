@@ -61,6 +61,17 @@ jobs:
       - name: Run Go regression tests
         run: go test ./...
 
+      - name: Enforce handler and router coverage floor
+        shell: bash
+        run: |
+          go test -count=1 -coverprofile coverage.tmp ./handler ./server
+          coverage="$(go tool cover -func coverage.tmp | awk '/^total:/ { gsub(/%/, "", $3); print $3 }')"
+          echo "Candidate BFF handler/router coverage: ${coverage}%"
+          if ! awk -v coverage="$coverage" 'BEGIN { exit (coverage + 0 >= 20.0) ? 0 : 1 }'; then
+            echo "::error::Candidate BFF handler/router coverage ${coverage}% is below the 20.0% floor."
+            exit 1
+          fi
+
   regression:
     name: Candidate Playwright regression
     runs-on: ubuntu-latest

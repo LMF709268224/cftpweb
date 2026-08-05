@@ -13,6 +13,8 @@ runs:
 
 - `go vet ./...` in `candbff`
 - `go test ./...` in `candbff`
+- a 20% minimum statement-coverage floor for `candbff/handler` and
+  `candbff/server`
 - the candidate Vue production build
 - Playwright regression tests with mocked API responses
 
@@ -41,41 +43,80 @@ microservices:
 
 - health response
 - JSON 404 response
-- registration of critical candidate routes
-- authentication requirements for protected routes
+- an exact contract for all 98 HTTP method and route combinations
+- authentication requirements for all 78 protected routes
 - malformed authentication cookies
 - allowed and rejected CORS origins
 
 Handler tests continue to use fake gRPC clients for downstream behavior.
+The coverage floor prevents large regressions, but it does not replace route,
+authorization, state-transition, or ownership assertions.
 
 ## API Coverage Inventory
 
 The candidate BFF currently registers 98 HTTP method and route combinations.
 Coverage is tracked by route group so missing areas remain visible.
 
-| Route group                                     | Routes | Current automated coverage                                    |
-| ----------------------------------------------- | -----: | ------------------------------------------------------------- |
-| Health, public config, webhook, telemetry, auth |      9 | Partial handler coverage and router smoke coverage            |
-| Protected preview endpoints                     |      4 | Authentication boundary coverage                              |
-| Public membership and mall catalog              |     11 | Partial pipeline and runtime handler coverage                 |
-| User profile                                    |      5 | Authentication and cookie coverage; profile mutations pending |
-| Membership                                      |      4 | Pending                                                       |
-| Mall purchase and payment                       |      7 | Partial stage, return URL, and payment-state coverage         |
-| Pipeline and progress                           |     12 | Partial access, runtime, and progress coverage                |
-| Enrollments                                     |      2 | Pending                                                       |
-| Resource packs and files                        |      5 | Pending                                                       |
-| Quizzes                                         |      6 | Partial downstream-error coverage                             |
-| Exams                                           |     10 | Partial history, retake, and callback coverage                |
-| Credential applications                         |      9 | Partial candidate-scoped application coverage                 |
-| Certificates                                    |      1 | Pending                                                       |
-| Orders                                          |      3 | Partial status and cancellation coverage                      |
-| Invoices                                        |      2 | URL validation and PDF extraction coverage                    |
-| Messages                                        |      5 | Partial pagination response coverage                          |
-| Dashboard                                       |      2 | Pending                                                       |
+| Route group                                     | Routes | Current automated coverage                                          |
+| ----------------------------------------------- | -----: | ------------------------------------------------------------------- |
+| Health, public config, webhook, telemetry, auth |      9 | Full route contract; callback, cookie, refresh, and logout coverage |
+| Protected preview endpoints                     |      4 | Full route and authentication boundary coverage                     |
+| Public membership and mall catalog              |     11 | Full route contract; partial pipeline and runtime coverage          |
+| User profile                                    |      5 | Authentication and cookie coverage; profile mutations pending       |
+| Membership                                      |      4 | Pending                                                             |
+| Mall purchase and payment                       |      7 | Partial stage, return URL, and payment-state coverage               |
+| Pipeline and progress                           |     12 | Partial access, runtime, and progress coverage                      |
+| Enrollments                                     |      2 | Pending                                                             |
+| Resource packs and files                        |      5 | Pending                                                             |
+| Quizzes                                         |      6 | Partial downstream-error coverage                                   |
+| Exams                                           |     10 | History, retake, callback, and request-validation coverage          |
+| Credential applications                         |      9 | Candidate scope and request-validation coverage                     |
+| Certificates                                    |      1 | Pending                                                             |
+| Orders                                          |      3 | Status, ownership, and cancellation-state coverage                  |
+| Invoices                                        |      2 | URL validation and PDF extraction coverage                          |
+| Messages                                        |      5 | Partial pagination response coverage                                |
+| Dashboard                                       |      2 | Pending                                                             |
 
 The first expansion priority is authentication, orders, payment, exams, and
 credential applications. Statement coverage is a supporting metric, not a
 replacement for business-flow assertions.
+
+## Candidate UI Regression Scope
+
+The deterministic Playwright suite covers:
+
+- protected-route login redirect and post-login return-path preservation
+- expired access-token refresh and expired refresh-token cleanup
+- order status and action consistency
+- hosted and embedded payment completion returning to the orders page
+- empty-data rendering for the 12 main candidate pages: dashboard,
+  marketplace, my certifications, exams, records, resource packs, credential
+  applications, certificates, membership, orders, messages, and settings
+- JavaScript page-crash detection for those main candidate pages
+
+These tests use browser-level API and Stripe mocks. They validate candidate UI
+behavior and request handling without requiring shared test accounts or
+creating real business records.
+
+## Change Requirements
+
+Every candidate-system change must keep the regression suite current:
+
+- A new, removed, renamed, or method-changed BFF route must update
+  `candidateRouteContract`. The exact route-contract test rejects untracked
+  route changes.
+- New Handler behavior must add focused tests for successful forwarding,
+  invalid input, candidate ownership or authorization, downstream errors, and
+  state transitions where those cases apply.
+- New candidate UI behavior must add or update a Playwright test when the
+  behavior can be reproduced with deterministic mocks.
+- Every bug fix must include a regression test that would fail without the
+  fix.
+- Tests that mutate real data belong in the live-environment suite and must
+  define cleanup behavior before they are automated.
+
+The pull request template repeats these requirements so reviewers can see
+which layers were updated.
 
 ## Live Environment Scope
 
