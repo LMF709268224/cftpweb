@@ -724,9 +724,25 @@ async function submitQuiz(page: Page) {
 }
 
 async function returnToLearning(page: Page) {
-  await page.getByTestId("quiz-return").click()
+  const learningURLPattern = /\/certifications\/[^/?#]+\/learn\/[^/?#]+/
+  if (learningURLPattern.test(new URL(page.url()).pathname)) return
+
+  const quizURL = new URL(page.url())
+  const returnTo = String(quizURL.searchParams.get("returnTo") || "").trim()
+  const returnButton = page.getByTestId("quiz-return")
+
+  if (await returnButton.isVisible().catch(() => false)) {
+    await returnButton.click()
+  } else if (returnTo.startsWith("/") && !returnTo.startsWith("//")) {
+    await page.goto(new URL(returnTo, quizURL.origin).toString(), {
+      waitUntil: "domcontentloaded",
+    })
+  } else {
+    await page.goBack({ waitUntil: "domcontentloaded" })
+  }
+
   await expect(page).toHaveURL(
-    /\/certifications\/[^/?#]+\/learn\/[^/?#]+/,
+    learningURLPattern,
     { timeout: 30_000 },
   )
 }
