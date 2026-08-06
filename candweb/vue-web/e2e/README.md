@@ -45,11 +45,15 @@ dedicated Stripe Test Mode certification purchase and course-learning account:
 npm run test:e2e:live:journey
 ```
 
-It reuses the existing candidate live-test account, selects the first paid,
-currently purchasable certification that contains a course, disables default
-course exemptions, and continues into the certification created by that
-payment. The run creates a paid test order and irreversible candidate progress,
-so Admin cleanup and account-state reset are required before rerunning it.
+It reuses the existing candidate live-test account. The journey first resumes a
+matching unpaid bundle order from the Orders page. If none exists, it purchases
+the first paid, currently purchasable certification that contains a course. If
+the account already owns an eligible certification, it reuses that pipeline and
+continues with learning without creating another order. Stripe completion is
+confirmed from the common order payment status and the candidate pipeline,
+rather than from the pipeline alone. Paid orders and learning progress are not
+automatically removed, so Admin cleanup is still required when a fresh purchase
+scenario must be recreated.
 
 ## Live read-only regression
 
