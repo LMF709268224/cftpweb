@@ -447,17 +447,17 @@ async function handleSubmit() {
           <p class="mt-2 text-muted-foreground">{{ t.examSignup.subtitle }}</p>
         </div>
         <div class="max-w-2xl rounded-[16px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-      <form class="space-y-6" novalidate @submit.prevent="handleSubmit">
+      <form data-testid="exam-signup-form" class="space-y-6" novalidate @submit.prevent="handleSubmit">
         <div class="grid gap-4 sm:grid-cols-2">
-          <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formFirstName }}</span><input v-model="formData.first_name" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" required /></label>
-          <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formLastName }}</span><input v-model="formData.last_name" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" required /></label>
+          <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formFirstName }}</span><input v-model="formData.first_name" data-testid="exam-signup-first-name" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" required /></label>
+          <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formLastName }}</span><input v-model="formData.last_name" data-testid="exam-signup-last-name" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" required /></label>
         </div>
         <label class="block space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formMiddleName }}</span><input v-model="formData.middle_name" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" /></label>
         <div class="grid gap-4 sm:grid-cols-2">
-          <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formEmail }}</span><input v-model="formData.email" class="input" type="email" :maxlength="PROFILE_TEXT_LIMITS.short" required /></label>
+          <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formEmail }}</span><input v-model="formData.email" data-testid="exam-signup-email" class="input" type="email" :maxlength="PROFILE_TEXT_LIMITS.short" required /></label>
           <label class="space-y-2">
             <span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formGender }}</span>
-            <select v-model="formData.gender" class="input cursor-pointer" required>
+            <select v-model="formData.gender" data-testid="exam-signup-gender" class="input cursor-pointer" required>
               <option value="" disabled>{{ t.examSignup.formGender }}</option>
               <option v-for="option in genderOptions" :key="option" :value="option">{{ t.common.genderOptions[option] }}</option>
             </select>
@@ -467,6 +467,7 @@ async function handleSubmit() {
           <span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formBirthdate }}</span>
           <LocalizedDatePicker
             v-model="formData.birthdate"
+            data-testid="exam-signup-birthdate"
             :language="lang"
             :placeholder="lang === 'zh' ? '日/月/年' : 'DD/MM/YYYY'"
             :aria-label="t.examSignup.formBirthdate"
@@ -475,7 +476,7 @@ async function handleSubmit() {
         <div class="grid gap-4" :class="locationGridClass">
           <label class="space-y-2">
             <span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formCountry }}</span>
-            <select v-model="selectedCountryCode" class="input cursor-pointer" required @change="handleCountryChange">
+            <select v-model="selectedCountryCode" data-testid="exam-signup-country" class="input cursor-pointer" required @change="handleCountryChange">
               <option value="" disabled>{{ t.examSignup.formCountry }}</option>
               <option v-for="country in countryOptions" :key="country.code" :value="country.code">{{ country.displayName }}</option>
             </select>
@@ -497,8 +498,8 @@ async function handleSubmit() {
             <input v-else v-model="formData.city" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" required />
           </label>
         </div>
-        <label class="block space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formAddress }}</span><input v-model="formData.address" class="input" :maxlength="PROFILE_TEXT_LIMITS.address" required /></label>
-        <label class="block space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formPostalCode }}</span><input v-model="formData.postal_code" class="input" :maxlength="PROFILE_TEXT_LIMITS.postalCode" pattern="[A-Za-z0-9][A-Za-z0-9 -]*[A-Za-z0-9]" required @blur="formData.postal_code = normalizePostalCode(formData.postal_code)" /></label>
+        <label class="block space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formAddress }}</span><input v-model="formData.address" data-testid="exam-signup-address" class="input" :maxlength="PROFILE_TEXT_LIMITS.address" required /></label>
+        <label class="block space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formPostalCode }}</span><input v-model="formData.postal_code" data-testid="exam-signup-postal-code" class="input" :maxlength="PROFILE_TEXT_LIMITS.postalCode" pattern="[A-Za-z0-9][A-Za-z0-9 -]*[A-Za-z0-9]" required @blur="formData.postal_code = normalizePostalCode(formData.postal_code)" /></label>
         <div class="grid gap-4 sm:grid-cols-1">
           <label class="space-y-2">
             <span class="text-sm font-medium">{{ t.examSignup.formWorkPhone }}</span>
@@ -520,7 +521,7 @@ async function handleSubmit() {
           </label>
         </div>
         <div class="flex justify-end pt-2">
-          <button class="btn btn-primary w-full sm:w-auto" :disabled="loading">
+          <button type="submit" data-testid="exam-signup-submit" class="btn btn-primary w-full sm:w-auto" :disabled="loading">
             <template v-if="loading"><Loader2 class="h-4 w-4 animate-spin" /> {{ t.examSignup.submitting }}</template>
             <template v-else><Send class="mr-2 h-4 w-4" /> {{ t.examSignup.submit }}</template>
           </button>

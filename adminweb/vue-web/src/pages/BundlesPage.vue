@@ -4,6 +4,7 @@ import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 
 import PricingEditor from "@/components/PricingEditor.vue"
+import TranslationsEditor from "@/components/TranslationsEditor.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { fetchAllCursorRecords } from "@/lib/cursorPagination"
@@ -122,6 +123,10 @@ let detailRequestId = 0
 let nextCreateItemKey = 1
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.bundlesAdmin)
+const bundleTranslationFields = computed(() => [
+  { key: "name", label: copy.value.fields.name, maxLength: 128 },
+  { key: "description", label: copy.value.fields.description, kind: "textarea" as const, maxLength: 1024 },
+])
 
 const currentPage = computed(() => Math.floor(offset.value / limit) + 1)
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / limit)))
@@ -1551,10 +1556,18 @@ onMounted(load)
                     {{ copy.fields.bundleUlid }}
                     <input v-model="form.bundle_ulid" disabled class="h-11 rounded-xl border border-slate-200 bg-slate-100 px-4" />
                   </label>
-                  <label class="grid gap-2 text-sm font-bold md:col-span-2">
-                    {{ copy.fields.name }}
+                  <div class="grid gap-2 text-sm font-bold md:col-span-2">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                      <span>{{ copy.fields.name }}</span>
+                      <TranslationsEditor
+                        v-if="form.bundle_ulid"
+                        :endpoint="`/api/mall/bundles/${encodeURIComponent(form.bundle_ulid)}/translations`"
+                        :target-id="form.bundle_ulid"
+                        :fields="bundleTranslationFields"
+                      />
+                    </div>
                     <input v-model="form.name" class="h-11 rounded-xl border border-slate-200 px-4" maxlength="160" />
-                  </label>
+                  </div>
                   <label class="grid gap-2 text-sm font-bold">
                     {{ copy.fields.thumbnailObjectKey }}
                     <input v-model="form.thumbnail_object_key" class="h-11 rounded-xl border border-slate-200 px-4" />

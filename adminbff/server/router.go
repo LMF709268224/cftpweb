@@ -57,6 +57,8 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 		r.Route("/pipelines", func(r chi.Router) {
 			r.Get("/", h.ListPipelines)
 			r.Get("/{pipeline_id}", h.GetPipeline)
+			r.Get("/{pipeline_id}/translations", h.GetPipelineTranslations)
+			r.Put("/{pipeline_id}/translations", h.SetPipelineTranslations)
 			r.Post("/", h.CreatePipelineDraft)
 			r.Post("/{pipeline_id}/duplicate", h.DuplicatePipelineDraft)
 			r.Put("/{pipeline_id}/structure", h.UpdatePipelineStructure)
@@ -65,6 +67,10 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Post("/{pipeline_id}/deprecate", h.DeprecatePipeline)
 			r.Delete("/{pipeline_id}", h.DeletePipeline)
 		})
+		r.Get("/pipeline-stages/{stage_id}/translations", h.GetStageTranslations)
+		r.Put("/pipeline-stages/{stage_id}/translations", h.SetStageTranslations)
+		r.Get("/pipeline-units/{unit_id}/translations", h.GetUnitTranslations)
+		r.Put("/pipeline-units/{unit_id}/translations", h.SetUnitTranslations)
 
 		r.Route("/prog/pipelines", func(r chi.Router) {
 			r.Get("/", h.ListProgPipelines)
@@ -310,6 +316,8 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Post("/version-files/{file_id}/ignore", h.IgnoreVersionFile)
 			r.Get("/definitions", h.ListCredentialDefinitions)
 			r.Get("/definitions/{cred_def_ulid}", h.GetCredentialDefinitionDetail)
+			r.Get("/definitions/{cred_def_ulid}/translations", h.GetCredDefTranslations)
+			r.Put("/definitions/{cred_def_ulid}/translations", h.SetCredDefTranslations)
 			r.Post("/definitions", h.CreateCredentialDefinition)
 		})
 
@@ -324,6 +332,8 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 		r.Route("/pdf-templates", func(r chi.Router) {
 			r.Get("/", h.ListPdfTemplates)
 			r.Get("/detail", h.GetPdfTemplateDetail)
+			r.Get("/{template_id}/translations", h.GetPdfTemplateTranslations)
+			r.Put("/{template_id}/translations", h.SetPdfTemplateTranslations)
 			r.Post("/", h.CreatePdfTemplate)
 			r.Put("/", h.UpdatePdfTemplate)
 		})
@@ -362,6 +372,8 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 				r.Get("/schemas", h.GetBundleJsonSchemas)
 				r.Post("/sync-display-pricing", h.AdminSyncBundleDisplayPricing)
 				r.Get("/{bundle_ulid}", h.GetBundle)
+				r.Get("/{bundle_ulid}/translations", h.GetBundleTranslations)
+				r.Put("/{bundle_ulid}/translations", h.SetBundleTranslations)
 				r.Post("/{bundle_ulid}/duplicate", h.DuplicateBundle)
 				r.Put("/{bundle_ulid}/meta", h.UpdateBundleMeta)
 				r.Put("/pricing", h.UpdateBundlePricing)
@@ -397,6 +409,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Get("/", h.ListMemberships)
 			r.Post("/", h.AdminCreateMembershipConfig)
 			r.Put("/", h.AdminUpdateMembershipConfig)
+			r.Get("/configs", h.AdminListMembershipConfigs)
 			r.Get("/active", h.GetActiveMembership)
 			r.Get("/users", h.ListUserMemberships)
 			r.Get("/billings", h.ListMembershipBillings)
@@ -404,6 +417,8 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Post("/revoke", h.AdminRevokeMembership)
 			r.Post("/purge", h.AdminPurgeCandidateMembership)
 			r.Get("/{membership_ulid}", h.GetMembership)
+			r.Get("/{membership_ulid}/translations", h.GetMembershipTranslations)
+			r.Put("/{membership_ulid}/translations", h.SetMembershipTranslations)
 			r.Post("/{membership_ulid}/publish", h.AdminPublishMembershipConfig)
 			r.Post("/{membership_ulid}/deprecate", h.AdminDeprecateMembershipConfig)
 			r.Route("/mails", func(r chi.Router) {

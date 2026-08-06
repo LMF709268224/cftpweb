@@ -3,6 +3,7 @@ import { ChevronDown, Copy, Info, Loader2, Plus, RefreshCw, Save, Send, Trash2, 
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import JsonPreview from "@/components/JsonPreview.vue"
+import TranslationsEditor from "@/components/TranslationsEditor.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { fetchAllCursorRecords } from "@/lib/cursorPagination"
@@ -12,6 +13,7 @@ import { badgeClass, pickFirst } from "@/lib/status"
 
 type PipelineForm = {
   name: string
+  description: string
   pipeline_gpath: string
   category_tips: string
   structure_json: string
@@ -36,6 +38,7 @@ const emptyStructure = () => ({
 
 const emptyForm: PipelineForm = {
   name: "",
+  description: "",
   pipeline_gpath: "",
   category_tips: "default",
   structure_json: JSON.stringify(emptyStructure(), null, 2),
@@ -75,6 +78,17 @@ const limit = 20
 let detailRequestId = 0
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.pipelineConfigAdmin)
+const pipelineTranslationFields = computed(() => [
+  { key: "name", label: copy.value.fields.name, maxLength: 128 },
+  { key: "description", label: copy.value.fields.description, kind: "textarea" as const, maxLength: 1024 },
+  { key: "category_tips", label: copy.value.fields.categoryTips, maxLength: 128 },
+])
+const stageTranslationFields = computed(() => [
+  { key: "name", label: copy.value.fields.name, maxLength: 128 },
+])
+const unitTranslationFields = computed(() => [
+  { key: "name", label: copy.value.fields.name, maxLength: 256 },
+])
 
 const canPrev = computed(() => !!prevToken.value)
 const canNext = computed(() => hasMore.value)
@@ -345,6 +359,7 @@ function formFromPipeline(pipeline: JsonRecord | null): PipelineForm {
   if (!pipeline) return { ...emptyForm }
   return {
     name: String(pipeline.name || ""),
+    description: String(pipeline.description || ""),
     category_tips: String(pipeline.category_tips || ""),
     pipeline_gpath: String(pipeline.pipeline_gpath || ""),
     structure_json: JSON.stringify(structureFromPipeline(pipeline), null, 2),
@@ -774,6 +789,7 @@ async function createPipeline() {
       method: "POST",
       body: JSON.stringify({
         name: form.value.name.trim(),
+        description: form.value.description.trim(),
         category_tips: form.value.category_tips.trim(),
         pipeline_gpath: form.value.pipeline_gpath.trim(),
       }),
@@ -802,7 +818,10 @@ async function saveMetadata() {
   try {
     await apiClient(`/api/pipelines/${encodeURIComponent(selectedId.value)}/metadata`, {
       method: "PUT",
-      body: JSON.stringify({ new_name: form.value.name.trim() }),
+      body: JSON.stringify({
+        new_name: form.value.name.trim(),
+        description: form.value.description.trim(),
+      }),
     })
     toast.success(copy.value.toasts.metadataSaved)
     await load()
@@ -1110,9 +1129,26 @@ onMounted(() => {
           </div>
         </div>
         <div class="grid gap-4 md:grid-cols-2">
-          <label class="grid gap-2 text-sm font-bold md:col-span-2">
-            <span><span class="mr-1 text-red-500">*</span>{{ copy.fields.name }}</span>
+          <div class="grid gap-2 text-sm font-bold md:col-span-2">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <span><span class="mr-1 text-red-500">*</span>{{ copy.fields.name }}</span>
+              <TranslationsEditor
+                v-if="selectedId"
+                :endpoint="`/api/pipelines/${encodeURIComponent(selectedId)}/translations`"
+                :target-id="selectedId"
+                :fields="pipelineTranslationFields"
+                :default-values="{ category_tips: form.category_tips }"
+              />
+            </div>
             <input v-model="form.name" class="rounded-xl border border-slate-200 px-4 py-3" />
+          </div>
+          <label class="grid gap-2 text-sm font-bold md:col-span-2">
+            <span>{{ copy.fields.description }}</span>
+            <textarea
+              v-model="form.description"
+              class="min-h-28 resize-y rounded-xl border border-slate-200 px-4 py-3"
+              maxlength="512"
+            />
           </label>
           <details class="group md:col-span-2">
             <summary class="inline-flex cursor-pointer select-none items-center gap-1 rounded-lg text-sm font-bold text-slate-500 transition-colors hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
@@ -1165,26 +1201,28 @@ onMounted(() => {
             <p class="mt-1 text-sm text-slate-500">{{ layerItems.find((layer) => layer.key === activeLayer)?.desc }}</p>
           </div>
 
-          <div v-if="activeLayer === 'overview'" class="grid gap-4 p-4 md:gap-5 md:p-5 lg:grid-cols-2">
-            <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+          <div v-if="activeLayer === 'overview'" class="space-y-5 p-4 md:p-5">
+            <div class="grid gap-4 md:gap-5 lg:grid-cols-2">
+              <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
               <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.pipelineId }}</div>
               <div class="mt-2 break-all text-sm font-bold text-slate-950">{{ selectedId || "-" }}</div>
-            </div>
-            <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+              </div>
+              <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
               <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.pipelineGuid }}</div>
               <div class="mt-2 break-all text-sm font-bold text-slate-950">{{ selected?.pipeline_guid || "-" }}</div>
-            </div>
-            <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+              </div>
+              <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
               <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.status }}</div>
               <div class="mt-2"><span class="rounded-full border px-3 py-1 text-xs font-black" :class="pipelineStatusBadgeClass(pipelineStatus(selected || {}))">{{ pipelineStatusLabel(pipelineStatus(selected || {})) }}</span></div>
-            </div>
-            <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+              </div>
+              <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
               <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.version }}</div>
               <div class="mt-2 text-sm font-bold text-slate-950">v{{ selected?.version || 0 }}</div>
-            </div>
-            <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+              </div>
+              <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
               <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.createdAt }}</div>
               <div class="mt-2 text-sm font-bold text-slate-950">{{ formatDate(String(selected?.created_at || "")) }}</div>
+              </div>
             </div>
           </div>
 
@@ -1229,10 +1267,18 @@ onMounted(() => {
                     {{ copy.fields.sortOrder }}
                     <input :value="numberValue(selectedStage, 'sort_order')" :disabled="isStructureLocked()" type="number" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedStage, 'sort_order', eventNumber($event))" />
                   </label>
-                  <label class="grid gap-2 text-sm font-bold md:col-span-2">
-                    {{ copy.fields.name }}
+                  <div class="grid gap-2 text-sm font-bold md:col-span-2">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                      <span>{{ copy.fields.name }}</span>
+                      <TranslationsEditor
+                        v-if="fieldValue(selectedStage, 'stage_ulid')"
+                        :endpoint="`/api/pipeline-stages/${encodeURIComponent(fieldValue(selectedStage, 'stage_ulid'))}/translations`"
+                        :target-id="fieldValue(selectedStage, 'stage_ulid')"
+                        :fields="stageTranslationFields"
+                      />
+                    </div>
                     <input :value="fieldValue(selectedStage, 'name')" :disabled="isStructureLocked()" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedStage, 'name', eventValue($event))" />
-                  </label>
+                  </div>
                 </div>
                 <section class="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
                   <div class="flex flex-wrap items-start justify-between gap-3">
@@ -1327,10 +1373,18 @@ onMounted(() => {
                     {{ copy.fields.unitId }}
                     <input :value="fieldValue(selectedUnitItem.unit, 'unit_ulid')" disabled class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-500" />
                   </label>
-                  <label class="grid gap-2 text-sm font-bold">
-                    <span><span class="mr-1 text-red-500">*</span>{{ copy.fields.name }}</span>
+                  <div class="grid gap-2 text-sm font-bold">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                      <span><span class="mr-1 text-red-500">*</span>{{ copy.fields.name }}</span>
+                      <TranslationsEditor
+                        v-if="fieldValue(selectedUnitItem.unit, 'unit_ulid')"
+                        :endpoint="`/api/pipeline-units/${encodeURIComponent(fieldValue(selectedUnitItem.unit, 'unit_ulid'))}/translations`"
+                        :target-id="fieldValue(selectedUnitItem.unit, 'unit_ulid')"
+                        :fields="unitTranslationFields"
+                      />
+                    </div>
                     <input :value="fieldValue(selectedUnitItem.unit, 'name')" :disabled="isStructureLocked()" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedUnitItem?.unit, 'name', eventValue($event))" />
-                  </label>
+                  </div>
                   <label class="grid gap-2 text-sm font-bold">
                     {{ copy.fields.sortOrder }}
                     <input :value="numberValue(selectedUnitItem.unit, 'sort_order')" :disabled="isStructureLocked()" type="number" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedUnitItem?.unit, 'sort_order', eventNumber($event))" />

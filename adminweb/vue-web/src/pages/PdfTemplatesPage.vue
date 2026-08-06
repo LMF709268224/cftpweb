@@ -3,6 +3,7 @@ import { Loader2, Plus, RefreshCw, Save, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import ReadonlyField from "@/components/ReadonlyField.vue"
+import TranslationsEditor from "@/components/TranslationsEditor.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
@@ -26,6 +27,10 @@ const form = ref({
 })
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.pdfTemplatesAdmin)
+const templateTranslationFields = computed(() => [
+  { key: "name", label: copy.value.fields.name, maxLength: 128 },
+  { key: "description", label: copy.value.fields.description, kind: "textarea" as const, maxLength: 1024 },
+])
 
 const hiddenRawFieldKeys = new Set(["detail", "summary", "template_id", "template_ulid", "name", "description", "html_template"])
 const selectedFields = computed(() => {
@@ -283,9 +288,17 @@ onMounted(load)
           <div v-modal-dialog="closeDialog" class="flex h-full max-h-none w-full max-w-[1100px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
             <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:p-5">
               <div class="min-w-0">
-                <h2 class="text-xl font-black">
-                  {{ mode === "create" ? copy.newTemplate : mode === "edit" ? copy.editTitle : copy.detailTitle }}
-                </h2>
+                <div class="flex flex-wrap items-center gap-3">
+                  <h2 class="text-xl font-black">
+                    {{ mode === "create" ? copy.newTemplate : mode === "edit" ? copy.editTitle : copy.detailTitle }}
+                  </h2>
+                  <TranslationsEditor
+                    v-if="mode !== 'create' && form.template_id"
+                    :endpoint="`/api/pdf-templates/${encodeURIComponent(form.template_id)}/translations`"
+                    :target-id="form.template_id"
+                    :fields="templateTranslationFields"
+                  />
+                </div>
                 <p class="mt-1 break-all text-sm text-slate-500">{{ mode === "create" ? copy.createDescription : templateUlid(selected) }}</p>
               </div>
               <button class="rounded-full border border-slate-200 p-2 text-slate-500 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50" type="button" :aria-label="copy.close" :disabled="saving" @click="closeDialog">

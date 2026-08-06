@@ -49,6 +49,7 @@ func (h *Handler) CreatePipelineDraft(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		CategoryTips       string `json:"category_tips"`
 		Name               string `json:"name"`
+		Description        string `json:"description"`
 		PipelineUlid       string `json:"pipeline_id"`
 		PipelineGpath      string `json:"pipeline_gpath"`
 		ThumbnailObjectKey string `json:"thumbnail_object_key"`
@@ -62,6 +63,7 @@ func (h *Handler) CreatePipelineDraft(w http.ResponseWriter, r *http.Request) {
 	req := gccpb.CreatePipelineDraftRequest{
 		CategoryTips:       strings.TrimSpace(input.CategoryTips),
 		Name:               strings.TrimSpace(input.Name),
+		Description:        strings.TrimSpace(input.Description),
 		PipelineUlid:       strings.TrimSpace(input.PipelineUlid),
 		PipelineGpath:      strings.TrimSpace(input.PipelineGpath),
 		ThumbnailObjectKey: strings.TrimSpace(input.ThumbnailObjectKey),

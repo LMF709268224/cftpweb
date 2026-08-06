@@ -15,6 +15,7 @@ const InvoicesPage = () => import("@/pages/InvoicesPage.vue")
 const LmsPage = () => import("@/pages/LmsPage.vue")
 const LoginPage = () => import("@/pages/LoginPage.vue")
 const MailsPage = () => import("@/pages/MailsPage.vue")
+const MembershipsPage = () => import("@/pages/MembershipsPage.vue")
 const MessagesPage = () => import("@/pages/MessagesPage.vue")
 const NotFoundPage = () => import("@/pages/NotFoundPage.vue")
 const OrdersPage = () => import("@/pages/OrdersPage.vue")
@@ -42,6 +43,7 @@ export type ResourceRouteKey =
   | "lms"
   | "pipelines"
   | "bundles"
+  | "memberships"
   | "prog"
   | "exams"
   | "messages"
@@ -120,6 +122,16 @@ export const resourceRoutes: RouteRecordRaw[] = [
       copyKey: "bundles",
       endpoint: "/api/mall/bundles",
       itemKeys: ["bundles", "items"],
+    } satisfies ResourceRouteMeta,
+  },
+  {
+    path: "/memberships",
+    name: "memberships",
+    component: MembershipsPage,
+    meta: {
+      copyKey: "memberships",
+      endpoint: "/api/memberships/configs",
+      itemKeys: ["memberships", "items"],
     } satisfies ResourceRouteMeta,
   },
   {

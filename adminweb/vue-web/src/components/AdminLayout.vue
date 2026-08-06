@@ -83,6 +83,7 @@ const navGroups = computed(() => [
       { path: "/lms", label: copy.value.nav.lms, icon: BookOpen },
       { path: "/pipelines", label: copy.value.nav.pipelines, icon: FileBadge },
       { path: "/bundles", label: copy.value.nav.bundles, icon: Boxes },
+      { path: "/memberships", label: copy.value.nav.memberships, icon: Settings },
       { path: "/resource-packs", label: copy.value.nav.resourcePacks, icon: FileText },
       { path: "/resource-pack-files", label: copy.value.nav.resourcePackFiles, icon: FileText },
       { path: "/credentials", label: copy.value.nav.credentials, icon: ShieldCheck },

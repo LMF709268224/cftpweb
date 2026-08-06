@@ -2,6 +2,7 @@
 import { Loader2, Plus, RefreshCw, Trash2, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
+import TranslationsEditor from "@/components/TranslationsEditor.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { type JsonRecord } from "@/lib/display"
@@ -48,6 +49,22 @@ const categoryOptions = computed(() => [
   { value: "Academic", label: copy.value.categoryOptions.academic },
 ])
 const categoryValues = computed(() => new Set(categoryOptions.value.map((option) => option.value)))
+const credentialTranslationFields = computed(() => [
+  { key: "name", label: copy.value.labels.name, maxLength: 128 },
+  { key: "description", label: copy.value.labels.description, kind: "textarea" as const, maxLength: 1024 },
+  { key: "acquisition_method", label: copy.value.labels.acquisitionMethod, maxLength: 256 },
+  {
+    key: "file_constraint_names",
+    label: copy.value.labels.requiredFiles,
+    kind: "map" as const,
+    mapEntries: fileConstraints(selected.value)
+      .map((constraint) => {
+        const label = String(constraint.name || "").trim()
+        return { key: normalizeTranslationKey(label), label }
+      })
+      .filter((entry) => entry.key),
+  },
+])
 
 function definitionUlid(definition: JsonRecord | null | undefined) {
   return String(pickFirst(definition || {}, ["cred_def_ulid", "cred_def_id", "qual_ulid"]) || "")
@@ -72,6 +89,14 @@ function definitionName(definition: JsonRecord | null | undefined) {
 function fileConstraints(definition: JsonRecord | null | undefined) {
   const value = definition?.file_constraints
   return Array.isArray(value) ? value.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item)) : []
+}
+
+function normalizeTranslationKey(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
 }
 
 function fileTypeLabel(type: unknown) {
@@ -283,7 +308,15 @@ onMounted(load)
         <div v-modal-dialog="closeDetail" class="flex h-full max-h-none w-full max-w-[1180px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
           <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
             <div class="min-w-0">
-              <h2 class="break-words text-xl font-black md:truncate md:text-2xl">{{ mode === "create" ? copy.createTitle : selected ? definitionName(selected) : copy.detailTitle }}</h2>
+              <div class="flex flex-wrap items-center gap-3">
+                <h2 class="break-words text-xl font-black md:truncate md:text-2xl">{{ mode === "create" ? copy.createTitle : selected ? definitionName(selected) : copy.detailTitle }}</h2>
+                <TranslationsEditor
+                  v-if="mode !== 'create' && selected"
+                  :endpoint="`/api/credentials/definitions/${encodeURIComponent(definitionUlid(selected))}/translations`"
+                  :target-id="definitionUlid(selected)"
+                  :fields="credentialTranslationFields"
+                />
+              </div>
               <p class="mt-1 break-all text-sm text-slate-500">
                 {{ mode === "create" ? copy.createHint : definitionUlid(selected) || copy.selectCredential }}
               </p>
