@@ -3,6 +3,7 @@ import { Loader2, Plus, RefreshCw, Save, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import ReadonlyField from "@/components/ReadonlyField.vue"
+import TranslationsEditor from "@/components/TranslationsEditor.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
@@ -26,6 +27,10 @@ const form = ref({
 })
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.pdfTemplatesAdmin)
+const templateTranslationFields = computed(() => [
+  { key: "name", label: copy.value.fields.name, maxLength: 128 },
+  { key: "description", label: copy.value.fields.description, kind: "textarea" as const, maxLength: 1024 },
+])
 
 const hiddenRawFieldKeys = new Set(["detail", "summary", "template_id", "template_ulid", "name", "description", "html_template"])
 const selectedFields = computed(() => {
@@ -343,6 +348,13 @@ onMounted(load)
                     <iframe class="mt-4 h-80 w-full rounded-xl border border-slate-200 bg-white md:h-[520px]" sandbox="allow-same-origin" :srcdoc="previewHtml" />
                   </div>
                 </div>
+              </div>
+              <div v-if="mode !== 'create'" class="mt-6">
+                <TranslationsEditor
+                  :endpoint="`/api/pdf-templates/${encodeURIComponent(form.template_id)}/translations`"
+                  :target-id="form.template_id"
+                  :fields="templateTranslationFields"
+                />
               </div>
             </div>
             <div v-if="!readonlyMode" class="flex shrink-0 flex-col justify-end border-t border-slate-200 bg-white px-4 py-4 sm:flex-row md:px-5">

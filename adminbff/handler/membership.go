@@ -35,6 +35,23 @@ func (h *Handler) ListMemberships(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, resp)
 }
 
+func (h *Handler) AdminListMembershipConfigs(w http.ResponseWriter, r *http.Request) {
+	page := parseCursorPage(r, 20)
+	resp, err := h.Gmbr.AdminListMemberships(r.Context(), &gmbrpb.AdminListMembershipsRequest{
+		Cursor:    page.Cursor,
+		PageSize:  page.PageSize,
+		SortOrder: gmbrpb.SortOrder(page.Sort),
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	if resp.Memberships == nil {
+		resp.Memberships = []*gmbrpb.AdminMembership{}
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
 func (h *Handler) GetMembership(w http.ResponseWriter, r *http.Request) {
 	membershipULID := strings.TrimSpace(chi.URLParam(r, "membership_ulid"))
 	if !requireRequestField(w, membershipULID, "membership_ulid") {

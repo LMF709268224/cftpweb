@@ -3,6 +3,7 @@ import { ChevronDown, Copy, Info, Loader2, Plus, RefreshCw, Save, Send, Trash2, 
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import JsonPreview from "@/components/JsonPreview.vue"
+import TranslationsEditor from "@/components/TranslationsEditor.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { fetchAllCursorRecords } from "@/lib/cursorPagination"
@@ -75,6 +76,17 @@ const limit = 20
 let detailRequestId = 0
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.pipelineConfigAdmin)
+const pipelineTranslationFields = computed(() => [
+  { key: "name", label: copy.value.fields.name, maxLength: 128 },
+  { key: "category_tips", label: copy.value.fields.categoryTips, maxLength: 128 },
+  { key: "description", label: copy.value.fields.description, kind: "textarea" as const, maxLength: 1024 },
+])
+const stageTranslationFields = computed(() => [
+  { key: "name", label: copy.value.fields.name, maxLength: 128 },
+])
+const unitTranslationFields = computed(() => [
+  { key: "name", label: copy.value.fields.name, maxLength: 256 },
+])
 
 const canPrev = computed(() => !!prevToken.value)
 const canNext = computed(() => hasMore.value)
@@ -1165,27 +1177,34 @@ onMounted(() => {
             <p class="mt-1 text-sm text-slate-500">{{ layerItems.find((layer) => layer.key === activeLayer)?.desc }}</p>
           </div>
 
-          <div v-if="activeLayer === 'overview'" class="grid gap-4 p-4 md:gap-5 md:p-5 lg:grid-cols-2">
-            <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+          <div v-if="activeLayer === 'overview'" class="space-y-5 p-4 md:p-5">
+            <div class="grid gap-4 md:gap-5 lg:grid-cols-2">
+              <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
               <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.pipelineId }}</div>
               <div class="mt-2 break-all text-sm font-bold text-slate-950">{{ selectedId || "-" }}</div>
-            </div>
-            <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+              </div>
+              <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
               <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.pipelineGuid }}</div>
               <div class="mt-2 break-all text-sm font-bold text-slate-950">{{ selected?.pipeline_guid || "-" }}</div>
-            </div>
-            <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+              </div>
+              <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
               <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.status }}</div>
               <div class="mt-2"><span class="rounded-full border px-3 py-1 text-xs font-black" :class="pipelineStatusBadgeClass(pipelineStatus(selected || {}))">{{ pipelineStatusLabel(pipelineStatus(selected || {})) }}</span></div>
-            </div>
-            <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+              </div>
+              <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
               <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.version }}</div>
               <div class="mt-2 text-sm font-bold text-slate-950">v{{ selected?.version || 0 }}</div>
-            </div>
-            <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+              </div>
+              <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
               <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.createdAt }}</div>
               <div class="mt-2 text-sm font-bold text-slate-950">{{ formatDate(String(selected?.created_at || "")) }}</div>
+              </div>
             </div>
+            <TranslationsEditor
+              :endpoint="`/api/pipelines/${encodeURIComponent(selectedId)}/translations`"
+              :target-id="selectedId"
+              :fields="pipelineTranslationFields"
+            />
           </div>
 
           <div v-else-if="activeLayer === 'stages'" class="grid min-h-[620px] lg:grid-cols-[320px_minmax(0,1fr)]">
@@ -1234,6 +1253,11 @@ onMounted(() => {
                     <input :value="fieldValue(selectedStage, 'name')" :disabled="isStructureLocked()" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedStage, 'name', eventValue($event))" />
                   </label>
                 </div>
+                <TranslationsEditor
+                  :endpoint="`/api/pipeline-stages/${encodeURIComponent(fieldValue(selectedStage, 'stage_ulid'))}/translations`"
+                  :target-id="fieldValue(selectedStage, 'stage_ulid')"
+                  :fields="stageTranslationFields"
+                />
                 <section class="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
                   <div class="flex flex-wrap items-start justify-between gap-3">
                     <div>
@@ -1405,6 +1429,11 @@ onMounted(() => {
                     </div>
                   </details>
                 </div>
+                <TranslationsEditor
+                  :endpoint="`/api/pipeline-units/${encodeURIComponent(fieldValue(selectedUnitItem.unit, 'unit_ulid'))}/translations`"
+                  :target-id="fieldValue(selectedUnitItem.unit, 'unit_ulid')"
+                  :fields="unitTranslationFields"
+                />
               </template>
               <div v-else class="p-12 text-center text-slate-500">{{ copy.selectOrAddUnit }}</div>
             </div>

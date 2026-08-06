@@ -4,6 +4,7 @@ import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 
 import PricingEditor from "@/components/PricingEditor.vue"
+import TranslationsEditor from "@/components/TranslationsEditor.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { fetchAllCursorRecords } from "@/lib/cursorPagination"
@@ -122,6 +123,10 @@ let detailRequestId = 0
 let nextCreateItemKey = 1
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.bundlesAdmin)
+const bundleTranslationFields = computed(() => [
+  { key: "name", label: copy.value.fields.name, maxLength: 128 },
+  { key: "description", label: copy.value.fields.description, kind: "textarea" as const, maxLength: 1024 },
+])
 
 const currentPage = computed(() => Math.floor(offset.value / limit) + 1)
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / limit)))
@@ -1576,6 +1581,12 @@ onMounted(load)
                     </button>
                   </div>
                 </div>
+
+                <TranslationsEditor
+                  :endpoint="`/api/mall/bundles/${encodeURIComponent(form.bundle_ulid)}/translations`"
+                  :target-id="form.bundle_ulid"
+                  :fields="bundleTranslationFields"
+                />
 
                 <details class="rounded-2xl border border-slate-200 bg-white p-4 md:p-5 mt-6 mb-4">
                   <summary class="cursor-pointer text-sm font-black text-slate-700">{{ copy.advancedConfig }}</summary>
