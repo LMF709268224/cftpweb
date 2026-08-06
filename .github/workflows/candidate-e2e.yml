@@ -131,9 +131,9 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-  live-readonly:
-    name: Candidate live read-only regression
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_live_readonly }}
+  live:
+    name: Candidate live regression
+    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.run_live_readonly || inputs.run_live_write) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -161,7 +161,7 @@ jobs:
         run: |
           for name in E2E_CANDIDATE_BASE_URL E2E_CANDIDATE_USERNAME E2E_CANDIDATE_PASSWORD; do
             if [ -z "${!name}" ]; then
-              echo "::error::Repository secret ${name} is required for the live read-only regression."
+              echo "::error::Repository secret ${name} is required for the live regression."
               exit 1
             fi
           done
@@ -176,6 +176,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run live read-only regression
+        if: ${{ inputs.run_live_readonly }}
         run: npm run test:e2e:live
         env:
           CI: "true"
@@ -183,60 +184,8 @@ jobs:
           E2E_CANDIDATE_USERNAME: ${{ secrets.E2E_CANDIDATE_USERNAME }}
           E2E_CANDIDATE_PASSWORD: ${{ secrets.E2E_CANDIDATE_PASSWORD }}
 
-      - name: Upload sanitized live failure report
-        if: ${{ failure() }}
-        uses: actions/upload-artifact@v5
-        with:
-          name: candidate-live-readonly-report
-          path: candweb/vue-web/playwright-report-live/
-          if-no-files-found: ignore
-          retention-days: 3
-
-  live-write:
-    name: Candidate live write regression
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_live_write }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    defaults:
-      run:
-        working-directory: candweb/vue-web
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: "20.x"
-          cache: npm
-          cache-dependency-path: candweb/vue-web/package-lock.json
-
-      - name: Validate live write regression secrets
-        env:
-          E2E_CANDIDATE_BASE_URL: ${{ secrets.E2E_CANDIDATE_BASE_URL }}
-          E2E_CANDIDATE_USERNAME: ${{ secrets.E2E_CANDIDATE_USERNAME }}
-          E2E_CANDIDATE_PASSWORD: ${{ secrets.E2E_CANDIDATE_PASSWORD }}
-        shell: bash
-        run: |
-          for name in E2E_CANDIDATE_BASE_URL E2E_CANDIDATE_USERNAME E2E_CANDIDATE_PASSWORD; do
-            if [ -z "${!name}" ]; then
-              echo "::error::Repository secret ${name} is required for the live write regression."
-              exit 1
-            fi
-          done
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Type-check Playwright suites
-        run: npm run test:e2e:typecheck
-
-      - name: Install Chromium
-        run: npx playwright install --with-deps chromium
-
       - name: Run controlled live write regression
+        if: ${{ inputs.run_live_write }}
         run: npm run test:e2e:live:write
         env:
           CI: "true"
@@ -246,11 +195,11 @@ jobs:
           E2E_CANDIDATE_USERNAME: ${{ secrets.E2E_CANDIDATE_USERNAME }}
           E2E_CANDIDATE_PASSWORD: ${{ secrets.E2E_CANDIDATE_PASSWORD }}
 
-      - name: Upload sanitized live write failure report
+      - name: Upload sanitized live failure report
         if: ${{ failure() }}
         uses: actions/upload-artifact@v5
         with:
-          name: candidate-live-write-report
+          name: candidate-live-regression-report
           path: candweb/vue-web/playwright-report-live/
           if-no-files-found: ignore
           retention-days: 3
