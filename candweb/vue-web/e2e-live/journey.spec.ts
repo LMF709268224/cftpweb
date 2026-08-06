@@ -210,23 +210,55 @@ test.describe("candidate live certification purchase and learning journey", () =
     const catalog = await requestData<{ bundles?: any[] }>(
       request,
       environment.baseURL,
-      "/api/mall/bundles?page_size=100",
+      "/api/mall/bundles",
+    )
+    const catalogBundles = catalog?.bundles || []
+
+    await page.goto("/certifications", { waitUntil: "domcontentloaded" })
+    const renderedCards = page.locator(
+      '[data-testid="certification-card"][data-bundle-id]',
+    )
+    if (catalogBundles.length > 0) {
+      await expect.poll(
+        () => renderedCards.count(),
+        {
+          message: [
+            "The deployed candidate portal did not render the certification-card test markers.",
+            "Deploy candweb from commit f2bc67c or later before running the live paid journey.",
+          ].join(" "),
+          timeout: 30_000,
+        },
+      ).toBeGreaterThan(0)
+    }
+
+    const renderedBundleIDs = new Set(
+      await renderedCards.evaluateAll((nodes) =>
+        nodes
+          .map((node) => node.getAttribute("data-bundle-id")?.trim() || "")
+          .filter(Boolean),
+      ),
+    )
+    const renderedCatalog = catalogBundles.filter((bundle) =>
+      renderedBundleIDs.has(bundleID(bundle)),
     )
     const selection = await findPurchasableCertification(
       request,
       environment.baseURL,
-      catalog?.bundles || [],
+      renderedCatalog,
     )
 
     expect(
       selection.bundle,
-      selection.diagnostic,
+      [
+        selection.diagnostic,
+        `api-catalog=${catalogBundles.length}`,
+        `rendered-cards=${renderedBundleIDs.size}`,
+      ].filter(Boolean).join("; "),
     ).toBeTruthy()
 
     const bundle = selection.bundle
     const selectedBundleID = bundleID(bundle)
     const pipelineID = bundlePipelineID(bundle)
-    await page.goto("/certifications", { waitUntil: "domcontentloaded" })
     const card = page.locator(
       `[data-testid="certification-card"][data-bundle-id="${selectedBundleID}"]`,
     )
