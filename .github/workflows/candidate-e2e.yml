@@ -16,13 +16,18 @@ on:
         required: true
         default: true
         type: boolean
+      run_live_write:
+        description: Run controlled candidate test-environment writable regression
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
 
 concurrency:
-  group: candidate-regression-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: candidate-regression-${{ github.workflow }}-${{ github.ref }}-${{ github.event_name == 'workflow_dispatch' && inputs.run_live_write && 'live-write' || 'regular' }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' || inputs.run_live_write != true }}
 
 jobs:
   backend:
@@ -73,8 +78,8 @@ jobs:
           go test -count=1 -coverprofile coverage.tmp ./handler ./server
           coverage="$(go tool cover -func coverage.tmp | awk '/^total:/ { gsub(/%/, "", $3); print $3 }')"
           echo "Candidate BFF handler/router coverage: ${coverage}%"
-          if ! awk -v coverage="$coverage" 'BEGIN { exit (coverage + 0 >= 20.0) ? 0 : 1 }'; then
-            echo "::error::Candidate BFF handler/router coverage ${coverage}% is below the 20.0% floor."
+          if ! awk -v coverage="$coverage" 'BEGIN { exit (coverage + 0 >= 35.0) ? 0 : 1 }'; then
+            echo "::error::Candidate BFF handler/router coverage ${coverage}% is below the 35.0% floor."
             exit 1
           fi
 
@@ -183,6 +188,69 @@ jobs:
         uses: actions/upload-artifact@v5
         with:
           name: candidate-live-readonly-report
+          path: candweb/vue-web/playwright-report-live/
+          if-no-files-found: ignore
+          retention-days: 3
+
+  live-write:
+    name: Candidate live write regression
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_live_write }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    defaults:
+      run:
+        working-directory: candweb/vue-web
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "20.x"
+          cache: npm
+          cache-dependency-path: candweb/vue-web/package-lock.json
+
+      - name: Validate live write regression secrets
+        env:
+          E2E_CANDIDATE_BASE_URL: ${{ secrets.E2E_CANDIDATE_BASE_URL }}
+          E2E_CANDIDATE_USERNAME: ${{ secrets.E2E_CANDIDATE_USERNAME }}
+          E2E_CANDIDATE_PASSWORD: ${{ secrets.E2E_CANDIDATE_PASSWORD }}
+        shell: bash
+        run: |
+          for name in E2E_CANDIDATE_BASE_URL E2E_CANDIDATE_USERNAME E2E_CANDIDATE_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Repository secret ${name} is required for the live write regression."
+              exit 1
+            fi
+          done
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check Playwright suites
+        run: npm run test:e2e:typecheck
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run controlled live write regression
+        run: npm run test:e2e:live:write
+        env:
+          CI: "true"
+          E2E_LIVE_WRITE_ENABLED: "true"
+          E2E_LIVE_WRITE_BUNDLE_ID: ${{ vars.E2E_LIVE_WRITE_BUNDLE_ID }}
+          E2E_CANDIDATE_BASE_URL: ${{ secrets.E2E_CANDIDATE_BASE_URL }}
+          E2E_CANDIDATE_USERNAME: ${{ secrets.E2E_CANDIDATE_USERNAME }}
+          E2E_CANDIDATE_PASSWORD: ${{ secrets.E2E_CANDIDATE_PASSWORD }}
+
+      - name: Upload sanitized live write failure report
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: candidate-live-write-report
           path: candweb/vue-web/playwright-report-live/
           if-no-files-found: ignore
           retention-days: 3

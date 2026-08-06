@@ -51,7 +51,7 @@ async function installMutationBlocker(page: Page, candidateOrigin: string) {
 function requiredEnvironment(name: string) {
   const value = process.env[name]?.trim()
   if (!value) {
-    throw new Error(`${name} is required for the candidate live read-only regression`)
+    throw new Error(`${name} is required for the candidate live regression`)
   }
   return value
 }

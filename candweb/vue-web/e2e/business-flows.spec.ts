@@ -1,0 +1,211 @@
+import { expect, test } from "@playwright/test"
+import {
+  installCandidateApiMocks,
+  seedAuthenticatedCandidate,
+  type ApiMockContext,
+} from "./support/candidate"
+
+test.beforeEach(async ({ page }) => {
+  await seedAuthenticatedCandidate(page)
+})
+
+test("消息可以批量标记已读并删除", async ({ page }) => {
+  const messages = [
+    {
+      message_id: "message-unread",
+      msg_type: 1,
+      status: 0,
+      title: "回归测试未读消息",
+      content: "这是一条未读消息",
+      created_at: "2026-08-06T08:00:00Z",
+    },
+    {
+      message_id: "message-read",
+      msg_type: 2,
+      status: 1,
+      title: "回归测试已读消息",
+      content: "这是一条已读消息",
+      created_at: "2026-08-05T08:00:00Z",
+    },
+  ]
+  const readBodies: unknown[] = []
+  const deleteBodies: unknown[] = []
+
+  await installCandidateApiMocks(page, ({ pathname, method, body }) => {
+    if (pathname === "/api/messages" && method === "GET") {
+      return { data: { messages, has_more: false, total: messages.length } }
+    }
+    if (pathname === "/api/messages/unread-count") {
+      return { data: { unread_count: messages.filter((message) => message.status === 0).length } }
+    }
+    if (pathname === "/api/messages/read" && method === "PUT") {
+      readBodies.push(body)
+      const ids = new Set((body as { message_ids?: string[] })?.message_ids || [])
+      for (const message of messages) {
+        if (ids.has(message.message_id)) message.status = 1
+      }
+      return { data: { success: true } }
+    }
+    if (pathname === "/api/messages/delete" && method === "POST") {
+      deleteBodies.push(body)
+      const ids = new Set((body as { message_ids?: string[] })?.message_ids || [])
+      for (let index = messages.length - 1; index >= 0; index -= 1) {
+        if (ids.has(messages[index].message_id)) messages.splice(index, 1)
+      }
+      return { data: { success: true } }
+    }
+    return undefined
+  })
+
+  await page.goto("/messages", { waitUntil: "domcontentloaded" })
+  await expect(page.getByText("回归测试未读消息")).toBeVisible()
+
+  await page.getByRole("button", { name: "全部标为已读" }).click()
+  await expect.poll(() => readBodies).toEqual([{ message_ids: ["message-unread"] }])
+  await expect(page.getByRole("button", { name: "全部标为已读" })).toHaveCount(0)
+
+  const readMessageRow = page.locator(".group").filter({ hasText: "回归测试已读消息" })
+  await readMessageRow.getByRole("button", { name: "更多操作" }).click()
+  await readMessageRow.getByRole("button", { name: "删除" }).click()
+
+  await expect.poll(() => deleteBodies).toEqual([{ message_ids: ["message-read"] }])
+  await expect(page.getByText("回归测试已读消息")).toHaveCount(0)
+})
+
+test("会员取消续费后刷新为已取消状态", async ({ page }) => {
+  let cancelled = false
+  let cancelBody: unknown
+
+  const activeRecord = () => ({
+    membership_record_ulid: "membership-record-1",
+    membership_ulid: "membership-plan-1",
+    membership_gpath: "affiliate",
+    membership_name: "Affiliate Membership",
+    status: "ACTIVE",
+    auto_renew: true,
+    started_at: "2026-01-01T00:00:00Z",
+    expires_at: "2027-01-01T00:00:00Z",
+    cancelled_at: cancelled ? "2026-08-06T09:00:00Z" : "",
+  })
+
+  await installCandidateApiMocks(page, ({ pathname, method, body }) => {
+    if (pathname === "/api/membership/plans") {
+      return {
+        data: {
+          memberships: [{
+            membership_ulid: "membership-plan-1",
+            membership_gpath: "affiliate",
+            name: "Affiliate Membership",
+            tier_level: 1,
+          }],
+        },
+      }
+    }
+    if (pathname === "/api/membership/history") {
+      return { data: { user_memberships: [activeRecord()], total: 1 } }
+    }
+    if (pathname === "/api/membership/billings") {
+      return { data: { billings: [], total: 0 } }
+    }
+    if (pathname === "/api/membership/active") {
+      return { data: { membership: activeRecord() } }
+    }
+    if (pathname === "/api/membership/cancel" && method === "POST") {
+      cancelBody = body
+      cancelled = true
+      return { data: { success: true } }
+    }
+    return undefined
+  })
+
+  await page.goto("/membership", { waitUntil: "domcontentloaded" })
+  await page.getByRole("button", { name: "取消续费" }).click()
+
+  const dialog = page.getByRole("dialog")
+  await expect(dialog).toBeVisible()
+  await dialog.getByRole("button", { name: "取消续费" }).click()
+
+  await expect.poll(() => cancelBody).toEqual({
+    membership_record_ulid: "membership-record-1",
+    reason: "user_requested",
+  })
+  await expect(page.getByRole("button", { name: "已取消续费" })).toBeDisabled()
+})
+
+test("测验选择答案后同步草稿并提交结果", async ({ page }) => {
+  const requests: Array<{ pathname: string; body: unknown }> = []
+
+  await installCandidateApiMocks(page, ({ pathname, method, body }) => {
+    if (pathname === "/api/quizzes/attempts/attempt-1/paper") {
+      return {
+        data: {
+          attempt_id: "attempt-1",
+          title: "回归测试测验",
+          remaining_seconds: 600,
+          questions: [{
+            question_id: "question-1",
+            question_text: "Playwright 的主要用途是什么？",
+            question_type: 1,
+            points: 10,
+            options: [
+              { option_id: "option-a", option_text: "浏览器自动化测试" },
+              { option_id: "option-b", option_text: "数据库备份" },
+            ],
+          }],
+        },
+      }
+    }
+    if (pathname === "/api/quizzes/attempts/attempt-1/draft" && method === "POST") {
+      requests.push({ pathname, body })
+      return { data: { success: true } }
+    }
+    if (pathname === "/api/quizzes/attempts/attempt-1/submit" && method === "POST") {
+      requests.push({ pathname, body })
+      return { data: { score: 10, max_score: 10, pass_status: 1 } }
+    }
+    return undefined
+  })
+
+  await page.goto("/quizzes?attemptId=attempt-1", { waitUntil: "domcontentloaded" })
+  await page.getByRole("button", { name: /浏览器自动化测试/ }).click()
+
+  const expectedBody = {
+    submissions: [{ question_id: "question-1", selected_option_ids: ["option-a"] }],
+  }
+  await expect.poll(() => requests.find((request) => request.pathname.endsWith("/draft"))?.body).toEqual(expectedBody)
+
+  await page.getByRole("button", { name: "提交答卷" }).click()
+  await page.getByRole("dialog").getByRole("button", { name: "提交答卷" }).click()
+
+  await expect.poll(() => requests.find((request) => request.pathname.endsWith("/submit"))?.body).toEqual(expectedBody)
+  await expect(page.getByRole("heading", { name: "测验已完成" })).toBeVisible()
+  await expect(page.getByText("10", { exact: true }).first()).toBeVisible()
+})
+
+test("待报名考试从列表进入对应报名页面", async ({ page }) => {
+  await installCandidateApiMocks(page, ({ pathname }: ApiMockContext) => {
+    if (pathname === "/api/exams") {
+      return {
+        data: {
+          exams: [{
+            exam_id: "exam-1",
+            exam_name: "CFtP Regression Exam",
+            course_unit_ulid: "course-unit-1",
+            pipeline_ulid: "pipeline-1",
+            course_unit_status: "COURSE_UNIT_STATUS_WAITING_SIGNUP_EXAM",
+            exam_status: "EXAM_STATUS_UNSPECIFIED",
+          }],
+          total: 1,
+        },
+      }
+    }
+    return undefined
+  })
+
+  await page.goto("/exams", { waitUntil: "domcontentloaded" })
+  await page.getByRole("link", { name: "去报名考试" }).click()
+
+  await expect(page).toHaveURL(
+    "http://127.0.0.1:4173/exams/signup?unitId=course-unit-1&pipelineId=pipeline-1&returnTo=%2Fexams",
+  )
+})

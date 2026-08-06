@@ -193,3 +193,42 @@ test("订单页嵌入式支付成功后留在订单页并刷新订单状态", as
   await expect(completedRow.getByText("已完成", { exact: true })).toBeVisible()
   await expect(completedRow.getByRole("button", { name: "继续支付" })).toHaveCount(0)
 })
+
+test("取消未支付订单后刷新列表并隐藏该订单", async ({ page }) => {
+  const order = orderFixture({
+    order_id: "order-cancel",
+    product_name: "CFtP Cancel Bundle",
+    biz_ref_ulid: "bundle-order-cancel",
+  })
+  let cancelled = false
+  let cancelBody: unknown
+  let orderListRequests = 0
+
+  await installCandidateApiMocks(page, ({ pathname, method, body }) => {
+    if (pathname === "/api/orders") {
+      orderListRequests += 1
+      return orderListResponse(cancelled ? [] : [order])
+    }
+    if (pathname === "/api/orders/cancel" && method === "POST") {
+      cancelBody = body
+      cancelled = true
+      return { data: { success: true } }
+    }
+    return undefined
+  })
+
+  await page.goto("/orders", { waitUntil: "domcontentloaded" })
+  const row = page.locator(".order-row").filter({ hasText: order.product_name })
+  await row.getByRole("button", { name: "取消支付" }).click()
+
+  const dialog = page.getByRole("dialog")
+  await expect(dialog).toBeVisible()
+  await dialog.getByRole("button", { name: "取消订单" }).click()
+
+  await expect.poll(() => cancelBody).toEqual({
+    biz_type: "PIPELINE_BUNDLE",
+    biz_ref_ulid: "bundle-order-cancel",
+  })
+  await expect.poll(() => orderListRequests).toBeGreaterThanOrEqual(2)
+  await expect(row).toHaveCount(0)
+})

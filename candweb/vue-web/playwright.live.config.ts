@@ -39,5 +39,14 @@ export default defineConfig({
         storageState: "test-results/live-auth/candidate.json",
       },
     },
+    {
+      name: "live-write",
+      testMatch: /write\.spec\.ts/,
+      dependencies: ["live-auth"],
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: "test-results/live-auth/candidate.json",
+      },
+    },
   ],
 })
