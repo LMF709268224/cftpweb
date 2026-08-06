@@ -616,10 +616,17 @@ async function submitQuiz(page: Page) {
 }
 
 async function correctAnswersFromQuizDetail(page: Page) {
-  await page.getByTestId("quiz-detail").click()
   const correctOptions = page.locator(
     '[data-testid="quiz-detail-option"][data-correct="true"]',
   )
+  if (!await correctOptions.first().isVisible().catch(() => false)) {
+    const detailButton = page.getByTestId("quiz-detail")
+    await expect(
+      detailButton,
+      "failed quiz must either show grading automatically or expose the detail action",
+    ).toBeVisible({ timeout: 10_000 })
+    await detailButton.click()
+  }
   await expect(correctOptions.first(), "failed quiz must expose detailed correct answers").toBeVisible()
   const answers = await correctOptions.evaluateAll((nodes) => {
     const result: Record<string, string[]> = {}
