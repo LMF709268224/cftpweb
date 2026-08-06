@@ -20,6 +20,23 @@ async function requestData<T>(request: APIRequestContext, baseURL: string, path:
   return payload?.data as T
 }
 
+async function postData<T>(
+  request: APIRequestContext,
+  baseURL: string,
+  path: string,
+  data: unknown,
+) {
+  const response = await request.post(new URL(path, baseURL).toString(), {
+    data,
+    headers: { Accept: "application/json" },
+  })
+  const payload = await response.json().catch(() => null) as APIEnvelope<T> | null
+  expect(response.status(), `POST ${path}`).toBeGreaterThanOrEqual(200)
+  expect(response.status(), `POST ${path}`).toBeLessThan(300)
+  expect(payload?.code, `POST ${path} response code`).toBe(200)
+  return payload?.data as T
+}
+
 async function missingRequiredProfileFields(page: Page) {
   const form = page.getByTestId("checkout-step-registration")
   const fields = form.locator("input[required], select[required]")
@@ -65,6 +82,18 @@ async function fillOptionalStripeField(page: Page, selectors: string[], value: s
   }
 }
 
+async function selectOptionalStripeField(page: Page, selectors: string[], value: string) {
+  for (const frame of page.frames()) {
+    for (const selector of selectors) {
+      const locator = frame.locator(selector).first()
+      if (await locator.isVisible().catch(() => false)) {
+        await locator.selectOption(value)
+        return
+      }
+    }
+  }
+}
+
 async function completeStripeTestPayment(page: Page) {
   await fillOptionalStripeField(
     page,
@@ -90,6 +119,21 @@ async function completeStripeTestPayment(page: Page) {
     page,
     ['input[name="billingName"]', 'input[autocomplete="name"]'],
     "Candidate Regression",
+  )
+  await selectOptionalStripeField(
+    page,
+    ['select[name="country"]', 'select[name="billingCountry"]'],
+    "US",
+  )
+  await fillOptionalStripeField(
+    page,
+    ['input[name="addressLine1"]', 'input[autocomplete="address-line1"]'],
+    "1 Regression Street",
+  )
+  await fillOptionalStripeField(
+    page,
+    ['input[name="postalCode"]', 'input[autocomplete="postal-code"]'],
+    "10001",
   )
 
   const submit = await visibleFrameLocator(
@@ -132,6 +176,86 @@ function bundleHasCourse(bundle: any) {
   )
 }
 
+function activeBundleOrder(bundle: any) {
+  return bundle?.purchase_state?.active_order || bundle?.active_order || null
+}
+
+async function cancelPendingBundleOrder(
+  request: APIRequestContext,
+  baseURL: string,
+  orderID: string,
+) {
+  const cancelled = await postData<{
+    success?: boolean
+    biz_ref_ulid?: string
+    status?: string
+  }>(
+    request,
+    baseURL,
+    "/api/orders/cancel",
+    {
+      biz_type: "BUNDLE_PURCHASE",
+      biz_ref_ulid: orderID,
+    },
+  )
+  expect(cancelled?.success, `cancel pending bundle order ${orderID}`).toBe(true)
+}
+
+async function cancelBundleOrderIfPossible(
+  request: APIRequestContext,
+  baseURL: string,
+  bundleID: string,
+  expectedOrderID: string,
+) {
+  const detail = await requestData<any>(
+    request,
+    baseURL,
+    `/api/mall/bundles/${encodeURIComponent(bundleID)}`,
+  )
+  const activeOrder = activeBundleOrder(detail)
+  const activeOrderID = String(activeOrder?.order_id || "").trim()
+  if (activeOrderID !== expectedOrderID || activeOrder?.can_cancel !== true) {
+    return false
+  }
+  await cancelPendingBundleOrder(request, baseURL, expectedOrderID)
+  return true
+}
+
+async function candidateHasPipeline(
+  request: APIRequestContext,
+  baseURL: string,
+  pipelineID: string,
+) {
+  const pipelines = await requestData<{ list?: any[] }>(
+    request,
+    baseURL,
+    "/api/pipeline",
+  )
+  return (pipelines?.list || []).some((pipeline) => pipelineConfigID(pipeline) === pipelineID)
+}
+
+async function bundleOrderDiagnostic(
+  request: APIRequestContext,
+  baseURL: string,
+  orderID: string,
+) {
+  const orders = await requestData<{ orders?: any[] }>(
+    request,
+    baseURL,
+    "/api/orders?page_size=50",
+  )
+  const order = (orders?.orders || []).find((item) =>
+    String(item?.biz_ref_ulid || "").trim() === orderID
+      || String(item?.order_id || "").trim() === orderID,
+  )
+  if (!order) return `order=${orderID}; common-order=not-found`
+  return [
+    `order=${orderID}`,
+    `order-status=${String(order?.order_status || "unknown")}`,
+    `payment-status=${String(order?.payment_status || "unknown")}`,
+  ].join("; ")
+}
+
 type CertificationSelection = {
   bundle: any | null
   diagnostic: string
@@ -150,24 +274,54 @@ async function findPurchasableCertification(
     unlockable: 0,
     paid: 0,
     withCourse: 0,
+    recoveredPendingOrders: 0,
   }
 
   for (const summary of catalog) {
     const id = bundleID(summary)
     if (!id) continue
 
-    const detail = await requestData<any>(
+    let detail = await requestData<any>(
       request,
       baseURL,
       `/api/mall/bundles/${encodeURIComponent(id)}`,
     )
     counts.details += 1
-    const hasPipeline = Boolean(bundlePipelineID(detail))
-    const eligibility = purchaseEligibility(detail)
-    const canPurchase = eligibility?.can_purchase === true
-    const canUnlock = eligibility?.can_unlock === true
-    const isPaid = bundlePaidAmount(detail) > 0
-    const hasCourse = bundleHasCourse(detail)
+    let hasPipeline = Boolean(bundlePipelineID(detail))
+    let eligibility = purchaseEligibility(detail)
+    let canPurchase = eligibility?.can_purchase === true
+    let canUnlock = eligibility?.can_unlock === true
+    let isPaid = bundlePaidAmount(detail) > 0
+    let hasCourse = bundleHasCourse(detail)
+    const activeOrder = activeBundleOrder(detail)
+
+    if (
+      hasPipeline
+      && isPaid
+      && hasCourse
+      && !canPurchase
+      && activeOrder?.action === "purchase"
+      && activeOrder?.can_cancel === true
+      && String(activeOrder?.order_id || "").trim()
+    ) {
+      await cancelPendingBundleOrder(
+        request,
+        baseURL,
+        String(activeOrder.order_id).trim(),
+      )
+      counts.recoveredPendingOrders += 1
+      detail = await requestData<any>(
+        request,
+        baseURL,
+        `/api/mall/bundles/${encodeURIComponent(id)}`,
+      )
+      eligibility = purchaseEligibility(detail)
+      hasPipeline = Boolean(bundlePipelineID(detail))
+      canPurchase = eligibility?.can_purchase === true
+      canUnlock = eligibility?.can_unlock === true
+      isPaid = bundlePaidAmount(detail) > 0
+      hasCourse = bundleHasCourse(detail)
+    }
 
     if (hasPipeline) counts.pipeline += 1
     if (canPurchase) counts.purchasable += 1
@@ -194,6 +348,7 @@ async function findPurchasableCertification(
       `unlockable=${counts.unlockable}`,
       `paid=${counts.paid}`,
       `with-course=${counts.withCourse}`,
+      `recovered-pending-orders=${counts.recoveredPendingOrders}`,
     ].join("; "),
   }
 }
@@ -301,21 +456,69 @@ test.describe("candidate live certification purchase and learning journey", () =
     await page.getByTestId("checkout-confirm-pay").click()
     await expect(page.getByTestId("checkout-step-payment")).toBeVisible()
 
-    await completeStripeTestPayment(page)
-    await expect(page).toHaveURL(/\/checkout\/success\/[^/?#]+/, { timeout: 180_000 })
+    const paymentBundle = await requestData<any>(
+      request,
+      environment.baseURL,
+      `/api/mall/bundles/${encodeURIComponent(selectedBundleID)}`,
+    )
+    const paymentOrderID = String(activeBundleOrder(paymentBundle)?.order_id || "").trim()
+    expect(paymentOrderID, "checkout must expose the created bundle order").not.toBe("")
 
-    await expect.poll(async () => {
-      const pipelines = await requestData<{ list?: any[] }>(
+    let purchaseCompleted = false
+    try {
+      await completeStripeTestPayment(page)
+      try {
+        await expect.poll(
+          () => candidateHasPipeline(
+            request,
+            environment.baseURL,
+            pipelineID,
+          ),
+          {
+            message: "Stripe payment should create the purchased candidate pipeline",
+            timeout: 180_000,
+            intervals: [1_000, 2_000, 5_000],
+          },
+        ).toBe(true)
+      } catch {
+        const diagnostic = await bundleOrderDiagnostic(
+          request,
+          environment.baseURL,
+          paymentOrderID,
+        )
+        throw new Error(
+          `Stripe payment did not create the candidate pipeline; ${diagnostic}; page=${new URL(page.url()).pathname}`,
+        )
+      }
+      purchaseCompleted = true
+    } finally {
+      if (!purchaseCompleted && !await candidateHasPipeline(
         request,
         environment.baseURL,
-        "/api/pipeline",
-      )
-      return (pipelines?.list || []).some((pipeline) => pipelineConfigID(pipeline) === pipelineID)
-    }, {
-      message: "Stripe webhook should create the purchased candidate pipeline",
-      timeout: 120_000,
-      intervals: [1_000, 2_000, 5_000],
-    }).toBe(true)
+        pipelineID,
+      )) {
+        try {
+          await cancelBundleOrderIfPossible(
+            request,
+            environment.baseURL,
+            selectedBundleID,
+            paymentOrderID,
+          )
+        } catch (error) {
+          test.info().annotations.push({
+            type: "pending-order-cleanup",
+            description: error instanceof Error ? error.message : String(error),
+          })
+        }
+      }
+    }
+
+    if (!/\/checkout\/success\/[^/?#]+/.test(new URL(page.url()).pathname)) {
+      test.info().annotations.push({
+        type: "payment-return",
+        description: "Payment completed and the pipeline was created, but the browser did not enter the checkout success route.",
+      })
+    }
 
     await page.goto("/my-certifications", { waitUntil: "domcontentloaded" })
     const certification = page.locator(

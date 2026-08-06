@@ -53,6 +53,7 @@ export default defineConfig({
       name: "live-journey",
       testMatch: /journey\.spec\.ts/,
       dependencies: ["live-auth"],
+      retries: 0,
       use: {
         ...devices["Desktop Chrome"],
         storageState: "test-results/live-auth/candidate.json",
