@@ -714,21 +714,21 @@ onBeforeUnmount(() => {
               </span>
             </div>
             <div class="text-right">
-              <button v-if="canContinuePayment(order)" @click.stop="continueOrderPayment(order)" class="pointer-events-auto inline-flex h-8 min-w-[148px] items-center justify-center whitespace-nowrap rounded-lg bg-primary/10 px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/20 md:w-full">
+              <button v-if="canContinuePayment(order)" @click.stop="continueOrderPayment(order)" class="pointer-events-auto inline-flex h-10 min-w-[148px] items-center justify-center whitespace-nowrap rounded-lg bg-primary/10 px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/20 md:h-8 md:w-full">
                 {{ t.orders.continuePayment }}
               </button>
               <p v-else class="text-lg font-semibold text-card-foreground">{{ order.amount }}</p>
             </div>
-            <button v-if="canCancelOrder(order)" type="button" class="pointer-events-auto inline-flex h-8 w-full items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-600 transition-colors hover:border-red-300 hover:bg-red-100" @click.stop="openCancelConfirm(order)">
+            <button v-if="canCancelOrder(order)" type="button" class="pointer-events-auto inline-flex h-10 w-full items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-600 transition-colors hover:border-red-300 hover:bg-red-100 md:h-8" @click.stop="openCancelConfirm(order)">
               <Loader2 v-if="cancelLoading === order.bizRefUlid" class="h-4 w-4 animate-spin" />
               {{ t.orders.cancelPayment }}
             </button>
-            <span v-else class="h-8 w-[112px]" />
-            <button v-if="order.canViewInvoice" @click.stop="viewInvoice(order.invoiceOrderId)" class="pointer-events-auto inline-flex h-9 w-[112px] items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-primary/10 px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/20">
+            <span v-else class="h-10 w-[112px] md:h-8" />
+            <button v-if="order.canViewInvoice" @click.stop="viewInvoice(order.invoiceOrderId)" class="pointer-events-auto inline-flex h-10 w-[112px] items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-primary/10 px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/20 md:h-9">
               <Loader2 v-if="invoiceLoading === order.invoiceOrderId" class="h-4 w-4 animate-spin" />
               {{ t.orders.viewInvoice }}
             </button>
-            <span v-else class="h-9 w-[112px]" />
+            <span v-else class="h-10 w-[112px] md:h-9" />
 
             <Loader2 v-if="detailLoadingOrderId === order.id" class="h-5 w-5 animate-spin text-muted-foreground" />
             <ChevronRight v-else class="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1" />
