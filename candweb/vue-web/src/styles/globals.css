@@ -644,7 +644,7 @@
     }
 
     .candidate-portal .page-panel > main {
-      padding-inline: 1rem;
+      padding-inline: 0.75rem !important;
     }
   }
 }
