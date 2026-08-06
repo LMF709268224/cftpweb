@@ -151,6 +151,9 @@ onMounted(() => {
             <div class="mt-6">
               <RouterLink
                 :to="certificationDetailHref(course)"
+                data-testid="owned-certification-details"
+                :data-pipeline-config-id="course.configId"
+                :data-pipeline-instance-id="course.instanceId"
                 class="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-primary px-3 text-sm font-bold text-white shadow-sm shadow-primary/20 transition-colors hover:bg-primary/90"
                 :title="copy.viewDetailsHint"
               >

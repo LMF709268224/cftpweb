@@ -27,6 +27,8 @@ Use `npm run test:e2e:headed` to watch the browser and
 - Order status and action consistency
 - Hosted payment return synchronization
 - Embedded Stripe completion without leaving the orders page
+- Complete certification checkout through mocked Stripe and appearance in My Certifications
+- Complete course lesson and quiz submission journey
 - Empty-data rendering and JavaScript crash detection for the 12 main
   candidate pages
 
@@ -35,6 +37,20 @@ behavior. New main pages should also be added to `portal-smoke.spec.ts`.
 
 Real Casdoor, Stripe test-mode, and exam-provider smoke tests belong in a
 separate staging suite so this fast regression suite remains repeatable.
+
+The live suite also provides the manually gated `live-journey` project for a
+dedicated Stripe Test Mode certification purchase and course-learning account:
+
+```powershell
+npm run test:e2e:live:journey
+```
+
+It requires the configured bundle, pipeline, course, lesson, and quiz repository
+variables documented in `docs/开发维护/考生系统回归测试任务台账.md`. The run creates a
+paid test order and irreversible candidate progress, so Admin cleanup and
+fixture reset are required before rerunning it. Use the dedicated
+`E2E_JOURNEY_USERNAME` and `E2E_JOURNEY_PASSWORD` secrets rather than the
+read-only smoke account.
 
 ## Live read-only regression
 

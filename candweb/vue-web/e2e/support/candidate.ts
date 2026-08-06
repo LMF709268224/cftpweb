@@ -25,9 +25,15 @@ export const candidateUser = {
   email: "candidate-e2e@example.test",
   first_name: "Regression",
   last_name: "Candidate",
+  gender: "male",
+  birthday: "1990-01-01",
   phone: "+65 8000 0000",
+  phone_country_code: "SG",
   country: "SG",
   region: "SG",
+  city: "Singapore",
+  address_text: "1 Regression Road",
+  postal_code: "018956",
 }
 
 function responseCode(status: number, code?: number) {

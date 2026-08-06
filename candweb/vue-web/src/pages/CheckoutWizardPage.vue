@@ -1556,7 +1556,7 @@ async function confirmAndPay() {
         <template v-else>
         <div class="checkout-card max-w-5xl rounded-[16px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
           <!-- Step 1: Selection -->
-          <div v-if="currentStep === 1" class="checkout-step-one space-y-8">
+          <div v-if="currentStep === 1" data-testid="checkout-step-selection" class="checkout-step-one space-y-8">
             <div class="checkout-step-one-title mb-4">
               <h2 class="text-2xl font-bold">{{ t.checkoutWizard.yourLevel1Paper.replace(levelPlaceholder, "1") }}</h2>
             </div>
@@ -1763,7 +1763,7 @@ async function confirmAndPay() {
           </div>
 
           <!-- Step 2: Registration -->
-          <form id="checkout-registration-form" v-if="currentStep === 2" class="space-y-6" novalidate @submit.prevent="nextFromStep2">
+          <form id="checkout-registration-form" v-if="currentStep === 2" data-testid="checkout-step-registration" class="space-y-6" novalidate @submit.prevent="nextFromStep2">
             <div class="grid gap-4 sm:grid-cols-2">
               <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formFirstName }}</span><input v-model="formData.first_name" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" required /></label>
               <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formLastName }}</span><input v-model="formData.last_name" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" required /></label>
@@ -1839,7 +1839,7 @@ async function confirmAndPay() {
 
             <div v-if="!isMembershipBundle" class="mt-6 border-t border-border pt-6">
               <label class="flex items-center gap-3">
-                <input v-model="formData.agreement" type="checkbox" class="h-4 w-4 shrink-0 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500" :required="!isMembershipBundle" />
+                <input v-model="formData.agreement" data-testid="checkout-agreement" type="checkbox" class="h-4 w-4 shrink-0 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500" :required="!isMembershipBundle" />
                 <span class="text-sm font-medium text-foreground">{{ t.examSignup.agreement }}</span>
               </label>
             </div>
@@ -1847,7 +1847,7 @@ async function confirmAndPay() {
           </form>
 
           <!-- Step 3: Review -->
-          <div v-if="currentStep === 3" class="space-y-6">
+          <div v-if="currentStep === 3" data-testid="checkout-step-review" class="space-y-6">
             <h2 class="text-xl font-semibold">{{ t.checkoutWizard.review }}</h2>
             <div class="rounded-lg border border-border p-4 text-sm space-y-2">
               <div class="grid grid-cols-3 gap-2">
@@ -1904,7 +1904,7 @@ async function confirmAndPay() {
           </div>
 
           <!-- Step 4: Payment -->
-          <div v-if="currentStep === 4" class="space-y-6">
+          <div v-if="currentStep === 4" data-testid="checkout-step-payment" class="space-y-6">
             <div>
               <h2 class="text-xl font-semibold">
                 {{ activeOrderAction === "credential_application"
@@ -1946,7 +1946,7 @@ async function confirmAndPay() {
             <ArrowLeft class="h-4 w-4" />
             {{ t.checkoutWizard.back }}
           </button>
-          <button form="checkout-registration-form" type="submit" class="checkout-form-next-button btn rounded-full px-8 text-white" :disabled="loading">
+          <button form="checkout-registration-form" data-testid="checkout-next" type="submit" class="checkout-form-next-button btn rounded-full px-8 text-white" :disabled="loading">
             <template v-if="loading"><Loader2 class="h-4 w-4 animate-spin" /> {{ t.examSignup.submitting }}</template>
             <template v-else>{{ t.checkoutWizard.next }} <Send class="ml-2 h-4 w-4" /></template>
           </button>
@@ -1957,7 +1957,7 @@ async function confirmAndPay() {
             <ArrowLeft class="h-4 w-4" />
             {{ t.checkoutWizard.back }}
           </button>
-          <button class="checkout-form-next-button btn btn-vivid" :disabled="loading" @click="confirmAndPay">
+          <button data-testid="checkout-confirm-pay" class="checkout-form-next-button btn btn-vivid" :disabled="loading" @click="confirmAndPay">
             <template v-if="loading"><Loader2 class="h-4 w-4 animate-spin" /> {{ t.checkoutWizard.processing }}</template>
             <template v-else>{{ t.checkoutWizard.confirmAndPay }} <ArrowRight class="h-4 w-4" /></template>
           </button>

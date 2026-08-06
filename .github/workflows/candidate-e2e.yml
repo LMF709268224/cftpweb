@@ -21,13 +21,18 @@ on:
         required: true
         default: false
         type: boolean
+      run_live_journey:
+        description: Run paid certification and learning journeys against Stripe Test Mode
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
 
 concurrency:
-  group: candidate-regression-${{ github.workflow }}-${{ github.ref }}-${{ github.event_name == 'workflow_dispatch' && inputs.run_live_write && 'live-write' || 'regular' }}
-  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' || inputs.run_live_write != true }}
+  group: candidate-regression-${{ github.workflow }}-${{ github.ref }}-${{ github.event_name == 'workflow_dispatch' && (inputs.run_live_write || inputs.run_live_journey) && 'live-mutation' || 'regular' }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' || (inputs.run_live_write != true && inputs.run_live_journey != true) }}
 
 jobs:
   backend:
@@ -133,7 +138,7 @@ jobs:
 
   live:
     name: Candidate live regression
-    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.run_live_readonly || inputs.run_live_write) }}
+    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.run_live_readonly || inputs.run_live_write || inputs.run_live_journey) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -152,14 +157,24 @@ jobs:
           cache: npm
           cache-dependency-path: candweb/vue-web/package-lock.json
 
-      - name: Validate live regression secrets
+      - name: Validate live regression base URL
         env:
           E2E_CANDIDATE_BASE_URL: ${{ secrets.E2E_CANDIDATE_BASE_URL }}
+        shell: bash
+        run: |
+          if [ -z "$E2E_CANDIDATE_BASE_URL" ]; then
+            echo "::error::Repository secret E2E_CANDIDATE_BASE_URL is required for the live regression."
+            exit 1
+          fi
+
+      - name: Validate live smoke account secrets
+        if: ${{ inputs.run_live_readonly || inputs.run_live_write }}
+        env:
           E2E_CANDIDATE_USERNAME: ${{ secrets.E2E_CANDIDATE_USERNAME }}
           E2E_CANDIDATE_PASSWORD: ${{ secrets.E2E_CANDIDATE_PASSWORD }}
         shell: bash
         run: |
-          for name in E2E_CANDIDATE_BASE_URL E2E_CANDIDATE_USERNAME E2E_CANDIDATE_PASSWORD; do
+          for name in E2E_CANDIDATE_USERNAME E2E_CANDIDATE_PASSWORD; do
             if [ -z "${!name}" ]; then
               echo "::error::Repository secret ${name} is required for the live regression."
               exit 1
@@ -194,6 +209,41 @@ jobs:
           E2E_CANDIDATE_BASE_URL: ${{ secrets.E2E_CANDIDATE_BASE_URL }}
           E2E_CANDIDATE_USERNAME: ${{ secrets.E2E_CANDIDATE_USERNAME }}
           E2E_CANDIDATE_PASSWORD: ${{ secrets.E2E_CANDIDATE_PASSWORD }}
+
+      - name: Validate live certification journey variables
+        if: ${{ inputs.run_live_journey }}
+        env:
+          E2E_JOURNEY_USERNAME: ${{ secrets.E2E_JOURNEY_USERNAME }}
+          E2E_JOURNEY_PASSWORD: ${{ secrets.E2E_JOURNEY_PASSWORD }}
+          E2E_LIVE_PURCHASE_BUNDLE_ID: ${{ vars.E2E_LIVE_PURCHASE_BUNDLE_ID }}
+          E2E_LIVE_LEARNING_PIPELINE_ID: ${{ vars.E2E_LIVE_LEARNING_PIPELINE_ID }}
+          E2E_LIVE_LEARNING_COURSE_ID: ${{ vars.E2E_LIVE_LEARNING_COURSE_ID }}
+          E2E_LIVE_LEARNING_LESSON_ID: ${{ vars.E2E_LIVE_LEARNING_LESSON_ID }}
+          E2E_LIVE_LEARNING_QUIZ_ID: ${{ vars.E2E_LIVE_LEARNING_QUIZ_ID }}
+        shell: bash
+        run: |
+          for name in E2E_JOURNEY_USERNAME E2E_JOURNEY_PASSWORD E2E_LIVE_PURCHASE_BUNDLE_ID E2E_LIVE_LEARNING_PIPELINE_ID E2E_LIVE_LEARNING_COURSE_ID E2E_LIVE_LEARNING_LESSON_ID E2E_LIVE_LEARNING_QUIZ_ID; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Repository secret or variable ${name} is required for the paid certification journey."
+              exit 1
+            fi
+          done
+
+      - name: Run paid certification and learning journeys
+        if: ${{ inputs.run_live_journey }}
+        run: npm run test:e2e:live:journey
+        env:
+          CI: "true"
+          E2E_LIVE_JOURNEY_ENABLED: "true"
+          E2E_CANDIDATE_BASE_URL: ${{ secrets.E2E_CANDIDATE_BASE_URL }}
+          E2E_CANDIDATE_USERNAME: ${{ secrets.E2E_JOURNEY_USERNAME }}
+          E2E_CANDIDATE_PASSWORD: ${{ secrets.E2E_JOURNEY_PASSWORD }}
+          E2E_LIVE_PURCHASE_BUNDLE_ID: ${{ vars.E2E_LIVE_PURCHASE_BUNDLE_ID }}
+          E2E_LIVE_LEARNING_PIPELINE_ID: ${{ vars.E2E_LIVE_LEARNING_PIPELINE_ID }}
+          E2E_LIVE_LEARNING_COURSE_ID: ${{ vars.E2E_LIVE_LEARNING_COURSE_ID }}
+          E2E_LIVE_LEARNING_LESSON_ID: ${{ vars.E2E_LIVE_LEARNING_LESSON_ID }}
+          E2E_LIVE_LEARNING_QUIZ_ID: ${{ vars.E2E_LIVE_LEARNING_QUIZ_ID }}
+          E2E_STRIPE_TEST_EMAIL: ${{ vars.E2E_STRIPE_TEST_EMAIL }}
 
       - name: Upload sanitized live failure report
         if: ${{ failure() }}

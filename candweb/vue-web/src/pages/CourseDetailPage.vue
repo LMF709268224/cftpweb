@@ -1310,6 +1310,8 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
               v-for="(unit, unitIndex) in visibleStageUnits(stage)"
               :key="unit.unit_id || unit.glms_course_id || `${stageIndex}-${unitIndex}`"
               :to="learningHref(unit.glms_course_id)"
+              data-testid="course-unit-link"
+              :data-course-id="unit.glms_course_id || ''"
               class="flex items-center justify-between gap-4 border-t border-slate-50 px-5 py-4 transition-colors first:border-t-0 hover:bg-slate-50"
             >
               <div class="flex items-center gap-3">

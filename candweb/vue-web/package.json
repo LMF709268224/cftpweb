@@ -17,6 +17,8 @@
     "test:e2e:live:headed": "playwright test --config playwright.live.config.ts --project live-readonly --headed",
     "test:e2e:live:write": "playwright test --config playwright.live.config.ts --project live-write",
     "test:e2e:live:write:headed": "playwright test --config playwright.live.config.ts --project live-write --headed",
+    "test:e2e:live:journey": "playwright test --config playwright.live.config.ts --project live-journey",
+    "test:e2e:live:journey:headed": "playwright test --config playwright.live.config.ts --project live-journey --headed",
     "test:e2e:install": "playwright install chromium",
     "test:e2e:report": "playwright show-report"
   },

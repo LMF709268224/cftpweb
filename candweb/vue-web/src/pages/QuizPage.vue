@@ -368,7 +368,7 @@ onBeforeRouteLeave(() => {
       <button class="btn btn-primary cursor-pointer" @click="goBackToLearning"><ChevronLeft class="h-4 w-4" /> {{ t.common.back }}</button>
     </div>
 
-    <div v-else-if="result" class="mx-auto max-w-2xl py-12">
+    <div v-else-if="result" data-testid="quiz-result" class="mx-auto max-w-2xl py-12">
       <div class="card border-t-4 border-t-primary p-8 text-center shadow-lg">
         <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
           <CheckCircle2 class="h-8 w-8 text-primary" />
@@ -470,6 +470,9 @@ onBeforeRouteLeave(() => {
               <button
                 v-for="option in question.options || []"
                 :key="option.option_id"
+                data-testid="quiz-option"
+                :data-question-id="question.question_id"
+                :data-option-id="option.option_id"
                 :class="[
                   'flex w-full cursor-pointer items-start gap-3 rounded-md border p-4 text-left transition-colors',
                   (answers[question.question_id] || []).includes(option.option_id)
@@ -494,7 +497,7 @@ onBeforeRouteLeave(() => {
 
       <div class="sticky bottom-4 flex flex-col items-center justify-between gap-4 rounded-md bg-white/95 p-4 shadow-sm backdrop-blur-md sm:flex-row sm:p-6">
         <div class="text-sm text-muted-foreground">{{ formatQuizAnsweredCount(answeredCount, questions.length) }}</div>
-        <button type="button" class="btn btn-primary w-full cursor-pointer px-8 disabled:cursor-not-allowed sm:w-auto" :disabled="submitting || !allAnswered" @click="openSubmitConfirm">
+        <button type="button" data-testid="quiz-submit" class="btn btn-primary w-full cursor-pointer px-8 disabled:cursor-not-allowed sm:w-auto" :disabled="submitting || !allAnswered" @click="openSubmitConfirm">
           <span v-if="submitting" class="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-r-transparent" />
           <FileText v-else class="h-4 w-4" />
           {{ submitting ? t.common.loading : t.learning?.quizSubmit }}
@@ -544,7 +547,7 @@ onBeforeRouteLeave(() => {
           <button type="button" class="btn btn-outline min-w-20 rounded-lg" @click="closeSubmitConfirm">
             {{ t.common.cancel }}
           </button>
-          <button type="button" class="btn btn-primary min-w-24 rounded-lg shadow-sm shadow-primary/20" @click="confirmSubmitQuiz">
+          <button type="button" data-testid="quiz-submit-confirm" class="btn btn-primary min-w-24 rounded-lg shadow-sm shadow-primary/20" @click="confirmSubmitQuiz">
             {{ t.learning?.quizSubmit }}
           </button>
         </div>

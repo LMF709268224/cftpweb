@@ -164,6 +164,9 @@ async function handleCardClick() {
   <component
     :is="effectivePurchased ? RouterLink : 'div'"
     :to="effectivePurchased ? purchasedTarget : undefined"
+    data-testid="certification-card"
+    :data-bundle-id="id"
+    :data-pipeline-id="pipelineId || ''"
     class="group flex h-full flex-col overflow-hidden rounded-lg border border-[#ccd7e8] bg-white transition-colors duration-200 hover:border-primary"
     :class="!effectivePurchased && 'cursor-pointer'"
     @click="handleCardClick"

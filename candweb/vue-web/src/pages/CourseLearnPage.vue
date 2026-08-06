@@ -1628,6 +1628,8 @@ watch(selectedMaterial, () => {
           <template v-for="(step, index) in certificationFlowSteps" :key="step.id">
             <button
               type="button"
+              data-testid="certification-flow-step"
+              :data-step-id="step.id"
               :disabled="!canSelectFlowStep(step)"
               class="group flex min-w-0 flex-col items-center gap-2 disabled:cursor-not-allowed"
               @click="selectHeaderFlowStep(step)"
@@ -1693,6 +1695,8 @@ watch(selectedMaterial, () => {
               v-for="step in certificationFlowSteps"
               :key="step.id"
               type="button"
+              data-testid="certification-flow-step"
+              :data-step-id="step.id"
               :disabled="!canSelectFlowStep(step)"
               :class="[
                 'flex w-full items-center gap-3 rounded-md px-4 py-3 text-left text-sm transition-all disabled:cursor-not-allowed',
@@ -1729,6 +1733,8 @@ watch(selectedMaterial, () => {
                 v-for="tab in resourceContentTabs"
                 :key="tab.id"
                 type="button"
+                data-testid="learning-tab"
+                :data-tab-id="tab.id"
                 :class="[
                   'flex w-full items-center gap-3 rounded-md px-4 py-3 text-left text-sm transition-all',
                   activeContentTab === tab.id ? 'bg-primary/10 text-primary' : 'text-slate-700 hover:bg-muted',
@@ -1883,6 +1889,7 @@ watch(selectedMaterial, () => {
               <span class="font-bold text-foreground">{{ t.learning.quizAttemptsUnlimited }}</span>
             </div>
             <button
+              data-testid="open-quiz-list"
               class="btn btn-vivid mx-auto mt-5 rounded-md px-7 py-2 text-sm font-semibold"
               :disabled="quizTasks.length === 0"
               @click="quizChoicesExpanded = true"
@@ -1925,7 +1932,7 @@ watch(selectedMaterial, () => {
                   </div>
                   <div class="text-sm font-medium text-foreground">{{ index + 1 }}. {{ task.title }}</div>
                   <div class="mt-auto flex items-center gap-2 pt-3">
-                    <button class="btn btn-primary flex-1 rounded-lg py-1.5 text-xs" :disabled="!task.quizId || task.completed || Boolean(startingQuizId)" @click="startQuiz(task.quizId)">
+                    <button data-testid="start-quiz" :data-quiz-id="task.quizId" class="btn btn-primary flex-1 rounded-lg py-1.5 text-xs" :disabled="!task.quizId || task.completed || Boolean(startingQuizId)" @click="startQuiz(task.quizId)">
                       <Loader2 v-if="task.quizId && startingQuizId === task.quizId" class="h-4 w-4 animate-spin" />
                       {{ task.completed ? t.learning.completedTag : t.learning.takeQuiz }}
                     </button>
@@ -1958,7 +1965,7 @@ watch(selectedMaterial, () => {
                   </div>
                   <div class="text-sm font-medium text-foreground">{{ index + 1 }}. {{ task.title }}</div>
                   <div class="mt-auto flex items-center gap-2 pt-3">
-                    <button class="btn btn-primary flex-1 rounded-lg py-1.5 text-xs" :disabled="!task.quizId || task.completed || Boolean(startingQuizId)" @click="startQuiz(task.quizId)">
+                    <button data-testid="start-quiz" :data-quiz-id="task.quizId" class="btn btn-primary flex-1 rounded-lg py-1.5 text-xs" :disabled="!task.quizId || task.completed || Boolean(startingQuizId)" @click="startQuiz(task.quizId)">
                       <Loader2 v-if="task.quizId && startingQuizId === task.quizId" class="h-4 w-4 animate-spin" />
                       {{ task.completed ? t.learning.completedTag : t.learning.takeQuiz }}
                     </button>
@@ -1987,6 +1994,9 @@ watch(selectedMaterial, () => {
                 v-for="(lessonDetail, index) in lessons"
                 :key="lessonIdOf(lessonDetail.lesson) || `lesson-${index}`"
                 type="button"
+                data-testid="course-lesson"
+                :data-lesson-id="lessonIdOf(lessonDetail.lesson)"
+                :data-completed="lessonFullyCompleted(lessonIdOf(lessonDetail.lesson)) ? 'true' : 'false'"
                 :class="[
                   'flex w-full items-start gap-3 rounded-md border px-3 py-3 text-left text-sm transition-all',
                   lessonIdOf(lessonDetail.lesson) === activeLessonId
@@ -2025,6 +2035,7 @@ watch(selectedMaterial, () => {
               <h2 class="text-left text-[20px] font-bold leading-snug text-foreground 2xl:text-center">{{ lesson?.title || t.common.unknownCourse }}</h2>
               <div class="flex justify-start gap-2 2xl:justify-end">
                 <button
+                  data-testid="complete-lesson"
                   :class="[
                     'btn whitespace-nowrap',
                     currentLessonCompleted ? 'border border-emerald-200 bg-emerald-50 text-emerald-700 disabled:opacity-100' : 'btn-primary',
