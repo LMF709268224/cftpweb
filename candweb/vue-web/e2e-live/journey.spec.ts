@@ -116,9 +116,14 @@ function pipelineConfigID(pipeline: any) {
   return String(pipeline?.pipeline_cc_ulid || "").trim()
 }
 
-function bundlePaymentTotal(bundle: any) {
+function bundlePaidAmount(bundle: any) {
   const preview = bundle?.purchase_state?.payment_preview || bundle?.payment_preview || {}
-  return Number(preview?.total || 0)
+  const previewTotal = Number(preview?.total || 0)
+  if (previewTotal > 0) return previewTotal
+  return Math.max(
+    Number(bundle?.display_amount_min || 0),
+    Number(bundle?.display_amount_max || 0),
+  )
 }
 
 function bundleHasCourse(bundle: any) {
@@ -127,11 +132,26 @@ function bundleHasCourse(bundle: any) {
   )
 }
 
+type CertificationSelection = {
+  bundle: any | null
+  diagnostic: string
+}
+
 async function findPurchasableCertification(
   request: APIRequestContext,
   baseURL: string,
   catalog: any[],
-) {
+): Promise<CertificationSelection> {
+  const counts = {
+    catalog: catalog.length,
+    details: 0,
+    pipeline: 0,
+    purchasable: 0,
+    unlockable: 0,
+    paid: 0,
+    withCourse: 0,
+  }
+
   for (const summary of catalog) {
     const id = bundleID(summary)
     if (!id) continue
@@ -141,16 +161,41 @@ async function findPurchasableCertification(
       baseURL,
       `/api/mall/bundles/${encodeURIComponent(id)}`,
     )
-    if (
-      bundlePipelineID(detail)
-      && purchaseEligibility(detail)?.can_purchase === true
-      && bundlePaymentTotal(detail) > 0
-      && bundleHasCourse(detail)
-    ) {
-      return detail
+    counts.details += 1
+    const hasPipeline = Boolean(bundlePipelineID(detail))
+    const eligibility = purchaseEligibility(detail)
+    const canPurchase = eligibility?.can_purchase === true
+    const canUnlock = eligibility?.can_unlock === true
+    const isPaid = bundlePaidAmount(detail) > 0
+    const hasCourse = bundleHasCourse(detail)
+
+    if (hasPipeline) counts.pipeline += 1
+    if (canPurchase) counts.purchasable += 1
+    if (canUnlock) counts.unlockable += 1
+    if (isPaid) counts.paid += 1
+    if (hasCourse) counts.withCourse += 1
+
+    if (hasPipeline && canPurchase && isPaid && hasCourse) {
+      return {
+        bundle: detail,
+        diagnostic: "",
+      }
     }
   }
-  return null
+
+  return {
+    bundle: null,
+    diagnostic: [
+      "No direct paid certification purchase is currently available for the configured candidate.",
+      `catalog=${counts.catalog}`,
+      `details=${counts.details}`,
+      `pipeline=${counts.pipeline}`,
+      `purchasable=${counts.purchasable}`,
+      `unlockable=${counts.unlockable}`,
+      `paid=${counts.paid}`,
+      `with-course=${counts.withCourse}`,
+    ].join("; "),
+  }
 }
 
 test.describe("candidate live certification purchase and learning journey", () => {
@@ -165,19 +210,20 @@ test.describe("candidate live certification purchase and learning journey", () =
     const catalog = await requestData<{ bundles?: any[] }>(
       request,
       environment.baseURL,
-      "/api/mall/bundles",
+      "/api/mall/bundles?page_size=100",
     )
-    const bundle = await findPurchasableCertification(
+    const selection = await findPurchasableCertification(
       request,
       environment.baseURL,
       catalog?.bundles || [],
     )
 
     expect(
-      bundle,
-      "The configured candidate must have at least one currently purchasable certification",
+      selection.bundle,
+      selection.diagnostic,
     ).toBeTruthy()
 
+    const bundle = selection.bundle
     const selectedBundleID = bundleID(bundle)
     const pipelineID = bundlePipelineID(bundle)
     await page.goto("/certifications", { waitUntil: "domcontentloaded" })
