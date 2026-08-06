@@ -212,7 +212,7 @@ async function handleLogout() {
         <RouterLink to="/dashboard" class="flex min-w-0 items-center" @click="mobileMenuOpen = false">
           <img src="/gfi/gfi-logo-blue.svg" :alt="t.common.instituteName" class="h-auto w-[112px] object-contain brightness-0 invert" />
         </RouterLink>
-        <button class="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white" @click="mobileMenuOpen = false">
+        <button class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white" @click="mobileMenuOpen = false">
           <X class="h-5 w-5" />
         </button>
       </div>
@@ -232,7 +232,7 @@ async function handleLogout() {
           <RouterLink
             :to="item.href"
             :class="[
-              'group/nav-item flex h-9 items-center justify-between rounded-lg px-4 transition-colors duration-200',
+              'group/nav-item flex h-10 items-center justify-between rounded-lg px-4 transition-colors duration-200',
               isNavItemActive(item.href) ? 'bg-sidebar-accent font-semibold text-white' : 'text-white/80 hover:bg-white/10 hover:text-white',
             ]"
             @click="mobileMenuOpen = false"
@@ -248,7 +248,7 @@ async function handleLogout() {
 
       <div class="px-4 pb-5">
         <button
-          class="mb-3 flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-white/25 bg-transparent px-4 text-sm font-semibold text-white transition-colors hover:border-white/50 hover:bg-white/10"
+          class="mb-3 flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-white/25 bg-transparent px-4 text-sm font-semibold text-white transition-colors hover:border-white/50 hover:bg-white/10"
           type="button"
           @click="changeLanguage(lang === 'zh' ? 'en' : 'zh')"
         >

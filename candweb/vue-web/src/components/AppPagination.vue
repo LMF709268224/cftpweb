@@ -76,16 +76,16 @@ const mobilePageItems = computed<(number | "...")[]>(() => {
   const total = normalizedTotalPages.value
   const current = props.page
 
-  if (total <= 5) {
+  if (total <= 4) {
     return Array.from({ length: total }, (_, index) => index + 1)
   }
 
-  if (current <= 3) {
-    return [1, 2, 3, "...", total]
+  if (current <= 2) {
+    return [1, 2, "...", total]
   }
 
-  if (current >= total - 2) {
-    return [1, "...", total - 2, total - 1, total]
+  if (current >= total - 1) {
+    return [1, "...", total - 1, total]
   }
 
   return [1, "...", current, "...", total]
@@ -495,7 +495,7 @@ function submitPageJump() {
 
 @media (max-width: 640px) {
   .app-pagination {
-    grid-template-columns: auto 1fr;
+    grid-template-columns: 1fr;
     align-items: center;
     justify-items: stretch;
     gap: 0.75rem;
@@ -504,8 +504,8 @@ function submitPageJump() {
   }
 
   .pagination-pages {
-    justify-content: flex-end;
-    gap: 0.4rem;
+    justify-content: center;
+    gap: 0.25rem;
     flex-wrap: nowrap;
   }
 
@@ -518,7 +518,7 @@ function submitPageJump() {
   }
 
   .pagination-total {
-    justify-content: flex-start;
+    justify-content: center;
     gap: 0;
     font-size: 0.95rem;
   }
@@ -530,8 +530,13 @@ function submitPageJump() {
 
   .page-arrow,
   .page-number {
-    height: 1.9rem;
-    min-width: 1.9rem;
+    height: 2.5rem;
+    min-width: 2.5rem;
+  }
+
+  .page-ellipsis {
+    min-width: 1rem;
+    text-align: center;
   }
 }
 </style>
