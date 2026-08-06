@@ -9,6 +9,51 @@ type APIEnvelope<T> = {
   data?: T
 }
 
+type QuizAnswerKey = Map<string, string[]>
+
+function requiredJourneyEnvironment(name: string) {
+  const value = process.env[name]?.trim()
+  if (!value) {
+    throw new Error(`${name} is required for the candidate paid journey`)
+  }
+  return value
+}
+
+function liveJourneyConfiguration() {
+  const bundleID = requiredJourneyEnvironment("E2E_LIVE_JOURNEY_BUNDLE_ID")
+  const rawAnswerKey = requiredJourneyEnvironment("E2E_LIVE_QUIZ_ANSWERS_JSON")
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(rawAnswerKey)
+  } catch {
+    throw new Error(
+      "E2E_LIVE_QUIZ_ANSWERS_JSON must be a JSON object mapping question IDs to option ID arrays",
+    )
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error(
+      "E2E_LIVE_QUIZ_ANSWERS_JSON must be a JSON object mapping question IDs to option ID arrays",
+    )
+  }
+
+  const answerKey: QuizAnswerKey = new Map()
+  for (const [questionID, rawOptionIDs] of Object.entries(parsed)) {
+    const optionIDs = Array.isArray(rawOptionIDs)
+      ? [...new Set(rawOptionIDs.map((value) => String(value).trim()).filter(Boolean))]
+      : []
+    if (!questionID.trim() || optionIDs.length === 0) {
+      throw new Error(
+        "E2E_LIVE_QUIZ_ANSWERS_JSON must provide at least one option ID for every question ID",
+      )
+    }
+    answerKey.set(questionID.trim(), optionIDs)
+  }
+  if (answerKey.size === 0) {
+    throw new Error("E2E_LIVE_QUIZ_ANSWERS_JSON must contain at least one question")
+  }
+  return { bundleID, answerKey }
+}
+
 async function requestData<T>(request: APIRequestContext, baseURL: string, path: string) {
   const response = await request.get(new URL(path, baseURL).toString(), {
     headers: { Accept: "application/json" },
@@ -566,7 +611,7 @@ async function firstEnabledQuizButton(page: Page) {
 
 async function chooseQuizAnswers(
   page: Page,
-  correctAnswers?: Map<string, string[]>,
+  answerKey: QuizAnswerKey,
 ) {
   const options = page.locator('[data-testid="quiz-option"][data-question-id]')
   await expect.poll(
@@ -582,27 +627,26 @@ async function chooseQuizAnswers(
     [...new Set(nodes.map((node) => node.getAttribute("data-question-id")).filter(Boolean))],
   )
   for (const questionID of questionIDs) {
-    const configuredAnswers = correctAnswers?.get(String(questionID)) || []
-    if (correctAnswers) {
-      expect(
-        configuredAnswers.length,
-        `detailed grading must expose at least one correct option for question ${questionID}`,
-      ).toBeGreaterThan(0)
-    }
-    const optionIDs = configuredAnswers.length > 0
-      ? configuredAnswers
-      : [
-          String(
-            (await page.locator(
-              `[data-testid="quiz-option"][data-question-id="${questionID}"]`,
-            ).first().getAttribute("data-option-id")) || "",
-          ),
-        ]
+    const optionIDs = answerKey.get(String(questionID)) || []
+    expect(
+      optionIDs.length,
+      [
+        `E2E_LIVE_QUIZ_ANSWERS_JSON has no answer for question ${questionID}.`,
+        "Update the dedicated test certification answer key before rerunning the paid journey.",
+      ].join(" "),
+    ).toBeGreaterThan(0)
     for (const optionID of optionIDs) {
-      expect(optionID, `question ${questionID} must expose an option ID`).not.toBe("")
-      await page.locator(
+      const option = page.locator(
         `[data-testid="quiz-option"][data-question-id="${questionID}"][data-option-id="${optionID}"]`,
-      ).click()
+      )
+      await expect(
+        option,
+        [
+          `Configured option ${optionID} is not available for question ${questionID}.`,
+          "The dedicated test certification changed; update E2E_LIVE_QUIZ_ANSWERS_JSON.",
+        ].join(" "),
+      ).toBeVisible()
+      await option.click()
     }
   }
 }
@@ -615,32 +659,6 @@ async function submitQuiz(page: Page) {
   return await result.getAttribute("data-passed") === "true"
 }
 
-async function correctAnswersFromQuizDetail(page: Page) {
-  const correctOptions = page.locator(
-    '[data-testid="quiz-detail-option"][data-correct="true"]',
-  )
-  if (!await correctOptions.first().isVisible().catch(() => false)) {
-    const detailButton = page.getByTestId("quiz-detail")
-    await expect(
-      detailButton,
-      "failed quiz must either show grading automatically or expose the detail action",
-    ).toBeVisible({ timeout: 10_000 })
-    await detailButton.click()
-  }
-  await expect(correctOptions.first(), "failed quiz must expose detailed correct answers").toBeVisible()
-  const answers = await correctOptions.evaluateAll((nodes) => {
-    const result: Record<string, string[]> = {}
-    for (const node of nodes) {
-      const questionID = node.getAttribute("data-question-id") || ""
-      const optionID = node.getAttribute("data-option-id") || ""
-      if (!questionID || !optionID) continue
-      result[questionID] = [...(result[questionID] || []), optionID]
-    }
-    return result
-  })
-  return new Map(Object.entries(answers))
-}
-
 async function returnToLearning(page: Page) {
   await page.getByTestId("quiz-return").click()
   await expect(page).toHaveURL(
@@ -649,7 +667,7 @@ async function returnToLearning(page: Page) {
   )
 }
 
-async function completePendingQuizzes(page: Page) {
+async function completePendingQuizzes(page: Page, answerKey: QuizAnswerKey) {
   await openQuizTasks(page)
   const total = await page.getByTestId("start-quiz").count()
   let completedNow = 0
@@ -660,23 +678,16 @@ async function completePendingQuizzes(page: Page) {
     const quizID = String(await startQuiz.getAttribute("data-quiz-id") || "").trim()
     expect(quizID, "an available quiz must expose its quiz ID").not.toBe("")
     await startQuiz.click()
-    await chooseQuizAnswers(page)
+    await chooseQuizAnswers(page, answerKey)
+    const passed = await submitQuiz(page)
 
-    let passed = await submitQuiz(page)
-    if (!passed) {
-      const correctAnswers = await correctAnswersFromQuizDetail(page)
-      await returnToLearning(page)
-      await openQuizTasks(page)
-      const retry = page.locator(
-        `[data-testid="start-quiz"][data-quiz-id="${quizID}"]`,
-      ).filter({ visible: true }).first()
-      await expect(retry, `failed quiz ${quizID} must allow a retry`).toBeEnabled()
-      await retry.click()
-      await chooseQuizAnswers(page, correctAnswers)
-      passed = await submitQuiz(page)
-    }
-
-    expect(passed, `quiz ${quizID} must pass before the formal exam can open`).toBe(true)
+    expect(
+      passed,
+      [
+        `quiz ${quizID} did not pass with the configured test answer key.`,
+        "Verify the dedicated LMS test quiz and E2E_LIVE_QUIZ_ANSWERS_JSON.",
+      ].join(" "),
+    ).toBe(true)
     completedNow += 1
     await returnToLearning(page)
     await openQuizTasks(page)
@@ -763,6 +774,7 @@ test.describe("candidate live certification purchase, learning, quiz, and exam j
 
   test("buy or resume a certification and progress through learning, quizzes, and exam signup", async ({ page }) => {
     const environment = liveEnvironment()
+    const journey = liveJourneyConfiguration()
     const request = page.context().request
     const catalog = await requestData<{ bundles?: any[] }>(
       request,
@@ -796,8 +808,15 @@ test.describe("candidate live certification purchase, learning, quiz, and exam j
       ),
     )
     const renderedCatalog = catalogBundles.filter((bundle) =>
-      renderedBundleIDs.has(bundleID(bundle)),
+      bundleID(bundle) === journey.bundleID && renderedBundleIDs.has(bundleID(bundle)),
     )
+    expect(
+      renderedBundleIDs.has(journey.bundleID),
+      [
+        `The configured journey bundle ${journey.bundleID} is not rendered in the certification catalog.`,
+        "Verify E2E_LIVE_JOURNEY_BUNDLE_ID and the candidate's catalog eligibility.",
+      ].join(" "),
+    ).toBe(true)
     const selection = await findCertificationJourney(
       request,
       environment.baseURL,
@@ -1012,8 +1031,8 @@ test.describe("candidate live certification purchase, learning, quiz, and exam j
     )
 
     const quizProgress = await test.step(
-      "complete every configured quiz and retry failed attempts with published grading",
-      () => completePendingQuizzes(page),
+      "complete every configured quiz with the dedicated test answer key",
+      () => completePendingQuizzes(page, journey.answerKey),
     )
     reportJourneyStage(
       "quizzes",
