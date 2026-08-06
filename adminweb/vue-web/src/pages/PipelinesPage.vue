@@ -13,6 +13,7 @@ import { badgeClass, pickFirst } from "@/lib/status"
 
 type PipelineForm = {
   name: string
+  description: string
   pipeline_gpath: string
   category_tips: string
   structure_json: string
@@ -37,6 +38,7 @@ const emptyStructure = () => ({
 
 const emptyForm: PipelineForm = {
   name: "",
+  description: "",
   pipeline_gpath: "",
   category_tips: "default",
   structure_json: JSON.stringify(emptyStructure(), null, 2),
@@ -357,6 +359,7 @@ function formFromPipeline(pipeline: JsonRecord | null): PipelineForm {
   if (!pipeline) return { ...emptyForm }
   return {
     name: String(pipeline.name || ""),
+    description: String(pipeline.description || ""),
     category_tips: String(pipeline.category_tips || ""),
     pipeline_gpath: String(pipeline.pipeline_gpath || ""),
     structure_json: JSON.stringify(structureFromPipeline(pipeline), null, 2),
@@ -786,6 +789,7 @@ async function createPipeline() {
       method: "POST",
       body: JSON.stringify({
         name: form.value.name.trim(),
+        description: form.value.description.trim(),
         category_tips: form.value.category_tips.trim(),
         pipeline_gpath: form.value.pipeline_gpath.trim(),
       }),
@@ -814,7 +818,10 @@ async function saveMetadata() {
   try {
     await apiClient(`/api/pipelines/${encodeURIComponent(selectedId.value)}/metadata`, {
       method: "PUT",
-      body: JSON.stringify({ new_name: form.value.name.trim() }),
+      body: JSON.stringify({
+        new_name: form.value.name.trim(),
+        description: form.value.description.trim(),
+      }),
     })
     toast.success(copy.value.toasts.metadataSaved)
     await load()
@@ -1134,6 +1141,14 @@ onMounted(() => {
             </div>
             <input v-model="form.name" class="rounded-xl border border-slate-200 px-4 py-3" />
           </div>
+          <label class="grid gap-2 text-sm font-bold md:col-span-2">
+            <span>{{ copy.fields.description }}</span>
+            <textarea
+              v-model="form.description"
+              class="min-h-28 resize-y rounded-xl border border-slate-200 px-4 py-3"
+              maxlength="512"
+            />
+          </label>
           <details class="group md:col-span-2">
             <summary class="inline-flex cursor-pointer select-none items-center gap-1 rounded-lg text-sm font-bold text-slate-500 transition-colors hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
               {{ copy.advancedConfig }}
