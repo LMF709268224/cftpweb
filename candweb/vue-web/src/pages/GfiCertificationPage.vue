@@ -336,13 +336,13 @@ h1,h2,h3,h4,p { overflow-wrap:anywhere; letter-spacing:0; }
   .certification-page :deep(.gfi-brand) { width:122px; flex-basis:122px; }
   .certification-page :deep(.gfi-menu-toggle) { top:24px; right:45px; }
   .certification-page :deep(.gfi-mobile-nav) { top:91px; max-height:calc(100vh - 91px); }
-  .cert-container { width:calc(100% - 90px); }
+  .cert-container { width:calc(100% - 32px); }
   .cert-hero,.cert-hero .cert-container { min-height:385px; }
   .cert-hero { background-position:50% center; }
   .cert-hero .cert-container { justify-content:flex-start; padding-top:124px; }
   .cert-hero::before { background:linear-gradient(90deg,rgba(9,27,67,.97),rgba(9,27,67,.68)); }
-  .cert-hero h1 { font-size:42px; white-space:nowrap; }
-  .cert-hero p { font-size:14px; }
+  .cert-hero h1 { font-size:32px; line-height:1.2; white-space:normal; }
+  .cert-hero p { width:100%; max-width:100%; overflow-wrap:anywhere; font-size:14px; }
   .cert-hero a > span,.flagship-grid a > span { padding:13px 19px; }
   .cert-hero a i,.flagship-grid a i { width:48px; height:48px; }
   .cert-impact { padding:110px 0; }
@@ -374,10 +374,12 @@ h1,h2,h3,h4,p { overflow-wrap:anywhere; letter-spacing:0; }
   .direct-entry { padding:30px 24px; }
   .programme-banner { margin-top:46px; }
   .programme-banner img { height:116px; }
-  .programme-meta { padding:64px 0 37px; overflow:hidden; }
+  .programme-meta { padding:64px 0 37px; }
   .programme-meta h1 { margin:5px 0 18px; font-size:31px; }
-  .programme-meta dl { display:grid; grid-template-columns:65px 104px 180px; column-gap:40px; }
-  .programme-meta dt { white-space:nowrap; }
+  .programme-meta dl { display:grid; grid-template-columns:minmax(0,1fr); gap:18px; }
+  .programme-meta dl > div { min-width:0; }
+  .programme-meta dt { margin-bottom:6px; white-space:normal; }
+  .programme-meta dd { overflow-wrap:anywhere; }
   .programme-details { padding:15px 0 70px; }
   .programme-grid { display:flex; flex-direction:column; gap:28px; }
   .programme-panel,.purchase-card { width:100%; }
