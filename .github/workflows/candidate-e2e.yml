@@ -22,7 +22,7 @@ on:
         default: false
         type: boolean
       run_live_journey:
-        description: Run paid certification and learning journeys against Stripe Test Mode
+        description: Run paid certification, learning, quiz, and exam signup journey in the test environment
         required: true
         default: false
         type: boolean
@@ -210,7 +210,7 @@ jobs:
           E2E_CANDIDATE_USERNAME: ${{ secrets.E2E_CANDIDATE_USERNAME }}
           E2E_CANDIDATE_PASSWORD: ${{ secrets.E2E_CANDIDATE_PASSWORD }}
 
-      - name: Run paid certification and learning journeys
+      - name: Run paid certification, learning, quiz, and exam signup journey
         if: ${{ inputs.run_live_journey }}
         run: npm run test:e2e:live:journey
         env:

@@ -20,6 +20,7 @@ async function waitForCheckoutProfile(page: Page) {
     const missing: string[] = []
     for (let index = 0; index < await fields.count(); index += 1) {
       const field = fields.nth(index)
+      if (!await field.isVisible()) continue
       if (await field.getAttribute("type") === "checkbox") continue
       if (!String(await field.inputValue()).trim()) {
         missing.push(await field.getAttribute("id") || `field-${index + 1}`)
