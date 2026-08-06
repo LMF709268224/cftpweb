@@ -190,20 +190,6 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Validate paid journey test data
-        if: ${{ inputs.run_live_journey }}
-        env:
-          E2E_LIVE_JOURNEY_BUNDLE_ID: ${{ vars.E2E_LIVE_JOURNEY_BUNDLE_ID }}
-          E2E_LIVE_QUIZ_ANSWERS_JSON: ${{ secrets.E2E_LIVE_QUIZ_ANSWERS_JSON }}
-        shell: bash
-        run: |
-          for name in E2E_LIVE_JOURNEY_BUNDLE_ID E2E_LIVE_QUIZ_ANSWERS_JSON; do
-            if [ -z "${!name}" ]; then
-              echo "::error::${name} is required for the paid certification journey."
-              exit 1
-            fi
-          done
-
       - name: Run live read-only regression
         if: ${{ inputs.run_live_readonly }}
         run: npm run test:e2e:live
@@ -223,6 +209,22 @@ jobs:
           E2E_CANDIDATE_BASE_URL: ${{ secrets.E2E_CANDIDATE_BASE_URL }}
           E2E_CANDIDATE_USERNAME: ${{ secrets.E2E_CANDIDATE_USERNAME }}
           E2E_CANDIDATE_PASSWORD: ${{ secrets.E2E_CANDIDATE_PASSWORD }}
+
+      - name: Validate paid journey test data
+        if: ${{ inputs.run_live_journey }}
+        env:
+          E2E_LIVE_JOURNEY_BUNDLE_ID: ${{ vars.E2E_LIVE_JOURNEY_BUNDLE_ID }}
+          E2E_LIVE_QUIZ_ANSWERS_JSON: ${{ secrets.E2E_LIVE_QUIZ_ANSWERS_JSON }}
+        shell: bash
+        run: |
+          if [ -z "$E2E_LIVE_JOURNEY_BUNDLE_ID" ]; then
+            echo "::error::Repository Variable E2E_LIVE_JOURNEY_BUNDLE_ID is required for the paid certification journey."
+            exit 1
+          fi
+          if [ -z "$E2E_LIVE_QUIZ_ANSWERS_JSON" ]; then
+            echo "::error::Repository Secret E2E_LIVE_QUIZ_ANSWERS_JSON is required for the paid certification journey."
+            exit 1
+          fi
 
       - name: Run paid certification, learning, quiz, and exam signup journey
         if: ${{ inputs.run_live_journey }}
