@@ -1582,8 +1582,8 @@ watch(selectedMaterial, () => {
           </RouterLink>
         </div>
 
-    <LoadingState v-if="pageLoading" :label="t.common.loading" variant="page" :rows="4" />
-    <div v-else-if="!course" class="rounded-md bg-white p-8 text-center text-muted-foreground">
+    <LoadingState v-if="pageLoading" data-testid="course-learning-loading" :label="t.common.loading" variant="page" :rows="4" />
+    <div v-else-if="!course" data-testid="course-unavailable" class="rounded-md bg-white p-8 text-center text-muted-foreground">
       <div class="mx-auto max-w-md space-y-4">
         <div>
           <h2 class="text-lg font-semibold text-foreground">{{ t.learning.courseUnavailableTitle }}</h2>
@@ -1989,7 +1989,7 @@ watch(selectedMaterial, () => {
               </div>
               <span class="badge shrink-0 border-slate-200 bg-slate-50 text-slate-700">{{ lessons.length }}</span>
             </div>
-            <div v-if="lessons.length === 0" class="rounded-md border border-dashed border-slate-200 bg-slate-50 p-4 text-center text-sm text-muted-foreground">
+            <div v-if="lessons.length === 0" data-testid="course-lessons-empty" class="rounded-md border border-dashed border-slate-200 bg-slate-50 p-4 text-center text-sm text-muted-foreground">
               {{ t.learning.noChaptersDesc }}
             </div>
             <div v-else class="space-y-2">

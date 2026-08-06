@@ -483,6 +483,23 @@ function reportJourneyStage(stage: string, detail: string) {
 
 async function completeReadyLessons(page: Page) {
   const lessons = page.locator('[data-testid="course-lesson"][data-lesson-id]')
+  await expect(
+    page.getByTestId("course-learning-loading"),
+    "the selected certification course must finish loading",
+  ).toBeHidden({ timeout: 60_000 })
+  await expect(
+    page.getByTestId("course-unavailable"),
+    "the selected certification course must be available",
+  ).toBeHidden()
+  await expect(
+    lessons.first(),
+    "the selected certification course must contain at least one lesson after loading",
+  ).toBeVisible({ timeout: 60_000 })
+  await expect(
+    page.getByTestId("course-lessons-empty"),
+    "the selected certification course must not be empty",
+  ).toBeHidden()
+
   const total = await lessons.count()
   expect(total, "the selected certification course must contain at least one lesson").toBeGreaterThan(0)
 
@@ -966,6 +983,12 @@ test.describe("candidate live certification purchase, learning, quiz, and exam j
       : page.locator('[data-testid="course-unit-link"][data-course-id]').first()
     await expect(course, "purchased certification must expose a learning course").toBeVisible()
     await course.click()
+    await expect(
+      page,
+      "opening the selected certification course must enter the learning page",
+    ).toHaveURL(/\/certifications\/[^/?#]+\/learn\/[^/?#]+(?:\/lessons\/[^/?#]+)?(?:\?|$)/, {
+      timeout: 30_000,
+    })
 
     reportJourneyStage(
       "course-opened",
