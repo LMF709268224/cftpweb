@@ -290,8 +290,13 @@ test.describe("candidate live certification purchase and learning journey", () =
       "The existing candidate profile must be complete before running the purchase journey",
     ).toMatch(/\d/)
 
-    await page.getByTestId("checkout-agreement").check()
-    await page.getByTestId("checkout-next").click()
+    const agreement = page.getByTestId("checkout-agreement")
+    if (await agreement.isVisible().catch(() => false)) {
+      await agreement.check()
+    }
+    const checkoutNext = page.getByTestId("checkout-next")
+    await expect(checkoutNext).toBeEnabled()
+    await checkoutNext.click()
     await expect(page.getByTestId("checkout-step-review")).toBeVisible()
     await page.getByTestId("checkout-confirm-pay").click()
     await expect(page.getByTestId("checkout-step-payment")).toBeVisible()

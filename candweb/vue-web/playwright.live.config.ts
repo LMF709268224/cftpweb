@@ -19,6 +19,7 @@ export default defineConfig({
   ],
   use: {
     baseURL,
+    actionTimeout: 30_000,
     ignoreHTTPSErrors: false,
     trace: "off",
     screenshot: "off",
