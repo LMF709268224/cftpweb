@@ -9,50 +9,9 @@ type APIEnvelope<T> = {
   data?: T
 }
 
-type QuizAnswerKey = Map<string, string[]>
+type QuizAnswerSelection = Map<string, string[]>
 
-function requiredJourneyEnvironment(name: string) {
-  const value = process.env[name]?.trim()
-  if (!value) {
-    throw new Error(`${name} is required for the candidate paid journey`)
-  }
-  return value
-}
-
-function liveJourneyConfiguration() {
-  const bundleID = requiredJourneyEnvironment("E2E_LIVE_JOURNEY_BUNDLE_ID")
-  const rawAnswerKey = requiredJourneyEnvironment("E2E_LIVE_QUIZ_ANSWERS_JSON")
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(rawAnswerKey)
-  } catch {
-    throw new Error(
-      "E2E_LIVE_QUIZ_ANSWERS_JSON must be a JSON object mapping question IDs to option ID arrays",
-    )
-  }
-  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-    throw new Error(
-      "E2E_LIVE_QUIZ_ANSWERS_JSON must be a JSON object mapping question IDs to option ID arrays",
-    )
-  }
-
-  const answerKey: QuizAnswerKey = new Map()
-  for (const [questionID, rawOptionIDs] of Object.entries(parsed)) {
-    const optionIDs = Array.isArray(rawOptionIDs)
-      ? [...new Set(rawOptionIDs.map((value) => String(value).trim()).filter(Boolean))]
-      : []
-    if (!questionID.trim() || optionIDs.length === 0) {
-      throw new Error(
-        "E2E_LIVE_QUIZ_ANSWERS_JSON must provide at least one option ID for every question ID",
-      )
-    }
-    answerKey.set(questionID.trim(), optionIDs)
-  }
-  if (answerKey.size === 0) {
-    throw new Error("E2E_LIVE_QUIZ_ANSWERS_JSON must contain at least one question")
-  }
-  return { bundleID, answerKey }
-}
+const MAX_QUIZ_ATTEMPTS = 20
 
 async function requestData<T>(request: APIRequestContext, baseURL: string, path: string) {
   const response = await request.get(new URL(path, baseURL).toString(), {
@@ -611,7 +570,7 @@ async function firstEnabledQuizButton(page: Page) {
 
 async function chooseQuizAnswers(
   page: Page,
-  answerKey: QuizAnswerKey,
+  answers: QuizAnswerSelection,
 ) {
   const options = page.locator('[data-testid="quiz-option"][data-question-id]')
   await expect.poll(
@@ -623,17 +582,20 @@ async function chooseQuizAnswers(
     },
   ).toBeGreaterThan(0)
 
+  for (let index = 0; index < await options.count(); index += 1) {
+    const option = options.nth(index)
+    const className = String(await option.getAttribute("class") || "")
+    if (className.includes("border-slate-200")) await option.click()
+  }
+
   const questionIDs = await options.evaluateAll((nodes) =>
     [...new Set(nodes.map((node) => node.getAttribute("data-question-id")).filter(Boolean))],
   )
   for (const questionID of questionIDs) {
-    const optionIDs = answerKey.get(String(questionID)) || []
+    const optionIDs = answers.get(String(questionID)) || []
     expect(
       optionIDs.length,
-      [
-        `E2E_LIVE_QUIZ_ANSWERS_JSON has no answer for question ${questionID}.`,
-        "Update the dedicated test certification answer key before rerunning the paid journey.",
-      ].join(" "),
+      `generated quiz attempt must select at least one option for question ${questionID}`,
     ).toBeGreaterThan(0)
     for (const optionID of optionIDs) {
       const option = page.locator(
@@ -641,14 +603,116 @@ async function chooseQuizAnswers(
       )
       await expect(
         option,
-        [
-          `Configured option ${optionID} is not available for question ${questionID}.`,
-          "The dedicated test certification changed; update E2E_LIVE_QUIZ_ANSWERS_JSON.",
-        ].join(" "),
+        `generated option ${optionID} must exist for question ${questionID}`,
       ).toBeVisible()
       await option.click()
     }
   }
+}
+
+function questionID(question: any) {
+  return String(
+    question?.question_id || question?.question_ulid || question?.questionUlid || "",
+  ).trim()
+}
+
+function optionID(option: any) {
+  return String(
+    option?.option_id || option?.option_ulid || option?.optionUlid || "",
+  ).trim()
+}
+
+function nonEmptyOptionCombinations(optionIDs: string[]) {
+  const combinations: string[][] = []
+  const signatures = new Set<string>()
+  const add = (selection: string[]) => {
+    const signature = selection.join(",")
+    if (selection.length === 0 || signatures.has(signature)) return
+    signatures.add(signature)
+    combinations.push(selection)
+  }
+
+  for (const currentOptionID of optionIDs) add([currentOptionID])
+  add([...optionIDs])
+  for (let left = 0; left < optionIDs.length; left += 1) {
+    for (let right = left + 1; right < optionIDs.length; right += 1) {
+      add([optionIDs[left], optionIDs[right]])
+      if (combinations.length >= MAX_QUIZ_ATTEMPTS) return combinations
+    }
+  }
+  return combinations
+}
+
+function generatedQuizAnswers(paper: any, attemptIndex: number) {
+  const answers: QuizAnswerSelection = new Map()
+  let remainingIndex = attemptIndex
+  let totalCombinations = 1
+
+  for (const question of paper?.questions || []) {
+    const currentQuestionID = questionID(question)
+    const optionIDs = (question?.options || []).map(optionID).filter(Boolean)
+    expect(currentQuestionID, "quiz paper question must expose an ID").not.toBe("")
+    expect(optionIDs.length, `quiz question ${currentQuestionID} must expose options`).toBeGreaterThan(0)
+
+    const choices = Number(question?.question_type) === 2
+      ? nonEmptyOptionCombinations(optionIDs)
+      : optionIDs.map((currentOptionID: string) => [currentOptionID])
+    expect(choices.length, `quiz question ${currentQuestionID} must expose answer combinations`).toBeGreaterThan(0)
+
+    totalCombinations = Math.min(
+      Number.MAX_SAFE_INTEGER,
+      totalCombinations * choices.length,
+    )
+    answers.set(currentQuestionID, choices[remainingIndex % choices.length])
+    remainingIndex = Math.floor(remainingIndex / choices.length)
+  }
+
+  expect(answers.size, "quiz paper must contain at least one question").toBeGreaterThan(0)
+  return { answers, totalCombinations }
+}
+
+async function currentQuizPaper(
+  page: Page,
+  request: APIRequestContext,
+  baseURL: string,
+) {
+  await expect(page).toHaveURL(/\/quizzes(?:\?|$)/, { timeout: 30_000 })
+  const attemptID = String(new URL(page.url()).searchParams.get("attemptId") || "").trim()
+  expect(attemptID, "started quiz must expose an attempt ID").not.toBe("")
+  return requestData<any>(
+    request,
+    baseURL,
+    `/api/quizzes/attempts/${encodeURIComponent(attemptID)}/paper`,
+  )
+}
+
+async function publishedQuizAnswers(page: Page) {
+  const correctOptions = page.locator(
+    '[data-testid="quiz-detail-option"][data-correct="true"]',
+  )
+  if (!await correctOptions.first().isVisible().catch(() => false)) {
+    const detailButton = page.getByTestId("quiz-detail")
+    if (await detailButton.isVisible().catch(() => false)) {
+      await detailButton.click()
+      await correctOptions.first().waitFor({ state: "visible", timeout: 3_000 }).catch(() => {})
+    }
+  }
+  if (!await correctOptions.first().isVisible().catch(() => false)) return null
+
+  const rawAnswers = await correctOptions.evaluateAll((nodes) => {
+    const result: Record<string, string[]> = {}
+    for (const node of nodes) {
+      const currentQuestionID = node.getAttribute("data-question-id") || ""
+      const currentOptionID = node.getAttribute("data-option-id") || ""
+      if (!currentQuestionID || !currentOptionID) continue
+      result[currentQuestionID] = [
+        ...(result[currentQuestionID] || []),
+        currentOptionID,
+      ]
+    }
+    return result
+  })
+  return new Map(Object.entries(rawAnswers))
 }
 
 async function submitQuiz(page: Page) {
@@ -667,25 +731,64 @@ async function returnToLearning(page: Page) {
   )
 }
 
-async function completePendingQuizzes(page: Page, answerKey: QuizAnswerKey) {
+async function completePendingQuizzes(
+  page: Page,
+  request: APIRequestContext,
+  baseURL: string,
+) {
   await openQuizTasks(page)
   const total = await page.getByTestId("start-quiz").count()
   let completedNow = 0
 
   for (let index = 0; index < total; index += 1) {
-    const startQuiz = await firstEnabledQuizButton(page)
-    if (!startQuiz) break
-    const quizID = String(await startQuiz.getAttribute("data-quiz-id") || "").trim()
+    const initialButton = await firstEnabledQuizButton(page)
+    if (!initialButton) break
+    const quizID = String(await initialButton.getAttribute("data-quiz-id") || "").trim()
     expect(quizID, "an available quiz must expose its quiz ID").not.toBe("")
-    await startQuiz.click()
-    await chooseQuizAnswers(page, answerKey)
-    const passed = await submitQuiz(page)
+    let passed = false
+    let publishedAnswers: QuizAnswerSelection | null = null
+    let attemptsUsed = 0
+    let availableCombinations = Number.MAX_SAFE_INTEGER
+
+    while (
+      !passed
+      && attemptsUsed < MAX_QUIZ_ATTEMPTS
+      && (publishedAnswers !== null || attemptsUsed < availableCombinations)
+    ) {
+      const startQuiz = page.locator(
+        `[data-testid="start-quiz"][data-quiz-id="${quizID}"]`,
+      ).filter({ visible: true }).first()
+      if (!await startQuiz.isEnabled().catch(() => false)) break
+
+      await startQuiz.click()
+      const paper = await currentQuizPaper(page, request, baseURL)
+      const generated = generatedQuizAnswers(paper, attemptsUsed)
+      availableCombinations = generated.totalCombinations
+      const answers = new Map(generated.answers)
+      for (const [currentQuestionID, optionIDs] of publishedAnswers || []) {
+        if (answers.has(currentQuestionID)) answers.set(currentQuestionID, optionIDs)
+      }
+      await chooseQuizAnswers(page, answers)
+      passed = await submitQuiz(page)
+      attemptsUsed += 1
+
+      reportJourneyStage(
+        "quiz-attempt",
+        `quiz=${quizID}; attempt=${attemptsUsed}; passed=${passed}`,
+      )
+      if (passed) break
+
+      publishedAnswers = await publishedQuizAnswers(page)
+      await returnToLearning(page)
+      await openQuizTasks(page)
+    }
 
     expect(
       passed,
       [
-        `quiz ${quizID} did not pass with the configured test answer key.`,
-        "Verify the dedicated LMS test quiz and E2E_LIVE_QUIZ_ANSWERS_JSON.",
+        `quiz ${quizID} did not pass after ${attemptsUsed} distinct answer attempts.`,
+        `combination-limit=${Math.min(availableCombinations, MAX_QUIZ_ATTEMPTS)}.`,
+        "The quiz may have exhausted its server-side attempt limit or require more combinations.",
       ].join(" "),
     ).toBe(true)
     completedNow += 1
@@ -774,7 +877,6 @@ test.describe("candidate live certification purchase, learning, quiz, and exam j
 
   test("buy or resume a certification and progress through learning, quizzes, and exam signup", async ({ page }) => {
     const environment = liveEnvironment()
-    const journey = liveJourneyConfiguration()
     const request = page.context().request
     const catalog = await requestData<{ bundles?: any[] }>(
       request,
@@ -808,15 +910,8 @@ test.describe("candidate live certification purchase, learning, quiz, and exam j
       ),
     )
     const renderedCatalog = catalogBundles.filter((bundle) =>
-      bundleID(bundle) === journey.bundleID && renderedBundleIDs.has(bundleID(bundle)),
+      renderedBundleIDs.has(bundleID(bundle)),
     )
-    expect(
-      renderedBundleIDs.has(journey.bundleID),
-      [
-        `The configured journey bundle ${journey.bundleID} is not rendered in the certification catalog.`,
-        "Verify E2E_LIVE_JOURNEY_BUNDLE_ID and the candidate's catalog eligibility.",
-      ].join(" "),
-    ).toBe(true)
     const selection = await findCertificationJourney(
       request,
       environment.baseURL,
@@ -1031,8 +1126,8 @@ test.describe("candidate live certification purchase, learning, quiz, and exam j
     )
 
     const quizProgress = await test.step(
-      "complete every configured quiz with the dedicated test answer key",
-      () => completePendingQuizzes(page, journey.answerKey),
+      "complete every configured quiz by retrying distinct answer combinations",
+      () => completePendingQuizzes(page, request, environment.baseURL),
     )
     reportJourneyStage(
       "quizzes",

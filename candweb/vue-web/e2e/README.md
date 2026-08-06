@@ -45,15 +45,14 @@ dedicated Stripe Test Mode certification purchase and course-learning account:
 npm run test:e2e:live:journey
 ```
 
-It reuses the existing candidate live-test account and only operates the
-dedicated certification configured in `E2E_LIVE_JOURNEY_BUNDLE_ID`. Quiz
-answers come from `E2E_LIVE_QUIZ_ANSWERS_JSON`, a JSON object mapping question
-IDs to correct option ID arrays. The journey resumes a matching unpaid order,
-purchases the configured certification, or reuses its existing pipeline. It
-then completes learning, quizzes, and formal exam signup without guessing
-answers from production-like grading. Paid orders and learning progress are
-not automatically removed, so Admin cleanup is still required when a fresh
-purchase scenario must be recreated.
+It reuses the existing candidate live-test account. The journey resumes a
+matching unpaid order, purchases an available paid certification, or reuses an
+existing eligible pipeline. It then completes learning, quizzes, and formal
+exam signup. Failed quizzes use published grading when available; otherwise
+the test retries different single-choice and multi-choice combinations, with a
+20-attempt safety limit per quiz. Paid orders and learning progress are not
+automatically removed, so Admin cleanup is still required when a fresh purchase
+scenario must be recreated.
 
 ## Live read-only regression
 
