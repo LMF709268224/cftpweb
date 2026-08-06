@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test"
+import { expect, test, type Page } from "@playwright/test"
 import {
   candidateUser,
   installCandidateApiMocks,
@@ -12,6 +12,24 @@ const pipelineInstanceID = "pipeline-instance-regression"
 const courseID = "course-regression"
 const lessonID = "lesson-regression"
 const quizID = "quiz-regression"
+
+async function waitForCheckoutProfile(page: Page) {
+  const form = page.getByTestId("checkout-step-registration")
+  await expect.poll(async () => {
+    const fields = form.locator("input[required], select[required]")
+    const missing: string[] = []
+    for (let index = 0; index < await fields.count(); index += 1) {
+      const field = fields.nth(index)
+      if (await field.getAttribute("type") === "checkbox") continue
+      if (!String(await field.inputValue()).trim()) {
+        missing.push(await field.getAttribute("id") || `field-${index + 1}`)
+      }
+    }
+    return missing
+  }, {
+    message: "candidate profile should finish loading before checkout submission",
+  }).toEqual([])
+}
 
 const bundle = {
   bundle_id: bundleID,
@@ -125,6 +143,7 @@ test("认证从商城下单、Stripe 支付到已购认证完整闭环", async (
 
   await expect(page).toHaveURL(new RegExp(`/checkout/${bundleID}$`))
   await expect(page.getByTestId("checkout-step-registration")).toBeVisible()
+  await waitForCheckoutProfile(page)
   await page.getByTestId("checkout-agreement").check()
   await page.getByTestId("checkout-next").click()
 

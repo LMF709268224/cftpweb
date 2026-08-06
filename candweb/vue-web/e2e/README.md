@@ -45,12 +45,11 @@ dedicated Stripe Test Mode certification purchase and course-learning account:
 npm run test:e2e:live:journey
 ```
 
-It requires the configured bundle, pipeline, course, lesson, and quiz repository
-variables documented in `docs/开发维护/考生系统回归测试任务台账.md`. The run creates a
-paid test order and irreversible candidate progress, so Admin cleanup and
-fixture reset are required before rerunning it. Use the dedicated
-`E2E_JOURNEY_USERNAME` and `E2E_JOURNEY_PASSWORD` secrets rather than the
-read-only smoke account.
+It reuses the existing candidate live-test account, selects the first paid,
+currently purchasable certification that contains a course, disables default
+course exemptions, and continues into the certification created by that
+payment. The run creates a paid test order and irreversible candidate progress,
+so Admin cleanup and account-state reset are required before rerunning it.
 
 ## Live read-only regression
 

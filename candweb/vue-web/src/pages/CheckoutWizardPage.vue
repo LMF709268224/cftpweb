@@ -1610,6 +1610,8 @@ async function confirmAndPay() {
                       <label class="checkout-unit-option cursor-pointer">
                         <div class="relative flex items-center justify-center">
                           <input
+                            data-testid="checkout-exemption-toggle"
+                            :data-unit-id="unit.unit_id"
                             type="checkbox"
                             class="peer sr-only"
                             :checked="unit.qualified ? Boolean(selectedExemptionUnitIds[unit.unit_id]) : isQualificationEditorExpanded(unit.unit_id)"
@@ -1933,6 +1935,7 @@ async function confirmAndPay() {
           class="checkout-step-footer"
         >
           <button
+            data-testid="checkout-selection-next"
             class="checkout-next-button btn rounded-full px-8 py-3 text-white disabled:cursor-not-allowed disabled:opacity-50"
             :disabled="hasExpandedQualificationEditors || Boolean(qualificationSubmittingUnitId) || (isExemptionSelected && !exemptionDeclarationChecked)"
             @click="nextFromStep1"

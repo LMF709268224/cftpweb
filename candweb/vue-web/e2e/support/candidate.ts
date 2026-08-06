@@ -27,7 +27,7 @@ export const candidateUser = {
   last_name: "Candidate",
   gender: "male",
   birthday: "1990-01-01",
-  phone: "+65 8000 0000",
+  phone: "+6580000000",
   phone_country_code: "SG",
   country: "SG",
   region: "SG",
