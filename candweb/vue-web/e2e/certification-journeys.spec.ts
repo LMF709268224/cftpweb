@@ -274,6 +274,19 @@ test("已购认证进入课程、完成课件并通过测验完整闭环", async
 
   await expect(page.getByTestId("quiz-result")).toBeVisible()
   await expect(page.getByText("10", { exact: true }).first()).toBeVisible()
+  await page.getByTestId("quiz-return").click()
+  await expect(page).toHaveURL(
+    new RegExp(`/certifications/${pipelineID}/learn/${courseID}`),
+  )
+  await page.locator(
+    '[data-testid="certification-flow-step"][data-step-id="quiz"]',
+  ).first().click()
+  await page.locator(
+    '[data-testid="certification-flow-step"][data-step-id="lesson"]',
+  ).first().click()
+  await expect(
+    page.locator(`[data-testid="course-lesson"][data-lesson-id="${lessonID}"]`),
+  ).toBeVisible()
   expect(submittedBodies).toEqual([{
     submissions: [{
       question_id: "question-regression",

@@ -495,6 +495,16 @@ async function completeReadyLessons(page: Page) {
     page.getByTestId("course-unavailable"),
     "the selected certification course must be available",
   ).toBeHidden()
+
+  const lessonStep = page.locator(
+    '[data-testid="certification-flow-step"][data-step-id="lesson"]',
+  ).first()
+  await expect(
+    lessonStep,
+    "the selected certification must expose its lesson step",
+  ).toBeEnabled()
+  await lessonStep.click()
+
   await expect(
     lessons.first(),
     "the selected certification course must contain at least one lesson after loading",
