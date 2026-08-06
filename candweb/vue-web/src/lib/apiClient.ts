@@ -109,6 +109,9 @@ async function requestApi(endpoint: string, options: ApiClientOptions, allowRefr
   } = options
   const currentLang = (localStorage.getItem("app_lang") || "zh") as "zh" | "en"
   const headers = new Headers(options.headers)
+  if (!headers.has("Accept-Language")) {
+    headers.set("Accept-Language", currentLang === "zh" ? "zh-CN" : "en-US")
+  }
   const controller = new AbortController()
   const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs)
   const showErrorToast = (message: string, id?: string) => {

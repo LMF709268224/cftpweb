@@ -121,6 +121,7 @@ func normalizeProgTimelineStatus(entityType, statusText string) string {
 
 func (h *Handler) ListMyPipelines(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
+	locale := requestLocale(r)
 
 	resp, err := h.Gprog.ListCandidatePipelines(r.Context(), &gprog.ListCandidatePipelinesReq{
 		CandidateUlid: candidateID,
@@ -144,6 +145,7 @@ func (h *Handler) ListMyPipelines(w http.ResponseWriter, r *http.Request) {
 		if config, configErr := h.Gcc.GetPipeline(r.Context(), &gccpb.GetPipelineRequest{
 			Query: &gccpb.GetPipelineRequest_PipelineUlid{PipelineUlid: summary.PipelineCcUlid},
 		}); configErr == nil {
+			config = h.localizedPipeline(r.Context(), config, locale)
 			summary.PipelineName = strings.TrimSpace(config.GetName())
 			summary.Description = strings.TrimSpace(config.GetDescription())
 			if progress, ok := pipelineProgressFromCourseEnrollments(config, enrollmentProgress); ok {

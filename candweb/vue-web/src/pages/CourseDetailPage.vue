@@ -143,7 +143,7 @@ type CourseSummary = {
 
 const route = useRoute()
 const router = useRouter()
-const { t } = useTranslation()
+const { t, lang } = useTranslation()
 const detail = ref<PipelineDetail | null>(null)
 const courseSummaries = ref<Record<string, CourseSummary>>({})
 const credentialDefinitions = ref<Record<string, CredentialDefinition>>({})
@@ -1036,6 +1036,14 @@ watch(pipelineIssuingCertificate, (issuing) => {
 watch(visibleCourseIdsKey, () => void loadCourseSummaries(), { immediate: true })
 watch(finalQualificationIdsKey, () => void loadCredentialDefinitions(), { immediate: true })
 watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
+watch(lang, async () => {
+  try {
+    await loadDetail(false, true)
+    await loadCredentialDefinitions()
+  } catch (error) {
+    console.warn("Failed to refresh localized certification detail", error)
+  }
+})
 </script>
 
 <template>

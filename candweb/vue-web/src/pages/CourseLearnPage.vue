@@ -188,7 +188,7 @@ type FlowStepStatus = "done" | "current" | "available" | "locked"
 
 const route = useRoute()
 const router = useRouter()
-const { t } = useTranslation()
+const { t, lang } = useTranslation()
 
 const payload = ref<CourseCompleteResponse | null>(null)
 const loading = ref(false)
@@ -1531,6 +1531,9 @@ watch(courseId, async () => {
 })
 
 watch(pipelineId, () => void loadRuntime())
+watch(lang, () => {
+  void loadRuntime(true)
+})
 watch(activeContentTab, async (tab) => {
   if (tab === "exam") {
     if (pipelineCancelled.value) {

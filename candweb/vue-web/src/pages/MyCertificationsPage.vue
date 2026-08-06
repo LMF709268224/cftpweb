@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue"
+import { computed, onMounted, ref, watch } from "vue"
 import { RouterLink } from "vue-router"
 import { toast } from "vue-sonner"
 import { BookOpen, Clock, Eye } from "lucide-vue-next"
@@ -21,7 +21,7 @@ type CandidatePipelineCard = {
   completedAt: string
 }
 
-const { t } = useTranslation()
+const { t, lang } = useTranslation()
 const myCourses = ref<CandidatePipelineCard[]>([])
 const loading = ref(false)
 
@@ -89,6 +89,10 @@ function handlePaymentReturn() {
 
 onMounted(() => {
   handlePaymentReturn()
+  void refreshMyCourses()
+})
+
+watch(lang, () => {
   void refreshMyCourses()
 })
 </script>

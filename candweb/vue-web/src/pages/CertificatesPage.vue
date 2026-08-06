@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue"
+import { computed, onMounted, ref, watch } from "vue"
 import { RouterLink } from "vue-router"
 import { AlertCircle, Award, Calendar, CheckCircle2, ClipboardCheck, Download, Eye, Loader2, RefreshCw, ShieldCheck, Sparkles, X } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
@@ -9,7 +9,7 @@ import { useBodyScrollLock } from "@/lib/bodyScrollLock"
 import { formatBackendDateOnly } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
 
-const { t } = useTranslation()
+const { t, lang } = useTranslation()
 const certificates = ref<any[]>([])
 const loading = ref(false)
 const loadError = ref(false)
@@ -165,6 +165,10 @@ async function loadCertificates(showLoading = true, showCelebration = false, sup
 
 onMounted(async () => {
   await loadCertificates(true, true)
+})
+
+watch(lang, () => {
+  void loadCertificates(false, false, true)
 })
 </script>
 

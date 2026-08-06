@@ -9,6 +9,7 @@ import (
 // ListCertificates GET /api/certificates 证书列表
 func (h *Handler) ListCertificates(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
+	locale := requestLocale(r)
 
 	credsResp, err := h.Creds.ListCandidateCredentials(r.Context(), &gcredspb.ListCandidateCredentialsRequest{
 		CandidateUlid: candidateID,
@@ -31,6 +32,7 @@ func (h *Handler) ListCertificates(w http.ResponseWriter, r *http.Request) {
 		if defResp, err := h.Creds.GetCredentialDefinitionDetail(r.Context(), &gcredspb.GetCredentialDefinitionDetailRequest{
 			CredDefUlid: cred.GetCredDefUlid(),
 		}); err == nil && defResp != nil {
+			defResp = h.localizedCredentialDefinition(r.Context(), defResp, locale)
 			item.Name = defResp.GetName()
 			item.Description = defResp.GetDescription()
 		}

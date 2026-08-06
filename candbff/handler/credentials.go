@@ -13,6 +13,7 @@ import (
 // ListCredentialDefinitions GET /api/credentials/definitions
 func (h *Handler) ListCredentialDefinitions(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
+	locale := requestLocale(r)
 	qualIDs := compactStrings(strings.Split(firstNonEmpty(r.URL.Query().Get("qual_ulids"), r.URL.Query().Get("qual_ids")), ","))
 	if len(qualIDs) > 0 {
 		details := make([]map[string]interface{}, 0, len(qualIDs))
@@ -24,6 +25,7 @@ func (h *Handler) ListCredentialDefinitions(w http.ResponseWriter, r *http.Reque
 				HandleGrpcError(w, err)
 				return
 			}
+			def = h.localizedCredentialDefinition(r.Context(), def, locale)
 			latestApplication, err := h.latestCredentialApplication(r.Context(), candidateID, qualID)
 			if err != nil {
 				HandleGrpcError(w, err)
@@ -37,6 +39,7 @@ func (h *Handler) ListCredentialDefinitions(w http.ResponseWriter, r *http.Reque
 				"file_constraints":   def.GetFileConstraints(),
 				"category":           def.GetCategory(),
 				"respath":            def.GetRespath(),
+				"acquisition_method": def.GetAcquisitionMethod(),
 				"latest_application": latestApplication,
 			})
 		}
@@ -68,6 +71,7 @@ func (h *Handler) ListCredentialDefinitions(w http.ResponseWriter, r *http.Reque
 		}
 		detailRes, err := h.Creds.GetCredentialDefinitionDetail(r.Context(), detailReq)
 		if err == nil && detailRes != nil {
+			detailRes = h.localizedCredentialDefinition(r.Context(), detailRes, locale)
 			details = append(details, map[string]interface{}{
 				"cred_def_ulid":      detailRes.GetCredDefUlid(),
 				"cred_def_id":        detailRes.GetCredDefUlid(),
@@ -76,15 +80,22 @@ func (h *Handler) ListCredentialDefinitions(w http.ResponseWriter, r *http.Reque
 				"file_constraints":   detailRes.GetFileConstraints(),
 				"category":           detailRes.GetCategory(),
 				"respath":            detailRes.GetRespath(),
+				"acquisition_method": detailRes.GetAcquisitionMethod(),
 				"latest_application": latestApplication,
 			})
 			continue
 		}
+		name := def.GetName()
+		description := def.GetDescription()
+		if translation := h.credentialDefinitionTranslation(r.Context(), def.GetCredDefUlid(), locale); translation != nil {
+			name = translatedText(name, translation.GetName())
+			description = translatedText(description, translation.GetDescription())
+		}
 		details = append(details, map[string]interface{}{
 			"cred_def_ulid":      def.GetCredDefUlid(),
 			"cred_def_id":        def.GetCredDefUlid(),
-			"name":               def.GetName(),
-			"description":        def.GetDescription(),
+			"name":               name,
+			"description":        description,
 			"category":           def.GetCategory(),
 			"latest_application": latestApplication,
 		})
@@ -204,12 +215,13 @@ func (h *Handler) ListCandidateApplications(w http.ResponseWriter, r *http.Reque
 
 	applications := make([]map[string]interface{}, 0, len(res.GetApplications()))
 	definitionNameCache := map[string]map[string]interface{}{}
+	locale := requestLocale(r)
 	for _, app := range res.GetApplications() {
 		if app == nil {
 			continue
 		}
 		payload := credentialApplicationPayload(app)
-		if def := h.credentialDefinitionSummary(r.Context(), app.GetCredDefUlid(), definitionNameCache); def != nil {
+		if def := h.credentialDefinitionSummary(r.Context(), app.GetCredDefUlid(), locale, definitionNameCache); def != nil {
 			for key, value := range def {
 				payload[key] = value
 			}
@@ -248,7 +260,7 @@ func (h *Handler) latestCredentialApplication(ctx context.Context, candidateID, 
 	return credentialApplicationPayload(applications[0]), nil
 }
 
-func (h *Handler) credentialDefinitionSummary(ctx context.Context, credDefULID string, cache map[string]map[string]interface{}) map[string]interface{} {
+func (h *Handler) credentialDefinitionSummary(ctx context.Context, credDefULID string, locale string, cache map[string]map[string]interface{}) map[string]interface{} {
 	credDefULID = strings.TrimSpace(credDefULID)
 	if credDefULID == "" {
 		return nil
@@ -263,10 +275,12 @@ func (h *Handler) credentialDefinitionSummary(ctx context.Context, credDefULID s
 		cache[credDefULID] = nil
 		return nil
 	}
+	def = h.localizedCredentialDefinition(ctx, def, locale)
 	summary := map[string]interface{}{
 		"credential_name":        def.GetName(),
 		"credential_description": def.GetDescription(),
 		"credential_category":    def.GetCategory(),
+		"acquisition_method":     def.GetAcquisitionMethod(),
 	}
 	cache[credDefULID] = summary
 	return summary

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue"
+import { onMounted, ref, watch } from "vue"
 import { useRoute } from "vue-router"
 import { AlertCircle, Award, CheckCircle, Clock, FileText, Loader2, X, XCircle } from "lucide-vue-next"
 import { getFileConstraintInfo } from "../lib/fileConstraints"
@@ -12,7 +12,7 @@ import { formatBackendDateOnly } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
 import { toast } from "vue-sonner"
 
-const { t } = useTranslation()
+const { t, lang } = useTranslation()
 const route = useRoute()
 const definitions = ref<any[]>([])
 const applications = ref<any[]>([])
@@ -93,7 +93,7 @@ async function fetchApplications(options: { showLoading?: boolean } = {}) {
   }
 }
 
-async function fetchData() {
+async function fetchData(openSingleDefinition = true) {
   loading.value = true
   try {
     const qualIds = String(route.query.qual_ulids || route.query.qual_ids || "").trim()
@@ -101,7 +101,7 @@ async function fetchData() {
     const defsRes = await apiClient(definitionsEndpoint)
     definitions.value = defsRes?.definitions || []
     await fetchApplications()
-    if (qualIds && definitions.value.length === 1 && !isApplyOpen.value) {
+    if (openSingleDefinition && qualIds && definitions.value.length === 1 && !isApplyOpen.value) {
       handleDefinitionAction(definitions.value[0])
     }
   } finally {
@@ -349,6 +349,10 @@ function handleDefinitionAction(def: any) {
 }
 
 onMounted(fetchData)
+
+watch(lang, () => {
+  void fetchData(false)
+})
 </script>
 
 <template>

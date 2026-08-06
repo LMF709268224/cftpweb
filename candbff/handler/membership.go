@@ -10,6 +10,7 @@ import (
 // ListMembershipPlans GET /api/membership/plans
 func (h *Handler) ListMembershipPlans(w http.ResponseWriter, r *http.Request) {
 	page := parseCursorPage(r, 20)
+	locale := requestLocale(r)
 
 	resp, err := h.Gmbr.ListMemberships(r.Context(), &gmbrpb.ListMembershipsRequest{
 		PageSize:  page.PageSize,
@@ -33,7 +34,7 @@ func (h *Handler) ListMembershipPlans(w http.ResponseWriter, r *http.Request) {
 		if status != "" && status != "ACTIVE" && status != "PUBLISHED" {
 			continue
 		}
-		plans = append(plans, plan)
+		plans = append(plans, h.localizedMembership(r.Context(), plan, locale))
 	}
 
 	WriteJSON(w, http.StatusOK, map[string]any{

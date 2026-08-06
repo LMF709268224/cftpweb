@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue"
+import { computed, onMounted, ref, watch } from "vue"
 import { RouterLink } from "vue-router"
 import { AlertCircle, Check, ChevronDown, Crown, Loader2, Percent, RefreshCw, ShoppingBag, Star, X, XCircle } from "lucide-vue-next"
 import { toast } from "vue-sonner"
@@ -73,7 +73,7 @@ const hasActiveMembership = computed(() => {
 })
 
 const currentMembershipName = computed(() => {
-  return membershipDisplayName(currentRecord.value, t.value.membership.membershipRecord)
+  return String(currentPlan.value?.name || membershipDisplayName(currentRecord.value, t.value.membership.membershipRecord))
 })
 
 const isAutoRenewCancelled = computed(() => {
@@ -274,15 +274,34 @@ async function loadMembershipBillings() {
   return nextBillings
 }
 
+async function loadMembershipPlans() {
+  const planData = await apiClient("/api/membership/plans?page=1&page_size=50")
+  const nextPlans = listFrom(planData, ["memberships", "plans", "items"])
+  plans.value = nextPlans
+
+  if (activeMembership.value) {
+    const record = currentRecord.value
+    const matchedPlan = nextPlans.find((plan) => {
+      return plan.membership_ulid === record?.membership_ulid || plan.membership_gpath === record?.membership_gpath
+    })
+    if (matchedPlan) {
+      activeMembership.value = {
+        ...activeMembership.value,
+        membership_config: matchedPlan,
+      }
+    }
+  }
+  return nextPlans
+}
+
 async function loadMembership() {
   loading.value = true
   try {
-    const [planData, nextHistory] = await Promise.all([
-      apiClient("/api/membership/plans?page=1&page_size=50"),
+    const [, nextHistory] = await Promise.all([
+      loadMembershipPlans(),
       loadMembershipHistory(),
       loadMembershipBillings(),
     ])
-    plans.value = listFrom(planData, ["memberships", "plans", "items"])
     activeMembership.value = await loadActiveMembershipFromHistory(nextHistory) || { user_memberships: nextHistory }
   } catch (err) {
     console.error(err)
@@ -385,6 +404,12 @@ function handleBillingPaginationChange() {
 
 onMounted(() => {
   void loadMembership()
+})
+
+watch(lang, () => {
+  void loadMembershipPlans().catch((error) => {
+    console.warn("Failed to refresh localized membership plans", error)
+  })
 })
 </script>
 

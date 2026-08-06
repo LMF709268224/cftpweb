@@ -542,6 +542,7 @@ watch(lang, () => {
     if (mappedCity) formData.city = mappedCity[1]
   }
   ensureCurrentCityOption()
+  void refreshLocalizedCheckoutContent()
 })
 
 async function syncSignupToProfile() {
@@ -635,6 +636,30 @@ async function loadBundleInfo() {
   applyBundleInfo(response)
   await refreshQualificationApplications()
   return response
+}
+
+async function refreshLocalizedCheckoutContent() {
+  if (!bundleId) return
+  try {
+    const response = await fetchBundlePayload()
+    applyBundleInfo(response)
+
+    const qualificationIds = Object.keys(qualificationDefinitions.value)
+    if (qualificationIds.length === 0) return
+
+    const definitionsResponse = await apiClient(
+      `/api/credentials/definitions?qual_ulids=${encodeURIComponent(qualificationIds.join(","))}`,
+      { suppressErrorToast: true },
+    )
+    const definitions = Array.isArray(definitionsResponse?.definitions) ? definitionsResponse.definitions : []
+    qualificationDefinitions.value = Object.fromEntries(
+      definitions
+        .map((definition: any) => [qualificationDefinitionId(definition), definition] as const)
+        .filter(([qualificationId]: readonly [string, any]) => Boolean(qualificationId)),
+    )
+  } catch (error) {
+    console.warn("Failed to refresh localized checkout content", error)
+  }
 }
 
 async function loadPurchaseReadyBundleInfo() {

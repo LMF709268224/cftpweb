@@ -43,6 +43,7 @@ type bundleEligibilitySummary struct {
 
 type bundleEnrichmentState struct {
 	candidateID              string
+	locale                   string
 	membershipHistory        []*gmbrpb.UserMembership
 	activeMembershipByGpath  map[string]*gmbrpb.UserMembership
 	loadedMembershipsByGpath map[string]bool
@@ -91,6 +92,7 @@ type bundlePurchaseState struct {
 
 // ListPipelines  GET /api/mall/pipelines
 func (h *Handler) ListPipelines(w http.ResponseWriter, r *http.Request) {
+	locale := requestLocale(r)
 	resp, err := h.Gcc.ListPipelines(r.Context(), &gccpb.ListPipelinesRequest{
 		Filters: &gccpb.PipelineFilters{
 			CandidateUlid: CandidateID(r),
@@ -125,6 +127,7 @@ func (h *Handler) ListPipelines(w http.ResponseWriter, r *http.Request) {
 		if pipelineForOutput == nil {
 			pipelineForOutput = pipelineSummaryToConfig(pipeline)
 		}
+		pipelineForOutput = h.localizedPipeline(r.Context(), pipelineForOutput, locale)
 
 		finalEligibilityResp, err := h.Gcc.GetPipelineFinalEligibility(r.Context(), &gccpb.GetPipelineFinalEligibilityRequest{
 			PipelineUlid: pipeline.GetPipelineUlid(),
@@ -178,6 +181,7 @@ func (h *Handler) GetPipelineDetail(w http.ResponseWriter, r *http.Request) {
 		HandleGrpcError(w, err)
 		return
 	}
+	gccResp = h.localizedPipeline(ctx, gccResp, requestLocale(r))
 
 	out := PipelineDetailRsp{
 		Config: toPipelineConfig(gccResp, nil),
@@ -216,6 +220,7 @@ func (h *Handler) GetPipelineRuntime(w http.ResponseWriter, r *http.Request) {
 		HandleGrpcError(w, err)
 		return
 	}
+	gccResp = h.localizedPipeline(ctx, gccResp, requestLocale(r))
 
 	out := PipelineRuntimeRsp{
 		Config: toPipelineConfig(gccResp, nil),
@@ -437,7 +442,7 @@ func (h *Handler) ListBundles(w http.ResponseWriter, r *http.Request) {
 	includeUnavailable := strings.EqualFold(strings.TrimSpace(r.URL.Query().Get("include_unavailable")), "true")
 
 	const fetchLimit uint32 = 100
-	state := h.newBundleEnrichmentState(r.Context(), candidateID)
+	state := h.newBundleEnrichmentState(r.Context(), candidateID, requestLocale(r))
 	filtered := make([]map[string]interface{}, 0)
 	cursor := ""
 	for {
@@ -502,7 +507,7 @@ func (h *Handler) GetBundleDetail(w http.ResponseWriter, r *http.Request) {
 		HandleGrpcError(w, err)
 		return
 	}
-	WriteJSON(w, http.StatusOK, h.enrichBundle(r.Context(), resp.GetBundle(), h.newBundleEnrichmentState(r.Context(), CandidateID(r))))
+	WriteJSON(w, http.StatusOK, h.enrichBundle(r.Context(), resp.GetBundle(), h.newBundleEnrichmentState(r.Context(), CandidateID(r), requestLocale(r))))
 }
 
 // GetBundlePricingDetail GET /api/mall/bundles/{bundleId}/pricing-detail
@@ -519,7 +524,7 @@ func (h *Handler) GetBundlePricingDetail(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	WriteJSON(w, http.StatusOK, map[string]interface{}{
-		"bundle":              h.enrichBundle(r.Context(), resp.GetBundle(), h.newBundleEnrichmentState(r.Context(), CandidateID(r))),
+		"bundle":              h.enrichBundle(r.Context(), resp.GetBundle(), h.newBundleEnrichmentState(r.Context(), CandidateID(r), requestLocale(r))),
 		"pricing_detail_json": resp.GetPricingDetailJson(),
 	})
 }
@@ -790,9 +795,10 @@ func isActiveMembershipStatus(status string) bool {
 	return status == "active" || status == "membership_status_active"
 }
 
-func (h *Handler) newBundleEnrichmentState(ctx context.Context, candidateID string) *bundleEnrichmentState {
+func (h *Handler) newBundleEnrichmentState(ctx context.Context, candidateID string, locale string) *bundleEnrichmentState {
 	state := &bundleEnrichmentState{
 		candidateID:              strings.TrimSpace(candidateID),
+		locale:                   normalizedLocale(locale),
 		activeMembershipByGpath:  map[string]*gmbrpb.UserMembership{},
 		loadedMembershipsByGpath: map[string]bool{},
 	}
@@ -1135,7 +1141,7 @@ func (h *Handler) activeBundleOrder(ctx context.Context, candidateID string, bun
 	return nil, nil
 }
 
-func (h *Handler) pipelineExemptionOptions(ctx context.Context, candidateID string, pipelineID string) *PipelineExemptionOptionsRsp {
+func (h *Handler) pipelineExemptionOptions(ctx context.Context, candidateID string, pipelineID string, locale string) *PipelineExemptionOptionsRsp {
 	candidateID = strings.TrimSpace(candidateID)
 	pipelineID = strings.TrimSpace(pipelineID)
 	if candidateID == "" || pipelineID == "" {
@@ -1149,6 +1155,7 @@ func (h *Handler) pipelineExemptionOptions(ctx context.Context, candidateID stri
 		slog.Warn("Failed to load pipeline for exemption options during enrichment", "error", err, "pipeline_id", pipelineID)
 		return nil
 	}
+	pipeline = h.localizedPipeline(ctx, pipeline, locale)
 
 	out := PipelineExemptionOptionsRsp{
 		Stages: make([]PipelineExemptionStage, 0, len(pipeline.GetStages())),
@@ -1176,7 +1183,7 @@ func (h *Handler) pipelineExemptionOptions(ctx context.Context, candidateID stri
 				ExemptionQuals: make([]PipelineExemptionQual, 0, len(qualIDs)),
 			}
 			for _, qualID := range qualIDs {
-				def := h.cachedCredentialDefinition(ctx, defCache, qualID)
+				def := h.cachedCredentialDefinition(ctx, defCache, qualID, locale)
 				check := h.cachedCandidateQualification(ctx, checkCache, candidateID, qualID)
 				qualOut := PipelineExemptionQual{
 					QualId: qualID,
@@ -1216,7 +1223,7 @@ func (h *Handler) pipelineExemptionOptions(ctx context.Context, candidateID stri
 	return &out
 }
 
-func (h *Handler) cachedCredentialDefinition(ctx context.Context, cache map[string]*gcredspb.CredentialDefinition, qualID string) *gcredspb.CredentialDefinition {
+func (h *Handler) cachedCredentialDefinition(ctx context.Context, cache map[string]*gcredspb.CredentialDefinition, qualID string, locale string) *gcredspb.CredentialDefinition {
 	if def, ok := cache[qualID]; ok {
 		return def
 	}
@@ -1228,6 +1235,7 @@ func (h *Handler) cachedCredentialDefinition(ctx context.Context, cache map[stri
 		cache[qualID] = nil
 		return nil
 	}
+	def = h.localizedCredentialDefinition(ctx, def, locale)
 	cache[qualID] = def
 	return def
 }
@@ -1262,7 +1270,7 @@ func (h *Handler) bundlePurchaseState(ctx context.Context, state *bundleEnrichme
 		out.PaymentPreview = preview
 	}
 	if pipelineID != "" && (eligibility.CanPurchase || out.ActiveOrder != nil) {
-		out.ExemptionOptions = h.pipelineExemptionOptions(ctx, state.candidateID, pipelineID)
+		out.ExemptionOptions = h.pipelineExemptionOptions(ctx, state.candidateID, pipelineID, state.locale)
 	}
 	return out
 }
@@ -1273,12 +1281,24 @@ func (h *Handler) enrichBundle(ctx context.Context, b *mallpb.BundleInfo, state 
 	itemTypes := bundleItemTypes(b)
 	eligibility := defaultBundleEligibility()
 	membershipGpath := ""
+	locale := ""
+	if state != nil {
+		locale = state.locale
+	}
+	bundleName := b.GetName()
+	bundleDescription := b.GetDescription()
+	if state != nil {
+		if translation := h.bundleTranslation(ctx, b.GetBundleUlid(), locale); translation != nil {
+			bundleName = translatedText(bundleName, translation.GetName())
+			bundleDescription = translatedText(bundleDescription, translation.GetDescription())
+		}
+	}
 	m := map[string]interface{}{
 		"bundle_id":            b.GetBundleUlid(),
 		"bundle_gpath":         b.GetBundleGpath(),
 		"version":              b.GetVersion(),
-		"name":                 b.GetName(),
-		"description":          b.GetDescription(),
+		"name":                 bundleName,
+		"description":          bundleDescription,
 		"items_json":           b.GetItemsJson(),
 		"thumbnail_object_key": b.GetThumbnailObjectKey(),
 		"thumbnail_file_hash":  b.GetThumbnailFileHash(),
@@ -1319,6 +1339,7 @@ func (h *Handler) enrichBundle(ctx context.Context, b *mallpb.BundleInfo, state 
 			Query: &gccpb.GetPipelineRequest_PipelineUlid{PipelineUlid: pipelineID},
 		})
 		if err == nil && pipeline != nil {
+			pipeline = h.localizedPipeline(ctx, pipeline, locale)
 			m["pipeline_status"] = pipeline.GetStatus()
 			m["pipeline_is_active"] = isActivePipelineStatus(pipeline.GetStatus())
 			m["stages"] = toStages(pipeline.GetStages())
@@ -1333,6 +1354,7 @@ func (h *Handler) enrichBundle(ctx context.Context, b *mallpb.BundleInfo, state 
 			MembershipUlid: membershipID,
 		})
 		if err == nil && membership != nil {
+			membership = h.localizedMembership(ctx, membership, locale)
 			membershipGpath = membership.GetMembershipGpath()
 			m["membership_gpath"] = membershipGpath
 			m["membership_name"] = membership.GetName()
