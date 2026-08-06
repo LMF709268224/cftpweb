@@ -25,6 +25,7 @@ const props = withDefaults(defineProps<{
   endpoint: string
   targetId?: string
   fields: FieldSpec[]
+  defaultValues?: TranslationRecord
   title?: string
   description?: string
 }>(), {
@@ -60,6 +61,21 @@ function cloneRecord(value: TranslationRecord): TranslationRecord {
   return JSON.parse(JSON.stringify(value || {})) as TranslationRecord
 }
 
+function translationDefaults(): TranslationRecord {
+  const allowedKeys = new Set(props.fields.map((field) => field.key))
+  return Object.fromEntries(
+    Object.entries(props.defaultValues || {})
+      .filter(([key]) => allowedKeys.has(key)),
+  )
+}
+
+function withTranslationDefaults(value: TranslationRecord): TranslationRecord {
+  return {
+    ...cloneRecord(translationDefaults()),
+    ...cloneRecord(value),
+  }
+}
+
 function hasTranslationContent(value: unknown): boolean {
   if (typeof value === "string") return value.trim().length > 0
   if (Array.isArray(value)) return value.some(hasTranslationContent)
@@ -72,7 +88,7 @@ function normalizeTranslations(value: unknown): TranslationMap {
   const next: TranslationMap = {}
   for (const [locale, raw] of Object.entries(value)) {
     if (!raw || typeof raw !== "object" || Array.isArray(raw) || !hasTranslationContent(raw)) continue
-    next[locale] = cloneRecord(raw as TranslationRecord)
+    next[locale] = withTranslationDefaults(raw as TranslationRecord)
   }
   return next
 }
@@ -152,7 +168,10 @@ function addLocale() {
     toast.error(copy.value.duplicateLocale)
     return
   }
-  translations.value = { ...translations.value, [locale]: {} }
+  translations.value = {
+    ...translations.value,
+    [locale]: withTranslationDefaults({}),
+  }
   removedLocales.value.delete(locale)
   cancelAdd()
 }

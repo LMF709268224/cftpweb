@@ -80,8 +80,8 @@ const { t } = useAdminLanguage()
 const copy = computed(() => t.value.pipelineConfigAdmin)
 const pipelineTranslationFields = computed(() => [
   { key: "name", label: copy.value.fields.name, maxLength: 128 },
-  { key: "category_tips", label: copy.value.fields.categoryTips, maxLength: 128 },
   { key: "description", label: copy.value.fields.description, kind: "textarea" as const, maxLength: 1024 },
+  { key: "category_tips", label: copy.value.fields.categoryTips, maxLength: 128 },
 ])
 const stageTranslationFields = computed(() => [
   { key: "name", label: copy.value.fields.name, maxLength: 128 },
@@ -1137,6 +1137,7 @@ onMounted(() => {
                 :endpoint="`/api/pipelines/${encodeURIComponent(selectedId)}/translations`"
                 :target-id="selectedId"
                 :fields="pipelineTranslationFields"
+                :default-values="{ category_tips: form.category_tips }"
               />
             </div>
             <input v-model="form.name" class="rounded-xl border border-slate-200 px-4 py-3" />
