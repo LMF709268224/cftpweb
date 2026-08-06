@@ -31,6 +31,18 @@ func (h *Handler) ListResourcePacks(w http.ResponseWriter, r *http.Request) {
 		HandleGrpcError(w, err)
 		return
 	}
+	locale := requestLocale(r)
+	var wg sync.WaitGroup
+	for index, pack := range resp.GetPacks() {
+		index := index
+		pack := pack
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			resp.Packs[index] = h.localizedResourcePack(r.Context(), pack, locale)
+		}()
+	}
+	wg.Wait()
 	WriteJSON(w, http.StatusOK, resp)
 }
 
@@ -64,22 +76,24 @@ func (h *Handler) ListResourcePackFiles(w http.ResponseWriter, r *http.Request) 
 	}
 
 	extFiles := make([]extFile, len(resp.GetFiles()))
+	locale := requestLocale(r)
 	var wg sync.WaitGroup
 	for i, file := range resp.GetFiles() {
-		extFiles[i] = extFile{ResourcePackFile: file}
-		if objectKey := strings.TrimSpace(file.GetThumbnailObjectKey()); objectKey != "" {
-			wg.Add(1)
-			go func(index int, key string) {
-				defer wg.Done()
+		wg.Add(1)
+		go func(index int, source *lmspb.ResourcePackFile) {
+			defer wg.Done()
+			file := h.localizedResourcePackFile(r.Context(), source, locale)
+			extFiles[index] = extFile{ResourcePackFile: file}
+			if objectKey := strings.TrimSpace(file.GetThumbnailObjectKey()); objectKey != "" {
 				viewResp, err := h.Lms.CreateViewURL(r.Context(), &lmspb.CreateViewURLCandidateRequest{
 					CandidateUlid: candidateID,
-					ObjectKey:     key,
+					ObjectKey:     objectKey,
 				})
 				if err == nil {
 					extFiles[index].ThumbnailUrl = viewResp.GetViewUrl()
 				}
-			}(i, objectKey)
-		}
+			}
+		}(i, file)
 	}
 	wg.Wait()
 

@@ -210,7 +210,8 @@ func (h *Handler) ListMaterials(w http.ResponseWriter, r *http.Request) {
 			CourseUlid:    courseID,
 		})
 		if err == nil {
-			if t := strings.TrimSpace(summaryResp.GetCourse().GetTitle()); t != "" {
+			course := h.localizedCourseSummary(r.Context(), summaryResp.GetCourse(), requestLocale(r))
+			if t := strings.TrimSpace(course.GetTitle()); t != "" {
 				title = t
 			}
 		}
@@ -307,6 +308,9 @@ func (h *Handler) GetPipelineCourse(w http.ResponseWriter, r *http.Request) {
 	}
 
 	completeCourse := resp.GetCompleteCourse()
+	if completeCourse != nil {
+		completeCourse.Course = h.localizedCourse(r.Context(), completeCourse.GetCourse(), requestLocale(r))
+	}
 
 	if len(completeCourse.GetMaterials()) == 0 {
 		matResp, err := h.Lms.ListCourseMaterials(r.Context(), &lmspb.ListCourseMaterialsCandidateRequest{

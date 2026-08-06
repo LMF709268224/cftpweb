@@ -28,7 +28,7 @@ type ResourcePackFile = {
 
 const route = useRoute()
 const router = useRouter()
-const { t } = useTranslation()
+const { t, lang } = useTranslation()
 const loading = ref(false)
 const openingFileId = ref("")
 const search = ref("")
@@ -216,6 +216,12 @@ async function openFile(file: ResourcePackFile) {
 }
 
 watch(packId, () => {
+  files.value = []
+  thumbnailUrls.value = {}
+  void loadFiles()
+})
+
+watch(lang, () => {
   files.value = []
   thumbnailUrls.value = {}
   void loadFiles()

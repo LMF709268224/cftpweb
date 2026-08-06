@@ -10,6 +10,7 @@ import (
 
 	gccpb "github.com/afnandelfin620-star/cftptest/cftp/gcc"
 	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
+	lmspb "github.com/afnandelfin620-star/cftptest/cftp/glms"
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
 	gmbrpb "github.com/afnandelfin620-star/cftptest/cftp/gmbr"
 	"google.golang.org/protobuf/proto"
@@ -80,6 +81,97 @@ func translationForLocale[T any](translations map[string]T, locale string) (T, b
 	}
 	var zero T
 	return zero, false
+}
+
+func (h *Handler) courseTranslation(ctx context.Context, courseID string, locale string) *lmspb.CourseTranslation {
+	locale = normalizedLocale(locale)
+	courseID = strings.TrimSpace(courseID)
+	if courseID == "" || locale == "" || h.Lms == nil {
+		return nil
+	}
+	resp, err := h.Lms.GetCourseTranslations(ctx, &lmspb.GetCourseTranslationsRequest{
+		CourseId: courseID,
+		Locale:   locale,
+	})
+	if err != nil {
+		slog.Warn("Failed to load course translation", "error", err, "course_id", courseID, "locale", locale)
+		return nil
+	}
+	translation, _ := translationForLocale(resp.GetTranslations(), locale)
+	return translation
+}
+
+func (h *Handler) localizedCourse(ctx context.Context, course *lmspb.Course, locale string) *lmspb.Course {
+	if course == nil {
+		return nil
+	}
+	translation := h.courseTranslation(ctx, course.GetCourseUlid(), locale)
+	if translation == nil {
+		return course
+	}
+	localized := proto.Clone(course).(*lmspb.Course)
+	localized.Title = translatedText(localized.GetTitle(), translation.GetTitle())
+	localized.Description = translatedText(localized.GetDescription(), translation.GetDescription())
+	return localized
+}
+
+func (h *Handler) localizedCourseSummary(ctx context.Context, course *lmspb.CourseSummary, locale string) *lmspb.CourseSummary {
+	if course == nil {
+		return nil
+	}
+	translation := h.courseTranslation(ctx, course.GetCourseUlid(), locale)
+	if translation == nil {
+		return course
+	}
+	localized := proto.Clone(course).(*lmspb.CourseSummary)
+	localized.Title = translatedText(localized.GetTitle(), translation.GetTitle())
+	return localized
+}
+
+func (h *Handler) localizedResourcePack(ctx context.Context, pack *lmspb.ResourcePack, locale string) *lmspb.ResourcePack {
+	locale = normalizedLocale(locale)
+	if pack == nil || locale == "" || h.Lms == nil {
+		return pack
+	}
+	resp, err := h.Lms.GetResourcePackTranslations(ctx, &lmspb.GetResourcePackTranslationsRequest{
+		PackId: pack.GetPackId(),
+		Locale: locale,
+	})
+	if err != nil {
+		slog.Warn("Failed to load resource pack translation", "error", err, "pack_id", pack.GetPackId(), "locale", locale)
+		return pack
+	}
+	translation, ok := translationForLocale(resp.GetTranslations(), locale)
+	if !ok || translation == nil {
+		return pack
+	}
+	localized := proto.Clone(pack).(*lmspb.ResourcePack)
+	localized.Title = translatedText(localized.GetTitle(), translation.GetTitle())
+	localized.Description = translatedText(localized.GetDescription(), translation.GetDescription())
+	return localized
+}
+
+func (h *Handler) localizedResourcePackFile(ctx context.Context, file *lmspb.ResourcePackFile, locale string) *lmspb.ResourcePackFile {
+	locale = normalizedLocale(locale)
+	if file == nil || locale == "" || h.Lms == nil {
+		return file
+	}
+	resp, err := h.Lms.GetResourcePackFileTranslations(ctx, &lmspb.GetResourcePackFileTranslationsRequest{
+		FileId: file.GetFileId(),
+		Locale: locale,
+	})
+	if err != nil {
+		slog.Warn("Failed to load resource pack file translation", "error", err, "file_id", file.GetFileId(), "locale", locale)
+		return file
+	}
+	translation, ok := translationForLocale(resp.GetTranslations(), locale)
+	if !ok || translation == nil {
+		return file
+	}
+	localized := proto.Clone(file).(*lmspb.ResourcePackFile)
+	localized.Title = translatedText(localized.GetTitle(), translation.GetTitle())
+	localized.Description = translatedText(localized.GetDescription(), translation.GetDescription())
+	return localized
 }
 
 func (h *Handler) localizedPipeline(ctx context.Context, pipeline *gccpb.PipelineConfig, locale string) *gccpb.PipelineConfig {

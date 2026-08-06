@@ -1039,6 +1039,7 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
 watch(lang, async () => {
   try {
     await loadDetail(false, true)
+    await loadCourseSummaries()
     await loadCredentialDefinitions()
   } catch (error) {
     console.warn("Failed to refresh localized certification detail", error)

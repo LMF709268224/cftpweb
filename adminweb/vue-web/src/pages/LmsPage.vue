@@ -4,6 +4,7 @@ import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import ReadonlyField from "@/components/ReadonlyField.vue"
 import LmsPrerequisitesTab from "@/components/LmsPrerequisitesTab.vue"
+import TranslationsEditor from "@/components/TranslationsEditor.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { isVideoFile, MAX_BASIC_VIDEO_UPLOAD_BYTES, sha256Hex, uploadToDirectURL } from "@/lib/directUpload"
@@ -150,6 +151,10 @@ type QuizListItem = {
 const pageSize = 20
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.lmsAdmin)
+const courseTranslationFields = computed(() => [
+  { key: "title", label: copy.value.courseTitle, maxLength: 512 },
+  { key: "description", label: copy.value.description, kind: "textarea" as const, maxLength: 2048 },
+])
 
 const courses = ref<JsonRecord[]>([])
 const selectedCourse = ref<JsonRecord | null>(null)
@@ -3185,10 +3190,18 @@ onMounted(() => {
 
         <div class="p-4 md:p-5">
           <form class="grid gap-3 lg:grid-cols-2" @submit.prevent="saveCourse">
-            <label class="block">
-              <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.courseTitle }}</span>
+            <div class="block">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.courseTitle }}</span>
+                <TranslationsEditor
+                  v-if="selectedCourseId"
+                  :endpoint="`/api/lms/courses/${encodeURIComponent(selectedCourseId)}/translations`"
+                  :target-id="selectedCourseId"
+                  :fields="courseTranslationFields"
+                />
+              </div>
               <input v-model="courseForm.title" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" />
-            </label>
+            </div>
             <label v-if="false" class="block">
               <span class="text-sm font-bold">{{ copy.categoryTips }}</span>
               <input v-model="courseForm.category_tips" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" />

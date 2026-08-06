@@ -153,6 +153,8 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Route("/courses", func(r chi.Router) {
 				r.Get("/", h.ListLmsCourses)
 				r.Post("/", h.CreateLmsCourse)
+				r.Get("/{course_id}/translations", h.GetCourseTranslations)
+				r.Put("/{course_id}/translations", h.SetCourseTranslations)
 				r.Get("/{course_id}/complete", h.GetCompleteLmsCourse)
 				r.Get("/{course_id}/detail", h.GetLmsCourseDetail)
 				r.Post("/{course_id}/publish", h.PublishLmsCourse)
@@ -239,6 +241,8 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Route("/resource-packs", func(r chi.Router) {
 				r.Get("/", h.ListLmsResourcePacks)
 				r.Post("/", h.CreateLmsResourcePack)
+				r.Get("/{pack_id}/translations", h.GetResourcePackTranslations)
+				r.Put("/{pack_id}/translations", h.SetResourcePackTranslations)
 				r.Get("/{pack_id}", h.GetLmsResourcePack)
 				r.Put("/{pack_id}", h.UpdateLmsResourcePack)
 				r.Post("/{pack_id}/publish", h.PublishLmsResourcePack)
@@ -252,6 +256,8 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 
 			r.Route("/resource-pack-files", func(r chi.Router) {
 				r.Get("/", h.ListAllLmsResourcePackFiles)
+				r.Get("/{file_id}/translations", h.GetResourcePackFileTranslations)
+				r.Put("/{file_id}/translations", h.SetResourcePackFileTranslations)
 				r.Get("/{file_id}", h.GetLmsResourcePackFile)
 				r.Put("/{file_id}", h.UpdateLmsResourcePackFile)
 				r.Delete("/{file_id}", h.DeleteLmsResourcePackFile)

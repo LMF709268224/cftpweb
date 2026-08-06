@@ -8,6 +8,7 @@ import (
 
 	gccpb "github.com/afnandelfin620-star/cftptest/cftp/gcc"
 	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
+	lmspb "github.com/afnandelfin620-star/cftptest/cftp/glms"
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
 	gmbrpb "github.com/afnandelfin620-star/cftptest/cftp/gmbr"
 	"google.golang.org/grpc"
@@ -59,6 +60,55 @@ func (localizationCCClient) GetUnitTranslations(
 
 type localizationCredentialClient struct {
 	gcredspb.CredentialServiceClient
+}
+
+type localizationLMSClient struct {
+	lmspb.LmsServiceClient
+}
+
+func (localizationLMSClient) GetCourseTranslations(
+	_ context.Context,
+	_ *lmspb.GetCourseTranslationsRequest,
+	_ ...grpc.CallOption,
+) (*lmspb.GetCourseTranslationsResponse, error) {
+	return &lmspb.GetCourseTranslationsResponse{
+		Translations: map[string]*lmspb.CourseTranslation{
+			"zh-CN": {
+				Title:       "课程标题",
+				Description: "课程描述",
+			},
+		},
+	}, nil
+}
+
+func (localizationLMSClient) GetResourcePackTranslations(
+	_ context.Context,
+	_ *lmspb.GetResourcePackTranslationsRequest,
+	_ ...grpc.CallOption,
+) (*lmspb.GetResourcePackTranslationsResponse, error) {
+	return &lmspb.GetResourcePackTranslationsResponse{
+		Translations: map[string]*lmspb.ResourcePackTranslation{
+			"zh-CN": {
+				Title:       "资源包标题",
+				Description: "资源包描述",
+			},
+		},
+	}, nil
+}
+
+func (localizationLMSClient) GetResourcePackFileTranslations(
+	_ context.Context,
+	_ *lmspb.GetResourcePackFileTranslationsRequest,
+	_ ...grpc.CallOption,
+) (*lmspb.GetResourcePackFileTranslationsResponse, error) {
+	return &lmspb.GetResourcePackFileTranslationsResponse{
+		Translations: map[string]*lmspb.ResourcePackFileTranslation{
+			"zh-CN": {
+				Title:       "文件标题",
+				Description: "文件描述",
+			},
+		},
+	}, nil
 }
 
 func (localizationCredentialClient) GetCredDefTranslations(
@@ -146,6 +196,57 @@ func TestRequestLocale(t *testing.T) {
 				t.Fatalf("requestLocale() = %q, want %q", got, test.want)
 			}
 		})
+	}
+}
+
+func TestLocalizedGLMSContent(t *testing.T) {
+	handler := &Handler{Lms: localizationLMSClient{}}
+
+	baseCourse := &lmspb.Course{
+		CourseUlid:  "course-1",
+		Title:       "Course title",
+		Description: "Course description",
+	}
+	localizedCourse := handler.localizedCourse(context.Background(), baseCourse, "zh-CN")
+	if localizedCourse.GetTitle() != "课程标题" || localizedCourse.GetDescription() != "课程描述" {
+		t.Fatalf("course translation was not applied: %#v", localizedCourse)
+	}
+	if baseCourse.GetTitle() != "Course title" {
+		t.Fatal("course localization mutated the source course")
+	}
+
+	basePack := &lmspb.ResourcePack{
+		PackId:      "pack-1",
+		Title:       "Resource pack",
+		Description: "Resource pack description",
+	}
+	localizedPack := handler.localizedResourcePack(context.Background(), basePack, "zh-CN")
+	if localizedPack.GetTitle() != "资源包标题" || localizedPack.GetDescription() != "资源包描述" {
+		t.Fatalf("resource pack translation was not applied: %#v", localizedPack)
+	}
+
+	baseFile := &lmspb.ResourcePackFile{
+		FileId:      "file-1",
+		Title:       "Resource file",
+		Description: "Resource file description",
+	}
+	localizedFile := handler.localizedResourcePackFile(context.Background(), baseFile, "zh-CN")
+	if localizedFile.GetTitle() != "文件标题" || localizedFile.GetDescription() != "文件描述" {
+		t.Fatalf("resource pack file translation was not applied: %#v", localizedFile)
+	}
+}
+
+func TestLocalizedGLMSContentFallsBackToBaseLanguage(t *testing.T) {
+	handler := &Handler{Lms: localizationLMSClient{}}
+	base := &lmspb.Course{
+		CourseUlid:  "course-1",
+		Title:       "Course title",
+		Description: "Course description",
+	}
+
+	localized := handler.localizedCourse(context.Background(), base, "en-US")
+	if localized != base {
+		t.Fatal("missing translation should return the original course")
 	}
 }
 

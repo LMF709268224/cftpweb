@@ -1531,8 +1531,11 @@ watch(courseId, async () => {
 })
 
 watch(pipelineId, () => void loadRuntime())
-watch(lang, () => {
-  void loadRuntime(true)
+watch(lang, async () => {
+  await Promise.all([
+    loadCourse(false),
+    loadRuntime(true),
+  ])
 })
 watch(activeContentTab, async (tab) => {
   if (tab === "exam") {

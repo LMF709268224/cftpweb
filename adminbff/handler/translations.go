@@ -6,6 +6,7 @@ import (
 
 	gccpb "github.com/afnandelfin620-star/cftptest/cftp/gcc"
 	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
+	lmspb "github.com/afnandelfin620-star/cftptest/cftp/glms"
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
 	gmbrpb "github.com/afnandelfin620-star/cftptest/cftp/gmbr"
 	"github.com/go-chi/chi/v5"
@@ -107,6 +108,108 @@ func (h *Handler) SetUnitTranslations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if _, err := h.Gcc.SetUnitTranslations(r.Context(), &req); err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, map[string]any{"translations": req.Translations})
+}
+
+func (h *Handler) GetCourseTranslations(w http.ResponseWriter, r *http.Request) {
+	targetID := strings.TrimSpace(chi.URLParam(r, "course_id"))
+	if !requireRequestField(w, targetID, "course_id") {
+		return
+	}
+	resp, err := h.Lms.GetCourseTranslations(r.Context(), &lmspb.GetCourseTranslationsRequest{
+		CourseId: targetID,
+		Locale:   strings.TrimSpace(r.URL.Query().Get("locale")),
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+func (h *Handler) SetCourseTranslations(w http.ResponseWriter, r *http.Request) {
+	targetID := strings.TrimSpace(chi.URLParam(r, "course_id"))
+	var req lmspb.SetCourseTranslationsRequest
+	if err := ReadJSON(r, &req); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body: "+err.Error())
+		return
+	}
+	req.CourseId = targetID
+	if !requireRequestField(w, req.CourseId, "course_id") {
+		return
+	}
+	if _, err := h.Lms.SetCourseTranslations(r.Context(), &req); err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, map[string]any{"translations": req.Translations})
+}
+
+func (h *Handler) GetResourcePackTranslations(w http.ResponseWriter, r *http.Request) {
+	targetID := strings.TrimSpace(chi.URLParam(r, "pack_id"))
+	if !requireRequestField(w, targetID, "pack_id") {
+		return
+	}
+	resp, err := h.Lms.GetResourcePackTranslations(r.Context(), &lmspb.GetResourcePackTranslationsRequest{
+		PackId: targetID,
+		Locale: strings.TrimSpace(r.URL.Query().Get("locale")),
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+func (h *Handler) SetResourcePackTranslations(w http.ResponseWriter, r *http.Request) {
+	targetID := strings.TrimSpace(chi.URLParam(r, "pack_id"))
+	var req lmspb.SetResourcePackTranslationsRequest
+	if err := ReadJSON(r, &req); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body: "+err.Error())
+		return
+	}
+	req.PackId = targetID
+	if !requireRequestField(w, req.PackId, "pack_id") {
+		return
+	}
+	if _, err := h.Lms.SetResourcePackTranslations(r.Context(), &req); err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, map[string]any{"translations": req.Translations})
+}
+
+func (h *Handler) GetResourcePackFileTranslations(w http.ResponseWriter, r *http.Request) {
+	targetID := strings.TrimSpace(chi.URLParam(r, "file_id"))
+	if !requireRequestField(w, targetID, "file_id") {
+		return
+	}
+	resp, err := h.Lms.GetResourcePackFileTranslations(r.Context(), &lmspb.GetResourcePackFileTranslationsRequest{
+		FileId: targetID,
+		Locale: strings.TrimSpace(r.URL.Query().Get("locale")),
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+func (h *Handler) SetResourcePackFileTranslations(w http.ResponseWriter, r *http.Request) {
+	targetID := strings.TrimSpace(chi.URLParam(r, "file_id"))
+	var req lmspb.SetResourcePackFileTranslationsRequest
+	if err := ReadJSON(r, &req); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body: "+err.Error())
+		return
+	}
+	req.FileId = targetID
+	if !requireRequestField(w, req.FileId, "file_id") {
+		return
+	}
+	if _, err := h.Lms.SetResourcePackFileTranslations(r.Context(), &req); err != nil {
 		HandleGrpcError(w, err)
 		return
 	}

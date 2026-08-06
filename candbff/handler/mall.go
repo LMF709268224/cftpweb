@@ -366,6 +366,7 @@ func (h *Handler) GetMallCourseSummary(w http.ResponseWriter, r *http.Request) {
 		HandleGrpcError(w, err)
 		return
 	}
+	resp.Course = h.localizedCourseSummary(r.Context(), resp.GetCourse(), requestLocale(r))
 	WriteJSON(w, http.StatusOK, resp)
 }
 

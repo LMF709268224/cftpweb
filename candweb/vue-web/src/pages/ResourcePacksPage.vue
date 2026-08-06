@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue"
+import { computed, onMounted, ref, watch } from "vue"
 import { RouterLink } from "vue-router"
 import { ArrowRight, CalendarClock, PackageOpen, RefreshCw, Search } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
@@ -16,7 +16,7 @@ type ResourcePack = {
   updated_at?: string
 }
 
-const { t } = useTranslation()
+const { t, lang } = useTranslation()
 const loading = ref(false)
 const search = ref("")
 const packs = ref<ResourcePack[]>([])
@@ -53,6 +53,11 @@ function rememberPack(pack: ResourcePack) {
 }
 
 onMounted(() => {
+  void loadPacks()
+})
+
+watch(lang, () => {
+  search.value = ""
   void loadPacks()
 })
 </script>

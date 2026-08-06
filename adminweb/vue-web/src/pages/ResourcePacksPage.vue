@@ -3,6 +3,7 @@ import { Info, Loader2, Plus, RefreshCw, Save, X, UploadCloud } from "lucide-vue
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import { ApiError, apiClient } from "@/lib/apiClient"
+import TranslationsEditor from "@/components/TranslationsEditor.vue"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 
@@ -25,6 +26,10 @@ let listRequestId = 0
 let detailRequestId = 0
 const { t, isZh } = useAdminLanguage()
 const copy = computed(() => t.value.resourcePacksAdmin)
+const resourcePackTranslationFields = computed(() => [
+  { key: "title", label: copy.value.fields.title, maxLength: 512 },
+  { key: "description", label: copy.value.fields.description, kind: "textarea" as const, maxLength: 2048 },
+])
 
 const uploadingThumbnail = ref(false)
 const thumbnailFileInput = ref<HTMLInputElement | null>(null)
@@ -613,7 +618,15 @@ onMounted(load)
         <div v-modal-dialog="closePackDetail" class="flex h-full max-h-none w-full max-w-[1100px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
           <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:p-5">
             <div class="min-w-0">
-              <h2 class="break-words text-xl font-black">{{ mode === "create" ? copy.createTitle : mode === "edit" ? copy.editTitle : copy.detailTitle }}</h2>
+              <div class="flex flex-wrap items-center gap-3">
+                <h2 class="break-words text-xl font-black">{{ mode === "create" ? copy.createTitle : mode === "edit" ? copy.editTitle : copy.detailTitle }}</h2>
+                <TranslationsEditor
+                  v-if="mode !== 'create' && form.pack_id"
+                  :endpoint="`/api/lms/resource-packs/${encodeURIComponent(form.pack_id)}/translations`"
+                  :target-id="form.pack_id"
+                  :fields="resourcePackTranslationFields"
+                />
+              </div>
               <p class="mt-1 text-sm text-slate-500">{{ mode === "detail" ? copy.readonlyHint : mode === "create" ? copy.createHint : copy.editHint }}</p>
               <p v-if="detailLoading" class="mt-1 inline-flex items-center gap-2 text-xs font-bold text-blue-600">
                 <Loader2 class="h-3.5 w-3.5 animate-spin" />
