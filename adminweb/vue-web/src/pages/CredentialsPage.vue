@@ -308,7 +308,15 @@ onMounted(load)
         <div v-modal-dialog="closeDetail" class="flex h-full max-h-none w-full max-w-[1180px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
           <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
             <div class="min-w-0">
-              <h2 class="break-words text-xl font-black md:truncate md:text-2xl">{{ mode === "create" ? copy.createTitle : selected ? definitionName(selected) : copy.detailTitle }}</h2>
+              <div class="flex flex-wrap items-center gap-3">
+                <h2 class="break-words text-xl font-black md:truncate md:text-2xl">{{ mode === "create" ? copy.createTitle : selected ? definitionName(selected) : copy.detailTitle }}</h2>
+                <TranslationsEditor
+                  v-if="mode !== 'create' && selected"
+                  :endpoint="`/api/credentials/definitions/${encodeURIComponent(definitionUlid(selected))}/translations`"
+                  :target-id="definitionUlid(selected)"
+                  :fields="credentialTranslationFields"
+                />
+              </div>
               <p class="mt-1 break-all text-sm text-slate-500">
                 {{ mode === "create" ? copy.createHint : definitionUlid(selected) || copy.selectCredential }}
               </p>
@@ -414,11 +422,6 @@ onMounted(load)
                     </div>
                   </div>
                 </div>
-                <TranslationsEditor
-                  :endpoint="`/api/credentials/definitions/${encodeURIComponent(definitionUlid(selected))}/translations`"
-                  :target-id="definitionUlid(selected)"
-                  :fields="credentialTranslationFields"
-                />
               </div>
             </template>
           </section>

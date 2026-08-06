@@ -1556,10 +1556,18 @@ onMounted(load)
                     {{ copy.fields.bundleUlid }}
                     <input v-model="form.bundle_ulid" disabled class="h-11 rounded-xl border border-slate-200 bg-slate-100 px-4" />
                   </label>
-                  <label class="grid gap-2 text-sm font-bold md:col-span-2">
-                    {{ copy.fields.name }}
+                  <div class="grid gap-2 text-sm font-bold md:col-span-2">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                      <span>{{ copy.fields.name }}</span>
+                      <TranslationsEditor
+                        v-if="form.bundle_ulid"
+                        :endpoint="`/api/mall/bundles/${encodeURIComponent(form.bundle_ulid)}/translations`"
+                        :target-id="form.bundle_ulid"
+                        :fields="bundleTranslationFields"
+                      />
+                    </div>
                     <input v-model="form.name" class="h-11 rounded-xl border border-slate-200 px-4" maxlength="160" />
-                  </label>
+                  </div>
                   <label class="grid gap-2 text-sm font-bold">
                     {{ copy.fields.thumbnailObjectKey }}
                     <input v-model="form.thumbnail_object_key" class="h-11 rounded-xl border border-slate-200 px-4" />
@@ -1581,12 +1589,6 @@ onMounted(load)
                     </button>
                   </div>
                 </div>
-
-                <TranslationsEditor
-                  :endpoint="`/api/mall/bundles/${encodeURIComponent(form.bundle_ulid)}/translations`"
-                  :target-id="form.bundle_ulid"
-                  :fields="bundleTranslationFields"
-                />
 
                 <details class="rounded-2xl border border-slate-200 bg-white p-4 md:p-5 mt-6 mb-4">
                   <summary class="cursor-pointer text-sm font-black text-slate-700">{{ copy.advancedConfig }}</summary>

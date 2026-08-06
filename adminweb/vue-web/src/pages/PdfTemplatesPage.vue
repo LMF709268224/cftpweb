@@ -288,9 +288,17 @@ onMounted(load)
           <div v-modal-dialog="closeDialog" class="flex h-full max-h-none w-full max-w-[1100px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
             <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:p-5">
               <div class="min-w-0">
-                <h2 class="text-xl font-black">
-                  {{ mode === "create" ? copy.newTemplate : mode === "edit" ? copy.editTitle : copy.detailTitle }}
-                </h2>
+                <div class="flex flex-wrap items-center gap-3">
+                  <h2 class="text-xl font-black">
+                    {{ mode === "create" ? copy.newTemplate : mode === "edit" ? copy.editTitle : copy.detailTitle }}
+                  </h2>
+                  <TranslationsEditor
+                    v-if="mode !== 'create' && form.template_id"
+                    :endpoint="`/api/pdf-templates/${encodeURIComponent(form.template_id)}/translations`"
+                    :target-id="form.template_id"
+                    :fields="templateTranslationFields"
+                  />
+                </div>
                 <p class="mt-1 break-all text-sm text-slate-500">{{ mode === "create" ? copy.createDescription : templateUlid(selected) }}</p>
               </div>
               <button class="rounded-full border border-slate-200 p-2 text-slate-500 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50" type="button" :aria-label="copy.close" :disabled="saving" @click="closeDialog">
@@ -348,13 +356,6 @@ onMounted(load)
                     <iframe class="mt-4 h-80 w-full rounded-xl border border-slate-200 bg-white md:h-[520px]" sandbox="allow-same-origin" :srcdoc="previewHtml" />
                   </div>
                 </div>
-              </div>
-              <div v-if="mode !== 'create'" class="mt-6">
-                <TranslationsEditor
-                  :endpoint="`/api/pdf-templates/${encodeURIComponent(form.template_id)}/translations`"
-                  :target-id="form.template_id"
-                  :fields="templateTranslationFields"
-                />
               </div>
             </div>
             <div v-if="!readonlyMode" class="flex shrink-0 flex-col justify-end border-t border-slate-200 bg-white px-4 py-4 sm:flex-row md:px-5">

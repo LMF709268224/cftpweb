@@ -1122,10 +1122,18 @@ onMounted(() => {
           </div>
         </div>
         <div class="grid gap-4 md:grid-cols-2">
-          <label class="grid gap-2 text-sm font-bold md:col-span-2">
-            <span><span class="mr-1 text-red-500">*</span>{{ copy.fields.name }}</span>
+          <div class="grid gap-2 text-sm font-bold md:col-span-2">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <span><span class="mr-1 text-red-500">*</span>{{ copy.fields.name }}</span>
+              <TranslationsEditor
+                v-if="selectedId"
+                :endpoint="`/api/pipelines/${encodeURIComponent(selectedId)}/translations`"
+                :target-id="selectedId"
+                :fields="pipelineTranslationFields"
+              />
+            </div>
             <input v-model="form.name" class="rounded-xl border border-slate-200 px-4 py-3" />
-          </label>
+          </div>
           <details class="group md:col-span-2">
             <summary class="inline-flex cursor-pointer select-none items-center gap-1 rounded-lg text-sm font-bold text-slate-500 transition-colors hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
               {{ copy.advancedConfig }}
@@ -1200,11 +1208,6 @@ onMounted(() => {
               <div class="mt-2 text-sm font-bold text-slate-950">{{ formatDate(String(selected?.created_at || "")) }}</div>
               </div>
             </div>
-            <TranslationsEditor
-              :endpoint="`/api/pipelines/${encodeURIComponent(selectedId)}/translations`"
-              :target-id="selectedId"
-              :fields="pipelineTranslationFields"
-            />
           </div>
 
           <div v-else-if="activeLayer === 'stages'" class="grid min-h-[620px] lg:grid-cols-[320px_minmax(0,1fr)]">
@@ -1248,16 +1251,19 @@ onMounted(() => {
                     {{ copy.fields.sortOrder }}
                     <input :value="numberValue(selectedStage, 'sort_order')" :disabled="isStructureLocked()" type="number" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedStage, 'sort_order', eventNumber($event))" />
                   </label>
-                  <label class="grid gap-2 text-sm font-bold md:col-span-2">
-                    {{ copy.fields.name }}
+                  <div class="grid gap-2 text-sm font-bold md:col-span-2">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                      <span>{{ copy.fields.name }}</span>
+                      <TranslationsEditor
+                        v-if="fieldValue(selectedStage, 'stage_ulid')"
+                        :endpoint="`/api/pipeline-stages/${encodeURIComponent(fieldValue(selectedStage, 'stage_ulid'))}/translations`"
+                        :target-id="fieldValue(selectedStage, 'stage_ulid')"
+                        :fields="stageTranslationFields"
+                      />
+                    </div>
                     <input :value="fieldValue(selectedStage, 'name')" :disabled="isStructureLocked()" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedStage, 'name', eventValue($event))" />
-                  </label>
+                  </div>
                 </div>
-                <TranslationsEditor
-                  :endpoint="`/api/pipeline-stages/${encodeURIComponent(fieldValue(selectedStage, 'stage_ulid'))}/translations`"
-                  :target-id="fieldValue(selectedStage, 'stage_ulid')"
-                  :fields="stageTranslationFields"
-                />
                 <section class="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
                   <div class="flex flex-wrap items-start justify-between gap-3">
                     <div>
@@ -1351,10 +1357,18 @@ onMounted(() => {
                     {{ copy.fields.unitId }}
                     <input :value="fieldValue(selectedUnitItem.unit, 'unit_ulid')" disabled class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-500" />
                   </label>
-                  <label class="grid gap-2 text-sm font-bold">
-                    <span><span class="mr-1 text-red-500">*</span>{{ copy.fields.name }}</span>
+                  <div class="grid gap-2 text-sm font-bold">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                      <span><span class="mr-1 text-red-500">*</span>{{ copy.fields.name }}</span>
+                      <TranslationsEditor
+                        v-if="fieldValue(selectedUnitItem.unit, 'unit_ulid')"
+                        :endpoint="`/api/pipeline-units/${encodeURIComponent(fieldValue(selectedUnitItem.unit, 'unit_ulid'))}/translations`"
+                        :target-id="fieldValue(selectedUnitItem.unit, 'unit_ulid')"
+                        :fields="unitTranslationFields"
+                      />
+                    </div>
                     <input :value="fieldValue(selectedUnitItem.unit, 'name')" :disabled="isStructureLocked()" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedUnitItem?.unit, 'name', eventValue($event))" />
-                  </label>
+                  </div>
                   <label class="grid gap-2 text-sm font-bold">
                     {{ copy.fields.sortOrder }}
                     <input :value="numberValue(selectedUnitItem.unit, 'sort_order')" :disabled="isStructureLocked()" type="number" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedUnitItem?.unit, 'sort_order', eventNumber($event))" />
@@ -1429,11 +1443,6 @@ onMounted(() => {
                     </div>
                   </details>
                 </div>
-                <TranslationsEditor
-                  :endpoint="`/api/pipeline-units/${encodeURIComponent(fieldValue(selectedUnitItem.unit, 'unit_ulid'))}/translations`"
-                  :target-id="fieldValue(selectedUnitItem.unit, 'unit_ulid')"
-                  :fields="unitTranslationFields"
-                />
               </template>
               <div v-else class="p-12 text-center text-slate-500">{{ copy.selectOrAddUnit }}</div>
             </div>

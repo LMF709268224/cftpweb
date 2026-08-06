@@ -183,7 +183,14 @@ onMounted(load)
         <div v-modal-dialog="closeDialog" class="flex h-full w-full max-w-[1120px] flex-col overflow-hidden bg-white shadow-2xl md:h-auto md:max-h-[90vh] md:rounded-3xl">
           <header class="flex items-start justify-between gap-4 border-b border-slate-200 p-4 md:p-5">
             <div class="min-w-0">
-              <h2 class="truncate text-xl font-black md:text-2xl">{{ membershipName(selected) }}</h2>
+              <div class="flex flex-wrap items-center gap-3">
+                <h2 class="truncate text-xl font-black md:text-2xl">{{ membershipName(selected) }}</h2>
+                <TranslationsEditor
+                  :endpoint="`/api/memberships/${encodeURIComponent(membershipId(selected))}/translations`"
+                  :target-id="membershipId(selected)"
+                  :fields="translationFields"
+                />
+              </div>
               <p class="mt-1 break-all font-mono text-xs font-bold text-blue-700">{{ membershipId(selected) }}</p>
             </div>
             <button class="rounded-full border border-slate-200 p-2 text-slate-500" type="button" :aria-label="copy.close" :disabled="detailLoading" @click="closeDialog">
@@ -220,11 +227,6 @@ onMounted(load)
                 </div>
               </div>
 
-              <TranslationsEditor
-                :endpoint="`/api/memberships/${encodeURIComponent(membershipId(selected))}/translations`"
-                :target-id="membershipId(selected)"
-                :fields="translationFields"
-              />
             </div>
           </main>
         </div>
