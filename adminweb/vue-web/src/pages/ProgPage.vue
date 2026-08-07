@@ -298,6 +298,10 @@ function certificateTaskStatusLabel(value: unknown) {
   return labels[normalized] || labels[raw] || raw || copy.value.certificateTasks.unknownStatus
 }
 
+function isCompletedCertificateTaskStatus(value: unknown) {
+  return String(value ?? "").trim().toUpperCase().replace(/^CERTIFICATE_TASK_STATUS_/, "") === "COMPLETED"
+}
+
 function entityTypeLabel(value: unknown) {
   const normalizedType = String(value || "").toUpperCase()
   const labels = copy.value.entityTypes as Record<string, string>
@@ -1180,6 +1184,7 @@ onMounted(async () => {
                       <p class="mt-1 break-all text-sm text-slate-500">{{ certificateTaskUlid(selectedCertificateTask) || "-" }}</p>
                     </div>
                     <button
+                      v-if="selectedCertificateTask && !isCompletedCertificateTaskStatus(selectedCertificateTask.status)"
                       class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40 sm:w-auto"
                       type="button"
                       :disabled="!selectedCertificateTask || retryingCertificateTask === certificateTaskUlid(selectedCertificateTask)"
