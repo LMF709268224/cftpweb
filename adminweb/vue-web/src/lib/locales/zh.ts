@@ -2515,7 +2515,25 @@ export const zh = {
         },
         completionReasonLabels: {
             FINAL_ELIG_MET: "已满足最终资格要求",
-            "ALL COURSE UNITS COMPLETED": "所有课程单元均已完成",
+            ALL_COURSE_UNITS_COMPLETED: "所有课程单元均已完成",
+        },
+        logEventTypeLabels: {
+            PIPELINE_CREATE: "创建认证实例",
+            STAGE_ADVANCED: "推进认证阶段",
+            STATUS_CHANGED: "状态变更",
+            STATUS_CHANGE: "状态变更",
+            CREATED: "创建记录",
+            UPDATED: "更新记录",
+        },
+        logTriggerSourceLabels: {
+            PIPELINE_WORKER: "认证流程自动处理",
+            SYSTEM: "系统自动处理",
+            ADMIN: "管理员操作",
+            CANDIDATE: "考生操作",
+            USER: "考生操作",
+        },
+        logReasonMessageLabels: {
+            ALL_CERTIFICATES_ISSUED_SUCCESSFULLY: "所有证书已成功签发",
         },
         fieldLabels: {
             candidate_name: "考生姓名",

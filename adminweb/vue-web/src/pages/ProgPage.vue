@@ -308,10 +308,28 @@ function entityTypeLabel(value: unknown) {
   return labels[normalizedType] || String(value || "-")
 }
 
-function completionReasonLabel(value: unknown) {
+function localizedLogValue(value: unknown, labels: Record<string, string>) {
   const raw = String(value || "").trim()
+  if (!raw) return "-"
+  const normalized = raw.toUpperCase().replace(/[\s-]+/g, "_")
+  return labels[normalized] || labels[raw.toUpperCase()] || labels[raw] || raw
+}
+
+function completionReasonLabel(value: unknown) {
   const labels = copy.value.completionReasonLabels as Record<string, string>
-  return labels[raw.toUpperCase()] || raw || "-"
+  return localizedLogValue(value, labels)
+}
+
+function logEventTypeLabel(value: unknown) {
+  return localizedLogValue(value, copy.value.logEventTypeLabels as Record<string, string>)
+}
+
+function logTriggerSourceLabel(value: unknown) {
+  return localizedLogValue(value, copy.value.logTriggerSourceLabels as Record<string, string>)
+}
+
+function logReasonMessageLabel(value: unknown) {
+  return localizedLogValue(value, copy.value.logReasonMessageLabels as Record<string, string>)
 }
 
 function isDateField(key: string) {
@@ -345,6 +363,12 @@ function detailFieldValue(group: "overview" | "stage" | "unit" | "log", key: str
   if (key === "from_status" || key === "to_status") return entityStatusLabel(record?.entity_type, value)
   if (key === "entity_type") return entityTypeLabel(value)
   if (key === "completion_reason" || key === "completed_reason") return completionReasonLabel(value)
+  if (group === "log") {
+    if (key === "reason_code") return completionReasonLabel(value)
+    if (key === "reason_message") return logReasonMessageLabel(value)
+    if (key === "trigger_source") return logTriggerSourceLabel(value)
+    if (key === "event_type") return logEventTypeLabel(value)
+  }
   if (isDateField(key)) return formatDate(value) || readableValue(value)
   return readableValue(value)
 }

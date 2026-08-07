@@ -2517,7 +2517,25 @@ export const en: AdminTranslations = {
         },
         completionReasonLabels: {
             FINAL_ELIG_MET: "Final eligibility requirements met",
-            "ALL COURSE UNITS COMPLETED": "All course units completed",
+            ALL_COURSE_UNITS_COMPLETED: "All course units completed",
+        },
+        logEventTypeLabels: {
+            PIPELINE_CREATE: "Certification instance created",
+            STAGE_ADVANCED: "Certification stage advanced",
+            STATUS_CHANGED: "Status changed",
+            STATUS_CHANGE: "Status changed",
+            CREATED: "Record created",
+            UPDATED: "Record updated",
+        },
+        logTriggerSourceLabels: {
+            PIPELINE_WORKER: "Certification workflow automation",
+            SYSTEM: "System automation",
+            ADMIN: "Admin action",
+            CANDIDATE: "Candidate action",
+            USER: "Candidate action",
+        },
+        logReasonMessageLabels: {
+            ALL_CERTIFICATES_ISSUED_SUCCESSFULLY: "All certificates issued successfully",
         },
         fieldLabels: {
             candidate_name: "Candidate Name",
