@@ -144,7 +144,7 @@ func (h *Handler) ListLmsCourses(w http.ResponseWriter, r *http.Request) {
 		currentOnly = false
 	case "":
 		mappedStatus = ""
-		currentOnly = true
+		currentOnly = false
 	default:
 		mappedStatus = status
 		currentOnly = false
