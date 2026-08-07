@@ -86,6 +86,10 @@ function definitionName(definition: JsonRecord | null | undefined) {
   return String(pickFirst(definition || {}, ["name", "name_hint", "title"]) || copy.value.unnamedCredential)
 }
 
+function definitionAcquisitionMethod(definition: JsonRecord | null | undefined) {
+  return String(pickFirst(definition || {}, ["acquisition_method", "acquisitionMethod"]) || "")
+}
+
 function fileConstraints(definition: JsonRecord | null | undefined) {
   const value = definition?.file_constraints
   return Array.isArray(value) ? value.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item)) : []
@@ -406,6 +410,10 @@ onMounted(load)
                   <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <div class="text-xs font-black uppercase text-slate-400">{{ copy.labels.description }}</div>
                     <div class="mt-2 break-all text-sm font-bold text-slate-950">{{ selected.description || "-" }}</div>
+                  </div>
+                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:col-span-2">
+                    <div class="text-xs font-black uppercase text-slate-400">{{ copy.labels.acquisitionMethod }}</div>
+                    <div class="mt-2 whitespace-pre-wrap break-words text-sm font-bold text-slate-950">{{ definitionAcquisitionMethod(selected) || "-" }}</div>
                   </div>
                 </div>
 
