@@ -2551,6 +2551,12 @@ export const en: AdminTranslations = {
         load: "Load",
         noLogs: "No logs",
         logDetailTitle: "Log Detail",
+        logColumns: {
+            transition: "Status Change",
+            entity: "Entity",
+            occurredAt: "Occurred At",
+            action: "Action",
+        },
         rawHint: "System fields are read-only. Use the left-side action buttons for runtime changes.",
         rawJson: "Raw JSON",
         copyJson: "Copy JSON",

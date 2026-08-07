@@ -40,6 +40,7 @@ const detail = ref<JsonRecord | null>(null)
 const logs = ref<JsonRecord[]>([])
 const selectedLog = ref<JsonRecord | null>(null)
 const logDetail = ref<JsonRecord | null>(null)
+const logDetailOpen = ref(false)
 const certificateTasks = ref<JsonRecord[]>([])
 const selectedCertificateTask = ref<JsonRecord | null>(null)
 const certificateTaskDetail = ref<JsonRecord | null>(null)
@@ -118,6 +119,7 @@ function clearPipelineDetailState() {
   logs.value = []
   selectedLog.value = null
   logDetail.value = null
+  logDetailOpen.value = false
   certificateTasks.value = []
   selectedCertificateTask.value = null
   certificateTaskDetail.value = null
@@ -613,6 +615,17 @@ async function loadLogDetail(transitionUlid: string) {
   } finally {
     if (requestId === logDetailRequestId && isSelectedPipeline(pipelineId)) logDetailLoading.value = false
   }
+}
+
+async function openLogDetail(log: JsonRecord) {
+  selectedLog.value = log
+  logDetail.value = null
+  logDetailOpen.value = true
+  await loadLogDetail(String(log.transition_ulid || ""))
+}
+
+function closeLogDetail() {
+  logDetailOpen.value = false
 }
 
 async function loadCertificateTasks() {
@@ -1252,63 +1265,68 @@ onMounted(async () => {
                 </div>
               </div>
 
-              <div v-else-if="activeTab === 'logs'" class="grid lg:grid-cols-[380px_minmax(0,1fr)]">
-                <div class="border-b border-slate-200 lg:border-b-0 lg:border-r">
-                  <div class="flex items-center justify-between gap-3 border-b border-slate-200 p-4">
-                    <div>
-                      <div class="font-black">{{ copy.logListTitle }}</div>
-                      <div class="text-xs text-slate-500">{{ copy.logListDescription }}</div>
-                    </div>
-                    <button
-                      class="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50"
-                      type="button"
-                      :disabled="logsLoading"
-                      @click="loadLogs()"
-                    >
-                      <Loader2 v-if="logsLoading" class="h-4 w-4 animate-spin" />
-                      {{ copy.load }}
-                    </button>
-                  </div>
-                  <div v-if="logsLoading" class="p-10 text-center text-slate-500">
-                    <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-                    {{ copy.loading }}
+              <div v-else-if="activeTab === 'logs'" class="w-full">
+                <div class="flex flex-col gap-3 border-b border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between md:px-5">
+                  <div>
+                    <div class="font-black">{{ copy.logListTitle }}</div>
+                    <div class="text-xs text-slate-500">{{ copy.logListDescription }}</div>
                   </div>
                   <button
-                    v-for="log in logs"
-                    v-else
-                    :key="String(log.transition_ulid)"
-                    class="w-full border-b border-slate-100 px-5 py-4 text-left last:border-b-0 hover:bg-sky-50"
-                    :class="selectedLog === log ? 'bg-sky-50' : ''"
+                    class="inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50"
                     type="button"
-                    @click="selectedLog = log; loadLogDetail(String(log.transition_ulid || ''))"
+                    :disabled="logsLoading"
+                    @click="loadLogs()"
                   >
-                    <div class="font-black">{{ entityStatusLabel(log.entity_type, log.from_status) }} -> {{ entityStatusLabel(log.entity_type, log.to_status) }}</div>
-                    <div class="mt-1 text-sm text-slate-500">{{ entityTypeLabel(log.entity_type) }} · {{ log.entity_ulid || "-" }}</div>
-                    <div class="mt-1 text-xs text-slate-400">{{ formatDate(String(log.created_at || "")) }}</div>
+                    <Loader2 v-if="logsLoading" class="h-4 w-4 animate-spin" />
+                    {{ copy.load }}
                   </button>
-                  <div v-if="!logsLoading && !logs.length" class="p-10 text-center text-slate-500">{{ copy.noLogs }}</div>
-                  <div class="flex flex-col items-stretch justify-between gap-3 border-t border-slate-200 px-4 py-4 sm:flex-row sm:items-center md:px-5">
-                    <span class="text-sm font-bold text-slate-500">{{ Math.floor(logOffset / logPageSize) + 1 }} / {{ Math.max(1, Math.ceil(logsTotal / logPageSize)) }}</span>
-                    <div class="flex flex-col gap-3 sm:flex-row">
+                </div>
+                <div class="hidden grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_180px_110px] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500 md:grid">
+                  <span>{{ copy.logColumns.transition }}</span>
+                  <span>{{ copy.logColumns.entity }}</span>
+                  <span>{{ copy.logColumns.occurredAt }}</span>
+                  <span class="text-right">{{ copy.logColumns.action }}</span>
+                </div>
+                <div v-if="logsLoading" class="p-10 text-center text-slate-500">
+                  <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
+                  {{ copy.loading }}
+                </div>
+                <template v-else>
+                  <div
+                    v-for="log in logs"
+                    :key="String(log.transition_ulid)"
+                    class="grid gap-3 border-b border-slate-100 px-4 py-4 last:border-b-0 md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_180px_110px] md:items-center md:gap-4 md:px-5"
+                  >
+                    <div>
+                      <div class="text-xs font-black text-slate-400 md:hidden">{{ copy.logColumns.transition }}</div>
+                      <div class="mt-1 font-black md:mt-0">{{ entityStatusLabel(log.entity_type, log.from_status) }} -> {{ entityStatusLabel(log.entity_type, log.to_status) }}</div>
+                      <div class="mt-1 break-all text-xs text-slate-400">{{ log.transition_ulid || "-" }}</div>
+                    </div>
+                    <div>
+                      <div class="text-xs font-black text-slate-400 md:hidden">{{ copy.logColumns.entity }}</div>
+                      <div class="mt-1 font-bold md:mt-0">{{ entityTypeLabel(log.entity_type) }}</div>
+                      <div class="mt-1 break-all text-xs text-slate-500">{{ log.entity_ulid || "-" }}</div>
+                    </div>
+                    <div>
+                      <div class="text-xs font-black text-slate-400 md:hidden">{{ copy.logColumns.occurredAt }}</div>
+                      <div class="mt-1 text-sm font-semibold text-slate-500 md:mt-0">{{ formatDate(String(log.created_at || "")) }}</div>
+                    </div>
+                    <button
+                      class="inline-flex w-full items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 transition hover:underline md:w-auto md:justify-self-end md:border-0 md:bg-transparent md:px-0 md:py-0"
+                      type="button"
+                      @click="openLogDetail(log)"
+                    >
+                      {{ copy.viewDetails }}
+                    </button>
+                  </div>
+                </template>
+                <div v-if="!logsLoading && !logs.length" class="p-10 text-center text-slate-500">{{ copy.noLogs }}</div>
+                <div class="flex flex-col items-stretch justify-between gap-3 border-t border-slate-200 px-4 py-4 sm:flex-row sm:items-center md:px-5">
+                  <span class="text-sm font-bold text-slate-500">{{ Math.floor(logOffset / logPageSize) + 1 }} / {{ Math.max(1, Math.ceil(logsTotal / logPageSize)) }}</span>
+                  <div class="flex flex-col gap-3 sm:flex-row">
                     <button class="rounded-xl border px-4 py-2 font-bold disabled:cursor-not-allowed disabled:opacity-40" type="button" :disabled="logsLoading || !canPrevLogs" @click="loadLogs(selectedPipelineUlid, Math.max(0, logOffset - logPageSize))">{{ copy.prev }}</button>
                     <button class="rounded-xl border px-4 py-2 font-bold disabled:cursor-not-allowed disabled:opacity-40" type="button" :disabled="logsLoading || !canNextLogs" @click="loadLogs(selectedPipelineUlid, logOffset + logPageSize)">{{ copy.next }}</button>
-                    </div>
                   </div>
-                </div>
-                <div class="space-y-5 p-4 md:p-5">
-                  <h4 class="text-lg font-black">{{ copy.logDetailTitle }}</h4>
-                  <div v-if="logDetailLoading" class="p-10 text-center text-slate-500">
-                    <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-                    {{ copy.loadingDetails }}
-                  </div>
-                  <template v-else>
-                    <div v-if="selectedLog" class="grid gap-4 md:grid-cols-2">
-                      <div v-for="entry in detailEntries('log', asRecord((logDetail || selectedLog).summary || selectedLog))" :key="entry.key" class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                        <div class="text-xs font-black text-slate-400">{{ entry.label }}</div>
-                        <div class="mt-2 whitespace-pre-wrap break-all text-sm font-bold">{{ entry.value }}</div>
-                      </div>
-                    </div>
-                  </template>
                 </div>
               </div>
             </section>
@@ -1317,6 +1335,34 @@ onMounted(async () => {
         </div>
       </div>
     </div>
+
+    <Teleport to="body">
+      <div v-if="logDetailOpen && selectedLog" class="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/55 p-0 md:p-6" @mousedown.self="closeLogDetail">
+        <section v-modal-dialog="closeLogDetail" class="flex h-full max-h-none w-full max-w-[960px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
+          <header class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
+            <div class="min-w-0">
+              <h3 class="text-xl font-black md:text-2xl">{{ copy.logDetailTitle }}</h3>
+              <p class="mt-1 break-all text-sm text-slate-500">{{ selectedLog.transition_ulid || "-" }}</p>
+            </div>
+            <button class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="copy.close" @click="closeLogDetail">
+              <X class="h-5 w-5" />
+            </button>
+          </header>
+          <div class="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
+            <div v-if="logDetailLoading" class="p-10 text-center text-slate-500">
+              <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
+              {{ copy.loadingDetails }}
+            </div>
+            <div v-else class="grid gap-4 md:grid-cols-2">
+              <div v-for="entry in detailEntries('log', asRecord((logDetail || selectedLog).summary || selectedLog))" :key="entry.key" class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                <div class="text-xs font-black text-slate-400">{{ entry.label }}</div>
+                <div class="mt-2 whitespace-pre-wrap break-all text-sm font-bold">{{ entry.value }}</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </Teleport>
 
     <div v-if="pendingAction" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 md:p-6">
       <div v-modal-dialog="closeActionConfirm" class="w-full max-w-lg rounded-2xl bg-white p-4 shadow-2xl md:rounded-3xl md:p-6">

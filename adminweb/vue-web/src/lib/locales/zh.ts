@@ -2549,6 +2549,12 @@ export const zh = {
         load: "加载",
         noLogs: "暂无日志",
         logDetailTitle: "日志详情",
+        logColumns: {
+            transition: "状态变更",
+            entity: "对象",
+            occurredAt: "发生时间",
+            action: "操作",
+        },
         rawHint: "系统字段仅用于查看；运行态修改请使用左侧操作按钮。",
         rawJson: "原始 JSON",
         copyJson: "复制 JSON",
