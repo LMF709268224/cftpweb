@@ -17,12 +17,15 @@ import {
   getChinaCityOptions,
   getCountryCityOptions,
   getCountryOptions,
+  getOrganizationPhonePrefixes,
   getProvinceOptions,
   getStateCityOptions,
   loadLocationData,
   normalizeAddressCountryCode,
   normalizeLocationForSubmission,
   type CountryOption,
+  type PhonePrefixOption,
+  resolvePhoneCountryCode,
 } from "@/lib/locationOptions"
 import { GENDER_OPTIONS, PROFILE_TEXT_LIMITS, isValidEmail, isValidInternationalPhone, isValidPostalCode, normalizeGender, normalizeInternationalPhone, normalizePostalCode, trimToMax } from "@/lib/profileFormValidation"
 import { useUser } from "@/lib/user"
@@ -65,7 +68,7 @@ const resendCodeText = computed(() => t.value.settings.resendCode.replace('{{sec
 let emailCodeInterval: number | undefined
 const selectedCountryCode = ref("")
 const selectedProvinceCode = ref("")
-const orgPhonePrefixes = ref<{ code: string, dialCode: string, name: string }[]>([])
+const orgPhonePrefixes = ref<PhonePrefixOption[]>([])
 const countryOptions = ref<CountryOption[]>([])
 const provinceOptions = ref<any[]>([])
 const cityOptions = ref<any[]>([])
@@ -277,18 +280,12 @@ onMounted(async () => {
       
       const configRes = await apiClient("/api/public/config/organization")
       if (configRes && configRes.country_codes) {
-        const allCountries = getCachedCountries()
-        orgPhonePrefixes.value = configRes.country_codes.map((code: string) => {
-          const country = allCountries.find(c => c.isoCode === code)
-          return {
-            code,
-            dialCode: country ? `+${country.phonecode}` : code,
-            name: country ? country.name : code,
-          }
-        })
-        if (!profile.phoneCountryCode && orgPhonePrefixes.value.length > 0) {
-          profile.phoneCountryCode = orgPhonePrefixes.value[0].code
-        }
+        orgPhonePrefixes.value = getOrganizationPhonePrefixes(configRes.country_codes)
+        profile.phoneCountryCode = resolvePhoneCountryCode(
+          profile.phoneCountryCode,
+          orgPhonePrefixes.value,
+          selectedCountryCode.value,
+        )
       }
     }
   } catch {
@@ -543,7 +540,7 @@ async function handleUpdateEmail() {
             <label class="space-y-2">
               <span class="text-sm font-medium">{{ t.settings.workPhone }}</span>
               <div class="flex gap-2">
-                <select v-if="orgPhonePrefixes.length > 0" v-model="profile.phoneCountryCode" class="input cursor-pointer w-28 shrink-0">
+                <select v-if="orgPhonePrefixes.length > 0" v-model="profile.phoneCountryCode" data-testid="settings-phone-country-code" class="input cursor-pointer w-28 shrink-0">
                   <option v-for="prefix in orgPhonePrefixes" :key="prefix.code" :value="prefix.code">{{ prefix.dialCode }}</option>
                 </select>
                 <input

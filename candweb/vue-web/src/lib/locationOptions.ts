@@ -6,6 +6,12 @@ export type CountryOption = {
   displayName: string
 }
 
+export type PhonePrefixOption = {
+  code: string
+  dialCode: string
+  name: string
+}
+
 export const CN_STATE_LABELS: Record<string, string> = {
   AH: "安徽", BJ: "北京", CQ: "重庆", FJ: "福建", GS: "甘肃", GD: "广东", GX: "广西", GZ: "贵州",
   HI: "海南", HE: "河北", HL: "黑龙江", HA: "河南", HK: "香港", HB: "湖北", HN: "湖南", NM: "内蒙古",
@@ -171,6 +177,52 @@ export async function loadLocationData() {
 
 export function getCachedCountries() {
   return allCountriesCache
+}
+
+export function getOrganizationPhonePrefixes(countryCodes: unknown): PhonePrefixOption[] {
+  if (!Array.isArray(countryCodes) || allCountriesCache.length === 0) return []
+
+  const normalizedCodes = countryCodes
+    .map((code) => String(code || "").trim())
+    .filter(Boolean)
+  const includesAllCountries = normalizedCodes.some(
+    (code) => code === "*" || code.toLowerCase() === "all",
+  )
+  const countries = includesAllCountries
+    ? [...allCountriesCache].sort((a, b) => String(a.name).localeCompare(String(b.name), "en"))
+    : normalizedCodes
+        .map((code) => allCountriesCache.find(
+          (country) => String(country.isoCode).toUpperCase() === code.toUpperCase(),
+        ))
+        .filter(Boolean)
+
+  const seenCodes = new Set<string>()
+  return countries.flatMap((country) => {
+    const code = String(country.isoCode || "").trim().toUpperCase()
+    const phonecode = String(country.phonecode || "").trim().replace(/^\+/, "")
+    if (!code || !phonecode || seenCodes.has(code)) return []
+    seenCodes.add(code)
+    return [{
+      code,
+      dialCode: `+${phonecode}`,
+      name: String(country.name || code),
+    }]
+  })
+}
+
+export function resolvePhoneCountryCode(
+  currentCode: unknown,
+  prefixes: PhonePrefixOption[],
+  preferredCountryCode?: unknown,
+) {
+  const current = String(currentCode || "").trim().toUpperCase()
+  const existing = prefixes.find((prefix) => prefix.code === current)
+  if (existing) return existing.code
+
+  const preferred = String(preferredCountryCode || "").trim().toUpperCase()
+  return prefixes.find((prefix) => prefix.code === preferred)?.code
+    || prefixes[0]?.code
+    || ""
 }
 
 export function getCountryOptions(locale: string) {

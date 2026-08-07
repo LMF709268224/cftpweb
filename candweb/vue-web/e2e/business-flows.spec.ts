@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test"
 import {
+  candidateUser,
   installCandidateApiMocks,
   seedAuthenticatedCandidate,
   type ApiMockContext,
@@ -7,6 +8,31 @@ import {
 
 test.beforeEach(async ({ page }) => {
   await seedAuthenticatedCandidate(page)
+})
+
+test("Casdoor 所有地区配置展开为完整电话区号列表", async ({ page }) => {
+  await installCandidateApiMocks(page, ({ pathname }) => {
+    if (pathname === "/api/user/me") {
+      return {
+        data: {
+          ...candidateUser,
+          phone_country_code: "All",
+        },
+      }
+    }
+    if (pathname === "/api/public/config/organization") {
+      return { data: { country_codes: ["All"] } }
+    }
+    return undefined
+  })
+
+  await page.goto("/settings", { waitUntil: "domcontentloaded" })
+
+  const phoneCountryCode = page.getByTestId("settings-phone-country-code")
+  await expect(phoneCountryCode).toHaveValue("SG")
+  await expect(phoneCountryCode.locator('option[value="All"]')).toHaveCount(0)
+  await expect(phoneCountryCode.locator('option[value="SG"]')).toHaveText("+65")
+  expect(await phoneCountryCode.locator("option").count()).toBeGreaterThan(200)
 })
 
 test("消息可以批量标记已读并删除", async ({ page }) => {

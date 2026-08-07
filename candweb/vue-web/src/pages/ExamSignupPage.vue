@@ -17,12 +17,15 @@ import {
   getChinaCityOptions,
   getCountryCityOptions,
   getCountryOptions,
+  getOrganizationPhonePrefixes,
   getProvinceOptions,
   getStateCityOptions,
   loadLocationData,
   normalizeAddressCountryCode,
   normalizeLocationForSubmission,
   type CountryOption,
+  type PhonePrefixOption,
+  resolvePhoneCountryCode,
 } from "@/lib/locationOptions"
 import { GENDER_OPTIONS, PROFILE_TEXT_LIMITS, isValidEmail, isValidInternationalPhone, isValidPostalCode, normalizeGender, normalizeInternationalPhone, normalizePostalCode, trimToMax } from "@/lib/profileFormValidation"
 
@@ -45,7 +48,7 @@ const locationGridClass = computed(() => {
   const fieldCount = 1 + Number(showProvinceField.value) + Number(showCityField.value)
   return fieldCount === 3 ? "sm:grid-cols-3" : fieldCount === 2 ? "sm:grid-cols-2" : "sm:grid-cols-1"
 })
-const orgPhonePrefixes = ref<{ code: string, dialCode: string, name: string }[]>([])
+const orgPhonePrefixes = ref<PhonePrefixOption[]>([])
 const genderOptions = GENDER_OPTIONS
 const formData = reactive({
   first_name: "",
@@ -306,18 +309,12 @@ async function fetchOrgConfig() {
   try {
     const configRes = await apiClient("/api/public/config/organization")
     if (configRes && configRes.country_codes) {
-      const allCountries = getCachedCountries()
-      orgPhonePrefixes.value = configRes.country_codes.map((code: string) => {
-        const country = allCountries.find((c) => c.isoCode === code)
-        return {
-          code,
-          dialCode: country ? `+${country.phonecode}` : code,
-          name: country ? country.name : code,
-        }
-      })
-      if (!formData.phone_country_code && orgPhonePrefixes.value.length > 0) {
-        formData.phone_country_code = orgPhonePrefixes.value[0].code
-      }
+      orgPhonePrefixes.value = getOrganizationPhonePrefixes(configRes.country_codes)
+      formData.phone_country_code = resolvePhoneCountryCode(
+        formData.phone_country_code,
+        orgPhonePrefixes.value,
+        selectedCountryCode.value,
+      )
     }
   } catch (err) {
     console.error("Failed to load organization config", err)
