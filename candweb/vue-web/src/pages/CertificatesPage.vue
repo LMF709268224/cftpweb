@@ -12,6 +12,7 @@ import { useTranslation } from "@/lib/language"
 const { t, lang } = useTranslation()
 const certificates = ref<any[]>([])
 const loading = ref(false)
+const previewingCertificateUrl = ref("")
 const loadError = ref(false)
 const celebrationVisible = ref(false)
 const CERTIFICATE_PREVIEW_TIMEOUT_MS = 20000
@@ -31,8 +32,8 @@ function getCelebrationCertificateKey(cert?: { id?: string; credentialId?: strin
 
 async function previewCertificate(url?: string) {
   if (!url) return
-  if (loading.value) return
-  loading.value = true
+  if (previewingCertificateUrl.value) return
+  previewingCertificateUrl.value = url
   const controller = new AbortController()
   const timeoutId = window.setTimeout(() => controller.abort(), CERTIFICATE_PREVIEW_TIMEOUT_MS)
   let blobUrl = ""
@@ -49,7 +50,7 @@ async function previewCertificate(url?: string) {
     if (blobUrl) {
       window.setTimeout(() => URL.revokeObjectURL(blobUrl), CERTIFICATE_BLOB_URL_REVOKE_DELAY_MS)
     }
-    loading.value = false
+    previewingCertificateUrl.value = ""
   }
 }
 
@@ -318,7 +319,10 @@ watch(lang, () => {
             <button class="btn btn-primary flex-1 rounded-lg shadow-sm shadow-primary/20 transition-all duration-300 group-hover:shadow-primary/30" :disabled="!cert.pdfUrl" @click="openCertificate(cert.pdfUrl)">
               <Download class="h-4 w-4" /> {{ cert.pdfUrl ? t.certificatesPage.downloadCertificate : t.certificatesPage.certificateGenerating }}
             </button>
-            <button class="btn btn-outline rounded-lg px-3" :disabled="!cert.pdfUrl" @click="previewCertificate(cert.pdfUrl)"><Eye class="h-4 w-4" /></button>
+            <button class="btn btn-outline rounded-lg px-3" :disabled="!cert.pdfUrl || Boolean(previewingCertificateUrl)" @click="previewCertificate(cert.pdfUrl)">
+              <Loader2 v-if="previewingCertificateUrl === cert.pdfUrl" class="h-4 w-4 animate-spin" />
+              <Eye v-else class="h-4 w-4" />
+            </button>
           </div>
         </div>
       </div>
