@@ -541,7 +541,7 @@ async function handleUpdateEmail() {
               <span class="text-sm font-medium">{{ t.settings.workPhone }}</span>
               <div class="flex gap-2">
                 <select v-if="orgPhonePrefixes.length > 0" v-model="profile.phoneCountryCode" data-testid="settings-phone-country-code" class="input cursor-pointer w-28 shrink-0">
-                  <option v-for="prefix in orgPhonePrefixes" :key="prefix.code" :value="prefix.code">{{ prefix.dialCode }}</option>
+                  <option v-for="prefix in orgPhonePrefixes" :key="prefix.code" :value="prefix.code">{{ prefix.dialCode }} · {{ prefix.name }}</option>
                 </select>
                 <input
                   id="settings-work-phone"

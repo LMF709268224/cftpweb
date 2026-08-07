@@ -179,6 +179,11 @@ export function getCachedCountries() {
   return allCountriesCache
 }
 
+function formatPhonePrefix(phonecode: unknown) {
+  const countryCallingCode = String(phonecode || "").match(/\d+/)?.[0]
+  return countryCallingCode ? `+${countryCallingCode}` : ""
+}
+
 export function getOrganizationPhonePrefixes(countryCodes: unknown): PhonePrefixOption[] {
   if (!Array.isArray(countryCodes) || allCountriesCache.length === 0) return []
 
@@ -199,12 +204,12 @@ export function getOrganizationPhonePrefixes(countryCodes: unknown): PhonePrefix
   const seenCodes = new Set<string>()
   return countries.flatMap((country) => {
     const code = String(country.isoCode || "").trim().toUpperCase()
-    const phonecode = String(country.phonecode || "").trim().replace(/^\+/, "")
-    if (!code || !phonecode || seenCodes.has(code)) return []
+    const dialCode = formatPhonePrefix(country.phonecode)
+    if (!code || !dialCode || seenCodes.has(code)) return []
     seenCodes.add(code)
     return [{
       code,
-      dialCode: `+${phonecode}`,
+      dialCode,
       name: String(country.name || code),
     }]
   })

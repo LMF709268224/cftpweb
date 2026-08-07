@@ -31,7 +31,11 @@ test("Casdoor 所有地区配置展开为完整电话区号列表", async ({ pag
   const phoneCountryCode = page.getByTestId("settings-phone-country-code")
   await expect(phoneCountryCode).toHaveValue("SG")
   await expect(phoneCountryCode.locator('option[value="All"]')).toHaveCount(0)
-  await expect(phoneCountryCode.locator('option[value="SG"]')).toHaveText("+65")
+  await expect(phoneCountryCode.locator('option[value="SG"]')).toHaveText("+65 · Singapore")
+  await expect(phoneCountryCode.locator('option[value="DM"]')).toHaveText("+1 · Dominica")
+  await expect(phoneCountryCode.locator('option[value="DO"]')).toHaveText(
+    "+1 · Dominican Republic",
+  )
   expect(await phoneCountryCode.locator("option").count()).toBeGreaterThan(200)
 })
 

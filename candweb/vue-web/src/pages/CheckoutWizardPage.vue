@@ -1886,7 +1886,7 @@ async function confirmAndPay() {
                 <span class="text-sm font-medium">{{ t.examSignup.formWorkPhone }}</span>
                 <div class="flex gap-2">
                   <select v-if="orgPhonePrefixes.length > 0" v-model="formData.phone_country_code" class="input cursor-pointer w-28 shrink-0">
-                    <option v-for="prefix in orgPhonePrefixes" :key="prefix.code" :value="prefix.code">{{ prefix.dialCode }}</option>
+                    <option v-for="prefix in orgPhonePrefixes" :key="prefix.code" :value="prefix.code">{{ prefix.dialCode }} · {{ prefix.name }}</option>
                   </select>
                   <input
                     id="exam-signup-work-phone"
