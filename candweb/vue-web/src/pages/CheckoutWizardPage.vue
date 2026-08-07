@@ -574,6 +574,58 @@ function applyBundleInfo(response: any) {
   }
 }
 
+function qualificationIdsForStages(stages: any[]) {
+  return Array.from(new Set(
+    stages
+      .flatMap((stage: any) => stage.units || [])
+      .flatMap((unit: any) => unit.exemption_quals || [])
+      .map((qualification: any) => String(qualification?.qual_id || "").trim())
+      .filter(Boolean),
+  ))
+}
+
+function applyQualificationDefinitionsToStages(definitions: Record<string, any>) {
+  exemptionStages.value = exemptionStages.value.map((stage: any) => ({
+    ...stage,
+    units: (stage.units || []).map((unit: any) => ({
+      ...unit,
+      exemption_quals: (unit.exemption_quals || []).map((qualification: any) => {
+        const qualificationId = String(qualification?.qual_id || "").trim()
+        const definition = definitions[qualificationId]
+        if (!definition) return qualification
+        return {
+          ...qualification,
+          name: definition.name || qualification.name,
+          description: definition.description || qualification.description,
+          acquisition_method: definition.acquisition_method || qualification.acquisition_method,
+          file_constraints: definition.file_constraints || qualification.file_constraints,
+        }
+      }),
+    })),
+  }))
+}
+
+async function refreshCheckoutQualificationDefinitions() {
+  const qualificationIds = qualificationIdsForStages(exemptionStages.value)
+  if (qualificationIds.length === 0) {
+    qualificationDefinitions.value = {}
+    return
+  }
+
+  const response = await apiClient(
+    `/api/credentials/definitions?qual_ulids=${encodeURIComponent(qualificationIds.join(","))}`,
+    { suppressErrorToast: true },
+  )
+  const definitions = Array.isArray(response?.definitions) ? response.definitions : []
+  const definitionsById = Object.fromEntries(
+    definitions
+      .map((definition: any) => [qualificationDefinitionId(definition), definition] as const)
+      .filter(([qualificationId]: readonly [string, any]) => Boolean(qualificationId)),
+  )
+  qualificationDefinitions.value = definitionsById
+  applyQualificationDefinitionsToStages(definitionsById)
+}
+
 function syncQualifiedExemptionSelections(stages: any[]) {
   const previousSelections = selectedExemptionUnitIds.value
   const nextSelections: Record<string, boolean> = {}
@@ -634,6 +686,7 @@ async function completeTemporaryCftpUnlock(response: any) {
 async function loadBundleInfo() {
   const response = await fetchBundlePayload()
   applyBundleInfo(response)
+  await refreshCheckoutQualificationDefinitions()
   await refreshQualificationApplications()
   return response
 }
@@ -643,20 +696,7 @@ async function refreshLocalizedCheckoutContent() {
   try {
     const response = await fetchBundlePayload()
     applyBundleInfo(response)
-
-    const qualificationIds = Object.keys(qualificationDefinitions.value)
-    if (qualificationIds.length === 0) return
-
-    const definitionsResponse = await apiClient(
-      `/api/credentials/definitions?qual_ulids=${encodeURIComponent(qualificationIds.join(","))}`,
-      { suppressErrorToast: true },
-    )
-    const definitions = Array.isArray(definitionsResponse?.definitions) ? definitionsResponse.definitions : []
-    qualificationDefinitions.value = Object.fromEntries(
-      definitions
-        .map((definition: any) => [qualificationDefinitionId(definition), definition] as const)
-        .filter(([qualificationId]: readonly [string, any]) => Boolean(qualificationId)),
-    )
+    await refreshCheckoutQualificationDefinitions()
   } catch (error) {
     console.warn("Failed to refresh localized checkout content", error)
   }
@@ -666,6 +706,7 @@ async function loadPurchaseReadyBundleInfo() {
   const response = await fetchBundlePayload()
   const purchaseReadyBundle = await completeTemporaryCftpUnlock(response)
   applyBundleInfo(purchaseReadyBundle)
+  await refreshCheckoutQualificationDefinitions()
 
   try {
     const pricingRes = await apiClient(`/api/mall/bundles/${encodeURIComponent(bundleId)}/pricing-detail`, { suppressErrorToast: true })
