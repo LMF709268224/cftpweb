@@ -2230,7 +2230,7 @@ export const en: AdminTranslations = {
         loading: "Loading membership plans...",
         empty: "No membership plans",
         total: (count: number) => `${count} plans`,
-        viewDetails: "Configure Languages",
+        viewDetails: "View Details",
         detailTitle: "Membership Plan",
         close: "Close",
         cancel: "Cancel",

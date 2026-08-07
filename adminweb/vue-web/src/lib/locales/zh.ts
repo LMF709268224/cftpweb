@@ -2228,7 +2228,7 @@ export const zh = {
         loading: "正在加载会员方案...",
         empty: "暂无会员方案",
         total: (count: number) => `共 ${count} 个方案`,
-        viewDetails: "配置多语言",
+        viewDetails: "查看详情",
         detailTitle: "会员方案",
         close: "关闭",
         cancel: "取消",
