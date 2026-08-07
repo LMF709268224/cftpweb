@@ -29,18 +29,23 @@ const translationFields = computed(() => [
   { key: "description", label: copy.value.fields.description, kind: "textarea" as const, maxLength: 2048 },
   { key: "ideal_for", label: copy.value.fields.idealFor, kind: "textarea" as const, maxLength: 2048 },
   {
-    key: "feature_categories",
-    label: copy.value.fields.featureCategories,
-    kind: "map" as const,
-    mapEntries: featureEntries.value.categories,
-  },
-  {
     key: "feature_labels",
     label: copy.value.fields.featureLabels,
     kind: "map" as const,
     mapEntries: featureEntries.value.labels,
   },
+  {
+    key: "feature_categories",
+    label: copy.value.fields.featureCategories,
+    kind: "map" as const,
+    mapEntries: featureEntries.value.categories,
+  },
 ])
+const translationDefaultValues = computed(() => ({
+  feature_categories: Object.fromEntries(
+    featureEntries.value.categories.map((entry) => [entry.key, entry.label]),
+  ),
+}))
 
 function membershipId(membership: JsonRecord | null | undefined) {
   return String(pickFirst(membership || {}, ["membership_ulid", "membership_id"]) || "")
@@ -189,6 +194,7 @@ onMounted(load)
                   :endpoint="`/api/memberships/${encodeURIComponent(membershipId(selected))}/translations`"
                   :target-id="membershipId(selected)"
                   :fields="translationFields"
+                  :default-values="translationDefaultValues"
                 />
               </div>
               <p class="mt-1 break-all font-mono text-xs font-bold text-blue-700">{{ membershipId(selected) }}</p>
@@ -205,6 +211,14 @@ onMounted(load)
             </div>
             <div v-else class="space-y-6">
               <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.name }}</div>
+                  <div class="mt-2 text-sm font-bold">{{ membershipName(selected) }}</div>
+                </div>
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:col-span-2">
+                  <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.description }}</div>
+                  <div class="mt-2 whitespace-pre-wrap text-sm font-bold">{{ selected.description || copy.noDescription }}</div>
+                </div>
                 <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.membershipGpath }}</div>
                   <div class="mt-2 break-all text-sm font-bold">{{ selected.membership_gpath || "-" }}</div>
