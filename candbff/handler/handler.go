@@ -15,6 +15,7 @@ import (
 	gmsgpb "github.com/afnandelfin620-star/cftptest/cftp/gmsg"
 	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
 	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
+	"github.com/redis/go-redis/v9"
 )
 
 // ── Context 键 ──
@@ -47,6 +48,7 @@ type Handler struct {
 	CasdoorClientSecret string
 	CasdoorAppName      string
 	CasdoorOrgName      string
+	Rdb                 *redis.Client
 }
 
 func New(
@@ -66,6 +68,7 @@ func New(
 	casdoorClientSecret string,
 	casdoorAppName string,
 	casdoorOrgName string,
+	rdb *redis.Client,
 ) *Handler {
 	return &Handler{
 		Lms:                 lms,
@@ -84,6 +87,7 @@ func New(
 		CasdoorClientSecret: casdoorClientSecret,
 		CasdoorAppName:      casdoorAppName,
 		CasdoorOrgName:      casdoorOrgName,
+		Rdb:                 rdb,
 	}
 }
 

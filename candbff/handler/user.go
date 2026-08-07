@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"net/http"
 	"strings"
-	"sync"
 	"time"
 
 	gmailpb "github.com/afnandelfin620-star/cftptest/cftp/gmail"
@@ -21,15 +20,6 @@ const (
 	userPropRealNameV2 = "real_name"
 )
 
-type codeCacheItem struct {
-	email      string
-	code       string
-	expireTime time.Time
-}
-
-// TODO: Move verification codes to shared storage before running multiple candbff
-// pods. Process-local state fails when send and verify requests reach different pods.
-var emailVerificationCodes sync.Map
 
 // GetUserMe GET /api/user/me
 func (h *Handler) GetUserMe(w http.ResponseWriter, r *http.Request) {
@@ -260,7 +250,13 @@ func (h *Handler) SendEmailCode(w http.ResponseWriter, r *http.Request) {
 	}
 
 	code := fmt.Sprintf("%06d", rand.Intn(1000000))
-	emailVerificationCodes.Store(name, codeCacheItem{email: input.Email, code: code, expireTime: time.Now().Add(5 * time.Minute)})
+	cacheKey := "candbff:email_verification:" + name
+	cacheValue := input.Email + ":" + code
+	if err := h.Rdb.Set(r.Context(), cacheKey, cacheValue, 5*time.Minute).Err(); err != nil {
+		slog.Error("Failed to cache verification code in Redis", "error", err)
+		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to send email")
+		return
+	}
 
 	content := fmt.Sprintf("Your verification code is: %s. It will expire in 5 minutes.", code)
 	if input.Lang == "zh" {
@@ -300,14 +296,15 @@ func (h *Handler) UpdateUserEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	item, ok := emailVerificationCodes.Load(name)
-	if !ok {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "verification code required")
+	cacheKey := "candbff:email_verification:" + name
+	cacheValue, err := h.Rdb.Get(r.Context(), cacheKey).Result()
+	if err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "verification code required or expired")
 		return
 	}
 
-	cacheItem := item.(codeCacheItem)
-	if cacheItem.email != input.Email || cacheItem.code != input.VerificationCode || time.Now().After(cacheItem.expireTime) {
+	expectedValue := input.Email + ":" + input.VerificationCode
+	if cacheValue != expectedValue {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid or expired verification code")
 		return
 	}
@@ -328,6 +325,6 @@ func (h *Handler) UpdateUserEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	emailVerificationCodes.Delete(name)
+	h.Rdb.Del(r.Context(), cacheKey)
 	WriteJSON(w, http.StatusOK, BaseRsp{Code: 0, Msg: "success"})
 }
