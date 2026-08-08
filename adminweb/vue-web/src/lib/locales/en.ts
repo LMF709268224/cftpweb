@@ -1751,9 +1751,9 @@ export const en: AdminTranslations = {
         record: "Record",
         operation: "Action",
         columns: {
-            who: "Who",
-            action: "What happened",
-            result: "Result",
+            who: "User",
+            action: "Event",
+            result: "Status",
             time: "Time",
             operation: "Action",
         },

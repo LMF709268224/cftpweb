@@ -1749,9 +1749,9 @@ export const zh = {
         record: "记录",
         operation: "操作",
         columns: {
-            who: "谁",
-            action: "做什么",
-            result: "结果怎样",
+            who: "用户",
+            action: "事件",
+            result: "状态",
             time: "时间",
             operation: "操作",
         },
