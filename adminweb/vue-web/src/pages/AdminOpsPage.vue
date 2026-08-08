@@ -8,7 +8,7 @@ import { formatDate } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 
 type JsonRecord = Record<string, unknown>
-type PaginationMode = "offset" | "page"
+type PaginationMode = "cursor" | "none"
 
 type OpsFilter = {
   key: string
@@ -64,6 +64,11 @@ type DetailSection = {
   entries: DetailEntry[]
 }
 
+type RecordSummary = {
+  primary: string
+  secondary?: string
+}
+
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.adminOps)
 
@@ -76,7 +81,12 @@ function statusLabel(value: unknown) {
   const raw = String(value || "").trim()
   if (!raw) return ""
   const labels = copy.value.statusLabels as Record<string, string>
-  return labels[raw] || labels[raw.toUpperCase()] || raw
+  const upper = raw.toUpperCase()
+  const normalized = upper.replace(
+    /^(STAGE_STATUS_|COURSE_UNIT_STATUS_|PIPELINE_STATUS_|MAIL_TASK_STATUS_|DELIVERY_STATUS_|RECEIVE_STATUS_|EVENT_STATUS_|AUDIT_STATUS_|PROCESSED_STATUS_|SUBSCRIPTION_STATUS_|EXAM_STATUS_|RESULT_STATUS_|STATUS_)/,
+    "",
+  )
+  return labels[raw] || labels[upper] || labels[normalized] || raw
 }
 
 function mailTaskStatusOptions() {
@@ -263,7 +273,7 @@ const modules = computed<OpsModule[]>(() => [
     listPath: "/api/pay/subscriptions",
     itemKeys: ["subscriptions", "items"],
     idKeys: ["subscription_ulid", "subscriptionUlid", "stripe_subscription_id", "stripeSubscriptionId", "order_ulid", "orderUlid"],
-    pagination: "page",
+    pagination: "cursor",
     filters: [
       { key: "customer_ulid", label: fieldLabel("customer_ulid") },
       { key: "status", label: fieldLabel("status") },
@@ -278,7 +288,7 @@ const modules = computed<OpsModule[]>(() => [
     detailPath: (id) => `/api/pay/webhook-events/${encodeURIComponent(id)}`,
     itemKeys: ["events", "items"],
     idKeys: ["event_id", "eventId", "stripe_event_id", "stripeEventId"],
-    pagination: "page",
+    pagination: "cursor",
     filters: [
       { key: "event_type", label: fieldLabel("event_type"), options: payWebhookEventTypeOptions() },
       { key: "processed_status", label: fieldLabel("processed_status"), options: payWebhookProcessedStatusOptions() },
@@ -294,7 +304,7 @@ const modules = computed<OpsModule[]>(() => [
     listPath: "/api/pay/order-items",
     itemKeys: ["items"],
     idKeys: ["id", "item_id", "itemId"],
-    pagination: "page",
+    pagination: "none",
     requiredFilters: ["order_ulid"],
     filters: [{ key: "order_ulid", label: fieldLabel("order_ulid"), placeholder: copy.value.placeholders.required }],
   },
@@ -307,7 +317,7 @@ const modules = computed<OpsModule[]>(() => [
     detailPath: (id) => `/api/mall/mail-tasks/${encodeURIComponent(id)}`,
     itemKeys: ["items"],
     idKeys: ["mail_task_ulid", "mailTaskUlid"],
-    pagination: "offset",
+    pagination: "cursor",
     filters: [
       { key: "candidate_ulid", label: fieldLabel("candidate_ulid") },
       { key: "order_ulid", label: fieldLabel("order_ulid") },
@@ -328,7 +338,7 @@ const modules = computed<OpsModule[]>(() => [
     detailPath: (id) => `/api/memberships/mails/${encodeURIComponent(id)}`,
     itemKeys: ["mails", "items"],
     idKeys: ["mail_ulid", "mailUlid"],
-    pagination: "page",
+    pagination: "cursor",
     filters: [
       { key: "candidate_ulid", label: fieldLabel("candidate_ulid") },
       { key: "task_status", label: fieldLabel("task_status"), options: mailTaskStatusOptions() },
@@ -348,7 +358,7 @@ const modules = computed<OpsModule[]>(() => [
     detailPath: (id) => `/api/mall/nats-messages/${encodeURIComponent(id)}`,
     itemKeys: ["items"],
     idKeys: ["message_ulid", "messageUlid"],
-    pagination: "offset",
+    pagination: "cursor",
     filters: [
       { key: "receive_status", label: fieldLabel("receive_status"), options: receiveStatusOptions() },
       { key: "source_service", label: fieldLabel("source_service") },
@@ -365,7 +375,7 @@ const modules = computed<OpsModule[]>(() => [
     detailPath: (id) => `/api/prog/mail-tasks/${encodeURIComponent(id)}`,
     itemKeys: ["tasks", "items"],
     idKeys: ["mail_task_ulid", "mailTaskUlid"],
-    pagination: "offset",
+    pagination: "cursor",
     requiredFilters: ["candidate_ulid"],
     filters: [
       { key: "candidate_ulid", label: fieldLabel("candidate_ulid"), placeholder: copy.value.placeholders.required },
@@ -385,7 +395,7 @@ const modules = computed<OpsModule[]>(() => [
     detailPath: (id) => `/api/prog/stages/${encodeURIComponent(id)}`,
     itemKeys: ["stages", "items"],
     idKeys: ["stage_ulid", "stageUlid"],
-    pagination: "offset",
+    pagination: "cursor",
     requiredFilters: ["pipeline_ulid"],
     filters: [{ key: "pipeline_ulid", label: fieldLabel("pipeline_ulid"), placeholder: copy.value.placeholders.required }],
   },
@@ -398,7 +408,7 @@ const modules = computed<OpsModule[]>(() => [
     detailPath: (id) => `/api/prog/course-units/${encodeURIComponent(id)}`,
     itemKeys: ["course_units", "courseUnits", "items"],
     idKeys: ["course_unit_ulid", "courseUnitUlid"],
-    pagination: "offset",
+    pagination: "cursor",
     requiredFilters: ["pipeline_ulid"],
     filters: [
       { key: "pipeline_ulid", label: fieldLabel("pipeline_ulid"), placeholder: copy.value.placeholders.required },
@@ -415,7 +425,7 @@ const modules = computed<OpsModule[]>(() => [
     detailPath: (id) => `/api/prog/driver-events/${encodeURIComponent(id)}`,
     itemKeys: ["items"],
     idKeys: ["event_ulid", "eventUlid"],
-    pagination: "offset",
+    pagination: "cursor",
     filters: [
       { key: "entity_type", label: fieldLabel("entity_type"), options: driverEntityTypeOptions() },
       { key: "entity_ulid", label: fieldLabel("entity_ulid") },
@@ -432,7 +442,7 @@ const modules = computed<OpsModule[]>(() => [
     detailPath: (id) => `/api/prog/nats-messages/${encodeURIComponent(id)}`,
     itemKeys: ["items"],
     idKeys: ["message_ulid", "messageUlid"],
-    pagination: "offset",
+    pagination: "cursor",
     filters: [
       { key: "receive_status", label: fieldLabel("receive_status"), options: receiveStatusOptions() },
       { key: "source_service", label: fieldLabel("source_service") },
@@ -448,7 +458,7 @@ const modules = computed<OpsModule[]>(() => [
     detailIDFormat: "ulid",
     itemKeys: ["audit_messages", "auditMessages", "items"],
     idKeys: ["message_ulid", "messageUlid"],
-    pagination: "page",
+    pagination: "cursor",
     filters: [
       { key: "processed_status", label: fieldLabel("processed_status"), options: examAuditProcessedStatusOptions() },
       { key: "event_type", label: fieldLabel("event_type"), options: examAuditEventTypeOptions() },
@@ -461,8 +471,8 @@ const modules = computed<OpsModule[]>(() => [
     description: copy.value.descriptions.examTransitions,
     listPath: "/api/exam-ops/status-transitions",
     itemKeys: ["transitions", "items"],
-    idKeys: ["transition_ulid", "transitionUlid", "id"],
-    pagination: "page",
+    idKeys: ["msg_fp", "msgFp"],
+    pagination: "cursor",
     filters: [
       { key: "exam_ulid", label: fieldLabel("exam_ulid") },
       { key: "status_type", label: fieldLabel("status_type"), options: examTransitionStatusTypeOptions() },
@@ -477,7 +487,7 @@ const modules = computed<OpsModule[]>(() => [
     detailPath: (id) => `/api/exam-ops/reminder-mails/${encodeURIComponent(id)}`,
     itemKeys: ["mails", "items"],
     idKeys: ["mail_ulid", "mailUlid"],
-    pagination: "page",
+    pagination: "cursor",
     filters: [
       { key: "exam_ulid", label: fieldLabel("exam_ulid") },
       { key: "task_status", label: fieldLabel("task_status"), options: mailTaskStatusOptions() },
@@ -505,7 +515,9 @@ const actionLoading = ref("")
 const pendingAction = ref<PendingAction | null>(null)
 const total = ref(0)
 const page = ref(1)
-const offset = ref(0)
+const cursorStack = ref<string[]>([""])
+const nextCursor = ref("")
+const hasMore = ref(false)
 const pageSize = 20
 let listRequestId = 0
 let detailRequestId = 0
@@ -597,31 +609,179 @@ function isULID(value: string) {
   return /^[0-9A-HJKMNP-TV-Z]{26}$/i.test(value)
 }
 
-function getTitle(item: JsonRecord) {
-  if (activeModule.value.key === "progDriverEvents") {
-    const eventType = getField(item, ["event_type", "eventType"])
-    if (eventType !== undefined) return driverEventTypeLabel(eventType)
-  }
-  if (activeModule.value.key === "examAudit") {
-    const eventType = getField(item, ["event_type", "eventType"])
-    if (eventType !== undefined) return examAuditEventTypeLabel(eventType)
-  }
-  const title = getField(item, ["title", "name", "subject", "event_type", "eventType", "message_type", "messageType"])
-  return title === undefined ? getItemID(item) || copy.value.untitled : String(title)
+function summary(primary: unknown, secondary?: unknown): RecordSummary {
+  const primaryText = String(primary || "").trim() || copy.value.unknown
+  const secondaryText = String(secondary || "").trim()
+  return { primary: primaryText, secondary: secondaryText || undefined }
 }
 
-function getSubtitle(item: JsonRecord) {
-  const rawStatus = getField(item, ["task_status", "taskStatus", "processed_status", "processedStatus", "event_status", "eventStatus", "status"])
-  const mappedStatus = rawStatus
-    ? activeModule.value.key === "payWebhooks"
-      ? payWebhookProcessedStatusLabel(rawStatus)
-      : activeModule.value.key === "examAudit"
-        ? examAuditProcessedStatusLabel(rawStatus)
-        : statusLabel(rawStatus)
-    : undefined
-  const time = getField(item, ["created_at", "createdAt", "scheduled_at", "scheduledAt"])
-  const parts = [mappedStatus, formatDate(time)].filter((value) => value !== undefined && value !== "")
-  return parts.map(String).join(" · ")
+function candidateSummary(item: JsonRecord) {
+  const name = getField(item, ["candidate_name", "candidateName", "recipient_name", "recipientName"])
+  const email = getField(item, ["recipient_email", "recipientEmail", "candidate_email", "candidateEmail"])
+  const id = getField(item, ["candidate_ulid", "candidateUlid", "customer_ulid", "customerUlid"])
+  return summary(name || email || id || copy.value.actors.unknownUser, email || id)
+}
+
+function whoSummary(item: JsonRecord): RecordSummary {
+  switch (activeModule.value.key) {
+    case "paySubscriptions":
+    case "mallMailTasks":
+    case "mbrMailTasks":
+    case "progMailTasks":
+      return candidateSummary(item)
+    case "payWebhooks":
+      return summary(copy.value.actors.stripe, getField(item, ["event_id", "eventId"]))
+    case "payOrderItems":
+      return summary(copy.value.actors.order, getField(item, ["order_ulid", "orderUlid"]))
+    case "mallNats":
+    case "progNats":
+      return summary(getField(item, ["source_service", "sourceService"]) || copy.value.actors.system, getField(item, ["subject"]))
+    case "progStages":
+      return summary(copy.value.actors.certification, getField(item, ["pipeline_ulid", "pipelineUlid"]))
+    case "progCourseUnits":
+      return summary(copy.value.actors.courseUnit, getField(item, ["stage_ulid", "stageUlid", "pipeline_ulid", "pipelineUlid"]))
+    case "progDriverEvents":
+      return summary(
+        getField(item, ["source"]) || driverEntityTypeLabel(getField(item, ["entity_type", "entityType"])),
+        getField(item, ["entity_ulid", "entityUlid"]),
+      )
+    case "examAudit":
+    case "examTransitions":
+      return summary(copy.value.actors.examSystem, getField(item, ["exam_ulid", "examUlid", "message_ulid", "messageUlid"]))
+    case "examReminders":
+      return summary(
+        getField(item, ["recipient_name", "recipientName", "candidate_email", "candidateEmail", "recipient_email", "recipientEmail"]) ||
+          copy.value.actors.unknownUser,
+        getField(item, ["recipient_email", "recipientEmail", "candidate_email", "candidateEmail", "exam_ulid", "examUlid"]),
+      )
+    default:
+      return summary(copy.value.actors.system, getItemID(item))
+  }
+}
+
+function actionSummary(item: JsonRecord): RecordSummary {
+  switch (activeModule.value.key) {
+    case "paySubscriptions":
+      return summary(copy.value.businessActions.subscriptionPayment, getField(item, ["stripe_subscription_id", "stripeSubscriptionId", "order_ulid", "orderUlid"]))
+    case "payWebhooks": {
+      const eventType = getField(item, ["event_type", "eventType"])
+      return summary((copy.value.payWebhookDetail.eventTypes as Record<string, string>)[String(eventType || "")] || eventType, getField(item, ["event_id", "eventId"]))
+    }
+    case "payOrderItems":
+      return summary(getField(item, ["title"]) || copy.value.businessActions.orderItem, getField(item, ["item_type", "itemType", "item_id", "itemId"]))
+    case "mallMailTasks":
+    case "progMailTasks":
+      return summary(getField(item, ["subject"]) || mailTypeLabel(getField(item, ["mail_type", "mailType"])), mailTypeLabel(getField(item, ["mail_type", "mailType"])))
+    case "mbrMailTasks":
+      return summary(getField(item, ["subject"]) || notificationTypeLabel(getField(item, ["notification_type", "notificationType"])), notificationTypeLabel(getField(item, ["notification_type", "notificationType"])))
+    case "mallNats":
+    case "progNats":
+      return summary(getField(item, ["subject"]) || natsMessageTypeLabel(getField(item, ["message_type", "messageType"])), natsMessageTypeLabel(getField(item, ["message_type", "messageType"])))
+    case "progStages":
+      return summary(copy.value.businessActions.stageRuntime, getField(item, ["stage_cc_ulid", "stageCcUlid", "stage_ulid", "stageUlid"]))
+    case "progCourseUnits":
+      return summary(copy.value.businessActions.courseRuntime, getField(item, ["course_unit_cc_ulid", "courseUnitCcUlid", "course_unit_ulid", "courseUnitUlid"]))
+    case "progDriverEvents": {
+      const eventType = getField(item, ["event_type", "eventType"])
+      return summary(driverEventTypeLabel(eventType), eventType)
+    }
+    case "examAudit": {
+      const eventType = getField(item, ["event_type", "eventType"])
+      return summary(examAuditEventTypeLabel(eventType), getField(item, ["message_ulid", "messageUlid"]))
+    }
+    case "examTransitions": {
+      const fromStatus = statusLabel(getField(item, ["from_status", "fromStatus"]))
+      const toStatus = statusLabel(getField(item, ["to_status", "toStatus"]))
+      const statusType = examTransitionStatusTypeLabel(getField(item, ["status_type", "statusType"]))
+      return summary(copy.value.businessActions.statusTransition, [fromStatus, toStatus].filter(Boolean).join(" → ") || statusType)
+    }
+    case "examReminders":
+      return summary(getField(item, ["subject"]) || reminderTypeLabel(getField(item, ["reminder_type", "reminderType"])), reminderTypeLabel(getField(item, ["reminder_type", "reminderType"])))
+    default:
+      return summary(getItemID(item) || copy.value.untitled)
+  }
+}
+
+function resultStatus(item: JsonRecord) {
+  const rawStatus = getField(item, [
+    "task_status",
+    "taskStatus",
+    "delivery_status",
+    "deliveryStatus",
+    "processed_status",
+    "processedStatus",
+    "receive_status",
+    "receiveStatus",
+    "event_status",
+    "eventStatus",
+    "status",
+    "to_status",
+    "toStatus",
+  ])
+  if (!rawStatus) return ""
+  if (activeModule.value.key === "payWebhooks") return payWebhookProcessedStatusLabel(rawStatus)
+  if (activeModule.value.key === "examAudit") return examAuditProcessedStatusLabel(rawStatus)
+  return statusLabel(rawStatus)
+}
+
+function resultSummary(item: JsonRecord): RecordSummary {
+  if (activeModule.value.key === "payOrderItems") {
+    return summary(
+      formatStripeAmount(getField(item, ["final_price", "finalPrice"]), getField(item, ["currency"])),
+      copy.value.quantity(getField(item, ["quantity"]) || 1),
+    )
+  }
+  const status = resultStatus(item) || copy.value.statusLabels.UNKNOWN
+  let secondary: unknown
+  switch (activeModule.value.key) {
+    case "paySubscriptions":
+      secondary = formatStripeAmount(getField(item, ["amount"]), getField(item, ["currency"]))
+      break
+    case "mallMailTasks":
+    case "mbrMailTasks":
+    case "progMailTasks":
+    case "examReminders": {
+      const retries = getField(item, ["retry_count", "retryCount"])
+      const error = getField(item, ["last_error", "lastError", "error_message", "errorMessage"])
+      secondary = error || (retries !== undefined ? copy.value.retryCount(retries) : "")
+      break
+    }
+    case "progStages":
+      secondary = getField(item, ["completed_reason", "completedReason"])
+      break
+    case "progCourseUnits": {
+      const progress = getField(item, ["course_progress", "courseProgress"])
+      secondary = progress !== undefined ? copy.value.progress(progress) : ""
+      break
+    }
+    case "mallNats":
+    case "progNats":
+    case "progDriverEvents":
+    case "examAudit":
+      secondary = copy.value.attemptCount(getField(item, ["process_attempts", "processAttempts"]) || 0)
+      break
+  }
+  return summary(status, secondary)
+}
+
+function resultTone(item: JsonRecord) {
+  const raw = String(
+    getField(item, ["task_status", "taskStatus", "delivery_status", "deliveryStatus", "processed_status", "processedStatus", "receive_status", "receiveStatus", "event_status", "eventStatus", "status", "to_status", "toStatus"]) || "",
+  ).toUpperCase()
+  if (/(FAILED|ERROR|CANCELLED|DELETED|REJECTED)/.test(raw)) return "border-rose-200 bg-rose-50 text-rose-700"
+  if (/(SENT|DELIVERED|PROCESSED|COMPLETED|PAID|SUCCEEDED|SUCCESS|ACTIVE)/.test(raw)) return "border-emerald-200 bg-emerald-50 text-emerald-700"
+  if (/(PENDING|WAIT|RETRY|RUNNING|PROCESSING)/.test(raw)) return "border-amber-200 bg-amber-50 text-amber-700"
+  return "border-slate-200 bg-slate-50 text-slate-700"
+}
+
+function recordTime(item: JsonRecord) {
+  const value = getField(item, ["created_at", "createdAt", "scheduled_at", "scheduledAt", "transitioned_at", "transitionedAt", "received_at", "receivedAt", "stripe_created_at", "stripeCreatedAt"])
+  if (activeModule.value.key === "paySubscriptions" || activeModule.value.key === "payWebhooks" || activeModule.value.key === "payOrderItems") return formatStripeTimestamp(value)
+  return formatDate(value) || "-"
+}
+
+function getTitle(item: JsonRecord) {
+  return actionSummary(item).primary
 }
 
 function extractItems(data: JsonRecord, module: OpsModule) {
@@ -1431,12 +1591,10 @@ function buildListURL(module: OpsModule) {
     const queryValue = value ? filterQueryValue(filter, value) : ""
     if (queryValue) params.set(filter.key, queryValue)
   }
-  if (module.pagination === "page") {
-    params.set("page", String(page.value))
+  if (module.pagination === "cursor") {
     params.set("page_size", String(pageSize))
-  } else {
-    params.set("limit", String(pageSize))
-    params.set("offset", String(offset.value))
+    const cursor = cursorStack.value[page.value - 1] || ""
+    if (cursor) params.set("cursor", cursor)
   }
   return `${module.listPath}?${params.toString()}`
 }
@@ -1449,7 +1607,9 @@ async function loadList(reset = false) {
   ensureOptionFilterDefaults(module)
   if (reset) {
     page.value = 1
-    offset.value = 0
+    cursorStack.value = [""]
+    nextCursor.value = ""
+    hasMore.value = false
   }
   selected.value = null
   detail.value = null
@@ -1467,13 +1627,14 @@ async function loadList(reset = false) {
     if (!isCurrentListRequest(requestId, moduleKey)) return
     items.value = extractItems(data, module)
     total.value = Number(data.total || items.value.length || 0)
-    if (items.value.length) {
-      void openItem(items.value[0], false)
-    }
+    nextCursor.value = String(data.next_cursor || data.nextCursor || "")
+    hasMore.value = Boolean(data.has_more ?? data.hasMore ?? nextCursor.value)
   } catch (error) {
     if (!isCurrentListRequest(requestId, moduleKey)) return
     items.value = []
     total.value = 0
+    nextCursor.value = ""
+    hasMore.value = false
     toast.error(apiErrorMessage(error, copy.value.toasts.loadFailed))
   } finally {
     if (isCurrentListRequest(requestId, moduleKey)) loading.value = false
@@ -1558,27 +1719,23 @@ async function executePendingAction() {
 }
 
 function previousPage() {
-  if (activeModule.value.pagination === "page") {
-    if (page.value <= 1) return
-    page.value -= 1
-  } else {
-    offset.value = Math.max(0, offset.value - pageSize)
-  }
+  if (activeModule.value.pagination !== "cursor" || page.value <= 1) return
+  page.value -= 1
   void loadList()
 }
 
 function nextPage() {
-  if (activeModule.value.pagination === "page") {
-    page.value += 1
-  } else {
-    offset.value += pageSize
-  }
+  if (activeModule.value.pagination !== "cursor" || !hasMore.value || !nextCursor.value) return
+  cursorStack.value[page.value] = nextCursor.value
+  page.value += 1
   void loadList()
 }
 
 watch(activeKey, () => {
   page.value = 1
-  offset.value = 0
+  cursorStack.value = [""]
+  nextCursor.value = ""
+  hasMore.value = false
   void loadList()
 })
 
@@ -1665,7 +1822,7 @@ void loadList()
           <h2 class="text-xl font-black text-slate-950">{{ copy.listTitle }}</h2>
           <p class="mt-1 text-sm font-medium text-slate-500">{{ copy.listDescription }}</p>
         </div>
-        <span class="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ copy.total(total) }}</span>
+        <span class="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ copy.pageCount(page, total) }}</span>
       </div>
 
       <div v-if="missingRequiredFilters.length" class="px-6 py-14 text-center text-sm font-bold text-amber-700">
@@ -1674,21 +1831,39 @@ void loadList()
       <div v-else-if="loading" class="px-6 py-14 text-center text-sm font-bold text-slate-500">{{ copy.loading }}</div>
       <div v-else-if="!items.length" class="px-6 py-14 text-center text-sm font-bold text-slate-500">{{ copy.empty }}</div>
       <div v-else>
-        <div class="grid grid-cols-[minmax(0,1fr)_96px] gap-3 border-b border-slate-100 bg-slate-50 px-4 py-3 text-xs font-black text-slate-500 md:grid-cols-[minmax(0,1fr)_112px] md:gap-4 md:px-5">
-          <span>{{ copy.record }}</span>
-          <span class="text-right">{{ copy.operation }}</span>
+        <div class="hidden grid-cols-[minmax(180px,1.05fr)_minmax(240px,1.45fr)_minmax(180px,0.9fr)_160px_96px] gap-4 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500 md:grid">
+          <span>{{ copy.columns.who }}</span>
+          <span>{{ copy.columns.action }}</span>
+          <span>{{ copy.columns.result }}</span>
+          <span>{{ copy.columns.time }}</span>
+          <span class="text-right">{{ copy.columns.operation }}</span>
         </div>
         <div
           v-for="item in items"
           :key="getItemID(item) || stringify(item)"
-          class="grid w-full gap-3 border-b border-slate-100 p-4 text-left transition last:border-b-0 hover:bg-slate-50 md:grid-cols-[minmax(0,1fr)_112px] md:items-center md:gap-4 md:p-5"
+          class="grid w-full gap-4 border-b border-slate-100 p-4 text-left transition last:border-b-0 hover:bg-slate-50 md:grid-cols-[minmax(180px,1.05fr)_minmax(240px,1.45fr)_minmax(180px,0.9fr)_160px_96px] md:items-center md:px-5 md:py-4"
           :class="getItemID(item) === getItemID(selected) ? 'bg-sky-50' : ''"
         >
-          <span class="min-w-0">
-            <span class="block break-words font-black text-slate-950">{{ getTitle(item) }}</span>
-            <span class="mt-1 block break-all text-xs font-bold text-blue-700">{{ getItemID(item) || "-" }}</span>
-            <span class="mt-1 block break-words text-xs font-semibold text-slate-500">{{ getSubtitle(item) || "-" }}</span>
-          </span>
+          <div class="min-w-0">
+            <span class="mb-1 block text-[11px] font-black uppercase tracking-wide text-slate-400 md:hidden">{{ copy.columns.who }}</span>
+            <span class="block break-words font-black text-slate-950">{{ whoSummary(item).primary }}</span>
+            <span v-if="whoSummary(item).secondary" class="mt-1 block break-all text-xs font-semibold text-slate-500">{{ whoSummary(item).secondary }}</span>
+          </div>
+          <div class="min-w-0">
+            <span class="mb-1 block text-[11px] font-black uppercase tracking-wide text-slate-400 md:hidden">{{ copy.columns.action }}</span>
+            <span class="block break-words font-black text-slate-950">{{ actionSummary(item).primary }}</span>
+            <span v-if="actionSummary(item).secondary" class="mt-1 block break-all text-xs font-bold text-blue-700">{{ actionSummary(item).secondary }}</span>
+            <span class="mt-1 block break-all text-[11px] font-semibold text-slate-400">{{ getItemID(item) || "-" }}</span>
+          </div>
+          <div class="min-w-0">
+            <span class="mb-1 block text-[11px] font-black uppercase tracking-wide text-slate-400 md:hidden">{{ copy.columns.result }}</span>
+            <span class="inline-flex max-w-full rounded-full border px-2.5 py-1 text-xs font-black" :class="resultTone(item)">{{ resultSummary(item).primary }}</span>
+            <span v-if="resultSummary(item).secondary" class="mt-1.5 block break-words text-xs font-semibold text-slate-500">{{ resultSummary(item).secondary }}</span>
+          </div>
+          <div class="min-w-0">
+            <span class="mb-1 block text-[11px] font-black uppercase tracking-wide text-slate-400 md:hidden">{{ copy.columns.time }}</span>
+            <span class="block break-words text-sm font-bold text-slate-700">{{ recordTime(item) }}</span>
+          </div>
           <button
             class="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 md:justify-self-end md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-right"
             type="button"
@@ -1699,12 +1874,13 @@ void loadList()
         </div>
       </div>
 
-      <div class="flex items-center justify-end gap-3 border-t border-slate-200 px-4 py-4 md:px-5">
+      <div v-if="activeModule.pagination === 'cursor'" class="flex items-center justify-between gap-3 border-t border-slate-200 px-4 py-4 md:px-5">
+        <span class="text-sm font-bold text-slate-500">{{ copy.page(page) }}</span>
         <div class="flex w-full gap-2 md:w-auto">
-          <button class="flex-1 rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold disabled:opacity-40 md:flex-none" :disabled="page <= 1 && offset <= 0" @click="previousPage">
+          <button class="flex-1 rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold disabled:opacity-40 md:flex-none" :disabled="page <= 1" @click="previousPage">
             {{ copy.previous }}
           </button>
-          <button class="flex-1 rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold md:flex-none" :disabled="items.length < pageSize" @click="nextPage">
+          <button class="flex-1 rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold disabled:opacity-40 md:flex-none" :disabled="!hasMore || !nextCursor" @click="nextPage">
             {{ copy.next }}
           </button>
         </div>

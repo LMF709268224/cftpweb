@@ -107,7 +107,7 @@ func (h *Handler) ListPaySubscriptions(w http.ResponseWriter, r *http.Request) {
 		HandleGrpcError(w, err)
 		return
 	}
-	WriteJSON(w, http.StatusOK, resp)
+	WriteJSON(w, http.StatusOK, h.candidateAwarePayload(resp, "customer_ulid"))
 }
 
 func (h *Handler) ListPayWebhookEvents(w http.ResponseWriter, r *http.Request) {
@@ -225,7 +225,7 @@ func (h *Handler) ListMallMailTasks(w http.ResponseWriter, r *http.Request) {
 		HandleGrpcError(w, err)
 		return
 	}
-	WriteJSON(w, http.StatusOK, resp)
+	WriteJSON(w, http.StatusOK, h.candidateAwarePayload(resp, "candidate_ulid"))
 }
 
 func (h *Handler) GetMallMailTaskSummary(w http.ResponseWriter, r *http.Request) {
@@ -238,7 +238,7 @@ func (h *Handler) GetMallMailTaskSummary(w http.ResponseWriter, r *http.Request)
 		HandleGrpcError(w, err)
 		return
 	}
-	WriteJSON(w, http.StatusOK, resp)
+	WriteJSON(w, http.StatusOK, h.candidateAwarePayload(resp, "candidate_ulid"))
 }
 
 func (h *Handler) GetMallMailTaskDetail(w http.ResponseWriter, r *http.Request) {
@@ -251,7 +251,7 @@ func (h *Handler) GetMallMailTaskDetail(w http.ResponseWriter, r *http.Request) 
 		HandleGrpcError(w, err)
 		return
 	}
-	WriteJSON(w, http.StatusOK, resp)
+	WriteJSON(w, http.StatusOK, h.candidateAwarePayload(resp, "candidate_ulid"))
 }
 
 func (h *Handler) RetryMallMailTask(w http.ResponseWriter, r *http.Request) {
@@ -358,7 +358,7 @@ func (h *Handler) ListProgMailTasks(w http.ResponseWriter, r *http.Request) {
 		HandleGrpcError(w, err)
 		return
 	}
-	WriteJSON(w, http.StatusOK, resp)
+	WriteJSON(w, http.StatusOK, h.candidateAwarePayload(resp, "candidate_ulid"))
 }
 
 func (h *Handler) GetProgMailTaskDetail(w http.ResponseWriter, r *http.Request) {
@@ -371,7 +371,7 @@ func (h *Handler) GetProgMailTaskDetail(w http.ResponseWriter, r *http.Request) 
 		HandleGrpcError(w, err)
 		return
 	}
-	WriteJSON(w, http.StatusOK, resp)
+	WriteJSON(w, http.StatusOK, h.candidateAwarePayload(resp, "candidate_ulid"))
 }
 
 func (h *Handler) RetryProgMailTask(w http.ResponseWriter, r *http.Request) {

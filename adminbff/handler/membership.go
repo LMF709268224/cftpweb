@@ -261,7 +261,7 @@ func (h *Handler) ListMembershipMails(w http.ResponseWriter, r *http.Request) {
 		HandleGrpcError(w, err)
 		return
 	}
-	WriteJSON(w, http.StatusOK, resp)
+	WriteJSON(w, http.StatusOK, h.candidateAwarePayload(resp, "candidate_ulid"))
 }
 
 func (h *Handler) GetMembershipMailDetail(w http.ResponseWriter, r *http.Request) {
@@ -276,7 +276,7 @@ func (h *Handler) GetMembershipMailDetail(w http.ResponseWriter, r *http.Request
 		HandleGrpcError(w, err)
 		return
 	}
-	WriteJSON(w, http.StatusOK, resp)
+	WriteJSON(w, http.StatusOK, h.candidateAwarePayload(resp, "candidate_ulid"))
 }
 
 func (h *Handler) RetryMembershipMail(w http.ResponseWriter, r *http.Request) {
