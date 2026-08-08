@@ -267,9 +267,9 @@ onMounted(() => {
                 class="portal-stat-card portal-card-featured portal-card-skeleton h-[214px] w-full rounded-[16px] border border-slate-100 bg-white p-8 shadow-[0_2px_8px_rgba(15,23,42,0.08)] lg:basis-[34%] lg:grow-0 lg:shrink-0"
               >
                 <div class="mx-auto h-9 w-9 rounded-full bg-slate-100" />
-                <div class="mx-auto mt-6 h-5 w-32 rounded-full bg-slate-100" />
-                <div class="mx-auto mt-12 h-9 w-16 rounded-full bg-slate-100" />
-                <div class="mx-auto mt-4 h-4 w-28 rounded-full bg-slate-100" />
+                <div class="portal-card-skeleton-title mx-auto mt-6 h-5 w-32 rounded-full bg-slate-100" />
+                <div class="portal-card-skeleton-value mx-auto mt-12 h-9 w-16 rounded-full bg-slate-100" />
+                <div class="portal-card-skeleton-action mx-auto mt-4 h-4 w-28 rounded-full bg-slate-100" />
               </div>
             </div>
 
@@ -280,9 +280,9 @@ onMounted(() => {
                 class="portal-stat-card portal-card-secondary portal-card-skeleton h-[214px] w-full rounded-[16px] border border-slate-100 bg-white p-8 shadow-[0_2px_8px_rgba(15,23,42,0.08)] lg:basis-[29%] lg:grow-0 lg:shrink-0"
               >
                 <div class="mx-auto h-9 w-9 rounded-full bg-slate-100" />
-                <div class="mx-auto mt-6 h-5 w-28 rounded-full bg-slate-100" />
-                <div class="mx-auto mt-12 h-9 w-14 rounded-full bg-slate-100" />
-                <div class="mx-auto mt-4 h-4 w-24 rounded-full bg-slate-100" />
+                <div class="portal-card-skeleton-title mx-auto mt-6 h-5 w-28 rounded-full bg-slate-100" />
+                <div class="portal-card-skeleton-value mx-auto mt-12 h-9 w-14 rounded-full bg-slate-100" />
+                <div class="portal-card-skeleton-action mx-auto mt-4 h-4 w-24 rounded-full bg-slate-100" />
               </div>
             </div>
           </div>
@@ -409,6 +409,54 @@ onMounted(() => {
 @keyframes portal-card-skeleton-shimmer {
   100% {
     transform: translateX(100%);
+  }
+}
+
+@media (max-width: 767px) {
+  .portal-card-section {
+    margin-top: 24px;
+  }
+
+  .portal-card-section > div {
+    gap: 16px;
+  }
+
+  .portal-card-row {
+    gap: 16px;
+  }
+
+  .portal-stat-card {
+    height: 184px;
+    padding: 20px;
+  }
+
+  .portal-card-icon {
+    height: 40px;
+    width: 40px;
+  }
+
+  .portal-stat-card h2 {
+    margin-top: 10px;
+  }
+
+  .portal-stat-card p:first-of-type {
+    margin-top: 18px;
+  }
+
+  .portal-stat-card p:last-of-type {
+    margin-top: 8px;
+  }
+
+  .portal-card-skeleton-title {
+    margin-top: 10px;
+  }
+
+  .portal-card-skeleton-value {
+    margin-top: 18px;
+  }
+
+  .portal-card-skeleton-action {
+    margin-top: 8px;
   }
 }
 

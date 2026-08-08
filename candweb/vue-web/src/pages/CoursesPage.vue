@@ -220,12 +220,12 @@ onMounted(() => {
       </header>
 
       <main class="px-5 py-8 md:px-8 lg:px-10">
-        <div class="mb-6">
+        <div class="courses-page-intro mb-6">
           <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.courses.title }}</h1>
           <p class="mt-2 text-muted-foreground">{{ t.courses.subtitle }}</p>
         </div>
 
-        <div class="mb-4 flex flex-col gap-3 rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] lg:flex-row lg:items-center lg:justify-between">
+        <div class="courses-page-controls mb-4 flex flex-col gap-3 rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] lg:flex-row lg:items-center lg:justify-between">
           <div class="overflow-x-auto">
             <div class="inline-flex min-w-max rounded-lg bg-[#f6fafb] p-1">
               <button
@@ -253,7 +253,7 @@ onMounted(() => {
           <Clock class="h-5 w-5 animate-spin" /> <span>{{ t.common.loading }}</span>
         </div>
 
-        <div v-else-if="filteredCourses.length > 0" class="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
+        <div v-else-if="filteredCourses.length > 0" class="courses-page-grid grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
           <CourseCard v-for="course in filteredCourses" :key="`${course.id}-${course.eligibilityRefreshKey || 0}`" v-bind="course" />
         </div>
 
@@ -271,3 +271,21 @@ onMounted(() => {
     </div>
   </AppShell>
 </template>
+
+<style scoped>
+@media (max-width: 767px) {
+  .courses-page-intro {
+    margin-bottom: 16px;
+  }
+
+  .courses-page-controls {
+    gap: 8px;
+    margin-bottom: 12px;
+    padding: 12px;
+  }
+
+  .courses-page-grid {
+    gap: 12px;
+  }
+}
+</style>

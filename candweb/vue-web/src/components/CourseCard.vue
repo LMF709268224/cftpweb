@@ -171,7 +171,7 @@ async function handleCardClick() {
     :class="!effectivePurchased && 'cursor-pointer'"
     @click="handleCardClick"
   >
-    <div class="relative h-32 overflow-hidden bg-white sm:h-36 xl:h-40">
+    <div class="course-card-media relative h-32 overflow-hidden bg-white sm:h-36 xl:h-40">
       <template v-if="image">
         <img :src="image" :alt="title" class="h-full w-full scale-[1.65] object-contain px-2 py-3 transition-transform duration-500 group-hover:scale-[1.72]" />
       </template>
@@ -188,18 +188,18 @@ async function handleCardClick() {
 
     </div>
 
-    <div class="flex flex-1 flex-col p-4 sm:p-5">
-      <div class="mb-3 min-h-[104px]">
-        <h3 class="mb-2 min-h-12 break-words text-lg font-semibold leading-6 text-card-foreground transition-colors group-hover:text-primary">{{ title }}</h3>
+    <div class="course-card-body flex flex-1 flex-col p-4 sm:p-5">
+      <div class="course-card-summary mb-3 min-h-[104px]">
+        <h3 class="course-card-title mb-2 min-h-12 break-words text-lg font-semibold leading-6 text-card-foreground transition-colors group-hover:text-primary">{{ title }}</h3>
         <p class="line-clamp-2 min-h-10 text-sm leading-5 text-muted-foreground">{{ description }}</p>
       </div>
 
-      <div class="mb-3 flex min-h-[132px] flex-col justify-start space-y-2.5">
+      <div class="course-card-purchase-details mb-3 flex min-h-[132px] flex-col justify-start space-y-2.5">
         <div v-if="resolvedStatusLabel" class="flex flex-wrap gap-2">
           <span class="badge border-primary/20 bg-primary/10 text-primary">{{ resolvedStatusLabel }}</span>
         </div>
 
-        <div class="min-h-[52px]">
+        <div class="course-card-detail-slot min-h-[52px]">
           <div v-if="accessState" :class="['rounded-lg border px-3 py-2 text-xs', accessState.className]">
             <div class="flex items-center gap-1.5 font-medium">
               <component :is="accessState.icon" class="h-3.5 w-3.5" />
@@ -209,7 +209,7 @@ async function handleCardClick() {
           </div>
         </div>
 
-        <div class="min-h-[52px]">
+        <div class="course-card-detail-slot min-h-[52px]">
           <div v-if="priceLabel" class="space-y-0.5">
             <div class="text-sm font-medium leading-5 text-muted-foreground">
               {{ cardCopy.estimatedPrice }}
@@ -239,8 +239,8 @@ async function handleCardClick() {
         </div>
       </div>
 
-      <div v-if="stats?.length" class="mb-3 grid grid-cols-3 gap-2 rounded-lg border border-border bg-muted p-2 text-center">
-        <div v-for="stat in stats" :key="stat.label" class="rounded-lg bg-white px-2 py-2">
+      <div v-if="stats?.length" class="course-card-stats mb-3 grid grid-cols-3 gap-2 rounded-lg border border-border bg-muted p-2 text-center">
+        <div v-for="stat in stats" :key="stat.label" class="course-card-stat rounded-lg bg-white px-2 py-2">
           <div class="text-sm font-semibold text-foreground">{{ stat.value }}</div>
           <div class="truncate text-[11px] text-muted-foreground">{{ stat.label }}</div>
         </div>
@@ -259,7 +259,7 @@ async function handleCardClick() {
         </div>
       </div>
 
-      <div class="mt-auto border-t border-border pt-3">
+      <div class="course-card-footer mt-auto border-t border-border pt-3">
         <div
           :class="[
             'flex h-10 w-full items-center justify-center rounded-lg px-4 text-sm font-semibold transition-all duration-300',
@@ -272,3 +272,44 @@ async function handleCardClick() {
     </div>
   </component>
 </template>
+
+<style scoped>
+@media (max-width: 767px) {
+  .course-card-media {
+    height: 112px;
+  }
+
+  .course-card-body {
+    padding: 12px;
+  }
+
+  .course-card-summary,
+  .course-card-title,
+  .course-card-purchase-details,
+  .course-card-detail-slot {
+    min-height: 0;
+  }
+
+  .course-card-summary,
+  .course-card-purchase-details {
+    margin-bottom: 10px;
+  }
+
+  .course-card-title {
+    margin-bottom: 6px;
+  }
+
+  .course-card-stats {
+    margin-bottom: 10px;
+    padding: 6px;
+  }
+
+  .course-card-stat {
+    padding-block: 6px;
+  }
+
+  .course-card-footer {
+    padding-top: 8px;
+  }
+}
+</style>
