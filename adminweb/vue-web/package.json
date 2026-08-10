@@ -9,7 +9,13 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vue-tsc -b && vite build && node scripts/compress-dist.mjs",
-    "preview": "vite preview --host 0.0.0.0"
+    "preview": "vite preview --host 0.0.0.0",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:typecheck": "tsc -p tsconfig.e2e.json",
+    "test:e2e:live": "playwright test --config playwright.live.config.ts --project live-readonly",
+    "test:e2e:live:headed": "playwright test --config playwright.live.config.ts --project live-readonly --headed",
+    "test:e2e:install": "playwright install chromium"
   },
   "dependencies": {
     "clsx": "^2.1.1",
@@ -20,6 +26,7 @@
     "vue-sonner": "^2.0.9"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/vite": "^4.3.1",
     "@types/node": "^25.9.3",
     "@vitejs/plugin-vue": "^5.2.4",

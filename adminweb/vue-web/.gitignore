@@ -5,3 +5,7 @@ dist-ssr
 .vite
 .DS_Store
 *.tsbuildinfo
+playwright-report/
+playwright-report-live/
+test-results/
+blob-report/

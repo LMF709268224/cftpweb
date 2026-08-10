@@ -1,0 +1,177 @@
+name: Admin Portal Regression
+
+on:
+  push:
+    branches:
+      - v2
+      - main
+  pull_request:
+    branches:
+      - v2
+      - main
+  workflow_dispatch:
+    inputs:
+      run_live_readonly:
+        description: Run the admin test-environment read-only regression
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: admin-regression-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Admin BFF regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GOPRIVATE: github.com/afnandelfin620-star/cftptest
+
+    defaults:
+      run:
+        working-directory: adminbff
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: adminbff/go.mod
+          cache-dependency-path: adminbff/go.sum
+
+      - name: Configure private Go module access
+        env:
+          CFTPTEST_READ_TOKEN: ${{ secrets.CFTPTEST_READ_TOKEN }}
+        run: |
+          if [ -z "$CFTPTEST_READ_TOKEN" ]; then
+            echo "::error::Repository secret CFTPTEST_READ_TOKEN is required to download the private cftptest Go module."
+            exit 1
+          fi
+          git config --global \
+            url."https://x-access-token:${CFTPTEST_READ_TOKEN}@github.com/afnandelfin620-star/cftptest".insteadOf \
+            "https://github.com/afnandelfin620-star/cftptest"
+
+      - name: Download Go modules
+        run: go mod download
+
+      - name: Run Go vet
+        run: go vet ./...
+
+      - name: Run Go regression tests
+        run: go test ./...
+
+  regression:
+    name: Admin Playwright regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    defaults:
+      run:
+        working-directory: adminweb/vue-web
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "20.x"
+          cache: npm
+          cache-dependency-path: adminweb/vue-web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build admin portal
+        run: npm run build
+
+      - name: Type-check Playwright suites
+        run: npm run test:e2e:typecheck
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright regression
+        run: npm run test:e2e
+        env:
+          CI: "true"
+
+      - name: Upload failure report
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: admin-playwright-report
+          path: |
+            adminweb/vue-web/playwright-report/
+            adminweb/vue-web/test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  live:
+    name: Admin live regression
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_live_readonly }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    defaults:
+      run:
+        working-directory: adminweb/vue-web
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "20.x"
+          cache: npm
+          cache-dependency-path: adminweb/vue-web/package-lock.json
+
+      - name: Validate live regression secrets
+        env:
+          E2E_ADMIN_BASE_URL: ${{ secrets.E2E_ADMIN_BASE_URL }}
+          E2E_ADMIN_USERNAME: ${{ secrets.E2E_ADMIN_USERNAME }}
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+        shell: bash
+        run: |
+          for name in E2E_ADMIN_BASE_URL E2E_ADMIN_USERNAME E2E_ADMIN_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Repository secret ${name} is required for the live regression."
+              exit 1
+            fi
+          done
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check Playwright suites
+        run: npm run test:e2e:typecheck
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run live read-only regression
+        run: npm run test:e2e:live
+        env:
+          CI: "true"
+          E2E_ADMIN_BASE_URL: ${{ secrets.E2E_ADMIN_BASE_URL }}
+          E2E_ADMIN_USERNAME: ${{ secrets.E2E_ADMIN_USERNAME }}
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+
+      - name: Upload sanitized live failure report
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: admin-live-regression-report
+          path: adminweb/vue-web/playwright-report-live/
+          if-no-files-found: ignore
+          retention-days: 3
