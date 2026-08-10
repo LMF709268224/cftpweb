@@ -48,7 +48,7 @@ function getDotCount(path: string): number {
     case "/orders": return redDots.value.orders || 0
     case "/invoices": return redDots.value.invoices || 0
     case "/messages": return redDots.value.messages || 0
-    case "/mails": return redDots.value.messages || 0
+    case "/mails": return redDots.value.mails || 0
     default: return 0
   }
 }

@@ -513,4 +513,5 @@ type SystemRedDotsRsp struct {
 	Orders       uint32 `json:"orders"`
 	Invoices     uint32 `json:"invoices"`
 	Messages     uint32 `json:"messages"`
+	Mails        uint32 `json:"mails"`
 }

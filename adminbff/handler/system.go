@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"sync"
 	"sync/atomic"
@@ -15,6 +16,7 @@ func (h *Handler) GetSystemRedDots(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var rsp SystemRedDotsRsp
 	var wg sync.WaitGroup
+	var failed atomic.Bool
 
 	// Applications (gcreds) - 这个目前微服务接口是支持按 Statuses 过滤的
 	wg.Add(1)
@@ -33,17 +35,20 @@ func (h *Handler) GetSystemRedDots(w http.ResponseWriter, r *http.Request) {
 			}
 			return res.GetCount(), res.GetNextCursor(), nil
 		})
-		if err == nil {
-			atomic.AddUint32(&rsp.Applications, countResult.Total)
+		if err != nil {
+			slog.Warn("Failed to count pending applications for system red dots", "error", err)
+			failed.Store(true)
+			return
 		}
+		atomic.AddUint32(&rsp.Applications, countResult.Total)
 	}()
 
 	// TODO: 等待微服务团队在 cftp/gexam 中补充 GetAdminInterventionTaskCount 等接口
 	// atomic.AddUint32(&rsp.Exams, 0)
-	
+
 	// TODO: 等待微服务团队在 cftp/gprog 的 CertificateTaskFilters 补充 Status 筛选字段
 	// atomic.AddUint32(&rsp.Prog, 0)
-	
+
 	// TODO: 等待微服务团队在 cftp/gmall 和 gpay 补充相应 AdminCount 的 Status 过滤接口
 	// atomic.AddUint32(&rsp.Orders, 0)
 	// atomic.AddUint32(&rsp.Invoices, 0)
@@ -69,12 +74,19 @@ func (h *Handler) GetSystemRedDots(w http.ResponseWriter, r *http.Request) {
 			}
 			return res.GetCount(), res.GetNextCursor(), nil
 		})
-		if err == nil {
-			atomic.AddUint32(&rsp.Messages, countResult.Total)
+		if err != nil {
+			slog.Warn("Failed to count failed mails for system red dots", "error", err)
+			failed.Store(true)
+			return
 		}
+		atomic.AddUint32(&rsp.Mails, countResult.Total)
 	}()
 
 	wg.Wait()
+	if failed.Load() {
+		WriteError(w, http.StatusServiceUnavailable, ErrServiceUnavailable, "failed to load system red dots")
+		return
+	}
 
 	WriteJSON(w, http.StatusOK, rsp)
 }

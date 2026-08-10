@@ -649,12 +649,12 @@
     },
     {
       "method": "POST",
-      "path": "/api/exams/{examId}/exemption",
+      "path": "/api/exams/units/{courseUnitUlid}/exemption",
       "description": "申请免考",
       "auth_required": true,
       "request": {
         "params": [
-          { "name": "examId", "type": "string", "required": true, "description": "考试ID" }
+          { "name": "courseUnitUlid", "type": "string", "required": true, "description": "课程单元 ULID" }
         ],
         "query": [],
         "body": null
@@ -664,7 +664,7 @@
           "status": { "type": "string", "description": "申请状态: submitted" },
           "message": { "type": "string", "description": "结果消息" }
         },
-        "note": "需要 gexam 新增 ApplyExemption gRPC 接口"
+        "note": "需要 gprog 新增考生免考申请接口"
       }
     },
     {
