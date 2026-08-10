@@ -456,7 +456,7 @@ watch(lang, () => {
   .certificate-date-item {
     min-width: 0;
     padding: 10px;
-    border-radius: 10px;
+    border-radius: 8px;
   }
 
   .certificate-date-item p:last-child {

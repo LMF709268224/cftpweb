@@ -1432,7 +1432,7 @@ watch(lang, async () => {
   .course-detail-hero {
     gap: 16px;
     padding: 16px;
-    border-radius: 10px;
+    border-radius: 12px;
   }
 
   .course-detail-hero h1 {
@@ -1447,7 +1447,7 @@ watch(lang, async () => {
 
   .course-detail-panel {
     padding: 16px;
-    border-radius: 10px;
+    border-radius: 12px;
   }
 
   .course-detail-panel .btn {
@@ -1489,7 +1489,7 @@ watch(lang, async () => {
 
   .course-detail-stages {
     padding: 16px;
-    border-radius: 10px;
+    border-radius: 12px;
   }
 
   .course-detail-stages-heading {
@@ -1498,7 +1498,7 @@ watch(lang, async () => {
   }
 
   .course-detail-stage {
-    border-radius: 10px;
+    border-radius: 8px;
   }
 
   .course-detail-stage-header {

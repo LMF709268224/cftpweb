@@ -605,11 +605,14 @@ onBeforeRouteLeave(() => {
     line-height: 26px;
   }
 
-  .quiz-detail-card,
-  .quiz-question-card,
   .quiz-session-header,
   .quiz-submit-bar {
-    border-radius: 10px;
+    border-radius: 12px;
+  }
+
+  .quiz-detail-card,
+  .quiz-question-card {
+    border-radius: 8px;
   }
 
   .quiz-card-header {

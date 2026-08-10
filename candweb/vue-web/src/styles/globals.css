@@ -654,7 +654,68 @@
 }
 
 @media (max-width: 767px) {
+  .candidate-portal {
+    --gfi-radius-lg: 0.75rem;
+    --gfi-mobile-card-border: rgba(0, 42, 102, 0.14);
+  }
+
   :where(.candidate-portal .page-panel) > main {
     padding: var(--gfi-mobile-page-padding-block) var(--gfi-mobile-page-padding-inline);
+  }
+
+  :where(.candidate-portal .page-panel > main) :is(
+    .portal-stat-card,
+    .courses-page-controls,
+    .my-certification-card,
+    .exams-panel,
+    .resource-packs-controls,
+    .credentials-available-header,
+    .credential-definition-card,
+    .credentials-applications-header,
+    .credentials-applications-state,
+    .membership-current-card,
+    .membership-tabs,
+    .membership-overview-card,
+    .membership-level-card,
+    .membership-records-panel,
+    .orders-panel,
+    .messages-panel,
+    .settings-tabs-shell,
+    .certificates-state,
+    .record-status-card,
+    .records-panel,
+    .resource-detail-search,
+    .resource-detail-empty,
+    .course-detail-hero,
+    .course-detail-panel,
+    .course-detail-stages,
+    .exam-signup-card,
+    .quiz-result-card,
+    .quiz-session-header,
+    .quiz-submit-bar
+  ) {
+    border-radius: var(--gfi-radius-lg) !important;
+    box-shadow: none !important;
+  }
+
+  :where(.candidate-portal .page-panel > main) :is(
+    .membership-record-item,
+    .course-detail-stage,
+    .quiz-detail-card,
+    .quiz-question-card
+  ) {
+    border-radius: var(--gfi-radius-md) !important;
+    box-shadow: none !important;
+  }
+
+  :where(.candidate-portal .page-panel > main) :is(
+    .messages-panel,
+    .course-detail-hero,
+    .course-detail-stages,
+    .quiz-session-header,
+    .quiz-question-card,
+    .quiz-submit-bar
+  ) {
+    border: 1px solid var(--gfi-mobile-card-border);
   }
 }
