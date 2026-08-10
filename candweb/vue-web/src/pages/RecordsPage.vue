@@ -25,20 +25,20 @@ function recordStatusConfig(status: keyof typeof statusConfig) {
         <span class="text-sm font-medium text-foreground">{{ t.recordsPage.title }}</span>
       </header>
 
-      <main class="px-5 py-8 md:px-8 lg:px-10">
-        <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <main class="records-page px-5 py-8 md:px-8 lg:px-10">
+        <div class="records-page-intro mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.recordsPage.title }}</h1>
             <p class="mt-2 text-muted-foreground">{{ t.recordsPage.subtitle }}</p>
           </div>
-        <button class="btn btn-primary rounded-lg shadow-sm shadow-primary/20" disabled><Plus class="h-4 w-4" /> {{ t.recordsPage.uploadNew }}</button>
+        <button class="records-upload-btn btn btn-primary rounded-lg shadow-sm shadow-primary/20" disabled><Plus class="h-4 w-4" /> {{ t.recordsPage.uploadNew }}</button>
       </div>
 
-    <div class="mb-4 grid gap-4 sm:grid-cols-3">
-      <div v-for="(config, status) in statusConfig" :key="status" class="group relative overflow-hidden rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:ring-primary/25 hover:shadow-md hover:shadow-primary/10">
+    <div class="records-status-grid mb-4 grid gap-4 sm:grid-cols-3">
+      <div v-for="(config, status) in statusConfig" :key="status" class="record-status-card group relative overflow-hidden rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:ring-primary/25 hover:shadow-md hover:shadow-primary/10">
         <div :class="['absolute left-0 top-0 h-full w-1', status === 'verified' ? 'bg-primary' : status === 'pending' ? 'bg-amber-500' : 'bg-red-500']" />
-        <div class="flex items-center gap-4">
-          <div :class="['flex h-11 w-11 items-center justify-center rounded-lg transition-transform group-hover:scale-105', status === 'verified' ? 'bg-primary/10' : status === 'pending' ? 'bg-amber-100' : 'bg-red-100']">
+        <div class="record-status-content flex items-center gap-4">
+          <div :class="['record-status-icon flex h-11 w-11 items-center justify-center rounded-lg transition-transform group-hover:scale-105', status === 'verified' ? 'bg-primary/10' : status === 'pending' ? 'bg-amber-100' : 'bg-red-100']">
             <component
               :is="config.icon"
               :class="[
@@ -57,18 +57,18 @@ function recordStatusConfig(status: keyof typeof statusConfig) {
       </div>
     </div>
 
-    <div class="overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-      <div class="flex items-center gap-3 bg-white px-4 py-4">
+    <div class="records-panel overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+      <div class="records-panel-header flex items-center gap-3 bg-white px-4 py-4">
         <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10"><GraduationCap class="h-4 w-4 text-primary" /></div>
         <h2 class="font-semibold text-card-foreground">{{ t.recordsPage.myRecords }}</h2>
       </div>
-      <div v-if="records.length === 0" class="flex flex-col items-center justify-center px-4 py-14 text-center">
+      <div v-if="records.length === 0" class="records-empty flex flex-col items-center justify-center px-4 py-14 text-center">
         <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10"><FileText class="h-8 w-8 text-primary" /></div>
         <h3 class="mb-2 text-lg font-semibold text-foreground">{{ t.recordsPage.noRecords }}</h3>
         <p class="max-w-md text-sm text-muted-foreground">{{ t.recordsPage.noRecordsDesc }}</p>
       </div>
       <div v-else class="space-y-2">
-        <div v-for="record in records" :key="record.id" class="group flex items-center justify-between px-4 py-4 transition-colors hover:bg-primary/10">
+        <div v-for="record in records" :key="record.id" class="record-row group flex items-center justify-between px-4 py-4 transition-colors hover:bg-primary/10">
           <span :class="['badge', statusBadgeClassFromTone(recordStatusConfig(record.status).tone)]">{{ recordStatusConfig(record.status).label }}</span>
           <ChevronRight class="h-5 w-5 text-muted-foreground" />
         </div>
@@ -78,3 +78,73 @@ function recordStatusConfig(status: keyof typeof statusConfig) {
     </div>
   </AppShell>
 </template>
+
+<style scoped>
+@media (max-width: 767px) {
+  .records-page-intro {
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .records-page-intro h1 {
+    font-size: 24px;
+    line-height: 32px;
+  }
+
+  .records-page-intro p {
+    margin-top: 6px;
+    font-size: 14px;
+    line-height: 22px;
+  }
+
+  .records-upload-btn {
+    width: 100%;
+    min-height: 40px;
+  }
+
+  .records-status-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .record-status-card {
+    padding: 10px 8px;
+    border-radius: 12px;
+  }
+
+  .record-status-content {
+    flex-direction: column;
+    gap: 6px;
+    text-align: center;
+  }
+
+  .record-status-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .record-status-content p:first-child {
+    font-size: 20px;
+    line-height: 24px;
+  }
+
+  .record-status-content p:last-child {
+    font-size: 12px;
+    line-height: 18px;
+  }
+
+  .records-panel {
+    border-radius: 12px;
+  }
+
+  .records-panel-header,
+  .record-row {
+    padding: 12px;
+  }
+
+  .records-empty {
+    padding: 32px 12px;
+  }
+}
+</style>

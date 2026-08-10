@@ -432,7 +432,7 @@ onMounted(() => {
           </div>
         </div>
 
-    <div class="w-full overflow-hidden rounded-t-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+    <div class="messages-panel w-full overflow-hidden rounded-t-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <div class="w-full bg-white">
         <div class="messages-tabs grid min-h-[60px] w-full grid-cols-3 items-stretch gap-1 rounded-t-xl bg-slate-100 p-1 md:flex md:min-h-[68px] md:flex-wrap md:items-stretch md:gap-x-8 md:gap-y-0 md:rounded-none md:border-b md:border-border md:bg-transparent md:p-0 md:pl-4">
           <button

@@ -354,28 +354,28 @@ onBeforeRouteLeave(() => {
         <span class="text-sm font-medium text-foreground">{{ t.learning?.quizPrefix }}</span>
       </header>
 
-      <main class="px-5 py-8 md:px-8 lg:px-10">
-    <div v-if="loading" class="flex min-h-[60vh] items-center justify-center">
+      <main class="quiz-page px-5 py-8 md:px-8 lg:px-10">
+    <div v-if="loading" class="quiz-state flex min-h-[60vh] items-center justify-center">
       <div class="flex items-center gap-3 rounded-2xl bg-white px-5 py-4 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
         <Loader2 class="h-5 w-5 animate-spin text-primary" />
         <span>{{ t.common.loading }}</span>
       </div>
     </div>
 
-    <div v-else-if="!paper" class="flex min-h-[60vh] flex-col items-center justify-center gap-4">
+    <div v-else-if="!paper" class="quiz-state flex min-h-[60vh] flex-col items-center justify-center gap-4">
       <AlertCircle class="h-12 w-12 text-destructive" />
       <h2 class="text-lg font-semibold text-foreground">{{ t.learning?.quizNotFound }}</h2>
       <button class="btn btn-primary cursor-pointer" @click="goBackToLearning"><ChevronLeft class="h-4 w-4" /> {{ t.common.back }}</button>
     </div>
 
-    <div v-else-if="result" data-testid="quiz-result" :data-passed="quizPassed ? 'true' : 'false'" class="mx-auto max-w-2xl py-12">
-      <div class="card border-t-4 border-t-primary p-8 text-center shadow-lg">
+    <div v-else-if="result" data-testid="quiz-result" :data-passed="quizPassed ? 'true' : 'false'" class="quiz-result mx-auto max-w-2xl py-12">
+      <div class="quiz-result-card card border-t-4 border-t-primary p-8 text-center shadow-lg">
         <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
           <CheckCircle2 class="h-8 w-8 text-primary" />
         </div>
         <h1 class="text-2xl font-bold">{{ t.learning?.quizCompleted }}</h1>
         <p class="mt-2 text-muted-foreground">{{ t.learning?.quizSubmittedDesc }}</p>
-        <div class="my-6 rounded-lg border bg-card p-6 shadow-sm">
+        <div class="quiz-score-card my-6 rounded-lg border bg-card p-6 shadow-sm">
           <span class="text-sm font-medium text-muted-foreground">{{ t.learning?.quizScore }}</span>
           <div class="mt-2 flex items-baseline justify-center gap-2">
             <span class="text-4xl font-bold text-foreground">{{ result.score || 0 }}</span>
@@ -392,15 +392,15 @@ onBeforeRouteLeave(() => {
       </div>
 
       <!-- Detailed grading result block -->
-      <div v-if="showDetail" class="mt-8 space-y-6 text-left">
+      <div v-if="showDetail" class="quiz-detail-list mt-8 space-y-6 text-left">
         <h2 class="text-xl font-bold">{{ t.learning?.quizDetailTitle }}</h2>
-        <div v-for="(question, index) in questions" :key="question.question_id" class="overflow-hidden rounded-md bg-white shadow-sm border border-border">
-          <div class="flex items-center justify-between border-b bg-muted/30 px-6 py-3 text-sm font-medium text-muted-foreground">
+        <div v-for="(question, index) in questions" :key="question.question_id" class="quiz-detail-card overflow-hidden rounded-md bg-white shadow-sm border border-border">
+          <div class="quiz-card-header flex items-center justify-between border-b bg-muted/30 px-6 py-3 text-sm font-medium text-muted-foreground">
             <span>{{ formatQuizQuestionCount(Number(index) + 1, questions.length) }}</span>
             <span class="rounded border bg-background px-2 py-0.5 text-xs">{{ question.points || 0 }} {{ t.learning?.quizPts }}</span>
           </div>
-          <div class="p-6">
-            <h3 class="mb-6 text-lg font-medium leading-relaxed text-foreground">{{ question.question_text }}</h3>
+          <div class="quiz-card-body p-6">
+            <h3 class="quiz-question-title mb-6 text-lg font-medium leading-relaxed text-foreground">{{ question.question_text }}</h3>
             <div class="space-y-3">
               <div
                 v-for="option in question.options || []"
@@ -410,7 +410,7 @@ onBeforeRouteLeave(() => {
                 :data-option-id="option.option_id"
                 :data-correct="getAnswerDetail(question.question_id)?.correct_option_ids?.includes(option.option_id) ? 'true' : 'false'"
                 :class="[
-                  'flex w-full items-start gap-3 rounded-md border p-4 text-left',
+                  'quiz-option flex w-full items-start gap-3 rounded-md border p-4 text-left',
                   getAnswerDetail(question.question_id)?.correct_option_ids?.includes(option.option_id) ? 'border-emerald-200 bg-emerald-50' : 
                   (getAnswerDetail(question.question_id)?.selected_option_ids?.includes(option.option_id) ? 'border-rose-200 bg-rose-50' : 'border-border bg-slate-50 opacity-60')
                 ]"
@@ -433,7 +433,7 @@ onBeforeRouteLeave(() => {
                 </div>
               </div>
             </div>
-            <div v-if="question.explanation || getAnswerDetail(question.question_id)?.explanation" class="mt-6 rounded-md bg-blue-50 p-4 border border-blue-100">
+            <div v-if="question.explanation || getAnswerDetail(question.question_id)?.explanation" class="quiz-explanation mt-6 rounded-md bg-blue-50 p-4 border border-blue-100">
               <div class="flex items-center gap-2 text-blue-800 font-semibold mb-2">
                 <AlertCircle class="h-4 w-4" />
                 <span>{{ t.learning?.quizExplanation }}</span>
@@ -445,10 +445,10 @@ onBeforeRouteLeave(() => {
       </div>
     </div>
 
-    <div v-else class="mx-auto max-w-3xl space-y-8">
-      <div class="rounded-md bg-white p-6 sm:p-8">
-        <button class="btn btn-ghost -ml-2 mb-4 cursor-pointer text-muted-foreground" @click="goBackToLearning"><ChevronLeft class="h-4 w-4" /> {{ t.learning?.quizReturn }}</button>
-        <div class="flex items-start justify-between gap-4">
+    <div v-else class="quiz-session mx-auto max-w-3xl space-y-8">
+      <div class="quiz-session-header rounded-md bg-white p-6 sm:p-8">
+        <button class="quiz-back btn btn-ghost -ml-2 mb-4 cursor-pointer text-muted-foreground" @click="goBackToLearning"><ChevronLeft class="h-4 w-4" /> {{ t.learning?.quizReturn }}</button>
+        <div class="quiz-title-row flex items-start justify-between gap-4">
           <div>
             <h1 class="text-2xl font-bold text-foreground sm:text-3xl">{{ paper.title || t.learning?.quizPrefix }}</h1>
             <p v-if="paper.description" class="mt-2 text-muted-foreground">{{ paper.description }}</p>
@@ -462,14 +462,14 @@ onBeforeRouteLeave(() => {
         </div>
       </div>
 
-      <div class="space-y-6">
-        <div v-for="(question, index) in questions" :key="question.question_id" class="overflow-hidden rounded-md bg-white">
-          <div class="flex items-center justify-between border-b bg-muted/30 px-6 py-3 text-sm font-medium text-muted-foreground">
+      <div class="quiz-question-list space-y-6">
+        <div v-for="(question, index) in questions" :key="question.question_id" class="quiz-question-card overflow-hidden rounded-md bg-white">
+          <div class="quiz-card-header flex items-center justify-between border-b bg-muted/30 px-6 py-3 text-sm font-medium text-muted-foreground">
             <span>{{ formatQuizQuestionCount(Number(index) + 1, questions.length) }}</span>
             <span class="rounded border bg-background px-2 py-0.5 text-xs">{{ question.points || 0 }} {{ t.learning?.quizPts }}</span>
           </div>
-          <div class="p-6">
-            <h3 class="mb-6 text-lg font-medium leading-relaxed text-foreground">{{ question.question_text }}</h3>
+          <div class="quiz-card-body p-6">
+            <h3 class="quiz-question-title mb-6 text-lg font-medium leading-relaxed text-foreground">{{ question.question_text }}</h3>
             <div class="space-y-3">
               <button
                 v-for="option in question.options || []"
@@ -478,7 +478,7 @@ onBeforeRouteLeave(() => {
                 :data-question-id="question.question_id"
                 :data-option-id="option.option_id"
                 :class="[
-                  'flex w-full cursor-pointer items-start gap-3 rounded-md border p-4 text-left transition-colors',
+                  'quiz-option flex w-full cursor-pointer items-start gap-3 rounded-md border p-4 text-left transition-colors',
                   (answers[question.question_id] || []).includes(option.option_id)
                     ? 'border-slate-200 bg-slate-50'
                     : 'border-border hover:bg-slate-50',
@@ -499,7 +499,7 @@ onBeforeRouteLeave(() => {
         </div>
       </div>
 
-      <div class="sticky bottom-4 flex flex-col items-center justify-between gap-4 rounded-md bg-white/95 p-4 shadow-sm backdrop-blur-md sm:flex-row sm:p-6">
+      <div class="quiz-submit-bar sticky bottom-4 flex flex-col items-center justify-between gap-4 rounded-md bg-white/95 p-4 shadow-sm backdrop-blur-md sm:flex-row sm:p-6">
         <div class="text-sm text-muted-foreground">{{ formatQuizAnsweredCount(answeredCount, questions.length) }}</div>
         <button type="button" data-testid="quiz-submit" class="btn btn-primary w-full cursor-pointer px-8 disabled:cursor-not-allowed sm:w-auto" :disabled="submitting || !allAnswered" @click="openSubmitConfirm">
           <span v-if="submitting" class="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-r-transparent" />
@@ -511,10 +511,10 @@ onBeforeRouteLeave(() => {
       </main>
     </div>
 
-    <div v-if="submitConfirmOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
+    <div v-if="submitConfirmOpen" class="quiz-confirm-backdrop fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
       <div
         ref="submitConfirmDialogRef"
-        class="w-full max-w-md overflow-hidden rounded-[16px] bg-white shadow-[0_24px_60px_rgba(15,23,42,0.24)]"
+        class="quiz-confirm-dialog w-full max-w-md overflow-hidden rounded-[16px] bg-white shadow-[0_24px_60px_rgba(15,23,42,0.24)]"
         role="dialog"
         aria-modal="true"
         aria-labelledby="quiz-submit-confirm-title"
@@ -559,3 +559,142 @@ onBeforeRouteLeave(() => {
     </div>
   </AppShell>
 </template>
+
+<style scoped>
+@media (max-width: 767px) {
+  .quiz-state {
+    min-height: 42vh;
+    padding: 24px 0;
+    text-align: center;
+  }
+
+  .quiz-result {
+    padding: 4px 0 20px;
+  }
+
+  .quiz-result-card {
+    padding: 16px;
+  }
+
+  .quiz-result-card h1,
+  .quiz-session-header h1 {
+    font-size: 22px;
+    line-height: 30px;
+  }
+
+  .quiz-score-card {
+    margin: 16px 0;
+    padding: 16px;
+  }
+
+  .quiz-detail-list {
+    display: flex;
+    flex-direction: column;
+    margin-top: 16px;
+    gap: 12px;
+  }
+
+  .quiz-detail-list > :not([hidden]) ~ :not([hidden]),
+  .quiz-session > :not([hidden]) ~ :not([hidden]),
+  .quiz-question-list > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 0;
+  }
+
+  .quiz-detail-list > h2 {
+    font-size: 18px;
+    line-height: 26px;
+  }
+
+  .quiz-session-header,
+  .quiz-submit-bar {
+    border-radius: 12px;
+  }
+
+  .quiz-detail-card,
+  .quiz-question-card {
+    border-radius: 8px;
+  }
+
+  .quiz-card-header {
+    padding: 10px 12px;
+  }
+
+  .quiz-card-body {
+    padding: 12px;
+  }
+
+  .quiz-question-title {
+    margin-bottom: 12px;
+    font-size: 16px;
+    line-height: 24px;
+  }
+
+  .quiz-card-body > .space-y-3 {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .quiz-card-body > .space-y-3 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 0;
+  }
+
+  .quiz-option {
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .quiz-explanation {
+    margin-top: 12px;
+    padding: 12px;
+  }
+
+  .quiz-session {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .quiz-session-header {
+    padding: 16px;
+  }
+
+  .quiz-back {
+    margin-bottom: 12px;
+  }
+
+  .quiz-title-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .quiz-question-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .quiz-submit-bar {
+    bottom: 8px;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .quiz-submit-bar .btn {
+    min-height: 42px;
+  }
+
+  .quiz-confirm-backdrop {
+    padding: 12px;
+  }
+
+  .quiz-confirm-dialog {
+    border-radius: 12px;
+  }
+
+  .quiz-confirm-dialog > div {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+}
+</style>

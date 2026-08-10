@@ -648,7 +648,7 @@ onBeforeUnmount(() => {
           <p class="mt-2 text-muted-foreground">{{ t.orders.subtitle }}</p>
         </div>
 
-    <div class="overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+    <div class="orders-panel overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <div class="orders-toolbar flex flex-col gap-3 border-b border-slate-100 bg-white px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
         <div class="flex items-center">
           <h2 class="font-semibold text-card-foreground">{{ t.orders.orderHistory }}</h2>
