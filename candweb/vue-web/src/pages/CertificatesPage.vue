@@ -251,17 +251,17 @@ watch(lang, () => {
         <span class="text-sm font-medium text-foreground">{{ t.certificatesPage.title }}</span>
       </header>
 
-      <main class="px-5 py-8 md:px-8 lg:px-10">
-        <div class="mb-6">
+      <main class="certificates-page px-5 py-8 md:px-8 lg:px-10">
+        <div class="certificates-page-intro mb-6">
           <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.certificatesPage.title }}</h1>
           <p class="mt-2 text-muted-foreground">{{ t.certificatesPage.subtitle }}</p>
         </div>
 
-    <div v-if="loading" class="flex items-center justify-center gap-2 rounded-[16px] bg-white py-16 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+    <div v-if="loading" class="certificates-state flex items-center justify-center gap-2 rounded-[16px] bg-white py-16 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <Loader2 class="h-5 w-5 animate-spin" />
       <span>{{ t.common.loading }}</span>
     </div>
-    <div v-else-if="loadError" class="flex flex-col items-center justify-center rounded-[16px] bg-white px-4 py-16 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+    <div v-else-if="loadError" class="certificates-state flex flex-col items-center justify-center rounded-[16px] bg-white px-4 py-16 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-red-50">
         <AlertCircle class="h-8 w-8 text-red-600" />
       </div>
@@ -272,7 +272,7 @@ watch(lang, () => {
         {{ t.certificatesPage.retry }}
       </button>
     </div>
-    <div v-else-if="certificates.length" class="grid gap-4 lg:grid-cols-2">
+    <div v-else-if="certificates.length" class="certificates-grid grid gap-4 lg:grid-cols-2">
       <div
         v-for="cert in certificates"
         :key="cert.id"
@@ -281,7 +281,7 @@ watch(lang, () => {
         <span class="certificate-card-sheen pointer-events-none absolute left-0 top-0 z-20 h-1 w-full" />
         <span class="certificate-card-orb pointer-events-none absolute -right-12 -top-12 z-10 h-36 w-36 rounded-full opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
         <div class="absolute inset-x-0 top-0 z-10 h-1" :class="certificateSourceAccentClass(cert.source)" />
-        <div class="relative bg-[#002a66] p-4 text-white">
+        <div class="certificate-card-hero relative bg-[#002a66] p-4 text-white">
           <div class="relative flex items-start justify-between">
             <div class="min-w-0">
               <div class="mb-3 flex flex-wrap items-center gap-2">
@@ -304,18 +304,18 @@ watch(lang, () => {
             <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-white/20 bg-white/10"><Award class="h-6 w-6" /></div>
           </div>
         </div>
-        <div class="relative p-4">
-          <div class="mb-4 grid grid-cols-2 gap-3">
-            <div class="rounded-[14px] bg-[#eef3f8] p-3">
+        <div class="certificate-card-body relative p-4">
+          <div class="certificate-date-grid mb-4 grid grid-cols-2 gap-3">
+            <div class="certificate-date-item rounded-[14px] bg-[#eef3f8] p-3">
               <p class="mb-1 text-xs text-muted-foreground">{{ t.certificatesPage.issueDate }}</p>
               <p class="flex items-center gap-1.5 font-medium text-card-foreground"><Calendar class="h-4 w-4 text-muted-foreground" /> {{ cert.issueDate }}</p>
             </div>
-            <div class="rounded-[14px] bg-[#eef3f8] p-3">
+            <div class="certificate-date-item rounded-[14px] bg-[#eef3f8] p-3">
               <p class="mb-1 text-xs text-muted-foreground">{{ t.certificatesPage.expiryDate }}</p>
               <p class="flex items-center gap-1.5 font-medium text-card-foreground"><Calendar class="h-4 w-4 text-muted-foreground" /> {{ cert.expiryDate }}</p>
             </div>
           </div>
-          <div class="flex gap-3">
+          <div class="certificate-card-actions flex gap-3">
             <button class="btn btn-primary flex-1 rounded-lg shadow-sm shadow-primary/20 transition-all duration-300 group-hover:shadow-primary/30" :disabled="!cert.pdfUrl" @click="openCertificate(cert.pdfUrl)">
               <Download class="h-4 w-4" /> {{ cert.pdfUrl ? t.certificatesPage.downloadCertificate : t.certificatesPage.certificateGenerating }}
             </button>
@@ -328,7 +328,7 @@ watch(lang, () => {
       </div>
     </div>
 
-    <div v-else class="flex min-h-[320px] flex-col items-center justify-center rounded-[16px] bg-white p-6 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+    <div v-else class="certificates-state flex min-h-[320px] flex-col items-center justify-center rounded-[16px] bg-white p-6 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10">
         <Award class="h-8 w-8 text-primary" />
       </div>
@@ -405,6 +405,78 @@ watch(lang, () => {
   44%,
   100% {
     transform: translateX(140%);
+  }
+}
+
+@media (max-width: 767px) {
+  .certificates-page-intro {
+    margin-bottom: 16px;
+  }
+
+  .certificates-page-intro h1 {
+    font-size: 24px;
+    line-height: 32px;
+  }
+
+  .certificates-page-intro p {
+    margin-top: 6px;
+    font-size: 14px;
+    line-height: 22px;
+  }
+
+  .certificates-state {
+    min-height: 220px;
+    padding: 32px 12px;
+    border-radius: 12px;
+  }
+
+  .certificates-grid {
+    gap: 12px;
+  }
+
+  .certificate-card {
+    border-radius: 12px;
+  }
+
+  .certificate-card-hero,
+  .certificate-card-body {
+    padding: 12px;
+  }
+
+  .certificate-card-hero h3 {
+    font-size: 18px;
+    line-height: 26px;
+  }
+
+  .certificate-date-grid {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .certificate-date-item {
+    min-width: 0;
+    padding: 10px;
+    border-radius: 10px;
+  }
+
+  .certificate-date-item p:last-child {
+    align-items: flex-start;
+    font-size: 13px;
+    line-height: 18px;
+    overflow-wrap: anywhere;
+  }
+
+  .certificate-date-item svg {
+    margin-top: 1px;
+    flex-shrink: 0;
+  }
+
+  .certificate-card-actions {
+    gap: 8px;
+  }
+
+  .certificate-card-actions .btn {
+    min-height: 40px;
   }
 }
 </style>

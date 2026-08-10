@@ -240,13 +240,13 @@ onMounted(() => {
         <span class="text-sm font-medium text-foreground">{{ copy.title }}</span>
       </header>
 
-      <main class="px-5 py-8 md:px-8 lg:px-10">
-        <section class="mb-6">
-          <RouterLink to="/resource-packs" class="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-primary">
+      <main class="resource-detail-page px-5 py-8 md:px-8 lg:px-10">
+        <section class="resource-detail-intro mb-6">
+          <RouterLink to="/resource-packs" class="resource-detail-back mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-primary">
             <ArrowLeft class="h-4 w-4" />
             {{ copy.back }}
           </RouterLink>
-          <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div class="resource-detail-heading flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ copy.title }}</h1>
               <p class="mt-2 max-w-2xl text-muted-foreground">{{ copy.subtitle }}</p>
@@ -258,7 +258,7 @@ onMounted(() => {
           </div>
         </section>
 
-    <section class="mb-5 rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+    <section class="resource-detail-search mb-5 rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <div class="relative">
         <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input v-model="search" class="input pl-10" :placeholder="copy.search" />
@@ -268,7 +268,7 @@ onMounted(() => {
     <section
       v-if="filteredFiles.length"
       :class="[
-        'grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4',
+        'resource-detail-grid grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4',
         isVideoGrid ? '' : '2xl:grid-cols-5',
       ]"
     >
@@ -276,7 +276,7 @@ onMounted(() => {
         v-for="file in filteredFiles"
         :key="file.file_id"
         :class="[
-          'group overflow-hidden transition-all hover:-translate-y-0.5',
+          'resource-detail-card group overflow-hidden transition-all hover:-translate-y-0.5',
           normalizedType(file.file_type) === 2
             ? 'bg-transparent'
             : 'rounded-[18px] border border-border bg-white shadow-[0_10px_24px_rgba(15,23,42,0.08)] hover:shadow-[0_16px_34px_rgba(15,23,42,0.12)]',
@@ -357,7 +357,7 @@ onMounted(() => {
             </div>
           </button>
 
-          <button class="block w-full px-4 py-4 text-left" :disabled="openingFileId === file.file_id" @click="openFile(file)">
+          <button class="resource-detail-card-body block w-full px-4 py-4 text-left" :disabled="openingFileId === file.file_id" @click="openFile(file)">
             <h2 class="line-clamp-2 min-h-[2.75rem] text-base font-bold leading-snug text-foreground transition-colors group-hover:text-primary">{{ file.title || file.file_name || file.file_id }}</h2>
             <p v-if="file.description || file.file_name" class="mt-2 line-clamp-2 text-sm leading-5 text-muted-foreground">{{ file.description || file.file_name }}</p>
             <div class="mt-3 flex items-center justify-between gap-4 text-sm text-muted-foreground">
@@ -377,7 +377,7 @@ onMounted(() => {
       </article>
     </section>
 
-    <section v-else class="rounded-[16px] bg-white px-4 py-14 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+    <section v-else class="resource-detail-empty rounded-[16px] bg-white px-4 py-14 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10">
         <RefreshCw v-if="loading" class="h-8 w-8 animate-spin text-primary" />
         <FileArchive v-else class="h-8 w-8 text-primary" />
@@ -428,5 +428,70 @@ onMounted(() => {
 .resource-detail-refresh-btn:disabled {
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+@media (max-width: 767px) {
+  .resource-detail-intro {
+    margin-bottom: 16px;
+  }
+
+  .resource-detail-back {
+    margin-bottom: 16px;
+  }
+
+  .resource-detail-heading {
+    gap: 12px;
+  }
+
+  .resource-detail-heading h1 {
+    font-size: 24px;
+    line-height: 32px;
+  }
+
+  .resource-detail-heading p {
+    margin-top: 6px;
+    font-size: 14px;
+    line-height: 22px;
+  }
+
+  .resource-detail-refresh-btn {
+    width: 100%;
+    min-height: 40px;
+    justify-content: center;
+    border-radius: 8px;
+  }
+
+  .resource-detail-search {
+    margin-bottom: 12px;
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .resource-detail-grid {
+    gap: 12px;
+  }
+
+  .resource-detail-card {
+    border-radius: 12px;
+  }
+
+  .resource-detail-card-body {
+    padding: 12px;
+  }
+
+  .resource-detail-card-body h2 {
+    min-height: auto;
+  }
+
+  .resource-detail-card-body > div {
+    gap: 8px;
+    margin-top: 10px;
+    font-size: 12px;
+  }
+
+  .resource-detail-empty {
+    padding: 32px 12px;
+    border-radius: 12px;
+  }
 }
 </style>

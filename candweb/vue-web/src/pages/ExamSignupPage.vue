@@ -435,17 +435,17 @@ async function handleSubmit() {
         <span class="text-sm font-medium text-foreground">{{ t.examSignup.title }}</span>
       </header>
 
-      <main class="px-5 py-8 md:px-8 lg:px-10">
-        <RouterLink :to="backLink" class="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
+      <main class="exam-signup-page px-5 py-8 md:px-8 lg:px-10">
+        <RouterLink :to="backLink" class="exam-signup-back mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
           <ArrowLeft class="h-4 w-4" /> {{ backLabel }}
         </RouterLink>
-        <div class="mb-8 max-w-2xl">
+        <div class="exam-signup-intro mb-8 max-w-2xl">
           <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.examSignup.title }}</h1>
           <p class="mt-2 text-muted-foreground">{{ t.examSignup.subtitle }}</p>
         </div>
-        <div class="max-w-2xl rounded-[16px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-      <form data-testid="exam-signup-form" class="space-y-6" novalidate @submit.prevent="handleSubmit">
-        <div class="grid gap-4 sm:grid-cols-2">
+        <div class="exam-signup-card max-w-2xl rounded-[16px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+      <form data-testid="exam-signup-form" class="exam-signup-form space-y-6" novalidate @submit.prevent="handleSubmit">
+        <div class="exam-signup-grid grid gap-4 sm:grid-cols-2">
           <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formFirstName }}</span><input v-model="formData.first_name" data-testid="exam-signup-first-name" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" required /></label>
           <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formLastName }}</span><input v-model="formData.last_name" data-testid="exam-signup-last-name" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" required /></label>
         </div>
@@ -470,7 +470,7 @@ async function handleSubmit() {
             :aria-label="t.examSignup.formBirthdate"
           />
         </label>
-        <div class="grid gap-4" :class="locationGridClass">
+        <div class="exam-signup-grid grid gap-4" :class="locationGridClass">
           <label class="space-y-2">
             <span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formCountry }}</span>
             <select v-model="selectedCountryCode" data-testid="exam-signup-country" class="input cursor-pointer" required @change="handleCountryChange">
@@ -500,14 +500,14 @@ async function handleSubmit() {
         <div class="grid gap-4 sm:grid-cols-1">
           <label class="space-y-2">
             <span class="text-sm font-medium">{{ t.examSignup.formWorkPhone }}</span>
-            <div class="flex gap-2">
+            <div class="exam-signup-phone flex gap-2">
               <select v-if="orgPhonePrefixes.length > 0" v-model="formData.phone_country_code" class="input cursor-pointer w-28 shrink-0">
                 <option v-for="prefix in orgPhonePrefixes" :key="prefix.code" :value="prefix.code">{{ prefix.dialCode }} · {{ prefix.name }}</option>
               </select>
               <input
                 id="exam-signup-work-phone"
                 v-model="formData.phone"
-                class="input flex-1"
+                class="exam-signup-phone-input input min-w-0 flex-1"
                 type="tel"
                 inputmode="tel"
                 autocomplete="tel"
@@ -529,3 +529,61 @@ async function handleSubmit() {
     </div>
   </AppShell>
 </template>
+
+<style scoped>
+@media (max-width: 767px) {
+  .exam-signup-back {
+    margin-bottom: 16px;
+  }
+
+  .exam-signup-intro {
+    margin-bottom: 16px;
+  }
+
+  .exam-signup-intro h1 {
+    font-size: 24px;
+    line-height: 32px;
+  }
+
+  .exam-signup-intro p {
+    margin-top: 6px;
+    font-size: 14px;
+    line-height: 22px;
+  }
+
+  .exam-signup-card {
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .exam-signup-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .exam-signup-form > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 0;
+  }
+
+  .exam-signup-grid {
+    gap: 12px;
+  }
+
+  .exam-signup-form label {
+    gap: 6px;
+  }
+
+  .exam-signup-phone select {
+    width: 96px;
+  }
+
+  .exam-signup-phone-input {
+    min-width: 0;
+  }
+
+  .exam-signup-form button[type="submit"] {
+    min-height: 42px;
+  }
+}
+</style>

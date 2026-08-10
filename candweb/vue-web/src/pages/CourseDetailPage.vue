@@ -1055,14 +1055,14 @@ watch(lang, async () => {
         <span class="text-sm font-medium text-foreground">{{ pipeline?.name || t.common.unknownCourse }}</span>
       </header>
 
-      <main class="px-5 py-8 md:px-8 lg:px-10">
-        <RouterLink :to="purchased ? '/my-certifications' : '/certifications'" class="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
+      <main class="course-detail-page px-5 py-8 md:px-8 lg:px-10">
+        <RouterLink :to="purchased ? '/my-certifications' : '/certifications'" class="course-detail-back mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
           <ArrowLeft class="h-4 w-4" />
           {{ t.courses.backToPipelines }}
         </RouterLink>
 
     <LoadingState v-if="loading" :label="t.common.loading" variant="page" :rows="4" />
-    <div v-else-if="!pipeline" class="rounded-md bg-white p-8 text-center text-muted-foreground">
+    <div v-else-if="!pipeline" class="course-detail-empty rounded-md bg-white p-8 text-center text-muted-foreground">
       <div class="mx-auto max-w-md space-y-4">
         <div>
           <h2 class="text-lg font-semibold text-foreground">{{ t.learning.courseUnavailableTitle }}</h2>
@@ -1074,7 +1074,7 @@ watch(lang, async () => {
       </div>
     </div>
     <template v-else>
-      <div :class="['mb-4 rounded-md bg-white p-6', firstCourseThumbnail && 'grid gap-6 lg:grid-cols-[340px_1fr]']">
+      <div :class="['course-detail-hero mb-4 rounded-md bg-white p-6', firstCourseThumbnail && 'grid gap-6 lg:grid-cols-[340px_1fr]']">
         <div v-if="firstCourseThumbnail" class="relative flex aspect-video items-center justify-center overflow-hidden rounded-md bg-muted">
           <img :src="firstCourseThumbnail" :alt="pipeline.name || t.common.unknownCourse" class="h-full w-full object-cover" />
           <div class="absolute inset-0 bg-gradient-to-t from-black/45 via-black/5 to-transparent" />
@@ -1084,7 +1084,7 @@ watch(lang, async () => {
           <h1 class="mb-2 text-2xl font-bold text-foreground">{{ pipeline.name || t.common.unknownCourse }}</h1>
           <p v-if="pipeline.description" class="mb-4 max-w-3xl text-sm leading-6 text-muted-foreground">{{ pipeline.description }}</p>
 
-          <div class="mb-5 flex flex-wrap gap-6 text-sm text-muted-foreground">
+          <div class="course-detail-meta mb-5 flex flex-wrap gap-6 text-sm text-muted-foreground">
             <div class="flex items-center gap-1.5">
               <BookOpen class="h-4 w-4" />
               <span>{{ stages.length }} {{ t.courses.stages }}</span>
@@ -1118,7 +1118,7 @@ watch(lang, async () => {
 
       <section
         v-if="finalQualificationRequired"
-        class="mb-4 rounded-md border border-blue-200 bg-blue-50 p-5 shadow-[0_10px_24px_rgba(15,74,82,0.04)]"
+        class="course-detail-panel mb-4 rounded-md border border-blue-200 bg-blue-50 p-5 shadow-[0_10px_24px_rgba(15,74,82,0.04)]"
       >
         <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div class="min-w-0">
@@ -1128,7 +1128,7 @@ watch(lang, async () => {
             </div>
             <p class="mt-2 max-w-3xl text-sm leading-6 text-blue-800">{{ finalQualificationPanelDescription }}</p>
             <div class="mt-4 grid gap-2 md:grid-cols-2">
-              <div v-for="qual in finalQualifications" :key="qual.qualId" class="rounded-lg border border-blue-100 bg-white px-4 py-3">
+              <div v-for="qual in finalQualifications" :key="qual.qualId" class="course-detail-subcard rounded-lg border border-blue-100 bg-white px-4 py-3">
                 <div class="font-semibold text-blue-950">{{ qual.name || t.credentialsPage.availableQualifications }}</div>
                 <p v-if="qual.description" class="mt-2 text-xs leading-5 text-slate-600">{{ qual.description }}</p>
                 <div v-if="qual.application" class="mt-3 flex flex-wrap items-center gap-2">
@@ -1191,7 +1191,7 @@ watch(lang, async () => {
 
       <section
         v-if="purchased && pipelineHasCertificate"
-        class="mb-4 rounded-md border border-slate-200 bg-white p-5 shadow-[0_10px_24px_rgba(15,23,42,0.04)]"
+        class="course-detail-panel mb-4 rounded-md border border-slate-200 bg-white p-5 shadow-[0_10px_24px_rgba(15,23,42,0.04)]"
       >
         <div v-if="certificateAvailable" class="space-y-5">
           <div class="flex items-center gap-2 text-foreground">
@@ -1200,8 +1200,8 @@ watch(lang, async () => {
           </div>
           <p class="max-w-3xl text-sm leading-6 text-muted-foreground">{{ t.learning.certificatePanelDesc }}</p>
 
-          <div class="relative overflow-hidden rounded-lg bg-emerald-600 px-5 py-5 text-white">
-            <div class="relative z-10 flex items-center justify-between gap-4">
+          <div class="course-detail-certificate-banner relative overflow-hidden rounded-lg bg-emerald-600 px-5 py-5 text-white">
+            <div class="course-detail-certificate-banner-content relative z-10 flex items-center justify-between gap-4">
               <div class="min-w-0">
                 <div class="flex items-center gap-2 text-xl font-semibold">
                   <Sparkles class="h-5 w-5" />
@@ -1213,7 +1213,7 @@ watch(lang, async () => {
             </div>
           </div>
 
-          <div class="rounded-lg border border-slate-200 bg-white p-5">
+          <div class="course-detail-certificate-info rounded-lg border border-slate-200 bg-white p-5">
             <h3 class="text-base font-semibold text-foreground">{{ t.learning.certificateDetailsTitle }}</h3>
             <div class="mt-5 grid gap-5 sm:grid-cols-2">
               <div>
@@ -1260,8 +1260,8 @@ watch(lang, async () => {
         </div>
       </section>
 
-      <section class="rounded-md bg-white p-6">
-        <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
+      <section class="course-detail-stages rounded-md bg-white p-6">
+        <div class="course-detail-stages-heading mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 class="text-lg font-semibold text-foreground">{{ t.courses.stageListTitle }}</h2>
             <p class="mt-1 text-sm text-muted-foreground">{{ t.courses.stageListDesc }}</p>
@@ -1270,7 +1270,7 @@ watch(lang, async () => {
         </div>
 
         <LoadingState v-if="stageListLoading" :label="t.common.loading" variant="section" :rows="3" />
-        <div v-else-if="stages.length === 0" class="rounded-md bg-slate-50 p-8 text-center text-muted-foreground">
+        <div v-else-if="stages.length === 0" class="course-detail-empty rounded-md bg-slate-50 p-8 text-center text-muted-foreground">
           <div class="mx-auto max-w-md space-y-4">
             <div>
               <h3 class="text-base font-semibold text-foreground">{{ t.courses.noStagesTitle }}</h3>
@@ -1286,12 +1286,12 @@ watch(lang, async () => {
             v-for="(stage, stageIndex) in stages"
             :key="stage.stage_id || stageIndex"
             :class="[
-              'overflow-hidden rounded-md border bg-white',
+              'course-detail-stage overflow-hidden rounded-md border bg-white',
               stageIndex === activeStageIndex ? 'border-primary/25' : 'border-slate-100',
             ]"
           >
-          <div class="flex flex-col gap-4 border-b border-slate-100 px-5 py-4 md:flex-row md:items-center md:justify-between">
-            <div class="flex items-center gap-3">
+          <div class="course-detail-stage-header flex flex-col gap-4 border-b border-slate-100 px-5 py-4 md:flex-row md:items-center md:justify-between">
+            <div class="course-detail-stage-title flex min-w-0 items-center gap-3">
               <div
                 :class="[
                   'flex h-10 w-10 items-center justify-center rounded-lg text-sm font-semibold',
@@ -1321,9 +1321,9 @@ watch(lang, async () => {
               :to="learningHref(unit.glms_course_id)"
               data-testid="course-unit-link"
               :data-course-id="unit.glms_course_id || ''"
-              class="flex items-center justify-between gap-4 border-t border-slate-50 px-5 py-4 transition-colors first:border-t-0 hover:bg-slate-50"
+              class="course-detail-unit flex items-center justify-between gap-4 border-t border-slate-50 px-5 py-4 transition-colors first:border-t-0 hover:bg-slate-50"
             >
-              <div class="flex items-center gap-3">
+              <div class="course-detail-unit-main flex min-w-0 items-center gap-3">
                 <div
                   :class="[
                     'flex h-8 w-8 items-center justify-center rounded-full',
@@ -1334,7 +1334,7 @@ watch(lang, async () => {
                 >
                   <Play class="h-3.5 w-3.5 fill-current" />
                 </div>
-                <div>
+                <div class="min-w-0">
                   <div class="font-medium text-foreground">
                     {{ (unit.glms_course_id && courseSummaries[unit.glms_course_id]?.title) || unit.name || unit.glms_course_id || t.common.unknownCourse }}
                   </div>
@@ -1350,7 +1350,7 @@ watch(lang, async () => {
                   </div>
                 </div>
               </div>
-              <div class="flex flex-wrap items-center justify-end gap-2">
+              <div class="course-detail-unit-actions flex flex-wrap items-center justify-end gap-2">
                 <span :class="['badge', unitStateClass(unit)]">{{ t.learning.unitStatusLabel }}: {{ unitStateText(unit) }}</span>
                 <span
                   v-if="unit.glms_course_id"
@@ -1418,3 +1418,114 @@ watch(lang, async () => {
     </div>
   </AppShell>
 </template>
+
+<style scoped>
+@media (max-width: 767px) {
+  .course-detail-back {
+    margin-bottom: 16px;
+  }
+
+  .course-detail-empty {
+    padding: 32px 12px;
+  }
+
+  .course-detail-hero {
+    gap: 16px;
+    padding: 16px;
+    border-radius: 10px;
+  }
+
+  .course-detail-hero h1 {
+    font-size: 22px;
+    line-height: 30px;
+  }
+
+  .course-detail-meta {
+    gap: 10px 16px;
+    margin-bottom: 16px;
+  }
+
+  .course-detail-panel {
+    padding: 16px;
+    border-radius: 10px;
+  }
+
+  .course-detail-panel .btn {
+    width: 100%;
+    min-height: 42px;
+    justify-content: center;
+  }
+
+  .course-detail-subcard {
+    padding: 12px;
+  }
+
+  .course-detail-certificate-banner {
+    padding: 16px;
+  }
+
+  .course-detail-certificate-banner-content {
+    align-items: flex-start;
+  }
+
+  .course-detail-certificate-banner-content > svg {
+    width: 36px;
+    height: 36px;
+  }
+
+  .course-detail-certificate-banner-content div div {
+    font-size: 18px;
+    line-height: 26px;
+  }
+
+  .course-detail-certificate-info {
+    padding: 16px;
+  }
+
+  .course-detail-certificate-info > div {
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .course-detail-stages {
+    padding: 16px;
+    border-radius: 10px;
+  }
+
+  .course-detail-stages-heading {
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+
+  .course-detail-stage {
+    border-radius: 10px;
+  }
+
+  .course-detail-stage-header {
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .course-detail-stage-title > div:last-child,
+  .course-detail-unit-main > div:last-child {
+    min-width: 0;
+  }
+
+  .course-detail-stage-title h3,
+  .course-detail-unit-main .font-medium {
+    overflow-wrap: anywhere;
+  }
+
+  .course-detail-unit {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .course-detail-unit-actions {
+    justify-content: flex-start;
+    padding-left: 44px;
+  }
+}
+</style>
