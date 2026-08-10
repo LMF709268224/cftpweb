@@ -106,7 +106,7 @@ watch(lang, () => {
       </header>
 
       <main class="px-5 py-8 md:px-8 lg:px-10">
-        <div class="mb-6">
+        <div class="my-certifications-intro mb-6">
           <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ copy.title }}</h1>
           <p class="mt-2 text-muted-foreground">{{ copy.subtitle }}</p>
         </div>
@@ -115,18 +115,18 @@ watch(lang, () => {
           <Clock class="h-5 w-5 animate-spin" /> <span>{{ t.common.loading }}</span>
         </div>
 
-        <div v-else-if="myCourses.length > 0" class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        <div v-else-if="myCourses.length > 0" class="my-certifications-grid grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
           <div
             v-for="course in myCourses"
             :key="`${course.configId}-${course.instanceId}`"
-            class="group flex min-h-[320px] flex-col rounded-[18px] border-2 border-[#dfe4ea] bg-white p-5 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all duration-300 hover:-translate-y-0.5 hover:border-primary hover:shadow-[0_18px_42px_rgba(16,30,67,0.16)]"
+            class="my-certification-card group flex min-h-[320px] flex-col rounded-[18px] border-2 border-[#dfe4ea] bg-white p-5 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all duration-300 hover:-translate-y-0.5 hover:border-primary hover:shadow-[0_18px_42px_rgba(16,30,67,0.16)]"
           >
             <div class="flex-1">
               <h3 class="line-clamp-2 text-xl font-bold leading-tight tracking-tight text-foreground transition-colors group-hover:text-primary">
                 {{ course.title || t.common.unknownCourse }}
               </h3>
 
-              <div class="mt-6 space-y-5 text-base text-muted-foreground">
+              <div class="my-certification-status mt-6 space-y-5 text-base text-muted-foreground">
                 <div class="flex items-center justify-between gap-4">
                   <span>{{ copy.status }}:</span>
                   <span :class="['rounded-lg px-3 py-1.5 text-sm font-semibold', timelineStatusBadgeClassForStatus('PIPELINE', course.statusValue)]">
@@ -135,7 +135,7 @@ watch(lang, () => {
                 </div>
               </div>
 
-              <div v-if="course.progressAvailable" class="mt-7">
+              <div v-if="course.progressAvailable" class="my-certification-progress mt-7">
                 <div class="mb-2 flex items-center justify-between text-sm">
                   <span class="text-muted-foreground">{{ t.courses.courseProgress }}</span>
                   <span class="font-semibold text-foreground">{{ course.progress }}%</span>
@@ -145,14 +145,14 @@ watch(lang, () => {
                 </div>
               </div>
 
-              <div v-if="course.currentStage || course.startedAt || course.completedAt" class="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-sm text-muted-foreground">
+              <div v-if="course.currentStage || course.startedAt || course.completedAt" class="my-certification-meta mt-5 flex flex-wrap gap-x-4 gap-y-2 text-sm text-muted-foreground">
                 <span v-if="course.currentStage">{{ t.courses.stage }}: {{ course.currentStage }}</span>
                 <span v-if="course.startedAt">{{ copy.startedAt }}: {{ course.startedAt }}</span>
                 <span v-if="course.completedAt">{{ copy.completedAt }}: {{ course.completedAt }}</span>
               </div>
             </div>
 
-            <div class="mt-6">
+            <div class="my-certification-action mt-6">
               <RouterLink
                 :to="certificationDetailHref(course)"
                 data-testid="owned-certification-details"
@@ -180,3 +180,32 @@ watch(lang, () => {
     </div>
   </AppShell>
 </template>
+
+<style scoped>
+@media (max-width: 767px) {
+  .my-certifications-intro {
+    margin-bottom: 16px;
+  }
+
+  .my-certifications-grid {
+    gap: 12px;
+  }
+
+  .my-certification-card {
+    min-height: 0;
+    padding: 16px;
+  }
+
+  .my-certification-status,
+  .my-certification-progress,
+  .my-certification-action {
+    margin-top: 16px;
+  }
+
+  .my-certification-meta {
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 12px;
+  }
+}
+</style>
