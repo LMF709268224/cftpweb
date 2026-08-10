@@ -489,7 +489,7 @@ func writeCandidateAccessError(w http.ResponseWriter, err error) {
 // ApplyExemption POST /api/exams/units/{courseUnitUlid}/exemption
 func (h *Handler) ApplyExemption(w http.ResponseWriter, r *http.Request) {
 	// TODO(microservice-missing-api): gprog has not exposed candidate exemption application yet.
-	WriteError(w, http.StatusNotImplemented, ErrInternal, "Under construction (waiting for gprog exemption API)")
+	WriteError(w, http.StatusNotImplemented, ErrNotImplemented, "candidate exemption application is not available in current gprog API")
 }
 
 // ListExams GET /api/exams

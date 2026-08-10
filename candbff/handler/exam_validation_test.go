@@ -102,5 +102,5 @@ func TestApplyExemptionReportsUnavailableContract(t *testing.T) {
 
 	(&Handler{}).ApplyExemption(recorder, request)
 
-	assertHandlerAPIError(t, recorder, http.StatusNotImplemented, ErrInternal)
+	assertHandlerAPIError(t, recorder, http.StatusNotImplemented, ErrNotImplemented)
 }
