@@ -71,12 +71,12 @@ watch(lang, () => {
       </header>
 
       <main class="px-5 py-8 md:px-8 lg:px-10">
-        <div class="mb-6">
+        <div class="resource-packs-intro mb-6">
           <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ copy.title }}</h1>
           <p class="mt-2 max-w-2xl text-muted-foreground">{{ copy.subtitle }}</p>
         </div>
 
-    <section class="mb-4 flex flex-col gap-4 rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] sm:flex-row sm:items-center sm:justify-between">
+    <section class="resource-packs-controls mb-4 flex flex-col gap-4 rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] sm:flex-row sm:items-center sm:justify-between">
       <div class="relative flex-1 sm:max-w-md">
         <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input v-model="search" class="input pl-10" :placeholder="copy.search" />
@@ -87,7 +87,7 @@ watch(lang, () => {
       </button>
     </section>
 
-    <section v-if="filteredPacks.length" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <section v-if="filteredPacks.length" class="resource-packs-grid grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       <RouterLink
         v-for="pack in filteredPacks"
         :key="pack.pack_id"
@@ -97,21 +97,21 @@ watch(lang, () => {
       >
         <span class="resource-pack-sheen pointer-events-none absolute left-0 top-0 z-20 h-1 w-full" />
         <span class="resource-pack-orb pointer-events-none absolute -right-12 -top-12 z-10 h-36 w-36 rounded-full opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-        <div class="relative flex h-24 items-end overflow-hidden bg-[#002a66] px-4 pb-3 text-white">
+        <div class="resource-pack-visual relative flex h-24 items-end overflow-hidden bg-[#002a66] px-4 pb-3 text-white">
           <div class="absolute right-4 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-lg border border-white/20 bg-white/10">
             <PackageOpen class="h-7 w-7 text-white/70" />
           </div>
         </div>
-        <div class="relative p-4">
+        <div class="resource-pack-body relative p-4">
           <h2 class="line-clamp-2 text-lg font-semibold text-card-foreground transition-colors group-hover:text-primary">{{ pack.title || pack.pack_id }}</h2>
-          <p class="mt-2 line-clamp-3 min-h-[4.5rem] text-sm leading-6 text-muted-foreground">{{ pack.description || copy.emptyDesc }}</p>
-          <div class="mt-4 space-y-2 text-xs text-muted-foreground">
+          <p class="resource-pack-description mt-2 line-clamp-3 min-h-[4.5rem] text-sm leading-6 text-muted-foreground">{{ pack.description || copy.emptyDesc }}</p>
+          <div class="resource-pack-meta mt-4 space-y-2 text-xs text-muted-foreground">
             <p v-if="pack.updated_at" class="flex items-center gap-1.5">
               <CalendarClock class="h-3.5 w-3.5" />
               <span>{{ copy.updated }}: {{ formatBackendDateOnly(pack.updated_at) }}</span>
             </p>
           </div>
-          <div class="mt-4 flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white shadow-sm shadow-primary/20 transition-all duration-300 group-hover:bg-primary/90 group-hover:shadow-primary/30">
+          <div class="resource-pack-action mt-4 flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white shadow-sm shadow-primary/20 transition-all duration-300 group-hover:bg-primary/90 group-hover:shadow-primary/30">
             {{ copy.open }}
             <ArrowRight class="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
           </div>
@@ -193,5 +193,42 @@ watch(lang, () => {
 
 .resource-pack-orb {
   background: radial-gradient(circle, rgba(9, 87, 249, 0.16), transparent 68%);
+}
+
+@media (max-width: 767px) {
+  .resource-packs-intro {
+    margin-bottom: 16px;
+  }
+
+  .resource-packs-controls {
+    gap: 8px;
+    margin-bottom: 12px;
+    padding: 12px;
+  }
+
+  .resource-packs-grid {
+    gap: 12px;
+  }
+
+  .resource-pack-visual {
+    height: 80px;
+  }
+
+  .resource-pack-body {
+    padding: 12px;
+  }
+
+  .resource-pack-description {
+    min-height: 0;
+  }
+
+  .resource-pack-meta,
+  .resource-pack-action {
+    margin-top: 12px;
+  }
+
+  .resource-pack-meta:empty {
+    display: none;
+  }
 }
 </style>

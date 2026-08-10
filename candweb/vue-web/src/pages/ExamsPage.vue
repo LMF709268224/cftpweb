@@ -423,7 +423,7 @@ onBeforeUnmount(() => {
       </header>
 
       <main class="px-4 py-6 md:px-6 lg:px-8">
-        <div class="mb-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div class="exams-page-heading mb-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.examsPage.title }}</h1>
             <p class="hidden mt-2 text-muted-foreground">{{ t.examsPage.subtitle }}</p>
@@ -455,7 +455,7 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <div class="rounded-[16px] bg-white p-3 shadow-[0_10px_24px_rgba(15,74,82,0.05)] md:p-4">
+    <div class="exams-panel rounded-[16px] bg-white p-3 shadow-[0_10px_24px_rgba(15,74,82,0.05)] md:p-4">
       <div v-if="loading" class="flex items-center justify-center gap-2 py-16 text-muted-foreground">
         <Loader2 class="h-5 w-5 animate-spin" />
         <span>{{ t.common.loading }}</span>
@@ -486,11 +486,11 @@ onBeforeUnmount(() => {
           <span>{{ t.examsPage.countPrefix }} {{ total > 0 ? total : filtered.length }} {{ t.examsPage.countSuffix }}</span>
           <span>{{ activeTab === 'history' ? t.examsPage.historyFilterHint : t.examsPage.visibleRecordsHint }}</span>
         </div>
-        <div class="grid gap-3">
-          <div v-for="exam in filtered" :key="exam.exam_id" class="relative overflow-hidden rounded-[14px] bg-white p-3 shadow-[0_8px_22px_rgba(15,74,82,0.05)] transition-all hover:shadow-md hover:shadow-primary/10 md:p-5">
+        <div class="exam-card-grid grid gap-3">
+          <div v-for="exam in filtered" :key="exam.exam_id" class="exam-card relative overflow-hidden rounded-[14px] bg-white p-3 shadow-[0_8px_22px_rgba(15,74,82,0.05)] transition-all hover:shadow-md hover:shadow-primary/10 md:p-5">
             <div class="absolute left-0 top-0 h-full w-0.5 bg-primary md:w-1" />
-            <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-              <div class="min-w-0 space-y-3 pl-1 md:space-y-2">
+            <div class="exam-card-layout grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+              <div class="exam-card-content min-w-0 space-y-3 pl-1 md:space-y-2">
                 <div class="flex flex-wrap items-center gap-2">
                   <span v-if="isExamFailedUnit(exam)" :class="['badge', statusBadgeClassForStatusValue('FAILED')]">{{ t.examsPage.examFailedTitle }}</span>
                   <template v-else>
@@ -503,8 +503,8 @@ onBeforeUnmount(() => {
                   </span>
                 </div>
                 <h3 class="text-lg font-semibold leading-6 text-foreground">{{ exam.exam_code || exam.program_code || exam.exam_id || t.common.unknown }}</h3>
-                <div class="grid gap-2 text-sm text-muted-foreground sm:grid-cols-2 sm:gap-x-8 xl:grid-cols-[minmax(260px,auto)_minmax(220px,auto)]">
-                  <div v-if="shouldShowStoredExamDetails(exam) && hasText(exam.confirmation_number)" class="rounded-lg bg-slate-50 px-3 py-2 sm:bg-transparent sm:px-0 sm:py-0">
+                <div class="exam-card-details grid gap-2 text-sm text-muted-foreground sm:grid-cols-2 sm:gap-x-8 xl:grid-cols-[minmax(260px,auto)_minmax(220px,auto)]">
+                  <div v-if="shouldShowStoredExamDetails(exam) && hasText(exam.confirmation_number)" class="exam-confirmation rounded-lg bg-slate-50 px-3 py-2 sm:bg-transparent sm:px-0 sm:py-0">
                     <div class="text-xs font-medium text-muted-foreground sm:inline sm:text-sm sm:text-foreground">{{ t.examsPage.confirmationNumber }}:</div>
                     <div class="mt-1 break-all font-medium leading-5 text-foreground sm:mt-0 sm:inline sm:break-words sm:font-normal sm:text-muted-foreground"> {{ exam.confirmation_number }}</div>
                   </div>
@@ -625,6 +625,40 @@ onBeforeUnmount(() => {
 .exam-refresh-btn:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16), 0 14px 28px -18px rgba(37, 99, 235, 0.42);
+}
+
+@media (max-width: 767px) {
+  .exams-page-heading {
+    margin-bottom: 12px;
+  }
+
+  .exams-panel {
+    padding: 8px;
+  }
+
+  .exam-card-grid {
+    gap: 10px;
+  }
+
+  .exam-card {
+    padding: 10px;
+  }
+
+  .exam-card-layout {
+    gap: 12px;
+  }
+
+  .exam-card-content > :not(:last-child) {
+    margin-block-end: 8px;
+  }
+
+  .exam-card-details {
+    gap: 6px;
+  }
+
+  .exam-confirmation {
+    padding: 6px 10px;
+  }
 }
 
 </style>

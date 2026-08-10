@@ -364,7 +364,7 @@ watch(lang, () => {
       </header>
 
       <main class="px-5 py-8 md:px-8 lg:px-10">
-        <div class="mb-6">
+        <div class="credentials-page-intro mb-6">
           <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.credentialsPage.title }}</h1>
           <p class="mt-2 text-muted-foreground">{{ t.credentialsPage.subtitle }}</p>
         </div>
@@ -373,36 +373,36 @@ watch(lang, () => {
       <Loader2 class="h-5 w-5 animate-spin" />
       <span>{{ t.common.loading }}</span>
     </div>
-    <div v-else class="space-y-4">
+    <div v-else class="credentials-page-content space-y-4">
       <section>
-        <div class="mb-4 flex flex-col justify-center gap-1 rounded-[16px] bg-white px-4 py-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+        <div class="credentials-available-header mb-4 flex flex-col justify-center gap-1 rounded-[16px] bg-white px-4 py-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
           <div class="flex items-center gap-3">
             <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <Award class="h-4 w-4" />
             </div>
             <h2 class="font-semibold text-card-foreground">{{ t.credentialsPage.availableQualifications }}</h2>
           </div>
-          <p class="ml-12 text-sm text-muted-foreground">{{ t.credentialsPage.availableQualificationsDesc }}</p>
+          <p class="credentials-available-description ml-12 text-sm text-muted-foreground">{{ t.credentialsPage.availableQualificationsDesc }}</p>
         </div>
-        <div class="grid gap-4 md:grid-cols-3">
+        <div class="credential-definitions-grid grid gap-4 md:grid-cols-3">
           <div v-for="def in definitions" :key="credentialDefinitionId(def)" class="group relative flex flex-col overflow-hidden rounded-[16px] bg-white text-card-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:bg-[#f4fbfc] hover:shadow-md hover:shadow-primary/10">
             <div class="absolute left-0 top-0 h-full w-1 bg-primary/45" />
-            <div class="flex flex-col space-y-3 p-4">
-              <div class="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform group-hover:scale-105">
+            <div class="credential-definition-heading flex flex-col space-y-3 p-4">
+              <div class="credential-definition-icon flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform group-hover:scale-105">
                 <Award class="h-5 w-5" />
               </div>
               <h3 class="text-xl font-semibold leading-tight tracking-tight">{{ def.name }}</h3>
               <span class="badge w-fit border-primary/20 bg-primary/10 text-primary">{{ def.category }}</span>
             </div>
-            <div class="flex flex-1 flex-col p-4 pt-0">
+            <div class="credential-definition-body flex flex-1 flex-col p-4 pt-0">
               <p class="flex-1 text-sm leading-6 text-muted-foreground">{{ def.description }}</p>
-              <div v-if="latestApplicationForDef(credentialDefinitionId(def))" class="mt-3">
+              <div v-if="latestApplicationForDef(credentialDefinitionId(def))" class="credential-definition-status mt-3">
                 <span :class="['inline-flex w-fit items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold', applicationStatusPillClass(latestApplicationForDef(credentialDefinitionId(def))?.status)]">
                   <component :is="statusIcon(latestApplicationForDef(credentialDefinitionId(def))?.status)" class="h-3.5 w-3.5" />
                   {{ statusLabel(t, CANDIDATE_APPLICATION_STATUS_LABELS, latestApplicationForDef(credentialDefinitionId(def))?.status, 'credentialsPage.appStatusUnknown') }}
                 </span>
               </div>
-              <button class="btn btn-primary mt-4 w-full cursor-pointer rounded-lg shadow-sm shadow-primary/20 disabled:cursor-not-allowed disabled:opacity-60" :disabled="isApplicationActionDisabled(def)" @click="handleDefinitionAction(def)">
+              <button class="credential-definition-action btn btn-primary mt-4 w-full cursor-pointer rounded-lg shadow-sm shadow-primary/20 disabled:cursor-not-allowed disabled:opacity-60" :disabled="isApplicationActionDisabled(def)" @click="handleDefinitionAction(def)">
                 {{ applicationActionLabel(def) }}
               </button>
             </div>
@@ -411,17 +411,17 @@ watch(lang, () => {
       </section>
 
       <section>
-        <div class="mb-4 flex items-center gap-3 rounded-[16px] bg-white px-4 py-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+        <div class="credentials-applications-header mb-4 flex items-center gap-3 rounded-[16px] bg-white px-4 py-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
           <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <FileText class="h-4 w-4" />
           </div>
           <h2 class="font-semibold text-card-foreground">{{ t.credentialsPage.myApplications }}</h2>
         </div>
-        <div v-if="applicationsLoading" class="flex items-center justify-center gap-2 rounded-[16px] bg-white py-14 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+        <div v-if="applicationsLoading" class="credentials-applications-state flex items-center justify-center gap-2 rounded-[16px] bg-white py-14 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
           <Loader2 class="h-5 w-5 animate-spin" />
           <span>{{ t.common.loading }}</span>
         </div>
-        <div v-else-if="applications.length === 0" class="flex flex-col items-center justify-center rounded-[16px] bg-white px-4 py-14 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+        <div v-else-if="applications.length === 0" class="credentials-applications-state flex flex-col items-center justify-center rounded-[16px] bg-white px-4 py-14 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
           <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10">
             <FileText class="h-8 w-8 text-primary" />
           </div>
@@ -507,3 +507,60 @@ watch(lang, () => {
     </div>
   </AppShell>
 </template>
+
+<style scoped>
+@media (max-width: 767px) {
+  .credentials-page-intro {
+    margin-bottom: 16px;
+  }
+
+  .credentials-page-content > :not(:last-child) {
+    margin-block-end: 12px;
+  }
+
+  .credentials-available-header,
+  .credentials-applications-header {
+    margin-bottom: 12px;
+    padding: 12px;
+  }
+
+  .credentials-available-description {
+    margin-top: 8px;
+    margin-left: 0;
+    line-height: 20px;
+  }
+
+  .credential-definitions-grid {
+    gap: 12px;
+  }
+
+  .credential-definition-heading {
+    padding: 12px;
+  }
+
+  .credential-definition-heading > :not(:last-child) {
+    margin-block-end: 8px;
+  }
+
+  .credential-definition-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .credential-definition-body {
+    padding: 0 12px 12px;
+  }
+
+  .credential-definition-status {
+    margin-top: 10px;
+  }
+
+  .credential-definition-action {
+    margin-top: 12px;
+  }
+
+  .credentials-applications-state {
+    padding-block: 32px;
+  }
+}
+</style>
