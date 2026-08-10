@@ -192,7 +192,13 @@
   }
 
   .page-panel > main {
-    padding: 1.5rem !important;
+    padding: 1.5rem;
+  }
+
+  @media (min-width: 768px) {
+    .page-panel > main {
+      padding: 1.5rem !important;
+    }
   }
 
   .app-side-card {
@@ -307,6 +313,8 @@
     --gfi-space-6: 1.5rem;
     --gfi-space-8: 2rem;
     --gfi-space-12: 3rem;
+    --gfi-mobile-page-padding-inline: 0.75rem;
+    --gfi-mobile-page-padding-block: 1.25rem;
     --gfi-radius-sm: 0.25rem;
     --gfi-radius-md: 0.5rem;
     --gfi-radius-lg: 0.875rem;
@@ -642,9 +650,11 @@
     .candidate-portal .page-panel {
       border-radius: 0;
     }
+  }
+}
 
-    .candidate-portal .page-panel > main {
-      padding-inline: 0.75rem !important;
-    }
+@media (max-width: 767px) {
+  :where(.candidate-portal .page-panel) > main {
+    padding: var(--gfi-mobile-page-padding-block) var(--gfi-mobile-page-padding-inline);
   }
 }
