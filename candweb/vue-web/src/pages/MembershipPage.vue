@@ -428,56 +428,58 @@ watch(lang, () => {
       </header>
 
       <main class="px-5 py-8 md:px-8 lg:px-10">
-        <div class="mb-6 flex flex-wrap items-start justify-between gap-4">
+        <div class="membership-page-intro mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.membership.title }}</h1>
             <p class="mt-2 text-muted-foreground">{{ t.membership.subtitle }}</p>
           </div>
-          <span v-if="hasActiveMembership" class="rounded-full border px-4 py-2 text-sm font-black" :class="badgeClass(currentRecord.status)">
+          <span v-if="hasActiveMembership" class="membership-status-badge rounded-full border px-4 py-2 text-sm font-black" :class="badgeClass(currentRecord.status)">
             {{ statusLabel(currentRecord.status) }}
           </span>
         </div>
 
-        <div v-if="loading" class="rounded-[16px] bg-white p-12 text-center text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+        <div v-if="loading" class="membership-loading-state rounded-[16px] bg-white p-12 text-center text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
           <Loader2 class="mx-auto mb-3 h-7 w-7 animate-spin text-primary" />
           {{ t.membership.loading }}
         </div>
 
         <template v-else>
-          <section class="mb-5 overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_10px_28px_rgba(15,74,82,0.06)]">
-            <div class="relative bg-[#002a66] p-6 text-white">
-              <div class="absolute right-6 top-6 opacity-15">
+          <section class="membership-current-card mb-5 overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_10px_28px_rgba(15,74,82,0.06)]">
+            <div class="membership-current-hero relative bg-[#002a66] p-6 text-white">
+              <div class="membership-current-crown absolute right-6 top-6 opacity-15">
                 <Crown class="h-24 w-24" />
               </div>
               <div class="relative">
                 <p class="text-sm font-semibold uppercase tracking-[0.24em] text-white/70">{{ t.membership.currentMembership }}</p>
-                <h2 class="mt-3 text-3xl font-black">{{ hasActiveMembership ? currentMembershipName : t.membership.noActiveMembership }}</h2>
-                <p class="mt-2 max-w-2xl text-sm text-white/80">
+                <h2 class="membership-current-name mt-3 text-3xl font-black">
+                  <span class="membership-current-name-text">{{ hasActiveMembership ? currentMembershipName : t.membership.noActiveMembership }}</span>
+                </h2>
+                <p class="membership-current-description mt-2 max-w-2xl text-sm text-white/80">
                   {{ hasActiveMembership ? (currentPlan?.description || currentRecord?.description || t.membership.activeMembershipDesc) : t.membership.noActiveMembershipDesc }}
                 </p>
               </div>
             </div>
-            <div class="grid gap-3 p-5 md:grid-cols-4">
-              <div class="rounded-2xl bg-slate-50 p-4">
+            <div class="membership-summary-grid grid gap-3 p-5 md:grid-cols-4">
+              <div class="membership-summary-item rounded-2xl bg-slate-50 p-4">
                 <div class="text-xs font-bold text-slate-500">{{ t.membership.started }}</div>
-                <div class="mt-2 text-sm font-black text-slate-900">{{ formatDate(currentRecord.started_at) }}</div>
+                <div class="membership-summary-value mt-2 text-sm font-black text-slate-900">{{ formatDate(currentRecord.started_at) }}</div>
               </div>
-              <div class="rounded-2xl bg-slate-50 p-4">
+              <div class="membership-summary-item rounded-2xl bg-slate-50 p-4">
                 <div class="text-xs font-bold text-slate-500">{{ t.membership.expires }}</div>
-                <div class="mt-2 text-sm font-black text-slate-900">{{ formatDate(currentRecord.expires_at) }}</div>
+                <div class="membership-summary-value mt-2 text-sm font-black text-slate-900">{{ formatDate(currentRecord.expires_at) }}</div>
               </div>
-              <div class="rounded-2xl bg-slate-50 p-4">
+              <div class="membership-summary-item rounded-2xl bg-slate-50 p-4">
                 <div class="text-xs font-bold text-slate-500">{{ t.membership.nextBilling }}</div>
-                <div class="mt-2 text-sm font-black text-slate-900">{{ formatDate(currentRecord.next_billing_at) }}</div>
+                <div class="membership-summary-value mt-2 text-sm font-black text-slate-900">{{ formatDate(currentRecord.next_billing_at) }}</div>
               </div>
-              <div class="rounded-2xl bg-slate-50 p-4">
+              <div class="membership-summary-item rounded-2xl bg-slate-50 p-4">
                 <div class="text-xs font-bold text-slate-500">{{ t.membership.autoRenew }}</div>
-                <div class="mt-2 text-sm font-black text-slate-900">{{ autoRenewLabel }}</div>
+                <div class="membership-summary-value mt-2 text-sm font-black text-slate-900">{{ autoRenewLabel }}</div>
               </div>
             </div>
           </section>
 
-          <div class="mb-4 rounded-[14px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.04)] md:px-6 md:pt-4 md:pb-0">
+          <div class="membership-tabs mb-4 rounded-[14px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.04)] md:px-6 md:pt-4 md:pb-0">
             <div class="relative md:hidden">
               <select
                 v-model="activeTab"
@@ -504,23 +506,23 @@ watch(lang, () => {
             </div>
           </div>
 
-          <section v-if="activeTab === 'overview'" class="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
-            <div class="rounded-[16px] bg-white p-5 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-              <h2 class="mb-4 text-lg font-semibold text-card-foreground">{{ t.membership.benefits }}</h2>
-              <div v-if="currentPlan && parseFeatures(currentPlan).length" class="grid gap-3 sm:grid-cols-2">
-                <div v-for="feature in parseFeatures(currentPlan)" :key="feature" class="flex gap-3 rounded-xl border border-emerald-100 bg-emerald-50/70 p-4">
+          <section v-if="activeTab === 'overview'" class="membership-overview-grid grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+            <div class="membership-overview-card rounded-[16px] bg-white p-5 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+              <h2 class="membership-section-heading mb-4 text-lg font-semibold text-card-foreground">{{ t.membership.benefits }}</h2>
+              <div v-if="currentPlan && parseFeatures(currentPlan).length" class="membership-benefits-grid grid gap-3 sm:grid-cols-2">
+                <div v-for="feature in parseFeatures(currentPlan)" :key="feature" class="membership-benefit-item flex gap-3 rounded-xl border border-emerald-100 bg-emerald-50/70 p-4">
                   <Check class="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
                   <span class="text-sm font-medium text-slate-700">{{ feature }}</span>
                 </div>
               </div>
-              <div v-else class="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+              <div v-else class="membership-benefit-item flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
                 <AlertCircle class="mt-0.5 h-4 w-4 shrink-0" />
                 {{ t.membership.noBenefits }}
               </div>
             </div>
 
-            <div class="rounded-[16px] bg-white p-5 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-              <h2 class="mb-4 text-lg font-semibold text-card-foreground">{{ t.membership.actions }}</h2>
+            <div class="membership-overview-card rounded-[16px] bg-white p-5 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+              <h2 class="membership-section-heading mb-4 text-lg font-semibold text-card-foreground">{{ t.membership.actions }}</h2>
               <div class="space-y-3 text-sm text-slate-600">
                 <div class="flex justify-between gap-4"><span>{{ t.membership.membershipName }}</span><span class="text-right font-semibold text-slate-800">{{ currentMembershipName }}</span></div>
                 <div class="flex justify-between"><span>{{ t.membership.source }}</span><span>{{ formatSource(currentRecord.source) }}</span></div>
@@ -541,8 +543,8 @@ watch(lang, () => {
             </div>
           </section>
 
-          <section v-if="activeTab === 'levels'" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            <div v-for="plan in plans" :key="plan.membership_ulid || plan.membership_gpath" class="relative flex h-full flex-col overflow-hidden rounded-[18px] bg-white p-5 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:shadow-md">
+          <section v-if="activeTab === 'levels'" class="membership-levels-grid grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div v-for="plan in plans" :key="plan.membership_ulid || plan.membership_gpath" class="membership-level-card relative flex h-full flex-col overflow-hidden rounded-[18px] bg-white p-5 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:shadow-md">
               <div class="absolute left-0 top-0 h-full w-1" :class="Number(plan.tier_level || 0) >= 3 ? 'bg-amber-500' : Number(plan.tier_level || 0) >= 2 ? 'bg-primary' : 'bg-slate-300'" />
               <div class="mb-4 flex items-start justify-between gap-3">
                 <div>
@@ -584,8 +586,8 @@ watch(lang, () => {
             </div>
           </section>
 
-          <section v-if="activeTab === 'history'" class="overflow-hidden rounded-[16px] border border-slate-100 bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-            <div v-for="item in history" :key="item.membership_record_ulid || item.membership_order_ulid" class="mb-3 grid gap-4 rounded-[14px] border border-slate-100 bg-slate-50/70 p-4 transition-all last:mb-0 hover:-translate-y-0.5 hover:border-primary/20 hover:bg-white hover:shadow-[0_12px_28px_rgba(15,74,82,0.08)] md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+          <section v-if="activeTab === 'history'" class="membership-records-panel overflow-hidden rounded-[16px] border border-slate-100 bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+            <div v-for="item in history" :key="item.membership_record_ulid || item.membership_order_ulid" class="membership-record-item mb-3 grid gap-4 rounded-[14px] border border-slate-100 bg-slate-50/70 p-4 transition-all last:mb-0 hover:-translate-y-0.5 hover:border-primary/20 hover:bg-white hover:shadow-[0_12px_28px_rgba(15,74,82,0.08)] md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
               <div>
                 <div class="break-words text-base font-black leading-6 text-slate-950 md:truncate" :title="membershipDisplayName(item, t.membership.membershipRecord)">{{ membershipDisplayName(item, t.membership.membershipRecord) }}</div>
                 <div class="mt-1 text-sm font-medium text-slate-600">{{ formatDate(item.started_at) }} - {{ formatDate(item.expires_at) }}</div>
@@ -608,8 +610,8 @@ watch(lang, () => {
             />
           </section>
 
-          <section v-if="activeTab === 'billings'" class="overflow-hidden rounded-[16px] border border-slate-100 bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-            <div v-for="item in billings" :key="item.billing_record_ulid || item.gpay_order_ulid" class="mb-3 grid gap-4 rounded-[14px] border border-slate-100 bg-slate-50/70 p-4 transition-all last:mb-0 hover:-translate-y-0.5 hover:border-primary/20 hover:bg-white hover:shadow-[0_12px_28px_rgba(15,74,82,0.08)] md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+          <section v-if="activeTab === 'billings'" class="membership-records-panel overflow-hidden rounded-[16px] border border-slate-100 bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+            <div v-for="item in billings" :key="item.billing_record_ulid || item.gpay_order_ulid" class="membership-record-item mb-3 grid gap-4 rounded-[14px] border border-slate-100 bg-slate-50/70 p-4 transition-all last:mb-0 hover:-translate-y-0.5 hover:border-primary/20 hover:bg-white hover:shadow-[0_12px_28px_rgba(15,74,82,0.08)] md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
               <div>
                 <div class="break-words text-base font-black leading-6 text-slate-950 md:truncate" :title="billingTitle(item)">{{ billingTitle(item) }}</div>
                 <div class="mt-1 text-sm text-slate-500">{{ formatMoney(item.amount_minor, item.currency || "USD") }} · {{ formatDate(item.period_start) }} - {{ formatDate(item.period_end) }}</div>
@@ -711,5 +713,102 @@ watch(lang, () => {
 .membership-refresh-btn:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16), 0 14px 28px -18px rgba(37, 99, 235, 0.42);
+}
+
+@media (max-width: 767px) {
+  .membership-refresh-btn {
+    padding-inline: 12px;
+  }
+
+  .membership-page-intro {
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .membership-status-badge {
+    padding: 6px 12px;
+  }
+
+  .membership-loading-state {
+    padding: 32px 12px;
+  }
+
+  .membership-current-card {
+    margin-bottom: 12px;
+  }
+
+  .membership-current-hero {
+    padding: 16px;
+  }
+
+  .membership-current-crown {
+    top: 16px;
+    right: 16px;
+  }
+
+  .membership-current-crown > svg {
+    width: 72px;
+    height: 72px;
+  }
+
+  .membership-current-name {
+    margin-top: 8px;
+  }
+
+  .membership-current-name-text {
+    color: #ffffff;
+  }
+
+  .membership-current-description {
+    margin-top: 6px;
+    line-height: 20px;
+  }
+
+  .membership-summary-grid {
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .membership-summary-item {
+    padding: 12px;
+  }
+
+  .membership-summary-value {
+    margin-top: 4px;
+  }
+
+  .membership-tabs {
+    margin-bottom: 12px;
+    padding: 12px;
+  }
+
+  .membership-overview-grid,
+  .membership-levels-grid {
+    gap: 12px;
+  }
+
+  .membership-overview-card,
+  .membership-level-card,
+  .membership-records-panel,
+  .membership-record-item {
+    padding: 12px;
+  }
+
+  .membership-section-heading {
+    margin-bottom: 12px;
+  }
+
+  .membership-benefits-grid {
+    gap: 8px;
+  }
+
+  .membership-benefit-item {
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .membership-record-item {
+    gap: 12px;
+  }
 }
 </style>

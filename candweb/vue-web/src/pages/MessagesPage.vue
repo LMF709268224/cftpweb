@@ -418,7 +418,7 @@ onMounted(() => {
       </header>
 
       <main class="messages-main w-full px-5 py-8 md:px-8 lg:px-10">
-        <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div class="messages-page-intro mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <h1 class="text-2xl font-bold tracking-tight text-foreground md:text-3xl">{{ t.messagesPage.title }}</h1>
             <p class="mt-2 text-muted-foreground">{{ unreadCountText() }}</p>
@@ -434,11 +434,11 @@ onMounted(() => {
 
     <div class="w-full overflow-hidden rounded-t-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <div class="w-full bg-white">
-        <div class="grid min-h-[60px] w-full grid-cols-3 items-stretch gap-1 rounded-t-xl bg-slate-100 p-1 md:flex md:min-h-[68px] md:flex-wrap md:items-stretch md:gap-x-8 md:gap-y-0 md:rounded-none md:border-b md:border-border md:bg-transparent md:p-0 md:pl-4">
+        <div class="messages-tabs grid min-h-[60px] w-full grid-cols-3 items-stretch gap-1 rounded-t-xl bg-slate-100 p-1 md:flex md:min-h-[68px] md:flex-wrap md:items-stretch md:gap-x-8 md:gap-y-0 md:rounded-none md:border-b md:border-border md:bg-transparent md:p-0 md:pl-4">
           <button
             v-for="tab in statusTabs"
             :key="tab.value || 'all'"
-            :class="['relative inline-flex min-h-12 cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-2 py-3 text-sm font-semibold transition-colors duration-200 md:min-h-[68px] md:justify-start md:gap-2 md:rounded-none md:px-1 md:py-0 md:text-base md:font-medium', selectedStatus === tab.value ? 'bg-white text-primary shadow-sm md:bg-transparent md:shadow-none' : 'text-slate-600 hover:text-primary md:text-foreground']"
+            :class="['message-tab relative inline-flex min-h-12 cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-2 py-3 text-sm font-semibold transition-colors duration-200 md:min-h-[68px] md:justify-start md:gap-2 md:rounded-none md:px-1 md:py-0 md:text-base md:font-medium', selectedStatus === tab.value ? 'bg-white text-primary shadow-sm md:bg-transparent md:shadow-none' : 'text-slate-600 hover:text-primary md:text-foreground']"
             @click="selectStatus(tab.value)"
           >
             <component :is="tab.icon" class="h-4 w-4" />
@@ -449,11 +449,11 @@ onMounted(() => {
         </div>
       </div>
 
-      <div v-if="loading" class="flex items-center justify-center gap-2 px-4 py-16 text-muted-foreground">
+      <div v-if="loading" class="messages-state flex items-center justify-center gap-2 px-4 py-16 text-muted-foreground">
         <Loader2 class="h-5 w-5 animate-spin text-primary" />
         <span>{{ t.common.loading }}</span>
       </div>
-      <div v-else-if="loadError" class="flex flex-col items-center justify-center px-4 py-16 text-center">
+      <div v-else-if="loadError" class="messages-state flex flex-col items-center justify-center px-4 py-16 text-center">
         <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-red-50">
           <AlertCircle class="h-8 w-8 text-red-600" />
         </div>
@@ -464,7 +464,7 @@ onMounted(() => {
           {{ t.messagesPage.retry }}
         </button>
       </div>
-      <div v-else-if="messageList.length === 0" class="flex flex-col items-center justify-center px-4 py-16 text-center">
+      <div v-else-if="messageList.length === 0" class="messages-state flex flex-col items-center justify-center px-4 py-16 text-center">
         <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10"><MessageSquare class="h-8 w-8 text-primary" /></div>
         <h3 class="mb-2 text-lg font-semibold text-foreground">{{ t.messagesPage.noMessages }}</h3>
         <p class="text-muted-foreground">{{ t.messagesPage.noMessagesDesc }}</p>
@@ -473,23 +473,23 @@ onMounted(() => {
         <div
           v-for="message in messageList"
           :key="message.id"
-          :class="['group relative flex cursor-pointer items-start gap-3 border-b border-slate-100 px-3 py-4 transition-colors hover:bg-primary/10 md:gap-4 md:px-4', message.isUnread ? 'bg-primary/5' : '', detailLoadingId === message.id ? 'pointer-events-none opacity-75' : '']"
+          :class="['message-row group relative flex cursor-pointer items-start gap-3 border-b border-slate-100 px-3 py-4 transition-colors hover:bg-primary/10 md:gap-4 md:px-4', message.isUnread ? 'bg-primary/5' : '', detailLoadingId === message.id ? 'pointer-events-none opacity-75' : '']"
           @click="handleViewDetail(message)"
         >
           <div :class="['flex h-9 w-9 shrink-0 items-center justify-center rounded-lg md:h-10 md:w-10', configFor(message.type).iconBg, message.isUnread && 'ring-2 ring-primary/25']">
             <component :is="configFor(message.type).icon" :class="['h-4 w-4 md:h-5 md:w-5', configFor(message.type).iconColor]" />
           </div>
           <div class="min-w-0 flex-1">
-            <div class="mb-1.5 flex flex-wrap items-center gap-2 md:mb-2">
+            <div class="message-heading mb-1.5 flex flex-wrap items-center gap-2 md:mb-2">
               <span v-if="message.isUnread" class="rounded-full bg-primary px-2 py-0.5 text-[11px] font-bold text-primary-foreground shadow-sm shadow-primary/20">
                 {{ unreadLabel() }}
               </span>
               <h3 :class="['line-clamp-2 text-sm leading-snug text-card-foreground md:text-base', message.isUnread ? 'font-bold' : 'font-semibold']">{{ localizedMessageTitle(message.rawTitle, configFor(message.type).label) }}</h3>
-              <span class="badge">{{ configFor(message.type).label }}</span>
+              <span class="message-type-badge badge">{{ configFor(message.type).label }}</span>
             </div>
             <span class="text-xs text-muted-foreground">{{ message.time }}</span>
           </div>
-          <div class="flex shrink-0 items-center gap-1 md:gap-2">
+          <div class="message-actions flex shrink-0 items-center gap-1 md:gap-2">
             <div class="relative">
               <button type="button" class="btn btn-ghost h-9 w-9 rounded-lg border border-transparent p-0 text-slate-500 transition-colors hover:border-primary/20 hover:bg-primary/10 hover:text-primary" :aria-label="t.messagesPage.moreActions" :title="t.messagesPage.moreActions" :disabled="messageActionLoadingId === message.id || detailLoadingId === message.id" @click.stop="openMenuId = openMenuId === message.id ? null : message.id">
                 <MoreHorizontal class="h-5 w-5" />
@@ -507,11 +507,11 @@ onMounted(() => {
                 </button>
               </div>
             </div>
-            <Loader2 v-if="detailLoadingId === message.id" class="h-5 w-5 animate-spin text-primary" />
-            <ChevronRight v-else class="h-5 w-5 text-slate-500 transition-colors group-hover:text-primary" />
+            <Loader2 v-if="detailLoadingId === message.id" class="message-detail-indicator h-5 w-5 animate-spin text-primary" />
+            <ChevronRight v-else class="message-detail-indicator h-5 w-5 text-slate-500 transition-colors group-hover:text-primary" />
           </div>
         </div>
-        <div class="flex items-center justify-between px-4 py-3 text-sm text-muted-foreground">
+        <div class="messages-pagination flex items-center justify-between px-4 py-3 text-sm text-muted-foreground">
           <span></span>
           <div class="flex items-center gap-2">
             <button class="rounded-lg border border-slate-200 px-3 py-1.5 font-medium transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50" :disabled="page <= 1" @click="prevPage()">
@@ -571,6 +571,57 @@ onMounted(() => {
 .message-detail-content :deep(strong) {
   color: rgb(15 23 42);
   font-weight: 700;
+}
+
+@media (max-width: 767px) {
+  .messages-page-intro {
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .messages-tabs {
+    height: 42px;
+    min-height: 42px;
+    padding-block: 0;
+  }
+
+  .message-tab {
+    height: 42px;
+    min-height: 42px;
+    gap: 4px;
+    padding: 4px;
+  }
+
+  .messages-state {
+    padding-block: 32px;
+  }
+
+  .message-row {
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .message-heading {
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+
+  .message-type-badge {
+    padding: 2px 8px;
+  }
+
+  .message-actions {
+    gap: 0;
+  }
+
+  .message-detail-indicator {
+    width: 16px;
+    height: 16px;
+  }
+
+  .messages-pagination {
+    padding: 8px 12px;
+  }
 }
 </style>
 

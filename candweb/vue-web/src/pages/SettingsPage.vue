@@ -479,22 +479,22 @@ async function handleUpdateEmail() {
         <span class="text-sm font-medium text-foreground">{{ t.settings.title }}</span>
       </header>
 
-      <main class="px-5 py-8 md:px-8 lg:px-10">
-        <div class="mb-6 flex items-center justify-between space-y-2">
-          <h1 class="text-3xl font-bold tracking-tight">{{ t.settings.title }}</h1>
+      <main class="settings-main px-5 py-8 md:px-8 lg:px-10">
+        <div class="settings-title-row mb-6 flex items-center justify-between space-y-2">
+          <h1 class="settings-title text-3xl font-bold tracking-tight">{{ t.settings.title }}</h1>
         </div>
-    <div class="space-y-4">
-      <div class="rounded-[14px] bg-white px-5 pt-4 shadow-[0_10px_24px_rgba(15,74,82,0.04)] md:px-6">
-        <div class="flex flex-wrap gap-x-8 gap-y-2 border-b border-border">
+    <div class="settings-stack space-y-4">
+      <div class="settings-tabs-shell rounded-[14px] bg-white px-5 pt-4 shadow-[0_10px_24px_rgba(15,74,82,0.04)] md:px-6">
+        <div class="settings-tabs flex flex-wrap gap-x-8 gap-y-2 border-b border-border">
           <button
-            :class="['relative inline-flex cursor-pointer items-center whitespace-nowrap px-1 pb-5 text-base font-medium transition-colors duration-200', activeTab === 'profile' ? 'text-primary' : 'text-foreground hover:text-primary']"
+            :class="['settings-tab relative inline-flex cursor-pointer items-center whitespace-nowrap px-1 pb-5 text-base font-medium transition-colors duration-200', activeTab === 'profile' ? 'text-primary' : 'text-foreground hover:text-primary']"
             @click="setActiveTab('profile')"
           >
             {{ t.settings.profileTab }}
             <span v-if="activeTab === 'profile'" class="absolute bottom-[-1px] left-0 h-0.5 w-full rounded-full bg-primary" />
           </button>
           <button
-            :class="['relative inline-flex cursor-pointer items-center whitespace-nowrap px-1 pb-5 text-base font-medium transition-colors duration-200', activeTab === 'account' ? 'text-primary' : 'text-foreground hover:text-primary']"
+            :class="['settings-tab relative inline-flex cursor-pointer items-center whitespace-nowrap px-1 pb-5 text-base font-medium transition-colors duration-200', activeTab === 'account' ? 'text-primary' : 'text-foreground hover:text-primary']"
             @click="setActiveTab('account')"
           >
             {{ t.settings.accountTab }}
@@ -502,13 +502,13 @@ async function handleUpdateEmail() {
           </button>
         </div>
       </div>
-      <div v-if="activeTab === 'profile'" class="rounded-md bg-white text-card-foreground">
-        <div class="flex flex-col space-y-1.5 p-6">
+      <div v-if="activeTab === 'profile'" class="settings-panel rounded-md bg-white text-card-foreground">
+        <div class="settings-section-header flex flex-col space-y-1.5 p-6">
           <h2 class="text-xl font-semibold leading-none tracking-tight">{{ t.settings.profileTab }}</h2>
           <p class="text-sm text-muted-foreground">{{ t.settings.profileDesc }}</p>
         </div>
-        <div class="p-6 pt-0">
-        <form class="max-w-2xl space-y-4" novalidate @submit.prevent="handleUpdateProfile">
+        <div class="settings-section-content p-6 pt-0">
+        <form class="settings-form max-w-2xl space-y-4" novalidate @submit.prevent="handleUpdateProfile">
           <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.loginId }}</span><input v-model="profile.name" class="input bg-muted" disabled /></label>
             <label class="space-y-2">
@@ -589,13 +589,13 @@ async function handleUpdateEmail() {
         </form>
         </div>
       </div>
-      <div v-if="activeTab === 'account'" class="rounded-md bg-white text-card-foreground">
-        <div class="flex flex-col space-y-1.5 p-6">
+      <div v-if="activeTab === 'account'" class="settings-panel rounded-md bg-white text-card-foreground">
+        <div class="settings-section-header flex flex-col space-y-1.5 p-6">
           <h2 class="text-xl font-semibold leading-none tracking-tight">{{ t.settings.updatePassword }}</h2>
           <p class="text-sm text-muted-foreground">{{ t.settings.updatePasswordDesc }}</p>
         </div>
-        <div class="p-6 pt-0">
-        <form class="max-w-xl space-y-4" novalidate @submit.prevent="handleUpdatePassword">
+        <div class="settings-section-content p-6 pt-0">
+        <form class="settings-form max-w-xl space-y-4" novalidate @submit.prevent="handleUpdatePassword">
           <label class="block space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.currentPassword }}</span><input v-model="password.oldPassword" class="input" type="password" required /></label>
           <label class="block space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.newPassword }}</span><input v-model="password.newPassword" class="input" type="password" required /></label>
           <label class="block space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.confirmNewPassword }}</span><input v-model="password.confirmPassword" class="input" type="password" required /></label>
@@ -603,12 +603,12 @@ async function handleUpdateEmail() {
         </form>
         </div>
 
-        <div class="flex flex-col space-y-1.5 p-6 mt-6 border-t border-border">
+        <div class="settings-section-header settings-email-header flex flex-col space-y-1.5 p-6 mt-6 border-t border-border">
           <h2 class="text-xl font-semibold leading-none tracking-tight">{{ t.settings.updateEmail }}</h2>
           <p class="text-sm text-muted-foreground">{{ t.settings.updateEmailDesc }}</p>
         </div>
-        <div class="p-6 pt-0">
-          <form class="max-w-xl space-y-4" novalidate @submit.prevent="handleUpdateEmail">
+        <div class="settings-section-content p-6 pt-0">
+          <form class="settings-form max-w-xl space-y-4" novalidate @submit.prevent="handleUpdateEmail">
             <label class="block space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.newEmail }}</span><input v-model="emailUpdate.newEmail" class="input" type="email" required /></label>
             <label class="block space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.verificationCode }}</span>
               <div class="flex gap-2">
@@ -628,3 +628,76 @@ async function handleUpdateEmail() {
     </div>
   </AppShell>
 </template>
+
+<style scoped>
+@media (max-width: 767px) {
+  .settings-main {
+    padding: 20px 12px;
+  }
+
+  .settings-title-row {
+    margin-bottom: 16px;
+  }
+
+  .settings-title {
+    font-size: 24px;
+    line-height: 32px;
+  }
+
+  .settings-stack > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 12px;
+  }
+
+  .settings-tabs-shell {
+    padding: 8px 12px 0;
+  }
+
+  .settings-tabs {
+    column-gap: 24px;
+    row-gap: 0;
+  }
+
+  .settings-tab {
+    height: 42px;
+    padding: 0 4px;
+  }
+
+  .settings-panel {
+    border-radius: 8px;
+  }
+
+  .settings-section-header {
+    gap: 4px;
+    padding: 20px 16px 12px;
+  }
+
+  .settings-section-header h2 {
+    font-size: 18px;
+    line-height: 24px;
+  }
+
+  .settings-section-header p {
+    line-height: 20px;
+  }
+
+  .settings-section-content {
+    padding: 0 16px 20px;
+  }
+
+  .settings-form > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 12px;
+  }
+
+  .settings-form .grid {
+    gap: 12px;
+  }
+
+  .settings-form label > * + * {
+    margin-top: 6px;
+  }
+
+  .settings-email-header {
+    margin-top: 0;
+  }
+}
+</style>

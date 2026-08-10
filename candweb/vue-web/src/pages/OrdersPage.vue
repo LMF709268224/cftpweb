@@ -643,13 +643,13 @@ onBeforeUnmount(() => {
       </header>
 
       <main class="px-5 py-8 md:px-8 lg:px-10">
-        <div class="mb-6">
+        <div class="orders-page-intro mb-6">
           <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.orders.title }}</h1>
           <p class="mt-2 text-muted-foreground">{{ t.orders.subtitle }}</p>
         </div>
 
     <div class="overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-      <div class="flex flex-col gap-3 border-b border-slate-100 bg-white px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
+      <div class="orders-toolbar flex flex-col gap-3 border-b border-slate-100 bg-white px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
         <div class="flex items-center">
           <h2 class="font-semibold text-card-foreground">{{ t.orders.orderHistory }}</h2>
         </div>
@@ -670,8 +670,8 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
-      <div v-if="loading" class="flex items-center justify-center gap-2 py-16 text-muted-foreground"><Loader2 class="h-5 w-5 animate-spin" /> {{ t.common.loading }}</div>
-      <div v-else-if="loadError" class="flex flex-col items-center justify-center px-4 py-16 text-center">
+      <div v-if="loading" class="orders-state flex items-center justify-center gap-2 py-16 text-muted-foreground"><Loader2 class="h-5 w-5 animate-spin" /> {{ t.common.loading }}</div>
+      <div v-else-if="loadError" class="orders-state flex flex-col items-center justify-center px-4 py-16 text-center">
         <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-red-50">
           <AlertCircle class="h-8 w-8 text-red-600" />
         </div>
@@ -682,7 +682,7 @@ onBeforeUnmount(() => {
           {{ t.orders.retry }}
         </button>
       </div>
-      <div v-else-if="orders.length === 0" class="flex flex-col items-center justify-center px-4 py-14 text-center">
+      <div v-else-if="orders.length === 0" class="orders-state flex flex-col items-center justify-center px-4 py-14 text-center">
         <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10"><Package class="h-8 w-8 text-primary" /></div>
         <h3 class="mb-2 text-lg font-semibold text-foreground">{{ t.orders.noOrders }}</h3>
       </div>
@@ -695,19 +695,19 @@ onBeforeUnmount(() => {
           <button
             type="button"
             :aria-label="`${t.orders.detailTitle}: ${order.items.join(', ')}`"
-            class="flex min-w-0 items-center gap-4 text-left focus-visible:outline-none after:absolute after:inset-0 after:z-0 focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-primary/50"
+            class="order-summary flex min-w-0 items-center gap-4 text-left focus-visible:outline-none after:absolute after:inset-0 after:z-0 focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-primary/50"
             @click="openOrderDetail(order)"
           >
-            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10"><Package class="h-6 w-6 text-primary" /></div>
+            <div class="order-product-icon flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10"><Package class="h-6 w-6 text-primary" /></div>
             <div class="min-w-0">
-              <div class="mb-1 flex min-w-0 flex-wrap items-center gap-2">
+              <div class="order-heading-line mb-1 flex min-w-0 flex-wrap items-center gap-2">
                 <h3 class="order-title-mobile min-w-0 max-w-full font-medium text-card-foreground">{{ order.items.join(", ") }}</h3>
                 <span class="rounded-full border border-primary/15 bg-primary/5 px-2 py-0.5 text-xs font-semibold text-primary">{{ orderTypeLabel(order.bizType) }}</span>
               </div>
               <p class="text-sm text-muted-foreground">{{ order.date }}</p>
             </div>
           </button>
-          <div class="pointer-events-none relative z-10 flex w-full flex-wrap items-center justify-end gap-x-3 gap-y-3 pl-16 md:grid md:w-auto md:shrink-0 md:grid-cols-[130px_148px_112px_112px_24px] md:gap-x-5 md:pl-0">
+          <div class="order-actions pointer-events-none relative z-10 flex w-full flex-wrap items-center justify-end gap-x-3 gap-y-3 pl-16 md:grid md:w-auto md:shrink-0 md:grid-cols-[130px_148px_112px_112px_24px] md:gap-x-5 md:pl-0">
             <div class="mr-auto flex justify-start md:mr-0 md:justify-center">
               <span class="badge text-xs" :class="orderStatusBadgeClass(order)">
                 {{ orderStatusLabel(order) }}
@@ -717,21 +717,21 @@ onBeforeUnmount(() => {
               <button v-if="canContinuePayment(order)" @click.stop="continueOrderPayment(order)" class="pointer-events-auto inline-flex h-10 min-w-[148px] items-center justify-center whitespace-nowrap rounded-lg bg-primary/10 px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/20 md:h-8 md:w-full">
                 {{ t.orders.continuePayment }}
               </button>
-              <p v-else class="text-lg font-semibold text-card-foreground">{{ order.amount }}</p>
+              <p v-else class="order-amount text-lg font-semibold text-card-foreground">{{ order.amount }}</p>
             </div>
             <button v-if="canCancelOrder(order)" type="button" class="pointer-events-auto inline-flex h-10 w-full items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-600 transition-colors hover:border-red-300 hover:bg-red-100 md:h-8" @click.stop="openCancelConfirm(order)">
               <Loader2 v-if="cancelLoading === order.bizRefUlid" class="h-4 w-4 animate-spin" />
               {{ t.orders.cancelPayment }}
             </button>
-            <span v-else class="h-10 w-[112px] md:h-8" />
+            <span v-else class="order-action-placeholder h-10 w-[112px] md:h-8" />
             <button v-if="order.canViewInvoice" @click.stop="viewInvoice(order.invoiceOrderId)" class="pointer-events-auto inline-flex h-10 w-[112px] items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-primary/10 px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/20 md:h-9">
               <Loader2 v-if="invoiceLoading === order.invoiceOrderId" class="h-4 w-4 animate-spin" />
               {{ t.orders.viewInvoice }}
             </button>
-            <span v-else class="h-10 w-[112px] md:h-9" />
+            <span v-else class="order-action-placeholder h-10 w-[112px] md:h-9" />
 
-            <Loader2 v-if="detailLoadingOrderId === order.id" class="h-5 w-5 animate-spin text-muted-foreground" />
-            <ChevronRight v-else class="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1" />
+            <Loader2 v-if="detailLoadingOrderId === order.id" class="order-detail-indicator h-5 w-5 animate-spin text-muted-foreground" />
+            <ChevronRight v-else class="order-detail-indicator h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1" />
           </div>
         </div>
         <AppPagination
@@ -944,10 +944,68 @@ onBeforeUnmount(() => {
   word-break: break-word;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 767px) {
+  .orders-page-intro {
+    margin-bottom: 16px;
+  }
+
+  .orders-toolbar {
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .orders-toolbar > :last-child,
+  .orders-toolbar > :last-child > div {
+    gap: 8px;
+  }
+
+  .orders-state {
+    padding-block: 32px;
+  }
+
+  .order-row {
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .order-summary {
+    gap: 12px;
+  }
+
+  .order-product-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .order-heading-line {
+    gap: 6px;
+    margin-bottom: 2px;
+  }
+
   .order-title-mobile {
     font-size: 14px;
     line-height: 1.45;
+  }
+
+  .order-actions {
+    gap: 8px;
+    padding-left: 52px;
+    padding-right: 28px;
+  }
+
+  .order-action-placeholder {
+    display: none;
+  }
+
+  .order-amount {
+    font-size: 16px;
+    line-height: 24px;
+  }
+
+  .order-detail-indicator {
+    position: absolute;
+    right: 0;
+    bottom: 0;
   }
 }
 </style>
