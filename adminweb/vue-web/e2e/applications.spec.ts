@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test"
+import { expect, test, type Page } from "@playwright/test"
 import { installAdminApiMocks, seedAuthenticatedAdmin } from "./support/admin"
 
 const pendingApplication = {
@@ -7,16 +7,22 @@ const pendingApplication = {
   candidate_name: "Regression Candidate",
   cred_def_ulid: "credential-1",
   cred_def_name: "Regression Credential",
-  status: "Pending",
+  status: "PENDING",
   created_at: "2026-08-11T00:00:00Z",
-  files: [],
+  files: [
+    {
+      file_hash: "sha256-regression",
+      file_name: "evidence.pdf",
+      file_ext: "pdf",
+      file_size: 2048,
+      file_usage: "evidence",
+    },
+  ],
 }
 
-async function installApplicationMocks(
-  page: Parameters<typeof seedAuthenticatedAdmin>[0],
-  onAudit?: (postData: string | null) => void,
-) {
-  return installAdminApiMocks(page, ({ method, pathname, postData }) => {
+async function installApplicationReadMocks(page: Page, requests: string[]) {
+  return installAdminApiMocks(page, ({ method, pathname }) => {
+    requests.push(`${method} ${pathname}`)
     if (method === "GET" && pathname === "/api/applications") {
       return {
         data: {
@@ -30,52 +36,37 @@ async function installApplicationMocks(
     if (method === "GET" && pathname === "/api/applications/app-1") {
       return { data: pendingApplication }
     }
-    if (method === "POST" && pathname === "/api/applications/audit") {
-      onAudit?.(postData)
-      return { data: { app_ulid: "app-1", status: "Approved" } }
-    }
     return undefined
   })
 }
 
-async function openApplicationAudit(page: Parameters<typeof seedAuthenticatedAdmin>[0]) {
-  await page.goto("/applications")
-  await expect(page.getByText("Regression Credential").first()).toBeVisible()
-  await page.getByRole("button", { name: "查看详情" }).click()
-  await page.getByRole("button", { name: /审核操作/ }).click()
-  await expect(page.getByText("支持通过、打回重提、最终拒绝")).toBeVisible()
-}
-
-test("approving an application submits the selected application contract", async ({ page }) => {
+test("application list renders the returned read-only summary", async ({ page }) => {
   await seedAuthenticatedAdmin(page)
-  let auditBody: Record<string, unknown> | null = null
-  await installApplicationMocks(page, (postData) => {
-    auditBody = JSON.parse(postData || "null") as Record<string, unknown> | null
-  })
-  await openApplicationAudit(page)
+  const requests: string[] = []
+  await installApplicationReadMocks(page, requests)
 
-  await page.getByRole("button", { name: "通过", exact: true }).click()
+  await page.goto("/applications")
 
-  await expect.poll(() => auditBody).not.toBeNull()
-  expect(auditBody).toEqual({
-    application_id: "app-1",
-    approved: true,
-    reject_reason: "",
-    require_resubmit: false,
-  })
-  await expect(page.getByText("审核已提交")).toBeVisible()
+  await expect(page.getByText("Regression Credential").first()).toBeVisible()
+  await expect(page.getByText(/Regression Candidate/).first()).toBeVisible()
+  await expect(page.getByText(/app-1/).first()).toBeVisible()
+  expect(requests).toContain("GET /api/applications")
+  expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
 })
 
-test("rejecting an application without a remark is blocked before the API call", async ({ page }) => {
+test("application detail displays metadata and evidence without a mutation", async ({ page }) => {
   await seedAuthenticatedAdmin(page)
-  let auditRequests = 0
-  await installApplicationMocks(page, () => {
-    auditRequests += 1
-  })
-  await openApplicationAudit(page)
+  const requests: string[] = []
+  await installApplicationReadMocks(page, requests)
+  await page.goto("/applications")
 
-  await page.getByRole("button", { name: "最终拒绝" }).click()
+  await page.getByRole("button", { name: "查看详情" }).click()
+  const detailDialog = page.getByRole("dialog", { name: "Regression Credential" })
+  await expect(detailDialog.getByRole("heading", { name: "Regression Credential" })).toBeVisible()
+  await expect(detailDialog.getByText("app-1", { exact: true }).first()).toBeVisible()
+  await detailDialog.getByRole("button", { name: /申请材料/ }).click()
+  await expect(detailDialog.getByText("evidence.pdf")).toBeVisible()
 
-  await expect(page.getByText("拒绝或要求补交时需要填写审核备注")).toBeVisible()
-  expect(auditRequests).toBe(0)
+  expect(requests).toContain("GET /api/applications/app-1")
+  expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
 })

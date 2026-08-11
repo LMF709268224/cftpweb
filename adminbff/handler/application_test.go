@@ -2,140 +2,141 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
-	"time"
 
 	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
+	"github.com/go-chi/chi/v5"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
-type applicationCredentialClientStub struct {
+type applicationReadClientStub struct {
 	gcredspb.CredentialServiceClient
-	auditRequest *gcredspb.AuditApplicationRequest
-	auditError   error
+	listRequest   *gcredspb.ListApplicationsRequest
+	detailRequest *gcredspb.GetApplicationDetailRequest
 }
 
-func (s *applicationCredentialClientStub) AuditApplication(
+func (s *applicationReadClientStub) ListApplications(
 	_ context.Context,
-	req *gcredspb.AuditApplicationRequest,
+	req *gcredspb.ListApplicationsRequest,
 	_ ...grpc.CallOption,
-) (*gcredspb.ApplicationSummary, error) {
-	s.auditRequest = req
-	if s.auditError != nil {
-		return nil, s.auditError
-	}
-	return &gcredspb.ApplicationSummary{AppUlid: req.GetAppUlid()}, nil
+) (*gcredspb.ListApplicationsResponse, error) {
+	s.listRequest = req
+	return &gcredspb.ListApplicationsResponse{
+		Applications: []*gcredspb.ApplicationSummary{{
+			AppUlid:       "app-1",
+			CandidateUlid: "candidate-1",
+			CredDefUlid:   "credential-1",
+			Status:        "PENDING",
+		}},
+		HasMore:    true,
+		NextCursor: "next-page",
+	}, nil
 }
 
-func TestAuditApplicationForwardsAdminDecision(t *testing.T) {
-	tests := []struct {
-		name          string
-		body          string
-		applicationID string
-		approved      bool
-		remark        string
-		resubmit      bool
-	}{
-		{
-			name:          "approve canonical application id",
-			body:          `{"application_id":" app-approve ","approved":true}`,
-			applicationID: "app-approve",
-			approved:      true,
-		},
-		{
-			name:          "reject legacy app id",
-			body:          `{"app_id":"app-reject","reject_reason":"invalid evidence"}`,
-			applicationID: "app-reject",
-			remark:        "invalid evidence",
-		},
-		{
-			name:          "request resubmission by app ulid",
-			body:          `{"app_ulid":"app-resubmit","reject_reason":"upload a clearer file","require_resubmit":true}`,
-			applicationID: "app-resubmit",
-			remark:        "upload a clearer file",
-			resubmit:      true,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			client := &applicationCredentialClientStub{}
-			h := &Handler{Creds: client}
-			request := httptest.NewRequest(http.MethodPost, "/api/applications/audit", strings.NewReader(test.body))
-			request = request.WithContext(WithCandidate(request.Context(), "admin-1", "admin@example.test", "Admin", "token"))
-			recorder := httptest.NewRecorder()
-			before := time.Now().AddDate(2, 0, 0).Add(-time.Minute)
-
-			h.AuditApplication(recorder, request)
-
-			if recorder.Code != http.StatusOK {
-				t.Fatalf("status = %d, want %d; body=%s", recorder.Code, http.StatusOK, recorder.Body.String())
-			}
-			if client.auditRequest == nil {
-				t.Fatal("AuditApplication() did not call the credential service")
-			}
-			got := client.auditRequest
-			if got.GetAppUlid() != test.applicationID || got.GetApproved() != test.approved || got.GetAuditRemark() != test.remark || got.GetAllowReupload() != test.resubmit {
-				t.Fatalf("audit request = %+v", got)
-			}
-			if got.GetAuditorUlid() != "admin-1" {
-				t.Fatalf("auditor_ulid = %q, want admin-1", got.GetAuditorUlid())
-			}
-			validUntil, err := time.Parse(time.RFC3339, got.GetValidUntil())
-			if err != nil {
-				t.Fatalf("valid_until = %q: %v", got.GetValidUntil(), err)
-			}
-			if validUntil.Before(before) || validUntil.After(time.Now().AddDate(2, 0, 0).Add(time.Minute)) {
-				t.Fatalf("valid_until = %s, want approximately two years from now", validUntil)
-			}
-		})
-	}
+func (s *applicationReadClientStub) GetApplicationCount(
+	_ context.Context,
+	_ *gcredspb.GetApplicationCountRequest,
+	_ ...grpc.CallOption,
+) (*gcredspb.GetApplicationCountResponse, error) {
+	return &gcredspb.GetApplicationCountResponse{Count: 1}, nil
 }
 
-func TestAuditApplicationRejectsInvalidRequestsBeforeDownstream(t *testing.T) {
-	tests := []struct {
-		name string
-		body string
-	}{
-		{name: "malformed JSON", body: `{"application_id":`},
-		{name: "missing application id", body: `{"approved":true}`},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			client := &applicationCredentialClientStub{}
-			h := &Handler{Creds: client}
-			recorder := httptest.NewRecorder()
-
-			h.AuditApplication(recorder, httptest.NewRequest(http.MethodPost, "/api/applications/audit", strings.NewReader(test.body)))
-
-			if recorder.Code != http.StatusBadRequest {
-				t.Fatalf("status = %d, want %d; body=%s", recorder.Code, http.StatusBadRequest, recorder.Body.String())
-			}
-			if client.auditRequest != nil {
-				t.Fatal("credential service was called for an invalid audit request")
-			}
-		})
-	}
+func (s *applicationReadClientStub) ListCredentialDefinitions(
+	_ context.Context,
+	_ *gcredspb.ListCredentialDefinitionsRequest,
+	_ ...grpc.CallOption,
+) (*gcredspb.ListCredentialDefinitionsResponse, error) {
+	return &gcredspb.ListCredentialDefinitionsResponse{}, nil
 }
 
-func TestAuditApplicationMapsDownstreamUnavailable(t *testing.T) {
-	client := &applicationCredentialClientStub{auditError: status.Error(codes.Unavailable, "credentials unavailable")}
+func (s *applicationReadClientStub) GetApplicationDetail(
+	_ context.Context,
+	req *gcredspb.GetApplicationDetailRequest,
+	_ ...grpc.CallOption,
+) (*gcredspb.Application, error) {
+	s.detailRequest = req
+	return &gcredspb.Application{
+		AppUlid:       req.GetAppUlid(),
+		CandidateUlid: "candidate-1",
+		CredDefUlid:   "credential-1",
+		Status:        "PENDING",
+		CreatedAt:     "2026-08-11T00:00:00Z",
+	}, nil
+}
+
+func (s *applicationReadClientStub) GetCredentialDefinitionDetail(
+	_ context.Context,
+	_ *gcredspb.GetCredentialDefinitionDetailRequest,
+	_ ...grpc.CallOption,
+) (*gcredspb.CredentialDefinition, error) {
+	return &gcredspb.CredentialDefinition{Name: "Regression Credential"}, nil
+}
+
+func TestListApplicationsReturnsReadOnlyApplicationPage(t *testing.T) {
+	client := &applicationReadClientStub{}
 	h := &Handler{Creds: client}
 	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/api/applications?status=PENDING&page_size=10", nil)
 
-	h.AuditApplication(recorder, httptest.NewRequest(
-		http.MethodPost,
-		"/api/applications/audit",
-		strings.NewReader(`{"application_id":"app-1","approved":true}`),
-	))
+	h.ListApplications(recorder, request)
 
-	if recorder.Code != http.StatusServiceUnavailable {
-		t.Fatalf("status = %d, want %d; body=%s", recorder.Code, http.StatusServiceUnavailable, recorder.Body.String())
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body=%s", recorder.Code, http.StatusOK, recorder.Body.String())
+	}
+	if client.listRequest == nil {
+		t.Fatal("ListApplications() did not call the credential service")
+	}
+	if got := client.listRequest.GetFilters().GetStatuses(); len(got) != 1 || got[0] != "PENDING" {
+		t.Fatalf("statuses = %v, want [PENDING]", got)
+	}
+	if client.listRequest.GetPageSize() != 10 {
+		t.Fatalf("page_size = %d, want 10", client.listRequest.GetPageSize())
+	}
+
+	var payload struct {
+		Data struct {
+			Applications []map[string]interface{} `json:"applications"`
+			Total        uint32                   `json:"total"`
+			NextCursor   string                   `json:"next_cursor"`
+			HasMore      bool                     `json:"has_more"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if len(payload.Data.Applications) != 1 || payload.Data.Total != 1 || payload.Data.NextCursor != "next-page" || !payload.Data.HasMore {
+		t.Fatalf("application page = %+v", payload.Data)
+	}
+}
+
+func TestGetApplicationReturnsReadOnlyDetail(t *testing.T) {
+	client := &applicationReadClientStub{}
+	h := &Handler{Creds: client}
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/api/applications/app-1", nil)
+	routeContext := chi.NewRouteContext()
+	routeContext.URLParams.Add("app_id", "app-1")
+	request = request.WithContext(context.WithValue(request.Context(), chi.RouteCtxKey, routeContext))
+
+	h.GetApplication(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body=%s", recorder.Code, http.StatusOK, recorder.Body.String())
+	}
+	if client.detailRequest == nil || client.detailRequest.GetAppUlid() != "app-1" {
+		t.Fatalf("detail request = %+v", client.detailRequest)
+	}
+
+	var payload struct {
+		Data map[string]interface{} `json:"data"`
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if payload.Data["app_ulid"] != "app-1" || payload.Data["cred_def_name"] != "Regression Credential" || payload.Data["status"] != "PENDING" {
+		t.Fatalf("application detail = %+v", payload.Data)
 	}
 }

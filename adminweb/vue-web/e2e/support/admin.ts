@@ -3,7 +3,6 @@ import type { Page } from "@playwright/test"
 export type ApiMockContext = {
   method: string
   pathname: string
-  postData: string | null
   url: URL
 }
 
@@ -97,7 +96,6 @@ export async function installAdminApiMocks(page: Page, resolver?: ApiMockResolve
     const result = resolver?.({
       method: request.method(),
       pathname: url.pathname,
-      postData: request.postData(),
       url,
     })
     const status = result?.status ?? 200
