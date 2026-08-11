@@ -61,3 +61,24 @@ test("permission check ignores a response for a candidate changed while loading"
   await expect(page.getByRole("textbox", { name: "candidate_ulid" })).toHaveValue("candidate-current")
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
 })
+
+test("permission definitions recover after their initial read fails", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  const requests: string[] = []
+  let definitionReads = 0
+  await installAdminApiMocks(page, ({ method, pathname }) => {
+    requests.push(`${method} ${pathname}`)
+    if (pathname !== "/api/credentials/definitions") return undefined
+    definitionReads += 1
+    if (definitionReads === 1) return { status: 503, errorCode: "DEFINITIONS_UNAVAILABLE", message: "Definitions unavailable" }
+    return { data: { definitions: [definition] } }
+  })
+
+  await page.goto("/permissions")
+  await expect(page.getByText("资格定义加载失败", { exact: true })).toBeVisible()
+  await page.getByRole("button", { name: "刷新资格定义", exact: true }).click()
+
+  await expect(page.getByText("Regression Qualification", { exact: true }).first()).toBeVisible()
+  expect(definitionReads).toBe(2)
+  expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
+})

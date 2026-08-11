@@ -135,3 +135,111 @@ for (const fixture of opsModuleFixtures) {
     expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
   })
 }
+
+test("admin operations returns to the previous subscription cursor page", async ({ page }) => {
+  await seedAuthenticatedAdmin(page, "en")
+  const requests: string[] = []
+  await installAdminApiMocks(page, ({ method, pathname, url }) => {
+    requests.push(`${method} ${pathname}${url.search}`)
+    if (pathname !== "/api/pay/subscriptions") return undefined
+    if (url.searchParams.get("cursor") === "next-subscriptions") {
+      return {
+        data: {
+          subscriptions: [{ ...firstSubscription, subscription_ulid: "subscription-page-2", stripe_subscription_id: "sub_regression_2" }],
+          total: 1,
+          has_more: false,
+          next_cursor: "",
+        },
+      }
+    }
+    return { data: { subscriptions: [firstSubscription], total: 1, has_more: true, next_cursor: "next-subscriptions" } }
+  })
+
+  await page.goto("/admin-ops")
+  await expect(page.getByText("sub_regression_1", { exact: true }).first()).toBeVisible()
+  await page.getByRole("button", { name: "Next", exact: true }).click()
+  await expect(page.getByText("sub_regression_2", { exact: true }).first()).toBeVisible()
+  await page.getByRole("button", { name: "Previous", exact: true }).click()
+
+  await expect(page.getByText("sub_regression_1", { exact: true }).first()).toBeVisible()
+  await expect(page.getByText("Page 1", { exact: true }).first()).toBeVisible()
+  expect(requests[requests.length - 1]).not.toContain("cursor=")
+  expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
+})
+
+test("admin operations list recovers after a failed read", async ({ page }) => {
+  await seedAuthenticatedAdmin(page, "en")
+  const requests: string[] = []
+  let subscriptionReads = 0
+  await installAdminApiMocks(page, ({ method, pathname }) => {
+    requests.push(`${method} ${pathname}`)
+    if (pathname !== "/api/pay/subscriptions") return undefined
+    subscriptionReads += 1
+    if (subscriptionReads === 1) return { status: 503, errorCode: "OPS_UNAVAILABLE", message: "Ops list unavailable" }
+    return { data: { subscriptions: [firstSubscription], total: 1, has_more: false, next_cursor: "" } }
+  })
+
+  await page.goto("/admin-ops")
+  await expect(page.getByText(/Failed to load ops list/)).toBeVisible()
+  await page.getByRole("button", { name: "Refresh", exact: true }).click()
+
+  await expect(page.getByText("sub_regression_1", { exact: true }).first()).toBeVisible()
+  expect(subscriptionReads).toBe(2)
+  expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
+})
+
+test("admin operations ignores a slow list after switching modules", async ({ page }) => {
+  await seedAuthenticatedAdmin(page, "en")
+  const requests: string[] = []
+  await installAdminApiMocks(page, ({ method, pathname }) => {
+    requests.push(`${method} ${pathname}`)
+    if (pathname === "/api/pay/subscriptions") {
+      return {
+        data: { subscriptions: [{ ...firstSubscription, stripe_subscription_id: "sub_stale" }], total: 1, has_more: false, next_cursor: "" },
+        delayMs: 600,
+      }
+    }
+    if (pathname === "/api/pay/webhook-events") {
+      return { data: { events: [{ event_id: "evt_latest", processed_status: "PROCESSED" }], total: 1, has_more: false, next_cursor: "" } }
+    }
+    return undefined
+  })
+
+  await page.goto("/admin-ops")
+  await page.getByRole("button", { name: "Pay Webhooks", exact: true }).click()
+  await expect(page.getByText("evt_latest", { exact: true }).first()).toBeVisible()
+  await page.waitForTimeout(650)
+
+  await expect(page.getByText("sub_stale", { exact: true })).toHaveCount(0)
+  expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
+})
+
+test("admin operations detail can be reopened after a failed read", async ({ page }) => {
+  await seedAuthenticatedAdmin(page, "en")
+  const requests: string[] = []
+  let detailReads = 0
+  await installAdminApiMocks(page, ({ method, pathname }) => {
+    requests.push(`${method} ${pathname}`)
+    if (pathname === "/api/pay/webhook-events") {
+      return { data: { events: [{ event_id: "evt_retry", processed_status: "PROCESSED" }], total: 1, has_more: false, next_cursor: "" } }
+    }
+    if (pathname === "/api/pay/webhook-events/evt_retry") {
+      detailReads += 1
+      if (detailReads === 1) return { status: 503, errorCode: "DETAIL_UNAVAILABLE", message: "Detail unavailable" }
+      return { data: { event_id: "evt_retry", detail_marker: "detail-recovered" } }
+    }
+    return undefined
+  })
+
+  await page.goto("/admin-ops")
+  await page.getByRole("button", { name: "Pay Webhooks", exact: true }).click()
+  await expect(page.getByText("evt_retry", { exact: true }).first()).toBeVisible()
+  await page.getByRole("button", { name: "View detail", exact: true }).click()
+  await expect(page.getByText(/Failed to load detail/)).toBeVisible()
+  await page.getByRole("button", { name: "Close", exact: true }).click()
+  await page.getByRole("button", { name: "View detail", exact: true }).click()
+
+  await expect(page.getByText("detail-recovered", { exact: false })).toBeVisible()
+  expect(detailReads).toBe(2)
+  expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
+})

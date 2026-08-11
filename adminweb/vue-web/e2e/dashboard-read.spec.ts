@@ -71,3 +71,24 @@ test("dashboard keeps the latest filter result when an older request finishes la
   await expect(page.getByText("Stale User", { exact: true })).toHaveCount(0)
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
 })
+
+test("dashboard recovers after its initial read fails", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  const requests: string[] = []
+  let dashboardReads = 0
+  await installAdminApiMocks(page, ({ method, pathname }) => {
+    requests.push(`${method} ${pathname}`)
+    if (pathname !== "/api/dashboard/ops") return undefined
+    dashboardReads += 1
+    if (dashboardReads === 1) return { status: 503, errorCode: "DASHBOARD_UNAVAILABLE", message: "Dashboard unavailable" }
+    return { data: dashboardData("Recovered Administrator", { user_total: 1 }) }
+  })
+
+  await page.goto("/dashboard")
+  await expect(page.getByText("工作台加载失败", { exact: true })).toBeVisible()
+  await page.getByRole("button", { name: "刷新", exact: true }).click()
+
+  await expect(page.locator("table").getByText("Recovered Administrator", { exact: true })).toBeVisible()
+  expect(dashboardReads).toBe(2)
+  expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
+})
