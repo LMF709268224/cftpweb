@@ -92,9 +92,10 @@ test("较早的筛选请求不会覆盖最后一次筛选结果", async ({ page 
   })
 
   await page.goto("/messages", { waitUntil: "domcontentloaded" })
-  await page.getByRole("button", { name: /^未读/ }).click()
+  const statusTabs = page.locator(".messages-tabs")
+  await statusTabs.getByRole("button", { name: /^未读/ }).click()
   await expect.poll(() => unreadRequestStarted).toBe(true)
-  await page.getByRole("button", { name: "已读" }).click()
+  await statusTabs.getByRole("button", { name: "已读", exact: true }).click()
   await expect(page.getByText("最后的已读结果")).toBeVisible()
 
   const staleResponse = page.waitForResponse((response) => {
