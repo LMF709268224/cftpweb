@@ -67,6 +67,21 @@ jobs:
       - name: Run Go regression tests
         run: go test ./...
 
+      - name: Enforce Admin Handler coverage floor
+        shell: bash
+        run: |
+          output="$(go test -count=1 -cover ./handler)"
+          echo "$output"
+          coverage="$(printf '%s\n' "$output" | sed -n 's/.*coverage: \([0-9.]*\)%.*/\1/p')"
+          if [ -z "$coverage" ]; then
+            echo "::error::Unable to read Admin Handler coverage."
+            exit 1
+          fi
+          if ! awk -v coverage="$coverage" 'BEGIN { exit (coverage + 0 >= 7.0) ? 0 : 1 }'; then
+            echo "::error::Admin Handler coverage ${coverage}% is below the 7.0% floor."
+            exit 1
+          fi
+
   regression:
     name: Admin Playwright regression
     runs-on: ubuntu-latest
