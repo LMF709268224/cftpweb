@@ -11,6 +11,7 @@ export type ApiMockResult = {
   data?: unknown
   errorCode?: string
   message?: string
+  delayMs?: number
 }
 
 export type ApiMockResolver = (context: ApiMockContext) => ApiMockResult | undefined
@@ -98,6 +99,7 @@ export async function installAdminApiMocks(page: Page, resolver?: ApiMockResolve
       pathname: url.pathname,
       url,
     })
+    if (result?.delayMs) await new Promise((resolve) => setTimeout(resolve, result.delayMs))
     const status = result?.status ?? 200
     const payload = status >= 400
       ? {
@@ -118,10 +120,10 @@ export async function installAdminApiMocks(page: Page, resolver?: ApiMockResolve
   return { requestedPaths }
 }
 
-export async function seedAuthenticatedAdmin(page: Page) {
-  await page.addInitScript(() => {
+export async function seedAuthenticatedAdmin(page: Page, lang: "zh" | "en" = "zh") {
+  await page.addInitScript((selectedLang) => {
     localStorage.setItem("is_authenticated", "true")
     localStorage.setItem("user_name", "Regression Admin")
-    localStorage.setItem("app_lang", "zh")
-  })
+    localStorage.setItem("app_lang", selectedLang)
+  }, lang)
 }

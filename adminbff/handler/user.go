@@ -8,11 +8,13 @@ import (
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 )
 
+var getAdminProfile = casdoorsdk.GetUser
+
 // GetAdminMe GET /api/user/me
 func (h *Handler) GetAdminMe(w http.ResponseWriter, r *http.Request) {
 	name := AdminName(r)
 
-	fullUser, err := casdoorsdk.GetUser(name)
+	fullUser, err := getAdminProfile(name)
 	if err != nil {
 		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to get user info")
 		return

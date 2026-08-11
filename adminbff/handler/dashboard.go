@@ -22,6 +22,11 @@ const (
 	adminDashboardPageSize    = 100
 )
 
+var (
+	listDashboardUsers = casdoorsdk.GetUsers
+	getDashboardRole   = casdoorsdk.GetRole
+)
+
 const (
 	defaultDashboardAdminRole       = "role_admin_basic"
 	defaultDashboardStudentRole     = "role_student_basic"
@@ -90,7 +95,7 @@ type opsDashboardRoleConfig struct {
 }
 
 func (h *Handler) OpsDashboard(w http.ResponseWriter, r *http.Request) {
-	users, err := casdoorsdk.GetUsers()
+	users, err := listDashboardUsers()
 	if err != nil {
 		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to count candidates")
 		return
@@ -571,7 +576,7 @@ func dashboardRoleDefinitions(roleConfig opsDashboardRoleConfig) map[string]*cas
 		}
 		seen[normalized] = true
 
-		role, err := casdoorsdk.GetRole(roleName)
+		role, err := getDashboardRole(roleName)
 		if err != nil {
 			slog.Warn("dashboard role definition load failed", "role", roleName, "err", err)
 			continue
