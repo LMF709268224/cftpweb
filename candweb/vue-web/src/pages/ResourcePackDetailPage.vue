@@ -4,6 +4,7 @@ import { RouterLink, useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
 import { ArrowLeft, CalendarDays, Clock, Eye, FileArchive, Play, RefreshCw, Search } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
+import PageFeedback from "@/components/PageFeedback.vue"
 import { apiClient } from "@/lib/apiClient"
 import { formatBackendDateOnly } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
@@ -30,6 +31,7 @@ const route = useRoute()
 const router = useRouter()
 const { t, lang } = useTranslation()
 const loading = ref(false)
+const loadError = ref(false)
 const openingFileId = ref("")
 const search = ref("")
 const files = ref<ResourcePackFile[]>([])
@@ -168,15 +170,22 @@ async function loadThumbnail(file: ResourcePackFile) {
 
 async function loadFiles(pageToken = "") {
   if (!packId.value) return
+  const showPageError = !pageToken && files.value.length === 0
   loading.value = true
+  if (!pageToken) loadError.value = false
   try {
     const params = new URLSearchParams({ page_size: "100" })
     if (pageToken) params.set("page_token", pageToken)
     const resp = await apiClient(`/api/resource-packs/${encodeURIComponent(packId.value)}/files?${params.toString()}`)
-    const list = Array.isArray(resp?.files) ? resp.files : []
+    if (!Array.isArray(resp?.files)) throw new Error("RESOURCE_PACK_FILES_INVALID_RESPONSE")
+    const list = resp.files
     files.value = pageToken ? files.value.concat(list) : list
     nextPageToken.value = resp?.next_page_token || ""
     void Promise.all(list.map((file: ResourcePackFile) => loadThumbnail(file)))
+    loadError.value = false
+  } catch (error) {
+    console.error(error)
+    if (showPageError) loadError.value = true
   } finally {
     loading.value = false
   }
@@ -377,17 +386,30 @@ onMounted(() => {
       </article>
     </section>
 
-    <section v-else class="resource-detail-empty rounded-[16px] bg-white px-4 py-14 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-      <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10">
-        <RefreshCw v-if="loading" class="h-8 w-8 animate-spin text-primary" />
-        <FileArchive v-else class="h-8 w-8 text-primary" />
-      </div>
-      <h2 class="mt-4 text-lg font-semibold text-foreground">{{ loading ? copy.loading : search.trim() ? copy.noSearchTitle : copy.emptyTitle }}</h2>
-      <p v-if="!loading" class="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">{{ search.trim() ? copy.noSearchDesc : copy.emptyDesc }}</p>
-      <button v-if="search.trim()" class="btn btn-primary mt-5 rounded-lg shadow-sm shadow-primary/20" @click="search = ''">
-        {{ copy.clearSearch }}
-      </button>
-    </section>
+    <PageFeedback v-else-if="loading" class="resource-detail-empty" kind="loading" :loading-label="copy.loading" />
+
+    <PageFeedback
+      v-else-if="loadError"
+      class="resource-detail-empty"
+      kind="error"
+      :title="copy.loadFailed"
+      :description="copy.loadFailedDesc"
+      :action-label="copy.retry"
+      @action="loadFiles()"
+    />
+
+    <PageFeedback
+      v-else
+      class="resource-detail-empty"
+      kind="empty"
+      :title="search.trim() ? copy.noSearchTitle : copy.emptyTitle"
+      :description="search.trim() ? copy.noSearchDesc : copy.emptyDesc"
+    >
+      <template #icon><FileArchive class="h-8 w-8" /></template>
+      <template v-if="search.trim()" #action>
+        <button class="btn btn-primary mt-5 rounded-lg shadow-sm shadow-primary/20" @click="search = ''">{{ copy.clearSearch }}</button>
+      </template>
+    </PageFeedback>
 
     <div v-if="nextPageToken" class="mt-4 text-center">
       <button class="btn btn-outline rounded-lg" :disabled="loading" @click="loadFiles(nextPageToken)">

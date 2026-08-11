@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue"
 import { RouterLink, useRoute } from "vue-router"
-import { ArrowLeft, CheckCircle2, ClipboardList, ExternalLink, Loader2 } from "lucide-vue-next"
+import { ArrowLeft, CheckCircle2, ClipboardList, ExternalLink } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
+import PageFeedback from "@/components/PageFeedback.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
 
@@ -10,18 +11,29 @@ const route = useRoute()
 const { t } = useTranslation()
 const examId = decodeURIComponent(String(route.query.examId || ""))
 const loading = ref(true)
+const loadError = ref(false)
 const result = ref<any>(null)
 
-onMounted(async () => {
+async function loadResult() {
   if (!examId) {
+    loadError.value = false
     loading.value = false
     return
   }
+  loading.value = true
+  loadError.value = false
   try {
     result.value = await apiClient(`/api/exams/${encodeURIComponent(examId)}/result`)
+  } catch (error) {
+    console.error(error)
+    loadError.value = true
   } finally {
     loading.value = false
   }
+}
+
+onMounted(() => {
+  void loadResult()
 })
 </script>
 
@@ -39,11 +51,17 @@ onMounted(async () => {
           {{ t.examsPage.backToExams }}
         </RouterLink>
 
-    <div v-if="loading" class="flex items-center gap-2 text-muted-foreground">
-      <Loader2 class="h-4 w-4 animate-spin" /> {{ t.common.loading }}
-    </div>
-    <div v-else-if="!examId" class="rounded-[16px] bg-white p-8 text-center text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">{{ t.examsPage.selectExamFirst }}</div>
-    <div v-else-if="!result || result.has_result === false" class="rounded-[16px] bg-white p-8 text-center text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">{{ t.examsPage.noScoreDetails }}</div>
+    <PageFeedback v-if="loading" kind="loading" :loading-label="t.common.loading" />
+    <PageFeedback
+      v-else-if="loadError"
+      kind="error"
+      :title="t.examsPage.resultLoadFailed"
+      :description="t.examsPage.resultLoadFailedDesc"
+      :action-label="t.examsPage.retry"
+      @action="loadResult"
+    />
+    <PageFeedback v-else-if="!examId" kind="empty" :title="t.examsPage.selectExamFirst" />
+    <PageFeedback v-else-if="!result || result.has_result === false" kind="empty" :title="t.examsPage.noScoreDetails" />
     <div v-else>
       <section class="rounded-[16px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
         <h1 class="text-3xl font-bold text-foreground">{{ t.examsPage.resultTitle }}</h1>

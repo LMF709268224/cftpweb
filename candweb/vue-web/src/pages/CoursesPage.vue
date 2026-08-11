@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
-import { Clock, GraduationCap, Search } from "lucide-vue-next"
+import { GraduationCap, Search } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import CourseCard from "@/components/CourseCard.vue"
+import PageFeedback from "@/components/PageFeedback.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
 
@@ -15,6 +16,7 @@ const activeCategory = ref<CourseCategoryFilter>("all")
 const refreshKey = ref(0)
 const allCourses = ref<any[]>([])
 const loading = ref(false)
+const loadError = ref(false)
 
 const emptyCopy = computed(() => t.value.courses)
 const categoryOptions = computed<Array<{ key: CourseCategoryFilter; label: string }>>(() => [
@@ -103,10 +105,13 @@ function isMembershipBundle(bundle: any, itemTypes: string[]) {
 }
 
 async function fetchData() {
+  const showPageError = allCourses.value.length === 0
   loading.value = true
+  if (showPageError) loadError.value = false
   try {
     const res = await apiClient("/api/mall/bundles")
-    const bundles = Array.isArray(res?.bundles) ? res.bundles : []
+    if (!Array.isArray(res?.bundles)) throw new Error("MALL_BUNDLES_INVALID_RESPONSE")
+    const bundles = res.bundles
     allCourses.value = await Promise.all(bundles.map(async (b: any) => {
       const stages = Array.isArray(b?.stages) ? b.stages : []
       const itemTypes = bundleItemTypes(b)
@@ -143,8 +148,10 @@ async function fetchData() {
         ],
       }
     }))
+    loadError.value = false
   } catch (error) {
     console.error(error)
+    if (showPageError) loadError.value = true
     toast.error(t.value.common.error)
   } finally {
     loading.value = false
@@ -249,24 +256,34 @@ onMounted(() => {
           </div>
         </div>
 
-        <div v-if="loading && allCourses.length === 0" class="flex items-center justify-center gap-2 rounded-[16px] bg-white py-14 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-          <Clock class="h-5 w-5 animate-spin" /> <span>{{ t.common.loading }}</span>
-        </div>
+        <PageFeedback v-if="loading && allCourses.length === 0" kind="loading" :loading-label="t.common.loading" />
+
+        <PageFeedback
+          v-else-if="loadError"
+          kind="error"
+          :title="emptyCopy.loadFailed"
+          :description="emptyCopy.loadFailedDesc"
+          :action-label="emptyCopy.retry"
+          @action="fetchData"
+        />
 
         <div v-else-if="filteredCourses.length > 0" class="courses-page-grid grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
           <CourseCard v-for="course in filteredCourses" :key="`${course.id}-${course.eligibilityRefreshKey || 0}`" v-bind="course" />
         </div>
 
-        <div v-else class="flex flex-col items-center justify-center rounded-[16px] bg-white py-16 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-          <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10">
-            <Search class="h-8 w-8 text-primary" />
-          </div>
-          <h3 class="mb-2 text-lg font-semibold text-foreground">{{ searchQuery.trim() || activeCategory !== 'all' ? emptyCopy.noSearchTitle : emptyCopy.noAvailableTitle }}</h3>
-          <p class="mx-auto max-w-md text-sm leading-6 text-muted-foreground">{{ searchQuery.trim() || activeCategory !== 'all' ? emptyCopy.noSearchDesc : emptyCopy.noAvailableDesc }}</p>
-          <button v-if="searchQuery.trim() || activeCategory !== 'all'" class="btn btn-primary mt-5 rounded-lg shadow-sm shadow-primary/20" @click="searchQuery = ''; activeCategory = 'all'">
-            {{ emptyCopy.clearSearch }}
-          </button>
-        </div>
+        <PageFeedback
+          v-else
+          kind="empty"
+          :title="searchQuery.trim() || activeCategory !== 'all' ? emptyCopy.noSearchTitle : emptyCopy.noAvailableTitle"
+          :description="searchQuery.trim() || activeCategory !== 'all' ? emptyCopy.noSearchDesc : emptyCopy.noAvailableDesc"
+        >
+          <template #icon><Search class="h-8 w-8" /></template>
+          <template v-if="searchQuery.trim() || activeCategory !== 'all'" #action>
+            <button class="btn btn-primary mt-5 rounded-lg shadow-sm shadow-primary/20" @click="searchQuery = ''; activeCategory = 'all'">
+              {{ emptyCopy.clearSearch }}
+            </button>
+          </template>
+        </PageFeedback>
       </main>
     </div>
   </AppShell>

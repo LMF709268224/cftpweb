@@ -360,7 +360,10 @@ export const en: AppTranslations = {
         noAvailableDesc: "Products will appear here once they are available in the marketplace.",
         noSearchTitle: "No matching products",
         noSearchDesc: "Try another keyword or clear the search to view all products.",
-        clearSearch: "Clear search"
+        clearSearch: "Clear search",
+        loadFailed: "Failed to load marketplace",
+        loadFailedDesc: "Marketplace products are temporarily unavailable. Check your connection and try again.",
+        retry: "Reload"
     },
     myCertificationsPage: {
         title: "My Certifications",
@@ -372,7 +375,10 @@ export const en: AppTranslations = {
         emptyDesc: "Browse the marketplace and choose the certification or membership product that fits your goals.",
         browseMarketplace: "Browse Marketplace",
         startedAt: "Started At",
-        completedAt: "Completed At"
+        completedAt: "Completed At",
+        loadFailed: "Failed to load certifications",
+        loadFailedDesc: "Certification information is temporarily unavailable. Check your connection and try again.",
+        retry: "Reload"
     },
     resourcePacksPage: {
         title: "Resource Packs",
@@ -389,7 +395,10 @@ export const en: AppTranslations = {
         updated: "Updated",
         count: "packs",
         loading: "Loading...",
-        loadMore: "Load more"
+        loadMore: "Load more",
+        loadFailed: "Failed to load resource packs",
+        loadFailedDesc: "Resource packs are temporarily unavailable. Check your connection and try again.",
+        retry: "Reload"
     },
     resourcePackDetailPage: {
         titleDefault: "Resource Pack Detail",
@@ -413,6 +422,9 @@ export const en: AppTranslations = {
         missing: "Missing resource pack ID",
         loading: "Loading...",
         loadMore: "Load more",
+        loadFailed: "Failed to load resource files",
+        loadFailedDesc: "Resource files are temporarily unavailable. Check your connection and try again.",
+        retry: "Reload",
         noViewUrl: "Unable to open the preview right now. Please try again later.",
         fileTypeWebinar: "Webinar",
         fileTypePdf: "PDF",
@@ -514,6 +526,9 @@ export const en: AppTranslations = {
         lessonTypeLink: "External Link",
         lessonTypeUnknown: "Unknown Type",
         quizNotFound: "Quiz not found",
+        quizLoadFailed: "Failed to load quiz",
+        quizLoadFailedDesc: "Quiz content is temporarily unavailable. Check your connection and try again.",
+        quizRetry: "Reload",
         quizCompleted: "Quiz Completed",
         quizSubmittedDesc: "You have successfully submitted your answers.",
         quizScore: "Your Score",
@@ -808,6 +823,8 @@ export const en: AppTranslations = {
         viewResult: "View Result",
         viewCertificate: "View Certificate",
         noScoreDetails: "No score details yet",
+        resultLoadFailed: "Failed to load exam result",
+        resultLoadFailedDesc: "The exam result is temporarily unavailable. Check your connection and try again.",
         noExams: "No exam items yet",
         noExamsDesc: "When a course becomes eligible or the system creates a schedulable exam, it will appear here.",
         noHistory: "No exam history yet",
