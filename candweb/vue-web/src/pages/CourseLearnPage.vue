@@ -36,6 +36,7 @@ import {
 } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
 import LoadingState from "@/components/LoadingState.vue"
+import PageFeedback from "@/components/PageFeedback.vue"
 import PaymentSessionDialog from "@/components/PaymentSessionDialog.vue"
 import StageExemptionDialog from "@/components/StageExemptionDialog.vue"
 import { apiClient } from "@/lib/apiClient"
@@ -192,6 +193,7 @@ const { t, lang } = useTranslation()
 
 const payload = ref<CourseCompleteResponse | null>(null)
 const loading = ref(false)
+const loadError = ref(false)
 const initializing = ref(false)
 const syncing = ref(false)
 const activeLessonId = ref("")
@@ -969,15 +971,19 @@ function openSupplementaryPreview(item: SupplementaryMaterialItem) {
   openExternalPdfPreview(item.url, item.title || t.value.learning.supplementaryDefaultTitle)
 }
 
-async function loadCourse(showLoading = true) {
+async function loadCourse(showLoading = true, handlePageError = false) {
   if (!courseId.value) {
     payload.value = null
+    if (handlePageError) loadError.value = false
     if (showLoading) loading.value = false
-    return
+    return false
   }
   if (showLoading) loading.value = true
+  if (handlePageError) loadError.value = false
   try {
-    const res = await apiClient(`/api/pipeline/courses/${courseId.value}/complete`)
+    const res = await apiClient(`/api/pipeline/courses/${courseId.value}/complete`, {
+      suppressErrorToast: handlePageError,
+    })
     payload.value = res
     if (!activeLessonId.value) {
       const firstLesson = res?.complete_course?.chapters
@@ -988,8 +994,30 @@ async function loadCourse(showLoading = true) {
     const firstMaterial = res?.complete_course?.materials?.find((item: CourseMaterialSummary) => materialIdOf(item))
     const firstMaterialId = materialIdOf(firstMaterial)
     if (!selectedMaterialId.value && firstMaterialId) selectedMaterialId.value = firstMaterialId
+    return true
+  } catch (error) {
+    if (!handlePageError) throw error
+    console.error(error)
+    loadError.value = true
+    return false
   } finally {
     if (showLoading) loading.value = false
+  }
+}
+
+async function initializeCoursePage() {
+  initializing.value = true
+  try {
+    activeLessonId.value = routeLessonId.value
+    const loaded = await loadCourse(true, true)
+    if (!loaded) return
+    if (courseId.value) {
+      await loadProgress()
+      await syncProgress(courseId.value, false)
+    }
+    await loadRuntime()
+  } finally {
+    initializing.value = false
   }
 }
 
@@ -1500,18 +1528,7 @@ const courseStatusPolling = usePolling(
 )
 
 onMounted(async () => {
-  initializing.value = true
-  try {
-    activeLessonId.value = routeLessonId.value
-    await loadCourse()
-    if (courseId.value) {
-      await loadProgress()
-      await syncProgress(courseId.value, false)
-    }
-    await loadRuntime()
-  } finally {
-    initializing.value = false
-  }
+  await initializeCoursePage()
   courseStatusPolling.start()
 })
 
@@ -1522,7 +1539,8 @@ watch(courseId, async () => {
     selectedMaterialId.value = ""
     courseExamsLoaded.value = false
     courseExams.value = []
-    await loadCourse()
+    const loaded = await loadCourse(true, true)
+    if (!loaded) return
     await loadProgress()
     await syncProgress(courseId.value, false)
   } finally {
@@ -1589,6 +1607,14 @@ watch(selectedMaterial, () => {
         </div>
 
     <LoadingState v-if="pageLoading" data-testid="course-learning-loading" :label="t.common.loading" variant="page" :rows="4" />
+    <PageFeedback
+      v-else-if="loadError"
+      kind="error"
+      :title="t.learning.courseLearningLoadFailed"
+      :description="t.learning.courseLearningLoadFailedDesc"
+      :action-label="t.learning.retry"
+      @action="initializeCoursePage"
+    />
     <div v-else-if="!course" data-testid="course-unavailable" class="rounded-md bg-white p-8 text-center text-muted-foreground">
       <div class="mx-auto max-w-md space-y-4">
         <div>
