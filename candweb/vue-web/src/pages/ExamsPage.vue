@@ -629,7 +629,7 @@ onBeforeUnmount(() => {
 
 @media (max-width: 767px) {
   .exams-page-heading {
-    margin-bottom: 12px;
+    margin-bottom: 16px;
   }
 
   .exams-panel {
@@ -637,11 +637,11 @@ onBeforeUnmount(() => {
   }
 
   .exam-card-grid {
-    gap: 10px;
+    gap: 12px;
   }
 
   .exam-card {
-    padding: 10px;
+    padding: 12px;
   }
 
   .exam-card-layout {

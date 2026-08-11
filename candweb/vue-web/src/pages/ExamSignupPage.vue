@@ -559,7 +559,7 @@ async function handleSubmit() {
   .exam-signup-form {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
   }
 
   .exam-signup-form > :not([hidden]) ~ :not([hidden]) {
@@ -583,7 +583,7 @@ async function handleSubmit() {
   }
 
   .exam-signup-form button[type="submit"] {
-    min-height: 42px;
+    min-height: 44px;
   }
 }
 </style>
