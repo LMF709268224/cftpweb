@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import type { Component } from "vue"
-import { Award, BookOpen, CheckCircle2, ClipboardList, PackageOpen, PanelLeft, Receipt } from "lucide-vue-next"
+import { AlertCircle, Award, BookOpen, CheckCircle2, ClipboardList, Loader2, PackageOpen, PanelLeft, Receipt, RefreshCw } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
+import PageFeedback from "@/components/PageFeedback.vue"
 import { apiClient } from "@/lib/apiClient"
 import { isAuthenticated } from "@/lib/authStorage"
 import { useTranslation } from "@/lib/language"
@@ -141,6 +142,9 @@ const portalCards = computed<PortalCard[]>(() => {
 const featuredCards = computed(() => portalCards.value.filter((card) => card.featured))
 const secondaryCards = computed(() => portalCards.value.filter((card) => !card.featured))
 const showDashboardSkeleton = computed(() => dashboardLoading.value && !dashboardLoaded.value)
+const dashboardErrorCount = computed(() => Object.values(countErrors.value).filter(Boolean).length)
+const dashboardLoadFailed = computed(() => dashboardLoaded.value && dashboardErrorCount.value === 5)
+const dashboardPartialLoadFailed = computed(() => dashboardLoaded.value && dashboardErrorCount.value > 0 && !dashboardLoadFailed.value)
 
 const cardStyles = {
   orange: {
@@ -192,7 +196,7 @@ const cardStyles = {
 
 async function countFromRequest(endpoint: string, listKey: string): Promise<number | null> {
   try {
-    const res = await apiClient(endpoint)
+    const res = await apiClient(endpoint, { suppressErrorToast: true })
     const list = res?.[listKey]
     if (!Array.isArray(list)) {
       console.error(`Invalid dashboard response from ${endpoint}: expected array at ${listKey}`)
@@ -259,7 +263,22 @@ onMounted(() => {
         </section>
 
         <section class="portal-card-section mx-auto mt-12 w-full max-w-[1380px]">
-          <div v-if="showDashboardSkeleton" class="flex flex-col gap-8" role="status" :aria-label="t.common.loading" aria-live="polite">
+          <PageFeedback
+            v-if="dashboardLoadFailed"
+            kind="error"
+            :title="t.home.statsLoadFailed"
+            :description="t.home.statsLoadFailedDesc"
+          >
+            <template #action>
+              <button type="button" class="btn btn-primary mt-5 min-w-32 justify-center" :disabled="dashboardLoading" @click="loadDashboardStats">
+                <Loader2 v-if="dashboardLoading" class="h-4 w-4 animate-spin" />
+                <RefreshCw v-else class="h-4 w-4" />
+                {{ t.home.statsRetry }}
+              </button>
+            </template>
+          </PageFeedback>
+
+          <div v-else-if="showDashboardSkeleton" class="flex flex-col gap-8" role="status" :aria-label="t.common.loading" aria-live="polite">
             <div class="portal-card-row portal-card-featured-row flex flex-col items-center justify-center gap-6 lg:flex-row">
               <div
                 v-for="item in 2"
@@ -288,6 +307,26 @@ onMounted(() => {
           </div>
 
           <div v-else class="flex flex-col gap-8">
+            <div
+              v-if="dashboardPartialLoadFailed"
+              class="flex flex-col items-start justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-left sm:flex-row sm:items-center"
+              role="alert"
+            >
+              <div class="flex items-start gap-2 text-sm text-amber-900">
+                <AlertCircle class="mt-0.5 h-4 w-4 shrink-0" />
+                <span>{{ t.home.statsPartialLoadFailed }}</span>
+              </div>
+              <button
+                type="button"
+                class="btn btn-outline h-10 shrink-0 border-amber-300 bg-white px-4 text-amber-900 hover:bg-amber-100"
+                :disabled="dashboardLoading"
+                @click="loadDashboardStats"
+              >
+                <Loader2 v-if="dashboardLoading" class="h-4 w-4 animate-spin" />
+                <RefreshCw v-else class="h-4 w-4" />
+                {{ t.home.statsRetry }}
+              </button>
+            </div>
             <div class="portal-card-row portal-card-featured-row flex flex-col items-center justify-center gap-6 lg:flex-row">
               <RouterLink
                 v-for="card in featuredCards"
