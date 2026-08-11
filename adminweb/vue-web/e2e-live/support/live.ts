@@ -134,33 +134,6 @@ export async function authenticateAdmin(page: Page) {
   }
 }
 
-async function installMutationBlocker(page: Page, adminOrigin: string) {
-  await page.addInitScript(
-    ({ origin, allowedPaths }) => {
-      const mutationAttempts: string[] = []
-      const testWindow = window as typeof window & { __adminMutationAttempts?: string[] }
-      testWindow.__adminMutationAttempts = mutationAttempts
-      const allowed = new Set(allowedPaths)
-      const originalFetch = window.fetch
-
-      window.fetch = function adminReadOnlyFetch(input, init) {
-        const request = input instanceof Request ? input : null
-        const method = String(init?.method || request?.method || "GET").toUpperCase()
-        const url = new URL(request?.url || String(input), window.location.origin)
-        const safeMethod = method === "GET" || method === "HEAD" || method === "OPTIONS"
-
-        if (url.origin === origin && url.pathname.startsWith("/api/") && !safeMethod && !allowed.has(url.pathname)) {
-          const label = `${method} ${url.pathname}`
-          mutationAttempts.push(label)
-          return Promise.reject(new DOMException(`Blocked by admin read-only regression: ${label}`, "AbortError"))
-        }
-        return originalFetch.call(window, input, init)
-      }
-    },
-    { origin: adminOrigin, allowedPaths: [...allowedMutationPaths] },
-  )
-}
-
 function safeRequestLabel(rawURL: string, method?: string) {
   const url = new URL(rawURL)
   return `${method ? `${method} ` : ""}${url.pathname}`
@@ -173,6 +146,7 @@ export async function installReadOnlyGuards(page: Page) {
   const pageErrors: string[] = []
   const consoleErrors: string[] = []
   const requestFailures: string[] = []
+  const mutationAttempts: string[] = []
   const pendingRequests = new Set<PlaywrightRequest>()
   let lastAPIActivityAt = Date.now()
 
@@ -183,7 +157,18 @@ export async function installReadOnlyGuards(page: Page) {
       && !backgroundAPIPaths.has(url.pathname)
   }
 
-  await installMutationBlocker(page, adminOrigin)
+  await page.route("**/api/**", async (route) => {
+    const request = route.request()
+    const url = new URL(request.url())
+    const method = request.method().toUpperCase()
+    const safeMethod = method === "GET" || method === "HEAD" || method === "OPTIONS"
+    if (url.origin === adminOrigin && !safeMethod && !allowedMutationPaths.has(url.pathname)) {
+      mutationAttempts.push(`${method} ${url.pathname}`)
+      await route.abort("blockedbyclient")
+      return
+    }
+    await route.continue()
+  })
   page.on("request", (request) => {
     if (!isTracked(request)) return
     pendingRequests.add(request)
@@ -220,6 +205,7 @@ export async function installReadOnlyGuards(page: Page) {
       pageErrors.length = 0
       consoleErrors.length = 0
       requestFailures.length = 0
+      mutationAttempts.length = 0
       pendingRequests.clear()
       lastAPIActivityAt = Date.now()
     },
@@ -233,10 +219,6 @@ export async function installReadOnlyGuards(page: Page) {
       throw new Error(`Admin API requests did not settle within ${timeout}ms: ${pending.join(", ")}`)
     },
     async assertClean() {
-      const mutationAttempts = await page.evaluate(() => {
-        const testWindow = window as typeof window & { __adminMutationAttempts?: string[] }
-        return testWindow.__adminMutationAttempts || []
-      })
       expect(mutationAttempts, "read-only regression attempted a business mutation").toEqual([])
       expect(apiFailures, "admin API returned an unexpected error").toEqual([])
       expect(requestFailures, "admin API request failed").toEqual([])
