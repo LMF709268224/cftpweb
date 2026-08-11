@@ -77,8 +77,8 @@ jobs:
             echo "::error::Unable to read Admin Handler coverage."
             exit 1
           fi
-          if ! awk -v coverage="$coverage" 'BEGIN { exit (coverage + 0 >= 8.0) ? 0 : 1 }'; then
-            echo "::error::Admin Handler coverage ${coverage}% is below the 8.0% floor."
+          if ! awk -v coverage="$coverage" 'BEGIN { exit (coverage + 0 >= 10.5) ? 0 : 1 }'; then
+            echo "::error::Admin Handler coverage ${coverage}% is below the 10.5% floor."
             exit 1
           fi
 
