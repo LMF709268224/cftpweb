@@ -475,15 +475,15 @@ watch(lang, () => {
       </main>
     </div>
 
-    <div v-if="isApplyOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div class="w-full max-w-md rounded-[16px] bg-white p-4 shadow-lg shadow-slate-900/20">
-        <div class="flex items-start justify-between gap-4">
+    <div v-if="isApplyOpen" class="credentials-apply-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div class="credentials-apply-dialog w-full max-w-md rounded-[16px] bg-white p-4 shadow-lg shadow-slate-900/20">
+        <div class="credentials-apply-header flex items-start justify-between gap-4">
           <h2 class="text-lg font-semibold leading-none tracking-tight">{{ selectedDef?.name }}</h2>
-          <button class="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-500 transition hover:border-primary/25 hover:text-primary" @click="isApplyOpen = false">
+          <button class="credentials-apply-close flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-500 transition hover:border-primary/25 hover:text-primary" @click="isApplyOpen = false">
             <X class="h-5 w-5" />
           </button>
         </div>
-        <div class="space-y-4 py-4">
+        <div class="credentials-apply-body space-y-4 py-4">
           <p class="text-sm text-muted-foreground">{{ t.credentialsPage.description }}: {{ selectedDef?.description }}</p>
           <div class="space-y-4 border-t border-border pt-4">
             <h4 class="text-sm font-semibold">{{ t.credentialsPage.uploadMaterials }}</h4>
@@ -509,7 +509,7 @@ watch(lang, () => {
             </div>
           </div>
         </div>
-        <div class="flex justify-end gap-3">
+        <div class="credentials-apply-actions flex justify-end gap-3">
           <button class="btn btn-outline cursor-pointer rounded-lg" @click="isApplyOpen = false">{{ t.common.cancel }}</button>
           <button class="btn btn-primary cursor-pointer rounded-lg shadow-sm shadow-primary/20 disabled:cursor-not-allowed" :disabled="isSubmitting || Boolean(uploadingConstraintName)" @click="handleSubmitApplication">
             <Loader2 v-if="isSubmitting" class="h-4 w-4 animate-spin" />
@@ -574,6 +574,49 @@ watch(lang, () => {
 
   .credentials-applications-state {
     padding-block: 32px;
+  }
+
+  .credentials-apply-backdrop {
+    padding: 12px;
+  }
+
+  .credentials-apply-dialog {
+    display: flex;
+    max-height: calc(100vh - 24px);
+    max-height: calc(100dvh - 24px);
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 12px;
+  }
+
+  .credentials-apply-header,
+  .credentials-apply-actions {
+    flex: 0 0 auto;
+  }
+
+  .credentials-apply-close {
+    width: 44px;
+    height: 44px;
+  }
+
+  .credentials-apply-body {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 4px;
+  }
+
+  .credentials-apply-dialog .btn {
+    min-height: 42px;
+  }
+
+  .credentials-apply-actions {
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+  }
+
+  .credentials-apply-actions > button {
+    min-height: 44px;
   }
 }
 </style>

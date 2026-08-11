@@ -128,3 +128,51 @@ for (const portalPage of portalPages) {
     await expect.poll(() => pageErrors).toEqual([]);
   });
 }
+
+test("资格申请弹窗在移动端保持操作区可见", async ({ page }) => {
+  await page.setViewportSize({ width: 382, height: 739 });
+  await seedAuthenticatedCandidate(page);
+  await installCandidateApiMocks(page, ({ pathname }) => {
+    if (pathname === "/api/credentials/definitions") {
+      return {
+        data: {
+          definitions: [{
+            cred_def_ulid: "credential-mobile",
+            name: "移动端资格申请",
+            category: "Qualification",
+            description: "用于验证材料较多时弹窗仍可正常操作。",
+            file_constraints: Array.from({ length: 8 }, (_, index) => ({
+              name: `证明材料 ${index + 1}`,
+              type: "document",
+              is_required: true,
+            })),
+          }],
+        },
+      };
+    }
+    if (pathname === "/api/credentials/applications") {
+      return { data: { applications: [], total: 0 } };
+    }
+    return undefined;
+  });
+
+  await page.goto("/credentials?qual_ulids=credential-mobile", { waitUntil: "domcontentloaded" });
+
+  const dialog = page.locator(".credentials-apply-dialog");
+  const scrollBody = page.locator(".credentials-apply-body");
+  const actions = page.locator(".credentials-apply-actions");
+  const closeButton = page.locator(".credentials-apply-close");
+
+  await expect(dialog).toBeVisible();
+  await expect(actions).toBeVisible();
+  await expect.poll(() => scrollBody.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(true);
+
+  const dialogBox = await dialog.boundingBox();
+  const closeButtonBox = await closeButton.boundingBox();
+  expect(dialogBox).not.toBeNull();
+  expect(closeButtonBox).not.toBeNull();
+  expect(dialogBox!.y).toBeGreaterThanOrEqual(0);
+  expect(dialogBox!.y + dialogBox!.height).toBeLessThanOrEqual(739);
+  expect(closeButtonBox!.width).toBeGreaterThanOrEqual(44);
+  expect(closeButtonBox!.height).toBeGreaterThanOrEqual(44);
+});
