@@ -670,7 +670,7 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
-      <div v-if="loading" class="orders-state flex items-center justify-center gap-2 py-16 text-muted-foreground"><Loader2 class="h-5 w-5 animate-spin" /> {{ t.common.loading }}</div>
+      <div v-if="loading" class="orders-state flex items-center justify-center gap-2 py-16 text-muted-foreground"><Loader2 class="h-5 w-5 animate-spin text-primary" /> {{ t.common.loading }}</div>
       <div v-else-if="loadError" class="orders-state flex flex-col items-center justify-center px-4 py-16 text-center">
         <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-red-50">
           <AlertCircle class="h-8 w-8 text-red-600" />
@@ -829,7 +829,7 @@ onBeforeUnmount(() => {
 
         <div class="overflow-y-auto bg-slate-50/70 px-4 py-4 sm:px-6 sm:py-5">
           <div v-if="detailLoading" class="flex items-center justify-center gap-2 py-16 text-muted-foreground">
-            <Loader2 class="h-5 w-5 animate-spin" />
+            <Loader2 class="h-5 w-5 animate-spin text-primary" />
             {{ t.common.loading }}
           </div>
           <div v-else-if="detailError" class="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">

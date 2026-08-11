@@ -12,6 +12,7 @@ import { useTranslation } from "@/lib/language"
 import { usePolling } from "@/lib/polling"
 type Message = { id: string; type: string; rawTitle: string; rawContent: string; time: string; isRead: boolean; isUnread: boolean }
 type MessageStatusFilter = "unread" | "read"
+type MessageAction = "read" | "delete"
 
 const { t, lang } = useTranslation()
 const selectedStatus = ref<MessageStatusFilter | null>(null)
@@ -25,8 +26,13 @@ const loading = ref(true)
 const loadError = ref(false)
 const markAllLoading = ref(false)
 const messageActionLoadingId = ref<string | null>(null)
+const messageActionError = ref<{ id: string; action: MessageAction } | null>(null)
 const detailLoadingId = ref<string | null>(null)
+const detailLoadError = ref(false)
+const detailSourceMessage = ref<Message | null>(null)
 const totalUnreadCount = ref(0)
+let messagesRequestId = 0
+let detailRequestId = 0
 
 const page = ref(1)
 const lastPage = ref(1)
@@ -116,6 +122,18 @@ function deleteMenuLabel() {
 
 function unreadLabel() {
   return t.value.messagesPage.unread
+}
+
+function messageActionErrorText(action: MessageAction) {
+  return action === "read"
+    ? t.value.messagesPage.markReadFailed
+    : t.value.messagesPage.deleteFailed
+}
+
+function retryMessageAction(message: Message) {
+  if (messageActionError.value?.id !== message.id) return
+  if (messageActionError.value.action === "read") void markAsRead(message.id)
+  else void deleteMessage(message.id)
 }
 
 function messageStatusValue(status: unknown) {
@@ -248,6 +266,10 @@ function formatPayloadSummary(payload: unknown) {
 }
 
 async function fetchMessages(showLoading = true, suppressErrorToast = false) {
+  const requestId = ++messagesRequestId
+  const requestedPage = page.value
+  const requestedLastPage = lastPage.value
+  const requestedStatus = selectedStatus.value
   if (showLoading) {
     loading.value = true
     loadError.value = false
@@ -257,63 +279,65 @@ async function fetchMessages(showLoading = true, suppressErrorToast = false) {
       page_size: String(pageSize),
     })
     let cursor = ""
-    if (page.value > lastPage.value) {
+    if (requestedPage > requestedLastPage) {
       cursor = nextCursor.value
-    } else if (page.value < lastPage.value) {
+    } else if (requestedPage < requestedLastPage) {
       cursor = prevCursor.value
     }
 
     if (cursor) params.set("cursor", cursor)
-    if (selectedStatus.value) params.set("status", selectedStatus.value)
+    if (requestedStatus) params.set("status", requestedStatus)
     const res = await apiClient(`/api/messages?${params.toString()}`, { suppressErrorToast })
-    const isBackward = page.value < lastPage.value
+    if (requestId !== messagesRequestId) return
+    if (!Array.isArray(res?.messages)) throw new Error("MESSAGES_INVALID_RESPONSE")
+
+    const isBackward = requestedPage < requestedLastPage
     hasMore.value = isBackward ? true : Boolean(res?.has_more)
     nextCursor.value = String(res?.next_cursor || "")
     prevCursor.value = String(res?.prev_cursor || "")
-    lastPage.value = page.value
-    if (res?.messages) {
-      messageList.value = res.messages.map((m: any) => {
-        let type = "system"
-        if (m.msg_type === 2) type = "announcement"
-        else if (m.msg_type === 3) type = "score"
-        else if (m.msg_type === 4) type = "payment"
-        else if (m.msg_type === 5) type = "other"
+    lastPage.value = requestedPage
+    messageList.value = res.messages.map((m: any) => {
+      let type = "system"
+      if (m.msg_type === 2) type = "announcement"
+      else if (m.msg_type === 3) type = "score"
+      else if (m.msg_type === 4) type = "payment"
+      else if (m.msg_type === 5) type = "other"
 
-        let title = t.value.common.systemNotification
-        if (type === "announcement") title = t.value.messagesPage.announcement
-        else if (type === "score") title = t.value.messagesPage.promotion
-        else if (type === "payment") title = t.value.messagesPage.payment
-        else if (type === "other") title = t.value.messagesPage.other
+      let title = t.value.common.systemNotification
+      if (type === "announcement") title = t.value.messagesPage.announcement
+      else if (type === "score") title = t.value.messagesPage.promotion
+      else if (type === "payment") title = t.value.messagesPage.payment
+      else if (type === "other") title = t.value.messagesPage.other
 
-        const payload = m.template_payload || m.payload
-        let content = m.content || formatPayloadSummary(payload)
-        try {
-          const parsed = JSON.parse(payload)
-          title = m.title || parsed.title || title
-          content = m.content || parsed.content || content
-        } catch {
-          // payload can be plain text.
-          title = m.title || title
-        }
+      const payload = m.template_payload || m.payload
+      let content = m.content || formatPayloadSummary(payload)
+      try {
+        const parsed = JSON.parse(payload)
+        title = m.title || parsed.title || title
+        content = m.content || parsed.content || content
+      } catch {
+        // payload can be plain text.
+        title = m.title || title
+      }
 
-        const statusValue = messageStatusValue(m.status)
-        return {
-          id: String(m.message_id || m.id),
-          type,
-          rawTitle: title,
-          rawContent: content,
-          time: formatBackendDate(m.created_at),
-          isRead: statusValue === 1,
-          isUnread: statusValue === 0,
-        }
-      })
-    }
+      const statusValue = messageStatusValue(m.status)
+      return {
+        id: String(m.message_id || m.id),
+        type,
+        rawTitle: title,
+        rawContent: content,
+        time: formatBackendDate(m.created_at),
+        isRead: statusValue === 1,
+        isUnread: statusValue === 0,
+      }
+    })
     loadError.value = false
   } catch (e) {
+    if (requestId !== messagesRequestId) return
     console.error(e)
     if (showLoading) loadError.value = true
   } finally {
-    if (showLoading) loading.value = false
+    if (showLoading && requestId === messagesRequestId) loading.value = false
   }
 }
 
@@ -323,12 +347,13 @@ async function markAllAsRead() {
   if (unreadIds.length === 0) return
   markAllLoading.value = true
   try {
-    await apiClient("/api/messages/read", { method: "PUT", body: JSON.stringify({ message_ids: unreadIds }) })
+    messagesRequestId += 1
+    await apiClient("/api/messages/read", { method: "PUT", body: JSON.stringify({ message_ids: unreadIds }), suppressErrorToast: true })
     messageList.value = messageList.value.map((m) => (m.isUnread ? { ...m, isRead: true, isUnread: false } : m))
     await syncUnreadCount()
     toast.success(t.value.messagesPage.markReadSuccess)
   } catch {
-    // apiClient handles toast.
+    toast.error(t.value.messagesPage.markAllFailed)
   } finally {
     markAllLoading.value = false
   }
@@ -337,14 +362,17 @@ async function markAllAsRead() {
 async function markAsRead(id: string, showToast = true) {
   if (messageActionLoadingId.value === id) return
   messageActionLoadingId.value = id
+  messageActionError.value = null
   try {
-    await apiClient("/api/messages/read", { method: "PUT", body: JSON.stringify({ message_ids: [id] }) })
+    messagesRequestId += 1
+    await apiClient("/api/messages/read", { method: "PUT", body: JSON.stringify({ message_ids: [id] }), suppressErrorToast: true })
     messageList.value = messageList.value.map((m) => (m.id === id ? { ...m, isRead: true, isUnread: false } : m))
     await syncUnreadCount()
     openMenuId.value = null
     if (showToast) toast.success(t.value.messagesPage.markReadSuccess)
   } catch {
-    // apiClient handles toast.
+    messageActionError.value = { id, action: "read" }
+    openMenuId.value = null
   } finally {
     if (messageActionLoadingId.value === id) messageActionLoadingId.value = null
   }
@@ -353,25 +381,32 @@ async function markAsRead(id: string, showToast = true) {
 async function deleteMessage(id: string) {
   if (messageActionLoadingId.value === id) return
   messageActionLoadingId.value = id
+  messageActionError.value = null
   try {
-    await apiClient("/api/messages/delete", { method: "POST", body: JSON.stringify({ message_ids: [id] }) })
+    messagesRequestId += 1
+    await apiClient("/api/messages/delete", { method: "POST", body: JSON.stringify({ message_ids: [id] }), suppressErrorToast: true })
     messageList.value = messageList.value.filter((m) => m.id !== id)
     await syncUnreadCount()
     openMenuId.value = null
     toast.success(t.value.messagesPage.deleteSuccess)
   } catch {
-    // apiClient handles toast.
+    messageActionError.value = { id, action: "delete" }
+    openMenuId.value = null
   } finally {
     if (messageActionLoadingId.value === id) messageActionLoadingId.value = null
   }
 }
 
-async function handleViewDetail(message: Message) {
+async function handleViewDetail(message: Message, markUnread = true) {
   if (detailLoadingId.value || messageActionLoadingId.value === message.id) return
+  const requestId = ++detailRequestId
+  detailSourceMessage.value = message
+  detailLoadError.value = false
   detailLoadingId.value = message.id
   try {
-    if (message.isUnread) await markAsRead(message.id, false)
-    const detail = await apiClient(`/api/messages/${message.id}`)
+    if (markUnread && message.isUnread) await markAsRead(message.id, false)
+    const detail = await apiClient(`/api/messages/${message.id}`, { suppressErrorToast: true })
+    if (requestId !== detailRequestId) return
     const detailType = message.type
     selectedMessageDetail.value = {
       ...detail,
@@ -382,14 +417,32 @@ async function handleViewDetail(message: Message) {
     }
     detailModalOpen.value = true
   } catch {
-    toast.error(t.value.messagesPage.detailLoadFailed)
+    if (requestId !== detailRequestId) return
+    selectedMessageDetail.value = {
+      rawTitle: message.rawTitle,
+      rawContent: message.rawContent,
+      typeLabel: configFor(message.type).label,
+      time: message.time,
+    }
+    detailLoadError.value = true
+    detailModalOpen.value = true
   } finally {
-    if (detailLoadingId.value === message.id) detailLoadingId.value = null
+    if (requestId === detailRequestId && detailLoadingId.value === message.id) detailLoadingId.value = null
   }
 }
 
+function retryMessageDetail() {
+  if (!detailSourceMessage.value || detailLoadingId.value) return
+  void handleViewDetail(detailSourceMessage.value, false)
+}
+
 function closeMessageDetail() {
+  detailRequestId += 1
   detailModalOpen.value = false
+  detailLoadingId.value = null
+  detailLoadError.value = false
+  detailSourceMessage.value = null
+  selectedMessageDetail.value = null
 }
 
 useDialogAccessibility(() => detailModalOpen.value, messageDetailDialogRef, closeMessageDetail)
@@ -399,7 +452,7 @@ const messagesPolling = usePolling(
     await fetchMessages(false, true)
     await syncUnreadCount()
   },
-  { shouldPoll: () => !detailModalOpen.value && !markAllLoading.value && !messageActionLoadingId.value && !detailLoadingId.value },
+  { shouldPoll: () => !loading.value && !detailModalOpen.value && !markAllLoading.value && !messageActionLoadingId.value && !detailLoadingId.value },
 )
 
 onMounted(() => {
@@ -488,6 +541,18 @@ onMounted(() => {
               <span class="message-type-badge badge">{{ configFor(message.type).label }}</span>
             </div>
             <span class="text-xs text-muted-foreground">{{ message.time }}</span>
+            <div
+              v-if="messageActionError?.id === message.id"
+              class="message-row-feedback mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-red-200 bg-red-50 px-2.5 py-2 text-xs text-red-700"
+              role="alert"
+              @click.stop
+            >
+              <AlertCircle class="h-4 w-4 shrink-0" />
+              <span class="min-w-0 flex-1">{{ messageActionErrorText(messageActionError.action) }}</span>
+              <button type="button" class="font-semibold text-red-800 underline underline-offset-2 disabled:opacity-60" :disabled="messageActionLoadingId === message.id" @click.stop="retryMessageAction(message)">
+                {{ t.messagesPage.actionRetry }}
+              </button>
+            </div>
           </div>
           <div class="message-actions flex shrink-0 items-center gap-1 md:gap-2">
             <div class="relative">
@@ -551,7 +616,22 @@ onMounted(() => {
           </button>
         </div>
         <div class="min-h-0 overflow-y-auto bg-slate-50/70 px-5 py-5 sm:px-6">
-          <div class="message-detail-content rounded-2xl border border-slate-100 bg-white px-5 py-4 text-sm leading-7 text-slate-800 shadow-sm shadow-slate-200/70" v-html="markdownToHtml(selectedMessageDetail?.rawContent || '')" />
+          <div v-if="detailLoadingId" class="flex min-h-48 items-center justify-center gap-2 text-muted-foreground" role="status" aria-live="polite">
+            <Loader2 class="h-5 w-5 animate-spin text-primary" />
+            <span>{{ t.common.loading }}</span>
+          </div>
+          <div v-else-if="detailLoadError" class="flex min-h-48 flex-col items-center justify-center rounded-xl border border-red-100 bg-white px-5 py-8 text-center" role="alert">
+            <div class="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-red-50">
+              <AlertCircle class="h-7 w-7 text-red-600" />
+            </div>
+            <h3 class="text-lg font-semibold text-slate-950">{{ t.messagesPage.detailLoadFailed }}</h3>
+            <p class="mt-2 max-w-md text-sm leading-6 text-slate-600">{{ t.messagesPage.detailLoadFailedDesc }}</p>
+            <button type="button" class="btn btn-primary mt-5 min-w-28 justify-center" @click="retryMessageDetail">
+              <RefreshCw class="h-4 w-4" />
+              {{ t.messagesPage.retry }}
+            </button>
+          </div>
+          <div v-else class="message-detail-content rounded-xl border border-slate-100 bg-white px-5 py-4 text-sm leading-7 text-slate-800 shadow-sm shadow-slate-200/70" v-html="markdownToHtml(selectedMessageDetail?.rawContent || '')" />
         </div>
       </div>
     </div>

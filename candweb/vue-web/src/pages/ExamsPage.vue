@@ -457,7 +457,7 @@ onBeforeUnmount(() => {
 
     <div class="exams-panel rounded-[16px] bg-white p-3 shadow-[0_10px_24px_rgba(15,74,82,0.05)] md:p-4">
       <div v-if="loading" class="flex items-center justify-center gap-2 py-16 text-muted-foreground">
-        <Loader2 class="h-5 w-5 animate-spin" />
+        <Loader2 class="h-5 w-5 animate-spin text-primary" />
         <span>{{ t.common.loading }}</span>
       </div>
       <div v-else-if="loadError" class="flex flex-col items-center justify-center px-4 py-16 text-center">

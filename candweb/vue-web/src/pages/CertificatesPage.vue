@@ -258,7 +258,7 @@ watch(lang, () => {
         </div>
 
     <div v-if="loading" class="certificates-state flex items-center justify-center gap-2 rounded-[16px] bg-white py-16 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-      <Loader2 class="h-5 w-5 animate-spin" />
+      <Loader2 class="h-5 w-5 animate-spin text-primary" />
       <span>{{ t.common.loading }}</span>
     </div>
     <div v-else-if="loadError" class="certificates-state flex flex-col items-center justify-center rounded-[16px] bg-white px-4 py-16 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">

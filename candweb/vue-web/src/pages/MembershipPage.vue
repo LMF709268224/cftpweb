@@ -438,9 +438,9 @@ watch(lang, () => {
           </span>
         </div>
 
-        <div v-if="loading" class="membership-loading-state rounded-[16px] bg-white p-12 text-center text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-          <Loader2 class="mx-auto mb-3 h-7 w-7 animate-spin text-primary" />
-          {{ t.membership.loading }}
+        <div v-if="loading" class="membership-loading-state flex items-center justify-center gap-2 rounded-[16px] bg-white px-4 py-16 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+          <Loader2 class="h-5 w-5 animate-spin text-primary" />
+          <span>{{ t.common.loading }}</span>
         </div>
 
         <template v-else>

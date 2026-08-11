@@ -1162,7 +1162,7 @@ watch(lang, async () => {
                   </div>
                 </div>
                 <div v-else-if="credentialDefinitionsLoading" class="mt-3 flex items-center gap-2 text-xs text-blue-700">
-                  <Loader2 class="h-3.5 w-3.5 animate-spin" />
+                  <Loader2 class="h-3.5 w-3.5 animate-spin text-primary" />
                   {{ t.common.loading }}
                 </div>
               </div>
