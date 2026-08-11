@@ -62,12 +62,14 @@ test("dashboard keeps the latest filter result when an older request finishes la
   await expect(page.locator("table").getByText("Initial User", { exact: true })).toBeVisible()
 
   const search = page.getByPlaceholder("搜索用户姓名或邮箱...")
+  const slowRequest = page.waitForRequest((request) => new URL(request.url()).searchParams.get("user_keyword") === "Slow")
+  const slowResponse = page.waitForResponse((response) => new URL(response.url()).searchParams.get("user_keyword") === "Slow")
   await search.fill("Slow")
-  await page.waitForRequest((request) => new URL(request.url()).searchParams.get("user_keyword") === "Slow")
+  await slowRequest
   await search.fill("Latest")
 
   await expect(page.locator("table").getByText("Latest User", { exact: true })).toBeVisible()
-  await page.waitForTimeout(750)
+  await slowResponse
   await expect(page.getByText("Stale User", { exact: true })).toHaveCount(0)
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
 })

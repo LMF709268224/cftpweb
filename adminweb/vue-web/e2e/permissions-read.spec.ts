@@ -47,13 +47,13 @@ test("permission check ignores a response for a candidate changed while loading"
   })
   await page.goto("/permissions")
   const candidate = page.getByPlaceholder("输入考生 ID")
+  const staleRequest = page.waitForRequest((request) => new URL(request.url()).searchParams.get("candidate_ulid") === "candidate-old")
+  const staleResponse = page.waitForResponse((response) => new URL(response.url()).searchParams.get("candidate_ulid") === "candidate-old")
   await candidate.fill("candidate-old")
-  await Promise.all([
-    page.waitForRequest((request) => new URL(request.url()).searchParams.get("candidate_ulid") === "candidate-old"),
-    page.getByRole("button", { name: "检查权限" }).click(),
-  ])
+  await page.getByRole("button", { name: "检查权限" }).click()
+  await staleRequest
   await candidate.fill("candidate-current")
-  await page.waitForTimeout(550)
+  await staleResponse
   await expect(page.getByText("权限详情", { exact: true })).toHaveCount(0)
 
   await page.getByRole("button", { name: "检查权限" }).click()

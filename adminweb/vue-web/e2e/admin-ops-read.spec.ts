@@ -205,10 +205,13 @@ test("admin operations ignores a slow list after switching modules", async ({ pa
     return undefined
   })
 
+  const slowSubscriptionRequest = page.waitForRequest((request) => new URL(request.url()).pathname === "/api/pay/subscriptions")
+  const slowSubscriptionResponse = page.waitForResponse((response) => new URL(response.url()).pathname === "/api/pay/subscriptions")
   await page.goto("/admin-ops")
+  await slowSubscriptionRequest
   await page.getByRole("button", { name: "Pay Webhooks", exact: true }).click()
   await expect(page.getByText("evt_latest", { exact: true }).first()).toBeVisible()
-  await page.waitForTimeout(650)
+  await slowSubscriptionResponse
 
   await expect(page.getByText("sub_stale", { exact: true })).toHaveCount(0)
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
