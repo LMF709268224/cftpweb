@@ -2,8 +2,9 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue"
 import { onBeforeRouteLeave, useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
-import { AlertCircle, CheckCircle2, ChevronLeft, Clock, FileText, Loader2, X } from "lucide-vue-next"
+import { AlertCircle, CheckCircle2, ChevronLeft, Clock, FileText, X } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
+import PageFeedback from "@/components/PageFeedback.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useBodyScrollLock } from "@/lib/bodyScrollLock"
 import { useDialogAccessibility } from "@/lib/dialogAccessibility"
@@ -20,6 +21,7 @@ const returnTo = computed(() => {
   return value
 })
 const loading = ref(true)
+const loadError = ref(false)
 const submitting = ref(false)
 const remainingSeconds = ref<number>(0)
 const timerInterval = ref<number | null>(null)
@@ -228,10 +230,12 @@ function handleBeforeUnload(event: BeforeUnloadEvent) {
 
 async function loadPaper() {
   if (!attemptId.value) {
+    loadError.value = false
     loading.value = false
     return
   }
   loading.value = true
+  loadError.value = false
   try {
     const res = await apiClient(`/api/quizzes/attempts/${attemptId.value}/paper`)
     paper.value = {
@@ -261,6 +265,9 @@ async function loadPaper() {
       remainingSeconds.value = Number(res.remaining_seconds)
       startTimer()
     }
+  } catch (error) {
+    console.error(error)
+    loadError.value = true
   } finally {
     loading.value = false
   }
@@ -355,18 +362,24 @@ onBeforeRouteLeave(() => {
       </header>
 
       <main class="quiz-page px-5 py-8 md:px-8 lg:px-10">
-    <div v-if="loading" class="quiz-state flex min-h-[60vh] items-center justify-center">
-      <div class="flex items-center gap-3 rounded-2xl bg-white px-5 py-4 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-        <Loader2 class="h-5 w-5 animate-spin text-primary" />
-        <span>{{ t.common.loading }}</span>
-      </div>
-    </div>
+    <PageFeedback v-if="loading" class="quiz-state" kind="loading" min-height-class="min-h-[60vh]" :loading-label="t.common.loading" />
 
-    <div v-else-if="!paper" class="quiz-state flex min-h-[60vh] flex-col items-center justify-center gap-4">
-      <AlertCircle class="h-12 w-12 text-destructive" />
-      <h2 class="text-lg font-semibold text-foreground">{{ t.learning?.quizNotFound }}</h2>
-      <button class="btn btn-primary cursor-pointer" @click="goBackToLearning"><ChevronLeft class="h-4 w-4" /> {{ t.common.back }}</button>
-    </div>
+    <PageFeedback
+      v-else-if="loadError"
+      class="quiz-state"
+      kind="error"
+      min-height-class="min-h-[60vh]"
+      :title="t.learning?.quizLoadFailed"
+      :description="t.learning?.quizLoadFailedDesc"
+      :action-label="t.learning?.quizRetry"
+      @action="loadPaper"
+    />
+
+    <PageFeedback v-else-if="!paper" class="quiz-state" kind="empty" min-height-class="min-h-[60vh]" :title="t.learning?.quizNotFound">
+      <template #action>
+        <button class="btn btn-primary mt-5 cursor-pointer" @click="goBackToLearning"><ChevronLeft class="h-4 w-4" /> {{ t.common.back }}</button>
+      </template>
+    </PageFeedback>
 
     <div v-else-if="result" data-testid="quiz-result" :data-passed="quizPassed ? 'true' : 'false'" class="quiz-result mx-auto max-w-2xl py-12">
       <div class="quiz-result-card card border-t-4 border-t-primary p-8 text-center shadow-lg">

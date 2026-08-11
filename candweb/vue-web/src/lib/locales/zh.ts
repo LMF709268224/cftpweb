@@ -358,7 +358,10 @@ export const zh = {
     noAvailableDesc: "商城开放商品后，会显示在这里。",
     noSearchTitle: "没有匹配的商品",
     noSearchDesc: "换个关键词再试，或清空搜索查看全部商品。",
-    clearSearch: "清空搜索"
+    clearSearch: "清空搜索",
+    loadFailed: "商城信息加载失败",
+    loadFailedDesc: "暂时无法获取商城商品，请检查网络后重试。",
+    retry: "重新加载"
   },
   myCertificationsPage: {
     title: "我的认证",
@@ -370,7 +373,10 @@ export const zh = {
     emptyDesc: "前往商城浏览并选择适合你的认证或会员商品。",
     browseMarketplace: "浏览商城",
     startedAt: "开始时间",
-    completedAt: "完成时间"
+    completedAt: "完成时间",
+    loadFailed: "认证信息加载失败",
+    loadFailedDesc: "暂时无法获取认证信息，请检查网络后重试。",
+    retry: "重新加载"
   },
   resourcePacksPage: {
     title: "资源包",
@@ -387,7 +393,10 @@ export const zh = {
     updated: "更新于",
     count: "个资源包",
     loading: "加载中...",
-    loadMore: "加载更多"
+    loadMore: "加载更多",
+    loadFailed: "资源包加载失败",
+    loadFailedDesc: "暂时无法获取资源包，请检查网络后重试。",
+    retry: "重新加载"
   },
   resourcePackDetailPage: {
     titleDefault: "资源包详情",
@@ -411,6 +420,9 @@ export const zh = {
     missing: "缺少资源包 ID",
     loading: "加载中...",
     loadMore: "加载更多",
+    loadFailed: "资源文件加载失败",
+    loadFailedDesc: "暂时无法获取资源文件，请检查网络后重试。",
+    retry: "重新加载",
     noViewUrl: "暂时无法打开预览，请稍后再试。",
     fileTypeWebinar: "网络研讨会",
     fileTypePdf: "PDF",
@@ -512,6 +524,9 @@ export const zh = {
     lessonTypeLink: "外部链接",
     lessonTypeUnknown: "未知类型",
     quizNotFound: "未找到测验",
+    quizLoadFailed: "测验加载失败",
+    quizLoadFailedDesc: "暂时无法获取测验内容，请检查网络后重试。",
+    quizRetry: "重新加载",
     quizCompleted: "测验已完成",
     quizSubmittedDesc: "你已成功提交了测验答卷。",
     quizScore: "得分",
@@ -806,6 +821,8 @@ export const zh = {
     viewResult: "查看结果",
     viewCertificate: "查看证书",
     noScoreDetails: "暂无评分明细",
+    resultLoadFailed: "考试结果加载失败",
+    resultLoadFailedDesc: "暂时无法获取考试结果，请检查网络后重试。",
     noExams: "暂无待考试项",
     noExamsDesc: "当课程满足考试条件或系统生成可预约考试时，这里会显示待考试列表。",
     noHistory: "暂无考试记录",

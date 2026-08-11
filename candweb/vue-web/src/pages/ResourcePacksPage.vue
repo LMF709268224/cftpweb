@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from "vue"
 import { RouterLink } from "vue-router"
 import { ArrowRight, CalendarClock, PackageOpen, RefreshCw, Search } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
+import PageFeedback from "@/components/PageFeedback.vue"
 import { apiClient } from "@/lib/apiClient"
 import { formatBackendDateOnly } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
@@ -18,6 +19,7 @@ type ResourcePack = {
 
 const { t, lang } = useTranslation()
 const loading = ref(false)
+const loadError = ref(false)
 const search = ref("")
 const packs = ref<ResourcePack[]>([])
 const nextPageToken = ref("")
@@ -33,14 +35,21 @@ const filteredPacks = computed(() => {
 })
 
 async function loadPacks(pageToken = "") {
+  const showPageError = !pageToken && packs.value.length === 0
   loading.value = true
+  if (!pageToken) loadError.value = false
   try {
     const params = new URLSearchParams({ page_size: "50" })
     if (pageToken) params.set("page_token", pageToken)
     const resp = await apiClient(`/api/resource-packs?${params.toString()}`)
-    const list = Array.isArray(resp?.packs) ? resp.packs : []
+    if (!Array.isArray(resp?.packs)) throw new Error("RESOURCE_PACKS_INVALID_RESPONSE")
+    const list = resp.packs
     packs.value = pageToken ? packs.value.concat(list) : list
     nextPageToken.value = resp?.next_page_token || ""
+    loadError.value = false
+  } catch (error) {
+    console.error(error)
+    if (showPageError) loadError.value = true
   } finally {
     loading.value = false
   }
@@ -119,21 +128,23 @@ watch(lang, () => {
       </RouterLink>
     </section>
 
-    <section v-else-if="loading" class="flex items-center justify-center gap-2 rounded-[16px] bg-white py-16 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-      <RefreshCw class="h-5 w-5 animate-spin" />
-      <span>{{ copy.loading }}</span>
-    </section>
+    <PageFeedback v-else-if="loading" kind="loading" :loading-label="copy.loading" />
 
-    <section v-else class="rounded-[16px] bg-white px-4 py-14 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-      <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10">
-        <PackageOpen class="h-8 w-8 text-primary" />
-      </div>
-      <h2 class="mt-4 text-lg font-semibold text-foreground">{{ search.trim() ? copy.noSearchTitle : copy.emptyTitle }}</h2>
-      <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">{{ search.trim() ? copy.noSearchDesc : copy.emptyDesc }}</p>
-      <button v-if="search.trim()" class="btn btn-primary mt-5 rounded-lg shadow-sm shadow-primary/20" @click="search = ''">
-        {{ copy.clearSearch }}
-      </button>
-    </section>
+    <PageFeedback
+      v-else-if="loadError"
+      kind="error"
+      :title="copy.loadFailed"
+      :description="copy.loadFailedDesc"
+      :action-label="copy.retry"
+      @action="loadPacks()"
+    />
+
+    <PageFeedback v-else kind="empty" :title="search.trim() ? copy.noSearchTitle : copy.emptyTitle" :description="search.trim() ? copy.noSearchDesc : copy.emptyDesc">
+      <template #icon><PackageOpen class="h-8 w-8" /></template>
+      <template v-if="search.trim()" #action>
+        <button class="btn btn-primary mt-5 rounded-lg shadow-sm shadow-primary/20" @click="search = ''">{{ copy.clearSearch }}</button>
+      </template>
+    </PageFeedback>
 
         <div v-if="nextPageToken" class="mt-4 text-center">
           <button class="btn btn-outline rounded-lg" :disabled="loading" @click="loadPacks(nextPageToken)">

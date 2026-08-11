@@ -2,9 +2,10 @@
 import { computed, onMounted, ref, watch } from "vue"
 import { RouterLink } from "vue-router"
 import { toast } from "vue-sonner"
-import { BookOpen, Clock, Eye } from "lucide-vue-next"
+import { BookOpen, Eye } from "lucide-vue-next"
 import { CANDIDATE_PIPELINE_STATUS_LABELS, statusLabel, timelineStatusBadgeClassForStatus } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
+import PageFeedback from "@/components/PageFeedback.vue"
 import { apiClient } from "@/lib/apiClient"
 import { formatBackendDate } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
@@ -24,6 +25,7 @@ type CandidatePipelineCard = {
 const { t, lang } = useTranslation()
 const myCourses = ref<CandidatePipelineCard[]>([])
 const loading = ref(false)
+const loadError = ref(false)
 
 const copy = computed(() => t.value.myCertificationsPage)
 
@@ -51,11 +53,16 @@ function certificationDetailHref(course: CandidatePipelineCard) {
 }
 
 async function refreshMyCourses() {
+  const showPageError = myCourses.value.length === 0
   loading.value = true
+  if (showPageError) loadError.value = false
   try {
     const res = await apiClient("/api/pipeline")
-    const list = Array.isArray(res?.list) ? res.list : []
-    myCourses.value = list.map(mapCandidatePipeline)
+    if (!Array.isArray(res?.list)) throw new Error("PIPELINE_LIST_INVALID_RESPONSE")
+    myCourses.value = res.list.map(mapCandidatePipeline)
+  } catch (error) {
+    console.error(error)
+    if (showPageError) loadError.value = true
   } finally {
     loading.value = false
   }
@@ -111,9 +118,16 @@ watch(lang, () => {
           <p class="mt-2 text-muted-foreground">{{ copy.subtitle }}</p>
         </div>
 
-        <div v-if="loading && myCourses.length === 0" class="flex items-center justify-center gap-2 rounded-[16px] bg-white py-14 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-          <Clock class="h-5 w-5 animate-spin" /> <span>{{ t.common.loading }}</span>
-        </div>
+        <PageFeedback v-if="loading && myCourses.length === 0" kind="loading" :loading-label="t.common.loading" />
+
+        <PageFeedback
+          v-else-if="loadError"
+          kind="error"
+          :title="copy.loadFailed"
+          :description="copy.loadFailedDesc"
+          :action-label="copy.retry"
+          @action="refreshMyCourses"
+        />
 
         <div v-else-if="myCourses.length > 0" class="my-certifications-grid grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
           <div
@@ -168,14 +182,12 @@ watch(lang, () => {
           </div>
         </div>
 
-        <div v-else class="flex flex-col items-center justify-center rounded-[16px] bg-white py-16 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-          <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10">
-            <BookOpen class="h-8 w-8 text-primary" />
-          </div>
-          <h3 class="mb-2 text-lg font-semibold text-foreground">{{ copy.emptyTitle }}</h3>
-          <p class="mb-4 text-muted-foreground">{{ copy.emptyDesc }}</p>
-          <RouterLink to="/certifications" class="btn btn-primary rounded-lg shadow-sm shadow-primary/20">{{ copy.browseMarketplace }}</RouterLink>
-        </div>
+        <PageFeedback v-else kind="empty" :title="copy.emptyTitle" :description="copy.emptyDesc">
+          <template #icon><BookOpen class="h-8 w-8" /></template>
+          <template #action>
+            <RouterLink to="/certifications" class="btn btn-primary mt-5 rounded-lg shadow-sm shadow-primary/20">{{ copy.browseMarketplace }}</RouterLink>
+          </template>
+        </PageFeedback>
       </main>
     </div>
   </AppShell>
