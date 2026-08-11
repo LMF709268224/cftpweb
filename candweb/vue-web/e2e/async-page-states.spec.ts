@@ -83,6 +83,37 @@ const asyncPageCases: AsyncPageCase[] = [
     successTitle: "暂无状态流转记录",
     successData: { logs: [] },
   },
+  {
+    name: "认证详情",
+    path: "/certifications/pipeline-regression",
+    endpoint: "/api/mall/pipelines/pipeline-regression/runtime",
+    errorTitle: "认证详情加载失败",
+    successTitle: "重试后认证详情",
+    successData: {
+      config: {
+        pipeline_cc_ulid: "pipeline-regression",
+        name: "重试后认证详情",
+        stages: [],
+      },
+    },
+  },
+  {
+    name: "课程学习",
+    path: "/certifications/pipeline-regression/learn/course-regression",
+    endpoint: "/api/pipeline/courses/course-regression/complete",
+    errorTitle: "课程内容加载失败",
+    successTitle: "重试后课程",
+    successData: {
+      complete_course: {
+        course: {
+          course_id: "course-regression",
+          title: "重试后课程",
+        },
+        chapters: [],
+        materials: [],
+      },
+    },
+  },
 ]
 
 for (const pageCase of asyncPageCases) {

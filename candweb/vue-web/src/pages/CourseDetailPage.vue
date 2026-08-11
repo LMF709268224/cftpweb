@@ -28,6 +28,7 @@ import {
 } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
 import LoadingState from "@/components/LoadingState.vue"
+import PageFeedback from "@/components/PageFeedback.vue"
 import PaymentSessionDialog from "@/components/PaymentSessionDialog.vue"
 import StageExemptionDialog from "@/components/StageExemptionDialog.vue"
 import { ApiClientError, apiClient } from "@/lib/apiClient"
@@ -149,6 +150,7 @@ const courseSummaries = ref<Record<string, CourseSummary>>({})
 const credentialDefinitions = ref<Record<string, CredentialDefinition>>({})
 const firstCourseThumbnail = ref("")
 const loading = ref(false)
+const loadError = ref(false)
 const courseSummariesLoading = ref(false)
 const credentialDefinitionsLoading = ref(false)
 const certificateLoading = ref(false)
@@ -465,18 +467,31 @@ function learningHref(courseId?: string) {
     : "/certifications"
 }
 
-async function loadDetail(showLoading = true, suppressErrorToast = false) {
+async function loadDetail(showLoading = true, suppressErrorToast = false, handlePageError = false) {
   if (!pipelineId.value) {
     detail.value = null
+    if (handlePageError) loadError.value = false
     if (showLoading) loading.value = false
-    return
+    return false
   }
   if (showLoading) loading.value = true
+  if (handlePageError) loadError.value = false
   try {
     detail.value = await apiClient(`/api/mall/pipelines/${pipelineId.value}/runtime`, { suppressErrorToast })
+    return true
+  } catch (error) {
+    if (!handlePageError) throw error
+    console.error(error)
+    loadError.value = true
+    return false
   } finally {
     if (showLoading) loading.value = false
   }
+}
+
+async function initializeDetailPage() {
+  const loaded = await loadDetail(true, true, true)
+  if (loaded) await handleStagePaymentReturn()
 }
 
 async function loadCourseSummaries() {
@@ -1016,18 +1031,19 @@ async function handleStagePaymentReturn() {
 }
 
 const detailPolling = usePolling(
-  () => loadDetail(false, true),
+  async () => {
+    await loadDetail(false, true)
+  },
   { shouldPoll: () => Boolean(pipelineId.value && pipelineIssuingCertificate.value) },
 )
 
 onMounted(async () => {
-  await loadDetail()
-  await handleStagePaymentReturn()
+  await initializeDetailPage()
 })
 watch(pipelineId, () => {
   detailPolling.stop()
   detail.value = null
-  void loadDetail()
+  void loadDetail(true, true, true)
 })
 watch(pipelineIssuingCertificate, (issuing) => {
   if (issuing && pipelineId.value) detailPolling.start()
@@ -1062,6 +1078,14 @@ watch(lang, async () => {
         </RouterLink>
 
     <LoadingState v-if="loading" :label="t.common.loading" variant="page" :rows="4" />
+    <PageFeedback
+      v-else-if="loadError"
+      kind="error"
+      :title="t.learning.certificationDetailLoadFailed"
+      :description="t.learning.certificationDetailLoadFailedDesc"
+      :action-label="t.learning.retry"
+      @action="initializeDetailPage"
+    />
     <div v-else-if="!pipeline" class="course-detail-empty rounded-md bg-white p-8 text-center text-muted-foreground">
       <div class="mx-auto max-w-md space-y-4">
         <div>
