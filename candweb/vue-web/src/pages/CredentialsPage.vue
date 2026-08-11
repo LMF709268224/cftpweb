@@ -6,6 +6,7 @@ import { getFileConstraintInfo } from "../lib/fileConstraints"
 import { CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, CANDIDATE_APPLICATION_STATUS_LABELS, statusEnumNameForStatus, statusLabel } from "@/lib/status-labels"
 import AppPagination from "@/components/AppPagination.vue"
 import AppShell from "@/components/AppShell.vue"
+import PageFeedback from "@/components/PageFeedback.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useBodyScrollLock } from "@/lib/bodyScrollLock"
 import { formatBackendDateOnly } from "@/lib/utils"
@@ -28,6 +29,7 @@ const applicationPrevCursor = ref("")
 const lastApplicationPage = ref(1)
 const lastApplicationPageSize = ref(applicationPageSize.value)
 const loading = ref(true)
+const loadError = ref(false)
 const applicationsLoading = ref(false)
 const selectedDef = ref<any>(null)
 const resubmitAppId = ref("")
@@ -62,7 +64,7 @@ function totalPagesFrom(data: any, total: number, pageSize: number) {
   return Number(data?.total_pages || Math.ceil(total / pageSize) || 0)
 }
 
-async function fetchApplications(options: { showLoading?: boolean } = {}) {
+async function fetchApplications(options: { showLoading?: boolean; suppressErrorToast?: boolean } = {}) {
   if (options.showLoading) applicationsLoading.value = true
   try {
     const params = new URLSearchParams({
@@ -78,7 +80,9 @@ async function fetchApplications(options: { showLoading?: boolean } = {}) {
     
     if (cursor) params.set("cursor", cursor)
     
-    const appsRes = await apiClient(`/api/credentials/applications?${params.toString()}`)
+    const appsRes = await apiClient(`/api/credentials/applications?${params.toString()}`, {
+      suppressErrorToast: options.suppressErrorToast,
+    })
     const nextApplications = appsRes?.applications || []
     applications.value = nextApplications
     applicationTotal.value = totalFrom(appsRes, nextApplications)
@@ -95,15 +99,19 @@ async function fetchApplications(options: { showLoading?: boolean } = {}) {
 
 async function fetchData(openSingleDefinition = true) {
   loading.value = true
+  loadError.value = false
   try {
     const qualIds = String(route.query.qual_ulids || route.query.qual_ids || "").trim()
     const definitionsEndpoint = qualIds ? `/api/credentials/definitions?qual_ulids=${encodeURIComponent(qualIds)}` : "/api/credentials/definitions"
-    const defsRes = await apiClient(definitionsEndpoint)
+    const defsRes = await apiClient(definitionsEndpoint, { suppressErrorToast: true })
     definitions.value = defsRes?.definitions || []
-    await fetchApplications()
+    await fetchApplications({ suppressErrorToast: true })
     if (openSingleDefinition && qualIds && definitions.value.length === 1 && !isApplyOpen.value) {
       handleDefinitionAction(definitions.value[0])
     }
+  } catch (error) {
+    console.error(error)
+    loadError.value = true
   } finally {
     loading.value = false
   }
@@ -369,10 +377,15 @@ watch(lang, () => {
           <p class="mt-2 text-muted-foreground">{{ t.credentialsPage.subtitle }}</p>
         </div>
 
-    <div v-if="loading" class="flex items-center justify-center gap-2 rounded-[16px] bg-white py-16 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-      <Loader2 class="h-5 w-5 animate-spin text-primary" />
-      <span>{{ t.common.loading }}</span>
-    </div>
+    <PageFeedback v-if="loading" kind="loading" :loading-label="t.common.loading" />
+    <PageFeedback
+      v-else-if="loadError"
+      kind="error"
+      :title="t.credentialsPage.loadFailed"
+      :description="t.credentialsPage.loadFailedDesc"
+      :action-label="t.credentialsPage.retry"
+      @action="fetchData()"
+    />
     <div v-else class="credentials-page-content space-y-4">
       <section>
         <div class="credentials-available-header mb-4 flex flex-col justify-center gap-1 rounded-[16px] bg-white px-4 py-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">

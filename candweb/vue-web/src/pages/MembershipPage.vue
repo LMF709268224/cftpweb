@@ -5,6 +5,7 @@ import { AlertCircle, Check, ChevronDown, Crown, Loader2, Percent, RefreshCw, Sh
 import { toast } from "vue-sonner"
 import AppShell from "@/components/AppShell.vue"
 import AppPagination from "@/components/AppPagination.vue"
+import PageFeedback from "@/components/PageFeedback.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useBodyScrollLock } from "@/lib/bodyScrollLock"
 import { useDialogAccessibility } from "@/lib/dialogAccessibility"
@@ -15,6 +16,7 @@ type RecordData = Record<string, any>
 const { t, lang } = useTranslation()
 const activeTab = ref("overview")
 const loading = ref(false)
+const loadError = ref(false)
 const cancelling = ref(false)
 const cancelRenewConfirmOpen = ref(false)
 const cancelRenewConfirmDialogRef = ref<HTMLElement | null>(null)
@@ -228,7 +230,7 @@ function totalPagesFrom(data: any, total: number, pageSize: number) {
   return Number(data?.total_pages || Math.ceil(total / pageSize) || 0)
 }
 
-async function loadMembershipHistory() {
+async function loadMembershipHistory(suppressErrorToast = false) {
   const params = new URLSearchParams({ page_size: String(historyPageSize.value) })
   
   let cursor = ""
@@ -239,7 +241,7 @@ async function loadMembershipHistory() {
   }
   
   if (cursor) params.set("cursor", cursor)
-  const historyData = await apiClient(`/api/membership/history?${params.toString()}`)
+  const historyData = await apiClient(`/api/membership/history?${params.toString()}`, { suppressErrorToast })
   const nextHistory = listFrom(historyData, ["user_memberships", "memberships", "records", "items", "history"])
   history.value = nextHistory
   historyTotal.value = totalFrom(historyData, nextHistory)
@@ -251,7 +253,7 @@ async function loadMembershipHistory() {
   return nextHistory
 }
 
-async function loadMembershipBillings() {
+async function loadMembershipBillings(suppressErrorToast = false) {
   const params = new URLSearchParams({ page_size: String(billingPageSize.value) })
   
   let cursor = ""
@@ -262,7 +264,7 @@ async function loadMembershipBillings() {
   }
   
   if (cursor) params.set("cursor", cursor)
-  const billingData = await apiClient(`/api/membership/billings?${params.toString()}`)
+  const billingData = await apiClient(`/api/membership/billings?${params.toString()}`, { suppressErrorToast })
   const nextBillings = listFrom(billingData, ["billings", "records", "items"])
   billings.value = nextBillings
   billingTotal.value = totalFrom(billingData, nextBillings)
@@ -274,8 +276,8 @@ async function loadMembershipBillings() {
   return nextBillings
 }
 
-async function loadMembershipPlans() {
-  const planData = await apiClient("/api/membership/plans?page=1&page_size=50")
+async function loadMembershipPlans(suppressErrorToast = false) {
+  const planData = await apiClient("/api/membership/plans?page=1&page_size=50", { suppressErrorToast })
   const nextPlans = listFrom(planData, ["memberships", "plans", "items"])
   plans.value = nextPlans
 
@@ -296,16 +298,17 @@ async function loadMembershipPlans() {
 
 async function loadMembership() {
   loading.value = true
+  loadError.value = false
   try {
     const [, nextHistory] = await Promise.all([
-      loadMembershipPlans(),
-      loadMembershipHistory(),
-      loadMembershipBillings(),
+      loadMembershipPlans(true),
+      loadMembershipHistory(true),
+      loadMembershipBillings(true),
     ])
     activeMembership.value = await loadActiveMembershipFromHistory(nextHistory) || { user_memberships: nextHistory }
   } catch (err) {
     console.error(err)
-    toast.error(t.value.membership.loadFailed)
+    loadError.value = true
   } finally {
     loading.value = false
   }
@@ -438,10 +441,15 @@ watch(lang, () => {
           </span>
         </div>
 
-        <div v-if="loading" class="membership-loading-state flex items-center justify-center gap-2 rounded-[16px] bg-white px-4 py-16 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-          <Loader2 class="h-5 w-5 animate-spin text-primary" />
-          <span>{{ t.common.loading }}</span>
-        </div>
+        <PageFeedback v-if="loading" kind="loading" :loading-label="t.membership.loading" />
+        <PageFeedback
+          v-else-if="loadError"
+          kind="error"
+          :title="t.membership.loadFailed"
+          :description="t.membership.loadFailedDesc"
+          :action-label="t.membership.retry"
+          @action="loadMembership"
+        />
 
         <template v-else>
           <section class="membership-current-card mb-5 overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_10px_28px_rgba(15,74,82,0.06)]">

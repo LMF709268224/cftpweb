@@ -59,6 +59,30 @@ const asyncPageCases: AsyncPageCase[] = [
     successTitle: "重试测验",
     successData: { title: "重试测验", questions: [], remaining_seconds: 0 },
   },
+  {
+    name: "资格申请",
+    path: "/credentials",
+    endpoint: "/api/credentials/definitions",
+    errorTitle: "资格申请加载失败",
+    successTitle: "暂无申请",
+    successData: { definitions: [] },
+  },
+  {
+    name: "会员",
+    path: "/membership",
+    endpoint: "/api/membership/plans",
+    errorTitle: "会员信息加载失败",
+    successTitle: "暂无有效会员",
+    successData: { memberships: [] },
+  },
+  {
+    name: "课程时间线",
+    path: "/certifications/pipeline-regression/timeline",
+    endpoint: "/api/mall/pipelines/pipeline-regression/timeline",
+    errorTitle: "课程时间线加载失败",
+    successTitle: "暂无状态流转记录",
+    successData: { logs: [] },
+  },
 ]
 
 for (const pageCase of asyncPageCases) {
@@ -81,3 +105,33 @@ for (const pageCase of asyncPageCases) {
     expect(requestCount).toBe(2)
   })
 }
+
+test("首页统计全部加载失败后可以重试", async ({ page }) => {
+  const responses: Record<string, unknown> = {
+    "/api/pipeline": { list: [] },
+    "/api/certificates": { certificates: [] },
+    "/api/exams": { exams: [] },
+    "/api/resource-packs": { packs: [] },
+    "/api/orders": { orders: [] },
+  }
+  const requestCounts = new Map<string, number>()
+
+  await seedAuthenticatedCandidate(page)
+  await installCandidateApiMocks(page, ({ pathname }) => {
+    if (!(pathname in responses)) return undefined
+
+    const requestCount = (requestCounts.get(pathname) || 0) + 1
+    requestCounts.set(pathname, requestCount)
+    if (requestCount === 1) return { status: 503, message: "temporarily unavailable" }
+    return { data: responses[pathname] }
+  })
+  await page.goto("/dashboard", { waitUntil: "domcontentloaded" })
+
+  await expect(page.getByRole("heading", { name: "首页统计加载失败" })).toBeVisible()
+  await page.getByRole("button", { name: "重新加载" }).click()
+  await expect(page.getByRole("heading", { name: "已购买认证" })).toBeVisible()
+
+  for (const endpoint of Object.keys(responses)) {
+    expect(requestCounts.get(endpoint)).toBe(2)
+  }
+})

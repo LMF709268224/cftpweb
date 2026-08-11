@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import { RouterLink, useRoute } from "vue-router"
-import { ArrowLeft, Clock, Loader2 } from "lucide-vue-next"
+import { ArrowLeft, Clock } from "lucide-vue-next"
 import { timelineStatusLabel } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
+import PageFeedback from "@/components/PageFeedback.vue"
 import { apiClient } from "@/lib/apiClient"
 import { formatBackendDate } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
@@ -25,18 +26,22 @@ const { t } = useTranslation()
 const pipelineId = computed(() => String(route.params.pipelineId || route.query.id || ""))
 const logs = ref<TimelineLog[]>([])
 const loading = ref(false)
+const loadError = ref(false)
 
 async function loadTimeline() {
   if (!pipelineId.value) {
     logs.value = []
+    loadError.value = false
     return
   }
   loading.value = true
+  loadError.value = false
   try {
-    const res = await apiClient(`/api/mall/pipelines/${pipelineId.value}/timeline`)
+    const res = await apiClient(`/api/mall/pipelines/${pipelineId.value}/timeline`, { suppressErrorToast: true })
     logs.value = res?.logs || []
   } catch {
     logs.value = []
+    loadError.value = true
   } finally {
     loading.value = false
   }
@@ -111,12 +116,17 @@ onMounted(loadTimeline)
           {{ t.learning.timelineBackToCourseDetails || t.common.back }}
         </RouterLink>
 
-    <div class="rounded-[16px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-      <div v-if="loading" class="flex items-center justify-center gap-2 py-16 text-muted-foreground">
-        <Loader2 class="h-5 w-5 animate-spin text-primary" />
-        <span>{{ t.common.loading }}</span>
-      </div>
-      <div v-else-if="logs.length === 0" class="flex flex-col items-center justify-center py-14 text-center">
+    <PageFeedback v-if="loading" kind="loading" :loading-label="t.common.loading" />
+    <PageFeedback
+      v-else-if="loadError"
+      kind="error"
+      :title="t.learning.timelineLoadFailed"
+      :description="t.learning.timelineLoadFailedDesc"
+      :action-label="t.learning.timelineRetry"
+      @action="loadTimeline"
+    />
+    <div v-else class="rounded-[16px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+      <div v-if="logs.length === 0" class="flex flex-col items-center justify-center py-14 text-center">
         <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
           <Clock class="h-8 w-8 text-muted-foreground" />
         </div>
