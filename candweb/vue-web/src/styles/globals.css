@@ -657,10 +657,49 @@
   .candidate-portal {
     --gfi-radius-lg: 0.75rem;
     --gfi-mobile-card-border: rgba(0, 42, 102, 0.14);
+    --gfi-mobile-content-gap: 0.75rem;
+    --gfi-mobile-control-height: 2.625rem;
+    --gfi-mobile-primary-control-height: 2.75rem;
   }
 
   :where(.candidate-portal .page-panel) > main {
     padding: var(--gfi-mobile-page-padding-block) var(--gfi-mobile-page-padding-inline);
+  }
+
+  .candidate-portal .page-panel > main :is(
+    button,
+    .btn,
+    .input,
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+    select
+  ) {
+    min-height: var(--gfi-mobile-control-height);
+  }
+
+  .candidate-portal .page-panel > main :is(
+    .btn-primary,
+    .btn-emphasis,
+    .btn-vivid,
+    button[type="submit"],
+    .my-certification-action > a,
+    .resource-pack-action > a,
+    .certificate-card-actions > a
+  ) {
+    min-height: var(--gfi-mobile-primary-control-height);
+  }
+
+  .candidate-portal .page-panel > main :is(
+    .courses-page-grid,
+    .my-certifications-grid,
+    .exam-card-grid,
+    .resource-packs-grid,
+    .credential-definitions-grid,
+    .certificates-grid,
+    .resource-detail-grid,
+    .quiz-detail-list,
+    .quiz-question-list
+  ) {
+    gap: var(--gfi-mobile-content-gap);
   }
 
   :where(.candidate-portal .page-panel > main) :is(
