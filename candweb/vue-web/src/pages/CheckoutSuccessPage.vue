@@ -17,26 +17,26 @@ const candUlid = computed(() => currentUser.value?.cand_ulid || currentUser.valu
 
 <template>
   <AppShell>
-    <main class="flex min-h-[70vh] items-center justify-center p-6">
-      <div class="w-full max-w-lg rounded-[24px] bg-white p-10 text-center shadow-[0_12px_40px_rgba(15,74,82,0.06)]">
-        <div class="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-emerald-50 text-emerald-500">
+    <main class="checkout-success-page flex min-h-[70vh] items-center justify-center p-6">
+      <div class="checkout-success-card w-full max-w-lg rounded-[24px] bg-white p-10 text-center shadow-[0_12px_40px_rgba(15,74,82,0.06)]">
+        <div class="checkout-success-icon mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-emerald-50 text-emerald-500">
           <CheckCircle2 class="h-12 w-12" />
         </div>
         
-        <h1 class="mb-3 text-3xl font-bold tracking-tight text-slate-900">{{ t.checkoutSuccess.title }}</h1>
-        <p class="mb-8 text-slate-500 text-lg">
+        <h1 class="checkout-success-title mb-3 text-3xl font-bold tracking-tight text-slate-900">{{ t.checkoutSuccess.title }}</h1>
+        <p class="checkout-success-description mb-8 text-slate-500 text-lg">
           {{ t.checkoutSuccess.orderPlaced }}
         </p>
 
-        <div class="mb-8 rounded-2xl border border-slate-100 bg-slate-50 p-6 text-left">
+        <div class="checkout-success-details mb-8 rounded-2xl border border-slate-100 bg-slate-50 p-6 text-left">
           <div class="flex flex-col gap-4">
             <div>
               <div class="text-sm font-medium text-slate-500">{{ t.checkoutSuccess.orderId }}</div>
-              <div class="mt-1 font-mono text-slate-900">{{ orderId }}</div>
+              <div class="checkout-success-id mt-1 font-mono text-slate-900">{{ orderId }}</div>
             </div>
             <div v-if="candUlid">
               <div class="text-sm font-medium text-slate-500">{{ t.checkoutSuccess.candidateId }}</div>
-              <div class="mt-1 font-mono text-slate-900 font-semibold">{{ candUlid }}</div>
+              <div class="checkout-success-id mt-1 font-mono text-slate-900 font-semibold">{{ candUlid }}</div>
             </div>
           </div>
         </div>
@@ -53,3 +53,54 @@ const candUlid = computed(() => currentUser.value?.cand_ulid || currentUser.valu
     </main>
   </AppShell>
 </template>
+
+<style scoped>
+@media (max-width: 767px) {
+  .checkout-success-page {
+    min-height: calc(100vh - 32px);
+    min-height: calc(100dvh - 32px);
+    padding: 8px 0;
+  }
+
+  .checkout-success-card {
+    padding: 20px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: none;
+  }
+
+  .checkout-success-icon {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 16px;
+  }
+
+  .checkout-success-icon > svg {
+    width: 32px;
+    height: 32px;
+  }
+
+  .checkout-success-title {
+    margin-bottom: 8px;
+  }
+
+  .checkout-success-description {
+    margin-bottom: 24px;
+    font-size: 16px;
+    line-height: 24px;
+  }
+
+  .checkout-success-details {
+    margin-bottom: 24px;
+    padding: 16px;
+    border-radius: 8px;
+  }
+
+  .checkout-success-id {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    font-size: 13px;
+    line-height: 20px;
+  }
+}
+</style>

@@ -129,6 +129,29 @@ for (const portalPage of portalPages) {
   });
 }
 
+test("支付成功页在移动端不会因长 ID 横向溢出", async ({ page }) => {
+  const longOrderId = "ORDER-MOBILE-REGRESSION-0123456789-ABCDEFGHIJKLMNOPQRSTUVWXYZ-0123456789";
+
+  await page.setViewportSize({ width: 382, height: 739 });
+  await seedAuthenticatedCandidate(page);
+  await installCandidateApiMocks(page, emptyPortalResponse);
+  await page.goto(`/checkout/success/${longOrderId}`, { waitUntil: "domcontentloaded" });
+
+  const card = page.locator(".checkout-success-card");
+  const orderId = page.locator(".checkout-success-id").first();
+
+  await expect(card).toBeVisible();
+  await expect(page.getByRole("link", { name: "查看我的认证" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "返回商城" })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await expect.poll(() => orderId.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+
+  const cardBox = await card.boundingBox();
+  expect(cardBox).not.toBeNull();
+  expect(cardBox!.width).toBeLessThanOrEqual(350);
+  await expect.poll(() => card.evaluate((element) => getComputedStyle(element).paddingLeft)).toBe("20px");
+});
+
 test("资格申请弹窗在移动端保持操作区可见", async ({ page }) => {
   await page.setViewportSize({ width: 382, height: 739 });
   await seedAuthenticatedCandidate(page);
