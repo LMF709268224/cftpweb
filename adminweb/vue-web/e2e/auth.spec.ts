@@ -75,3 +75,34 @@ test("expired refresh session clears local auth and preserves the dashboard dest
   await expect.poll(() => page.evaluate(() => localStorage.getItem("is_authenticated"))).toBeNull()
   await expect(page.locator("h1").first()).toBeVisible()
 })
+
+test("expired OAuth state restarts authentication once and then offers a manual retry", async ({ page }) => {
+  let loginRequests = 0
+  let loginURLRequests = 0
+
+  await installAdminApiMocks(page, ({ pathname }) => {
+    if (pathname === "/api/auth/login") {
+      loginRequests += 1
+      return { status: 401, errorCode: "OAUTH_STATE_INVALID", message: "Unauthorized" }
+    }
+    if (pathname === "/api/auth/login-url") {
+      loginURLRequests += 1
+      return { data: {} }
+    }
+    return undefined
+  })
+
+  await page.goto("/callback?code=expired-code&state=expired-state")
+
+  await expect(page).toHaveURL(/\/login\?redirect=/)
+  await expect.poll(() => loginURLRequests).toBe(1)
+  expect(loginRequests).toBe(1)
+  await expect.poll(() => page.evaluate(() => sessionStorage.getItem("admin_oauth_state_recovery"))).toBe("1")
+
+  await page.goto("/callback?code=expired-again&state=expired-again")
+
+  await expect(page.getByText(/This login attempt expired|登录页面停留时间过长/)).toBeVisible()
+  await expect(page.getByRole("button", { name: /Sign in again|重新登录/ })).toBeVisible()
+  expect(loginRequests).toBe(2)
+  expect(loginURLRequests).toBe(1)
+})

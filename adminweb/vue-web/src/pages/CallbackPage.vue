@@ -3,7 +3,7 @@ import { CheckCircle2, Loader2, ShieldAlert } from "lucide-vue-next"
 import { computed, onMounted, onUnmounted, ref } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { ApiError, apiClient } from "@/lib/apiClient"
-import { clearAuthRedirect, pendingAuthRedirect } from "@/lib/authRedirect"
+import { clearAuthRedirect, loginPathWithRedirect, pendingAuthRedirect } from "@/lib/authRedirect"
 import { setAuthSession } from "@/lib/authStorage"
 import { useAdminLanguage } from "@/lib/language"
 
@@ -15,6 +15,8 @@ const { t } = useAdminLanguage()
 const copy = computed(() => t.value.callback)
 let redirectTimer: number | undefined
 let unmounted = false
+const oauthStateRecoveryKey = "admin_oauth_state_recovery"
+const redirect = pendingAuthRedirect()
 
 function scheduleRedirect(action: () => void, delay: number) {
   if (unmounted) return
@@ -30,7 +32,10 @@ function friendlyAuthError(err: unknown) {
     const payload = err.payload as { error_code?: string; message?: string } | null
     const code = String(payload?.error_code || "").toUpperCase()
     const message = String(payload?.message || err.message || "")
-    if (code === "AUTH_FAILED" || message.toLowerCase().includes("admin")) {
+    if (code === "OAUTH_STATE_INVALID") {
+      return copy.value.stateExpired
+    }
+    if (err.status === 403 || message.toLowerCase().includes("admin")) {
       return copy.value.notAdmin
     }
     if (code === "INVALID_TOKEN" || message.toLowerCase().includes("application")) {
@@ -41,10 +46,27 @@ function friendlyAuthError(err: unknown) {
   return err instanceof Error && err.message ? err.message : copy.value.authFailed
 }
 
+function isInvalidOAuthState(err: unknown) {
+  if (!(err instanceof ApiError)) return false
+  const payload = err.payload as { error_code?: string } | null
+  return String(payload?.error_code || "").toUpperCase() === "OAUTH_STATE_INVALID"
+}
+
+function recoverInvalidOAuthState() {
+  if (sessionStorage.getItem(oauthStateRecoveryKey) === "1") return false
+  sessionStorage.setItem(oauthStateRecoveryKey, "1")
+  window.location.replace(loginPathWithRedirect(redirect))
+  return true
+}
+
+function retryLogin() {
+  sessionStorage.removeItem(oauthStateRecoveryKey)
+  void router.replace({ name: "login", query: { redirect } })
+}
+
 onMounted(async () => {
   const code = String(route.query.code || "")
   const state = String(route.query.state || "")
-  const redirect = pendingAuthRedirect()
   if (!code || !state) {
     status.value = "error"
     error.value = copy.value.missingParams
@@ -59,13 +81,17 @@ onMounted(async () => {
     })
 
     setAuthSession(payload.user?.name)
+    sessionStorage.removeItem(oauthStateRecoveryKey)
     status.value = "success"
     clearAuthRedirect()
     scheduleRedirect(() => { void router.replace(redirect) }, 800)
   } catch (err) {
     console.error(err)
+    if (isInvalidOAuthState(err) && recoverInvalidOAuthState()) return
     status.value = "error"
     error.value = friendlyAuthError(err)
+    if (isInvalidOAuthState(err)) return
+    sessionStorage.removeItem(oauthStateRecoveryKey)
     scheduleRedirect(() => { void router.replace({ name: "login", query: { redirect } }) }, 2500)
   }
 })
@@ -91,6 +117,14 @@ onUnmounted(() => {
       <p class="mt-3 text-sm leading-6 text-slate-300">
         {{ status === "loading" ? copy.loadingDescription : status === "success" ? copy.successDescription : error }}
       </p>
+      <button
+        v-if="status === 'error'"
+        class="mt-6 rounded-xl bg-sky-500 px-5 py-2 text-sm font-bold text-white hover:bg-sky-400"
+        type="button"
+        @click="retryLogin"
+      >
+        {{ copy.retry }}
+      </button>
     </div>
   </div>
 </template>
