@@ -22,7 +22,10 @@ function dashboardData(name: string, overrides: Record<string, unknown> = {}) {
     user_page: 1,
     user_page_size: 10,
     stage_buckets: [{ stage_id: "stage-regression", status: "ACTIVE", count: 2 }],
+		stage_buckets_exact: true,
     today_revenue: [{ currency: "USD", amount_minor: 12900, order_count: 1 }],
+		today_revenue_exact: true,
+		aggregation_sample_limit: 500,
     generated_at: "2026-08-11T00:00:00Z",
     ...overrides,
   }
@@ -42,9 +45,28 @@ test("dashboard renders populated user and summary data with read-only requests"
   await expect(page.locator("table").getByText("Regression Admin", { exact: true })).toBeVisible()
   await expect(page.locator("table").getByText("candidate-Regression Admin", { exact: true })).toBeVisible()
   await expect(page.getByText("75%", { exact: true })).toBeVisible()
+	await expect(page.getByText("USD 129.00", { exact: true })).toBeVisible()
   await expect(page.getByText("第 1 页 / 共 12 人", { exact: true })).toBeVisible()
   expect(requests).toContain("GET /api/dashboard/ops")
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
+})
+
+test("dashboard labels truncated aggregates instead of presenting them as exact", async ({ page }) => {
+	await seedAuthenticatedAdmin(page)
+	await installAdminApiMocks(page, ({ pathname }) => {
+		if (pathname === "/api/dashboard/ops") {
+			return {
+				data: dashboardData("Regression Admin", {
+					stage_buckets_exact: false,
+					today_revenue_exact: false,
+				}),
+			}
+		}
+		return undefined
+	})
+
+	await page.goto("/dashboard")
+	await expect(page.getByText("数据超过单次扫描上限，当前结果基于最近 500 条记录。")).toHaveCount(2)
 })
 
 test("dashboard keeps the latest filter result when an older request finishes late", async ({ page }) => {

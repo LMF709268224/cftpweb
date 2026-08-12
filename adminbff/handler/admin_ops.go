@@ -38,10 +38,7 @@ func optionalQueryString(r *http.Request, key string) *string {
 }
 
 func adminActorID(r *http.Request) string {
-	if adminID := strings.TrimSpace(AdminID(r)); adminID != "" {
-		return adminID
-	}
-	return "admin"
+	return strings.TrimSpace(AdminID(r))
 }
 
 func parsePayOrderStatus(r *http.Request) gpaypb.OrderStatus {

@@ -4,7 +4,6 @@ import (
 	"log/slog"
 	"net/http"
 
-	gmidpb "github.com/afnandelfin620-star/cftptest/cftp/gmid"
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 )
 
@@ -101,32 +100,24 @@ func (h *Handler) UpdateUserPassword(w http.ResponseWriter, r *http.Request) {
 
 // ListUsers GET /api/user/list
 func (h *Handler) ListUsers(w http.ResponseWriter, r *http.Request) {
-	users, err := casdoorsdk.GetUsers()
+	users, err := h.CandidateProfiles.UsersOrRefresh(r.Context())
 	if err != nil {
-		slog.Error("Failed to list users", "error", err)
-		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to get users")
+		slog.Error("Failed to initialize user identity cache", "error", err)
+		WriteError(w, http.StatusServiceUnavailable, ErrServiceUnavailable, "user identity cache is not ready")
 		return
 	}
 
 	var res []map[string]interface{}
 	for _, u := range users {
-		name := u.DisplayName
-		if name == "" {
-			name = u.Name
-		}
-
-		// 通过 gmid 获取真实的 ULID
-		gmidResp, err := h.Gmid.GetUlidByUUID(r.Context(), &gmidpb.GetUlidByUUIDRequest{
-			UserUuid: u.Id,
-		})
-		if err != nil || gmidResp.UserUlid == "" {
-			slog.Warn("Failed to get ULID for Casdoor User, skipping", "uuid", u.Id, "error", err)
+		userULID, ok := h.CandidateProfiles.ULIDForUUID(u.Id)
+		if !ok || userULID == "" {
+			slog.Warn("Casdoor user is missing from the identity cache; skipping", "uuid", u.Id)
 			continue
 		}
 
 		res = append(res, map[string]interface{}{
-			"id":    gmidResp.UserUlid,
-			"name":  name,
+			"id":    userULID,
+			"name":  candidateDisplayName(u),
 			"email": u.Email,
 		})
 	}

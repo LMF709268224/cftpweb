@@ -231,9 +231,7 @@ func (h *Handler) AdminPurgeCandidateMembership(w http.ResponseWriter, r *http.R
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body: "+err.Error())
 		return
 	}
-	if req.AdminUlid == "" {
-		req.AdminUlid = AdminID(r)
-	}
+	req.AdminUlid = AdminID(r)
 	if !requireRequestFields(w, req.CandidateUlid, "candidate_ulid", req.BundleOrderUlid, "bundle_order_ulid", req.AdminUlid, "admin_ulid") {
 		return
 	}
@@ -285,9 +283,7 @@ func (h *Handler) RetryMembershipMail(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body: "+err.Error())
 		return
 	}
-	if req.AdminUlid == "" {
-		req.AdminUlid = AdminID(r)
-	}
+	req.AdminUlid = AdminID(r)
 	if !requireRequestFields(w, req.MailUlid, "mail_ulid", req.AdminUlid, "admin_ulid") {
 		return
 	}
@@ -305,9 +301,7 @@ func (h *Handler) IgnoreMembershipMail(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body: "+err.Error())
 		return
 	}
-	if req.AdminUlid == "" {
-		req.AdminUlid = AdminID(r)
-	}
+	req.AdminUlid = AdminID(r)
 	if !requireRequestFields(w, req.MailUlid, "mail_ulid", req.AdminUlid, "admin_ulid") {
 		return
 	}

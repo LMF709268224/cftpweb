@@ -106,9 +106,9 @@ func (h *Handler) ListCredentials(w http.ResponseWriter, r *http.Request) {
 		Status:        strings.TrimSpace(r.URL.Query().Get("status")),
 	}
 	res, err := h.Creds.ListCredentials(r.Context(), &gcredspb.ListCredentialsRequest{
-		Filters:  filters,
-		Cursor:   page.Cursor,
-		PageSize: page.PageSize,
+		Filters:   filters,
+		Cursor:    page.Cursor,
+		PageSize:  page.PageSize,
 		SortOrder: gcredspb.SortOrder(page.Sort),
 	})
 	if err != nil {
@@ -221,9 +221,9 @@ func (h *Handler) ListApplications(w http.ResponseWriter, r *http.Request) {
 	statusFilter := strings.TrimSpace(r.URL.Query().Get("status"))
 
 	req := &gcredspb.ListApplicationsRequest{
-		Filters:  &gcredspb.ApplicationFilters{},
-		Cursor:   page.Cursor,
-		PageSize: page.PageSize,
+		Filters:   &gcredspb.ApplicationFilters{},
+		Cursor:    page.Cursor,
+		PageSize:  page.PageSize,
 		SortOrder: gcredspb.SortOrder(page.Sort),
 	}
 	if statusFilter != "" && statusFilter != "0" && strings.ToUpper(statusFilter) != "ALL" {
@@ -375,8 +375,6 @@ func credentialFilePayload(file *gcredspb.FileInfo) map[string]interface{} {
 	}
 }
 
-
-
 type AuditApplicationReq struct {
 	ApplicationId   string `json:"application_id"`
 	AppId           string `json:"app_id"`
@@ -384,11 +382,15 @@ type AuditApplicationReq struct {
 	Approved        bool   `json:"approved"`
 	RejectReason    string `json:"reject_reason"`
 	RequireResubmit bool   `json:"require_resubmit"`
+	ValidUntil      string `json:"valid_until"`
 }
 
 // AuditApplication 审核申请
 func (h *Handler) AuditApplication(w http.ResponseWriter, r *http.Request) {
 	candidateID := AdminID(r)
+	if !requireRequestField(w, candidateID, "admin_ulid") {
+		return
+	}
 
 	var body AuditApplicationReq
 	if err := ReadJSON(r, &body); err != nil {
@@ -405,6 +407,16 @@ func (h *Handler) AuditApplication(w http.ResponseWriter, r *http.Request) {
 	if !requireRequestField(w, applicationID, "app_id") {
 		return
 	}
+	validUntilRaw := strings.TrimSpace(body.ValidUntil)
+	validUntil, err := time.Parse(time.RFC3339, validUntilRaw)
+	if err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "valid_until must be an RFC3339 timestamp")
+		return
+	}
+	if body.Approved && !validUntil.After(time.Now()) {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "valid_until must be in the future when approving an application")
+		return
+	}
 
 	req := &gcredspb.AuditApplicationRequest{
 		AppUlid:       applicationID,
@@ -412,7 +424,7 @@ func (h *Handler) AuditApplication(w http.ResponseWriter, r *http.Request) {
 		AuditRemark:   body.RejectReason,
 		AllowReupload: body.RequireResubmit,
 		AuditorUlid:   candidateID,
-		ValidUntil:    time.Now().AddDate(2, 0, 0).Format(time.RFC3339),
+		ValidUntil:    validUntil.UTC().Format(time.RFC3339),
 	}
 
 	res, err := h.Creds.AuditApplication(r.Context(), req)

@@ -346,9 +346,7 @@ func (h *Handler) AdminPurgeCandidateBundle(w http.ResponseWriter, r *http.Reque
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body: "+err.Error())
 		return
 	}
-	if req.AdminUlid == "" {
-		req.AdminUlid = AdminID(r)
-	}
+	req.AdminUlid = AdminID(r)
 	if !requireRequestFields(w, req.CandidateUlid, "candidate_ulid", req.BundleOrderUlid, "bundle_order_ulid", req.AdminUlid, "admin_ulid") {
 		return
 	}

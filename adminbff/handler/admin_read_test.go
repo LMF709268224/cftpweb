@@ -19,7 +19,8 @@ import (
 
 type adminReadPayClient struct {
 	gpaypb.PayServiceClient
-	request *gpaypb.ListSubscriptionsRequest
+	request      *gpaypb.ListSubscriptionsRequest
+	orderRequest *gpaypb.ListOrdersRequest
 }
 
 func (s *adminReadPayClient) ListSubscriptions(_ context.Context, request *gpaypb.ListSubscriptionsRequest, _ ...grpc.CallOption) (*gpaypb.ListSubscriptionsResponse, error) {
@@ -36,6 +37,17 @@ func (s *adminReadPayClient) ListSubscriptions(_ context.Context, request *gpayp
 		HasMore:    true,
 		NextCursor: "next-subscriptions",
 	}, nil
+}
+
+func (s *adminReadPayClient) ListOrders(_ context.Context, request *gpaypb.ListOrdersRequest, _ ...grpc.CallOption) (*gpaypb.ListOrdersResponse, error) {
+	s.orderRequest = request
+	return &gpaypb.ListOrdersResponse{Orders: []*gpaypb.OrderSummary{{
+		OrderUlid: "order-regression",
+		Currency:  "USD",
+		Amount:    12900,
+		Status:    gpaypb.OrderStatus_ORDER_STATUS_COMPLETED,
+		PaidAt:    time.Now().Unix(),
+	}}}, nil
 }
 
 type adminReadCredentialClient struct {
@@ -201,44 +213,46 @@ func TestGetAdminMeReturnsReadOnlyProfile(t *testing.T) {
 }
 
 func TestOpsDashboardReturnsFilteredReadOnlyOverview(t *testing.T) {
-	originalUsers := listDashboardUsers
 	originalRole := getDashboardRole
 	roleConfig := dashboardRoleConfigFromEnv()
-	listDashboardUsers = func() ([]*casdoorsdk.User, error) {
-		return []*casdoorsdk.User{{
-			Id:            "user-regression",
-			Name:          "regression-admin",
-			DisplayName:   "Regression Administrator",
-			Email:         "regression-admin@example.test",
-			EmailVerified: true,
-			Location:      "Shanghai",
-			Roles:         []*casdoorsdk.Role{{Name: roleConfig.admin}},
-		}}, nil
-	}
 	getDashboardRole = func(string) (*casdoorsdk.Role, error) { return nil, nil }
 	t.Cleanup(func() {
-		listDashboardUsers = originalUsers
 		getDashboardRole = originalRole
 	})
 
 	prog := &adminReadProgClient{}
-	mall := &adminReadMallClient{}
+	pay := &adminReadPayClient{}
+	profiles := NewCandidateProfileCache(&adminReadMidClient{})
+	profiles.ready = true
+	profiles.users = []*casdoorsdk.User{{
+		Id:            "user-regression",
+		Name:          "regression-admin",
+		DisplayName:   "Regression Administrator",
+		Email:         "regression-admin@example.test",
+		EmailVerified: true,
+		Location:      "Shanghai",
+		Roles:         []*casdoorsdk.Role{{Name: roleConfig.admin}},
+	}}
+	profiles.ulidsByUUID["user-regression"] = "candidate-user-regression"
 	recorder := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/api/dashboard/ops?user_keyword=regression&user_role=admin&user_status=active&user_page=1&user_page_size=5", nil)
-	(&Handler{Gprog: prog, Mall: mall, Gmid: &adminReadMidClient{}}).OpsDashboard(recorder, request)
+	(&Handler{Gprog: prog, Gpay: pay, CandidateProfiles: profiles}).OpsDashboard(recorder, request)
 
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("status = %d, want %d; body=%s", recorder.Code, http.StatusOK, recorder.Body.String())
 	}
-	if prog.request.GetPageSize() != 100 || mall.request.GetPageSize() != 100 || mall.request.GetFilters().GetPaymentStatus() != "PAID" {
-		t.Fatalf("dashboard downstream requests = %+v / %+v", prog.request, mall.request)
+	if prog.request.GetPageSize() != 100 || pay.orderRequest.GetPageSize() != 100 || pay.orderRequest.GetFilters().GetStatusFilter() != gpaypb.OrderStatus_ORDER_STATUS_COMPLETED {
+		t.Fatalf("dashboard downstream requests = %+v / %+v", prog.request, pay.orderRequest)
 	}
 	var payload struct {
 		Data struct {
-			CandidateTotal int `json:"candidate_total"`
-			UserTotal      int `json:"user_total"`
-			UserPageSize   int `json:"user_page_size"`
-			Users          []struct {
+			CandidateTotal         int  `json:"candidate_total"`
+			UserTotal              int  `json:"user_total"`
+			UserPageSize           int  `json:"user_page_size"`
+			StageBucketsExact      bool `json:"stage_buckets_exact"`
+			TodayRevenueExact      bool `json:"today_revenue_exact"`
+			AggregationSampleLimit int  `json:"aggregation_sample_limit"`
+			Users                  []struct {
 				Name          string `json:"name"`
 				CandidateULID string `json:"candidate_ulid"`
 			} `json:"users"`
@@ -263,5 +277,8 @@ func TestOpsDashboardReturnsFilteredReadOnlyOverview(t *testing.T) {
 	}
 	if len(payload.Data.TodayRevenue) != 1 || payload.Data.TodayRevenue[0].Currency != "USD" || payload.Data.TodayRevenue[0].AmountMinor != 12900 {
 		t.Fatalf("dashboard revenue = %+v", payload.Data.TodayRevenue)
+	}
+	if !payload.Data.StageBucketsExact || !payload.Data.TodayRevenueExact || payload.Data.AggregationSampleLimit != adminDashboardSampleLimit {
+		t.Fatalf("dashboard exactness metadata = %+v", payload.Data)
 	}
 }

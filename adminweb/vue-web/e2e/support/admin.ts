@@ -29,6 +29,25 @@ function emptyAdminData(pathname: string) {
     }
   }
 
+	if (pathname === "/api/dashboard/ops") {
+		return {
+			candidate_total: 0,
+			user_stats: { total: 0, active: 0, inactive: 0, admins: 0, members: 0, email_verified: 0 },
+			user_role_stats: [],
+			profile_completion_percent: 0,
+			users: [],
+			user_total: 0,
+			user_page: 1,
+			user_page_size: 10,
+			stage_buckets: [],
+			stage_buckets_exact: true,
+			today_revenue: [],
+			today_revenue_exact: true,
+			aggregation_sample_limit: 500,
+			generated_at: "2026-08-12T00:00:00Z",
+		}
+	}
+
   return {
     items: [],
     list: [],
