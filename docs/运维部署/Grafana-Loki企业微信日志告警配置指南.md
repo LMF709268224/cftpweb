@@ -108,24 +108,21 @@ WHEN QUERY IS ABOVE 0
 
 `or on() vector(0)` 不应删除。它确保没有匹配日志时返回数值 `0`，而不是 `No data`。
 
-### 4.4 当前查询范围
+### 4.4 图三中的 Label browser 要不要配置
 
-当前 `{level="ERROR"}` 会统计 Loki 中所有带有 `level="ERROR"` 标签的日志。首次配置时
-可以先使用它打通告警链路。
+对应位置：图三查询框上方、`Kick start your query` 右侧的 `Label browser` 按钮。
 
-正式使用前，建议在查询编辑器中点击 `Label browser`，查看是否存在 `namespace` 标签。
-如果存在值 `cftp-test`，将查询改为：
+本次不用点击，也不用在这里填写任何内容。继续保留当前查询：
 
 ```logql
 (
-  sum(count_over_time({namespace="cftp-test", level="ERROR"}[5m]))
+  sum(count_over_time({level="ERROR"}[5m]))
   or on() vector(0)
 )
 ```
 
-如果实际标签叫 `namespace_name` 或 `kubernetes_namespace_name`，使用 Label browser 显示的
-真实名称替换 `namespace`。修改后必须再次点击 `Run queries` 和
-`Preview alert rule condition`，确认结果为数值且没有语法错误。
+`Label browser` 只是以后用于查看 Loki 有哪些标签，并不是保存规则必须完成的配置。当前先
+统计 Loki 收集到的全部 ERROR，以便把企业微信通知链路配置成功。
 
 ## 5. 页面第 3 区：创建 Folder 并添加 Labels
 
@@ -216,14 +213,19 @@ cftp-log-errors
 
 ### 6.4 设置 No data 和 Error handling
 
-在 `Keep firing for` 下方点击并展开 `Configure no data and error handling`，设置：
+对应位置：图四 `Keep firing for` 下面已经展开的 `Configure no data and error handling`。
 
-| 场景 | 设置值 | 原因 |
+你图四中的三个值已经正确，不需要修改：
+
+| 图四中的字段 | 保持的值 | 含义 |
 | --- | --- | --- |
-| Alert state if no data | `Normal` | 正常无错误日志不应告警；查询本身也已用 `vector(0)` 兜底 |
-| Alert state if execution error or timeout | `Alerting` | Loki 查询失败时也需要通知，避免监控失效却无人发现 |
+| `Alert state if no data or all values are null` | `Normal` | 没有 ERROR 日志时保持正常 |
+| `Alert state if execution error or timeout` | `Error` | Loki 查询失败时生成独立的 `DatasourceError` 告警 |
+| `Missing series evaluations to resolve` | `Default: 2` | 连续缺失 2 次评估后再清理对应序列 |
 
-如果查询执行错误触发告警，先检查 Loki 数据源和 Grafana 到 Loki 的网络，而不是应用日志。
+因此，图四保持当前的 `Normal / Error / Default: 2`，直接继续向下配置
+`5. Configure notifications` 即可。如果以后收到 `DatasourceError`，应检查 Loki 数据源和
+Grafana 到 Loki 的网络，而不是应用 ERROR 日志。
 
 ## 7. 先创建企业微信 Contact point
 
