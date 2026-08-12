@@ -13,15 +13,62 @@ Kubernetes Pod 日志 -> Vector -> Loki -> Grafana 告警规则 -> 企业微信�
 
 该规则只读取日志，不调用业务接口，也不会修改业务数据。
 
-## 2. 当前配置核对
+## 2. 从零开始：进入告警规则页面
 
-规则名称：
+### 2.1 打开新建告警规则页面
+
+登录 Grafana 后，按下面的位置进入：
+
+```text
+Grafana 左侧菜单
+-> Alerting
+-> Alert rules
+-> New alert rule
+```
+
+进入后，页面应依次显示以下区域：
+
+```text
+1. Enter alert rule name
+2. Define query and alert condition
+3. Add folder and labels
+4. Set evaluation behavior
+5. Configure notifications
+6. Configure notification message
+```
+
+下面严格按照这 6 个区域填写。
+
+## 3. 页面第 1 区：填写规则名称
+
+位置：页面顶部的 `1. Enter alert rule name`。
+
+找到 `Name` 输入框，填写：
 
 ```text
 CFTP 服务 ERROR 日志告警
 ```
 
-Loki 查询：
+填完后直接向下滚动，不需要单独保存。
+
+## 4. 页面第 2 区：填写 Loki 查询和触发条件
+
+位置：`2. Define query and alert condition`。
+
+### 4.1 选择数据源和查询模式
+
+在这个区域顶部依次设置：
+
+| 页面位置/字段 | 点击或填写的内容 |
+| --- | --- |
+| 左上角数据源下拉框 | 选择 `loki` |
+| 查询编辑器右上角 | 点击 `Code`，不要使用 `Builder` |
+| `Options -> Type` | 选择 `Instant` |
+| 顶部查询时间 | 保持 `10m to now` |
+
+### 4.2 填写查询
+
+删除查询编辑框里的原内容，完整粘贴：
 
 ```logql
 (
@@ -30,22 +77,38 @@ Loki 查询：
 )
 ```
 
-查询选项：
+然后点击查询编辑器右上方的 `Run queries`。
 
-| 配置项 | 设置值 |
+### 4.3 填写 Alert condition
+
+在查询框下方找到 `Alert condition`，按下面设置：
+
+| 页面字段 | 设置值 |
 | --- | --- |
-| 数据源 | `loki` |
-| 查询模式 | `Code` |
-| Type | `Instant` |
-| 查询时间 | `10m to now`，保持默认即可 |
-| Alert condition | `WHEN QUERY IS ABOVE 0` |
+| 第一个下拉框 | `WHEN QUERY` |
+| 第二个下拉框 | `IS ABOVE` |
+| 右侧数字输入框 | `0` |
 
-点击 `Preview alert rule condition` 后显示数值 `0` 和绿色 `Normal`，表示查询和条件
-均配置正确，当前最近 5 分钟没有匹配的 ERROR 日志。
+最终这一行应显示：
+
+```text
+WHEN QUERY IS ABOVE 0
+```
+
+点击蓝色按钮 `Preview alert rule condition`。
+
+看到下面任一结果都说明配置正确：
+
+```text
+数值 0 + 绿色 Normal：当前最近 5 分钟没有 ERROR
+数值大于 0 + Pending/Alerting：当前最近 5 分钟存在 ERROR
+```
+
+你当前截图显示 `0 / Normal`，所以页面第 1、2 区已经配置正确，不需要修改。
 
 `or on() vector(0)` 不应删除。它确保没有匹配日志时返回数值 `0`，而不是 `No data`。
 
-### 2.1 当前查询范围
+### 4.4 当前查询范围
 
 当前 `{level="ERROR"}` 会统计 Loki 中所有带有 `level="ERROR"` 标签的日志。首次配置时
 可以先使用它打通告警链路。
@@ -64,26 +127,30 @@ Loki 查询：
 真实名称替换 `namespace`。修改后必须再次点击 `Run queries` 和
 `Preview alert rule condition`，确认结果为数值且没有语法错误。
 
-## 3. 创建规则文件夹和标签
+## 5. 页面第 3 区：创建 Folder 并添加 Labels
 
-在 `3. Add folder and labels` 中操作。
+位置：`3. Add folder and labels`。
 
-### 3.1 创建 Folder
+### 5.1 创建并选择 Folder
 
-1. 点击 `New folder`。
-2. Folder 名称填写：
+1. 在 `Folder` 一行点击右侧的 `New folder`。
+2. 弹窗中的名称填写：
 
 ```text
 CFTP 运维告警
 ```
 
-3. 创建后选择该 Folder。
+3. 点击弹窗里的创建/确认按钮。
+4. 回到规则页面后，检查 `Folder` 下拉框已显示 `CFTP 运维告警`；如果没有，手动从
+   `Select folder` 下拉框中选择它。
 
 Folder 只用于整理 Grafana 告警规则，不是 Kubernetes Namespace。
 
-### 3.2 添加 Labels
+### 5.2 逐个添加 Labels
 
-点击 `Add labels`，依次添加：
+1. 在 `Labels` 一行点击 `Add labels`。
+2. 在弹出的 Key/Value 输入区域逐个添加下面 4 组值。
+3. 每填写一组后点击 `Add`，或者按当前界面的确认按钮保存该标签。
 
 | Key | Value | 用途 |
 | --- | --- | --- |
@@ -94,28 +161,50 @@ Folder 只用于整理 Grafana 告警规则，不是 Kubernetes Namespace。
 
 这些标签不是 Loki 查询条件，不会改变查询结果；它们用于搜索告警、静默告警和通知路由。
 
-## 4. 配置评估行为
+第 3 区最终应显示：
 
-在 `4. Set evaluation behavior` 中操作。必须先完成 Folder 选择，才能创建 Evaluation group。
+```text
+Folder: CFTP 运维告警
+Labels: severity=critical, environment=test, source=loki, team=cftp
+```
 
-### 4.1 创建 Evaluation group
+## 6. 页面第 4 区：配置检查周期
 
-1. 点击 `New evaluation group`。
-2. Group 名称填写：
+位置：`4. Set evaluation behavior`。必须先完成第 3 区的 Folder 选择，才能配置这一块。
+
+### 6.1 创建并选择 Evaluation group
+
+1. 在 `Select an evaluation group...` 右侧点击 `New evaluation group`。
+2. 弹窗中的 Group name 填写：
 
 ```text
 cftp-log-errors
 ```
 
-3. Evaluation interval 设置为：
+3. 弹窗中的 Evaluation interval 填写或选择：
 
 ```text
 1m
 ```
 
-这表示 Grafana 每分钟执行一次 Loki 查询。
+4. 点击创建/确认按钮。
+5. 回到页面后，检查下拉框已选择 `cftp-log-errors`。
 
-### 4.2 Pending period 和 Keep firing for
+这表示 Grafana 每 1 分钟执行一次 Loki 查询。
+
+### 6.2 设置 Pending period
+
+在 `Pending period` 下方：
+
+1. 点击快捷按钮 `1m`；或者在输入框填入 `1m`。
+2. 确认输入框最终显示 `1m`。
+
+### 6.3 设置 Keep firing for
+
+在 `Keep firing for` 下方：
+
+1. 点击快捷按钮 `None`。
+2. 确认输入框显示 `0s`。
 
 | 配置项 | 设置值 | 含义 |
 | --- | --- | --- |
@@ -125,9 +214,9 @@ cftp-log-errors
 因此，一条 ERROR 日志出现后，最多等待约 1 至 2 分钟收到通知。该日志离开 5 分钟查询
 窗口后，规则会恢复为 Normal。
 
-### 4.3 No data 和 Error handling
+### 6.4 设置 No data 和 Error handling
 
-展开 `Configure no data and error handling`，建议配置：
+在 `Keep firing for` 下方点击并展开 `Configure no data and error handling`，设置：
 
 | 场景 | 设置值 | 原因 |
 | --- | --- | --- |
@@ -136,11 +225,12 @@ cftp-log-errors
 
 如果查询执行错误触发告警，先检查 Loki 数据源和 Grafana 到 Loki 的网络，而不是应用日志。
 
-## 5. 创建企业微信 Contact point
+## 7. 先创建企业微信 Contact point
 
-如果已经创建并测试过企业微信 Contact point，可以跳到第 6 节。
+在填写页面第 5 区之前，需要先创建企业微信接收方。如果 Contact point 下拉框里已经能选到
+`CFTP-WeCom`，直接跳到第 8 节。
 
-### 5.1 创建企业微信群机器人
+### 7.1 在企业微信创建群机器人
 
 1. 打开用于接收告警的企业微信群。
 2. 进入群设置，选择 `群机器人`。
@@ -155,40 +245,55 @@ https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=REDACTED
 
 Webhook 中的 `key` 是密钥。禁止写入 Git、Markdown、截图或公开聊天记录。
 
-### 5.2 在 Grafana 中创建 Contact point
+### 7.2 从当前规则页面打开 Contact points
 
-1. 在规则页面第 5 步点击 `View or create contact points`，或者从左侧进入
-   `Alerting -> Notification configuration -> Contact points`。
-2. 点击 `New contact point`。
-3. Name 填写：
+1. 找到规则页面的 `5. Configure notifications`。
+2. 在 `Contact point` 下拉框右侧，按住 `Ctrl` 点击 `View or create contact points`，让它
+   在新标签页打开，避免当前尚未保存的规则内容丢失。
+3. 也可以从 Grafana 左侧菜单进入：
+
+```text
+Alerting
+-> Notification configuration
+-> Contact points
+```
+
+### 7.3 在 Grafana 创建 WeCom Contact point
+
+1. 在 Contact points 页面点击 `New contact point`。
+2. Name 填写：
 
 ```text
 CFTP-WeCom
 ```
 
-4. Integration 选择 `WeCom`。
-5. URL 填入企业微信群机器人的完整 Webhook 地址。
-6. 暂时保留默认消息模板。
-7. 点击 `Test`，确认企业微信群收到 Grafana 测试通知。
-8. 点击 `Save contact point`。
+3. 在 `Integration` 下拉框选择 `WeCom`。
+4. 找到 `URL` 输入框，填入企业微信群机器人的完整 Webhook 地址。
+5. 暂时保留默认消息模板。
+6. 点击页面上的 `Test` 或 `Test contact point`。
+7. 打开企业微信群，确认收到 Grafana 测试通知。
+8. 回到 Grafana，点击 `Save contact point`。
+9. 关闭该浏览器标签页，返回尚未保存的告警规则页面。
 
 如果 Integration 列表没有 `WeCom`，不要直接把企业微信 URL 填进普通 Webhook 后保存。
 不同 Grafana 版本的普通 Webhook 消息体可能不符合企业微信格式，应先升级 Grafana 或部署
 专用的消息格式转换服务。
 
-## 6. 配置通知接收方
+## 8. 页面第 5 区：选择通知接收方
 
-返回告警规则的 `5. Configure notifications`：
+位置：规则页面的 `5. Configure notifications`。
 
 1. Alertmanager 保持 `grafana`。
-2. Contact point 选择：
+2. 点击 `Contact point` 下拉框。
+3. 选择：
 
 ```text
 CFTP-WeCom
 ```
 
-3. 展开 `Muting, grouping and timings (optional)`。
-4. 如果当前 Grafana 提供对应输入框，填写：
+4. 如果下拉框中没有它，刷新下拉选项；不要刷新整个规则页面，以免未保存内容丢失。
+5. 点击并展开 `Muting, grouping and timings (optional)`。
+6. 如果展开后出现下面三个输入框，按表格填写：
 
 | 配置项 | 设置值 | 含义 |
 | --- | --- | --- |
@@ -200,47 +305,55 @@ CFTP-WeCom
 `Alerting -> Notification policies` 中统一配置。不要把 Repeat interval 设置成 `1m`，否则
 持续错误可能频繁刷群。
 
-## 7. 配置通知内容
+## 9. 页面第 6 区：填写通知文案
 
-在 `6. Configure notification message` 中填写。
+位置：`6. Configure notification message`。
 
-Summary：
+在 `Summary (optional)` 文本框填写：
 
 ```text
 CFTP 测试环境最近 5 分钟检测到 ERROR 日志
 ```
 
-Description：
+在 `Description (optional)` 文本框填写：
 
 ```text
 Loki 最近 5 分钟 ERROR 日志数量大于 0。请打开 Grafana Explore，选择 Loki，查询最近 15 分钟的 ERROR 日志并按 Pod 和服务定位原因。
 ```
 
-Runbook URL：当前没有专用在线排障页面时留空，不要填写无效地址。
+`Runbook URL (optional)` 输入框留空。当前没有专用在线排障页面，不要填写无效地址。
+
+`Add custom annotation` 和 `Link dashboard and panel` 暂时都不用点。
 
 当前告警发送的是错误数量、规则状态和 Grafana 链接，不会自动附带完整日志内容。这能避免
 Token、用户信息或业务数据被转发到企业微信群。详细错误必须回到 Grafana Explore 查看。
 
-## 8. 保存和验证
+## 10. 页面底部：保存并验证
 
-### 8.1 保存规则
+### 10.1 保存前逐项检查
 
 检查以下配置：
 
-```text
-Name: CFTP 服务 ERROR 日志告警
-Query: 最近 5 分钟 level="ERROR" 的数量
-Condition: IS ABOVE 0
-Folder: CFTP 运维告警
-Evaluation interval: 1m
-Pending period: 1m
-Keep firing for: 0s
-Contact point: CFTP-WeCom
-```
+| 页面区域 | 字段/位置 | 最终值 |
+| --- | --- | --- |
+| `1. Enter alert rule name` | Name | `CFTP 服务 ERROR 日志告警` |
+| `2. Define query and alert condition` | Data source | `loki` |
+| `2. Define query and alert condition` | Mode / Type | `Code` / `Instant` |
+| `2. Define query and alert condition` | Query | `sum(count_over_time({level="ERROR"}[5m])) or on() vector(0)` |
+| `2. Define query and alert condition` | Alert condition | `WHEN QUERY IS ABOVE 0` |
+| `3. Add folder and labels` | Folder | `CFTP 运维告警` |
+| `3. Add folder and labels` | Labels | `severity=critical`, `environment=test`, `source=loki`, `team=cftp` |
+| `4. Set evaluation behavior` | Evaluation group / interval | `cftp-log-errors` / `1m` |
+| `4. Set evaluation behavior` | Pending period | `1m` |
+| `4. Set evaluation behavior` | Keep firing for | `0s` / `None` |
+| `5. Configure notifications` | Alertmanager / Contact point | `grafana` / `CFTP-WeCom` |
+| `6. Configure notification message` | Summary | `CFTP 测试环境最近 5 分钟检测到 ERROR 日志` |
+| `6. Configure notification message` | Runbook URL | 留空 |
 
-点击 `Save rule and exit`。
+向页面最底部滚动，点击 `Save rule and exit`。如果按钮提示配置不完整，按错误提示回到对应
+的第 1 至第 6 区补齐；最常见的是未选择 Folder 或 Evaluation group。
 
-### 8.2 验证通知链路
+### 10.2 验证通知链路
 
 优先使用 Contact point 页面自带的 `Test` 功能验证企业微信通知，不要为了测试而在业务
 服务中制造真实错误。
@@ -264,13 +377,13 @@ Normal -> Pending -> Alerting
 {namespace="cftp-test", level="ERROR"}
 ```
 
-## 9. 常见问题
+## 11. 常见问题
 
-### 9.1 Preview 显示 0 / Normal
+### 11.1 Preview 显示 0 / Normal
 
 这是正常结果，表示最近 5 分钟没有 ERROR，不代表规则没有生效。
 
-### 9.2 Preview 显示 No data
+### 11.2 Preview 显示 No data
 
 确认查询中保留：
 
@@ -280,21 +393,21 @@ or on() vector(0)
 
 然后点击 `Run queries`。如果仍是 No data，检查 Loki 数据源是否可用。
 
-### 9.3 企业微信没有收到测试消息
+### 11.3 企业微信没有收到测试消息
 
 1. 在 Contact point 页面重新点击 `Test`。
 2. 检查 Webhook 地址是否完整、机器人是否仍在群内。
 3. 检查 Grafana 服务器是否能访问 `qyapi.weixin.qq.com`。
 4. 查看 Grafana Pod 日志中的通知发送错误。
 
-### 9.4 告警太多
+### 11.4 告警太多
 
 1. 给查询增加测试环境 Namespace 标签。
 2. 将阈值从 `IS ABOVE 0` 调整为 `IS ABOVE 2`，表示最近 5 分钟至少 3 条 ERROR。
 3. 保持 Repeat interval 为 `2h` 或更长。
 4. 为已知无须处理的固定错误增加精确排除条件，不要笼统排除整个服务。
 
-### 9.5 没有告警但 Grafana Explore 能看到错误
+### 11.5 没有告警但 Grafana Explore 能看到错误
 
 检查 Explore 中错误日志的 `level` 是 Loki 标签还是 JSON 字段。如果 `level` 只是日志正文
 中的 JSON 字段而不是标签，查询需要改成：
@@ -308,7 +421,7 @@ or on() vector(0)
 
 其中 `namespace` 仍需替换为 Label browser 中的真实 Kubernetes Namespace 标签。
 
-## 10. 后续建议
+## 12. 后续建议
 
 第一条全局 ERROR 规则稳定运行后，再分别建立以下规则，不要一开始全部开启：
 
