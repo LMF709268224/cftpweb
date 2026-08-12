@@ -153,6 +153,7 @@ func (h *Handler) candidateOrderAggregates(ctx context.Context, baseReq *mallpb.
 	completed := 0
 	totalAmount := 0.0
 	cursor := ""
+	guard := newCursorScanGuard()
 	for {
 		resp, err := h.Mall.ListOrders(ctx, &mallpb.ListOrdersRequest{
 			Filters:  baseReq.GetFilters(),
@@ -172,10 +173,14 @@ func (h *Handler) candidateOrderAggregates(ctx context.Context, baseReq *mallpb.
 				totalAmount += float64(item.GetAmountMinor()) / 100.0
 			}
 		}
-		if !resp.GetHasMore() || resp.GetNextCursor() == "" {
+		nextCursor, done, guardErr := guard.next(cursor, resp.GetHasMore(), resp.GetNextCursor())
+		if guardErr != nil {
+			return 0, 0, status.Error(codes.Internal, guardErr.Error())
+		}
+		if done {
 			break
 		}
-		cursor = resp.GetNextCursor()
+		cursor = nextCursor
 	}
 	return completed, totalAmount, nil
 }

@@ -71,6 +71,12 @@ func grpcAddr(envKey, service string) string {
 // NewGrpcClientPool 初始化到所有下游微服务的 gRPC 连接
 func NewGrpcClientPool(creds credentials.TransportCredentials) (*GrpcClientPool, error) {
 	pool := &GrpcClientPool{}
+	initialized := false
+	defer func() {
+		if !initialized {
+			pool.Close()
+		}
+	}()
 
 	var err error
 
@@ -173,6 +179,7 @@ func NewGrpcClientPool(creds credentials.TransportCredentials) (*GrpcClientPool,
 	}
 	pool.Gmail = gmailpb.NewMailServiceClient(pool.gmailConn)
 
+	initialized = true
 	return pool, nil
 }
 

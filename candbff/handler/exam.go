@@ -453,6 +453,7 @@ func (h *Handler) candidateExamDetail(ctx context.Context, candidateID, examID s
 	}
 
 	cursor := ""
+	guard := newCursorScanGuard()
 	for {
 		req := &gexampb.ListExamsRequest{
 			Filters: &gexampb.ExamFilters{
@@ -470,10 +471,14 @@ func (h *Handler) candidateExamDetail(ctx context.Context, candidateID, examID s
 				return detail, nil
 			}
 		}
-		if !resp.GetHasMore() || resp.GetNextCursor() == "" {
+		nextCursor, done, guardErr := guard.next(cursor, resp.GetHasMore(), resp.GetNextCursor())
+		if guardErr != nil {
+			return nil, status.Error(codes.Internal, guardErr.Error())
+		}
+		if done {
 			break
 		}
-		cursor = resp.GetNextCursor()
+		cursor = nextCursor
 	}
 	return nil, NewError(http.StatusForbidden, ErrForbidden, "exam is not available for current candidate")
 }
@@ -941,6 +946,9 @@ func renderExamCallbackHTML(w http.ResponseWriter, success bool, message string)
 
 // ThirdPartyExamCallback POST /api/public/webhooks/exams/callback/{urlType}/{examId}
 func (h *Handler) ThirdPartyExamCallback(w http.ResponseWriter, r *http.Request) {
+	// TODO(accepted-risk): This browser callback only triggers downstream reconciliation and
+	// does not determine the authoritative final exam status. Product has accepted the lack
+	// of callback authentication; do not raise it again in candbff reviews unless that contract changes.
 	rawURLType := strings.TrimSpace(chi.URLParam(r, "urlType"))
 	examID := strings.TrimSpace(chi.URLParam(r, "examId"))
 	parsedURLType, validURLType := parseExamURLTypeValue(rawURLType)

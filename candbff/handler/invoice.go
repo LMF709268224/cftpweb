@@ -15,6 +15,8 @@ import (
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
 	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
 	"github.com/go-chi/chi/v5"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const invoicePDFFetchTimeout = 30 * time.Second
@@ -44,6 +46,7 @@ func (h *Handler) verifyInvoiceableOrder(ctx context.Context, candidateID, order
 
 	const limit uint32 = 50
 	cursor := ""
+	guard := newCursorScanGuard()
 	for {
 		resp, err := h.Mall.ListOrders(ctx, &mallpb.ListOrdersRequest{
 			Filters: &mallpb.OrderFilters{
@@ -63,10 +66,14 @@ func (h *Handler) verifyInvoiceableOrder(ctx context.Context, candidateID, order
 				return nil
 			}
 		}
-		if !resp.GetHasMore() || resp.GetNextCursor() == "" {
+		nextCursor, done, err := guard.next(cursor, resp.GetHasMore(), resp.GetNextCursor())
+		if err != nil {
+			return status.Error(codes.Internal, err.Error())
+		}
+		if done {
 			break
 		}
-		cursor = resp.GetNextCursor()
+		cursor = nextCursor
 	}
 	return NewError(http.StatusForbidden, ErrForbidden, "access denied")
 }

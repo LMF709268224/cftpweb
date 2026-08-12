@@ -1,9 +1,10 @@
 package handler
 
 import (
+	"crypto/rand"
 	"fmt"
 	"log/slog"
-	"math/rand"
+	"math/big"
 	"net/http"
 	"strings"
 	"time"
@@ -11,7 +12,37 @@ import (
 	gmailpb "github.com/afnandelfin620-star/cftptest/cftp/gmail"
 	"github.com/afnandelfin620-star/cftptest/cftp/util"
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
+	"github.com/redis/go-redis/v9"
 )
+
+const (
+	emailVerificationTTL          = 5 * time.Minute
+	emailVerificationSendCooldown = time.Minute
+	maxEmailVerificationAttempts  = 5
+)
+
+var verifyEmailCodeScript = redis.NewScript(`
+local stored = redis.call("GET", KEYS[1])
+if not stored then
+  return 0
+end
+if stored == ARGV[1] then
+  redis.call("DEL", KEYS[1], KEYS[2])
+  return 1
+end
+local attempts = redis.call("INCR", KEYS[2])
+local ttl = redis.call("TTL", KEYS[1])
+if ttl > 0 then
+  redis.call("EXPIRE", KEYS[2], ttl)
+else
+  redis.call("EXPIRE", KEYS[2], ARGV[3])
+end
+if attempts >= tonumber(ARGV[2]) then
+  redis.call("DEL", KEYS[1])
+  return -2
+end
+return -1
+`)
 
 const (
 	userPropProvince   = "province"
@@ -19,7 +50,6 @@ const (
 	userPropRealName   = "realName"
 	userPropRealNameV2 = "real_name"
 )
-
 
 // GetUserMe GET /api/user/me
 func (h *Handler) GetUserMe(w http.ResponseWriter, r *http.Request) {
@@ -218,6 +248,28 @@ func (h *Handler) SendEmailCode(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "email required")
 		return
 	}
+	if h.Rdb == nil {
+		WriteError(w, http.StatusServiceUnavailable, ErrServiceUnavailable, "email verification is unavailable")
+		return
+	}
+
+	cooldownKey := "candbff:email_verification:send:" + name
+	allowed, err := h.Rdb.SetNX(r.Context(), cooldownKey, "1", emailVerificationSendCooldown).Result()
+	if err != nil {
+		slog.Error("Failed to apply email verification send limit", "error", err)
+		WriteError(w, http.StatusServiceUnavailable, ErrServiceUnavailable, "email verification is unavailable")
+		return
+	}
+	if !allowed {
+		WriteError(w, http.StatusTooManyRequests, ErrRateLimited, "verification code was requested too recently")
+		return
+	}
+	keepCooldown := false
+	defer func() {
+		if !keepCooldown {
+			_ = h.Rdb.Del(r.Context(), cooldownKey).Err()
+		}
+	}()
 
 	fullUser, err := casdoorsdk.GetUser(name)
 	if err != nil {
@@ -249,10 +301,19 @@ func (h *Handler) SendEmailCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	code := fmt.Sprintf("%06d", rand.Intn(1000000))
+	code, err := newEmailVerificationCode()
+	if err != nil {
+		slog.Error("Failed to generate email verification code", "error", err)
+		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to send email")
+		return
+	}
 	cacheKey := "candbff:email_verification:" + name
 	cacheValue := input.Email + ":" + code
-	if err := h.Rdb.Set(r.Context(), cacheKey, cacheValue, 5*time.Minute).Err(); err != nil {
+	if _, err := h.Rdb.TxPipelined(r.Context(), func(pipe redis.Pipeliner) error {
+		pipe.Set(r.Context(), cacheKey, cacheValue, emailVerificationTTL)
+		pipe.Del(r.Context(), cacheKey+":attempts")
+		return nil
+	}); err != nil {
 		slog.Error("Failed to cache verification code in Redis", "error", err)
 		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to send email")
 		return
@@ -272,12 +333,22 @@ func (h *Handler) SendEmailCode(w http.ResponseWriter, r *http.Request) {
 		HtmlBody:     content,
 	})
 	if err != nil {
+		_ = h.Rdb.Del(r.Context(), cacheKey).Err()
 		slog.Error("Failed to send verification code", "error", err)
 		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to send email")
 		return
 	}
 
+	keepCooldown = true
 	WriteJSON(w, http.StatusOK, BaseRsp{Code: 0, Msg: "success"})
+}
+
+func newEmailVerificationCode() (string, error) {
+	value, err := rand.Int(rand.Reader, big.NewInt(1_000_000))
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%06d", value.Int64()), nil
 }
 
 // UpdateUserEmail PUT /api/user/profile/email
@@ -295,16 +366,32 @@ func (h *Handler) UpdateUserEmail(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "email and verification code are required")
 		return
 	}
-
-	cacheKey := "candbff:email_verification:" + name
-	cacheValue, err := h.Rdb.Get(r.Context(), cacheKey).Result()
-	if err != nil {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "verification code required or expired")
+	if h.Rdb == nil {
+		WriteError(w, http.StatusServiceUnavailable, ErrServiceUnavailable, "email verification is unavailable")
 		return
 	}
 
+	cacheKey := "candbff:email_verification:" + name
+	attemptsKey := cacheKey + ":attempts"
 	expectedValue := input.Email + ":" + input.VerificationCode
-	if cacheValue != expectedValue {
+	verificationResult, err := verifyEmailCodeScript.Run(
+		r.Context(),
+		h.Rdb,
+		[]string{cacheKey, attemptsKey},
+		expectedValue,
+		maxEmailVerificationAttempts,
+		int(emailVerificationTTL.Seconds()),
+	).Int64()
+	if err != nil {
+		slog.Error("Failed to verify email code", "error", err)
+		WriteError(w, http.StatusServiceUnavailable, ErrServiceUnavailable, "email verification is unavailable")
+		return
+	}
+	if verificationResult == -2 {
+		WriteError(w, http.StatusTooManyRequests, ErrRateLimited, "too many invalid verification attempts")
+		return
+	}
+	if verificationResult != 1 {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid or expired verification code")
 		return
 	}
@@ -325,6 +412,5 @@ func (h *Handler) UpdateUserEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.Rdb.Del(r.Context(), cacheKey)
 	WriteJSON(w, http.StatusOK, BaseRsp{Code: 0, Msg: "success"})
 }

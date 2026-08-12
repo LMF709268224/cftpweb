@@ -205,6 +205,7 @@ func (h *Handler) completedByStagePipelineOrder(
 		PaymentMode:    "BY_STAGE",
 	}
 	cursor := ""
+	guard := newCursorScanGuard()
 	for {
 		ordersResp, err := h.Mall.ListPipelineOrders(ctx, &mallpb.ListPipelineOrdersRequest{
 			Filters:  filters,
@@ -238,8 +239,11 @@ func (h *Handler) completedByStagePipelineOrder(
 			return summary, nil
 		}
 
-		nextCursor := strings.TrimSpace(ordersResp.GetNextCursor())
-		if !ordersResp.GetHasMore() || nextCursor == "" || nextCursor == cursor {
+		nextCursor, done, guardErr := guard.next(cursor, ordersResp.GetHasMore(), ordersResp.GetNextCursor())
+		if guardErr != nil {
+			return nil, gstatus.Error(codes.Internal, guardErr.Error())
+		}
+		if done {
 			return nil, nil
 		}
 		cursor = nextCursor

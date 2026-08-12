@@ -17,6 +17,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/oklog/ulid/v2"
+	"google.golang.org/grpc/codes"
+	gstatus "google.golang.org/grpc/status"
 )
 
 type bundleEligibilityBlocker struct {
@@ -446,6 +448,7 @@ func (h *Handler) ListBundles(w http.ResponseWriter, r *http.Request) {
 	state := h.newBundleEnrichmentState(r.Context(), candidateID, requestLocale(r))
 	filtered := make([]map[string]interface{}, 0)
 	cursor := ""
+	guard := newCursorScanGuard()
 	for {
 		resp, err := h.Mall.ListBundles(r.Context(), &mallpb.ListBundlesRequest{
 			Cursor:   cursor,
@@ -469,10 +472,15 @@ func (h *Handler) ListBundles(w http.ResponseWriter, r *http.Request) {
 			}
 			filtered = append(filtered, enriched)
 		}
-		if !resp.GetHasMore() || resp.GetNextCursor() == "" {
+		nextCursor, done, guardErr := guard.next(cursor, resp.GetHasMore(), resp.GetNextCursor())
+		if guardErr != nil {
+			HandleGrpcError(w, gstatus.Error(codes.Internal, guardErr.Error()))
+			return
+		}
+		if done {
 			break
 		}
-		cursor = resp.GetNextCursor()
+		cursor = nextCursor
 	}
 
 	total := len(filtered)

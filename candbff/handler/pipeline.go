@@ -388,6 +388,9 @@ func (h *Handler) ListCandidateEnrollments(w http.ResponseWriter, r *http.Reques
 			pageSize = uint32(ps)
 		}
 	}
+	if pageSize > maxCandidateListPageSize {
+		pageSize = maxCandidateListPageSize
+	}
 
 	resp, err := h.Lms.ListCandidateEnrollments(r.Context(), &lmspb.ListCandidateEnrollmentsRequest{
 		Filters: &lmspb.CandidateEnrollmentFilters{

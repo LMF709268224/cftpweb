@@ -217,7 +217,7 @@ async function loadDashboardStats() {
       countFromRequest("/api/pipeline", "list"),
       countFromRequest("/api/certificates", "certificates"),
       countFromRequest("/api/exams?page=1&page_size=50", "exams"),
-      countFromRequest("/api/resource-packs?page_size=50", "packs"),
+      countFromRequest("/api/resource-packs?page_size=20", "packs"),
       countFromRequest("/api/orders?page=1&page_size=50", "orders"),
     ])
 

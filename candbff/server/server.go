@@ -20,6 +20,7 @@ type Server struct {
 	grpcPool   *GrpcClientPool
 	httpServer *http.Server
 	casdoor    *CasdoorClient
+	rdb        *redis.Client
 }
 
 func NewServer() *Server {
@@ -52,6 +53,7 @@ func (s *Server) Run(ctx context.Context) error {
 		Password: s.config.SecretConfig.RedisPassword,
 		DB:       0,
 	})
+	s.rdb = rdb
 
 	h := handler.New(
 		pool.Lms,
@@ -92,5 +94,14 @@ func (s *Server) gracefulShutdown() {
 	if s.grpcPool != nil {
 		s.grpcPool.Close()
 		slog.Info("gRPC client connections closed")
+		s.grpcPool = nil
+	}
+	if s.rdb != nil {
+		if err := s.rdb.Close(); err != nil {
+			slog.Warn("Redis client close failed", "error", err)
+		} else {
+			slog.Info("Redis client closed")
+		}
+		s.rdb = nil
 	}
 }

@@ -174,7 +174,7 @@ async function loadFiles(pageToken = "") {
   loading.value = true
   if (!pageToken) loadError.value = false
   try {
-    const params = new URLSearchParams({ page_size: "100" })
+    const params = new URLSearchParams({ page_size: "20" })
     if (pageToken) params.set("page_token", pageToken)
     const resp = await apiClient(`/api/resource-packs/${encodeURIComponent(packId.value)}/files?${params.toString()}`)
     if (!Array.isArray(resp?.files)) throw new Error("RESOURCE_PACK_FILES_INVALID_RESPONSE")

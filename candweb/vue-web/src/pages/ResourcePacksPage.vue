@@ -39,7 +39,7 @@ async function loadPacks(pageToken = "") {
   loading.value = true
   if (!pageToken) loadError.value = false
   try {
-    const params = new URLSearchParams({ page_size: "50" })
+    const params = new URLSearchParams({ page_size: "20" })
     if (pageToken) params.set("page_token", pageToken)
     const resp = await apiClient(`/api/resource-packs?${params.toString()}`)
     if (!Array.isArray(resp?.packs)) throw new Error("RESOURCE_PACKS_INVALID_RESPONSE")
