@@ -154,11 +154,12 @@ jobs:
       - name: Validate live regression secrets
         env:
           E2E_ADMIN_BASE_URL: ${{ secrets.E2E_ADMIN_BASE_URL }}
+          E2E_ADMIN_EXPECTED_ORIGIN: ${{ secrets.E2E_ADMIN_EXPECTED_ORIGIN }}
           E2E_ADMIN_USERNAME: ${{ secrets.E2E_ADMIN_USERNAME }}
           E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
         shell: bash
         run: |
-          for name in E2E_ADMIN_BASE_URL E2E_ADMIN_USERNAME E2E_ADMIN_PASSWORD; do
+          for name in E2E_ADMIN_BASE_URL E2E_ADMIN_EXPECTED_ORIGIN E2E_ADMIN_USERNAME E2E_ADMIN_PASSWORD; do
             if [ -z "${!name}" ]; then
               echo "::error::Repository secret ${name} is required for the live regression."
               exit 1
@@ -179,6 +180,7 @@ jobs:
         env:
           CI: "true"
           E2E_ADMIN_BASE_URL: ${{ secrets.E2E_ADMIN_BASE_URL }}
+          E2E_ADMIN_EXPECTED_ORIGIN: ${{ secrets.E2E_ADMIN_EXPECTED_ORIGIN }}
           E2E_ADMIN_USERNAME: ${{ secrets.E2E_ADMIN_USERNAME }}
           E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
 

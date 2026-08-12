@@ -1,32 +1,8 @@
 import { expect, test } from "@playwright/test"
+import { adminPageChecks } from "../e2e/support/admin-pages"
 import { installReadOnlyGuards, liveEnvironment } from "./support/live"
 
 test.setTimeout(900_000)
-
-const adminPages = [
-  "/dashboard",
-  "/applications",
-  "/exams",
-  "/prog",
-  "/lms",
-  "/pipelines",
-  "/bundles",
-  "/memberships",
-  "/resource-packs",
-  "/resource-pack-files",
-  "/credentials",
-  "/pdf-templates",
-  "/orders",
-  "/invoices",
-  "/messages",
-  "/mails",
-  "/permissions",
-  "/admin-ops",
-  "/audit/logs",
-  "/audit/webhooks",
-  "/pdf-requests",
-  "/settings",
-]
 
 test("real admin session can read health and current-user APIs", async ({ page }) => {
   const environment = liveEnvironment()
@@ -41,18 +17,15 @@ test("real admin session can read health and current-user APIs", async ({ page }
   expect(String(payload.data.name || payload.data.id || "").trim()).not.toBe("")
 })
 
-test("admin main pages can read real test-environment data without mutations", async ({ page }) => {
-  const guards = await installReadOnlyGuards(page)
+for (const adminPage of adminPageChecks) {
+  test(`${adminPage.path} reads its primary API without mutations`, async ({ page }) => {
+    const guards = await installReadOnlyGuards(page)
+    await page.goto(adminPage.path, { waitUntil: "domcontentloaded" })
 
-  for (const path of adminPages) {
-    await test.step(`${path} page`, async () => {
-      guards.reset()
-      await page.goto(path, { waitUntil: "domcontentloaded" })
-
-      await expect(page).toHaveURL(new RegExp(`${path.replaceAll("/", "\\/")}(?:[?#].*)?$`))
-      await expect(page.locator("h1").first()).toBeVisible({ timeout: 45_000 })
-      await guards.waitForAPIIdle()
-      await guards.assertClean()
-    })
-  }
-})
+    await expect(page).toHaveURL(new RegExp(`${adminPage.path.replaceAll("/", "\\/")}(?:[?#].*)?$`))
+    await expect(page.locator("h1").first()).toBeVisible({ timeout: 45_000 })
+    await guards.waitForAPIIdle()
+    await guards.assertRequested(adminPage.endpoint)
+    await guards.assertClean()
+  })
+}

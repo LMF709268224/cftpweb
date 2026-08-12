@@ -1,4 +1,4 @@
-import { expect, type Locator, type Page, type Request as PlaywrightRequest } from "@playwright/test"
+import { expect, type Locator, type Page, type Request as PlaywrightRequest, type Response } from "@playwright/test"
 
 export const liveAuthStatePath = "test-results/live-auth/admin.json"
 
@@ -17,8 +17,26 @@ function requiredEnvironment(name: string) {
 }
 
 export function liveEnvironment() {
+  const baseURL = requiredEnvironment("E2E_ADMIN_BASE_URL")
+  const expectedOrigin = requiredEnvironment("E2E_ADMIN_EXPECTED_ORIGIN")
+  let baseOrigin: string
+  let configuredOrigin: string
+  try {
+    baseOrigin = new URL(baseURL).origin
+    configuredOrigin = new URL(expectedOrigin).origin
+  } catch {
+    throw new Error("E2E_ADMIN_BASE_URL and E2E_ADMIN_EXPECTED_ORIGIN must be absolute URLs")
+  }
+  if (baseOrigin !== configuredOrigin) {
+    throw new Error(`Admin live regression target ${baseOrigin} does not match E2E_ADMIN_EXPECTED_ORIGIN`)
+  }
+  if (new URL(baseURL).protocol !== "https:") {
+    throw new Error("Admin live regression target must use HTTPS")
+  }
+
   return {
-    baseURL: requiredEnvironment("E2E_ADMIN_BASE_URL"),
+    baseURL,
+    expectedOrigin: configuredOrigin,
     username: requiredEnvironment("E2E_ADMIN_USERNAME"),
     password: requiredEnvironment("E2E_ADMIN_PASSWORD"),
   }
@@ -146,8 +164,11 @@ export async function installReadOnlyGuards(page: Page) {
   const pageErrors: string[] = []
   const consoleErrors: string[] = []
   const requestFailures: string[] = []
+  const resourceFailures: string[] = []
   const mutationAttempts: string[] = []
+  const successfulAPIPaths = new Set<string>()
   const pendingRequests = new Set<PlaywrightRequest>()
+  const responseInspections = new Set<Promise<void>>()
   let lastAPIActivityAt = Date.now()
 
   function isTracked(request: PlaywrightRequest) {
@@ -157,7 +178,25 @@ export async function installReadOnlyGuards(page: Page) {
       && !backgroundAPIPaths.has(url.pathname)
   }
 
-  await page.route("**/api/**", async (route) => {
+  async function inspectAPIResponse(response: Response) {
+    const url = new URL(response.url())
+    if (url.origin !== adminOrigin || !url.pathname.startsWith("/api/")) return
+    if (response.status() >= 400) {
+      apiFailures.push(`${safeRequestLabel(response.url())} -> HTTP ${response.status()}`)
+      return
+    }
+
+    const contentType = response.headers()["content-type"]?.toLowerCase() || ""
+    if (!contentType.includes("json")) return
+    const payload = await response.json().catch(() => null) as { code?: unknown } | null
+    if (!payload || payload.code !== 200) {
+      apiFailures.push(`${safeRequestLabel(response.url())} -> invalid success envelope`)
+      return
+    }
+    successfulAPIPaths.add(url.pathname)
+  }
+
+  await page.route("**/*", async (route) => {
     const request = route.request()
     const url = new URL(request.url())
     const method = request.method().toUpperCase()
@@ -181,12 +220,16 @@ export async function installReadOnlyGuards(page: Page) {
       lastAPIActivityAt = Date.now()
     }
     const url = new URL(response.url())
-    if (url.origin === adminOrigin && url.pathname.startsWith("/api/") && response.status() >= 400) {
-      apiFailures.push(`${safeRequestLabel(response.url())} -> HTTP ${response.status()}`)
+    if (url.origin === adminOrigin && !url.pathname.startsWith("/api/") && response.status() >= 400) {
+      resourceFailures.push(`${safeRequestLabel(response.url(), request.method())} -> HTTP ${response.status()}`)
     }
+    const inspection = inspectAPIResponse(response)
+    responseInspections.add(inspection)
+    void inspection.finally(() => responseInspections.delete(inspection))
   })
   page.on("requestfailed", (request) => {
-    if (!isTracked(request)) return
+    const url = new URL(request.url())
+    if (url.origin !== adminOrigin) return
     pendingRequests.delete(request)
     lastAPIActivityAt = Date.now()
     if (request.failure()?.errorText === "net::ERR_BLOCKED_BY_CLIENT") return
@@ -195,33 +238,30 @@ export async function installReadOnlyGuards(page: Page) {
   page.on("pageerror", (error) => pageErrors.push(error.message))
   page.on("console", (message) => {
     if (message.type() !== "error") return
-    if (message.text().startsWith("Failed to load resource:")) return
     consoleErrors.push(message.text())
   })
 
   return {
-    reset() {
-      apiFailures.length = 0
-      pageErrors.length = 0
-      consoleErrors.length = 0
-      requestFailures.length = 0
-      mutationAttempts.length = 0
-      pendingRequests.clear()
-      lastAPIActivityAt = Date.now()
-    },
     async waitForAPIIdle(timeout = 45_000) {
       const deadline = Date.now() + timeout
       while (Date.now() < deadline) {
-        if (pendingRequests.size === 0 && Date.now() - lastAPIActivityAt >= 1_000) return
+        if (pendingRequests.size === 0 && responseInspections.size === 0 && Date.now() - lastAPIActivityAt >= 1_000) return
         await page.waitForTimeout(250)
       }
       const pending = [...pendingRequests].map((request) => safeRequestLabel(request.url(), request.method()))
       throw new Error(`Admin API requests did not settle within ${timeout}ms: ${pending.join(", ")}`)
     },
+    async assertRequested(pathname: string) {
+      await expect.poll(
+        () => successfulAPIPaths.has(pathname),
+        { message: `expected a successful ${pathname} response`, timeout: 10_000 },
+      ).toBe(true)
+    },
     async assertClean() {
       expect(mutationAttempts, "read-only regression attempted a business mutation").toEqual([])
       expect(apiFailures, "admin API returned an unexpected error").toEqual([])
       expect(requestFailures, "admin API request failed").toEqual([])
+      expect(resourceFailures, "admin page resource returned an unexpected error").toEqual([])
       expect(pageErrors, "admin page raised a JavaScript exception").toEqual([])
       expect(consoleErrors, "admin page wrote errors to the browser console").toEqual([])
     },

@@ -99,6 +99,11 @@ export async function installAdminApiMocks(page: Page, resolver?: ApiMockResolve
       pathname: url.pathname,
       url,
     })
+    const method = request.method().toUpperCase()
+    const safeMethod = method === "GET" || method === "HEAD" || method === "OPTIONS"
+    if (!safeMethod && result === undefined) {
+      throw new Error(`Unexpected unmocked admin API mutation: ${method} ${url.pathname}`)
+    }
     if (result?.delayMs) await new Promise((resolve) => setTimeout(resolve, result.delayMs))
     const status = result?.status ?? 200
     const payload = status >= 400
