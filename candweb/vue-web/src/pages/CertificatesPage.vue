@@ -181,7 +181,7 @@ watch(lang, () => {
     >
       <div class="relative w-full max-w-[560px] overflow-hidden rounded-[20px] bg-white shadow-[0_24px_60px_rgba(16,30,67,0.28)]">
         <button
-          class="absolute right-4 top-4 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-500 transition hover:border-primary/25 hover:text-primary"
+          class="absolute right-4 top-4 z-20 flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-500 transition hover:border-primary/25 hover:text-primary md:h-10 md:w-10"
           @click="closeCelebrationModal"
         >
           <X class="h-5 w-5" />

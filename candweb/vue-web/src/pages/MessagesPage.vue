@@ -611,7 +611,7 @@ onMounted(() => {
             </div>
             <p class="text-sm font-medium text-slate-500">{{ selectedMessageDetail?.time }}</p>
           </div>
-          <button type="button" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-500 transition hover:border-primary/25 hover:text-primary" :aria-label="t.common.close" :title="t.common.close" @click="closeMessageDetail">
+          <button type="button" class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-500 transition hover:border-primary/25 hover:text-primary md:h-10 md:w-10" :aria-label="t.common.close" :title="t.common.close" @click="closeMessageDetail">
             <X class="h-5 w-5" />
           </button>
         </div>
