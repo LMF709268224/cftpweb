@@ -44,25 +44,25 @@ onMounted(hydrateSession)
 </script>
 
 <template>
-  <main class="candidate-portal flex min-h-screen items-center justify-center bg-background px-4 py-10 text-foreground">
-    <section class="w-full max-w-6xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_18px_55px_rgba(15,74,82,0.12)]">
-      <div class="flex items-center justify-between gap-4 border-b border-slate-200 px-6 py-5">
-        <div class="flex items-center gap-3">
+  <main class="candidate-portal flex min-h-screen items-center justify-center bg-background px-3 py-4 text-foreground md:px-4 md:py-10">
+    <section class="w-full max-w-6xl overflow-hidden rounded-xl border border-slate-200 bg-white shadow-none md:rounded-3xl md:shadow-[0_18px_55px_rgba(15,74,82,0.12)]">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-4 md:gap-4 md:px-6 md:py-5">
+        <div class="flex min-w-0 flex-1 items-center gap-3">
           <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent text-primary">
             <Wallet class="h-6 w-6" />
           </div>
-          <div>
+          <div class="min-w-0">
             <h1 class="text-2xl font-bold tracking-tight">{{ copy.title }}</h1>
-            <p class="mt-1 text-sm text-slate-500">{{ orderLabel }}</p>
+            <p class="mt-1 break-all text-sm text-slate-500">{{ orderLabel }}</p>
           </div>
         </div>
-        <button class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50" @click="goBack">
+        <button class="inline-flex shrink-0 items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50" @click="goBack">
           <ArrowLeft class="h-4 w-4" />
           {{ copy.back }}
         </button>
       </div>
 
-      <div class="p-6">
+      <div class="p-3 sm:p-4 md:p-6">
         <div v-if="!ready" class="flex min-h-[64vh] items-center justify-center text-sm text-slate-500">
           {{ copy.loading }}
         </div>
