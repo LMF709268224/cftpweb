@@ -331,6 +331,7 @@ export const zh = {
     callback: {
         missingParams: "认证回调参数不完整。",
         authFailed: "认证失败，请重新登录。",
+        stateExpired: "登录页面停留时间过长，本次认证已失效，请重新登录。",
         notAdmin: "抱歉，当前账号没有管理员权限，无法登录管理后台。请使用管理员账号登录。",
         wrongApplication: "抱歉，此登录凭证不属于管理后台应用，请从管理后台入口重新登录。",
         loadingTitle: "正在完成登录",
@@ -338,6 +339,7 @@ export const zh = {
         errorTitle: "认证失败",
         loadingDescription: "正在换取后台访问令牌。",
         successDescription: "正在进入管理后台。",
+        retry: "重新登录",
     },
     notFound: {
         title: "页面不存在",

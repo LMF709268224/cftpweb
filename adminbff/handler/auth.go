@@ -28,6 +28,9 @@ const (
 // GetLoginURL  GET /api/auth/login-url
 // 返回 Casdoor 登录页 URL，前端拿到后 redirect 用户到 Casdoor 完成登录
 func (h *Handler) GetLoginURL(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("Pragma", "no-cache")
+
 	redirectSigninURL, err := validatedAuthCallback(r, r.URL.Query().Get("callback"))
 	if err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, err.Error())
@@ -84,7 +87,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !consumeOAuthState(w, r, input.State) {
-		WriteError(w, http.StatusUnauthorized, ErrAuthFailed, "invalid or expired login state")
+		WriteError(w, http.StatusUnauthorized, ErrOAuthStateInvalid, "invalid or expired login state")
 		return
 	}
 

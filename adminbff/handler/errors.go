@@ -20,6 +20,7 @@ const (
 
 	// 认证模块
 	ErrAuthFailed          ErrorCode = "AUTH_FAILED"
+	ErrOAuthStateInvalid   ErrorCode = "OAUTH_STATE_INVALID"
 	ErrTokenExpired        ErrorCode = "TOKEN_EXPIRED"
 	ErrInvalidToken        ErrorCode = "INVALID_TOKEN"
 	ErrPasswordIncorrect   ErrorCode = "PASSWORD_INCORRECT"

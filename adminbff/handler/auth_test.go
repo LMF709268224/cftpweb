@@ -35,6 +35,12 @@ func TestGetLoginURLBindsStateCookie(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("GetLoginURL() status = %d, body = %s", rec.Code, rec.Body.String())
 	}
+	if got := rec.Header().Get("Cache-Control"); got != "no-store" {
+		t.Fatalf("Cache-Control = %q, want no-store", got)
+	}
+	if got := rec.Header().Get("Pragma"); got != "no-cache" {
+		t.Fatalf("Pragma = %q, want no-cache", got)
+	}
 	var response struct {
 		Data AuthURLRsp `json:"data"`
 	}
@@ -60,6 +66,35 @@ func TestGetLoginURLBindsStateCookie(t *testing.T) {
 	cookies := rec.Result().Cookies()
 	if len(cookies) != 1 || cookies[0].Name != oauthStateCookieName || cookies[0].Value != state {
 		t.Fatalf("OAuth state cookie = %+v, URL state = %q", cookies, state)
+	}
+}
+
+func TestLoginReportsInvalidOAuthState(t *testing.T) {
+	h := &Handler{}
+	req := httptest.NewRequest(
+		http.MethodPost,
+		"https://admin.example.com/api/auth/login",
+		strings.NewReader(`{"code":"authorization-code","state":"expired-state"}`),
+	)
+	rec := httptest.NewRecorder()
+
+	h.Login(rec, req)
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("Login() status = %d, body = %s", rec.Code, rec.Body.String())
+	}
+	var response struct {
+		ErrorCode ErrorCode `json:"error_code"`
+		Message   string    `json:"message"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+		t.Fatalf("decode login response: %v", err)
+	}
+	if response.ErrorCode != ErrOAuthStateInvalid {
+		t.Fatalf("error_code = %q, want %q", response.ErrorCode, ErrOAuthStateInvalid)
+	}
+	if response.Message != http.StatusText(http.StatusUnauthorized) {
+		t.Fatalf("message = %q, want generic unauthorized response", response.Message)
 	}
 }
 

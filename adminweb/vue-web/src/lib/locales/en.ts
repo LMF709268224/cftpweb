@@ -333,6 +333,7 @@ export const en: AdminTranslations = {
     callback: {
         missingParams: "Authentication callback parameters are incomplete.",
         authFailed: "Authentication failed. Please log in again.",
+        stateExpired: "This login attempt expired because the sign-in page was open too long. Please sign in again.",
         notAdmin: "Sorry, this account does not have admin access and cannot log in to the admin portal. Please use an administrator account.",
         wrongApplication: "Sorry, this login credential does not belong to the admin application. Please sign in again from the admin portal.",
         loadingTitle: "Completing Login",
@@ -340,6 +341,7 @@ export const en: AdminTranslations = {
         errorTitle: "Authentication Failed",
         loadingDescription: "Exchanging the callback for an admin access token.",
         successDescription: "Opening the admin console.",
+        retry: "Sign in again",
     },
     notFound: {
         title: "Page Not Found",
