@@ -125,7 +125,7 @@ onMounted(loadTimeline)
       :action-label="t.learning.timelineRetry"
       @action="loadTimeline"
     />
-    <div v-else class="rounded-[16px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+    <div v-else class="rounded-xl bg-white p-4 shadow-none md:rounded-[16px] md:p-6 md:shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <div v-if="logs.length === 0" class="flex flex-col items-center justify-center py-14 text-center">
         <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
           <Clock class="h-8 w-8 text-muted-foreground" />
