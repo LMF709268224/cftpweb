@@ -230,7 +230,7 @@ Grafana 到 Loki 的网络，而不是应用 ERROR 日志。
 ## 7. 先创建企业微信 Contact point
 
 在填写页面第 5 区之前，需要先创建企业微信接收方。如果 Contact point 下拉框里已经能选到
-`CFTP-WeCom`，直接跳到第 8 节。
+`cftp`，直接跳到第 8 节。你当前截图中已经选择了 `cftp`，因此不需要重新创建。
 
 ### 7.1 在企业微信创建群机器人
 
@@ -266,7 +266,7 @@ Alerting
 2. Name 填写：
 
 ```text
-CFTP-WeCom
+cftp
 ```
 
 3. 在 `Integration` 下拉框选择 `WeCom`。
@@ -287,25 +287,41 @@ CFTP-WeCom
 
 1. Alertmanager 保持 `grafana`。
 2. 点击 `Contact point` 下拉框。
-3. 选择：
+3. 选择你截图中已经创建好的 Contact point：
 
 ```text
-CFTP-WeCom
+cftp
 ```
 
-4. 如果下拉框中没有它，刷新下拉选项；不要刷新整个规则页面，以免未保存内容丢失。
-5. 点击并展开 `Muting, grouping and timings (optional)`。
-6. 如果展开后出现下面三个输入框，按表格填写：
+4. 点击并展开 `Muting, grouping and timings (optional)`。
+5. `Mute timings` 保持空，不选择任何 `Select time intervals...`。
+6. `Active timings` 保持空，不选择任何 `Select time intervals...`。
+7. `Override grouping` 开关保持关闭。
+8. `Override timings` 开关保持关闭。
+
+你当前界面右侧已经显示继承的默认值：
 
 | 配置项 | 设置值 | 含义 |
 | --- | --- | --- |
 | Group wait | `30s` | 首次触发后等待 30 秒，将同时发生的告警合并 |
 | Group interval | `5m` | 同一告警组的新增变化最多每 5 分钟通知一次 |
-| Repeat interval | `2h` | 问题持续存在时每 2 小时提醒一次 |
+| Repeat interval | `4h` | 问题持续存在时每 4 小时提醒一次 |
 
-如果这三个输入框没有显示，保持默认值即可；它们也可以在
-`Alerting -> Notification policies` 中统一配置。不要把 Repeat interval 设置成 `1m`，否则
-持续错误可能频繁刷群。
+这三个值来自 Grafana 的 Notification policy。因为默认值已经合理，所以不要打开
+`Override timings`，也不需要寻找或填写三个输入框。`Grouping: grafana_folder, alertname`
+同样保持默认，不要打开 `Override grouping`。
+
+第 5 区完成后的状态应与截图一致：
+
+```text
+Alertmanager: grafana
+Contact point: cftp
+Mute timings: 空
+Active timings: 空
+Override grouping: 关闭
+Override timings: 关闭
+默认 timings: Group wait 30s, Group interval 5m, Repeat interval 4h
+```
 
 ## 9. 页面第 6 区：填写通知文案
 
@@ -348,7 +364,9 @@ Token、用户信息或业务数据被转发到企业微信群。详细错误必
 | `4. Set evaluation behavior` | Evaluation group / interval | `cftp-log-errors` / `1m` |
 | `4. Set evaluation behavior` | Pending period | `1m` |
 | `4. Set evaluation behavior` | Keep firing for | `0s` / `None` |
-| `5. Configure notifications` | Alertmanager / Contact point | `grafana` / `CFTP-WeCom` |
+| `5. Configure notifications` | Alertmanager / Contact point | `grafana` / `cftp` |
+| `5. Configure notifications` | Mute timings / Active timings | 都留空 |
+| `5. Configure notifications` | Override grouping / Override timings | 都关闭，使用默认 `30s / 5m / 4h` |
 | `6. Configure notification message` | Summary | `CFTP 测试环境最近 5 分钟检测到 ERROR 日志` |
 | `6. Configure notification message` | Runbook URL | 留空 |
 
@@ -406,7 +424,7 @@ or on() vector(0)
 
 1. 给查询增加测试环境 Namespace 标签。
 2. 将阈值从 `IS ABOVE 0` 调整为 `IS ABOVE 2`，表示最近 5 分钟至少 3 条 ERROR。
-3. 保持 Repeat interval 为 `2h` 或更长。
+3. 保持当前默认 Repeat interval 为 `4h`。
 4. 为已知无须处理的固定错误增加精确排除条件，不要笼统排除整个服务。
 
 ### 11.5 没有告警但 Grafana Explore 能看到错误
