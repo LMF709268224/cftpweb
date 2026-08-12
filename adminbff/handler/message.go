@@ -216,9 +216,7 @@ func (h *Handler) RevokeMessage(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-	if strings.TrimSpace(req.AdminUlid) == "" {
-		req.AdminUlid = adminActorID(r)
-	}
+	req.AdminUlid = adminActorID(r)
 	if !requireRequestFields(w, req.UserUlid, "user_ulid", req.MessageUlid, "message_ulid", req.AdminUlid, "admin_ulid") {
 		return
 	}

@@ -214,7 +214,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 	})
 
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
-		handler.WriteJSON(w, http.StatusNotFound, map[string]string{"error": "API route not found"})
+		handler.WriteError(w, http.StatusNotFound, handler.ErrNotFound, "API route not found")
 	})
 	return r
 }

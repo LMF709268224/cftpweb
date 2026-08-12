@@ -71,7 +71,7 @@ func TestListCandidateEnrollmentsForwardsCandidateFiltersAndPagination(t *testin
 	}
 	if lms.listRequest.GetFilters().GetCandidateUlid() != "candidate-1" ||
 		lms.listRequest.GetFilters().GetStatus() != "learning" ||
-		lms.listRequest.GetPageSize() != 25 ||
+		lms.listRequest.GetPageSize() != maxCandidateListPageSize ||
 		lms.listRequest.GetCursor() != "current-page" {
 		t.Fatalf("ListCandidateEnrollments request = %+v", lms.listRequest)
 	}

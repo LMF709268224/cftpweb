@@ -67,6 +67,16 @@ test("application detail displays metadata and evidence without a mutation", asy
   await detailDialog.getByRole("button", { name: /申请材料/ }).click()
   await expect(detailDialog.getByText("evidence.pdf")).toBeVisible()
 
+	await detailDialog.getByRole("button", { name: /审核操作/ }).click()
+	const expectedExpiry = new Date()
+	expectedExpiry.setFullYear(expectedExpiry.getFullYear() + 2)
+	const expectedExpiryValue = [
+		expectedExpiry.getFullYear(),
+		String(expectedExpiry.getMonth() + 1).padStart(2, "0"),
+		String(expectedExpiry.getDate()).padStart(2, "0"),
+	].join("-")
+	await expect(detailDialog.getByLabel("资格有效期截止日")).toHaveValue(expectedExpiryValue)
+
   expect(requests).toContain("GET /api/applications/app-1")
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
 })

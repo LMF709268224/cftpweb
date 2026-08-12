@@ -11,6 +11,7 @@ export type ApiMockResult = {
   data?: unknown
   errorCode?: string
   message?: string
+  delayMs?: number
 }
 
 export type ApiMockResolver = (context: ApiMockContext) => ApiMockResult | undefined
@@ -27,6 +28,25 @@ function emptyAdminData(pathname: string) {
       mails: 0,
     }
   }
+
+	if (pathname === "/api/dashboard/ops") {
+		return {
+			candidate_total: 0,
+			user_stats: { total: 0, active: 0, inactive: 0, admins: 0, members: 0, email_verified: 0 },
+			user_role_stats: [],
+			profile_completion_percent: 0,
+			users: [],
+			user_total: 0,
+			user_page: 1,
+			user_page_size: 10,
+			stage_buckets: [],
+			stage_buckets_exact: true,
+			today_revenue: [],
+			today_revenue_exact: true,
+			aggregation_sample_limit: 500,
+			generated_at: "2026-08-12T00:00:00Z",
+		}
+	}
 
   return {
     items: [],
@@ -98,6 +118,12 @@ export async function installAdminApiMocks(page: Page, resolver?: ApiMockResolve
       pathname: url.pathname,
       url,
     })
+    const method = request.method().toUpperCase()
+    const safeMethod = method === "GET" || method === "HEAD" || method === "OPTIONS"
+    if (!safeMethod && result === undefined) {
+      throw new Error(`Unexpected unmocked admin API mutation: ${method} ${url.pathname}`)
+    }
+    if (result?.delayMs) await new Promise((resolve) => setTimeout(resolve, result.delayMs))
     const status = result?.status ?? 200
     const payload = status >= 400
       ? {
@@ -118,10 +144,10 @@ export async function installAdminApiMocks(page: Page, resolver?: ApiMockResolve
   return { requestedPaths }
 }
 
-export async function seedAuthenticatedAdmin(page: Page) {
-  await page.addInitScript(() => {
+export async function seedAuthenticatedAdmin(page: Page, lang: "zh" | "en" = "zh") {
+  await page.addInitScript((selectedLang) => {
     localStorage.setItem("is_authenticated", "true")
     localStorage.setItem("user_name", "Regression Admin")
-    localStorage.setItem("app_lang", "zh")
-  })
+    localStorage.setItem("app_lang", selectedLang)
+  }, lang)
 }

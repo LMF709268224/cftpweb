@@ -17,6 +17,7 @@ const (
 	ErrNotImplemented     ErrorCode = "NOT_IMPLEMENTED"
 	ErrPrecondition       ErrorCode = "PRECONDITION_FAILED"
 	ErrServiceUnavailable ErrorCode = "SERVICE_UNAVAILABLE"
+	ErrRateLimited        ErrorCode = "RATE_LIMITED"
 
 	// 认证模块
 	ErrAuthFailed          ErrorCode = "AUTH_FAILED"

@@ -280,11 +280,15 @@ func (h *Handler) findResourcePackFileForCandidate(r *http.Request, candidateID 
 func parseUint32Query(r *http.Request, key string) uint32 {
 	raw := strings.TrimSpace(r.URL.Query().Get(key))
 	if raw == "" {
-		return 0
+		return maxCandidateListPageSize
 	}
 	value, err := strconv.ParseUint(raw, 10, 32)
-	if err != nil {
-		return 0
+	if err != nil || value == 0 {
+		return maxCandidateListPageSize
 	}
-	return uint32(value)
+	pageSize := uint32(value)
+	if pageSize > maxCandidateListPageSize {
+		return maxCandidateListPageSize
+	}
+	return pageSize
 }

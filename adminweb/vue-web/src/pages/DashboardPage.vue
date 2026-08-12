@@ -58,7 +58,10 @@ type DashboardData = {
   user_page: number
   user_page_size: number
   stage_buckets: StageBucket[]
+  stage_buckets_exact: boolean
   today_revenue: RevenueItem[]
+  today_revenue_exact: boolean
+  aggregation_sample_limit: number
   generated_at: string
 }
 
@@ -395,12 +398,13 @@ onUnmounted(() => {
       </div>
     </section>
 
-    <section class="mt-7 hidden gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+    <section class="mt-7 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
       <article class="rounded-3xl border border-slate-200 bg-white shadow-sm">
         <div class="flex items-center justify-between border-b border-slate-100 p-6">
           <div>
             <h2 class="text-xl font-black">{{ copy.stageDistribution }}</h2>
             <p class="mt-1 text-sm text-slate-500">{{ copy.stageDistributionHint }}</p>
+            <p v-if="data && !data.stage_buckets_exact" class="mt-1 text-xs font-bold text-amber-700">{{ copy.sampledAggregation(data.aggregation_sample_limit) }}</p>
           </div>
           <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{{ totalPipelines }} {{ copy.pipelines }}</span>
         </div>
@@ -450,6 +454,7 @@ onUnmounted(() => {
             </div>
             <p class="mt-4 text-2xl font-black">{{ revenueText }}</p>
             <p class="mt-2 text-sm text-slate-500">{{ copy.paidOrders(totalPaidOrders) }}</p>
+            <p v-if="data && !data.today_revenue_exact" class="mt-2 text-xs font-bold text-amber-700">{{ copy.sampledAggregation(data.aggregation_sample_limit) }}</p>
           </div>
         </div>
       </article>

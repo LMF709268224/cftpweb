@@ -188,6 +188,13 @@ func TestRouterUnknownPathReturnsJSON404(t *testing.T) {
 	if contentType := recorder.Header().Get("Content-Type"); !strings.HasPrefix(contentType, "application/json") {
 		t.Fatalf("Content-Type = %q, want JSON", contentType)
 	}
+	var response testAPIResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if response.ErrorCode != handler.ErrNotFound {
+		t.Fatalf("error_code = %q, want %q", response.ErrorCode, handler.ErrNotFound)
+	}
 }
 
 func TestRouterMatchesCandidateRouteContract(t *testing.T) {

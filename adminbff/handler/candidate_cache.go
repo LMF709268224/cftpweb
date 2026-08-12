@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"strings"
 	"sync"
@@ -16,21 +17,36 @@ const (
 	candidateProfileRefreshTimeout  = 2 * time.Minute
 	candidateProfileLookupTimeout   = 30 * time.Second
 	candidateProfileGmidTimeout     = 3 * time.Second
+	candidateProfileRefreshWorkers  = 8
+	candidateProfileBackfillLimit   = 4
+)
+
+var (
+	listCandidateProfileUsers = casdoorsdk.GetUsers
+	getCandidateProfileUser   = casdoorsdk.GetUserByUserId
 )
 
 type CandidateProfileCache struct {
 	gmid gmidpb.MidServiceClient
 
-	mu       sync.RWMutex
-	names    map[string]string
-	inFlight map[string]struct{}
+	mu            sync.RWMutex
+	refreshMu     sync.Mutex
+	users         []*casdoorsdk.User
+	names         map[string]string
+	ulidsByUUID   map[string]string
+	inFlight      map[string]struct{}
+	backfillSlots chan struct{}
+	ready         bool
 }
 
 func NewCandidateProfileCache(gmid gmidpb.MidServiceClient) *CandidateProfileCache {
 	return &CandidateProfileCache{
-		gmid:     gmid,
-		names:    map[string]string{},
-		inFlight: map[string]struct{}{},
+		gmid:          gmid,
+		users:         []*casdoorsdk.User{},
+		names:         map[string]string{},
+		ulidsByUUID:   map[string]string{},
+		inFlight:      map[string]struct{}{},
+		backfillSlots: make(chan struct{}, candidateProfileBackfillLimit),
 	}
 }
 
@@ -83,41 +99,84 @@ func (c *CandidateProfileCache) refreshWithTimeout(parent context.Context) {
 }
 
 func (c *CandidateProfileCache) Refresh(ctx context.Context) error {
-	users, err := casdoorsdk.GetUsers()
+	if c == nil || c.gmid == nil {
+		return errors.New("candidate profile cache is not configured")
+	}
+	c.refreshMu.Lock()
+	defer c.refreshMu.Unlock()
+	return c.refresh(ctx)
+}
+
+func (c *CandidateProfileCache) refresh(ctx context.Context) error {
+	users, err := listCandidateProfileUsers()
 	if err != nil {
 		return err
 	}
 
+	type mapping struct {
+		uuid string
+		ulid string
+		name string
+	}
+	jobs := make(chan *casdoorsdk.User)
+	results := make(chan mapping, candidateProfileRefreshWorkers)
+	var workers sync.WaitGroup
+	for range candidateProfileRefreshWorkers {
+		workers.Add(1)
+		go func() {
+			defer workers.Done()
+			for user := range jobs {
+				userUUID := strings.TrimSpace(user.Id)
+				lookupCtx, cancel := context.WithTimeout(ctx, candidateProfileGmidTimeout)
+				resp, lookupErr := c.gmid.GetUlidByUUID(lookupCtx, &gmidpb.GetUlidByUUIDRequest{UserUuid: userUUID})
+				cancel()
+				if lookupErr != nil {
+					slog.Warn("candidate profile cache failed to map casdoor uuid", "user_uuid", userUUID, "error", lookupErr)
+					continue
+				}
+				candidateULID := strings.TrimSpace(resp.GetUserUlid())
+				if candidateULID != "" {
+					results <- mapping{uuid: userUUID, ulid: candidateULID, name: candidateDisplayName(user)}
+				}
+			}
+		}()
+	}
+	go func() {
+		defer close(jobs)
+		for _, user := range users {
+			if user == nil || strings.TrimSpace(user.Id) == "" {
+				continue
+			}
+			select {
+			case jobs <- user:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+	go func() {
+		workers.Wait()
+		close(results)
+	}()
+
 	names := make(map[string]string, len(users))
-	for _, user := range users {
-		if user == nil {
-			continue
+	ulidsByUUID := make(map[string]string, len(users))
+	for result := range results {
+		ulidsByUUID[result.uuid] = result.ulid
+		if result.name != "" {
+			names[result.ulid] = result.name
 		}
-		name := strings.TrimSpace(user.Name)
-		userUUID := strings.TrimSpace(user.Id)
-		if name == "" || userUUID == "" {
-			continue
-		}
-
-		lookupCtx, cancel := context.WithTimeout(ctx, candidateProfileGmidTimeout)
-		resp, err := c.gmid.GetUlidByUUID(lookupCtx, &gmidpb.GetUlidByUUIDRequest{
-			UserUuid: userUUID,
-		})
-		cancel()
-		if err != nil {
-			slog.Warn("candidate profile cache failed to map casdoor uuid", "user_uuid", userUUID, "error", err)
-			continue
-		}
-
-		candidateULID := strings.TrimSpace(resp.GetUserUlid())
-		if candidateULID != "" {
-			names[candidateULID] = name
-		}
+	}
+	if err := ctx.Err(); err != nil {
+		return err
 	}
 
 	c.mu.Lock()
+	c.users = append([]*casdoorsdk.User(nil), users...)
 	c.names = names
+	c.ulidsByUUID = ulidsByUUID
 	c.inFlight = map[string]struct{}{}
+	c.ready = true
 	c.mu.Unlock()
 
 	slog.Info("candidate profile cache refreshed", "count", len(names))
@@ -129,9 +188,16 @@ func (c *CandidateProfileCache) enqueue(candidateULID string) {
 		return
 	}
 
+	select {
+	case c.backfillSlots <- struct{}{}:
+	default:
+		return
+	}
+
 	c.mu.Lock()
 	if _, ok := c.inFlight[candidateULID]; ok {
 		c.mu.Unlock()
+		<-c.backfillSlots
 		return
 	}
 	c.inFlight[candidateULID] = struct{}{}
@@ -145,6 +211,7 @@ func (c *CandidateProfileCache) fetchOne(candidateULID string) {
 		c.mu.Lock()
 		delete(c.inFlight, candidateULID)
 		c.mu.Unlock()
+		<-c.backfillSlots
 	}()
 
 	ctx, cancel := context.WithTimeout(context.Background(), candidateProfileLookupTimeout)
@@ -162,28 +229,90 @@ func (c *CandidateProfileCache) fetchOne(candidateULID string) {
 		return
 	}
 
-	users, err := casdoorsdk.GetUsers()
+	user, err := getCandidateProfileUser(userUUID)
 	if err != nil {
-		slog.Warn("candidate profile cache backfill failed to load casdoor users", "candidate_ulid", candidateULID, "error", err)
+		slog.Warn("candidate profile cache backfill failed to load casdoor user", "candidate_ulid", candidateULID, "user_uuid", userUUID, "error", err)
+		return
+	}
+	if user == nil || strings.TrimSpace(user.Id) != userUUID {
+		slog.Warn("candidate profile cache backfill returned a different casdoor user", "candidate_ulid", candidateULID, "user_uuid", userUUID)
 		return
 	}
 
-	for _, user := range users {
-		if user == nil || strings.TrimSpace(user.Id) != userUUID {
-			continue
-		}
-		name := strings.TrimSpace(user.Name)
-		if name == "" {
-			return
-		}
-
-		c.mu.Lock()
+	c.mu.Lock()
+	c.ulidsByUUID[userUUID] = candidateULID
+	if name := candidateDisplayName(user); name != "" {
 		c.names[candidateULID] = name
-		c.mu.Unlock()
-		return
 	}
+	c.mu.Unlock()
+}
 
-	slog.Warn("candidate profile cache backfill did not find casdoor user", "candidate_ulid", candidateULID, "user_uuid", userUUID)
+func (c *CandidateProfileCache) ULIDForUUID(userUUID string) (string, bool) {
+	if c == nil {
+		return "", false
+	}
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	if !c.ready {
+		return "", false
+	}
+	ulid, ok := c.ulidsByUUID[strings.TrimSpace(userUUID)]
+	return ulid, ok
+}
+
+func (c *CandidateProfileCache) Users() ([]*casdoorsdk.User, bool) {
+	if c == nil {
+		return nil, false
+	}
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	if !c.ready {
+		return nil, false
+	}
+	return append([]*casdoorsdk.User(nil), c.users...), true
+}
+
+func (c *CandidateProfileCache) UsersOrRefresh(ctx context.Context) ([]*casdoorsdk.User, error) {
+	if users, ok := c.Users(); ok {
+		return users, nil
+	}
+	if c == nil || c.gmid == nil {
+		return nil, errors.New("candidate profile cache is not configured")
+	}
+	c.refreshMu.Lock()
+	defer c.refreshMu.Unlock()
+	if users, ok := c.Users(); ok {
+		return users, nil
+	}
+	if err := c.refresh(ctx); err != nil {
+		return nil, err
+	}
+	users, ok := c.Users()
+	if !ok {
+		return nil, errors.New("candidate profile cache refresh produced no snapshot")
+	}
+	return users, nil
+}
+
+func (c *CandidateProfileCache) Ready() bool {
+	if c == nil {
+		return false
+	}
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.ready
+}
+
+func candidateDisplayName(user *casdoorsdk.User) string {
+	if user == nil {
+		return ""
+	}
+	for _, value := range []string{user.DisplayName, user.RealName, strings.TrimSpace(user.FirstName + " " + user.LastName), user.Name} {
+		if value = strings.TrimSpace(value); value != "" {
+			return value
+		}
+	}
+	return ""
 }
 
 func (h *Handler) StartCandidateProfileCache(ctx context.Context) {

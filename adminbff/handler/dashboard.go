@@ -11,8 +11,7 @@ import (
 	"time"
 
 	"adminbff/config"
-	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
-	gmidpb "github.com/afnandelfin620-star/cftptest/cftp/gmid"
+	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
 	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 )
@@ -20,6 +19,10 @@ import (
 const (
 	adminDashboardSampleLimit = 500
 	adminDashboardPageSize    = 100
+)
+
+var (
+	getDashboardRole = casdoorsdk.GetRole
 )
 
 const (
@@ -38,7 +41,10 @@ type opsDashboardResponse struct {
 	UserPage                 int                       `json:"user_page"`
 	UserPageSize             int                       `json:"user_page_size"`
 	StageBuckets             []opsDashboardStageBucket `json:"stage_buckets"`
+	StageBucketsExact        bool                      `json:"stage_buckets_exact"`
 	TodayRevenue             []opsDashboardRevenue     `json:"today_revenue"`
+	TodayRevenueExact        bool                      `json:"today_revenue_exact"`
+	AggregationSampleLimit   int                       `json:"aggregation_sample_limit"`
 	GeneratedAt              string                    `json:"generated_at"`
 }
 
@@ -90,9 +96,10 @@ type opsDashboardRoleConfig struct {
 }
 
 func (h *Handler) OpsDashboard(w http.ResponseWriter, r *http.Request) {
-	users, err := casdoorsdk.GetUsers()
+	users, err := h.CandidateProfiles.UsersOrRefresh(r.Context())
 	if err != nil {
-		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to count candidates")
+		slog.Error("Failed to initialize dashboard identity cache", "error", err)
+		WriteError(w, http.StatusServiceUnavailable, ErrServiceUnavailable, "user identity cache is not ready")
 		return
 	}
 
@@ -111,12 +118,12 @@ func (h *Handler) OpsDashboard(w http.ResponseWriter, r *http.Request) {
 	roleConfig := dashboardRoleConfigFromEnv()
 	roleDefinitions := dashboardRoleDefinitions(roleConfig)
 	cftpUsers := filterCFTPDashboardUsers(users, roleConfig, roleDefinitions)
-	candidateByUserID := h.dashboardCandidateULIDs(r, cftpUsers)
+	candidateByUserID := h.dashboardCandidateULIDs(cftpUsers)
 	filteredUsers := filterOpsDashboardUsers(cftpUsers, candidateByUserID, roleConfig, roleDefinitions, opsDashboardUserFilterFromRequest(r))
 	pageUsers := paginateOpsDashboardUsers(filteredUsers, userPage, userPageSize)
 	userSummary := h.buildOpsUserSummary(cftpUsers, pageUsers, candidateByUserID, roleConfig, roleDefinitions)
 
-	pipelines, err := h.listDashboardPipelines(r.Context())
+	pipelines, stageBucketsExact, err := h.listDashboardPipelines(r.Context())
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
@@ -149,7 +156,7 @@ func (h *Handler) OpsDashboard(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	orders, err := h.listDashboardPaidOrders(r.Context())
+	orders, todayRevenueExact, err := h.listDashboardPaidOrders(r.Context())
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
@@ -159,10 +166,10 @@ func (h *Handler) OpsDashboard(w http.ResponseWriter, r *http.Request) {
 	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 	revenueByCurrency := make(map[string]*opsDashboardRevenue)
 	for _, order := range orders {
-		if order == nil || !isSameLocalDay(order.GetCreatedAt(), startOfDay) {
+		if order == nil || !isSameUnixLocalDay(order.GetPaidAt(), startOfDay) {
 			continue
 		}
-		currency := strings.ToUpper(strings.TrimSpace(order.GetCurrencyCode()))
+		currency := strings.ToUpper(strings.TrimSpace(order.GetCurrency()))
 		if currency == "" {
 			currency = "UNKNOWN"
 		}
@@ -171,7 +178,7 @@ func (h *Handler) OpsDashboard(w http.ResponseWriter, r *http.Request) {
 			item = &opsDashboardRevenue{Currency: currency}
 			revenueByCurrency[currency] = item
 		}
-		item.AmountMinor += order.GetAmountMinor()
+		item.AmountMinor += order.GetAmount()
 		item.OrderCount++
 	}
 
@@ -190,15 +197,19 @@ func (h *Handler) OpsDashboard(w http.ResponseWriter, r *http.Request) {
 		UserPage:                 userPage,
 		UserPageSize:             userPageSize,
 		StageBuckets:             stageBuckets,
+		StageBucketsExact:        stageBucketsExact,
 		TodayRevenue:             revenue,
+		TodayRevenueExact:        todayRevenueExact,
+		AggregationSampleLimit:   adminDashboardSampleLimit,
 		GeneratedAt:              now.Format(time.RFC3339),
 	})
 }
 
-func (h *Handler) listDashboardPipelines(ctx context.Context) ([]*gprogpb.PipelineSummary, error) {
+func (h *Handler) listDashboardPipelines(ctx context.Context) ([]*gprogpb.PipelineSummary, bool, error) {
 	items := make([]*gprogpb.PipelineSummary, 0, adminDashboardSampleLimit)
 	cursor := ""
 	seen := make(map[string]struct{})
+	exact := false
 
 	for page := 0; page < adminDashboardSampleLimit/adminDashboardPageSize && len(items) < adminDashboardSampleLimit; page++ {
 		pageSize := adminDashboardPageSize
@@ -210,18 +221,19 @@ func (h *Handler) listDashboardPipelines(ctx context.Context) ([]*gprogpb.Pipeli
 			PageSize: int32(pageSize),
 		})
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		items = append(items, resp.GetPipelines()...)
 		if !resp.GetHasMore() {
+			exact = true
 			break
 		}
 		nextCursor := strings.TrimSpace(resp.GetNextCursor())
 		if nextCursor == "" || nextCursor == cursor {
-			return nil, fmt.Errorf("dashboard pipeline cursor did not advance")
+			return nil, false, fmt.Errorf("dashboard pipeline cursor did not advance")
 		}
 		if _, ok := seen[nextCursor]; ok {
-			return nil, fmt.Errorf("dashboard pipeline cursor loop detected")
+			return nil, false, fmt.Errorf("dashboard pipeline cursor loop detected")
 		}
 		seen[nextCursor] = struct{}{}
 		cursor = nextCursor
@@ -230,39 +242,42 @@ func (h *Handler) listDashboardPipelines(ctx context.Context) ([]*gprogpb.Pipeli
 	if len(items) > adminDashboardSampleLimit {
 		items = items[:adminDashboardSampleLimit]
 	}
-	return items, nil
+	return items, exact, nil
 }
 
-func (h *Handler) listDashboardPaidOrders(ctx context.Context) ([]*mallpb.OrderSummary, error) {
-	items := make([]*mallpb.OrderSummary, 0, adminDashboardSampleLimit)
+func (h *Handler) listDashboardPaidOrders(ctx context.Context) ([]*gpaypb.OrderSummary, bool, error) {
+	items := make([]*gpaypb.OrderSummary, 0, adminDashboardSampleLimit)
 	cursor := ""
 	seen := make(map[string]struct{})
+	exact := false
 
 	for page := 0; page < adminDashboardSampleLimit/adminDashboardPageSize && len(items) < adminDashboardSampleLimit; page++ {
 		pageSize := adminDashboardPageSize
 		if remaining := adminDashboardSampleLimit - len(items); remaining < pageSize {
 			pageSize = remaining
 		}
-		resp, err := h.Mall.ListOrders(ctx, &mallpb.ListOrdersRequest{
-			Filters: &mallpb.OrderFilters{
-				PaymentStatus: "PAID",
+		resp, err := h.Gpay.ListOrders(ctx, &gpaypb.ListOrdersRequest{
+			Filters: &gpaypb.OrderAdminFilters{
+				StatusFilter: gpaypb.OrderStatus_ORDER_STATUS_COMPLETED,
 			},
-			Cursor:   cursor,
-			PageSize: uint32(pageSize),
+			Cursor:    cursor,
+			PageSize:  uint32(pageSize),
+			SortOrder: gpaypb.SortOrder_SORT_ORDER_DESC,
 		})
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
-		items = append(items, resp.GetItems()...)
+		items = append(items, resp.GetOrders()...)
 		if !resp.GetHasMore() {
+			exact = true
 			break
 		}
 		nextCursor := strings.TrimSpace(resp.GetNextCursor())
 		if nextCursor == "" || nextCursor == cursor {
-			return nil, fmt.Errorf("dashboard order cursor did not advance")
+			return nil, false, fmt.Errorf("dashboard order cursor did not advance")
 		}
 		if _, ok := seen[nextCursor]; ok {
-			return nil, fmt.Errorf("dashboard order cursor loop detected")
+			return nil, false, fmt.Errorf("dashboard order cursor loop detected")
 		}
 		seen[nextCursor] = struct{}{}
 		cursor = nextCursor
@@ -271,7 +286,7 @@ func (h *Handler) listDashboardPaidOrders(ctx context.Context) ([]*mallpb.OrderS
 	if len(items) > adminDashboardSampleLimit {
 		items = items[:adminDashboardSampleLimit]
 	}
-	return items, nil
+	return items, exact, nil
 }
 
 type opsDashboardUserSummary struct {
@@ -296,14 +311,17 @@ func opsDashboardUserFilterFromRequest(r *http.Request) opsDashboardUserFilter {
 	}
 }
 
-func (h *Handler) dashboardCandidateULIDs(r *http.Request, users []*casdoorsdk.User) map[string]string {
+func (h *Handler) dashboardCandidateULIDs(users []*casdoorsdk.User) map[string]string {
 	candidateByUserID := make(map[string]string, len(users))
+	if h.CandidateProfiles == nil || !h.CandidateProfiles.Ready() {
+		return candidateByUserID
+	}
 	for _, user := range users {
 		if user == nil || strings.TrimSpace(user.Id) == "" {
 			continue
 		}
-		candidateULID := h.dashboardCandidateULID(r, user.Id)
-		if candidateULID != "" {
+		candidateULID, ok := h.CandidateProfiles.ULIDForUUID(user.Id)
+		if ok && candidateULID != "" {
 			candidateByUserID[user.Id] = candidateULID
 		}
 	}
@@ -471,17 +489,6 @@ func (h *Handler) buildOpsUserSummary(
 	}
 }
 
-func (h *Handler) dashboardCandidateULID(r *http.Request, userID string) string {
-	if strings.TrimSpace(userID) == "" {
-		return ""
-	}
-	resp, err := h.Gmid.GetUlidByUUID(r.Context(), &gmidpb.GetUlidByUUIDRequest{UserUuid: userID})
-	if err != nil {
-		return ""
-	}
-	return strings.TrimSpace(resp.GetUserUlid())
-}
-
 func statsForStudents(roleCounts map[string]int64) int64 {
 	return roleCounts["student"]
 }
@@ -571,7 +578,7 @@ func dashboardRoleDefinitions(roleConfig opsDashboardRoleConfig) map[string]*cas
 		}
 		seen[normalized] = true
 
-		role, err := casdoorsdk.GetRole(roleName)
+		role, err := getDashboardRole(roleName)
 		if err != nil {
 			slog.Warn("dashboard role definition load failed", "role", roleName, "err", err)
 			continue
@@ -751,11 +758,10 @@ func profileCompletionPercent(user *casdoorsdk.User) int {
 	return completed * 100 / len(fields)
 }
 
-func isSameLocalDay(raw string, startOfDay time.Time) bool {
-	createdAt, err := time.Parse(time.RFC3339, strings.TrimSpace(raw))
-	if err != nil {
+func isSameUnixLocalDay(unixSeconds int64, startOfDay time.Time) bool {
+	if unixSeconds <= 0 {
 		return false
 	}
-	local := createdAt.In(startOfDay.Location())
-	return !local.Before(startOfDay) && local.Before(startOfDay.Add(24*time.Hour))
+	paidAt := time.Unix(unixSeconds, 0).In(startOfDay.Location())
+	return paidAt.Year() == startOfDay.Year() && paidAt.YearDay() == startOfDay.YearDay()
 }

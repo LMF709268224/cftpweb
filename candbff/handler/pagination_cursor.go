@@ -8,10 +8,41 @@ import (
 )
 
 const (
-	defaultCursorPageSize = 20
-	maxCursorPageSize     = 100
-	exactCountLimit       = 100000
+	defaultCursorPageSize           = 20
+	maxCursorPageSize               = 100
+	maxCandidateListPageSize uint32 = 20
+	exactCountLimit                 = 100000
 )
+
+const maxCursorScanPages = 100
+
+type cursorScanGuard struct {
+	seen  map[string]struct{}
+	pages int
+}
+
+func newCursorScanGuard() *cursorScanGuard {
+	return &cursorScanGuard{seen: make(map[string]struct{})}
+}
+
+func (g *cursorScanGuard) next(current string, hasMore bool, rawNext string) (string, bool, error) {
+	g.pages++
+	next := strings.TrimSpace(rawNext)
+	if !hasMore || next == "" {
+		return "", true, nil
+	}
+	if g.pages >= maxCursorScanPages {
+		return "", false, fmt.Errorf("pagination exceeded %d pages", maxCursorScanPages)
+	}
+	if next == current {
+		return "", false, fmt.Errorf("pagination cursor did not advance")
+	}
+	if _, ok := g.seen[next]; ok {
+		return "", false, fmt.Errorf("pagination cursor loop detected")
+	}
+	g.seen[next] = struct{}{}
+	return next, false, nil
+}
 
 type cursorPage struct {
 	Cursor   string

@@ -24,6 +24,7 @@ const prevCursor = ref("")
 const lastPage = ref(1)
 const statusFilter = ref("Pending")
 const auditRemark = ref("")
+const validUntil = ref(defaultValidUntil())
 const activeTab = ref<DetailTab>("overview")
 const pageSize = 20
 let detailRequestId = 0
@@ -99,6 +100,19 @@ const statusOptions = computed(() => [
   { value: "Rejected", label: copy.value.statusOptions.rejected },
   { value: "Reupload", label: copy.value.statusOptions.resubmit },
 ])
+
+function defaultValidUntil() {
+  const date = new Date()
+  date.setFullYear(date.getFullYear() + 2)
+  return localDateValue(date)
+}
+
+function localDateValue(date: Date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
 
 function appUlid(app: JsonRecord | null | undefined) {
   return String(pickFirst(app || {}, ["app_ulid", "app_id", "application_ulid", "application_id"]) || "")
@@ -239,6 +253,7 @@ function selectApplication(app: JsonRecord) {
   selected.value = app
   detailOpen.value = true
   auditRemark.value = ""
+  validUntil.value = defaultValidUntil()
   activeTab.value = "overview"
   void loadApplicationDetail(app)
 }
@@ -326,6 +341,16 @@ async function audit(action: "approve" | "reject" | "resubmit") {
     toast.error(copy.value.toasts.remarkRequired)
     return
   }
+  if (!validUntil.value) {
+    toast.error(copy.value.toasts.validUntilRequired)
+    return
+  }
+  const [year, month, day] = validUntil.value.split("-").map(Number)
+  const validUntilTimestamp = new Date(year, month - 1, day, 23, 59, 59, 999)
+  if (Number.isNaN(validUntilTimestamp.getTime()) || (action === "approve" && validUntilTimestamp.getTime() <= Date.now())) {
+    toast.error(copy.value.toasts.validUntilInvalid)
+    return
+  }
   const auditedApplicationId = appUlid(selected.value)
   const auditedRemark = auditRemark.value
   if (!auditedApplicationId) return
@@ -339,6 +364,7 @@ async function audit(action: "approve" | "reject" | "resubmit") {
         approved: action === "approve",
         reject_reason: auditedRemark,
         require_resubmit: action === "resubmit",
+        valid_until: validUntilTimestamp.toISOString(),
       }),
     })
     toast.success(copy.value.toasts.auditSubmitted)
@@ -584,6 +610,16 @@ onMounted(() => load(1))
                 <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
                   {{ copy.auditHint }}
                 </div>
+                <label class="block space-y-2">
+                  <span class="text-sm font-black text-slate-800">{{ copy.validUntil }}</span>
+                  <input
+                    v-model="validUntil"
+                    class="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm"
+                    type="date"
+                    :min="localDateValue(new Date())"
+                  >
+                  <span class="block text-xs text-slate-500">{{ copy.validUntilHint }}</span>
+                </label>
                 <textarea
                   v-model="auditRemark"
                   class="min-h-32 w-full rounded-2xl border border-slate-200 p-4 text-sm"
