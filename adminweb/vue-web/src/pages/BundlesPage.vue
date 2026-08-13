@@ -1181,6 +1181,7 @@ function replaceMembershipBindingInForm() {
       const membership = asRecord(value)
       if (!membership) continue
       membership.membership_id = toId
+      membership.discount_coupon = String(membership.discount_coupon || "").trim()
       if (durationMonths > 0) membership.duration_months = durationMonths
     }
   }

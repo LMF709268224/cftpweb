@@ -143,6 +143,7 @@ test("membership-only bundle replaces its stale membership reference", async ({ 
   expect(pricing.memberships[0]).toMatchObject({
     membership_id: newMembershipID,
     duration_months: 12,
+    discount_coupon: "",
     stripe_product_id: "prod_membership",
     stripe_price_id: "price_membership",
   })
