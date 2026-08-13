@@ -117,6 +117,7 @@ const activeTab = ref<DetailTab>("summary")
 const mode = ref<Mode>("detail")
 const showDeleteConfirm = ref(false)
 const replacementPipelineId = ref("")
+const replacementMembershipId = ref("")
 const limit = 10
 let listRequestId = 0
 let detailRequestId = 0
@@ -150,7 +151,12 @@ const createItemTypeOptions = computed(() => [
   { value: "pipeline" as const, label: copy.value.createItemTypes.pipeline },
   { value: "membership" as const, label: copy.value.createItemTypes.membership },
 ])
-const replacementPipelineOptions = computed<TargetOption[]>(() => pipelineOptions.value.map(pipelineTargetOption).filter(hasTargetId))
+const replacementPipelineOptions = computed<TargetOption[]>(() => pipelineOptions.value
+  .map(pipelineTargetOption)
+  .filter((option) => hasTargetId(option) && option.id !== currentPipelineRef.value))
+const replacementMembershipOptions = computed<TargetOption[]>(() => membershipOptions.value
+  .map(membershipTargetOption)
+  .filter((option) => hasTargetId(option) && option.id !== currentMembershipRef.value))
 const createItemsJson = computed(() => {
   return JSON.stringify(createItems.value.map((item) => ({
     item_type: item.item_type,
@@ -184,6 +190,7 @@ const linkedItemsPreview = computed<LinkedItemView[]>(() => {
 const currentPipelineRefs = computed(() => pipelineRefsFromItemsJson(form.value.items_json))
 const currentPipelineRef = computed(() => currentPipelineRefs.value[0] || "")
 const currentMembershipRefs = computed(() => membershipRefsFromItemsJson(form.value.items_json))
+const currentMembershipRef = computed(() => currentMembershipRefs.value[0] || "")
 const linkedPipelinePricingOptions = computed<PricingSelectOption[]>(() => currentPipelineRefs.value.map((id) => {
   const target = pipelineOptions.value.find((item) => pipelineTargetOption(item).id === id)
   const option = target ? pipelineTargetOption(target) : null
@@ -793,6 +800,7 @@ async function selectBundle(bundle: JsonRecord, open = true) {
   activeTab.value = "summary"
   showDeleteConfirm.value = false
   replacementPipelineId.value = ""
+  replacementMembershipId.value = ""
   form.value = formFromBundle(bundle)
   if (!open) return
   if (!id) return
@@ -1127,6 +1135,64 @@ async function replacePipelineBindingInForm() {
 async function replaceAndSavePipelineBinding() {
   if (!await replacePipelineBindingInForm()) return
   await savePricing()
+}
+
+function replaceMembershipBindingInForm() {
+  const fromId = currentMembershipRef.value.trim()
+  const toId = replacementMembershipId.value.trim()
+  if (!fromId || !toId) {
+    toast.error(copy.value.toasts.membershipRelinkRequiresTarget)
+    return false
+  }
+  if (fromId === toId || !replacementMembershipOptions.value.some((option) => option.id === toId)) {
+    toast.error(copy.value.toasts.membershipRelinkNoChange)
+    return false
+  }
+
+  const items = parseJson(form.value.items_json, "items_json")
+  const pricing = parseJson(form.value.pricing_json, "pricing_json")
+  const pricingRecord = asRecord(pricing)
+  if (!Array.isArray(items) || !pricingRecord) {
+    toast.error(copy.value.toasts.relinkInvalidJson)
+    return false
+  }
+
+  let itemChanged = false
+  const refKeys = ["ref_ulid", "ref_id", "ulid", "id", "item_id", "membership_id", "membership_ulid"]
+  for (const item of items) {
+    const record = asRecord(item)
+    if (!record || !isMembershipItem(record)) continue
+    for (const key of refKeys) {
+      if (String(record[key] || "").trim() === fromId) {
+        record[key] = toId
+        itemChanged = true
+      }
+    }
+  }
+  if (!itemChanged) {
+    toast.error(copy.value.toasts.membershipRelinkNoChange)
+    return false
+  }
+
+  const selectedMembership = membershipOptions.value.find((item) => membershipTargetOption(item).id === toId)
+  const durationMonths = Number(pickFirst(selectedMembership || {}, ["duration_in_months", "duration_months"])) || 0
+  if (Array.isArray(pricingRecord.memberships)) {
+    for (const value of pricingRecord.memberships) {
+      const membership = asRecord(value)
+      if (!membership) continue
+      membership.membership_id = toId
+      if (durationMonths > 0) membership.duration_months = durationMonths
+    }
+  }
+
+  form.value.items_json = JSON.stringify(items, null, 2)
+  form.value.pricing_json = JSON.stringify(pricingRecord, null, 2)
+  return true
+}
+
+async function replaceAndSaveMembershipBinding() {
+  if (!replaceMembershipBindingInForm()) return
+  if (await persistPricing()) replacementMembershipId.value = ""
 }
 
 async function publish() {
@@ -1609,7 +1675,7 @@ onMounted(load)
               </div>
 
               <div v-else-if="activeTab === 'pricing'" class="space-y-5">
-                <section class="rounded-2xl border border-sky-200 bg-sky-50 p-4 md:p-5">
+                <section v-if="currentPipelineRef" class="rounded-2xl border border-sky-200 bg-sky-50 p-4 md:p-5">
                   <div class="flex flex-wrap items-start justify-between gap-4">
                     <div>
                       <h3 class="text-lg font-black text-slate-950">{{ copy.relink.title }}</h3>
@@ -1623,22 +1689,54 @@ onMounted(load)
                   <div class="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_auto]">
                     <div class="rounded-xl bg-white p-4">
                       <div class="text-xs font-black uppercase text-slate-400">{{ copy.relink.currentPipeline }}</div>
-                      <div v-if="currentPipelineRef" class="mt-2 break-all font-mono text-xs font-bold text-blue-700">{{ currentPipelineRef }}</div>
-                      <div v-else class="mt-2 text-sm font-semibold text-slate-500">{{ copy.relink.noPipelineBinding }}</div>
+                      <div class="mt-2 break-all font-mono text-xs font-bold text-blue-700">{{ currentPipelineRef }}</div>
                     </div>
                     <label class="grid gap-2 text-sm font-bold">
                       {{ copy.relink.newPipeline }}
-                      <select v-model="replacementPipelineId" class="h-11 rounded-xl border border-slate-200 bg-white px-4" :disabled="!currentPipelineRef || targetOptionsLoading">
-                        <option value="">{{ copy.relink.selectNewPipeline }}</option>
+                      <select v-model="replacementPipelineId" class="h-11 rounded-xl border border-slate-200 bg-white px-4" :disabled="targetOptionsLoading || !replacementPipelineOptions.length">
+                        <option value="">{{ targetOptionsLoading ? copy.relink.loadingTargets : replacementPipelineOptions.length ? copy.relink.selectNewPipeline : copy.relink.noAvailablePipelines }}</option>
                         <option v-for="option in replacementPipelineOptions" :key="option.id" :value="option.id">
                           {{ option.title }} · {{ option.subtitle }}
                         </option>
                       </select>
                     </label>
                     <div class="flex flex-wrap items-end">
-                      <button class="inline-flex h-10 items-center justify-center rounded-xl bg-blue-700 px-5 text-sm font-bold text-white disabled:opacity-50" type="button" :disabled="!currentPipelineRef || !replacementPipelineId || saving" @click="replaceAndSavePipelineBinding">
+                      <button class="inline-flex h-10 items-center justify-center rounded-xl bg-blue-700 px-5 text-sm font-bold text-white disabled:opacity-50" type="button" :disabled="!replacementPipelineId || saving" @click="replaceAndSavePipelineBinding">
                         <Loader2 v-if="saving" class="mr-2 inline h-4 w-4 animate-spin" />
                         {{ copy.relink.save }}
+                      </button>
+                    </div>
+                  </div>
+                </section>
+                <section v-if="currentMembershipRef" class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 md:p-5">
+                  <div class="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                      <h3 class="text-lg font-black text-slate-950">{{ copy.membershipRelink.title }}</h3>
+                      <p class="mt-1 text-sm font-semibold text-slate-600">{{ copy.membershipRelink.description }}</p>
+                    </div>
+                    <button class="rounded-xl border bg-white px-4 py-2 text-sm font-bold disabled:opacity-50" type="button" :disabled="targetOptionsLoading" @click="loadCreateTargetOptions">
+                      <Loader2 v-if="targetOptionsLoading" class="mr-2 inline h-4 w-4 animate-spin" />
+                      {{ copy.membershipRelink.reloadTargets }}
+                    </button>
+                  </div>
+                  <div class="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_auto]">
+                    <div class="rounded-xl bg-white p-4">
+                      <div class="text-xs font-black uppercase text-slate-400">{{ copy.membershipRelink.currentMembership }}</div>
+                      <div class="mt-2 break-all font-mono text-xs font-bold text-emerald-700">{{ currentMembershipRef }}</div>
+                    </div>
+                    <label class="grid gap-2 text-sm font-bold">
+                      {{ copy.membershipRelink.newMembership }}
+                      <select v-model="replacementMembershipId" class="h-11 rounded-xl border border-slate-200 bg-white px-4" :disabled="targetOptionsLoading || !replacementMembershipOptions.length">
+                        <option value="">{{ targetOptionsLoading ? copy.membershipRelink.loadingTargets : replacementMembershipOptions.length ? copy.membershipRelink.selectNewMembership : copy.membershipRelink.noAvailableMemberships }}</option>
+                        <option v-for="option in replacementMembershipOptions" :key="option.id" :value="option.id">
+                          {{ option.title }} · {{ option.subtitle }}
+                        </option>
+                      </select>
+                    </label>
+                    <div class="flex flex-wrap items-end">
+                      <button class="inline-flex h-10 items-center justify-center rounded-xl bg-emerald-700 px-5 text-sm font-bold text-white disabled:opacity-50" type="button" :disabled="!replacementMembershipId || saving" @click="replaceAndSaveMembershipBinding">
+                        <Loader2 v-if="saving" class="mr-2 inline h-4 w-4 animate-spin" />
+                        {{ copy.membershipRelink.save }}
                       </button>
                     </div>
                   </div>
