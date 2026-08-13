@@ -441,7 +441,142 @@ or on() vector(0)
 
 其中 `namespace` 仍需替换为 Label browser 中的真实 Kubernetes Namespace 标签。
 
-## 12. 后续建议
+### 11.6 配置告警后 Explore 显示 No data
+
+配置告警不会删除、移动或消费 Loki 日志，告警查询也不会自动保留在 Explore 页面。打开
+`Grafana -> Explore -> loki` 后，如果查询输入框显示灰色提示文字 `Enter a Loki query`，说明
+当前查询框是空的；此时页面显示 `No data` 不代表 Loki 中的日志消失了。
+
+按以下步骤重新查询：
+
+1. 在查询输入框填写 `{level="ERROR"}`。
+2. 将右上角时间范围先改为 `Last 24 hours`，避免最近 1 小时恰好没有 ERROR。
+3. 点击 `Run query`。
+4. 如果仍没有结果，点击 `Label browser`，选择一个实际存在的标签和值后执行查询；不要猜测
+   Namespace 或容器标签名。
+5. 也可以点击查询框下方的 `Query history`，找到之前执行过的查询并重新运行。
+
+如果 `{level="ERROR"}` 没有结果，但希望先确认是否仍有其他级别日志，可以查询：
+
+```logql
+{level=~".+"}
+```
+
+该查询只覆盖带 `level` 标签的日志。如果 Label browser 中不存在 `level`，应改用界面中实际
+存在的 Namespace、应用或容器标签来确认日志采集是否正常。
+
+## 12. 方案评估、运行代价和新增容器
+
+### 12.1 当前方案是否最优
+
+当前规则适合用作测试环境的第一条兜底告警，用于确认
+`Vector -> Loki -> Grafana -> 企业微信` 整条链路可用；它不是正式环境的最终最优方案。
+
+当前查询：
+
+```logql
+(
+  sum(count_over_time({level="ERROR"}[5m]))
+  or on() vector(0)
+)
+```
+
+有以下特点：
+
+1. 查询会统计当前 Loki 数据源中所有带 `level="ERROR"` 标签的日志，不区分 Namespace、
+   应用或容器。
+2. 外层 `sum` 把所有日志合并成一个数值，通知链路简单、告警实例少，但企业微信消息不能直接
+   指出是哪个服务产生了错误，仍需进入 Explore 排查。
+3. 单条 ERROR 会在 5 分钟滚动窗口内持续被统计，因此 `Pending period=1m` 不能过滤掉单次
+   ERROR；它通常仍会触发告警，并在该日志离开查询窗口后恢复。
+4. `No data=Normal` 适合“没有 ERROR 就正常”的日志计数规则，但无法证明 Vector、Loki 和
+   应用本身仍在正常工作。采集链路中断时，也可能表现为没有 ERROR。
+
+因此，当前规则可以保留为全局安全网。正式使用时，不建议把“任意一条 ERROR”长期当作
+`critical`；应再建立按环境和服务划分的告警规则。
+
+### 12.2 运行代价
+
+| 代价 | 当前规则的影响 |
+| --- | --- |
+| Loki 查询 | 每分钟执行一次，即每天约 1440 次；每次查询最近 5 分钟。日志量越大，查询消耗的 CPU、内存和存储读取越多 |
+| 日志存储 | 新增容器会增加 Vector 传输量和 Loki 的磁盘/对象存储占用；这部分通常比单条告警规则本身的成本更大 |
+| 告警噪声 | 任意一条 ERROR 都会触发，单次错误通常产生一条告警通知，恢复通知开启时还会再产生一条恢复消息 |
+| 定位时间 | 当前 `sum` 丢失了服务和容器维度，收到通知后必须回到 Explore 查询原始日志 |
+| 监控盲区 | Grafana、Loki 或 Vector 自身故障时，这条业务日志规则不能独立保证仍能发出通知 |
+| 信息安全 | 当前只发送错误数量、规则状态和 Grafana 链接，不发送原始日志，泄露 Token 或用户数据的风险较低 |
+
+`level` 只有 `DEBUG/INFO/WARN/ERROR` 等少量固定值，基数较低，可以作为现有查询标签使用。
+不要把用户 ID、订单号、请求 ID、Trace ID 或 Pod UID 增加为 Loki 索引标签，否则会制造大量
+短生命周期日志流，增加写入、存储和查询成本。
+
+### 12.3 再运行一个容器是否自动适用
+
+新增 Pod、同一 Deployment 增加副本，或者同一 Pod 增加容器后，满足以下全部条件时，当前规则
+会自动统计它的 ERROR，不需要修改 Grafana 规则：
+
+1. 容器把日志写到标准输出或标准错误输出，而不是只写容器内部文件。
+2. Vector 使用 Kubernetes Pod 日志采集源，并且该 Namespace、Pod 或容器没有被采集过滤规则
+   或 `vector.dev/exclude` 注解排除。
+3. Vector 最终发送给 Loki 的日志包含规范化后的 Loki 标签 `level="ERROR"`。如果新应用只在
+   日志正文中输出 `error`，当前标签查询不会命中。
+4. 日志被写入当前 Grafana 所使用的同一个 Loki 数据源或 Tenant。
+
+当前规则会把新增容器的数据合并进总数，但不会在告警中显示新增容器的名称。部署后应在
+`Grafana -> Explore -> loki -> Label browser` 中确认实际的 Namespace 和容器标签名称及取值，
+再用真实标签执行一次查询。例如实际标签名确认为 `namespace` 和 `container` 后：
+
+```logql
+{namespace="cftp-test", container="adminbff"}
+```
+
+能看到该容器最新日志，且下面的查询能看到它的错误日志，才表示它已被当前规则覆盖：
+
+```logql
+{namespace="cftp-test", container="adminbff", level="ERROR"}
+```
+
+如果 Label browser 显示的是 `namespace_name`、`kubernetes_namespace_name`、
+`container_name` 等其他名称，必须使用界面中的真实名称替换示例，不能猜测标签名。
+
+“再运行一个容器”还需要区分容器的用途：
+
+| 新增对象 | 是否直接适用 | 需要注意 |
+| --- | --- | --- |
+| 新业务 Pod/容器或现有 Deployment 副本 | 通常适用 | 必须满足上面的采集、标签和 Loki Tenant 条件 |
+| Grafana 副本 | 不能只把副本数改为 2 | 多个 Grafana 实例需要共享 MySQL/PostgreSQL，并配置 Grafana Alerting HA；否则规则数据可能不一致或产生重复通知。默认情况下每个 Grafana 副本都会执行全部规则，Loki 查询负载会随副本数增加 |
+| Vector 副本 | 只有按节点部署时才适合扩展 | Kubernetes 中通常使用 DaemonSet 保持每个节点一个采集实例；两个 Vector 同时读取同一节点的同一批日志，可能重复写入 Loki，进而造成错误计数和告警重复 |
+| Loki 副本 | 需要按 Loki 的分布式/高可用部署方式配置 | 不能把两个互不共享数据的单机 Loki 当成一个数据源使用 |
+
+Grafana Alerting HA 的作用是让多个 Grafana 实例都能评估规则，并让内置 Alertmanager 尽力去重
+通知；它优先保证不漏通知，因此网络异常时仍可能偶尔产生重复通知。当前只有一个 Grafana 实例
+时，不需要为了这一条规则专门增加 Grafana 副本。
+
+### 12.4 推荐的最终方案
+
+建议采用分层告警，而不是只保留一条全局规则：
+
+| 层级 | 用途 | 建议 |
+| --- | --- | --- |
+| 全局兜底 | 验证链路并发现未分类错误 | 保留当前规则；正式环境建议标记为 `warning` |
+| 服务错误突增 | 发现某个稳定服务在 5 分钟内连续报错 | 按 Namespace 和稳定的应用/容器标签分组，阈值可先设为大于 2 |
+| 明确严重错误 | 启动失败、数据库不可用等确认需要立即处理的错误 | 使用精确错误特征，出现 1 次即触发 `critical` |
+| 可用性告警 | Pod 重启、Ready 失败、HTTP 不可达 | 使用 Kubernetes/Prometheus/探活指标；不要仅依赖“有没有 ERROR 日志” |
+| 采集链路健康 | Grafana 无法查询 Loki、Vector 停止采集 | 单独监控 `DatasourceError` 和日志采集组件状态 |
+
+如果 Label browser 已确认稳定标签名是 `namespace` 和 `app`，服务分组规则可以使用：
+
+```logql
+sum by (namespace, app) (
+  count_over_time({namespace="cftp-test", level="ERROR"}[5m])
+)
+```
+
+若没有 `app` 标签，可以改用实际存在且取值稳定的 `service` 或 `container` 标签。不要按 Pod
+名称、用户 ID、订单号或请求 ID 建立告警实例；Pod 名称会随发布和扩缩容变化，其余字段基数
+更高，都会增加告警数量和 Loki 查询成本。
+
+## 13. 后续建议
 
 第一条全局 ERROR 规则稳定运行后，再分别建立以下规则，不要一开始全部开启：
 
