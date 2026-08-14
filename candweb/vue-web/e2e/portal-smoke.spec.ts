@@ -129,6 +129,26 @@ for (const portalPage of portalPages) {
   });
 }
 
+test("首页统计卡片可以跳转到对应页面", async ({ page }) => {
+  await seedAuthenticatedCandidate(page);
+  await installCandidateApiMocks(page, emptyPortalResponse);
+  await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+
+  const dashboardCards = [
+    { key: "certificates", path: "/certificates" },
+    { key: "exams", path: "/exams" },
+    { key: "resourcePacks", path: "/resource-packs" },
+  ];
+
+  for (const card of dashboardCards) {
+    await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+    const link = page.getByTestId(`dashboard-card-${card.key}`);
+    await expect(link).toHaveAttribute("href", card.path);
+    await link.click();
+    await expect(page).toHaveURL(new RegExp(`${card.path.replaceAll("/", "\\/")}$`));
+  }
+});
+
 test("支付成功页在移动端不会因长 ID 横向溢出", async ({ page }) => {
   const longOrderId = "ORDER-MOBILE-REGRESSION-0123456789-ABCDEFGHIJKLMNOPQRSTUVWXYZ-0123456789";
 

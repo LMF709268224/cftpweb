@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import type { Component } from "vue"
+import { RouterLink } from "vue-router"
 import { AlertCircle, Award, BookOpen, CheckCircle2, ClipboardList, Loader2, PackageOpen, PanelLeft, Receipt, RefreshCw } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import PageFeedback from "@/components/PageFeedback.vue"
@@ -331,6 +332,7 @@ onMounted(() => {
               <RouterLink
                 v-for="card in featuredCards"
                 :key="card.key"
+                :data-testid="`dashboard-card-${card.key}`"
                 :to="card.href"
                 :class="[
                   'portal-stat-card portal-card-featured group relative flex h-[214px] w-full flex-col items-center justify-center overflow-hidden rounded-[16px] border bg-gradient-to-b p-8 text-center shadow-[0_2px_8px_rgba(15,23,42,0.12)] transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-[1.015] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 lg:basis-[34%] lg:grow-0 lg:shrink-0',
@@ -356,6 +358,7 @@ onMounted(() => {
               <RouterLink
                 v-for="card in secondaryCards"
                 :key="card.key"
+                :data-testid="`dashboard-card-${card.key}`"
                 :to="card.href"
                 :class="[
                   'portal-stat-card portal-card-secondary group relative flex h-[214px] w-full flex-col items-center justify-center overflow-hidden rounded-[16px] border bg-gradient-to-b p-8 text-center shadow-[0_2px_8px_rgba(15,23,42,0.12)] transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-[1.015] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 lg:basis-[29%] lg:grow-0 lg:shrink-0',
