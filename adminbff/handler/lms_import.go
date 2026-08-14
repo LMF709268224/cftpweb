@@ -34,15 +34,18 @@ type importCourseJSON struct {
 }
 
 type importChapterJSON struct {
-	Title   string             `json:"title"`
-	Lessons []importLessonJSON `json:"lessons"`
+	Title     string             `json:"title"`
+	SortOrder uint32             `json:"sort_order,omitempty"`
+	Lessons   []importLessonJSON `json:"lessons"`
 }
 
 type importLessonJSON struct {
 	Title          string `json:"title"`
+	SortOrder      uint32 `json:"sort_order,omitempty"`
 	LessonType     any    `json:"lesson_type"`
 	Body           string `json:"body"`
 	MediaObjectKey string `json:"media_object_key"`
+	MediaFileHash  string `json:"media_file_hash"`
 	ExternalURL    string `json:"external_url"`
 	VideoProvider  string `json:"video_provider"`
 	VideoStreamUID string `json:"video_stream_uid"`
@@ -92,6 +95,11 @@ type importedCoursePackageResponse struct {
 	Quizzes []importedChapterQuizResult `json:"quizzes"`
 }
 
+type importedChapterResponse struct {
+	ChapterULID string `json:"chapter_ulid"`
+	LessonCount int    `json:"lesson_count"`
+}
+
 // ImportLmsContent POST /api/lms/import
 func (h *Handler) ImportLmsContent(w http.ResponseWriter, r *http.Request) {
 	var req importLmsContentRequest
@@ -123,6 +131,53 @@ func normalizeLmsImportScope(scope string) string {
 	default:
 		return ""
 	}
+}
+
+// ImportLmsChapter POST /api/lms/courses/{course_id}/chapters/import
+func (h *Handler) ImportLmsChapter(w http.ResponseWriter, r *http.Request) {
+	courseID, ok := requiredURLParam(w, r, "course_id")
+	if !ok {
+		return
+	}
+
+	var chapter importChapterJSON
+	if err := ReadJSON(r, &chapter); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
+		return
+	}
+	if chapter.SortOrder == 0 {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "chapter.sort_order is required")
+		return
+	}
+	if !validateImportChapter(w, chapter, "chapter") {
+		return
+	}
+
+	chapterID := newLmsID()
+	chapterResp, err := h.Lms.CreateChapterAdmin(r.Context(), &lmspb.CreateChapterRequest{
+		ChapterUlid: chapterID,
+		CourseUlid:  courseID,
+		Title:       strings.TrimSpace(chapter.Title),
+		SortOrder:   chapter.SortOrder,
+	})
+	if err != nil {
+		writeLmsError(w, err)
+		return
+	}
+	chapterID = chapterResp.GetChapterUlid()
+
+	for lessonIndex, lesson := range chapter.Lessons {
+		lessonReq := buildImportLessonRequest(chapterID, lesson, uint32(lessonIndex+1))
+		if _, err := h.Lms.CreateLessonAdmin(r.Context(), lessonReq); err != nil {
+			writeLmsError(w, err)
+			return
+		}
+	}
+
+	WriteJSON(w, http.StatusOK, importedChapterResponse{
+		ChapterULID: chapterID,
+		LessonCount: len(chapter.Lessons),
+	})
 }
 
 func (h *Handler) importLmsCourse(w http.ResponseWriter, r *http.Request, req importLmsContentRequest) {
@@ -280,19 +335,8 @@ func validateImportCoursePackage(w http.ResponseWriter, course importCourseJSON)
 	}
 	for chapterIndex, chapter := range course.Chapters {
 		chapterPath := fmt.Sprintf("course_json.chapters[%d]", chapterIndex)
-		if strings.TrimSpace(chapter.Title) == "" {
-			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, chapterPath+".title is required")
+		if !validateImportChapter(w, chapter, chapterPath) {
 			return false
-		}
-		for lessonIndex, lesson := range chapter.Lessons {
-			lessonPath := fmt.Sprintf("%s.lessons[%d]", chapterPath, lessonIndex)
-			if strings.TrimSpace(lesson.Title) == "" {
-				WriteError(w, http.StatusBadRequest, ErrInvalidRequest, lessonPath+".title is required")
-				return false
-			}
-			if !validateImportLessonPayload(w, lesson, lessonPath) {
-				return false
-			}
 		}
 	}
 	for quizIndex, quiz := range course.Quizzes {
@@ -317,6 +361,28 @@ func validateImportCoursePackage(w http.ResponseWriter, course importCourseJSON)
 					return false
 				}
 			}
+		}
+	}
+	return true
+}
+
+func validateImportChapter(w http.ResponseWriter, chapter importChapterJSON, chapterPath string) bool {
+	if strings.TrimSpace(chapter.Title) == "" {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, chapterPath+".title is required")
+		return false
+	}
+	if len(chapter.Lessons) == 0 {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, chapterPath+".lessons must not be empty")
+		return false
+	}
+	for lessonIndex, lesson := range chapter.Lessons {
+		lessonPath := fmt.Sprintf("%s.lessons[%d]", chapterPath, lessonIndex)
+		if strings.TrimSpace(lesson.Title) == "" {
+			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, lessonPath+".title is required")
+			return false
+		}
+		if !validateImportLessonPayload(w, lesson, lessonPath) {
+			return false
 		}
 	}
 	return true
@@ -376,4 +442,49 @@ func normalizeImportLessonType(value any) string {
 		}
 	}
 	return ""
+}
+
+func buildImportLessonRequest(chapterID string, lesson importLessonJSON, fallbackSortOrder uint32) *lmspb.CreateLessonRequest {
+	lessonType := lmspb.LessonType_LESSON_TYPE_UNSPECIFIED
+	switch normalizeImportLessonType(lesson.LessonType) {
+	case "video":
+		lessonType = lmspb.LessonType_LESSON_TYPE_VIDEO
+	case "text":
+		lessonType = lmspb.LessonType_LESSON_TYPE_TEXT
+	case "pdf":
+		lessonType = lmspb.LessonType_LESSON_TYPE_PDF
+	case "image":
+		lessonType = lmspb.LessonType_LESSON_TYPE_IMAGE
+	case "audio":
+		lessonType = lmspb.LessonType_LESSON_TYPE_AUDIO
+	case "file":
+		lessonType = lmspb.LessonType_LESSON_TYPE_FILE
+	case "link":
+		lessonType = lmspb.LessonType_LESSON_TYPE_LINK
+	}
+
+	sortOrder := lesson.SortOrder
+	if sortOrder == 0 {
+		sortOrder = fallbackSortOrder
+	}
+	metaJSON := strings.TrimSpace(lesson.MetaJSON)
+	if metaJSON == "" {
+		metaJSON = "{}"
+	}
+
+	return &lmspb.CreateLessonRequest{
+		LessonUlid:     newLmsID(),
+		ChapterUlid:    chapterID,
+		Title:          strings.TrimSpace(lesson.Title),
+		SortOrder:      sortOrder,
+		LessonType:     lessonType,
+		Body:           lesson.Body,
+		MediaObjectKey: strings.TrimSpace(lesson.MediaObjectKey),
+		MediaFileHash:  strings.TrimSpace(lesson.MediaFileHash),
+		ExternalUrl:    strings.TrimSpace(lesson.ExternalURL),
+		VideoProvider:  strings.TrimSpace(lesson.VideoProvider),
+		VideoStreamUid: strings.TrimSpace(lesson.VideoStreamUID),
+		VideoEmbedCode: strings.TrimSpace(lesson.VideoEmbedCode),
+		MetaJson:       metaJSON,
+	}
 }

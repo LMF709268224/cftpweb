@@ -176,6 +176,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 				r.Post("/{course_id}/permissions/revoke", h.RevokeLmsCourseAccessPermission)
 				r.Get("/{course_id}/chapters", h.ListLmsChapters)
 				r.Post("/{course_id}/chapters", h.CreateLmsChapter)
+				r.Post("/{course_id}/chapters/import", h.ImportLmsChapter)
 				r.Post("/{course_id}/chapters/reorder", h.ReorderLmsChapters)
 				r.Get("/{course_id}/lessons", h.ListLmsLessonsByCourse)
 			})

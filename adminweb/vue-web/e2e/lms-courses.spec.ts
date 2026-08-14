@@ -75,3 +75,47 @@ test("LMS course detail reads counts and complete tree without editing", async (
   expect(requests.some((request) => request.includes("/publish") || request.includes("/import"))).toBe(false)
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
 })
+
+test("course import stops without retry and keeps the failed draft ID", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  const requests: string[] = []
+  let chapterImportCalls = 0
+  await installAdminApiMocks(page, ({ method, pathname }) => {
+    requests.push(`${method} ${pathname}`)
+    if (method === "GET" && pathname === "/api/lms/courses") {
+      return { data: { courses: [], has_more: false, next_cursor: "" } }
+    }
+    if (method === "POST" && pathname === "/api/lms/courses") {
+      return { data: { course_ulid: "draft-course-1" } }
+    }
+    if (method === "POST" && pathname === "/api/lms/courses/draft-course-1/chapters/import") {
+      chapterImportCalls += 1
+      if (chapterImportCalls === 1) return { data: { chapter_ulid: "chapter-1", lesson_count: 1 } }
+      return { status: 504, errorCode: "SERVICE_UNAVAILABLE", message: "chapter import timed out" }
+    }
+    return undefined
+  })
+
+  await page.goto("/lms")
+  await page.getByRole("button", { name: "导入 JSON" }).click()
+  await page.getByPlaceholder("也可以直接粘贴 JSON").fill(JSON.stringify({
+    title: "Chunked Course",
+    course_gpath: "/courses/chunked-course",
+    chapters: [
+      { title: "Chapter 1", lessons: [{ title: "Lesson 1", lesson_type: "video" }] },
+      { title: "Chapter 2", lessons: [{ title: "Lesson 2", lesson_type: "video" }] },
+    ],
+    quizzes: [],
+  }))
+  await page.getByRole("button", { name: "开始导入" }).click()
+
+  const dialog = page.getByRole("dialog")
+  await expect(dialog.getByText("导入已停止", { exact: true })).toBeVisible()
+  await expect(dialog.getByText("已保留未完成的课程草稿。请关闭窗口后删除该草稿，再重新导入。", { exact: true })).toBeVisible()
+  await expect(dialog.getByText("草稿课程 ID: draft-course-1", { exact: true })).toBeVisible()
+  await expect(dialog.getByRole("button", { name: "开始导入" })).toBeDisabled()
+
+  expect(chapterImportCalls).toBe(2)
+  expect(requests.filter((request) => request === "POST /api/lms/courses")).toHaveLength(1)
+  expect(requests).not.toContain("GET /api/lms/courses/draft-course-1/complete")
+})

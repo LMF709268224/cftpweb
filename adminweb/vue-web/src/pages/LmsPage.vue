@@ -24,6 +24,23 @@ type CourseForm = {
   course_gpath: string
 }
 
+type CourseImportChapter = JsonRecord & {
+  title: string
+  lessons: JsonRecord[]
+}
+
+type CourseImportQuiz = JsonRecord & {
+  chapter_title: string
+  title: string
+}
+
+type CourseImportPackage = JsonRecord & {
+  title: string
+  course_gpath: string
+  chapters: CourseImportChapter[]
+  quizzes: CourseImportQuiz[]
+}
+
 type ChapterForm = {
   title: string
   sort_order: string
@@ -254,6 +271,11 @@ const importCategoryTips = ref("")
 const importJson = ref("")
 const importFileInput = ref<HTMLInputElement | null>(null)
 const importFileName = ref("")
+const importProgressCurrent = ref(0)
+const importProgressTotal = ref(0)
+const importProgressLabel = ref("")
+const importDraftCourseId = ref("")
+const importFailedDraftId = ref("")
 let courseRequestId = 0
 let lessonsRequestId = 0
 let quizzesRequestId = 0
@@ -264,6 +286,10 @@ const selectedCourseId = computed(() => courseId(selectedCourse.value))
 const isCreatingCourse = computed(() => courseCreateOpen.value && !selectedCourseId.value)
 const selectedChapterId = computed(() => chapterId(selectedChapter.value))
 const selectedMaterialId = computed(() => materialId(selectedMaterial.value))
+const importProgressPercent = computed(() => {
+  if (importProgressTotal.value <= 0) return 0
+  return Math.round((importProgressCurrent.value / importProgressTotal.value) * 100)
+})
 
 const duplicateGpathWarning = computed(() => {
   const gpath = courseForm.value.course_gpath?.trim()
@@ -2859,13 +2885,136 @@ async function confirmDetailDelete() {
   }
 }
 
+function parseCourseImportPackage(value: unknown): CourseImportPackage {
+  if (!isJsonRecord(value)) throw new Error(copy.value.toasts.importInvalidPackage)
+  const title = String(value.title || "").trim()
+  const courseGpath = String(value.course_gpath || "").trim()
+  const rawChapters = Array.isArray(value.chapters) ? value.chapters : []
+  const rawQuizzes = value.quizzes === undefined ? [] : Array.isArray(value.quizzes) ? value.quizzes : null
+  if (!title || !courseGpath || rawChapters.length === 0 || rawQuizzes === null) {
+    throw new Error(copy.value.toasts.importInvalidPackage)
+  }
+
+  const chapters: CourseImportChapter[] = []
+  const chapterTitles = new Set<string>()
+  for (const rawChapter of rawChapters) {
+    if (!isJsonRecord(rawChapter)) throw new Error(copy.value.toasts.importInvalidPackage)
+    const chapterTitle = String(rawChapter.title || "").trim()
+    const rawLessons = Array.isArray(rawChapter.lessons) ? rawChapter.lessons : []
+    const lessons = rawLessons.filter(isJsonRecord)
+    if (!chapterTitle || lessons.length === 0 || lessons.length !== rawLessons.length || chapterTitles.has(chapterTitle)) {
+      throw new Error(copy.value.toasts.importInvalidPackage)
+    }
+    chapterTitles.add(chapterTitle)
+    chapters.push({ ...rawChapter, title: chapterTitle, lessons })
+  }
+
+  const quizzes: CourseImportQuiz[] = []
+  for (const rawQuiz of rawQuizzes) {
+    if (!isJsonRecord(rawQuiz)) throw new Error(copy.value.toasts.importInvalidPackage)
+    const chapterTitle = String(rawQuiz.chapter_title || "").trim()
+    const quizTitle = String(rawQuiz.title || "").trim()
+    if (!chapterTitle || !quizTitle || !chapterTitles.has(chapterTitle)) {
+      throw new Error(copy.value.toasts.importInvalidPackage)
+    }
+    quizzes.push({ ...rawQuiz, chapter_title: chapterTitle, title: quizTitle })
+  }
+
+  return { ...value, title, course_gpath: courseGpath, chapters, quizzes }
+}
+
+function courseImportPayload(coursePackage: CourseImportPackage): JsonRecord {
+  return {
+    category_tips: importCategoryTips.value.trim() || String(coursePackage.category_tips || "").trim(),
+    title: coursePackage.title,
+    description: String(coursePackage.description || ""),
+    thumbnail_object_key: String(coursePackage.thumbnail_object_key || ""),
+    thumbnail_file_hash: String(coursePackage.thumbnail_file_hash || ""),
+    duration_min: Number(coursePackage.duration_min || 0),
+    certification_enabled: Boolean(coursePackage.certification_enabled),
+    certification_def_ulid: String(coursePackage.certification_def_ulid || ""),
+    course_gpath: coursePackage.course_gpath,
+  }
+}
+
+function verifyImportedCourse(data: JsonRecord, coursePackage: CourseImportPackage) {
+  const complete = isJsonRecord(data.complete_course) ? data.complete_course : data
+  const chapterDetails = Array.isArray(complete.chapters) ? complete.chapters.filter(isJsonRecord) : []
+  const expectedLessonCount = coursePackage.chapters.reduce((count, chapter) => count + chapter.lessons.length, 0)
+  const actualLessonCount = chapterDetails.reduce((count, chapter) => {
+    return count + (Array.isArray(chapter.lessons) ? chapter.lessons.length : 0)
+  }, 0)
+  const actualQuizCount = chapterDetails.reduce((count, chapter) => {
+    return count + (Array.isArray(chapter.quizzes) ? chapter.quizzes.length : 0)
+  }, 0)
+  if (
+    chapterDetails.length !== coursePackage.chapters.length
+    || actualLessonCount !== expectedLessonCount
+    || actualQuizCount !== coursePackage.quizzes.length
+  ) {
+    throw new Error(copy.value.toasts.importVerificationFailed)
+  }
+}
+
+async function importCourseInSteps(coursePackage: CourseImportPackage) {
+  importProgressCurrent.value = 0
+  importProgressTotal.value = coursePackage.chapters.length + coursePackage.quizzes.length + 2
+  importProgressLabel.value = `${copy.value.importCreatingCourse}: ${coursePackage.title}`
+
+  const createdCourse = await apiClient<JsonRecord>("/api/lms/courses", {
+    method: "POST",
+    body: JSON.stringify(courseImportPayload(coursePackage)),
+  })
+  const draftCourseID = courseId(createdCourse)
+  if (!draftCourseID) throw new Error(copy.value.toasts.importMissingCourseId)
+  importDraftCourseId.value = draftCourseID
+  importProgressCurrent.value = 1
+
+  const chapterIDs = new Map<string, string>()
+  for (const [chapterIndex, chapter] of coursePackage.chapters.entries()) {
+    importProgressLabel.value = `${copy.value.importCreatingChapter}: ${chapter.title}`
+    const result = await apiClient<JsonRecord>(`/api/lms/courses/${encodeURIComponent(draftCourseID)}/chapters/import`, {
+      method: "POST",
+      body: JSON.stringify({ ...chapter, sort_order: chapterIndex + 1 }),
+    })
+    const importedChapterID = chapterId(result)
+    if (!importedChapterID) throw new Error(copy.value.toasts.importMissingChapterId)
+    chapterIDs.set(chapter.title, importedChapterID)
+    importProgressCurrent.value += 1
+  }
+
+  for (const quiz of coursePackage.quizzes) {
+    importProgressLabel.value = `${copy.value.importCreatingQuiz}: ${quiz.title}`
+    const targetChapterID = chapterIDs.get(quiz.chapter_title) || ""
+    if (!targetChapterID) throw new Error(copy.value.toasts.importQuizNeedsChapter)
+    const quizPayload = Object.fromEntries(Object.entries(quiz).filter(([key]) => key !== "chapter_title"))
+    await apiClient("/api/lms/import", {
+      method: "POST",
+      body: JSON.stringify({
+        scope: "quiz",
+        quizzable_type: 2,
+        quizzable_id: targetChapterID,
+        quiz_json: JSON.stringify(quizPayload),
+      }),
+    })
+    importProgressCurrent.value += 1
+  }
+
+  importProgressLabel.value = copy.value.importVerifying
+  const completeCourse = await apiClient<JsonRecord>(`/api/lms/courses/${encodeURIComponent(draftCourseID)}/complete`)
+  verifyImportedCourse(completeCourse, coursePackage)
+  importProgressCurrent.value += 1
+  importDraftCourseId.value = ""
+}
+
 async function importLmsJson() {
   if (!importJson.value.trim()) {
     toast.error(copy.value.toasts.importJsonRequired)
     return
   }
+  let parsedJSON: unknown
   try {
-    JSON.parse(importJson.value)
+    parsedJSON = JSON.parse(importJson.value)
   } catch {
     toast.error(copy.value.toasts.importInvalidJson)
     return
@@ -2877,26 +3026,31 @@ async function importLmsJson() {
 
   importing.value = true
   try {
-    const body = importScope.value === "course"
-      ? {
-          scope: "course",
-          category_tips: importCategoryTips.value.trim(),
-          course_json: importJson.value,
-        }
-      : {
+    if (importScope.value === "course") {
+      await importCourseInSteps(parseCourseImportPackage(parsedJSON))
+    } else {
+      const body = {
           scope: "quiz",
           quizzable_type: 2,
           quizzable_id: selectedChapterId.value,
           quiz_json: importJson.value,
-        }
-    await apiClient("/api/lms/import", { method: "POST", body: JSON.stringify(body) })
+      }
+      await apiClient("/api/lms/import", { method: "POST", body: JSON.stringify(body) })
+    }
     toast.success(copy.value.toasts.imported)
     closeImportDialog(true)
     await loadCourses()
     if (selectedCourseId.value) await loadChapters()
   } catch (err) {
     console.error(err)
-    toast.error(apiErrorMessage(err, copy.value.toasts.importFailed))
+    const message = apiErrorMessage(err, copy.value.toasts.importFailed)
+    if (importDraftCourseId.value) {
+      importFailedDraftId.value = importDraftCourseId.value
+      toast.error(`${message} ${copy.value.toasts.importFailedDraft}`)
+      await loadCourses()
+    } else {
+      toast.error(message)
+    }
   } finally {
     importing.value = false
   }
@@ -2909,6 +3063,11 @@ function closeImportDialog(force = false) {
   importCategoryTips.value = ""
   importJson.value = ""
   importFileName.value = ""
+  importProgressCurrent.value = 0
+  importProgressTotal.value = 0
+  importProgressLabel.value = ""
+  importDraftCourseId.value = ""
+  importFailedDraftId.value = ""
   if (importFileInput.value) importFileInput.value.value = ""
 }
 
@@ -4426,7 +4585,7 @@ onMounted(() => {
       </template>
     </main>
 
-    <div v-if="importOpen" v-modal-dialog="closeImportDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-0 md:p-6" @click.self="importOpen = false">
+    <div v-if="importOpen" v-modal-dialog="closeImportDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-0 md:p-6" @click.self="closeImportDialog()">
       <div class="flex h-full max-h-none w-full max-w-3xl flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
         <div class="flex items-center justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
           <h2 class="min-w-0 text-xl font-black md:text-2xl">{{ copy.importTitle }}</h2>
@@ -4436,14 +4595,14 @@ onMounted(() => {
           <div class="grid gap-4 sm:grid-cols-2">
             <label>
               <span class="text-sm font-bold">{{ copy.importType }}</span>
-              <select v-model="importScope" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3">
+              <select v-model="importScope" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="importing || Boolean(importFailedDraftId)">
                 <option value="course">{{ copy.importCourse }}</option>
                 <option value="quiz">{{ copy.importChapterQuiz }}</option>
               </select>
             </label>
             <label>
               <span class="text-sm font-bold">{{ copy.categoryTips }}</span>
-              <input v-model="importCategoryTips" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.importCategoryPlaceholder" />
+              <input v-model="importCategoryTips" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="importing || Boolean(importFailedDraftId)" :placeholder="copy.importCategoryPlaceholder" />
             </label>
           </div>
           <div class="mt-4">
@@ -4453,6 +4612,7 @@ onMounted(() => {
               <button
                 class="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-blue-600 bg-blue-50 px-4 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                 type="button"
+                :disabled="importing || Boolean(importFailedDraftId)"
                 @click="importFileInput?.click()"
               >
                 <UploadCloud class="h-4 w-4" />
@@ -4464,10 +4624,25 @@ onMounted(() => {
               </div>
             </div>
           </div>
-          <textarea v-model="importJson" class="mt-4 min-h-64 w-full rounded-xl border border-slate-200 px-3 py-2 font-mono text-sm md:min-h-80" :placeholder="copy.pasteJsonPlaceholder" />
+          <textarea v-model="importJson" class="mt-4 min-h-64 w-full rounded-xl border border-slate-200 px-3 py-2 font-mono text-sm disabled:bg-slate-100 md:min-h-80" :disabled="importing || Boolean(importFailedDraftId)" :placeholder="copy.pasteJsonPlaceholder" />
+          <section v-if="importProgressTotal > 0" class="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4" aria-live="polite">
+            <div class="flex items-center justify-between gap-3 text-sm font-bold text-blue-950">
+              <span>{{ copy.importProgress }}</span>
+              <span>{{ importProgressCurrent }} / {{ importProgressTotal }}</span>
+            </div>
+            <div class="mt-3 h-2 overflow-hidden rounded-full bg-blue-100">
+              <div class="h-full bg-blue-700 transition-[width] duration-300" :style="{ width: `${importProgressPercent}%` }" />
+            </div>
+            <p class="mt-3 truncate text-sm text-blue-900">{{ importProgressLabel }}</p>
+          </section>
+          <section v-if="importFailedDraftId" class="mt-4 rounded-lg border border-red-200 bg-red-50 p-4" role="alert">
+            <p class="font-bold text-red-900">{{ copy.importStopped }}</p>
+            <p class="mt-2 text-sm leading-6 text-red-800">{{ copy.importDeleteDraftHint }}</p>
+            <p class="mt-2 break-all font-mono text-xs font-semibold text-red-700">{{ copy.importDraftId }}: {{ importFailedDraftId }}</p>
+          </section>
         </div>
         <div class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-4 py-4 md:px-6">
-          <button class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 font-bold text-white disabled:opacity-50 sm:w-auto" :disabled="importing" type="button" @click="importLmsJson">
+          <button class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 font-bold text-white disabled:opacity-50 sm:w-auto" :disabled="importing || Boolean(importFailedDraftId)" type="button" @click="importLmsJson">
             <Loader2 v-if="importing" class="h-4 w-4 animate-spin" />
             <UploadCloud v-else class="h-4 w-4" />
             {{ importing ? copy.importing : copy.startImport }}

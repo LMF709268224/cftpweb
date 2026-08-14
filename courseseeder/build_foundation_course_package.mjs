@@ -76,12 +76,12 @@ for (const row of dataLines(quizPath, 10)) {
     passing_score: Number(row[2]),
     time_limit: Number(row[3]),
     randomize_questions: row[4].toLowerCase() === "t",
-    quiz_type: 1,
+    quiz_type: "must_pass",
     questions: new Map(),
   }
   const question = quiz.questions.get(questionNumber) || {
     question_text: row[6],
-    question_type: 1,
+    question_type: "SINGLE_CHOICE",
     points: 1,
     sort_order: questionNumber,
     is_required: true,

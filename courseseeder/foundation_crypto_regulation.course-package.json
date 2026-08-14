@@ -801,11 +801,11 @@
       "passing_score": 70,
       "time_limit": 30,
       "randomize_questions": false,
-      "quiz_type": 1,
+      "quiz_type": "must_pass",
       "questions": [
         {
           "question_text": "Which NFT project was created in 2015 and has since become a collector's item for being part of Ethereum's history?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 1,
           "is_required": true,
@@ -831,7 +831,7 @@
         },
         {
           "question_text": "What is the main non-collateralized approach used to maintain the value of a stablecoin?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 2,
           "is_required": true,
@@ -857,7 +857,7 @@
         },
         {
           "question_text": "Which synthetic asset platform allows users to mint synthetic versions of various assets by locking up collateral in the form of the platform's native token?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 3,
           "is_required": true,
@@ -883,7 +883,7 @@
         },
         {
           "question_text": "Which CBDC project was launched by the Bahamas and is the first-ever nationwide Central Bank Digital Currency in the world?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 4,
           "is_required": true,
@@ -909,7 +909,7 @@
         },
         {
           "question_text": "Which project focuses on the concept of a purpose-bound Singdollar and aims to explore the feasibility of introducing a digital version of the Singapore dollar?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 5,
           "is_required": true,
@@ -935,7 +935,7 @@
         },
         {
           "question_text": "Who introduced the idea of secure digital cash in 1983?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 6,
           "is_required": true,
@@ -961,7 +961,7 @@
         },
         {
           "question_text": "What is the primary function of a cryptographic hash function?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 7,
           "is_required": true,
@@ -987,7 +987,7 @@
         },
         {
           "question_text": "Which consensus mechanism is used by Ethereum 2.0?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 8,
           "is_required": true,
@@ -1013,7 +1013,7 @@
         },
         {
           "question_text": "What is the main purpose of the Lightning Network?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 9,
           "is_required": true,
@@ -1039,7 +1039,7 @@
         },
         {
           "question_text": "What is the main purpose of smart contracts in blockchain?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 10,
           "is_required": true,
@@ -1072,11 +1072,11 @@
       "passing_score": 70,
       "time_limit": 30,
       "randomize_questions": true,
-      "quiz_type": 1,
+      "quiz_type": "must_pass",
       "questions": [
         {
           "question_text": "What is listed as a primary impetus for crypto regulations?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 1,
           "is_required": true,
@@ -1102,7 +1102,7 @@
         },
         {
           "question_text": "What key risk in the digital assets ecosystem is FATF instrumental in driving global standards for?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 2,
           "is_required": true,
@@ -1128,7 +1128,7 @@
         },
         {
           "question_text": "IOSCO recommends regulators analyze the applicability and adequacy of regulatory frameworks, considering if crypto-assets are or behave like substitutes for what?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 3,
           "is_required": true,
@@ -1154,7 +1154,7 @@
         },
         {
           "question_text": "What is a proposed measure for DPTSPs to safeguard private keys and customer DPTs?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 4,
           "is_required": true,
@@ -1180,7 +1180,7 @@
         },
         {
           "question_text": "The Financial Services and Markets Act (FSMA) now regulates a new class of Financial Institutions (FIs). What does this new class cover?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 5,
           "is_required": true,
@@ -1206,7 +1206,7 @@
         },
         {
           "question_text": "What is excluded from the scope of DT services under FSMA?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 6,
           "is_required": true,
@@ -1232,7 +1232,7 @@
         },
         {
           "question_text": "What is the key test for whether crypto assets are subject to Traditional Finance (TradFi) regulations?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 7,
           "is_required": true,
@@ -1258,7 +1258,7 @@
         },
         {
           "question_text": "What is the general regulatory stance on NFTs in most jurisdictions, including Singapore?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 8,
           "is_required": true,
@@ -1284,7 +1284,7 @@
         },
         {
           "question_text": "What is a mitigation strategy for \"Customer Risk\" concerning ML/TF purposes?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 9,
           "is_required": true,
@@ -1310,7 +1310,7 @@
         },
         {
           "question_text": "What does FATF's Travel Rule mandate for VASPs?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 10,
           "is_required": true,
@@ -1343,11 +1343,11 @@
       "passing_score": 70,
       "time_limit": 30,
       "randomize_questions": true,
-      "quiz_type": 1,
+      "quiz_type": "must_pass",
       "questions": [
         {
           "question_text": "Why is compliance considered a necessity for the FinTech/Blockchain/Web3 space?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 1,
           "is_required": true,
@@ -1373,7 +1373,7 @@
         },
         {
           "question_text": "What does RegTech aim to improve in regulatory processes?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 2,
           "is_required": true,
@@ -1399,7 +1399,7 @@
         },
         {
           "question_text": "What is SupTech primarily defined as?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 3,
           "is_required": true,
@@ -1425,7 +1425,7 @@
         },
         {
           "question_text": "What is a challenge associated with complying with fast-changing regulations?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 4,
           "is_required": true,
@@ -1451,7 +1451,7 @@
         },
         {
           "question_text": "What approach is the financial system on the edge of moving towards from Know-Your-Customer (KYC) principles?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 5,
           "is_required": true,
@@ -1477,7 +1477,7 @@
         },
         {
           "question_text": "What are the four Vs typically used to identify Big Data?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 6,
           "is_required": true,
@@ -1503,7 +1503,7 @@
         },
         {
           "question_text": "What are the three main components of e-KYC?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 7,
           "is_required": true,
@@ -1529,7 +1529,7 @@
         },
         {
           "question_text": "What does Liveness Verification ensure in e-KYC?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 8,
           "is_required": true,
@@ -1555,7 +1555,7 @@
         },
         {
           "question_text": "What can Generative AI do for Contract Review and Analysis?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 9,
           "is_required": true,
@@ -1581,7 +1581,7 @@
         },
         {
           "question_text": "What is described as an \"art\" in Trade Surveillance?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 10,
           "is_required": true,
@@ -1614,11 +1614,11 @@
       "passing_score": 70,
       "time_limit": 30,
       "randomize_questions": false,
-      "quiz_type": 1,
+      "quiz_type": "must_pass",
       "questions": [
         {
           "question_text": "What is the primary backing for bank deposit tokens?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 1,
           "is_required": true,
@@ -1644,7 +1644,7 @@
         },
         {
           "question_text": "Which of the following is not a regulation imposed on DPT providers in Singapore?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 2,
           "is_required": true,
@@ -1670,7 +1670,7 @@
         },
         {
           "question_text": "Which of the following statements is true about stablecoins?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 3,
           "is_required": true,
@@ -1696,7 +1696,7 @@
         },
         {
           "question_text": "What is the primary objective of Project Mandala's real-time monitoring and reporting capabilities?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 4,
           "is_required": true,
@@ -1722,7 +1722,7 @@
         },
         {
           "question_text": "The use of which technology makes Project Mariana unique over other government-initiated projects?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 5,
           "is_required": true,
@@ -1748,7 +1748,7 @@
         },
         {
           "question_text": "What is Project Dunbar's main objective?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 6,
           "is_required": true,
@@ -1774,7 +1774,7 @@
         },
         {
           "question_text": "What are the crypto techniques used in Project Mandala?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 7,
           "is_required": true,
@@ -1800,7 +1800,7 @@
         },
         {
           "question_text": "What is a notable feature of the Project mBridge MVP platform regarding technology?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 8,
           "is_required": true,
@@ -1826,7 +1826,7 @@
         },
         {
           "question_text": "From an issuing bank's perspective, what are deposit tokens considered?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 9,
           "is_required": true,
@@ -1852,7 +1852,7 @@
         },
         {
           "question_text": "What cryptographic technique is used in Project Mandala to verify transactions without disclosing sensitive customer data?",
-          "question_type": 1,
+          "question_type": "SINGLE_CHOICE",
           "points": 1,
           "sort_order": 10,
           "is_required": true,

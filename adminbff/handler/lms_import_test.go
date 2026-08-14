@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http/httptest"
 	"testing"
+
+	lmspb "github.com/afnandelfin620-star/cftptest/cftp/glms"
 )
 
 func TestValidateImportCoursePackageAcceptsCloudflareVideoAndChapterQuiz(t *testing.T) {
@@ -67,6 +69,40 @@ func TestValidateImportCoursePackageRejectsMissingCourseGPath(t *testing.T) {
 	}
 	if recorder.Code != 400 {
 		t.Fatalf("expected HTTP 400, got %d", recorder.Code)
+	}
+}
+
+func TestValidateImportChapterRejectsEmptyLessons(t *testing.T) {
+	recorder := httptest.NewRecorder()
+	valid := validateImportChapter(recorder, importChapterJSON{Title: "Module 1"}, "chapter")
+	if valid {
+		t.Fatal("expected chapter without lessons to be rejected")
+	}
+	if recorder.Code != 400 {
+		t.Fatalf("expected HTTP 400, got %d", recorder.Code)
+	}
+}
+
+func TestBuildImportLessonRequestPreservesCloudflareVideoFields(t *testing.T) {
+	req := buildImportLessonRequest("01KZCHAPTER00000000000000", importLessonJSON{
+		Title:          "Introduction to Blockchain",
+		LessonType:     "video",
+		VideoProvider:  "cloudflare",
+		VideoStreamUID: "576943fb6c7a2cbf7acbfb2682adc6ee",
+		MediaFileHash:  "video-hash",
+	}, 3)
+
+	if req.GetLessonType() != lmspb.LessonType_LESSON_TYPE_VIDEO {
+		t.Fatalf("expected video lesson type, got %v", req.GetLessonType())
+	}
+	if req.GetSortOrder() != 3 {
+		t.Fatalf("expected fallback sort order 3, got %d", req.GetSortOrder())
+	}
+	if req.GetVideoProvider() != "cloudflare" || req.GetVideoStreamUid() != "576943fb6c7a2cbf7acbfb2682adc6ee" {
+		t.Fatalf("cloudflare fields were not preserved: %#v", req)
+	}
+	if req.GetMediaFileHash() != "video-hash" || req.GetMetaJson() != "{}" {
+		t.Fatalf("media metadata was not preserved: %#v", req)
 	}
 }
 
