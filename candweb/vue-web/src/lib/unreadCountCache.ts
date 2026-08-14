@@ -30,7 +30,8 @@ export async function getCachedUnreadCount() {
   if (cached !== null) return cached
 
   if (!unreadCountPromise) {
-    unreadCountPromise = apiClient("/api/messages/unread-count")
+    // Badge reads may outlive a page navigation.
+    unreadCountPromise = apiClient("/api/messages/unread-count", { keepalive: true })
       .then((payload) => {
         const value = Number(payload?.unread_count || 0)
         writeCachedUnreadCount(value)
@@ -45,7 +46,7 @@ export async function getCachedUnreadCount() {
 }
 
 export async function fetchUnreadCount(suppressErrorToast = false) {
-  const payload = await apiClient("/api/messages/unread-count", { suppressErrorToast })
+  const payload = await apiClient("/api/messages/unread-count", { keepalive: true, suppressErrorToast })
   const value = Number(payload?.unread_count || 0)
   setCachedUnreadCount(value)
   return value

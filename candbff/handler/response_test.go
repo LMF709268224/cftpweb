@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -41,14 +42,30 @@ func TestHandleGrpcErrorKeepsBusinessValidationMessage(t *testing.T) {
 
 func TestHandleGrpcErrorMapsCanceledRequestToClientClosed(t *testing.T) {
 	rec := httptest.NewRecorder()
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
 
-	HandleGrpcError(rec, status.Error(codes.Canceled, "context canceled"))
+	HandleGrpcErrorWithContext(rec, ctx, status.Error(codes.Canceled, "context canceled"))
 
 	if rec.Code != statusClientClosedRequest {
 		t.Fatalf("status = %d, want %d", rec.Code, statusClientClosedRequest)
 	}
 	if rec.Body.Len() != 0 {
 		t.Fatalf("body = %q, want empty", rec.Body.String())
+	}
+}
+
+func TestHandleGrpcErrorDoesNotTreatDownstreamCanceledAsClientClosed(t *testing.T) {
+	rec := httptest.NewRecorder()
+
+	HandleGrpcError(rec, status.Error(codes.Canceled, "downstream operation canceled"))
+
+	if rec.Code != http.StatusInternalServerError {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusInternalServerError)
+	}
+	resp := decodeAPIResponse(t, rec)
+	if resp.Message != http.StatusText(http.StatusInternalServerError) {
+		t.Fatalf("message = %q, want %q", resp.Message, http.StatusText(http.StatusInternalServerError))
 	}
 }
 

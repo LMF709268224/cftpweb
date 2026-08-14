@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"log/slog"
 	"net/http"
@@ -68,6 +69,14 @@ func HandleAppError(w http.ResponseWriter, err *AppError) {
 }
 
 func HandleGrpcError(w http.ResponseWriter, err error) {
+	handleGrpcError(w, nil, err)
+}
+
+func HandleGrpcErrorWithContext(w http.ResponseWriter, ctx context.Context, err error) {
+	handleGrpcError(w, ctx, err)
+}
+
+func handleGrpcError(w http.ResponseWriter, ctx context.Context, err error) {
 	if err == nil {
 		return
 	}
@@ -78,9 +87,14 @@ func HandleGrpcError(w http.ResponseWriter, err error) {
 		WriteError(w, http.StatusInternalServerError, ErrInternal, "internal server error")
 		return
 	}
-	if st.Code() == codes.Canceled {
-		slog.Info("Downstream gRPC request canceled", "grpc_code", st.Code())
+	if st.Code() == codes.Canceled && ctx != nil && ctx.Err() == context.Canceled {
+		slog.Info("Downstream gRPC request canceled by client", "grpc_code", st.Code())
 		w.WriteHeader(statusClientClosedRequest)
+		return
+	}
+	if st.Code() == codes.Canceled {
+		slog.Info("Downstream gRPC request canceled", "grpc_code", st.Code(), "error", err)
+		WriteError(w, http.StatusInternalServerError, ErrInternal, "internal server error")
 		return
 	}
 

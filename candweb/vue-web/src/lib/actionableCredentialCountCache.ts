@@ -30,7 +30,8 @@ export async function getCachedActionableCredentialCount() {
   if (cached !== null) return cached
 
   if (!fetchPromise) {
-    fetchPromise = apiClient("/api/credentials/actionable-count")
+    // Badge reads may outlive a page navigation.
+    fetchPromise = apiClient("/api/credentials/actionable-count", { keepalive: true })
       .then((payload) => {
         const value = Number(payload?.actionable_count || 0)
         writeCachedCount(value)
@@ -45,7 +46,7 @@ export async function getCachedActionableCredentialCount() {
 }
 
 export async function fetchActionableCredentialCount(suppressErrorToast = false) {
-  const payload = await apiClient("/api/credentials/actionable-count", { suppressErrorToast })
+  const payload = await apiClient("/api/credentials/actionable-count", { keepalive: true, suppressErrorToast })
   const value = Number(payload?.actionable_count || 0)
   setCachedActionableCredentialCount(value)
   return value

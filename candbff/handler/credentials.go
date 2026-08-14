@@ -519,7 +519,7 @@ func (h *Handler) GetActionableCredentialCount(w http.ResponseWriter, r *http.Re
 		CandidateUlid: candidateID,
 	})
 	if err != nil {
-		HandleGrpcError(w, err)
+		HandleGrpcErrorWithContext(w, ctx, err)
 		return
 	}
 	defs := defsRes.GetDefinitions()
