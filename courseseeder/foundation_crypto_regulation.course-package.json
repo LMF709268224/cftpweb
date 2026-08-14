@@ -108,10 +108,6 @@
       ]
     },
     {
-      "title": "Module 1 Quiz",
-      "lessons": []
-    },
-    {
       "title": "Module 2: Risks and Challenges",
       "lessons": [
         {
@@ -339,10 +335,6 @@
       ]
     },
     {
-      "title": "Module 2 Quiz",
-      "lessons": []
-    },
-    {
       "title": "Module 3: Evolution of Fintech",
       "lessons": [
         {
@@ -545,10 +537,6 @@
           "video_stream_uid": "1a08a972d5ac6cc1e7bb5bd08feb7dec"
         }
       ]
-    },
-    {
-      "title": "Module 3 Quiz",
-      "lessons": []
     },
     {
       "title": "Module 4: Regulatory Technologies: Compliance and Risk Management",
@@ -803,15 +791,11 @@
           "video_stream_uid": "62fd9b5ee501c3e95677e90aec4ca712"
         }
       ]
-    },
-    {
-      "title": "Module 4 Quiz",
-      "lessons": []
     }
   ],
   "quizzes": [
     {
-      "chapter_title": "Module 1 Quiz",
+      "chapter_title": "Module 1: Case Studies",
       "title": "Module 1 Quiz",
       "description": "Test your knowledge of blockchain technology and digital assets",
       "passing_score": 70,
@@ -1082,7 +1066,7 @@
       ]
     },
     {
-      "chapter_title": "Module 2 Quiz",
+      "chapter_title": "Module 2: Cross-Border Issues",
       "title": "Module 2 Quiz",
       "description": "Test your knowledge of crypto regulations and compliance",
       "passing_score": 70,
@@ -1353,7 +1337,7 @@
       ]
     },
     {
-      "chapter_title": "Module 3 Quiz",
+      "chapter_title": "Module 3: Regulatory Technology Use Cases",
       "title": "Module 3 Quiz",
       "description": "Test your knowledge of RegTech and SupTech",
       "passing_score": 70,
@@ -1624,7 +1608,7 @@
       ]
     },
     {
-      "chapter_title": "Module 4 Quiz",
+      "chapter_title": "Module 4 Case Study: Project Mandala",
       "title": "Module 4 Quiz",
       "description": "Test your knowledge of stablecoins, CBDCs, and regulatory projects",
       "passing_score": 70,

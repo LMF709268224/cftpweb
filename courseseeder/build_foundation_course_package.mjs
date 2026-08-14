@@ -42,6 +42,7 @@ for (const row of contentRows) {
 
 const chapters = [...chapterMap.values()]
   .sort((left, right) => left.sourcePosition - right.sourcePosition)
+  .filter(({ lessons }) => lessons.length > 0)
   .map(({ title, lessons }) => ({ title, lessons }))
 
 const quizDescriptions = {
@@ -51,15 +52,25 @@ const quizDescriptions = {
   "Module 4 Quiz": "Test your knowledge of stablecoins, CBDCs, and regulatory projects",
 }
 
+const quizChapterTitles = {
+  "Module 1 Quiz": "Module 1: Case Studies",
+  "Module 2 Quiz": "Module 2: Cross-Border Issues",
+  "Module 3 Quiz": "Module 3: Regulatory Technology Use Cases",
+  "Module 4 Quiz": "Module 4 Case Study: Project Mandala",
+}
+
 const quizMap = new Map()
 for (const row of dataLines(quizPath, 10)) {
   const sourcePosition = Number(row[0])
   const title = row[1]
   const questionNumber = Number(row[5])
   const optionNumber = Number(row[7])
+  if (!quizChapterTitles[title]) {
+    throw new Error(`missing chapter mapping for quiz: ${title}`)
+  }
   const quiz = quizMap.get(sourcePosition) || {
     sourcePosition,
-    chapter_title: title,
+    chapter_title: quizChapterTitles[title],
     title,
     description: quizDescriptions[title] || "",
     passing_score: Number(row[2]),
@@ -108,7 +119,7 @@ const packageDocument = {
 }
 
 const lessonCount = chapters.reduce((count, chapter) => count + chapter.lessons.length, 0)
-if (chapters.length !== 30 || lessonCount !== 109 || quizzes.length !== 4) {
+if (chapters.length !== 26 || lessonCount !== 109 || quizzes.length !== 4) {
   throw new Error(`unexpected source shape: chapters=${chapters.length}, lessons=${lessonCount}, quizzes=${quizzes.length}`)
 }
 
