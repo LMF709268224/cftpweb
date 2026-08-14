@@ -3397,6 +3397,8 @@ export const en: AdminTranslations = {
         importChapterQuiz: "Chapter Quiz",
         importCategoryPlaceholder: "Used when importing a course",
         jsonFile: "JSON File",
+        selectJsonFile: "Choose JSON File",
+        noFileSelected: "No file selected",
         pasteJsonPlaceholder: "You can also paste JSON directly",
         importing: "Importing...",
         startImport: "Start Import",

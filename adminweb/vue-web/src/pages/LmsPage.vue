@@ -252,6 +252,8 @@ const importOpen = ref(false)
 const importScope = ref<"course" | "quiz">("course")
 const importCategoryTips = ref("")
 const importJson = ref("")
+const importFileInput = ref<HTMLInputElement | null>(null)
+const importFileName = ref("")
 let courseRequestId = 0
 let lessonsRequestId = 0
 let quizzesRequestId = 0
@@ -2906,12 +2908,15 @@ function closeImportDialog(force = false) {
   importScope.value = "course"
   importCategoryTips.value = ""
   importJson.value = ""
+  importFileName.value = ""
+  if (importFileInput.value) importFileInput.value.value = ""
 }
 
 async function loadImportFile(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
   if (!file) return
+  importFileName.value = file.name
   importJson.value = await file.text()
   input.value = ""
 }
@@ -4441,10 +4446,24 @@ onMounted(() => {
               <input v-model="importCategoryTips" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.importCategoryPlaceholder" />
             </label>
           </div>
-          <label class="mt-4 block">
+          <div class="mt-4">
             <span class="text-sm font-bold">{{ copy.jsonFile }}</span>
-            <input class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" type="file" accept=".json,application/json" @change="loadImportFile" />
-          </label>
+            <input ref="importFileInput" class="hidden" type="file" accept=".json,application/json" @change="loadImportFile" />
+            <div class="mt-2 flex flex-col gap-2 sm:flex-row">
+              <button
+                class="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-blue-600 bg-blue-50 px-4 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                type="button"
+                @click="importFileInput?.click()"
+              >
+                <UploadCloud class="h-4 w-4" />
+                {{ copy.selectJsonFile }}
+              </button>
+              <div class="flex h-11 min-w-0 flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-600">
+                <FileJson class="h-4 w-4 shrink-0 text-slate-400" />
+                <span class="truncate">{{ importFileName || copy.noFileSelected }}</span>
+              </div>
+            </div>
+          </div>
           <textarea v-model="importJson" class="mt-4 min-h-64 w-full rounded-xl border border-slate-200 px-3 py-2 font-mono text-sm md:min-h-80" :placeholder="copy.pasteJsonPlaceholder" />
         </div>
         <div class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-4 py-4 md:px-6">

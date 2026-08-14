@@ -3395,6 +3395,8 @@ export const zh = {
         importChapterQuiz: "章节测验",
         importCategoryPlaceholder: "导入课程时使用",
         jsonFile: "JSON 文件",
+        selectJsonFile: "选择 JSON 文件",
+        noFileSelected: "尚未选择文件",
         pasteJsonPlaceholder: "也可以直接粘贴 JSON",
         importing: "导入中...",
         startImport: "开始导入",
