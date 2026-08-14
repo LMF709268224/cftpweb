@@ -96,6 +96,7 @@ const quizzes = [...quizMap.values()]
 
 const packageDocument = {
   package_type: "cftp-lms-course-package",
+  course_gpath: "/gcc/pipeline/core/foundation_in_crypto_regulation_and_compliance",
   package_version: 1,
   category_tips: "Crypto Regulation & Compliance",
   title: "Foundation in Crypto Regulation and Compliance",

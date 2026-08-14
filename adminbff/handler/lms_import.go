@@ -21,6 +21,7 @@ type importLmsContentRequest struct {
 
 type importCourseJSON struct {
 	Title                string                  `json:"title"`
+	CourseGPath          string                  `json:"course_gpath"`
 	Description          string                  `json:"description,omitempty"`
 	CategoryTips         string                  `json:"category_tips,omitempty"`
 	DurationMin          uint32                  `json:"duration_min,omitempty"`
@@ -124,16 +125,6 @@ func normalizeLmsImportScope(scope string) string {
 	}
 }
 
-func hasCourseMetadata(course importCourseJSON) bool {
-	return strings.TrimSpace(course.Description) != "" ||
-		strings.TrimSpace(course.CategoryTips) != "" ||
-		course.DurationMin > 0 ||
-		course.CertificationEnabled ||
-		strings.TrimSpace(course.CertificationDefULID) != "" ||
-		strings.TrimSpace(course.ThumbnailObjectKey) != "" ||
-		strings.TrimSpace(course.ThumbnailFileHash) != ""
-}
-
 func (h *Handler) importLmsCourse(w http.ResponseWriter, r *http.Request, req importLmsContentRequest) {
 	courseJSON := strings.TrimSpace(req.CourseJSON)
 	if !requireRequestField(w, courseJSON, "course_json") {
@@ -151,13 +142,10 @@ func (h *Handler) importLmsCourse(w http.ResponseWriter, r *http.Request, req im
 		return
 	}
 
-	// Keep the payload sent to GLMS within the ImportCourse contract. The
-	// optional quizzes and metadata are applied by the BFF after the tree is
-	// created, because GLMS exposes quiz import as a separate RPC.
-	coursePayload, err := json.Marshal(struct {
-		Title    string              `json:"title"`
-		Chapters []importChapterJSON `json:"chapters"`
-	}{Title: packageJSON.Title, Chapters: packageJSON.Chapters})
+	// Forward the complete GLMS course document. Only the package wrapper and
+	// BFF-managed quizzes are removed; filtering to a hand-written field subset
+	// would silently discard valid microservice fields such as course_gpath.
+	coursePayload, err := buildImportCoursePayload(courseJSON)
 	if err != nil {
 		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to prepare course import")
 		return
@@ -170,38 +158,6 @@ func (h *Handler) importLmsCourse(w http.ResponseWriter, r *http.Request, req im
 	if err != nil {
 		writeLmsError(w, err)
 		return
-	}
-	if hasCourseMetadata(packageJSON) {
-		complete, err := h.Lms.GetCompleteCourseAdmin(r.Context(), &lmspb.GetCompleteCourseRequest{CourseUlid: resp.GetCourseUlid()})
-		if err != nil {
-			writeLmsError(w, err)
-			return
-		}
-		if complete == nil || complete.GetCompleteCourse() == nil {
-			WriteError(w, http.StatusBadGateway, ErrServiceUnavailable, "imported course detail is unavailable")
-			return
-		}
-		course := complete.GetCompleteCourse().GetCourse()
-		if course == nil {
-			WriteError(w, http.StatusBadGateway, ErrServiceUnavailable, "imported course detail is unavailable")
-			return
-		}
-		_, err = h.Lms.UpdateCourseAdmin(r.Context(), &lmspb.UpdateCourseRequest{
-			CourseUlid:           resp.GetCourseUlid(),
-			CategoryTips:         firstNonEmpty(strings.TrimSpace(req.CategoryTips), strings.TrimSpace(packageJSON.CategoryTips)),
-			Title:                packageJSON.Title,
-			Description:          packageJSON.Description,
-			ThumbnailObjectKey:   packageJSON.ThumbnailObjectKey,
-			DurationMin:          packageJSON.DurationMin,
-			CertificationEnabled: packageJSON.CertificationEnabled,
-			CertificationDefUlid: packageJSON.CertificationDefULID,
-			ThumbnailFileHash:    packageJSON.ThumbnailFileHash,
-			Version:              course.GetVersion(),
-		})
-		if err != nil {
-			writeLmsError(w, err)
-			return
-		}
 	}
 
 	if len(packageJSON.Quizzes) == 0 {
@@ -254,6 +210,18 @@ func (h *Handler) importLmsCourse(w http.ResponseWriter, r *http.Request, req im
 	WriteJSON(w, http.StatusOK, importedCoursePackageResponse{Course: resp, Quizzes: results})
 }
 
+func buildImportCoursePayload(courseJSON string) ([]byte, error) {
+	var payload map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(courseJSON), &payload); err != nil {
+		return nil, err
+	}
+	delete(payload, "package_type")
+	delete(payload, "package_version")
+	delete(payload, "category_tips")
+	delete(payload, "quizzes")
+	return json.Marshal(payload)
+}
+
 func (h *Handler) importLmsQuiz(w http.ResponseWriter, r *http.Request, req importLmsContentRequest) {
 	quizJSON := strings.TrimSpace(req.QuizJSON)
 	if !requireRequestField(w, quizJSON, "quiz_json") || !requireRequestField(w, req.QuizzableID, "quizzable_id") {
@@ -304,6 +272,10 @@ func validateImportCourseJSON(w http.ResponseWriter, value string) bool {
 func validateImportCoursePackage(w http.ResponseWriter, course importCourseJSON) bool {
 	if strings.TrimSpace(course.Title) == "" {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "course_json.title is required")
+		return false
+	}
+	if strings.TrimSpace(course.CourseGPath) == "" {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "course_json.course_gpath is required")
 		return false
 	}
 	for chapterIndex, chapter := range course.Chapters {
