@@ -10,6 +10,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+const statusClientClosedRequest = 499
+
 type apiResponse struct {
 	Code      int         `json:"code"`
 	ErrorCode ErrorCode   `json:"error_code,omitempty"` // 业务错误码
@@ -74,6 +76,11 @@ func HandleGrpcError(w http.ResponseWriter, err error) {
 	if !ok {
 		slog.Error("Non-gRPC handler error", "error", err)
 		WriteError(w, http.StatusInternalServerError, ErrInternal, "internal server error")
+		return
+	}
+	if st.Code() == codes.Canceled {
+		slog.Info("Downstream gRPC request canceled", "grpc_code", st.Code())
+		w.WriteHeader(statusClientClosedRequest)
 		return
 	}
 

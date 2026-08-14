@@ -11,8 +11,6 @@ const allowedMutationPaths = new Set([
 const backgroundAPIPaths = new Set([
   "/api/telemetry",
   "/api/public/telemetry",
-  "/api/messages/unread-count",
-  "/api/credentials/actionable-count",
 ])
 
 async function installMutationBlocker(page: Page, candidateOrigin: string) {
