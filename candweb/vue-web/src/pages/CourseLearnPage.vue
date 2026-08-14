@@ -211,6 +211,7 @@ const runtime = ref<any>(null)
 const scheduleLoading = ref(false)
 const retakeLoadingUnitId = ref<string | null>(null)
 const lessonContentExpanded = ref(true)
+const courseDescriptionExpanded = ref(false)
 const activeContentTab = ref<LearnContentTabKey>("lesson")
 const quizChoicesExpanded = ref(false)
 const courseExamsLoading = ref(false)
@@ -520,6 +521,8 @@ const resourceContentTabs = computed(() => [
   },
 ])
 const certificationTitle = computed(() => course.value?.title || runtime.value?.config?.name || t.value.common.unknownCourse)
+const courseDescription = computed(() => course.value?.description || t.value.learning.certificationDefaultDesc)
+const courseDescriptionCanExpand = computed(() => courseDescription.value.length > 180)
 const allLessonsMarkedCompleted = computed(() =>
   lessons.value.length > 0 &&
   lessons.value.every((item) => {
@@ -1586,6 +1589,9 @@ watch(routeLessonId, (lessonId) => {
   if (nextLessonId && nextLessonId !== activeLessonId.value) activeLessonId.value = nextLessonId
   if (lessonId) activeContentTab.value = "lesson"
 })
+watch(courseId, () => {
+  courseDescriptionExpanded.value = false
+})
 watch(lessons, () => {
   if (!activeLessonId.value && lessons.value.length > 0) activeLessonId.value = lessonIdOf(lessons.value[0].lesson)
 })
@@ -1643,7 +1649,20 @@ watch(selectedMaterial, () => {
             </div>
             <div class="min-w-0">
               <h1 class="text-xl font-bold text-foreground">{{ certificationTitle }}</h1>
-              <p class="mt-1.5 text-sm text-muted-foreground">{{ course.description || t.learning.certificationDefaultDesc }}</p>
+              <p :class="['mt-1.5 text-sm leading-6 text-muted-foreground', !courseDescriptionExpanded && 'line-clamp-2']">
+                {{ courseDescription }}
+              </p>
+              <button
+                v-if="courseDescriptionCanExpand"
+                type="button"
+                class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                :aria-expanded="courseDescriptionExpanded"
+                @click="courseDescriptionExpanded = !courseDescriptionExpanded"
+              >
+                {{ courseDescriptionExpanded ? t.learning.showLess : t.learning.showMore }}
+                <ChevronDown v-if="courseDescriptionExpanded" class="h-3.5 w-3.5" />
+                <ChevronRight v-else class="h-3.5 w-3.5" />
+              </button>
               <div class="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                 <span class="inline-flex items-center gap-1"><BookOpen class="h-3.5 w-3.5" />{{ chapters.length }} {{ t.learning.chapters }}</span>
                 <span class="inline-flex items-center gap-1"><Clock class="h-3.5 w-3.5" />{{ lessons.length }} {{ t.learning.lessons }}</span>
@@ -2020,9 +2039,9 @@ watch(selectedMaterial, () => {
           </div>
         </div>
 
-        <div v-if="activeContentTab === 'lesson'" class="grid gap-4 xl:grid-cols-[280px_minmax(0,1fr)]">
-          <div class="rounded-md bg-white p-4">
-            <div class="mb-3 flex items-center justify-between gap-3">
+        <div v-if="activeContentTab === 'lesson'" class="lesson-workspace grid gap-4 xl:grid-cols-[280px_minmax(0,1fr)]">
+          <div class="flex min-h-0 flex-col rounded-md bg-white p-4">
+            <div class="mb-3 flex shrink-0 items-center justify-between gap-3">
               <div class="flex items-center gap-2">
                 <BookOpen class="h-4 w-4 text-primary" />
                 <h2 class="text-sm font-semibold text-foreground">{{ t.learning.lessonContentTitle }}</h2>
@@ -2032,7 +2051,7 @@ watch(selectedMaterial, () => {
             <div v-if="lessons.length === 0" data-testid="course-lessons-empty" class="rounded-md border border-dashed border-slate-200 bg-slate-50 p-4 text-center text-sm text-muted-foreground">
               {{ t.learning.noChaptersDesc }}
             </div>
-            <div v-else class="space-y-2">
+            <div v-else class="lesson-list-scroll min-h-0 flex-1 space-y-2 overflow-y-auto pr-2">
               <button
                 v-for="(lessonDetail, index) in lessons"
                 :key="lessonIdOf(lessonDetail.lesson) || `lesson-${index}`"
@@ -2070,14 +2089,24 @@ watch(selectedMaterial, () => {
             </div>
           </div>
 
-          <div id="lesson-detail" class="rounded-md bg-white p-5 lg:p-6">
-            <div v-if="lesson" class="grid gap-3 2xl:grid-cols-[1fr_auto_1fr] 2xl:items-start">
-              <div class="flex flex-wrap items-center gap-2">
-                <span class="badge border-primary/15 bg-primary/10 text-primary">{{ lessonTypeLabel(lesson?.lesson_type) }}</span>
-                <span v-if="activeLesson?.chapterTitle" class="badge border-slate-200 bg-slate-50 text-slate-700">{{ activeLesson.chapterTitle }}</span>
+          <div id="lesson-detail" class="lesson-detail-scroll min-h-0 overflow-y-auto rounded-md bg-white p-5 lg:p-6">
+            <div v-if="lesson" class="flex items-start justify-between gap-4">
+              <div class="min-w-0 flex-1">
+                <div class="flex min-w-0 flex-wrap items-center gap-2">
+                  <span class="badge shrink-0 border-primary/15 bg-primary/10 text-primary">{{ lessonTypeLabel(lesson?.lesson_type) }}</span>
+                  <span
+                    v-if="activeLesson?.chapterTitle"
+                    class="badge min-w-0 max-w-full truncate border-slate-200 bg-slate-50 text-slate-700 sm:max-w-md"
+                    :title="activeLesson.chapterTitle"
+                  >
+                    {{ activeLesson.chapterTitle }}
+                  </span>
+                </div>
+                <h2 class="mt-3 line-clamp-2 text-[20px] font-bold leading-snug text-foreground" :title="lesson?.title">
+                  {{ lesson?.title || t.common.unknownCourse }}
+                </h2>
               </div>
-              <h2 class="text-left text-[20px] font-bold leading-snug text-foreground 2xl:text-center">{{ lesson?.title || t.common.unknownCourse }}</h2>
-              <div class="flex justify-start gap-2 2xl:justify-end">
+              <div class="flex shrink-0 justify-end gap-2">
                 <button
                   data-testid="complete-lesson"
                   :class="[
@@ -2112,6 +2141,7 @@ watch(selectedMaterial, () => {
                     class="h-full w-full"
                     :src="cloudflareVideoSrc"
                     :title="lesson?.title || 'Course video'"
+                    loading="lazy"
                     allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
                     allowfullscreen
                   />
@@ -2384,5 +2414,16 @@ watch(selectedMaterial, () => {
 .learn-sync-btn:disabled {
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+@media (min-width: 1280px) {
+  .lesson-workspace {
+    height: clamp(34rem, calc(100vh - 2rem), 46rem);
+  }
+
+  .lesson-list-scroll,
+  .lesson-detail-scroll {
+    scrollbar-gutter: stable;
+  }
 }
 </style>

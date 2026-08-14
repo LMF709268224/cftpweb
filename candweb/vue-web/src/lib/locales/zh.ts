@@ -683,6 +683,8 @@ export const zh = {
     quizAttemptsUnlimited: "0 /无限制",
     quizSelectTitle: "选择要完成的测验",
     quizSelectDesc: "课程级测验和章节测验都会计入当前认证学习进度。",
+    showMore: "展开详情",
+    showLess: "收起详情",
     collapse: "收起",
   },
   examSignup: {

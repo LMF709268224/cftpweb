@@ -685,6 +685,8 @@ export const en: AppTranslations = {
         quizAttemptsUnlimited: "0 / Unlimited",
         quizSelectTitle: "Select a quiz to complete",
         quizSelectDesc: "Course-level and chapter quizzes both count toward your certification learning progress.",
+        showMore: "Show details",
+        showLess: "Hide details",
         collapse: "Collapse",
     },
     examSignup: {
