@@ -20,8 +20,16 @@ type importLmsContentRequest struct {
 }
 
 type importCourseJSON struct {
-	Title    string              `json:"title"`
-	Chapters []importChapterJSON `json:"chapters"`
+	Title                string                  `json:"title"`
+	Description          string                  `json:"description,omitempty"`
+	CategoryTips         string                  `json:"category_tips,omitempty"`
+	DurationMin          uint32                  `json:"duration_min,omitempty"`
+	CertificationEnabled bool                    `json:"certification_enabled,omitempty"`
+	CertificationDefULID string                  `json:"certification_def_ulid,omitempty"`
+	ThumbnailObjectKey   string                  `json:"thumbnail_object_key,omitempty"`
+	ThumbnailFileHash    string                  `json:"thumbnail_file_hash,omitempty"`
+	Chapters             []importChapterJSON     `json:"chapters"`
+	Quizzes              []importChapterQuizJSON `json:"quizzes,omitempty"`
 }
 
 type importChapterJSON struct {
@@ -35,6 +43,52 @@ type importLessonJSON struct {
 	Body           string `json:"body"`
 	MediaObjectKey string `json:"media_object_key"`
 	ExternalURL    string `json:"external_url"`
+	VideoProvider  string `json:"video_provider"`
+	VideoStreamUID string `json:"video_stream_uid"`
+	VideoEmbedCode string `json:"video_embed_code"`
+	MetaJSON       string `json:"meta_json"`
+}
+
+// importChapterQuizJSON is the optional package extension used by adminweb.
+// GLMS imports the course tree and quizzes through separate RPCs, so the BFF
+// resolves chapter_title to the newly-created chapter ULID after the course
+// import succeeds.
+type importChapterQuizJSON struct {
+	ChapterTitle       string                   `json:"chapter_title"`
+	Title              string                   `json:"title"`
+	Description        string                   `json:"description"`
+	PassingScore       uint32                   `json:"passing_score"`
+	TimeLimit          uint32                   `json:"time_limit"`
+	RandomizeQuestions bool                     `json:"randomize_questions"`
+	QuizType           any                      `json:"quiz_type"`
+	Questions          []importQuizQuestionJSON `json:"questions"`
+}
+
+type importQuizQuestionJSON struct {
+	QuestionText   string                 `json:"question_text"`
+	QuestionType   any                    `json:"question_type"`
+	Points         uint32                 `json:"points"`
+	SortOrder      uint32                 `json:"sort_order"`
+	IsRequired     bool                   `json:"is_required"`
+	Explanation    string                 `json:"explanation"`
+	MediaItemsJSON string                 `json:"media_items_json"`
+	Options        []importQuizOptionJSON `json:"options"`
+}
+
+type importQuizOptionJSON struct {
+	OptionText string `json:"option_text"`
+	IsCorrect  bool   `json:"is_correct"`
+	SortOrder  uint32 `json:"sort_order"`
+}
+
+type importedChapterQuizResult struct {
+	ChapterTitle string                    `json:"chapter_title"`
+	Quiz         *lmspb.ImportQuizResponse `json:"quiz"`
+}
+
+type importedCoursePackageResponse struct {
+	Course  *lmspb.ImportCourseResponse `json:"course"`
+	Quizzes []importedChapterQuizResult `json:"quizzes"`
 }
 
 // ImportLmsContent POST /api/lms/import
@@ -70,6 +124,16 @@ func normalizeLmsImportScope(scope string) string {
 	}
 }
 
+func hasCourseMetadata(course importCourseJSON) bool {
+	return strings.TrimSpace(course.Description) != "" ||
+		strings.TrimSpace(course.CategoryTips) != "" ||
+		course.DurationMin > 0 ||
+		course.CertificationEnabled ||
+		strings.TrimSpace(course.CertificationDefULID) != "" ||
+		strings.TrimSpace(course.ThumbnailObjectKey) != "" ||
+		strings.TrimSpace(course.ThumbnailFileHash) != ""
+}
+
 func (h *Handler) importLmsCourse(w http.ResponseWriter, r *http.Request, req importLmsContentRequest) {
 	courseJSON := strings.TrimSpace(req.CourseJSON)
 	if !requireRequestField(w, courseJSON, "course_json") {
@@ -78,19 +142,116 @@ func (h *Handler) importLmsCourse(w http.ResponseWriter, r *http.Request, req im
 	if !requireValidJSONString(w, courseJSON, "course_json") {
 		return
 	}
-	if !validateImportCourseJSON(w, courseJSON) {
+	var packageJSON importCourseJSON
+	if err := json.Unmarshal([]byte(courseJSON), &packageJSON); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "course_json is invalid")
+		return
+	}
+	if !validateImportCoursePackage(w, packageJSON) {
+		return
+	}
+
+	// Keep the payload sent to GLMS within the ImportCourse contract. The
+	// optional quizzes and metadata are applied by the BFF after the tree is
+	// created, because GLMS exposes quiz import as a separate RPC.
+	coursePayload, err := json.Marshal(struct {
+		Title    string              `json:"title"`
+		Chapters []importChapterJSON `json:"chapters"`
+	}{Title: packageJSON.Title, Chapters: packageJSON.Chapters})
+	if err != nil {
+		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to prepare course import")
 		return
 	}
 
 	resp, err := h.Lms.ImportCourseAdmin(r.Context(), &lmspb.ImportCourseRequest{
-		CategoryTips: strings.TrimSpace(req.CategoryTips),
-		CourseJson:   courseJSON,
+		CategoryTips: firstNonEmpty(strings.TrimSpace(req.CategoryTips), strings.TrimSpace(packageJSON.CategoryTips)),
+		CourseJson:   string(coursePayload),
 	})
 	if err != nil {
 		writeLmsError(w, err)
 		return
 	}
-	WriteJSON(w, http.StatusOK, resp)
+	if hasCourseMetadata(packageJSON) {
+		complete, err := h.Lms.GetCompleteCourseAdmin(r.Context(), &lmspb.GetCompleteCourseRequest{CourseUlid: resp.GetCourseUlid()})
+		if err != nil {
+			writeLmsError(w, err)
+			return
+		}
+		if complete == nil || complete.GetCompleteCourse() == nil {
+			WriteError(w, http.StatusBadGateway, ErrServiceUnavailable, "imported course detail is unavailable")
+			return
+		}
+		course := complete.GetCompleteCourse().GetCourse()
+		if course == nil {
+			WriteError(w, http.StatusBadGateway, ErrServiceUnavailable, "imported course detail is unavailable")
+			return
+		}
+		_, err = h.Lms.UpdateCourseAdmin(r.Context(), &lmspb.UpdateCourseRequest{
+			CourseUlid:           resp.GetCourseUlid(),
+			CategoryTips:         firstNonEmpty(strings.TrimSpace(req.CategoryTips), strings.TrimSpace(packageJSON.CategoryTips)),
+			Title:                packageJSON.Title,
+			Description:          packageJSON.Description,
+			ThumbnailObjectKey:   packageJSON.ThumbnailObjectKey,
+			DurationMin:          packageJSON.DurationMin,
+			CertificationEnabled: packageJSON.CertificationEnabled,
+			CertificationDefUlid: packageJSON.CertificationDefULID,
+			ThumbnailFileHash:    packageJSON.ThumbnailFileHash,
+			Version:              course.GetVersion(),
+		})
+		if err != nil {
+			writeLmsError(w, err)
+			return
+		}
+	}
+
+	if len(packageJSON.Quizzes) == 0 {
+		WriteJSON(w, http.StatusOK, resp)
+		return
+	}
+
+	chapters, err := h.Lms.ListChaptersAdmin(r.Context(), &lmspb.ListChaptersRequest{CourseUlid: resp.GetCourseUlid()})
+	if err != nil {
+		writeLmsError(w, err)
+		return
+	}
+	chapterIDs := make(map[string]string, len(chapters.GetChapters()))
+	for _, chapter := range chapters.GetChapters() {
+		if chapter != nil {
+			chapterIDs[strings.TrimSpace(chapter.GetTitle())] = chapter.GetChapterUlid()
+		}
+	}
+	results := make([]importedChapterQuizResult, 0, len(packageJSON.Quizzes))
+	for _, quiz := range packageJSON.Quizzes {
+		chapterID := chapterIDs[strings.TrimSpace(quiz.ChapterTitle)]
+		if chapterID == "" {
+			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "quiz chapter_title does not match an imported chapter: "+quiz.ChapterTitle)
+			return
+		}
+		quizPayload, err := json.Marshal(struct {
+			Title              string                   `json:"title"`
+			Description        string                   `json:"description,omitempty"`
+			PassingScore       uint32                   `json:"passing_score"`
+			TimeLimit          uint32                   `json:"time_limit"`
+			RandomizeQuestions bool                     `json:"randomize_questions"`
+			QuizType           any                      `json:"quiz_type"`
+			Questions          []importQuizQuestionJSON `json:"questions"`
+		}{quiz.Title, quiz.Description, quiz.PassingScore, quiz.TimeLimit, quiz.RandomizeQuestions, quiz.QuizType, quiz.Questions})
+		if err != nil {
+			WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to prepare quiz import")
+			return
+		}
+		quizResp, err := h.Lms.ImportQuizAdmin(r.Context(), &lmspb.ImportQuizRequest{
+			QuizzableType: lmspb.QuizzableType_QUIZZABLE_TYPE_CHAPTER,
+			QuizzableUlid: chapterID,
+			QuizJson:      string(quizPayload),
+		})
+		if err != nil {
+			writeLmsError(w, err)
+			return
+		}
+		results = append(results, importedChapterQuizResult{ChapterTitle: quiz.ChapterTitle, Quiz: quizResp})
+	}
+	WriteJSON(w, http.StatusOK, importedCoursePackageResponse{Course: resp, Quizzes: results})
 }
 
 func (h *Handler) importLmsQuiz(w http.ResponseWriter, r *http.Request, req importLmsContentRequest) {
@@ -137,6 +298,10 @@ func validateImportCourseJSON(w http.ResponseWriter, value string) bool {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "course_json is invalid")
 		return false
 	}
+	return validateImportCoursePackage(w, course)
+}
+
+func validateImportCoursePackage(w http.ResponseWriter, course importCourseJSON) bool {
 	if strings.TrimSpace(course.Title) == "" {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "course_json.title is required")
 		return false
@@ -158,6 +323,30 @@ func validateImportCourseJSON(w http.ResponseWriter, value string) bool {
 			}
 		}
 	}
+	for quizIndex, quiz := range course.Quizzes {
+		quizPath := fmt.Sprintf("course_json.quizzes[%d]", quizIndex)
+		if strings.TrimSpace(quiz.ChapterTitle) == "" || strings.TrimSpace(quiz.Title) == "" {
+			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, quizPath+".chapter_title and title are required")
+			return false
+		}
+		if quiz.PassingScore > 100 {
+			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, quizPath+".passing_score must be between 0 and 100")
+			return false
+		}
+		for questionIndex, question := range quiz.Questions {
+			questionPath := fmt.Sprintf("%s.questions[%d]", quizPath, questionIndex)
+			if strings.TrimSpace(question.QuestionText) == "" || len(question.Options) == 0 {
+				WriteError(w, http.StatusBadRequest, ErrInvalidRequest, questionPath+".question_text and options are required")
+				return false
+			}
+			for optionIndex, option := range question.Options {
+				if strings.TrimSpace(option.OptionText) == "" {
+					WriteError(w, http.StatusBadRequest, ErrInvalidRequest, fmt.Sprintf("%s.options[%d].option_text is required", questionPath, optionIndex))
+					return false
+				}
+			}
+		}
+	}
 	return true
 }
 
@@ -174,8 +363,12 @@ func validateImportLessonPayload(w http.ResponseWriter, lesson importLessonJSON,
 			return false
 		}
 	case "video", "pdf", "image", "audio", "file":
-		if strings.TrimSpace(lesson.MediaObjectKey) == "" {
-			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, lessonPath+".media_object_key is required")
+		if strings.TrimSpace(lesson.MediaObjectKey) == "" && strings.TrimSpace(lesson.VideoStreamUID) == "" {
+			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, lessonPath+".media_object_key or video_stream_uid is required")
+			return false
+		}
+		if strings.TrimSpace(lesson.VideoStreamUID) != "" && strings.TrimSpace(lesson.VideoProvider) == "" {
+			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, lessonPath+".video_provider is required when video_stream_uid is provided")
 			return false
 		}
 	case "":

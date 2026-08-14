@@ -126,6 +126,8 @@ type Lesson = {
   lesson_type?: number
   body?: string
   external_url?: string
+  video_provider?: string
+  video_stream_uid?: string
   video_embed_code?: string
 }
 
@@ -318,6 +320,12 @@ const activeLesson = computed(() => lessons.value.find((item) => lessonIdOf(item
 const lesson = computed(() => activeLesson.value?.lesson)
 const sanitizedLessonBody = computed(() => sanitizeCourseContent(lesson.value?.body))
 const sanitizedVideoEmbedCode = computed(() => sanitizeVideoEmbed(lesson.value?.video_embed_code))
+const cloudflareVideoSrc = computed(() => {
+  const provider = String(lesson.value?.video_provider || "").trim().toLowerCase()
+  const uid = String(lesson.value?.video_stream_uid || "").trim()
+  if (provider !== "cloudflare" || !/^[a-zA-Z0-9_-]{16,128}$/.test(uid)) return ""
+  return `https://iframe.videodelivery.net/${encodeURIComponent(uid)}`
+})
 const completedLessonIds = computed(() =>
   new Set(progressRecords.value.map(progressLessonIdOf).filter((value): value is string => Boolean(value))),
 )
@@ -2099,6 +2107,15 @@ watch(selectedMaterial, () => {
 
               <div v-if="lessonContentExpanded" class="mt-3">
                 <div v-if="sanitizedVideoEmbedCode" class="overflow-hidden rounded-md bg-muted" v-html="sanitizedVideoEmbedCode" />
+                <div v-else-if="cloudflareVideoSrc" class="aspect-video overflow-hidden rounded-md bg-black">
+                  <iframe
+                    class="h-full w-full"
+                    :src="cloudflareVideoSrc"
+                    :title="lesson?.title || 'Course video'"
+                    allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                    allowfullscreen
+                  />
+                </div>
                 <div v-else-if="lesson?.lesson_type === 3" class="space-y-4">
                   <div class="rounded-md bg-slate-50 p-4 text-sm text-muted-foreground">
                     <div v-if="sanitizedLessonBody" class="prose max-w-none text-sm text-foreground" v-html="sanitizedLessonBody" />

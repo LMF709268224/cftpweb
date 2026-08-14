@@ -1,0 +1,1897 @@
+{
+  "package_type": "cftp-lms-course-package",
+  "package_version": 1,
+  "category_tips": "Crypto Regulation & Compliance",
+  "title": "Foundation in Crypto Regulation and Compliance",
+  "description": "The Foundation in Crypto Regulation and Compliance Course is catered for professionals in regulatory bodies, financial institutions, and compliance roles, especially those with a passion and curiosity for crypto. Designed by leading industry experts and academics, this 16-hour online program provides regulators and compliance professionals with a comprehensive understanding of blockchain, cryptocurrency, and financial regulations. Participants will also gain hands-on insights into numerous important areas such as AML/KYC compliance and financial crime prevention, blockchain forensics and cross-border regulatory frameworks, RegTech solutions, and more. By the end of the course, attendees will be well-equipped to tackle compliance challenges, mitigate risks, and adapt to the evolving crypto landscape.",
+  "duration_min": 960,
+  "certification_enabled": false,
+  "chapters": [
+    {
+      "title": "Module 1: Understanding Blockchain Technology",
+      "lessons": [
+        {
+          "title": "Introduction to Blockchain",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "576943fb6c7a2cbf7acbfb2682adc6ee"
+        },
+        {
+          "title": "Blockchain and Cryptography",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "df519a016aaefc156dd047a6779d36af"
+        },
+        {
+          "title": "Proof of Work and Consensus",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "07dd86b3cbf50c73c15bb974b965c0c1"
+        },
+        {
+          "title": "Smart Contracts and Tokenization",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "907008920d37a37003c8c9fa54161067"
+        },
+        {
+          "title": "Blockchain Networks and Architecture",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "d45e09133760bbd5836d1ce999a062eb"
+        },
+        {
+          "title": "Blockchain Infrastructure: Wallets & Exchanges",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "d77e533017485931b93151334b38d189"
+        }
+      ]
+    },
+    {
+      "title": "Module 1: Digital Assets",
+      "lessons": [
+        {
+          "title": "Overview of Digital Assets",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "18defe77e2219263ac37d3cbe952937e"
+        },
+        {
+          "title": "ERC-20 Tokens & Use Cases",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "9ef7f4f2e6ab6eae665355f75866d876"
+        },
+        {
+          "title": "Non-Fungible Tokens (NFTs)",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "93505f17c4ad79efc55587413e6dd43d"
+        },
+        {
+          "title": "Stablecoins",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "835c423ab26a087235c43a7d87db8e54"
+        },
+        {
+          "title": "Decentralized Finance (DeFi)",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "fce3442db11732607a26651ef176eb76"
+        },
+        {
+          "title": "Central Bank Digital Currencies (CBDCs) & RWAs",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "8d1a8882c6dd0cc221a2b77f2439e647"
+        }
+      ]
+    },
+    {
+      "title": "Module 1: Case Studies",
+      "lessons": [
+        {
+          "title": "Binance: Role of Exchanges in Digital Asset Markets",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "d786fb25cb2f4c659d39e5769011032f"
+        },
+        {
+          "title": "Project Dynamo: Enhancing Digital Asset Infrastructure",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "eb2f3b543d1698021d2cd705e2fb9c4a"
+        }
+      ]
+    },
+    {
+      "title": "Module 1 Quiz",
+      "lessons": []
+    },
+    {
+      "title": "Module 2: Risks and Challenges",
+      "lessons": [
+        {
+          "title": "Need for Cryptocurrency Regulation",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "a48fe6db8516fb4c879b4d30b72a278e"
+        },
+        {
+          "title": "Impetus for Crypto Regulations",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "9133c8c96745bca128ff11757f2149b9"
+        },
+        {
+          "title": "Higher Risk of Money Laundering",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "61e4fa569a7b6ed4e02c3c3cf6b08e52"
+        }
+      ]
+    },
+    {
+      "title": "Module 2: Global Regulatory Landscape",
+      "lessons": [
+        {
+          "title": "State of Crypto-Asset Regulation",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "da2ec7a23af5f0475c509da5ba558be2"
+        },
+        {
+          "title": "Global Regulatory Status by Country",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "a56890fb59a20955333060b2dd669706"
+        },
+        {
+          "title": "International Regulatory Bodies",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "95bbb6400b5fd43f1502a47a9a4ed042"
+        }
+      ]
+    },
+    {
+      "title": "Module 2: Singapore as a Case Study",
+      "lessons": [
+        {
+          "title": "Singapore's Evolving Attitude Towards Crypto Regulations",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "104fa9b20ac019b201942d35fa2ee106"
+        },
+        {
+          "title": "MAS Regulatory Philosophy",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "bfb0182e4f95fe09fef40dae10eacf88"
+        },
+        {
+          "title": "Tenets of Effective Regulation",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "c8f9ebee38738d725eacdd9512fdadaf"
+        }
+      ]
+    },
+    {
+      "title": "Module 2: AML, CFT and KYC for Digital Assets",
+      "lessons": [
+        {
+          "title": "Tension Between Regulation and Innovation",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "f87f32480aedcb14c79c9a94770ad07d"
+        },
+        {
+          "title": "Key Risk: AML/CFT",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "757ee4427ca0f1f7f9628b105f633e20"
+        },
+        {
+          "title": "IOSCO Global Policy Recommendations for Digital Assets Markets",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "00165615c370d2bbbaa75eab86a89fbf"
+        },
+        {
+          "title": "IOSCO Paper Highlights",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "93983122bb9d508e933b9093fa6cc052"
+        },
+        {
+          "title": "Singapore's Payment Services Act (PSA)",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "a03dbe929fecbbb9fc3084834c79c3a6"
+        },
+        {
+          "title": "MAS CP: Proposed Regulatory Measures for DPT Services",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "6bcd7045a2eb6065167a14e87d32fa59"
+        },
+        {
+          "title": "Business Conduct of Crypto Intermediaries",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "7de192b5a0e842c3bfc31ce73e47e5e1"
+        },
+        {
+          "title": "Financial Services and Markets Act (FSMA)",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "912daecbfc16e90954fe6e33d0eced3d"
+        },
+        {
+          "title": "Case Study: Binance on AML Efforts",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "c0fa1e872c3afffbd90c5a60f390aa1a"
+        }
+      ]
+    },
+    {
+      "title": "Module 2: Traditional Finance (TradFi) Regulations",
+      "lessons": [
+        {
+          "title": "Regulatory Treatment of Crypto Assets",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "e9f3ea6beadcc4579005e848237c5029"
+        },
+        {
+          "title": "Case Studies and Examples",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "52fb89d5ad7c58c75657ae8f2c1ee2bc"
+        },
+        {
+          "title": "Application to Crypto",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "4ad549c3f3bc8c605a5b43e637694b0a"
+        }
+      ]
+    },
+    {
+      "title": "Module 2: Financial Crime Risks and Management",
+      "lessons": [
+        {
+          "title": "Risk Area 1: Customer Risk",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "e60e845c46483a3e4188e4a1d20edab7"
+        },
+        {
+          "title": "Risk Area 2: Geographical Risk",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "d86ff469f8aaf25bf5ba70a5155f2465"
+        },
+        {
+          "title": "Risk Area 3: Products and Services Risk",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "5ecf12e7d8e4acdab3ff1e8fcbff59fd"
+        },
+        {
+          "title": "Risk Area 4: Delivery Channel Risk",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "0f65dac2ab646e1a6213858bd972c587"
+        },
+        {
+          "title": "Risk Area 5: Third-Party and Service Providers Risk",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "138a5359807065530f42d84a02ad40dd"
+        }
+      ]
+    },
+    {
+      "title": "Module 2: Cross-Border Issues",
+      "lessons": [
+        {
+          "title": "Global Thresholds of FATF Travel Rule",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "f3fe41a12d98d66c88cdd8989417b5ae"
+        },
+        {
+          "title": "Case Studies and Examples",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "e03ce7c311ad58fcde0ae7f5f5959d60"
+        },
+        {
+          "title": "Responsibilities of Travel Rule Compliance",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "d0386ad207ac19c83d61e9be36d28f22"
+        },
+        {
+          "title": "ACIP Paper on the Management of ML/TF & Sanction Risks",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "7022aaf0bf4dc5a7e35ecd59f959df5a"
+        },
+        {
+          "title": "Jurisdictional Nature of Regulations",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "57dbe6a4e78afb63b99e6748914d0b1f"
+        },
+        {
+          "title": "Regulatory Cooperation",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "80a50accbdbd5296be165299ff5b1935"
+        }
+      ]
+    },
+    {
+      "title": "Module 2 Quiz",
+      "lessons": []
+    },
+    {
+      "title": "Module 3: Evolution of Fintech",
+      "lessons": [
+        {
+          "title": "Overview of Fintech Evolution",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "bc09ee7f5998ad2757ede451b56faa8d"
+        },
+        {
+          "title": "Growth of Fintech, Blockchain, and Web3",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "05753ef606782007ae7edfb59ea08920"
+        },
+        {
+          "title": "Fintech Evolution Timeline",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "72173a7085078a205cc59bdb3361359c"
+        }
+      ]
+    },
+    {
+      "title": "Module 3: Regulatory Technology introduction and Tools",
+      "lessons": [
+        {
+          "title": "Defining RegTech",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "72f511a423e35cec6706a23b1abbb377"
+        },
+        {
+          "title": "RegTech Industry Growth",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "39c6fc385ef119aca36b471c2c23d94b"
+        },
+        {
+          "title": "Interlinkages with SupTech",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "e18909362a8db558e3238949798df54f"
+        },
+        {
+          "title": "Features of RegTech",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "e0ccbc495a910ac21674efb69bf2ead3"
+        },
+        {
+          "title": "Rise of RegTech",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "7b7d64b5d16cff2a4ffaa4497c2c4741"
+        },
+        {
+          "title": "Evolution of RegTech",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "81630f58fc3f4ba0386e4227883afc4d"
+        },
+        {
+          "title": "RegTech Taxonomy",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "4f7c90d4aa40cea0b6362bb29e7f6b09"
+        },
+        {
+          "title": "Adoption of RegTech",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "ec6e2261fa458d668134dd400e4498f0"
+        }
+      ]
+    },
+    {
+      "title": "Module 3: Challenges of Evolving Regulations",
+      "lessons": [
+        {
+          "title": "10,000 Ft View: Evolving Regulations",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "780dc586dde3f18c0cb16fbd53e7bbbe"
+        },
+        {
+          "title": "Other Drivers",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "6c7cac3b2d196523d33ecd0e1c392217"
+        },
+        {
+          "title": "Challenges and Risks - Industry & Regulations",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "cdec35cae55843982c29f153956910d4"
+        }
+      ]
+    },
+    {
+      "title": "Module 3: Technologies in Regulatory Technology",
+      "lessons": [
+        {
+          "title": "Key Technologies",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "e0278c90cf870be3b4171f879f1bba0a"
+        },
+        {
+          "title": "Big Data and Analytics",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "8c03ac67eb20d17802d87b75934d1d26"
+        },
+        {
+          "title": "Data Management and Processing",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "b8019b774af513f299caa799eedbbb3c"
+        },
+        {
+          "title": "Data Analytics and Behavioural Assessment",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "efa6a2051d07e8f85cefafff71d15c95"
+        },
+        {
+          "title": "Predictive Modelling",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "770ceafaa4d9ed7e912498b60f172a0e"
+        }
+      ]
+    },
+    {
+      "title": "Module 3: AI and Machine Learning in Regulatory Technology",
+      "lessons": [
+        {
+          "title": "Definitions of AI",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "737e49341e6c0e48dbe889249296377d"
+        },
+        {
+          "title": "Types of AI",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "d38ac0bf64d7b40cc5c8cffe8d749fde"
+        },
+        {
+          "title": "AI and Machine Learning",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "d0c39e0c9b50f6ffacc14bfa328bcea9"
+        },
+        {
+          "title": "Use of AI in Regtech",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "f4c968eda0df9578abd3964a9d2183ac"
+        },
+        {
+          "title": "Generative AI in RegTech",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "ad9637239391b5057d43f76c86fa880b"
+        },
+        {
+          "title": "Market Surveillance",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "eb538df29df28e491b1beaed1a2a041c"
+        }
+      ]
+    },
+    {
+      "title": "Module 3: Regulatory Technology Use Cases",
+      "lessons": [
+        {
+          "title": "Use of RegTech in e-KYC",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "f4b5339ea684c5bfa3dab21bf2874262"
+        },
+        {
+          "title": "e-KYC: Facial Verification",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "31968755540febd7cd0e8c1c4c39fe02"
+        },
+        {
+          "title": "e-KYC: Liveness Verification",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "5327ad679c17d9c4a10e69425f7677f2"
+        },
+        {
+          "title": "Continuous CDD",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "1a08a972d5ac6cc1e7bb5bd08feb7dec"
+        }
+      ]
+    },
+    {
+      "title": "Module 3 Quiz",
+      "lessons": []
+    },
+    {
+      "title": "Module 4: Regulatory Technologies: Compliance and Risk Management",
+      "lessons": [
+        {
+          "title": "General Compliance and Risk Management",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "39b5d96c4000f9fd5e1d999c72501691"
+        },
+        {
+          "title": "Risk Management: Name Screening Integration",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "fcbd2913d4ee90972e5bfe12a4a05911"
+        },
+        {
+          "title": "Risk Management Issues",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "3f4383280352920e98e4069bed47a912"
+        },
+        {
+          "title": "Managing Expectations",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "c0d7720a2081c01f36c7eb3756c665ea"
+        },
+        {
+          "title": "Considerations When Adopting RegTech",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "914f413b8b3e0f62fcaeb16e1b42c853"
+        }
+      ]
+    },
+    {
+      "title": "Module 4: Regulatory Technology Metrics",
+      "lessons": [
+        {
+          "title": "Compliance Efficiency",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "084a80ab2e8c6e4a648b65cf007dffb3"
+        },
+        {
+          "title": "Operational Efficiency",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "fd2b771dd67cf5b93aa0b53b5a68da67"
+        },
+        {
+          "title": "Risk Management",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "ecc2b7d70eff49b2207247382635c872"
+        },
+        {
+          "title": "Return on Investment (ROI)",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "a98654e74198a138695a20684bf98789"
+        },
+        {
+          "title": "Data Quality and Accuracy",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "0208104150a1c777eb5cb28c0c750799"
+        },
+        {
+          "title": "User Experience and Adoption",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "7cab0ba89804f92af842e312182867ee"
+        },
+        {
+          "title": "Scalability and Flexibility",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "5ee2d58454ce7b8bac8bebef4b8e5a91"
+        },
+        {
+          "title": "Regulatory Reporting",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "ddccb6cf756b6bf3be9943436e0491c1"
+        }
+      ]
+    },
+    {
+      "title": "Module 4: Supervisory technology",
+      "lessons": [
+        {
+          "title": "Definition of SupTech",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "b13204b6d11c91bf279557471d961262"
+        },
+        {
+          "title": "Use Cases of SupTech",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "8cb5c3fb8453868f4acd2c0ad77fab8a"
+        },
+        {
+          "title": "Regulatory Reporting",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "a899cc4810ae7850e362c9bc8aeebc08"
+        },
+        {
+          "title": "Applications in Jurisdictions",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "25ca76e914ac698633b6c3bcb46eb9de"
+        },
+        {
+          "title": "Case Studies: People's Bank of China, Monetary Authority of Singapore and European Central Bank",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "48709732d92cd2ac31bf3486dc470b8a"
+        }
+      ]
+    },
+    {
+      "title": "Module 4: Enablers for RegTech and SupTech",
+      "lessons": [
+        {
+          "title": "Alignment of RegTech and SupTech",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "ca14c289efaa1c98db281567f8c74dcd"
+        },
+        {
+          "title": "Key Enablers",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "db5d8604c3fd64221213a8fd81e70e9a"
+        }
+      ]
+    },
+    {
+      "title": "Module 4: Reporting Evolution",
+      "lessons": [
+        {
+          "title": "Reporting Evolution",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "e89370238d38e525b9e4e7eb1c5cdac2"
+        }
+      ]
+    },
+    {
+      "title": "Module 4: Stablecoin Regulations and Implications",
+      "lessons": [
+        {
+          "title": "Digital Payment Providers in Singapore",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "696b39545c0bef4695f29d296a98659b"
+        },
+        {
+          "title": "Regulations for Digital Payment Providers",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "ac9591cb4d865b1f5d3bb6676c718943"
+        },
+        {
+          "title": "Future of Stablecoins",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "ac60e855666069719711007080c84bf7"
+        },
+        {
+          "title": "Bank Deposit Tokens",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "fb6ec7ce9b099294c2a96ec9c87e0634"
+        },
+        {
+          "title": "Regulation of Stablecoins",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "44032a4689624343b12c68d8a2cf4ee1"
+        },
+        {
+          "title": "Key Risks of Stablecoins",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "b068fe8e496c615d3b611440cd261af7"
+        },
+        {
+          "title": "Global Regulatory Approaches",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "c5ed05e4eb0ac3e11033a6e6acc6dafb"
+        },
+        {
+          "title": "BIS Paper on Stablecoins",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "9b5f2cf1f14466c627b4c3e54dd90b18"
+        },
+        {
+          "title": "Singapore's Stablecoin Regulatory Framework",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "e1adef3b6590a8390794717e0ecdbf57"
+        }
+      ]
+    },
+    {
+      "title": "Module 4 Case Study: Project Dunbar",
+      "lessons": [
+        {
+          "title": "Project Dunbar",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "adb219f05ee3232f3fc7939a0df6b9aa"
+        }
+      ]
+    },
+    {
+      "title": "Module 4 Case Study: Project mBridge",
+      "lessons": [
+        {
+          "title": "Project mBridge",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "908d2f691f5a65ab744b4c6dcbb113cb"
+        }
+      ]
+    },
+    {
+      "title": "Module 4 Case Study: Project Mariana",
+      "lessons": [
+        {
+          "title": "Project Mariana",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "08a3b65e2fd1ecdecfb4090000e05b46"
+        }
+      ]
+    },
+    {
+      "title": "Module 4 Case Study: Project Mandala",
+      "lessons": [
+        {
+          "title": "Project Mandala",
+          "lesson_type": "video",
+          "video_provider": "cloudflare",
+          "video_stream_uid": "62fd9b5ee501c3e95677e90aec4ca712"
+        }
+      ]
+    },
+    {
+      "title": "Module 4 Quiz",
+      "lessons": []
+    }
+  ],
+  "quizzes": [
+    {
+      "chapter_title": "Module 1 Quiz",
+      "title": "Module 1 Quiz",
+      "description": "Test your knowledge of blockchain technology and digital assets",
+      "passing_score": 70,
+      "time_limit": 30,
+      "randomize_questions": false,
+      "quiz_type": 1,
+      "questions": [
+        {
+          "question_text": "Which NFT project was created in 2015 and has since become a collector's item for being part of Ethereum's history?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 1,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "CryptoPunks",
+              "is_correct": false,
+              "sort_order": 1
+            },
+            {
+              "option_text": "CryptoKitties",
+              "is_correct": false,
+              "sort_order": 2
+            },
+            {
+              "option_text": "Etheria",
+              "is_correct": true,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "What is the main non-collateralized approach used to maintain the value of a stablecoin?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 2,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "Crypto-collateralization",
+              "is_correct": false,
+              "sort_order": 1
+            },
+            {
+              "option_text": "Asset-backed tokens",
+              "is_correct": false,
+              "sort_order": 2
+            },
+            {
+              "option_text": "Seigniorage shares",
+              "is_correct": true,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "Which synthetic asset platform allows users to mint synthetic versions of various assets by locking up collateral in the form of the platform's native token?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 3,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "Compound",
+              "is_correct": false,
+              "sort_order": 1
+            },
+            {
+              "option_text": "MakerDAO",
+              "is_correct": false,
+              "sort_order": 2
+            },
+            {
+              "option_text": "Synthetix",
+              "is_correct": true,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "Which CBDC project was launched by the Bahamas and is the first-ever nationwide Central Bank Digital Currency in the world?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 4,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "JAM-DEX",
+              "is_correct": false,
+              "sort_order": 1
+            },
+            {
+              "option_text": "Sand Dollar",
+              "is_correct": true,
+              "sort_order": 2
+            },
+            {
+              "option_text": "e-Naira",
+              "is_correct": false,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "Which project focuses on the concept of a purpose-bound Singdollar and aims to explore the feasibility of introducing a digital version of the Singapore dollar?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 5,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "Project Orchid",
+              "is_correct": true,
+              "sort_order": 1
+            },
+            {
+              "option_text": "Project Cedar",
+              "is_correct": false,
+              "sort_order": 2
+            },
+            {
+              "option_text": "Project Ubin",
+              "is_correct": false,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "Who introduced the idea of secure digital cash in 1983?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 6,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "Satoshi Nakamoto",
+              "is_correct": false,
+              "sort_order": 1
+            },
+            {
+              "option_text": "Vitalik Buterin",
+              "is_correct": false,
+              "sort_order": 2
+            },
+            {
+              "option_text": "David Chaum",
+              "is_correct": true,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "What is the primary function of a cryptographic hash function?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 7,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "Map data of arbitrary size to a fixed size",
+              "is_correct": true,
+              "sort_order": 1
+            },
+            {
+              "option_text": "Generate public keys",
+              "is_correct": false,
+              "sort_order": 2
+            },
+            {
+              "option_text": "Encrypt data",
+              "is_correct": false,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "Which consensus mechanism is used by Ethereum 2.0?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 8,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "Proof of Work",
+              "is_correct": false,
+              "sort_order": 1
+            },
+            {
+              "option_text": "Proof of Authority",
+              "is_correct": false,
+              "sort_order": 2
+            },
+            {
+              "option_text": "Proof of Stake",
+              "is_correct": true,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "What is the main purpose of the Lightning Network?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 9,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "Improve scalability",
+              "is_correct": true,
+              "sort_order": 1
+            },
+            {
+              "option_text": "Enhance security",
+              "is_correct": false,
+              "sort_order": 2
+            },
+            {
+              "option_text": "Reduce transaction fees",
+              "is_correct": false,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "What is the main purpose of smart contracts in blockchain?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 10,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "Validate blocks",
+              "is_correct": false,
+              "sort_order": 1
+            },
+            {
+              "option_text": "Encrypt transactions",
+              "is_correct": false,
+              "sort_order": 2
+            },
+            {
+              "option_text": "Automate and enforce agreements",
+              "is_correct": true,
+              "sort_order": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_title": "Module 2 Quiz",
+      "title": "Module 2 Quiz",
+      "description": "Test your knowledge of crypto regulations and compliance",
+      "passing_score": 70,
+      "time_limit": 30,
+      "randomize_questions": true,
+      "quiz_type": 1,
+      "questions": [
+        {
+          "question_text": "What is listed as a primary impetus for crypto regulations?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 1,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "Decreasing use of crypto-assets globally.",
+              "is_correct": false,
+              "sort_order": 1
+            },
+            {
+              "option_text": "Increasing use of crypto-assets in illicit activities.",
+              "is_correct": true,
+              "sort_order": 2
+            },
+            {
+              "option_text": "The desire to ban all crypto-assets.",
+              "is_correct": false,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "What key risk in the digital assets ecosystem is FATF instrumental in driving global standards for?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 2,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "Technology Risks",
+              "is_correct": false,
+              "sort_order": 1
+            },
+            {
+              "option_text": "Market Volatility",
+              "is_correct": false,
+              "sort_order": 2
+            },
+            {
+              "option_text": "AML/CFT",
+              "is_correct": true,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "IOSCO recommends regulators analyze the applicability and adequacy of regulatory frameworks, considering if crypto-assets are or behave like substitutes for what?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 3,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "Traditional goods and services",
+              "is_correct": false,
+              "sort_order": 1
+            },
+            {
+              "option_text": "Regulated financial instruments.",
+              "is_correct": true,
+              "sort_order": 2
+            },
+            {
+              "option_text": "Digital collectibles.",
+              "is_correct": false,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "What is a proposed measure for DPTSPs to safeguard private keys and customer DPTs?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 4,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "Allow any staff to authorize movement of client DPTs.",
+              "is_correct": false,
+              "sort_order": 1
+            },
+            {
+              "option_text": "Storing all customer assets in hot wallets",
+              "is_correct": false,
+              "sort_order": 2
+            },
+            {
+              "option_text": "Storing a high proportion of customer assets in cold wallets.",
+              "is_correct": true,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "The Financial Services and Markets Act (FSMA) now regulates a new class of Financial Institutions (FIs). What does this new class cover?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 5,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "Traditional banks only",
+              "is_correct": false,
+              "sort_order": 1
+            },
+            {
+              "option_text": "Virtual Asset Service Providers (VASPs) created in Singapore that provide DT services outside of Singapore",
+              "is_correct": true,
+              "sort_order": 2
+            },
+            {
+              "option_text": "Only foreign exchange trading platforms.",
+              "is_correct": false,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "What is excluded from the scope of DT services under FSMA?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 6,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "Safeguarding/administering DTs",
+              "is_correct": false,
+              "sort_order": 1
+            },
+            {
+              "option_text": "Financial advice relating to DTs.",
+              "is_correct": false,
+              "sort_order": 2
+            },
+            {
+              "option_text": "Technical Service Providers that do not possess any money or DT.",
+              "is_correct": true,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "What is the key test for whether crypto assets are subject to Traditional Finance (TradFi) regulations?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 7,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "The current market capitalization of the crypto asset.",
+              "is_correct": false,
+              "sort_order": 1
+            },
+            {
+              "option_text": "The underlying economic structure and impact of the crypto asset.",
+              "is_correct": true,
+              "sort_order": 2
+            },
+            {
+              "option_text": "The number of exchanges the crypto asset is listed on.",
+              "is_correct": false,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "What is the general regulatory stance on NFTs in most jurisdictions, including Singapore?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 8,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "They are fully regulated as securities",
+              "is_correct": false,
+              "sort_order": 1
+            },
+            {
+              "option_text": "They are largely unregulated.",
+              "is_correct": true,
+              "sort_order": 2
+            },
+            {
+              "option_text": "They are considered traditional financial instruments.",
+              "is_correct": false,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "What is a mitigation strategy for \"Customer Risk\" concerning ML/TF purposes?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 9,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "Allowing anonymous transactions.",
+              "is_correct": false,
+              "sort_order": 1
+            },
+            {
+              "option_text": "Implementing Customer Identification Program (CIP) and Customer Due Diligence (CDD).",
+              "is_correct": true,
+              "sort_order": 2
+            },
+            {
+              "option_text": "Encouraging the use of mixers/tumblers",
+              "is_correct": false,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "What does FATF's Travel Rule mandate for VASPs?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 10,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "They must use only specific blockchain networks.",
+              "is_correct": false,
+              "sort_order": 1
+            },
+            {
+              "option_text": "They must send, receive, and screen personal/business information for crypto transactions over a certain monetary threshold.",
+              "is_correct": true,
+              "sort_order": 2
+            },
+            {
+              "option_text": "They must report all transactions to a central authority, regardless of value.",
+              "is_correct": false,
+              "sort_order": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_title": "Module 3 Quiz",
+      "title": "Module 3 Quiz",
+      "description": "Test your knowledge of RegTech and SupTech",
+      "passing_score": 70,
+      "time_limit": 30,
+      "randomize_questions": true,
+      "quiz_type": 1,
+      "questions": [
+        {
+          "question_text": "Why is compliance considered a necessity for the FinTech/Blockchain/Web3 space?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 1,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "It is merely a \"nice to have\" feature.",
+              "is_correct": false,
+              "sort_order": 1
+            },
+            {
+              "option_text": "Technology has changed the risk profile of financial services but not removed the need for regulation.",
+              "is_correct": true,
+              "sort_order": 2
+            },
+            {
+              "option_text": "The FinTech/Blockchain/Web3 space has grown much bigger.",
+              "is_correct": false,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "What does RegTech aim to improve in regulatory processes?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 2,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "The complexity of compliance programs.",
+              "is_correct": false,
+              "sort_order": 1
+            },
+            {
+              "option_text": "The manual monitoring of information.",
+              "is_correct": false,
+              "sort_order": 2
+            },
+            {
+              "option_text": "The automation of monitoring information.",
+              "is_correct": true,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "What is SupTech primarily defined as?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 3,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "Technology used by financial institutions for compliance.",
+              "is_correct": false,
+              "sort_order": 1
+            },
+            {
+              "option_text": "Technology that help regulators in their regulatory oversight of financial institutions.",
+              "is_correct": true,
+              "sort_order": 2
+            },
+            {
+              "option_text": "Technology to help managers supervise their subordinates.",
+              "is_correct": false,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "What is a challenge associated with complying with fast-changing regulations?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 4,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "Decreased liability.",
+              "is_correct": false,
+              "sort_order": 1
+            },
+            {
+              "option_text": "Simplified compliance programs",
+              "is_correct": false,
+              "sort_order": 2
+            },
+            {
+              "option_text": "Increased costs.",
+              "is_correct": true,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "What approach is the financial system on the edge of moving towards from Know-Your-Customer (KYC) principles?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 5,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "Know-Your-Technology (KYT)",
+              "is_correct": false,
+              "sort_order": 1
+            },
+            {
+              "option_text": "Know-Your-Data (KYD)",
+              "is_correct": true,
+              "sort_order": 2
+            },
+            {
+              "option_text": "Know-Your-Risk (KYR)",
+              "is_correct": false,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "What are the four Vs typically used to identify Big Data?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 6,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "Value, Vision, Velocity, Volume.",
+              "is_correct": false,
+              "sort_order": 1
+            },
+            {
+              "option_text": "Veracity, Velocity, Variety, Volume.",
+              "is_correct": true,
+              "sort_order": 2
+            },
+            {
+              "option_text": "Verification, Validation, Visualization, Volatility.",
+              "is_correct": false,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "What are the three main components of e-KYC?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 7,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "Document Verification, Facial Verification, Liveness Verification.",
+              "is_correct": true,
+              "sort_order": 1
+            },
+            {
+              "option_text": "Password Verification, Biometric Scan, Credit Score Check.",
+              "is_correct": false,
+              "sort_order": 2
+            },
+            {
+              "option_text": "Self-photograph, ID Document, Social Media Check.",
+              "is_correct": false,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "What does Liveness Verification ensure in e-KYC?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 8,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "That the ID document is authentic.",
+              "is_correct": false,
+              "sort_order": 1
+            },
+            {
+              "option_text": "That the person who owns the ID is present and prevents impersonation.",
+              "is_correct": true,
+              "sort_order": 2
+            },
+            {
+              "option_text": "That the user can correctly read numbers aloud",
+              "is_correct": false,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "What can Generative AI do for Contract Review and Analysis?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 9,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "Automatically sign contracts without human review.",
+              "is_correct": false,
+              "sort_order": 1
+            },
+            {
+              "option_text": "Review legal documents, generate summaries, and highlight key clauses.",
+              "is_correct": true,
+              "sort_order": 2
+            },
+            {
+              "option_text": "Generate alternative contracts",
+              "is_correct": false,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "What is described as an \"art\" in Trade Surveillance?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 10,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "Automated reporting.",
+              "is_correct": false,
+              "sort_order": 1
+            },
+            {
+              "option_text": "Alert setting.",
+              "is_correct": true,
+              "sort_order": 2
+            },
+            {
+              "option_text": "Regulatory reporting.",
+              "is_correct": false,
+              "sort_order": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_title": "Module 4 Quiz",
+      "title": "Module 4 Quiz",
+      "description": "Test your knowledge of stablecoins, CBDCs, and regulatory projects",
+      "passing_score": 70,
+      "time_limit": 30,
+      "randomize_questions": false,
+      "quiz_type": 1,
+      "questions": [
+        {
+          "question_text": "What is the primary backing for bank deposit tokens?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 1,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "Cryptocurrency reserves",
+              "is_correct": false,
+              "sort_order": 1
+            },
+            {
+              "option_text": "Fiat currency deposits",
+              "is_correct": true,
+              "sort_order": 2
+            },
+            {
+              "option_text": "Government bonds",
+              "is_correct": false,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "Which of the following is not a regulation imposed on DPT providers in Singapore?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 2,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "A cap imposed for crypto lending for retail customers",
+              "is_correct": true,
+              "sort_order": 1
+            },
+            {
+              "option_text": "Customers assets are to be in a statutory trust",
+              "is_correct": false,
+              "sort_order": 2
+            },
+            {
+              "option_text": "Disclosures on risks to customers",
+              "is_correct": false,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "Which of the following statements is true about stablecoins?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 3,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "Stablecoins cannot be regulated",
+              "is_correct": false,
+              "sort_order": 1
+            },
+            {
+              "option_text": "Decentralized stablecoins face issues with trust in the issuing company",
+              "is_correct": false,
+              "sort_order": 2
+            },
+            {
+              "option_text": "There are still problems with hacks and potential pool runs with decentralized stablecoins",
+              "is_correct": true,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "What is the primary objective of Project Mandala's real-time monitoring and reporting capabilities?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 4,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "Increase transaction fees",
+              "is_correct": false,
+              "sort_order": 1
+            },
+            {
+              "option_text": "Ensure compliance issues are identified and addressed immediately",
+              "is_correct": true,
+              "sort_order": 2
+            },
+            {
+              "option_text": "Promote the use of decentralized finance",
+              "is_correct": false,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "The use of which technology makes Project Mariana unique over other government-initiated projects?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 5,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "Blockchain",
+              "is_correct": false,
+              "sort_order": 1
+            },
+            {
+              "option_text": "Automated Market Makers (AMMs)",
+              "is_correct": true,
+              "sort_order": 2
+            },
+            {
+              "option_text": "Digital Signatures",
+              "is_correct": false,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "What is Project Dunbar's main objective?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 6,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "Issuance of CBDCs for central banks",
+              "is_correct": false,
+              "sort_order": 1
+            },
+            {
+              "option_text": "Design a common platform for multiple central bank digital currencies (CBDCs) cross border transactions",
+              "is_correct": true,
+              "sort_order": 2
+            },
+            {
+              "option_text": "Explores policies for cross border CBDCs",
+              "is_correct": false,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "What are the crypto techniques used in Project Mandala?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 7,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "Homomorphic Encryption",
+              "is_correct": false,
+              "sort_order": 1
+            },
+            {
+              "option_text": "Zero Knowledge Proofs",
+              "is_correct": false,
+              "sort_order": 2
+            },
+            {
+              "option_text": "Secure Communication Channels",
+              "is_correct": true,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "What is a notable feature of the Project mBridge MVP platform regarding technology?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 8,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "It is built on an existing blockchain",
+              "is_correct": false,
+              "sort_order": 1
+            },
+            {
+              "option_text": "It is compatible with the Ethereum Virtual Machine",
+              "is_correct": true,
+              "sort_order": 2
+            },
+            {
+              "option_text": "It only supports single-currency transactions",
+              "is_correct": false,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "From an issuing bank's perspective, what are deposit tokens considered?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 9,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "A new type of asset on the bank's balance sheet",
+              "is_correct": false,
+              "sort_order": 1
+            },
+            {
+              "option_text": "A redistribution of deposit liabilities on the bank's balance sheet",
+              "is_correct": true,
+              "sort_order": 2
+            },
+            {
+              "option_text": "A separate entity requiring new capital",
+              "is_correct": false,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "question_text": "What cryptographic technique is used in Project Mandala to verify transactions without disclosing sensitive customer data?",
+          "question_type": 1,
+          "points": 1,
+          "sort_order": 10,
+          "is_required": true,
+          "explanation": "",
+          "media_items_json": "[]",
+          "options": [
+            {
+              "option_text": "Public Key Infrastructure (PKI)",
+              "is_correct": false,
+              "sort_order": 1
+            },
+            {
+              "option_text": "Zero-Knowledge Proofs (ZKPs)",
+              "is_correct": true,
+              "sort_order": 2
+            },
+            {
+              "option_text": "Symmetric Encryption",
+              "is_correct": false,
+              "sort_order": 3
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
