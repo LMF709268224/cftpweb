@@ -10,6 +10,8 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
+const requestTimeout = 60 * time.Second
+
 // buildRouter 构建 HTTP 路由
 func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 	r := chi.NewRouter()
@@ -19,7 +21,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
-	r.Use(middleware.Timeout(60 * time.Second))
+	r.Use(middleware.Timeout(requestTimeout))
 	r.Use(s.corsMiddleware)
 
 	// ---------- 健康检查 (公开) ----------

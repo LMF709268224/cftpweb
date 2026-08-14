@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+const httpWriteTimeout = requestTimeout + 15*time.Second
+
 func (s *Server) serveHTTP(router http.Handler) <-chan error {
 	addr := os.Getenv(config.EnvHTTPAddress)
 	if addr == "" {
@@ -21,7 +23,7 @@ func (s *Server) serveHTTP(router http.Handler) <-chan error {
 		Handler:           router,
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
-		WriteTimeout:      60 * time.Second,
+		WriteTimeout:      httpWriteTimeout,
 		IdleTimeout:       120 * time.Second,
 	}
 
