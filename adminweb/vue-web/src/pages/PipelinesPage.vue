@@ -1147,7 +1147,7 @@ onMounted(() => {
             <textarea
               v-model="form.description"
               class="min-h-28 resize-y rounded-xl border border-slate-200 px-4 py-3"
-              maxlength="512"
+              maxlength="1024"
             />
           </label>
           <details class="group md:col-span-2">
