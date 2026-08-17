@@ -47,7 +47,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-slate-950 text-slate-50">
+  <div class="app-min-viewport-height app-safe-area-screen relative flex w-full flex-col items-center justify-center overflow-hidden bg-slate-950 text-slate-50">
     <div class="pointer-events-none absolute left-1/2 top-1/2 h-[800px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-600/10 blur-[150px]" />
     <div class="relative z-10 mx-4 flex w-full max-w-sm flex-col items-center rounded-2xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-xl">
       <template v-if="status === 'loading'">

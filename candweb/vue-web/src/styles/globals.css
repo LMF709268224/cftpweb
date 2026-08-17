@@ -20,6 +20,11 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  --app-viewport-height: 100vh;
+  --app-safe-area-top: env(safe-area-inset-top, 0px);
+  --app-safe-area-right: env(safe-area-inset-right, 0px);
+  --app-safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --app-safe-area-left: env(safe-area-inset-left, 0px);
   --background: #e6efff;
   --foreground: #101114;
   --card: oklch(1 0 0);
@@ -45,6 +50,106 @@
   --sidebar-accent: #c2d8ff;
   --sidebar-accent-foreground: #1b458d;
   --sidebar-border: #ccdaee;
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --app-viewport-height: 100dvh;
+  }
+}
+
+.app-viewport-height {
+  height: var(--app-viewport-height);
+}
+
+.app-min-viewport-height {
+  min-height: var(--app-viewport-height);
+}
+
+.app-safe-area-screen {
+  box-sizing: border-box;
+  padding-top: var(--app-safe-area-top);
+  padding-right: var(--app-safe-area-right);
+  padding-bottom: var(--app-safe-area-bottom);
+  padding-left: var(--app-safe-area-left);
+}
+
+.app-safe-area-sidebar {
+  box-sizing: border-box;
+  padding-top: var(--app-safe-area-top);
+  padding-bottom: var(--app-safe-area-bottom);
+  padding-left: var(--app-safe-area-left);
+}
+
+.app-safe-area-overlay {
+  box-sizing: border-box;
+  padding-top: max(1rem, var(--app-safe-area-top));
+  padding-right: max(1rem, var(--app-safe-area-right));
+  padding-bottom: max(1rem, var(--app-safe-area-bottom));
+  padding-left: max(1rem, var(--app-safe-area-left));
+}
+
+.app-safe-area-overlay-order {
+  box-sizing: border-box;
+  padding-top: max(1rem, var(--app-safe-area-top));
+  padding-right: max(0.75rem, var(--app-safe-area-right));
+  padding-bottom: max(1rem, var(--app-safe-area-bottom));
+  padding-left: max(0.75rem, var(--app-safe-area-left));
+}
+
+.app-safe-area-overlay-spacious {
+  box-sizing: border-box;
+  padding-top: max(1.5rem, var(--app-safe-area-top));
+  padding-right: max(1rem, var(--app-safe-area-right));
+  padding-bottom: max(1.5rem, var(--app-safe-area-bottom));
+  padding-left: max(1rem, var(--app-safe-area-left));
+}
+
+.app-dialog-viewport {
+  max-height: min(92vh, calc(var(--app-viewport-height) - var(--app-safe-area-top) - var(--app-safe-area-bottom) - 2rem));
+}
+
+.app-dialog-viewport-compact {
+  max-height: min(86vh, calc(var(--app-viewport-height) - var(--app-safe-area-top) - var(--app-safe-area-bottom) - 2rem));
+}
+
+.app-safe-area-page-padding {
+  padding-top: calc(1.5rem + var(--app-safe-area-top));
+  padding-right: calc(1.5rem + var(--app-safe-area-right));
+  padding-bottom: calc(1.5rem + var(--app-safe-area-bottom));
+  padding-left: calc(1.5rem + var(--app-safe-area-left));
+}
+
+.app-safe-area-compact-padding {
+  padding-top: calc(1rem + var(--app-safe-area-top));
+  padding-right: calc(0.75rem + var(--app-safe-area-right));
+  padding-bottom: calc(1rem + var(--app-safe-area-bottom));
+  padding-left: calc(0.75rem + var(--app-safe-area-left));
+}
+
+.app-safe-area-section-padding {
+  padding-top: calc(2.5rem + var(--app-safe-area-top));
+  padding-right: calc(1rem + var(--app-safe-area-right));
+  padding-bottom: calc(2.5rem + var(--app-safe-area-bottom));
+  padding-left: calc(1rem + var(--app-safe-area-left));
+}
+
+@media (min-width: 768px) {
+  .app-safe-area-compact-padding {
+    padding-top: calc(2.5rem + var(--app-safe-area-top));
+    padding-right: calc(1rem + var(--app-safe-area-right));
+    padding-bottom: calc(2.5rem + var(--app-safe-area-bottom));
+    padding-left: calc(1rem + var(--app-safe-area-left));
+  }
+}
+
+@media (min-width: 640px) {
+  .app-safe-area-overlay-order {
+    padding-top: max(1.5rem, var(--app-safe-area-top));
+    padding-right: max(1rem, var(--app-safe-area-right));
+    padding-bottom: max(1.5rem, var(--app-safe-area-bottom));
+    padding-left: max(1rem, var(--app-safe-area-left));
+  }
 }
 
 @theme inline {
@@ -151,7 +256,7 @@
     @apply bg-white lg:overflow-hidden lg:rounded-xl lg:border lg:border-border;
     background-color: #f9fafb !important;
     border-color: #e5e7eb !important;
-    min-height: calc(100vh - 5rem);
+    min-height: calc(var(--app-viewport-height) - 5rem);
   }
 
   .page-panel > header {
@@ -202,7 +307,7 @@
   }
 
   .app-side-card {
-    max-height: calc(100vh - 122px);
+    max-height: calc(var(--app-viewport-height) - 122px);
     scrollbar-width: thin;
     scrollbar-color: #d7dce2 transparent;
   }
@@ -225,11 +330,11 @@
       max-width: none;
       margin-left: 0;
       margin-right: 0;
-      padding: 0.5rem 0.5rem 0.5rem 288px;
+      padding: calc(0.5rem + var(--app-safe-area-top)) calc(0.5rem + var(--app-safe-area-right)) calc(0.5rem + var(--app-safe-area-bottom)) calc(288px + var(--app-safe-area-left));
     }
 
     body.sidebar-collapsed .page-main {
-      padding-left: 64px;
+      padding-left: calc(64px + var(--app-safe-area-left));
     }
 
     body.sidebar-collapsed .app-side-card > div:last-of-type button span:not(:first-child),
@@ -239,12 +344,12 @@
     }
 
     .page-panel {
-      min-height: calc(100vh - 1rem);
+      min-height: calc(var(--app-viewport-height) - 1rem);
     }
 
     .app-side-card {
       left: 0;
-      max-height: 100vh;
+      max-height: var(--app-viewport-height);
     }
   }
 
@@ -291,6 +396,15 @@
     .page-main h1.text-2xl {
       font-size: 1.25rem !important;
       line-height: 1.75rem !important;
+    }
+  }
+
+  @media (max-width: 1023px) {
+    .page-main {
+      padding-top: var(--app-safe-area-top);
+      padding-right: var(--app-safe-area-right);
+      padding-bottom: var(--app-safe-area-bottom);
+      padding-left: var(--app-safe-area-left);
     }
   }
 
@@ -344,7 +458,7 @@
     --sidebar-accent: #0957f9;
     --sidebar-accent-foreground: #ffffff;
     --sidebar-border: rgba(255, 255, 255, 0.14);
-    min-height: 100vh;
+    min-height: var(--app-viewport-height);
     color: var(--foreground);
     font-family: "DM Sans GFI", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
     font-size: 0.9375rem;

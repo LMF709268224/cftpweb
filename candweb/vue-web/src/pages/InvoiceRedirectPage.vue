@@ -65,7 +65,7 @@ onBeforeUnmount(clearRedirectTimer)
 </script>
 
 <template>
-  <main class="candidate-portal flex min-h-screen items-center justify-center bg-background px-4 py-10 text-foreground">
+  <main class="candidate-portal app-min-viewport-height app-safe-area-section-padding flex items-center justify-center bg-background text-foreground">
     <section class="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-[0_18px_55px_rgba(15,74,82,0.12)]">
       <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-accent text-primary">
         <Receipt v-if="status !== 'error'" class="h-8 w-8" />

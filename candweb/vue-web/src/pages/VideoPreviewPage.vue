@@ -56,7 +56,7 @@ watch(fileId, loadVideo, { immediate: true })
 </script>
 
 <template>
-  <div class="candidate-portal flex h-screen flex-col bg-background">
+  <div class="candidate-portal app-viewport-height app-safe-area-screen flex flex-col bg-background">
     <header class="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 shadow-sm">
       <button class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100" @click="goBack">
         <ArrowLeft class="h-4 w-4" />

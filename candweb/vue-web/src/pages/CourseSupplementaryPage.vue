@@ -128,7 +128,7 @@ onMounted(loadCourse)
 </script>
 
 <template>
-  <div class="candidate-portal min-h-screen bg-background">
+  <div class="candidate-portal app-min-viewport-height bg-background">
     <header class="sticky top-0 z-10 border-b border-slate-200 bg-white/95 backdrop-blur">
       <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
         <button class="inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition-colors hover:text-slate-900" @click="goBack">

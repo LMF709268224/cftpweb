@@ -378,7 +378,7 @@ onErrorCaptured((err) => {
 </script>
 
 <template>
-  <div v-if="isResourcePackPreview" class="candidate-portal flex h-screen flex-col overflow-hidden bg-background">
+  <div v-if="isResourcePackPreview" class="candidate-portal app-viewport-height app-safe-area-screen flex flex-col overflow-hidden bg-background">
     <header class="shrink-0 px-4 pb-8 pt-4 sm:px-8 sm:pb-16 sm:pt-8">
       <button class="inline-flex h-10 items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm transition-colors hover:bg-slate-100" @click="goBackFromResourcePack">
         <ArrowLeft class="h-4 w-4" />
@@ -449,7 +449,7 @@ onErrorCaptured((err) => {
     </main>
   </div>
 
-  <div v-else class="candidate-portal flex h-screen flex-col bg-background">
+  <div v-else class="candidate-portal app-viewport-height app-safe-area-screen flex flex-col bg-background">
     <header class="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 shadow-sm">
       <!-- The back button is removed because the page opens in a new window -->
       <div class="w-[88px]"></div>

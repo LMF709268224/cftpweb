@@ -222,7 +222,7 @@ onBeforeUnmount(clearSlowHintTimer)
   --line: #d6dee9;
   --gold: #c9962e;
   display: flex;
-  min-height: 100vh;
+  min-height: var(--app-viewport-height);
   overflow: hidden;
   background: var(--background);
   color: var(--ink);
@@ -1089,7 +1089,7 @@ button:focus-visible {
 
 @media (max-width: 767px) {
   .login-page {
-    min-height: 100vh;
+    min-height: var(--app-viewport-height);
     overflow: visible;
     flex-direction: column;
   }

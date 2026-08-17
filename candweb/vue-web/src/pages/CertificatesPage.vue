@@ -177,9 +177,9 @@ watch(lang, () => {
   <AppShell content-class="p-0">
     <div
       v-if="celebrationVisible && featuredCertificate"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 py-6 backdrop-blur-sm"
+      class="app-safe-area-overlay-spacious fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm"
     >
-      <div class="relative w-full max-w-[560px] overflow-hidden rounded-[20px] bg-white shadow-[0_24px_60px_rgba(16,30,67,0.28)]">
+      <div class="app-dialog-viewport relative flex w-full max-w-[560px] flex-col overflow-hidden rounded-[20px] bg-white shadow-[0_24px_60px_rgba(16,30,67,0.28)]">
         <button
           class="absolute right-4 top-4 z-20 flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-500 transition hover:border-primary/25 hover:text-primary md:h-10 md:w-10"
           @click="closeCelebrationModal"
@@ -187,7 +187,7 @@ watch(lang, () => {
           <X class="h-5 w-5" />
         </button>
 
-        <div class="relative overflow-hidden px-6 pb-6 pt-7 text-center md:px-8 md:pb-8">
+        <div class="relative min-h-0 overflow-y-auto overscroll-contain px-6 pb-6 pt-7 text-center md:px-8 md:pb-8">
           <div class="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[radial-gradient(circle_at_top,rgba(16,30,67,0.14),transparent_70%)]" />
           <div class="pointer-events-none absolute inset-x-0 top-10 flex justify-center opacity-95">
             <img :src="rewGif" alt="" class="h-[240px] w-[240px] object-contain md:h-[300px] md:w-[300px]" />

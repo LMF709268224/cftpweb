@@ -734,9 +734,9 @@ onBeforeUnmount(() => {
 .news-copy h3 { display:-webkit-box; overflow:hidden; min-height:60px; margin:0 0 20px; color:var(--gfi-dark); font-family:"Syne Home","DM Sans Home",sans-serif; font-size:20px; line-height:1.5; font-weight:700; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
 .news-description { display:-webkit-box; overflow:hidden; min-height:48px; color:#545b67; font-size:14px; line-height:1.7; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
 
-.video-modal { position: fixed; z-index: 100; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(0,0,0,.84); }
+.video-modal { position: fixed; z-index: 100; inset: 0; display: flex; align-items: center; justify-content: center; padding-top: max(24px,var(--app-safe-area-top)); padding-right: max(24px,var(--app-safe-area-right)); padding-bottom: max(24px,var(--app-safe-area-bottom)); padding-left: max(24px,var(--app-safe-area-left)); background: rgba(0,0,0,.84); }
 .video-dialog { position: relative; width: min(960px, 100%); }
-.video-dialog video { display: block; width: 100%; max-height: calc(100vh - 100px); background: #000; }
+.video-dialog video { display: block; width: 100%; max-height: calc(var(--app-viewport-height) - var(--app-safe-area-top) - var(--app-safe-area-bottom) - 100px); background: #000; }
 .video-close { position: absolute; z-index: 2; top: -50px; right: 0; display: flex; width: 40px; height: 40px; align-items: center; justify-content: center; border-radius: 50%; background: #fff; color: #17213a; }
 .video-close svg { width: 22px; height: 22px; }
 

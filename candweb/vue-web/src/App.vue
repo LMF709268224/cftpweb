@@ -62,7 +62,7 @@ function goHome() {
 
 <template>
   <RouterView v-if="!appError" />
-  <div v-else class="flex min-h-screen items-center justify-center bg-[#eef8f7] p-6">
+  <div v-else class="app-min-viewport-height app-safe-area-page-padding flex items-center justify-center bg-[#eef8f7]">
     <div class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-[0_20px_45px_rgba(15,74,82,0.12)]">
       <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-50 text-2xl text-amber-600">!</div>
       <h1 class="text-xl font-bold text-slate-900">{{ t.app.pageErrorTitle }}</h1>

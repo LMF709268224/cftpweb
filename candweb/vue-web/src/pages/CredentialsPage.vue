@@ -475,7 +475,7 @@ watch(lang, () => {
       </main>
     </div>
 
-    <div v-if="isApplyOpen" class="credentials-apply-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div v-if="isApplyOpen" class="credentials-apply-backdrop app-safe-area-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div class="credentials-apply-dialog w-full max-w-md rounded-[16px] bg-white p-4 shadow-lg shadow-slate-900/20">
         <div class="credentials-apply-header flex items-start justify-between gap-4">
           <h2 class="text-lg font-semibold leading-none tracking-tight">{{ selectedDef?.name }}</h2>
@@ -577,13 +577,15 @@ watch(lang, () => {
   }
 
   .credentials-apply-backdrop {
-    padding: 12px;
+    padding-top: max(12px, var(--app-safe-area-top));
+    padding-right: max(12px, var(--app-safe-area-right));
+    padding-bottom: max(12px, var(--app-safe-area-bottom));
+    padding-left: max(12px, var(--app-safe-area-left));
   }
 
   .credentials-apply-dialog {
     display: flex;
-    max-height: calc(100vh - 24px);
-    max-height: calc(100dvh - 24px);
+    max-height: calc(var(--app-viewport-height) - var(--app-safe-area-top) - var(--app-safe-area-bottom) - 24px);
     flex-direction: column;
     overflow: hidden;
     border-radius: 12px;

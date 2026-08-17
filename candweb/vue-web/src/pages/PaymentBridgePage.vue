@@ -44,7 +44,7 @@ onMounted(hydrateSession)
 </script>
 
 <template>
-  <main class="candidate-portal flex min-h-screen items-center justify-center bg-background px-3 py-4 text-foreground md:px-4 md:py-10">
+  <main class="candidate-portal app-min-viewport-height app-safe-area-compact-padding flex items-center justify-center bg-background text-foreground">
     <section class="w-full max-w-6xl overflow-hidden rounded-xl border border-slate-200 bg-white shadow-none md:rounded-3xl md:shadow-[0_18px_55px_rgba(15,74,82,0.12)]">
       <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-4 md:gap-4 md:px-6 md:py-5">
         <div class="flex min-w-0 flex-1 items-center gap-3">

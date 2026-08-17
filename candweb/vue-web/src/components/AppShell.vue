@@ -33,7 +33,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="candidate-portal min-h-screen bg-background">
+  <div class="candidate-portal app-min-viewport-height bg-background">
     <Sidebar />
     <main class="page-main">
       <div :class="contentClass || 'px-4 py-4'">

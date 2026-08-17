@@ -926,10 +926,10 @@ async function handlePaymentSessionError() {
 </script>
 
 <template>
-  <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+  <div v-if="open" class="app-safe-area-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
     <div
       ref="dialogRef"
-      class="flex max-h-[86vh] w-full max-w-[620px] flex-col overflow-hidden rounded-xl bg-card shadow-2xl"
+      class="app-dialog-viewport-compact flex max-h-[86vh] w-full max-w-[620px] flex-col overflow-hidden rounded-xl bg-card shadow-2xl"
       role="dialog"
       aria-modal="true"
       aria-labelledby="purchase-dialog-title"

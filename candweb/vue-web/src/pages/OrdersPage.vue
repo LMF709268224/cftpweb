@@ -752,7 +752,7 @@ onBeforeUnmount(() => {
       </main>
     </div>
 
-    <div v-if="cancelConfirmOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
+    <div v-if="cancelConfirmOpen" class="app-safe-area-overlay fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
       <div
         ref="cancelConfirmDialogRef"
         class="w-full max-w-md overflow-hidden rounded-[16px] bg-white shadow-[0_24px_60px_rgba(15,23,42,0.24)]"
@@ -803,10 +803,10 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <div v-if="detailLoading || detailError || selectedOrderDetail" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-3 py-4 backdrop-blur-[2px] sm:px-4 sm:py-6">
+    <div v-if="detailLoading || detailError || selectedOrderDetail" class="app-safe-area-overlay-order fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 backdrop-blur-[2px]">
       <div
         ref="orderDetailDialogRef"
-        class="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-[22px] bg-white shadow-[0_28px_90px_rgba(15,23,42,0.28)]"
+        class="app-dialog-viewport flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-[22px] bg-white shadow-[0_28px_90px_rgba(15,23,42,0.28)]"
         role="dialog"
         aria-modal="true"
         aria-labelledby="order-detail-dialog-title"

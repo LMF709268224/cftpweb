@@ -524,7 +524,7 @@ onBeforeRouteLeave(() => {
       </main>
     </div>
 
-    <div v-if="submitConfirmOpen" class="quiz-confirm-backdrop fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
+    <div v-if="submitConfirmOpen" class="quiz-confirm-backdrop app-safe-area-overlay fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
       <div
         ref="submitConfirmDialogRef"
         class="quiz-confirm-dialog w-full max-w-md overflow-hidden rounded-[16px] bg-white shadow-[0_24px_60px_rgba(15,23,42,0.24)]"
@@ -688,7 +688,7 @@ onBeforeRouteLeave(() => {
   }
 
   .quiz-submit-bar {
-    bottom: 8px;
+    bottom: calc(8px + var(--app-safe-area-bottom));
     gap: 10px;
     padding: 12px;
   }
@@ -698,7 +698,10 @@ onBeforeRouteLeave(() => {
   }
 
   .quiz-confirm-backdrop {
-    padding: 12px;
+    padding-top: max(12px, var(--app-safe-area-top));
+    padding-right: max(12px, var(--app-safe-area-right));
+    padding-bottom: max(12px, var(--app-safe-area-bottom));
+    padding-left: max(12px, var(--app-safe-area-left));
   }
 
   .quiz-confirm-dialog {

@@ -205,9 +205,9 @@ async function handleLogout() {
     </div>
   </header>
 
-  <div v-if="mobileMenuOpen" class="fixed inset-0 z-50 lg:hidden">
+  <div v-if="mobileMenuOpen" class="app-viewport-height fixed inset-0 z-50 lg:hidden">
     <div class="absolute inset-0 bg-slate-950/35" @click="mobileMenuOpen = false" />
-    <aside class="app-side-card absolute left-0 top-0 flex h-full w-[280px] max-w-[82vw] max-h-none flex-col overflow-y-auto rounded-none border-r border-sidebar-border bg-sidebar shadow-2xl shadow-slate-950/20">
+    <aside class="app-side-card app-safe-area-sidebar absolute left-0 top-0 flex h-full w-[280px] max-w-[82vw] max-h-none flex-col overflow-y-auto rounded-none border-r border-sidebar-border bg-sidebar shadow-2xl shadow-slate-950/20">
       <div class="flex h-20 items-center justify-between border-b border-white/10 px-5">
         <RouterLink to="/dashboard" class="flex min-w-0 items-center" @click="mobileMenuOpen = false">
           <img src="/gfi/gfi-logo-blue.svg" :alt="t.common.instituteName" class="h-auto w-[112px] object-contain brightness-0 invert" />
@@ -275,7 +275,7 @@ async function handleLogout() {
 
   <aside
     :class="[
-      'app-side-card fixed left-0 top-0 z-30 hidden h-screen overflow-y-auto border-r border-sidebar-border bg-sidebar transition-[width] duration-300 ease-out lg:flex lg:flex-col',
+      'app-side-card app-viewport-height app-safe-area-sidebar fixed left-0 top-0 z-30 hidden overflow-y-auto border-r border-sidebar-border bg-sidebar transition-[width] duration-300 ease-out lg:flex lg:flex-col',
       isSidebarCollapsed ? 'w-14' : 'w-[280px]',
     ]"
   >

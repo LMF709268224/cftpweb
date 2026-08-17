@@ -644,7 +644,7 @@ watch(lang, () => {
       </main>
     </div>
 
-    <div v-if="cancelRenewConfirmOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
+    <div v-if="cancelRenewConfirmOpen" class="app-safe-area-overlay fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
       <div
         ref="cancelRenewConfirmDialogRef"
         class="w-full max-w-md overflow-hidden rounded-[16px] bg-white shadow-[0_24px_60px_rgba(15,23,42,0.24)]"

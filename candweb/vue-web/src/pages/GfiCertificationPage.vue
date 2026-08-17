@@ -331,11 +331,11 @@ h1,h2,h3,h4,p { overflow-wrap:anywhere; letter-spacing:0; }
 }
 
 @media (max-width:700px) {
-  .certification-page :deep(.gfi-header) { height:91px; }
+  .certification-page :deep(.gfi-header) { height:calc(91px + var(--app-safe-area-top)); }
   .certification-page :deep(.gfi-header-inner) { width:calc(100% - 90px); }
   .certification-page :deep(.gfi-brand) { width:122px; flex-basis:122px; }
-  .certification-page :deep(.gfi-menu-toggle) { top:24px; right:45px; }
-  .certification-page :deep(.gfi-mobile-nav) { top:91px; max-height:calc(100vh - 91px); }
+  .certification-page :deep(.gfi-menu-toggle) { top:calc(24px + var(--app-safe-area-top)); right:calc(45px + var(--app-safe-area-right)); }
+  .certification-page :deep(.gfi-mobile-nav) { top:calc(91px + var(--app-safe-area-top)); max-height:calc(var(--app-viewport-height) - 91px - var(--app-safe-area-top)); }
   .cert-container { width:calc(100% - 32px); }
   .cert-hero,.cert-hero .cert-container { min-height:385px; }
   .cert-hero { background-position:50% center; }

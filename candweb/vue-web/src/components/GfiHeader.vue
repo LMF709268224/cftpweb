@@ -226,7 +226,7 @@ watch(
 .gfi-menu-toggle { display: none; width: 42px; height: 42px; flex: 0 0 42px; align-items: center; justify-content: center; border: 0; background: transparent; color: #fff; }
 .gfi-header--light .gfi-menu-toggle { color: #0e1b3d; }
 .gfi-menu-toggle svg { width: 26px; height: 26px; }
-.gfi-mobile-nav { position: absolute; top: 78px; left: 0; right: 0; max-height: calc(100vh - 78px); overflow-y: auto; padding: 10px 20px 24px; background: #101f47; border-top: 1px solid rgba(255,255,255,.1); }
+.gfi-mobile-nav { position: absolute; top: calc(78px + var(--app-safe-area-top)); left: 0; right: 0; max-height: calc(var(--app-viewport-height) - 78px - var(--app-safe-area-top)); overflow-y: auto; padding-top: 10px; padding-right: calc(20px + var(--app-safe-area-right)); padding-bottom: calc(24px + var(--app-safe-area-bottom)); padding-left: calc(20px + var(--app-safe-area-left)); background: #101f47; border-top: 1px solid rgba(255,255,255,.1); }
 .gfi-mobile-nav > div > button { display: flex; width: 100%; align-items: center; justify-content: space-between; padding: 14px 0; border: 0; border-bottom: 1px solid rgba(255,255,255,.09); background: transparent; color: #fff; }
 .gfi-mobile-nav svg { width: 17px; height: 17px; }
 .gfi-mobile-submenu { display: grid; padding: 4px 0 9px 16px; }
@@ -244,11 +244,11 @@ watch(
 }
 
 @media (max-width: 960px) {
-  .gfi-header { height: 78px; }
-  .gfi-header-inner { width: calc(100% - 32px); }
+  .gfi-header { height: calc(78px + var(--app-safe-area-top)); }
+  .gfi-header-inner { width: calc(100% - 32px); padding-top: var(--app-safe-area-top); padding-right: var(--app-safe-area-right); padding-left: var(--app-safe-area-left); }
   .gfi-brand { width: 109px; flex-basis: 109px; }
   .gfi-desktop-nav, .gfi-header-actions { display: none; }
-  .gfi-menu-toggle { position: absolute; top: 18px; right: 16px; z-index: 90; display: inline-flex !important; margin-left: auto; background: transparent; visibility: visible !important; opacity: 1 !important; }
+  .gfi-menu-toggle { position: absolute; top: calc(18px + var(--app-safe-area-top)); right: calc(16px + var(--app-safe-area-right)); z-index: 90; display: inline-flex !important; margin-left: auto; background: transparent; visibility: visible !important; opacity: 1 !important; }
   .gfi-header--light .gfi-menu-toggle svg { display: block !important; color: #0e1b3d !important; stroke: #0e1b3d !important; }
 }
 </style>

@@ -594,10 +594,10 @@ onMounted(() => {
       </main>
     </div>
 
-    <div v-if="detailModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-[2px]">
+    <div v-if="detailModalOpen" class="app-safe-area-overlay fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-[2px]">
       <div
         ref="messageDetailDialogRef"
-        class="flex max-h-[86vh] w-full max-w-2xl flex-col overflow-hidden rounded-[20px] bg-white shadow-[0_24px_70px_rgba(15,23,42,0.28)]"
+        class="app-dialog-viewport-compact flex max-h-[86vh] w-full max-w-2xl flex-col overflow-hidden rounded-[20px] bg-white shadow-[0_24px_70px_rgba(15,23,42,0.28)]"
         role="dialog"
         aria-modal="true"
         aria-labelledby="message-detail-dialog-title"
