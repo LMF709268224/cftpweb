@@ -2143,9 +2143,17 @@ watch(selectedMaterial, () => {
                   v-if="lesson?.lesson_type === 1"
                   type="button"
                   data-testid="open-lesson-video"
-                  class="group flex aspect-video w-full items-center justify-center rounded-md bg-slate-950 text-white transition-colors hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
+                  class="group relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-md border border-slate-800 bg-slate-950 px-6 pt-20 text-white transition-colors hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
                   @click="openLessonVideo"
                 >
+                  <span class="absolute inset-x-0 top-0 border-b border-white/10 bg-slate-900 px-5 py-4 text-left">
+                    <span class="line-clamp-2 text-base font-semibold leading-snug" :title="lesson.title">
+                      {{ lesson.title || t.learning.unknownLesson }}
+                    </span>
+                    <span v-if="activeLesson?.chapterTitle" class="mt-1 block truncate text-xs text-slate-300" :title="activeLesson.chapterTitle">
+                      {{ activeLesson.chapterTitle }}
+                    </span>
+                  </span>
                   <span class="flex flex-col items-center gap-3">
                     <span class="flex h-16 w-16 items-center justify-center rounded-full bg-white text-primary shadow-lg transition-transform group-hover:scale-105">
                       <Play class="ml-1 h-7 w-7 fill-current" />
