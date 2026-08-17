@@ -15,26 +15,42 @@ const errorMessageKey = ref<VideoPreviewErrorKey | "">("")
 const frameLoaded = ref(false)
 
 const fileId = computed(() => String(route.params.fileId || ""))
+const lessonId = computed(() => String(route.params.lessonId || ""))
+const isLessonPreview = computed(() => Boolean(lessonId.value))
+const previewId = computed(() => lessonId.value || fileId.value)
 const storedTitle = computed(() =>
-  fileId.value ? sessionStorage.getItem(`resource-pack-file-preview-title:${fileId.value}`) || "" : "",
+  isLessonPreview.value
+    ? sessionStorage.getItem(`lesson-video-preview-title:${lessonId.value}`) || ""
+    : fileId.value
+      ? sessionStorage.getItem(`resource-pack-file-preview-title:${fileId.value}`) || ""
+      : "",
 )
 const title = computed(() => String(route.query.title || storedTitle.value || t.value.preview.videoTitle))
 const errorMessage = computed(() => (errorMessageKey.value ? t.value.preview[errorMessageKey.value] : ""))
+const backLabel = computed(() => isLessonPreview.value ? t.value.preview.backToCourse : t.value.preview.backToResources)
+
+const courseReturnPath = computed(() => {
+  const value = String(route.query.returnTo || "")
+  return value.startsWith("/certifications/") && !value.startsWith("//") ? value : "/my-certifications"
+})
 
 async function loadVideo() {
   videoSrc.value = ""
   errorMessageKey.value = ""
   frameLoaded.value = false
 
-  if (!fileId.value) {
+  if (!previewId.value) {
     errorMessageKey.value = "videoNoResource"
     return
   }
 
   loading.value = true
   try {
-    const resp = await apiClient(`/api/resource-pack-files/${encodeURIComponent(fileId.value)}/view-url`)
-    const viewUrl = String(resp?.view_url || resp?.url || "").trim()
+    const endpoint = isLessonPreview.value
+      ? `/api/pipeline/lessons/${encodeURIComponent(lessonId.value)}/video-play-url`
+      : `/api/resource-pack-files/${encodeURIComponent(fileId.value)}/view-url`
+    const resp = await apiClient(endpoint)
+    const viewUrl = String(resp?.url || resp?.view_url || "").trim()
     if (!viewUrl) {
       errorMessageKey.value = "videoNoUrl"
       return
@@ -49,10 +65,10 @@ async function loadVideo() {
 
 function goBack() {
   if (window.history.length > 1) router.back()
-  else router.push("/resource-packs")
+  else router.push(isLessonPreview.value ? courseReturnPath.value : "/resource-packs")
 }
 
-watch(fileId, loadVideo, { immediate: true })
+watch([fileId, lessonId], loadVideo, { immediate: true })
 </script>
 
 <template>
@@ -60,7 +76,7 @@ watch(fileId, loadVideo, { immediate: true })
     <header class="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 shadow-sm">
       <button class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100" @click="goBack">
         <ArrowLeft class="h-4 w-4" />
-        {{ t.preview.backToResources }}
+        {{ backLabel }}
       </button>
       <div class="min-w-0 flex-1 px-4 text-center">
         <div class="inline-flex max-w-full items-center gap-2 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-foreground">
@@ -74,6 +90,7 @@ watch(fileId, loadVideo, { immediate: true })
     <main class="min-h-0 flex-1 p-3">
       <div v-if="videoSrc" class="relative h-full overflow-hidden rounded-2xl border border-slate-200 bg-black shadow-[0_12px_30px_rgba(15,74,82,0.08)]">
         <iframe
+          data-testid="video-preview-frame"
           :src="videoSrc"
           class="h-full w-full border-0"
           allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"

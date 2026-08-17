@@ -83,6 +83,7 @@ var candidateRouteContract = []routeExpectation{
 	{method: http.MethodGet, path: "/api/pipeline/courses/{courseId}/complete", access: routeProtected},
 	{method: http.MethodGet, path: "/api/pipeline/lessons/{lessonId}", access: routeProtected},
 	{method: http.MethodGet, path: "/api/pipeline/lessons/{lessonId}/preview-url", access: routeProtected},
+	{method: http.MethodGet, path: "/api/pipeline/lessons/{lessonId}/video-play-url", access: routeProtected},
 	{method: http.MethodPost, path: "/api/pipeline/lessons/{lessonId}/complete", access: routeProtected},
 	{method: http.MethodGet, path: "/api/pipeline/{pipelineUlid}/certificate-url", access: routeProtected},
 	{method: http.MethodPost, path: "/api/progress/courses/{courseId}/sync", access: routeProtected},

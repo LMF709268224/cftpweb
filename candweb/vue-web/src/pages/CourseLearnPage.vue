@@ -43,7 +43,7 @@ import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
 import { formatBackendDate } from "@/lib/utils"
 import { usePolling } from "@/lib/polling"
-import { sanitizeCourseContent, sanitizeVideoEmbed } from "@/lib/sanitizeHtml"
+import { sanitizeCourseContent } from "@/lib/sanitizeHtml"
 import {
   normalizeSupplementaryMaterials,
   parseSupplementaryMaterialItems,
@@ -126,9 +126,6 @@ type Lesson = {
   lesson_type?: number
   body?: string
   external_url?: string
-  video_provider?: string
-  video_stream_uid?: string
-  video_embed_code?: string
 }
 
 type CourseMaterialSummary = {
@@ -320,13 +317,6 @@ const lessons = computed<LessonDetail[]>(() =>
 const activeLesson = computed(() => lessons.value.find((item) => lessonIdOf(item.lesson) === activeLessonId.value) || lessons.value[0])
 const lesson = computed(() => activeLesson.value?.lesson)
 const sanitizedLessonBody = computed(() => sanitizeCourseContent(lesson.value?.body))
-const sanitizedVideoEmbedCode = computed(() => sanitizeVideoEmbed(lesson.value?.video_embed_code))
-const cloudflareVideoSrc = computed(() => {
-  const provider = String(lesson.value?.video_provider || "").trim().toLowerCase()
-  const uid = String(lesson.value?.video_stream_uid || "").trim()
-  if (provider !== "cloudflare" || !/^[a-zA-Z0-9_-]{16,128}$/.test(uid)) return ""
-  return `https://iframe.videodelivery.net/${encodeURIComponent(uid)}`
-})
 const completedLessonIds = computed(() =>
   new Set(progressRecords.value.map(progressLessonIdOf).filter((value): value is string => Boolean(value))),
 )
@@ -1436,6 +1426,20 @@ function openPreviewTab(url: string) {
   window.open(resolved.href, "_blank", "noopener,noreferrer")
 }
 
+function openLessonVideo() {
+  const lessonId = currentLessonId.value
+  if (!lessonId) {
+    toast.error(t.value.common.error)
+    return
+  }
+  sessionStorage.setItem(`lesson-video-preview-title:${lessonId}`, lesson.value?.title || t.value.preview.videoTitle)
+  const target = router.resolve({
+    path: `/video-preview/lessons/${encodeURIComponent(lessonId)}`,
+    query: { returnTo: route.fullPath },
+  })
+  window.open(target.href, "_blank", "noopener,noreferrer")
+}
+
 function openExternalPdfPreview(src: string, title: string) {
   const resourceKey = crypto.randomUUID()
   sessionStorage.setItem(`external-pdf-preview-src:${resourceKey}`, src)
@@ -2135,17 +2139,23 @@ watch(selectedMaterial, () => {
               </button>
 
               <div v-if="lessonContentExpanded" class="mt-3">
-                <div v-if="sanitizedVideoEmbedCode" class="overflow-hidden rounded-md bg-muted" v-html="sanitizedVideoEmbedCode" />
-                <div v-else-if="cloudflareVideoSrc" class="aspect-video overflow-hidden rounded-md bg-black">
-                  <iframe
-                    class="h-full w-full"
-                    :src="cloudflareVideoSrc"
-                    :title="lesson?.title || 'Course video'"
-                    loading="lazy"
-                    allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-                    allowfullscreen
-                  />
-                </div>
+                <button
+                  v-if="lesson?.lesson_type === 1"
+                  type="button"
+                  data-testid="open-lesson-video"
+                  class="group flex aspect-video w-full items-center justify-center rounded-md bg-slate-950 text-white transition-colors hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
+                  @click="openLessonVideo"
+                >
+                  <span class="flex flex-col items-center gap-3">
+                    <span class="flex h-16 w-16 items-center justify-center rounded-full bg-white text-primary shadow-lg transition-transform group-hover:scale-105">
+                      <Play class="ml-1 h-7 w-7 fill-current" />
+                    </span>
+                    <span class="inline-flex items-center gap-2 text-sm font-semibold">
+                      {{ t.learning.openLessonVideo }}
+                      <ExternalLink class="h-4 w-4" />
+                    </span>
+                  </span>
+                </button>
                 <div v-else-if="lesson?.lesson_type === 3" class="space-y-4">
                   <div class="rounded-md bg-slate-50 p-4 text-sm text-muted-foreground">
                     <div v-if="sanitizedLessonBody" class="prose max-w-none text-sm text-foreground" v-html="sanitizedLessonBody" />

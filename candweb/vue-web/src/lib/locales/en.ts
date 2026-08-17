@@ -524,6 +524,7 @@ export const en: AppTranslations = {
         openExternalLesson: "Open External Lesson",
         lessonPdfHint: "This lesson is a PDF document, please open it to read and study.",
         openLessonPdf: "View PDF Lesson",
+        openLessonVideo: "Open Video Lesson",
         completeLesson: "Mark as completed",
         lessonQuizzes: "Lesson Quizzes",
         takeQuiz: "Start Quiz",

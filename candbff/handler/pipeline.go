@@ -452,6 +452,34 @@ func (h *Handler) GetLessonPreviewURL(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (h *Handler) GetLessonVideoPlayURL(w http.ResponseWriter, r *http.Request) {
+	candidateID := CandidateID(r)
+	lessonID := strings.TrimSpace(chi.URLParam(r, "lessonId"))
+	if !requireRequestFields(w, candidateID, "candidate_id", lessonID, "lesson_id") {
+		return
+	}
+
+	resp, err := h.Lms.GetLessonVideoPlayURL(r.Context(), &lmspb.GetLessonVideoPlayURLRequest{
+		CandidateUlid: candidateID,
+		LessonUlid:    lessonID,
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	playURL := strings.TrimSpace(resp.GetPlayUrl())
+	if playURL == "" {
+		WriteError(w, http.StatusBadGateway, ErrServiceUnavailable, "empty video play url")
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, GetAccessURLRsp{
+		URL:       playURL,
+		ExpiresAt: resp.GetExpiresAt(),
+	})
+}
+
 func (h *Handler) GetResourcePreviewURL(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
 	resourceURL := strings.TrimSpace(r.URL.Query().Get("src"))

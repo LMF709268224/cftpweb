@@ -36,7 +36,7 @@ const navRouteGroups: Record<string, string[]> = {
     "/certifications",
     "/courses",
   ],
-  "/my-certifications": ["/my-certifications", "/pdf-preview/lessons"],
+  "/my-certifications": ["/my-certifications", "/pdf-preview/lessons", "/video-preview/lessons"],
   "/exams": ["/exams"],
   "/resource-packs": [
     "/resource-packs",
