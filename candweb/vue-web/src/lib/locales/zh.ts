@@ -522,6 +522,7 @@ export const zh = {
     openExternalLesson: "打开外部课时",
     lessonPdfHint: "该课时为 PDF 资料文件，请打开以阅读和学习。",
     openLessonPdf: "查看 PDF 课时",
+    openLessonVideo: "打开视频课时",
     completeLesson: "标记为已完成",
     lessonQuizzes: "课时测验",
     takeQuiz: "开始测验",

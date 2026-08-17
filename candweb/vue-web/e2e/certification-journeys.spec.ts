@@ -108,6 +108,24 @@ test.beforeEach(async ({ page }) => {
   await seedAuthenticatedCandidate(page)
 })
 
+test("课程视频预览通过签名地址全屏播放", async ({ page }) => {
+  let requestedSignedURL = false
+  const signedURL = "https://iframe.videodelivery.net/signed-lesson-token"
+
+  await installCandidateApiMocks(page, ({ pathname, method }) => {
+    if (pathname === `/api/pipeline/lessons/${lessonID}/video-play-url` && method === "GET") {
+      requestedSignedURL = true
+      return { data: { url: signedURL, expires_at: "2026-08-17T12:00:00Z" } }
+    }
+    return undefined
+  })
+
+  await page.goto(`/video-preview/lessons/${lessonID}`, { waitUntil: "domcontentloaded" })
+
+  await expect(page.getByTestId("video-preview-frame")).toHaveAttribute("src", signedURL)
+  expect(requestedSignedURL).toBe(true)
+})
+
 test("认证从商城下单、Stripe 支付到已购认证完整闭环", async ({ page }) => {
   let paid = false
   let purchaseBody: unknown

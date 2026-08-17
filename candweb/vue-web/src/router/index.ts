@@ -150,6 +150,7 @@ export const router = createRouter({
     { path: "/resource-packs/:packId", component: ResourcePackDetailPage, meta: { titleKey: "resourcePackDetail", requiresAuth: true } },
     { path: "/resource-pack-files/:fileId/preview", component: PdfPreviewPage, meta: { titleKey: "pdfPreview", requiresAuth: true } },
     { path: "/video-preview/resource-pack-files/:fileId", component: VideoPreviewPage, meta: { titleKey: "videoPreview", requiresAuth: true } },
+    { path: "/video-preview/lessons/:lessonId", component: VideoPreviewPage, meta: { titleKey: "videoPreview", requiresAuth: true } },
     { path: "/credentials", component: CredentialsPage, meta: { titleKey: "credentials", requiresAuth: true } },
     { path: "/certificates", component: CertificatesPage, meta: { titleKey: "certificates", requiresAuth: true } },
     { path: "/orders", component: OrdersPage, meta: { titleKey: "orders", requiresAuth: true } },
