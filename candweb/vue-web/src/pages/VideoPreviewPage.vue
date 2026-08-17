@@ -73,18 +73,22 @@ watch([fileId, lessonId], loadVideo, { immediate: true })
 
 <template>
   <div class="candidate-portal app-viewport-height app-safe-area-screen flex flex-col bg-background">
-    <header class="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 shadow-sm">
-      <button class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100" @click="goBack">
+    <header class="grid h-16 shrink-0 grid-cols-[auto_minmax(0,1fr)] items-center border-b border-slate-200 bg-white px-3 shadow-sm sm:grid-cols-[112px_minmax(0,1fr)_112px] sm:px-4">
+      <button
+        :aria-label="backLabel"
+        class="inline-flex h-10 w-10 items-center justify-center gap-2 rounded-lg text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 sm:w-auto sm:justify-self-start sm:px-3"
+        @click="goBack"
+      >
         <ArrowLeft class="h-4 w-4" />
-        {{ backLabel }}
+        <span class="hidden sm:inline">{{ backLabel }}</span>
       </button>
-      <div class="min-w-0 flex-1 px-4 text-center">
-        <div class="inline-flex max-w-full items-center gap-2 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-foreground">
+      <div class="min-w-0 px-2 text-center sm:px-4">
+        <div class="inline-flex min-w-0 max-w-full items-center gap-2 rounded-full bg-accent px-3 py-2 text-sm font-semibold text-foreground sm:px-4" :title="title">
           <Play class="h-4 w-4 shrink-0 text-primary" />
-          <span class="truncate">{{ title }}</span>
+          <span class="min-w-0 truncate">{{ title }}</span>
         </div>
       </div>
-      <div class="w-[112px]" />
+      <div class="hidden w-[112px] sm:block" aria-hidden="true" />
     </header>
 
     <main class="min-h-0 flex-1 p-3">
