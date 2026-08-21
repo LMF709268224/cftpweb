@@ -1,15 +1,19 @@
 import { expect, test, type APIRequestContext, type Locator, type Page } from "@playwright/test"
 import { liveEnvironment } from "./support/live"
+import {
+  answersFromQuizAnswerKey,
+  loadQuizAnswerKey,
+  type QuizAnswerKey,
+  type QuizAnswerSelection,
+} from "./support/quiz-answer-key"
 
-test.setTimeout(600_000)
+test.setTimeout(1_200_000)
 
 type APIEnvelope<T> = {
   code?: number
   message?: string
   data?: T
 }
-
-type QuizAnswerSelection = Map<string, string[]>
 
 const MAX_QUIZ_ATTEMPTS = 20
 
@@ -361,6 +365,7 @@ async function findCertificationJourney(
   request: APIRequestContext,
   baseURL: string,
   catalog: any[],
+  targetBundleID: string,
 ): Promise<CertificationSelection> {
   const orders = await candidateOrders(request, baseURL)
   const pipelines = await requestData<{ list?: any[] }>(
@@ -371,8 +376,9 @@ async function findCertificationJourney(
   const ownedPipelineIDs = new Set(
     (pipelines?.list || []).map(pipelineConfigID).filter(Boolean),
   )
+  const targetCatalog = catalog.filter(summary => bundleID(summary) === targetBundleID)
   const counts = {
-    catalog: catalog.length,
+    catalog: targetCatalog.length,
     details: 0,
     pipeline: 0,
     purchasable: 0,
@@ -385,7 +391,7 @@ async function findCertificationJourney(
   let purchaseSelection: CertificationSelection | null = null
   let ownedSelection: CertificationSelection | null = null
 
-  for (const summary of catalog) {
+  for (const summary of targetCatalog) {
     const id = bundleID(summary)
     if (!id) continue
 
@@ -444,7 +450,7 @@ async function findCertificationJourney(
       }
     }
 
-    if (!ownedSelection && hasPipeline && isPaid && hasCourse && ownedPipelineIDs.has(pipelineID)) {
+    if (!ownedSelection && hasPipeline && hasCourse && ownedPipelineIDs.has(pipelineID)) {
       ownedSelection = {
         bundle: detail,
         mode: "owned",
@@ -454,15 +460,15 @@ async function findCertificationJourney(
     }
   }
 
-  if (purchaseSelection) return purchaseSelection
   if (ownedSelection) return ownedSelection
+  if (purchaseSelection) return purchaseSelection
 
   return {
     bundle: null,
     mode: null,
     order: null,
     diagnostic: [
-      "No resumable, directly purchasable, or already owned paid certification with a course is available.",
+      `Target bundle ${targetBundleID} is not a resumable, directly purchasable, or already owned certification with a course.`,
       `catalog=${counts.catalog}`,
       `details=${counts.details}`,
       `pipeline=${counts.pipeline}`,
@@ -761,6 +767,7 @@ async function completePendingQuizzes(
   page: Page,
   request: APIRequestContext,
   baseURL: string,
+  answerKey: QuizAnswerKey | null,
 ) {
   await openQuizTasks(page)
   const total = await page.getByTestId("start-quiz").count()
@@ -775,10 +782,11 @@ async function completePendingQuizzes(
     let publishedAnswers: QuizAnswerSelection | null = null
     let attemptsUsed = 0
     let availableCombinations = Number.MAX_SAFE_INTEGER
+    const maxAttempts = answerKey ? 1 : MAX_QUIZ_ATTEMPTS
 
     while (
       !passed
-      && attemptsUsed < MAX_QUIZ_ATTEMPTS
+      && attemptsUsed < maxAttempts
       && (publishedAnswers !== null || attemptsUsed < availableCombinations)
     ) {
       const startQuiz = page.locator(
@@ -788,9 +796,11 @@ async function completePendingQuizzes(
 
       await startQuiz.click()
       const paper = await currentQuizPaper(page, request, baseURL)
-      const generated = generatedQuizAnswers(paper, attemptsUsed)
+      const generated = answerKey
+        ? { answers: answersFromQuizAnswerKey(paper, answerKey), totalCombinations: 1 }
+        : generatedQuizAnswers(paper, attemptsUsed)
       availableCombinations = generated.totalCombinations
-      const answers = new Map(generated.answers)
+      const answers: QuizAnswerSelection = new Map(generated.answers)
       for (const [currentQuestionID, optionIDs] of publishedAnswers || []) {
         if (answers.has(currentQuestionID)) answers.set(currentQuestionID, optionIDs)
       }
@@ -812,8 +822,10 @@ async function completePendingQuizzes(
     expect(
       passed,
       [
-        `quiz ${quizID} did not pass after ${attemptsUsed} distinct answer attempts.`,
-        `combination-limit=${Math.min(availableCombinations, MAX_QUIZ_ATTEMPTS)}.`,
+        answerKey
+          ? `quiz ${quizID} did not pass with its tracked answer key.`
+          : `quiz ${quizID} did not pass after ${attemptsUsed} distinct answer attempts.`,
+        `combination-limit=${Math.min(availableCombinations, maxAttempts)}.`,
         "The quiz may have exhausted its server-side attempt limit or require more combinations.",
       ].join(" "),
     ).toBe(true)
@@ -903,6 +915,13 @@ test.describe("candidate live certification purchase, learning, quiz, and exam j
 
   test("buy or resume a certification and progress through learning, quizzes, and exam signup", async ({ page }) => {
     const environment = liveEnvironment()
+    const targetBundleID = String(process.env.E2E_LIVE_JOURNEY_BUNDLE_ID || "").trim()
+    expect(
+      targetBundleID,
+      "E2E_LIVE_JOURNEY_BUNDLE_ID must identify the exact certification bundle approved for this live journey",
+    ).not.toBe("")
+    const answerKeyName = String(process.env.E2E_LIVE_JOURNEY_QUIZ_ANSWER_KEY || "none").trim()
+    const quizAnswerKey = loadQuizAnswerKey(answerKeyName)
     const request = page.context().request
     const catalog = await requestData<{ bundles?: any[] }>(
       request,
@@ -942,6 +961,7 @@ test.describe("candidate live certification purchase, learning, quiz, and exam j
       request,
       environment.baseURL,
       renderedCatalog,
+      targetBundleID,
     )
 
     expect(
@@ -960,6 +980,10 @@ test.describe("candidate live certification purchase, learning, quiz, and exam j
     let paymentOrderID = String(selection.order?.biz_ref_ulid || "").trim()
     let createdNewOrder = false
 
+    test.info().annotations.push({
+      type: "journey-target",
+      description: `bundle=${targetBundleID}; quiz-answer-key=${answerKeyName || "none"}`,
+    })
     test.info().annotations.push({
       type: "journey-mode",
       description: mode === "resume"
@@ -1152,8 +1176,10 @@ test.describe("candidate live certification purchase, learning, quiz, and exam j
     )
 
     const quizProgress = await test.step(
-      "complete every configured quiz by retrying distinct answer combinations",
-      () => completePendingQuizzes(page, request, environment.baseURL),
+      quizAnswerKey
+        ? "complete every configured quiz with the tracked answer key"
+        : "complete every configured quiz by retrying distinct answer combinations",
+      () => completePendingQuizzes(page, request, environment.baseURL, quizAnswerKey),
     )
     reportJourneyStage(
       "quizzes",

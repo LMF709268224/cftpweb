@@ -174,6 +174,41 @@ Live read-only smoke tests may be scheduled after they have proved stable.
 Tests that create or mutate business data must remain manually triggered until
 automatic cleanup is available.
 
+### Targeted Certification Journey
+
+The writable certification journey must always target one explicitly approved
+catalog bundle. Start `Candidate Portal Regression` manually and configure:
+
+- `run_live_journey`: `true`
+- `journey_bundle_id`: the exact `bundle_id` shown by the candidate catalog or
+  Admin product configuration
+- `journey_quiz_answer_key`: `foundation_crypto_regulation` for the course
+  imported from `courseseeder/foundation_crypto_regulation.course-package.json`;
+  otherwise `none`
+
+The journey considers only the selected bundle. It resumes a matching pending
+order first, then reuses an owned pipeline, and purchases the bundle only when
+the test account does not already own it. This prevents a mutable live test
+from selecting another purchasable certification by catalog order.
+
+The tracked CourseSeeder answer key contains no runtime IDs. During each quiz,
+the test matches the imported question and correct option text against the
+candidate paper and converts those values to the runtime question and option
+ULIDs. Any missing, duplicate, or changed text fails the journey before an
+answer is submitted. Without a selected answer key, the generic journey keeps
+its bounded answer-combination behavior.
+
+The targeted journey completes every lesson through the candidate UI, submits
+all quizzes through the normal candidate APIs, and then waits for the pipeline
+to advance to the formal exam or a later state. It does not update GLMS or
+GPROG tables directly and does not expose a test-only control in CandWeb.
+
+Use a dedicated journey account. Before a fresh end-to-end completion run,
+purge that account's previous test pipeline through the reviewed Admin purge
+operation, or use a new test account. Re-running an already completed owned
+pipeline verifies its current completed state but cannot replay its original
+GLMS completion event or certificate issuance transition.
+
 ## Test Account Policy
 
 Use separate candidate accounts for different purposes:
