@@ -6,6 +6,10 @@ import {
   type QuizAnswerKey,
   type QuizAnswerSelection,
 } from "./support/quiz-answer-key"
+import {
+  findRuntimeCourseUnit,
+  runtimeCourseHasFormalExam,
+} from "./support/certification-runtime"
 
 test.setTimeout(1_200_000)
 
@@ -857,17 +861,8 @@ async function completePendingQuizzes(
 function runtimeCourseUnitID(runtime: any, courseID: string) {
   const nextStepID = String(runtime?.next_step?.course_unit_ulid || "").trim()
   if (nextStepID) return nextStepID
-  for (const stage of runtime?.config?.stages || []) {
-    for (const unit of stage?.units || []) {
-      const unitCourseID = String(
-        unit?.glms_course_id || unit?.course_id || unit?.course_ulid || unit?.courseUlid || "",
-      ).trim()
-      if (unitCourseID === courseID) {
-        return String(unit?.course_unit_ulid || unit?.unit_ulid || "").trim()
-      }
-    }
-  }
-  return ""
+  const unit = findRuntimeCourseUnit(runtime, courseID)
+  return String(unit?.course_unit_ulid || unit?.unit_ulid || "").trim()
 }
 
 async function missingExamSignupFields(page: Page) {
@@ -1213,6 +1208,12 @@ test.describe("candidate live certification purchase, learning, quiz, and exam j
     const completedExamActions = new Set(
       [...examActions].filter((action) => action !== "signup_exam"),
     )
+    const directCertificationActions = new Set([
+      "view_certificate",
+      "completed",
+      "issuing_certificate",
+      "final_qualification",
+    ])
     await expect.poll(
       async () => {
         const nextRuntime = await requestData<any>(
@@ -1239,12 +1240,17 @@ test.describe("candidate live certification purchase, learning, quiz, and exam j
       new URL(page.url()).pathname.split("/learn/")[1] || "",
     ).split("/")[0]
     const courseUnitID = runtimeCourseUnitID(examRuntime, courseID)
+    const courseHasFormalExam = runtimeCourseHasFormalExam(examRuntime, courseID)
     reportJourneyStage(
       "exam-ready",
-      `action=${examAction}; course-unit=${courseUnitID || "not-required-for-terminal-state"}`,
+      `action=${examAction}; formal-exam=${courseHasFormalExam}; course-unit=${courseUnitID || "not-required-for-terminal-state"}`,
     )
 
     if (examAction === "signup_exam") {
+      expect(
+        courseHasFormalExam,
+        "signup_exam requires exam_id or program on the runtime course unit",
+      ).toBe(true)
       expect(courseUnitID, "formal exam signup requires a runtime course unit ID").not.toBe("")
       const examStep = page.locator(
         '[data-testid="certification-flow-step"][data-step-id="exam"]',
@@ -1302,7 +1308,8 @@ test.describe("candidate live certification purchase, learning, quiz, and exam j
         `/api/mall/pipelines/${encodeURIComponent(pipelineID)}/runtime`,
       )
       examAction = String(examRuntime?.next_step?.action || "").trim()
-    } else if (courseUnitID) {
+    } else if (courseHasFormalExam) {
+      expect(courseUnitID, "a formal exam state requires a runtime course unit ID").not.toBe("")
       await expect.poll(
         () => candidateExamForUnit(request, environment.baseURL, courseUnitID),
         {
@@ -1311,6 +1318,12 @@ test.describe("candidate live certification purchase, learning, quiz, and exam j
           intervals: [1_000, 2_000, 5_000],
         },
       ).not.toBeNull()
+    } else {
+      expect(
+        [...directCertificationActions],
+        `a course without a formal exam must advance directly to certification; current action=${examAction}`,
+      ).toContain(examAction)
+      reportJourneyStage("direct-certification", `action=${examAction}; no formal exam configured`)
     }
 
     expect(
@@ -1319,7 +1332,9 @@ test.describe("candidate live certification purchase, learning, quiz, and exam j
     ).toContain(examAction)
     reportJourneyStage(
       "journey-complete",
-      `pipeline=${pipelineID}; final-action=${examAction}; formal exam execution itself remains with the third-party exam provider`,
+      courseHasFormalExam
+        ? `pipeline=${pipelineID}; final-action=${examAction}; formal exam execution itself remains with the third-party exam provider`
+        : `pipeline=${pipelineID}; final-action=${examAction}; course completed without a formal exam`,
     )
   })
 })
