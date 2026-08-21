@@ -2,8 +2,10 @@ package handler
 
 import (
 	"net/http"
+	"strings"
 
 	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
+	"github.com/go-chi/chi/v5"
 )
 
 // ListCertificates GET /api/certificates 证书列表
@@ -57,6 +59,42 @@ func (h *Handler) ListCertificates(w http.ResponseWriter, r *http.Request) {
 	}
 
 	WriteJSON(w, http.StatusOK, out)
+}
+
+// DownloadCertificate GET /api/certificates/{id}/download
+func (h *Handler) DownloadCertificate(w http.ResponseWriter, r *http.Request) {
+	credentialID := strings.TrimSpace(chi.URLParam(r, "id"))
+	if !requireRequestField(w, credentialID, "id") {
+		return
+	}
+
+	credential, err := h.Creds.GetCredentialDetail(r.Context(), &gcredspb.GetCredentialDetailRequest{
+		CredUlid: credentialID,
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	if credential.GetCandidateUlid() != CandidateID(r) {
+		WriteError(w, http.StatusNotFound, ErrNotFound, "certificate not found or access denied")
+		return
+	}
+
+	for _, file := range credential.GetFiles() {
+		if file == nil || file.GetFileUsage() != "certificate" {
+			continue
+		}
+		viewURL := strings.TrimSpace(file.GetViewUrl())
+		if viewURL == "" {
+			break
+		}
+
+		w.Header().Set("Cache-Control", "no-store")
+		http.Redirect(w, r, viewURL, http.StatusTemporaryRedirect)
+		return
+	}
+
+	WriteError(w, http.StatusNotFound, ErrNotFound, "certificate PDF not found")
 }
 
 func toCertificateFiles(files []*gcredspb.FileInfo) []CertificateFileInfo {

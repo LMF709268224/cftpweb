@@ -122,6 +122,7 @@ var candidateRouteContract = []routeExpectation{
 	{method: http.MethodPost, path: "/api/credentials/submit", access: routeProtected},
 	{method: http.MethodPut, path: "/api/credentials/update", access: routeProtected},
 	{method: http.MethodGet, path: "/api/certificates/", access: routeProtected},
+	{method: http.MethodGet, path: "/api/certificates/{id}/download", access: routeProtected},
 	{method: http.MethodGet, path: "/api/orders/", access: routeProtected},
 	{method: http.MethodGet, path: "/api/orders/{orderId}", access: routeProtected},
 	{method: http.MethodPost, path: "/api/orders/cancel", access: routeProtected},

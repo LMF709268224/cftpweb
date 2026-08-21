@@ -20,6 +20,8 @@ type certificateRegressionClient struct {
 	definitionRequest *gcredspb.GetCredentialDefinitionDetailRequest
 	detailRequest     *gcredspb.GetCredentialDetailRequest
 	listErr           error
+	detailResponse    *gcredspb.Credential
+	detailErr         error
 }
 
 func (c *certificateRegressionClient) ListCandidateCredentials(
@@ -66,6 +68,12 @@ func (c *certificateRegressionClient) GetCredentialDetail(
 	_ ...grpc.CallOption,
 ) (*gcredspb.Credential, error) {
 	c.detailRequest = request
+	if c.detailErr != nil {
+		return nil, c.detailErr
+	}
+	if c.detailResponse != nil {
+		return c.detailResponse, nil
+	}
 	return &gcredspb.Credential{
 		CredUlid: request.GetCredUlid(),
 		Files: []*gcredspb.FileInfo{
@@ -142,6 +150,93 @@ func TestListCertificatesPropagatesCandidateCredentialLookupError(t *testing.T) 
 		recorder,
 		newCandidateHandlerRequest(http.MethodGet, "/api/certificates", "", "candidate-1", nil),
 	)
+
+	assertHandlerAPIError(t, recorder, http.StatusServiceUnavailable, ErrServiceUnavailable)
+}
+
+func TestDownloadCertificateReturnsFreshCandidateScopedRedirect(t *testing.T) {
+	client := &certificateRegressionClient{
+		detailResponse: &gcredspb.Credential{
+			CredUlid:      "01M0HNR3F7ZC2BACKN1X24C9SC",
+			CandidateUlid: "candidate-1",
+			Files: []*gcredspb.FileInfo{
+				{
+					FileUsage: "certificate",
+					ViewUrl:   "https://files.example.test/fresh-certificate.pdf?signature=new",
+				},
+			},
+		},
+	}
+	handler := &Handler{Creds: client}
+	recorder := httptest.NewRecorder()
+	request := newCandidateHandlerRequest(
+		http.MethodGet,
+		"/api/certificates/01M0HNR3F7ZC2BACKN1X24C9SC/download",
+		"",
+		"candidate-1",
+		map[string]string{"id": "01M0HNR3F7ZC2BACKN1X24C9SC"},
+	)
+
+	handler.DownloadCertificate(recorder, request)
+
+	if recorder.Code != http.StatusTemporaryRedirect {
+		t.Fatalf("status = %d, want %d; body=%q", recorder.Code, http.StatusTemporaryRedirect, recorder.Body.String())
+	}
+	if client.detailRequest.GetCredUlid() != "01M0HNR3F7ZC2BACKN1X24C9SC" {
+		t.Fatalf("credential detail request = %#v", client.detailRequest)
+	}
+	if location := recorder.Header().Get("Location"); location != "https://files.example.test/fresh-certificate.pdf?signature=new" {
+		t.Fatalf("Location = %q", location)
+	}
+	if cacheControl := recorder.Header().Get("Cache-Control"); cacheControl != "no-store" {
+		t.Fatalf("Cache-Control = %q, want %q", cacheControl, "no-store")
+	}
+}
+
+func TestDownloadCertificateRejectsAnotherCandidatesCredential(t *testing.T) {
+	client := &certificateRegressionClient{
+		detailResponse: &gcredspb.Credential{
+			CredUlid:      "01M0HNR3F7ZC2BACKN1X24C9SC",
+			CandidateUlid: "candidate-2",
+			Files: []*gcredspb.FileInfo{
+				{FileUsage: "certificate", ViewUrl: "https://files.example.test/private.pdf"},
+			},
+		},
+	}
+	handler := &Handler{Creds: client}
+	recorder := httptest.NewRecorder()
+	request := newCandidateHandlerRequest(
+		http.MethodGet,
+		"/api/certificates/01M0HNR3F7ZC2BACKN1X24C9SC/download",
+		"",
+		"candidate-1",
+		map[string]string{"id": "01M0HNR3F7ZC2BACKN1X24C9SC"},
+	)
+
+	handler.DownloadCertificate(recorder, request)
+
+	assertHandlerAPIError(t, recorder, http.StatusNotFound, ErrNotFound)
+	if location := recorder.Header().Get("Location"); location != "" {
+		t.Fatalf("Location = %q, want empty", location)
+	}
+}
+
+func TestDownloadCertificatePropagatesCredentialLookupError(t *testing.T) {
+	handler := &Handler{
+		Creds: &certificateRegressionClient{
+			detailErr: status.Error(codes.Unavailable, "credential service unavailable"),
+		},
+	}
+	recorder := httptest.NewRecorder()
+	request := newCandidateHandlerRequest(
+		http.MethodGet,
+		"/api/certificates/01M0HNR3F7ZC2BACKN1X24C9SC/download",
+		"",
+		"candidate-1",
+		map[string]string{"id": "01M0HNR3F7ZC2BACKN1X24C9SC"},
+	)
+
+	handler.DownloadCertificate(recorder, request)
 
 	assertHandlerAPIError(t, recorder, http.StatusServiceUnavailable, ErrServiceUnavailable)
 }

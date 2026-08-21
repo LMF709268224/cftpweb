@@ -185,6 +185,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 
 		r.Route("/certificates", func(r chi.Router) {
 			r.Get("/", h.ListCertificates)
+			r.Get("/{id}/download", h.DownloadCertificate)
 		})
 
 		r.Route("/orders", func(r chi.Router) {

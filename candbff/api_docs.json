@@ -859,9 +859,9 @@
         "body": null
       },
       "response": {
-        "content_type": "application/pdf",
-        "description": "直接返回PDF二进制流",
-        "note": "需要新建 certificate 微服务"
+        "status": 307,
+        "description": "重定向到本次请求生成的临时PDF下载地址",
+        "note": "临时地址由 gcreds 生成，客户端每次查看或下载时都应重新请求本接口"
       }
     }
   ],

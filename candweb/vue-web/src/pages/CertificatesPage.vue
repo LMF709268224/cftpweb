@@ -12,7 +12,7 @@ import { useTranslation } from "@/lib/language"
 const { t, lang } = useTranslation()
 const certificates = ref<any[]>([])
 const loading = ref(false)
-const previewingCertificateUrl = ref("")
+const previewingCertificateId = ref("")
 const loadError = ref(false)
 const celebrationVisible = ref(false)
 const CERTIFICATE_PREVIEW_TIMEOUT_MS = 20000
@@ -22,18 +22,27 @@ const CERTIFICATE_CELEBRATED_IDS_KEY = "cftp-certificates-celebrated-ids"
 const featuredCertificate = computed(() => certificates.value[0] ?? null)
 useBodyScrollLock(() => celebrationVisible.value && Boolean(featuredCertificate.value))
 
-function openCertificate(url?: string) {
+function certificateDownloadUrl(certificateId?: string) {
+  return certificateId ? `/api/certificates/${encodeURIComponent(certificateId)}/download` : ""
+}
+
+function openUrl(url?: string) {
   if (url) window.open(url, "_blank", "noopener,noreferrer")
+}
+
+function openCertificate(certificateId?: string) {
+  openUrl(certificateDownloadUrl(certificateId))
 }
 
 function getCelebrationCertificateKey(cert?: { id?: string; credentialId?: string }) {
   return cert?.credentialId || cert?.id || ""
 }
 
-async function previewCertificate(url?: string) {
+async function previewCertificate(certificateId?: string) {
+  const url = certificateDownloadUrl(certificateId)
   if (!url) return
-  if (previewingCertificateUrl.value) return
-  previewingCertificateUrl.value = url
+  if (previewingCertificateId.value) return
+  previewingCertificateId.value = certificateId || ""
   const controller = new AbortController()
   const timeoutId = window.setTimeout(() => controller.abort(), CERTIFICATE_PREVIEW_TIMEOUT_MS)
   let blobUrl = ""
@@ -42,20 +51,20 @@ async function previewCertificate(url?: string) {
     if (!response.ok) throw new Error("fetch failed")
     const blob = await response.blob()
     blobUrl = URL.createObjectURL(blob)
-    openCertificate(blobUrl)
+    openUrl(blobUrl)
   } catch (err) {
-    openCertificate(url)
+    openUrl(url)
   } finally {
     window.clearTimeout(timeoutId)
     if (blobUrl) {
       window.setTimeout(() => URL.revokeObjectURL(blobUrl), CERTIFICATE_BLOB_URL_REVOKE_DELAY_MS)
     }
-    previewingCertificateUrl.value = ""
+    previewingCertificateId.value = ""
   }
 }
 
 function downloadFeaturedCertificate() {
-  openCertificate(featuredCertificate.value?.pdfUrl)
+  openCertificate(featuredCertificate.value?.credId)
 }
 
 const SOURCE_CONFIG: Record<string, { labelKey: "sourceApplication" | "sourceSystem"; icon: typeof ClipboardCheck | typeof ShieldCheck; cls: string; iconCls: string; accent: string }> = {
@@ -110,24 +119,27 @@ function closeCelebrationModal() {
 
 function normalizeCertificates(list: any[]) {
   return list
-    .map((cert: any) => ({
-      id: cert.cred_id || cert.catalog_id,
-      credGuid: cert.cred_guid || "",
-      createdAt: cert.created_at || "",
-      createdAtMs: cert.created_at ? new Date(cert.created_at).getTime() : 0,
-      validUntil: cert.valid_until || "",
-      validUntilMs: cert.valid_until ? new Date(cert.valid_until).getTime() : 0,
-      name: cert.name,
-      description: cert.description || "",
-      issueDate: cert.created_at ? formatBackendDateOnly(cert.created_at) : t.value.common.na,
-      expiryDate: cert.valid_until ? formatBackendDateOnly(cert.valid_until) : t.value.common.permanent,
-      credentialId: cert.cred_guid || cert.cred_id || t.value.common.na,
-      source: cert.source || "",
-      pdfUrl:
-        cert.files?.find(
-          (f: any) => f.file_type === 2 || f.file_ext === ".pdf" || f.file_ext === "pdf" || f.file_name?.endsWith(".pdf"),
-        )?.view_url || "",
-    }))
+    .map((cert: any) => {
+      const pdfFile = cert.files?.find(
+        (f: any) => f.file_type === 2 || f.file_ext === ".pdf" || f.file_ext === "pdf" || f.file_name?.endsWith(".pdf"),
+      )
+      return {
+        id: cert.cred_id || cert.catalog_id,
+        credId: cert.cred_id || "",
+        credGuid: cert.cred_guid || "",
+        createdAt: cert.created_at || "",
+        createdAtMs: cert.created_at ? new Date(cert.created_at).getTime() : 0,
+        validUntil: cert.valid_until || "",
+        validUntilMs: cert.valid_until ? new Date(cert.valid_until).getTime() : 0,
+        name: cert.name,
+        description: cert.description || "",
+        issueDate: cert.created_at ? formatBackendDateOnly(cert.created_at) : t.value.common.na,
+        expiryDate: cert.valid_until ? formatBackendDateOnly(cert.valid_until) : t.value.common.permanent,
+        credentialId: cert.cred_guid || cert.cred_id || t.value.common.na,
+        source: cert.source || "",
+        pdfAvailable: Boolean(pdfFile?.view_url),
+      }
+    })
     .sort((a: any, b: any) => {
       if (b.createdAtMs !== a.createdAtMs) return b.createdAtMs - a.createdAtMs
       return b.validUntilMs - a.validUntilMs
@@ -229,7 +241,7 @@ watch(lang, () => {
             <div class="mt-6">
               <button
                 class="certificate-modal-primary inline-flex w-full items-center justify-center gap-2 rounded-[14px] px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(16,30,67,0.24)] disabled:cursor-not-allowed disabled:opacity-50"
-                :disabled="!featuredCertificate.pdfUrl"
+                :disabled="!featuredCertificate.pdfAvailable || !featuredCertificate.credId"
                 @click="downloadFeaturedCertificate"
               >
                 <Download class="h-4 w-4" />
@@ -316,11 +328,11 @@ watch(lang, () => {
             </div>
           </div>
           <div class="certificate-card-actions flex gap-3">
-            <button class="btn btn-primary flex-1 rounded-lg shadow-sm shadow-primary/20 transition-all duration-300 group-hover:shadow-primary/30" :disabled="!cert.pdfUrl" @click="openCertificate(cert.pdfUrl)">
-              <Download class="h-4 w-4" /> {{ cert.pdfUrl ? t.certificatesPage.downloadCertificate : t.certificatesPage.certificateGenerating }}
+            <button class="btn btn-primary flex-1 rounded-lg shadow-sm shadow-primary/20 transition-all duration-300 group-hover:shadow-primary/30" :disabled="!cert.pdfAvailable || !cert.credId" @click="openCertificate(cert.credId)">
+              <Download class="h-4 w-4" /> {{ cert.pdfAvailable ? t.certificatesPage.downloadCertificate : t.certificatesPage.certificateGenerating }}
             </button>
-            <button class="btn btn-outline rounded-lg px-3" :disabled="!cert.pdfUrl || Boolean(previewingCertificateUrl)" @click="previewCertificate(cert.pdfUrl)">
-              <Loader2 v-if="previewingCertificateUrl === cert.pdfUrl" class="h-4 w-4 animate-spin" />
+            <button class="btn btn-outline rounded-lg px-3" :disabled="!cert.pdfAvailable || !cert.credId || Boolean(previewingCertificateId)" @click="previewCertificate(cert.credId)">
+              <Loader2 v-if="previewingCertificateId === cert.credId" class="h-4 w-4 animate-spin" />
               <Eye v-else class="h-4 w-4" />
             </button>
           </div>
