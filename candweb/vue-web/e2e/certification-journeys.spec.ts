@@ -280,6 +280,7 @@ test("已购认证进入课程、完成课件并通过测验完整闭环", async
   await page.locator(`[data-testid="course-unit-link"][data-course-id="${courseID}"]`).click()
 
   await expect(page.getByRole("heading", { name: "Regression Learning Course" }).first()).toBeVisible()
+  await expect(page.getByTestId("supplementary-content-nav")).toHaveCount(0)
   await page.getByTestId("complete-lesson").click()
   await expect(page.locator(`[data-testid="course-lesson"][data-lesson-id="${lessonID}"]`)).toHaveAttribute("data-completed", "true")
 

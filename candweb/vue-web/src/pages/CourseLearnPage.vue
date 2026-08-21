@@ -502,14 +502,17 @@ const examPendingStatusText = computed(() =>
     : t.value.learning.certificationExamOpenAfterQuizTag,
 )
 const shouldShowQuizPreparationCard = computed(() => !quizChoicesExpanded.value && !quizStepDone.value && completedQuizTaskCount.value === 0)
-const resourceContentTabs = computed(() => [
-  {
-    id: "materials" as const,
-    label: t.value.learning.materialsTitle,
-    icon: FileText,
-    count: totalMaterialCount.value,
-  },
-])
+const resourceContentTabs = computed(() => {
+  if (totalMaterialCount.value === 0) return []
+  return [
+    {
+      id: "materials" as const,
+      label: t.value.learning.materialsTitle,
+      icon: FileText,
+      count: totalMaterialCount.value,
+    },
+  ]
+})
 const certificationTitle = computed(() => course.value?.title || runtime.value?.config?.name || t.value.common.unknownCourse)
 const courseDescription = computed(() => course.value?.description || t.value.learning.certificationDefaultDesc)
 const courseDescriptionCanExpand = computed(() => courseDescription.value.length > 180)
@@ -1602,6 +1605,9 @@ watch(lessons, () => {
 watch(materials, () => {
   if (!selectedMaterialId.value && materials.value.length > 0) selectedMaterialId.value = materialIdOf(materials.value[0])
 })
+watch(totalMaterialCount, (count) => {
+  if (count === 0 && activeContentTab.value === "materials") activeContentTab.value = "lesson"
+})
 watch(selectedMaterial, () => {
   const materialId = materialIdOf(selectedMaterial.value)
   if (materialId) selectedMaterialId.value = materialId
@@ -1791,7 +1797,7 @@ watch(selectedMaterial, () => {
               </span>
             </button>
           </div>
-          <div class="mt-6 border-t border-slate-100 pt-5">
+          <div v-if="resourceContentTabs.length > 0" data-testid="supplementary-content-nav" class="mt-6 border-t border-slate-100 pt-5">
             <h3 class="mb-3 text-xs font-semibold text-muted-foreground">{{ t.learning.supplementaryContentTitle }}</h3>
             <div class="space-y-2">
               <button
