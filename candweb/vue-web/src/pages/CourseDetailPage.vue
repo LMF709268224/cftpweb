@@ -56,7 +56,8 @@ type PipelineConfig = {
   unlock_stripe_price_id?: string
   package_stripe_price_id?: string
   stages?: StageConfig[]
-  final_quals?: Qualification[]
+  final_audit_quals?: Qualification[]
+  award_certs?: Qualification[]
   has_certificate?: boolean
 }
 
@@ -87,9 +88,7 @@ type UnitConfig = {
 }
 
 type Qualification = {
-  qual_id?: string
-  qualId?: string
-  id?: string
+  qual_ulid?: string
   name_hint?: string
   nameHint?: string
   name?: string
@@ -211,11 +210,11 @@ const nextStepAction = computed(() =>
   nextStep.value?.action || courseUnitNextStepActionFromStatus(nextUnitStatus.value, Boolean(nextStep.value?.allow_retake)),
 )
 const finalQualifications = computed(() => {
-  const quals = pipeline.value?.final_quals || []
+  const quals = pipeline.value?.final_audit_quals || []
   return Array.isArray(quals)
     ? quals
         .map((qual) => ({
-          qualId: firstString(qual?.qual_id, qual?.qualId, qual?.id),
+          qualId: firstString(qual?.qual_ulid),
           name: firstString(qual?.name_hint, qual?.nameHint, qual?.name),
         }))
         .map((qual) => {
@@ -232,17 +231,17 @@ const finalQualifications = computed(() => {
     : []
 })
 const finalQualificationIds = computed(() => {
-  const quals = pipeline.value?.final_quals || []
+  const quals = pipeline.value?.final_audit_quals || []
   return Array.isArray(quals)
     ? quals
-        .map((qual) => firstString(qual?.qual_id, qual?.qualId, qual?.id))
+        .map((qual) => firstString(qual?.qual_ulid))
         .filter((id): id is string => Boolean(id))
     : []
 })
 const finalQualificationIdsKey = computed(() => finalQualificationIds.value.join(","))
 const pipelineHasCertificate = computed(() => {
   if (pipeline.value?.has_certificate) return true
-  return finalQualificationIds.value.length > 0 || nextStepAction.value === "view_certificate"
+  return Boolean(pipeline.value?.award_certs?.length) || nextStepAction.value === "view_certificate"
 })
 const pipelineWaitsFinalEligibility = computed(() => {
   const raw = String(pipelineStatus.value ?? "").trim()
@@ -1119,7 +1118,7 @@ watch(lang, async () => {
             </div>
             <div class="flex items-center gap-1.5">
               <Award class="h-4 w-4" />
-              <span>{{ pipeline.final_quals?.length || 0 }} {{ t.credentialsPage.availableQualifications }}</span>
+              <span>{{ pipeline.award_certs?.length || 0 }} {{ t.courses.awardedCertificates }}</span>
             </div>
           </div>
 

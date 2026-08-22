@@ -129,8 +129,6 @@ func (h *Handler) ListPipelines(w http.ResponseWriter, r *http.Request) {
 		if pipelineForOutput == nil {
 			pipelineForOutput = pipelineSummaryToConfig(pipeline)
 		}
-		pipelineForOutput = h.localizedPipeline(r.Context(), pipelineForOutput, locale)
-
 		finalEligibilityResp, err := h.Gcc.GetPipelineFinalEligibility(r.Context(), &gccpb.GetPipelineFinalEligibilityRequest{
 			PipelineUlid: pipeline.GetPipelineUlid(),
 		})
@@ -138,8 +136,11 @@ func (h *Handler) ListPipelines(w http.ResponseWriter, r *http.Request) {
 			HandleGrpcError(w, err)
 			return
 		}
+		pipelineForOutput.FinalAuditQuals = finalEligibilityResp.GetFinalAuditQuals()
+		pipelineForOutput.AwardCerts = finalEligibilityResp.GetAwardCerts()
+		pipelineForOutput = h.localizedPipeline(r.Context(), pipelineForOutput, locale)
 
-		config := toPipelineConfig(pipelineForOutput, finalEligibilityResp.GetCerts())
+		config := toPipelineConfig(pipelineForOutput)
 		if count, ok := h.pipelinePurchaseCount(r, config.PipelineUlid); ok {
 			config.PurchaseCount = &count
 		}
@@ -186,7 +187,7 @@ func (h *Handler) GetPipelineDetail(w http.ResponseWriter, r *http.Request) {
 	gccResp = h.localizedPipeline(ctx, gccResp, requestLocale(r))
 
 	out := PipelineDetailRsp{
-		Config: toPipelineConfig(gccResp, nil),
+		Config: toPipelineConfig(gccResp),
 	}
 
 	progResp, err := h.Gprog.ListCandidatePipelines(ctx, &gprogpb.ListCandidatePipelinesReq{
@@ -225,7 +226,7 @@ func (h *Handler) GetPipelineRuntime(w http.ResponseWriter, r *http.Request) {
 	gccResp = h.localizedPipeline(ctx, gccResp, requestLocale(r))
 
 	out := PipelineRuntimeRsp{
-		Config: toPipelineConfig(gccResp, nil),
+		Config: toPipelineConfig(gccResp),
 	}
 
 	progResp, err := h.Gprog.ListCandidatePipelines(ctx, &gprogpb.ListCandidatePipelinesReq{
@@ -1319,7 +1320,8 @@ func (h *Handler) enrichBundle(ctx context.Context, b *mallpb.BundleInfo, state 
 		"display_amount_max":   b.GetDisplayAmountMax(),
 		"display_currency":     b.GetDisplayCurrency(),
 		"stages":               []interface{}{},
-		"final_quals":          []interface{}{},
+		"final_audit_quals":    []interface{}{},
+		"award_certs":          []interface{}{},
 		"category_tips":        "",
 		"pipeline_id":          pipelineID,
 		"membership_id":        membershipID,
@@ -1352,7 +1354,8 @@ func (h *Handler) enrichBundle(ctx context.Context, b *mallpb.BundleInfo, state 
 			m["pipeline_status"] = pipeline.GetStatus()
 			m["pipeline_is_active"] = isActivePipelineStatus(pipeline.GetStatus())
 			m["stages"] = toStages(pipeline.GetStages())
-			m["final_quals"] = toUnlockQuals(pipeline.GetCertsQuals())
+			m["final_audit_quals"] = toQualificationRequirements(pipeline.GetFinalAuditQuals())
+			m["award_certs"] = toCertificateAwards(pipeline.GetAwardCerts())
 			m["category_tips"] = pipeline.GetCategoryTips()
 		} else {
 			m["pipeline_is_active"] = false
@@ -1449,15 +1452,10 @@ func formatPaymentKey(paymentKey string) string {
 	return paymentKey
 }
 
-func toPipelineConfig(p *gccpb.PipelineConfig, certQuals []*gccpb.Qualification) PipelineConfig {
+func toPipelineConfig(p *gccpb.PipelineConfig) PipelineConfig {
 	if p == nil {
 		return PipelineConfig{}
 	}
-	finalQuals := certQuals
-	if finalQuals == nil {
-		finalQuals = p.GetCertsQuals()
-	}
-
 	return PipelineConfig{
 		PipelineUlid:          p.GetPipelineUlid(),
 		PipelineGuid:          "",
@@ -1469,14 +1467,14 @@ func toPipelineConfig(p *gccpb.PipelineConfig, certQuals []*gccpb.Qualification)
 		ThumbnailFileHash:     p.GetThumbnailFileHash(),
 		UnlockStripeProductId: "",
 		UnlockStripePriceId:   "",
-		UnlockQuals:           toUnlockQuals(p.GetUnlockQuals()),
-		CertQuals:             toUnlockQuals(p.GetCertsQuals()),
+		PrerequisiteQuals:     toQualificationRequirements(p.GetPrerequisiteQuals()),
+		FinalAuditQuals:       toQualificationRequirements(p.GetFinalAuditQuals()),
+		AwardCerts:            toCertificateAwards(p.GetAwardCerts()),
 		Stages:                toStages(p.GetStages()),
 		Status:                p.GetStatus(),
 		IsCurrent:             p.GetIsCurrent(),
 		CreatedAt:             p.GetCreatedAt(),
-		FinalQuals:            toUnlockQuals(finalQuals),
-		HasCertificate:        len(p.GetCerts()) > 0 || len(p.GetCertsQuals()) > 0 || len(finalQuals) > 0,
+		HasCertificate:        len(p.GetAwardCerts()) > 0,
 	}
 }
 
@@ -1498,7 +1496,7 @@ func pipelineSummaryToConfig(p *gccpb.PipelineSummary) *gccpb.PipelineConfig {
 	}
 }
 
-func toUnlockQuals(quals []*gccpb.Qualification) []Qualification {
+func toQualificationRequirements(quals []*gccpb.QualificationRequirement) []Qualification {
 	if quals == nil {
 		return nil
 	}
@@ -1506,8 +1504,24 @@ func toUnlockQuals(quals []*gccpb.Qualification) []Qualification {
 	out := make([]Qualification, 0, len(quals))
 	for _, qual := range quals {
 		out = append(out, Qualification{
-			QualId:   qual.GetQualUlid(),
+			QualUlid: qual.GetQualUlid(),
 			NameHint: qual.GetNameHint(),
+		})
+	}
+	return out
+}
+
+func toCertificateAwards(certs []*gccpb.CertificateAward) []CertificateAward {
+	if certs == nil {
+		return nil
+	}
+
+	out := make([]CertificateAward, 0, len(certs))
+	for _, cert := range certs {
+		out = append(out, CertificateAward{
+			QualUlid:        cert.GetQualUlid(),
+			PdfTemplateUlid: cert.GetPdfTemplateUlid(),
+			NameHint:        cert.GetNameHint(),
 		})
 	}
 	return out
@@ -1729,12 +1743,7 @@ func pipelineIssuesCertificate(config *gccpb.PipelineConfig) bool {
 	if config == nil {
 		return false
 	}
-	for _, qual := range config.GetCertsQuals() {
-		if strings.TrimSpace(qual.GetQualUlid()) != "" {
-			return true
-		}
-	}
-	return false
+	return len(config.GetAwardCerts()) > 0
 }
 
 func fillCompletedPipelineNextStep(out *PipelineNextStep, issuesCertificate bool) {

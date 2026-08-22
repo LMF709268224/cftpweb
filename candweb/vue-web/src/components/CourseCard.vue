@@ -104,6 +104,9 @@ function blockerText(blocker?: EligibilityBlocker) {
   if (blocker.blocker_type === "ALREADY_PURCHASED") return cardCopy.value.alreadyPurchased
   if (blocker.blocker_type === "IN_PROGRESS_PURCHASE") return cardCopy.value.inProgressPurchase
   if (blocker.blocker_type === "PIPELINE_NOT_FOUND") return cardCopy.value.pipelineNotFound
+  if (blocker.blocker_type === "FORBIDDEN_QUALIFICATION") return cardCopy.value.forbiddenQualification
+  if (blocker.blocker_type === "CONFLICT_PIPELINE_IN_PROGRESS") return cardCopy.value.conflictPipelineInProgress
+  if (blocker.blocker_type === "CONFLICT_CHECK_UNAVAILABLE") return cardCopy.value.conflictCheckUnavailable
   return blocker.description || blocker.blocker_type || ""
 }
 

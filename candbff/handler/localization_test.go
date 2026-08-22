@@ -268,7 +268,7 @@ func TestLocalizedPipelineOverlaysConfiguredTranslations(t *testing.T) {
 				Name:     "Unit",
 			}},
 		}},
-		CertsQuals: []*gccpb.Qualification{{
+		FinalAuditQuals: []*gccpb.QualificationRequirement{{
 			QualUlid: "credential-1",
 			NameHint: "Work Experience Proof",
 		}},
@@ -286,8 +286,8 @@ func TestLocalizedPipelineOverlaysConfiguredTranslations(t *testing.T) {
 	if localized.GetStages()[0].GetUnits()[0].GetName() != "课程单元" {
 		t.Fatalf("unit translation was not applied: %#v", localized.GetStages()[0].GetUnits()[0])
 	}
-	if localized.GetCertsQuals()[0].GetNameHint() != "工作经验证明" {
-		t.Fatalf("qualification translation was not applied: %#v", localized.GetCertsQuals()[0])
+	if localized.GetFinalAuditQuals()[0].GetNameHint() != "工作经验证明" {
+		t.Fatalf("qualification translation was not applied: %#v", localized.GetFinalAuditQuals()[0])
 	}
 	if base.GetName() != "Pipeline" || base.GetStages()[0].GetName() != "Stage" {
 		t.Fatal("localization mutated the source pipeline")

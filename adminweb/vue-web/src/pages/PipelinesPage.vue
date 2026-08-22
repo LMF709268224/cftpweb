@@ -19,7 +19,7 @@ type PipelineForm = {
   structure_json: string
 }
 
-type LayerKey = "overview" | "stages" | "units" | "certs" | "unlock_quals" | "certs_quals" | "raw"
+type LayerKey = "overview" | "stages" | "units" | "award_certs" | "prerequisite_quals" | "final_audit_quals" | "forbidden_quals" | "conflict_pipeline_gpaths" | "raw"
 
 type UnitListItem = {
   stageIndex: number
@@ -30,9 +30,11 @@ type UnitListItem = {
 }
 
 const emptyStructure = () => ({
-  unlock_quals: [],
-  certs: [],
-  certs_quals: [],
+  prerequisite_quals: [],
+  final_audit_quals: [],
+  award_certs: [],
+  forbidden_quals: [],
+  conflict_pipeline_gpaths: [],
   stages: [],
 })
 
@@ -69,6 +71,8 @@ const selectedUnitPath = ref("")
 const selectedCertIndex = ref(0)
 const selectedUnlockQualIndex = ref(0)
 const selectedCertQualIndex = ref(0)
+const selectedForbiddenQualIndex = ref(0)
+const pendingConflictPipelineGpath = ref("")
 const deprecateConfirmOpen = ref(false)
 const deprecating = ref(false)
 const deleteConfirmOpen = ref(false)
@@ -105,9 +109,19 @@ const canDeleteSelectedPipeline = computed(() => !!selectedId.value && !deprecat
 const structureLocked = computed(() => creating.value || published.value || deprecated.value || !selectedId.value)
 
 const stages = computed(() => asArray(structure.value.stages))
-const certs = computed(() => asArray(structure.value.certs))
-const unlockQuals = computed(() => asArray(structure.value.unlock_quals))
-const certQuals = computed(() => asArray(structure.value.certs_quals))
+const certs = computed(() => asArray(structure.value.award_certs))
+const unlockQuals = computed(() => asArray(structure.value.prerequisite_quals))
+const certQuals = computed(() => asArray(structure.value.final_audit_quals))
+const forbiddenQuals = computed(() => asArray(structure.value.forbidden_quals))
+const conflictPipelineGpaths = computed(() => asStringArray(structure.value.conflict_pipeline_gpaths))
+const conflictPipelineOptions = computed(() => {
+  const currentGpath = String(selected.value?.pipeline_gpath || form.value.pipeline_gpath || "")
+  const configured = new Set(conflictPipelineGpaths.value)
+  return pipelines.value.filter((pipeline) => {
+    const gpath = String(pipeline.pipeline_gpath || "")
+    return gpath && gpath !== currentGpath && !configured.has(gpath)
+  })
+})
 const units = computed<UnitListItem[]>(() => {
   const list: UnitListItem[] = []
   stages.value.forEach((stage, stageIndex) => {
@@ -130,20 +144,27 @@ const selectedUnitItem = computed(() => units.value.find((item) => item.path ===
 const selectedCert = computed(() => certs.value[selectedCertIndex.value] || null)
 const selectedUnlockQual = computed(() => unlockQuals.value[selectedUnlockQualIndex.value] || null)
 const selectedCertQual = computed(() => certQuals.value[selectedCertQualIndex.value] || null)
+const selectedForbiddenQual = computed(() => forbiddenQuals.value[selectedForbiddenQualIndex.value] || null)
 
 const layerItems = computed(() => [
   { key: "overview" as const, title: copy.value.layers.overview.title, desc: copy.value.layers.overview.desc, count: selected.value ? 1 : 0 },
   { key: "stages" as const, title: copy.value.layers.stages.title, desc: copy.value.layers.stages.desc, count: stages.value.length },
   { key: "units" as const, title: copy.value.layers.units.title, desc: copy.value.layers.units.desc, count: units.value.length },
-  { key: "certs" as const, title: copy.value.layers.certs.title, desc: copy.value.layers.certs.desc, count: certs.value.length },
-  { key: "unlock_quals" as const, title: copy.value.layers.unlockQuals.title, desc: copy.value.layers.unlockQuals.desc, count: unlockQuals.value.length },
-  { key: "certs_quals" as const, title: copy.value.layers.certQuals.title, desc: copy.value.layers.certQuals.desc, count: certQuals.value.length },
+  { key: "prerequisite_quals" as const, title: copy.value.layers.unlockQuals.title, desc: copy.value.layers.unlockQuals.desc, count: unlockQuals.value.length },
+  { key: "final_audit_quals" as const, title: copy.value.layers.certQuals.title, desc: copy.value.layers.certQuals.desc, count: certQuals.value.length },
+  { key: "award_certs" as const, title: copy.value.layers.certs.title, desc: copy.value.layers.certs.desc, count: certs.value.length },
+  { key: "forbidden_quals" as const, title: copy.value.layers.forbiddenQuals.title, desc: copy.value.layers.forbiddenQuals.desc, count: forbiddenQuals.value.length },
+  { key: "conflict_pipeline_gpaths" as const, title: copy.value.layers.conflictPipelines.title, desc: copy.value.layers.conflictPipelines.desc, count: conflictPipelineGpaths.value.length },
 ])
 
 function asArray(value: unknown): JsonRecord[] {
   return Array.isArray(value)
     ? value.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     : []
+}
+
+function asStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.map((item) => String(item || "").trim()).filter(Boolean) : []
 }
 
 function isStructureLocked() {
@@ -267,7 +288,7 @@ function credentialById(id: string) {
 }
 
 function qualificationId(qualification: JsonRecord | null | undefined) {
-  return String(pickFirst(qualification || {}, ["qual_ulid", "qual_id"]) || "")
+  return String(qualification?.qual_ulid || "")
 }
 
 function pdfTemplateId(template: JsonRecord | null | undefined) {
@@ -291,9 +312,11 @@ function pdfTemplateById(id: string) {
 function normalizeStructureShape(value: JsonRecord | null | undefined) {
   const next = value || {}
   return {
-    unlock_quals: asArray(next.unlock_quals).map(normalizeQualificationShape),
-    certs: asArray(next.certs).map(normalizeQualificationShape),
-    certs_quals: asArray(next.certs_quals).map(normalizeQualificationShape),
+    prerequisite_quals: asArray(next.prerequisite_quals).map(normalizeQualificationRequirementShape),
+    final_audit_quals: asArray(next.final_audit_quals).map(normalizeQualificationRequirementShape),
+    award_certs: asArray(next.award_certs).map(normalizeQualificationShape),
+    forbidden_quals: asArray(next.forbidden_quals).map(normalizeQualificationRequirementShape),
+    conflict_pipeline_gpaths: asStringArray(next.conflict_pipeline_gpaths),
     stages: asArray(next.stages).map((stage) => ({
       ...stage,
       stage_ulid: String(pickFirst(stage, ["stage_ulid", "stage_id"]) || ""),
@@ -304,10 +327,16 @@ function normalizeStructureShape(value: JsonRecord | null | undefined) {
 
 function normalizeQualificationShape(qual: JsonRecord) {
   const next = { ...qual }
-  next.qual_ulid = String(pickFirst(next, ["qual_ulid", "qual_id"]) || "")
-  next.pdf_template_ulid = String(pickFirst(next, ["pdf_template_ulid", "pdf_template_id"]) || "")
+  next.qual_ulid = String(next.qual_ulid || "")
+  next.pdf_template_ulid = String(next.pdf_template_ulid || "")
   delete next.qual_id
   delete next.pdf_template_id
+  return next
+}
+
+function normalizeQualificationRequirementShape(qual: JsonRecord) {
+  const next = normalizeQualificationShape(qual)
+  delete next.pdf_template_ulid
   return next
 }
 
@@ -353,6 +382,7 @@ function ensureSelections() {
   if (selectedCertIndex.value >= certs.value.length) selectedCertIndex.value = Math.max(0, certs.value.length - 1)
   if (selectedUnlockQualIndex.value >= unlockQuals.value.length) selectedUnlockQualIndex.value = Math.max(0, unlockQuals.value.length - 1)
   if (selectedCertQualIndex.value >= certQuals.value.length) selectedCertQualIndex.value = Math.max(0, certQuals.value.length - 1)
+  if (selectedForbiddenQualIndex.value >= forbiddenQuals.value.length) selectedForbiddenQualIndex.value = Math.max(0, forbiddenQuals.value.length - 1)
 }
 
 function formFromPipeline(pipeline: JsonRecord | null): PipelineForm {
@@ -381,66 +411,90 @@ function parseStructure() {
 }
 
 function validateStructureForSave(next: JsonRecord) {
-  const certList = asArray(next.certs)
+  const certList = asArray(next.award_certs)
   for (const [certIndex, cert] of certList.entries()) {
     const certQualId = qualificationId(cert)
     const templateId = String(cert.pdf_template_ulid || "")
     if (!certQualId.trim()) {
       toast.error(copy.value.toasts.structureCertQualificationRequired(certIndex + 1))
       selectedCertIndex.value = certIndex
-      activeLayer.value = "certs"
+      activeLayer.value = "award_certs"
       return false
     }
     if (credentialOptions.value.length && !credentialById(certQualId)) {
       toast.error(copy.value.toasts.structureCertQualificationUnavailable(certIndex + 1))
       selectedCertIndex.value = certIndex
-      activeLayer.value = "certs"
+      activeLayer.value = "award_certs"
       return false
     }
     if (!templateId.trim()) {
       toast.error(copy.value.toasts.structureCertPdfTemplateRequired(certIndex + 1))
       selectedCertIndex.value = certIndex
-      activeLayer.value = "certs"
+      activeLayer.value = "award_certs"
       return false
     }
     if (pdfTemplateOptions.value.length && !pdfTemplateById(templateId)) {
       toast.error(copy.value.toasts.structureCertPdfTemplateUnavailable(certIndex + 1))
       selectedCertIndex.value = certIndex
-      activeLayer.value = "certs"
+      activeLayer.value = "award_certs"
       return false
     }
   }
 
-  for (const [qualIndex, qual] of asArray(next.unlock_quals).entries()) {
+  for (const [qualIndex, qual] of asArray(next.prerequisite_quals).entries()) {
     const qualId = qualificationId(qual)
     if (!qualId.trim()) {
       toast.error(copy.value.toasts.structureUnlockQualificationRequired(qualIndex + 1))
       selectedUnlockQualIndex.value = qualIndex
-      activeLayer.value = "unlock_quals"
+      activeLayer.value = "prerequisite_quals"
       return false
     }
     if (credentialOptions.value.length && !credentialById(qualId)) {
       toast.error(copy.value.toasts.structureUnlockQualificationUnavailable(qualIndex + 1))
       selectedUnlockQualIndex.value = qualIndex
-      activeLayer.value = "unlock_quals"
+      activeLayer.value = "prerequisite_quals"
       return false
     }
   }
 
-  for (const [qualIndex, qual] of asArray(next.certs_quals).entries()) {
+  for (const [qualIndex, qual] of asArray(next.final_audit_quals).entries()) {
     const qualId = qualificationId(qual)
     if (!qualId.trim()) {
       toast.error(copy.value.toasts.structureCompletionQualificationRequired(qualIndex + 1))
       selectedCertQualIndex.value = qualIndex
-      activeLayer.value = "certs_quals"
+      activeLayer.value = "final_audit_quals"
       return false
     }
     if (credentialOptions.value.length && !credentialById(qualId)) {
       toast.error(copy.value.toasts.structureCompletionQualificationUnavailable(qualIndex + 1))
       selectedCertQualIndex.value = qualIndex
-      activeLayer.value = "certs_quals"
+      activeLayer.value = "final_audit_quals"
       return false
     }
+  }
+
+  for (const [qualIndex, qual] of asArray(next.forbidden_quals).entries()) {
+    const qualId = qualificationId(qual)
+    if (!qualId.trim()) {
+      toast.error(copy.value.toasts.structureForbiddenQualificationRequired(qualIndex + 1))
+      selectedForbiddenQualIndex.value = qualIndex
+      activeLayer.value = "forbidden_quals"
+      return false
+    }
+    if (credentialOptions.value.length && !credentialById(qualId)) {
+      toast.error(copy.value.toasts.structureForbiddenQualificationUnavailable(qualIndex + 1))
+      selectedForbiddenQualIndex.value = qualIndex
+      activeLayer.value = "forbidden_quals"
+      return false
+    }
+  }
+
+  const currentGpath = String(selected.value?.pipeline_gpath || form.value.pipeline_gpath || "")
+  const conflictGpaths = asStringArray(next.conflict_pipeline_gpaths)
+  if (new Set(conflictGpaths).size !== conflictGpaths.length || conflictGpaths.includes(currentGpath)) {
+    toast.error(copy.value.toasts.structureConflictPipelineInvalid)
+    activeLayer.value = "conflict_pipeline_gpaths"
+    return false
   }
 
   const stageList = asArray(next.stages)
@@ -573,31 +627,53 @@ function moveSelectedUnit(targetStageIndex: number) {
 }
 
 function addCert() {
-  addGenericItem("certs", { qual_ulid: "", name_hint: copy.value.defaults.certificateName, pdf_template_ulid: "" }, "certs")
+  addGenericItem("award_certs", { qual_ulid: "", name_hint: copy.value.defaults.certificateName, pdf_template_ulid: "" }, "award_certs")
   selectedCertIndex.value = certs.value.length - 1
 }
 
 function addUnlockQual() {
-  addGenericItem("unlock_quals", { qual_ulid: "", name_hint: copy.value.defaults.unlockQualName }, "unlock_quals")
+  addGenericItem("prerequisite_quals", { qual_ulid: "", name_hint: copy.value.defaults.unlockQualName }, "prerequisite_quals")
   selectedUnlockQualIndex.value = unlockQuals.value.length - 1
 }
 
 function addCertQual() {
-  addGenericItem("certs_quals", { qual_ulid: "", name_hint: copy.value.defaults.certQualName }, "certs_quals")
+  addGenericItem("final_audit_quals", { qual_ulid: "", name_hint: copy.value.defaults.certQualName }, "final_audit_quals")
   selectedCertQualIndex.value = certQuals.value.length - 1
 }
 
-function addGenericItem(key: "certs" | "unlock_quals" | "certs_quals", value: JsonRecord, layer: LayerKey) {
+function addForbiddenQual() {
+  addGenericItem("forbidden_quals", { qual_ulid: "", name_hint: copy.value.defaults.forbiddenQualName }, "forbidden_quals")
+  selectedForbiddenQualIndex.value = forbiddenQuals.value.length - 1
+}
+
+function addGenericItem(key: "award_certs" | "prerequisite_quals" | "final_audit_quals" | "forbidden_quals", value: JsonRecord, layer: LayerKey) {
   if (isStructureLocked()) return
   asMutableArray(structure.value, key).push(value)
   activeLayer.value = layer
   syncStructureJson()
 }
 
-function removeGenericItem(key: "certs" | "unlock_quals" | "certs_quals", index: number) {
+function removeGenericItem(key: "award_certs" | "prerequisite_quals" | "final_audit_quals" | "forbidden_quals", index: number) {
   if (isStructureLocked()) return
   asMutableArray(structure.value, key).splice(index, 1)
   ensureSelections()
+  syncStructureJson()
+}
+
+function addConflictPipeline() {
+  if (isStructureLocked() || !pendingConflictPipelineGpath.value) return
+  const list = asStringArray(structure.value.conflict_pipeline_gpaths)
+  if (!list.includes(pendingConflictPipelineGpath.value)) list.push(pendingConflictPipelineGpath.value)
+  structure.value.conflict_pipeline_gpaths = list
+  pendingConflictPipelineGpath.value = ""
+  syncStructureJson()
+}
+
+function removeConflictPipeline(index: number) {
+  if (isStructureLocked()) return
+  const list = asStringArray(structure.value.conflict_pipeline_gpaths)
+  list.splice(index, 1)
+  structure.value.conflict_pipeline_gpaths = list
   syncStructureJson()
 }
 
@@ -727,6 +803,7 @@ async function selectPipeline(pipeline: JsonRecord) {
   const requestId = ++detailRequestId
   selected.value = pipeline
   creating.value = false
+  pendingConflictPipelineGpath.value = ""
   form.value = formFromPipeline(pipeline)
   setStructure(structureFromPipeline(pipeline))
   activeLayer.value = "overview"
@@ -765,6 +842,7 @@ function newPipeline() {
   detailRequestId += 1
   selected.value = null
   creating.value = true
+  pendingConflictPipelineGpath.value = ""
   form.value = { ...emptyForm }
   setStructure(emptyStructure())
   activeLayer.value = "overview"
@@ -774,6 +852,7 @@ function back() {
   detailRequestId += 1
   selected.value = null
   creating.value = false
+  pendingConflictPipelineGpath.value = ""
   form.value = { ...emptyForm }
   setStructure(emptyStructure())
 }
@@ -1464,7 +1543,7 @@ onMounted(() => {
             </div>
           </div>
 
-          <div v-else-if="activeLayer === 'certs'" class="grid min-h-[560px] lg:grid-cols-[320px_minmax(0,1fr)]">
+          <div v-else-if="activeLayer === 'award_certs'" class="grid min-h-[560px] lg:grid-cols-[320px_minmax(0,1fr)]">
             <div class="border-b border-slate-200 lg:border-b-0 lg:border-r">
               <div class="flex items-center justify-between gap-3 border-b border-slate-200 p-4">
                 <div>
@@ -1483,7 +1562,7 @@ onMounted(() => {
               <template v-if="selectedCert">
                 <div class="flex items-center justify-between gap-3">
                   <h4 class="text-lg font-black">{{ copy.certDetailTitle }}</h4>
-                  <button v-if="!isStructureLocked()" class="rounded-xl border border-red-200 px-4 py-2 font-bold text-red-600" type="button" @click="removeGenericItem('certs', selectedCertIndex)">{{ copy.deleteCert }}</button>
+                  <button v-if="!isStructureLocked()" class="rounded-xl border border-red-200 px-4 py-2 font-bold text-red-600" type="button" @click="removeGenericItem('award_certs', selectedCertIndex)">{{ copy.deleteCert }}</button>
                 </div>
                 <div class="grid gap-4">
                   <label class="grid gap-2 text-sm font-bold">
@@ -1512,39 +1591,39 @@ onMounted(() => {
             </div>
           </div>
 
-          <div v-else-if="activeLayer === 'unlock_quals' || activeLayer === 'certs_quals'" class="grid min-h-[560px] lg:grid-cols-[320px_minmax(0,1fr)]">
+          <div v-else-if="activeLayer === 'prerequisite_quals' || activeLayer === 'final_audit_quals'" class="grid min-h-[560px] lg:grid-cols-[320px_minmax(0,1fr)]">
             <div class="border-b border-slate-200 lg:border-b-0 lg:border-r">
               <div class="flex items-center justify-between gap-3 border-b border-slate-200 p-4">
                 <div>
-                  <div class="font-black">{{ activeLayer === 'unlock_quals' ? copy.unlockQualListTitle : copy.certQualListTitle }}</div>
+                  <div class="font-black">{{ activeLayer === 'prerequisite_quals' ? copy.unlockQualListTitle : copy.certQualListTitle }}</div>
                   <div class="text-xs text-slate-500">{{ copy.qualListDescription }}</div>
                 </div>
-                <button v-if="!isStructureLocked()" class="rounded-xl border px-3 py-2 text-sm font-bold" type="button" @click="activeLayer === 'unlock_quals' ? addUnlockQual() : addCertQual()">{{ copy.add }}</button>
+                <button v-if="!isStructureLocked()" class="rounded-xl border px-3 py-2 text-sm font-bold" type="button" @click="activeLayer === 'prerequisite_quals' ? addUnlockQual() : addCertQual()">{{ copy.add }}</button>
               </div>
-              <template v-if="activeLayer === 'unlock_quals'">
+              <template v-if="activeLayer === 'prerequisite_quals'">
                 <button v-for="(qual, index) in unlockQuals" :key="index" class="w-full border-b border-slate-100 p-4 text-left hover:bg-sky-50" :class="selectedUnlockQualIndex === index ? 'bg-sky-50' : ''" type="button" @click="selectedUnlockQualIndex = index">
                   <div class="font-black">{{ itemTitle(qual, copy.unlockQualFallback(index + 1)) }}</div>
-                  <div class="mt-2 break-all text-xs font-semibold text-slate-500">ID: {{ itemId(qual, ['qual_ulid', 'qual_id']) || "-" }}</div>
+                  <div class="mt-2 break-all text-xs font-semibold text-slate-500">ID: {{ itemId(qual, ['qual_ulid']) || "-" }}</div>
                 </button>
                 <div v-if="!unlockQuals.length" class="p-8 text-center text-sm text-slate-500">{{ copy.noUnlockQuals }}</div>
               </template>
               <template v-else>
                 <button v-for="(qual, index) in certQuals" :key="index" class="w-full border-b border-slate-100 p-4 text-left hover:bg-sky-50" :class="selectedCertQualIndex === index ? 'bg-sky-50' : ''" type="button" @click="selectedCertQualIndex = index">
                   <div class="font-black">{{ itemTitle(qual, copy.certQualFallback(index + 1)) }}</div>
-                  <div class="mt-2 break-all text-xs font-semibold text-slate-500">ID: {{ itemId(qual, ['qual_ulid', 'qual_id']) || "-" }}</div>
+                  <div class="mt-2 break-all text-xs font-semibold text-slate-500">ID: {{ itemId(qual, ['qual_ulid']) || "-" }}</div>
                 </button>
                 <div v-if="!certQuals.length" class="p-8 text-center text-sm text-slate-500">{{ copy.noCertQuals }}</div>
               </template>
             </div>
             <div class="space-y-5 p-5">
-              <template v-if="activeLayer === 'unlock_quals' ? selectedUnlockQual : selectedCertQual">
+              <template v-if="activeLayer === 'prerequisite_quals' ? selectedUnlockQual : selectedCertQual">
                 <div class="flex items-center justify-between gap-3">
                   <h4 class="text-lg font-black">{{ copy.qualDetailTitle }}</h4>
                   <button
                     v-if="!isStructureLocked()"
                     class="rounded-xl border border-red-200 px-4 py-2 font-bold text-red-600"
                     type="button"
-                    @click="activeLayer === 'unlock_quals' ? removeGenericItem('unlock_quals', selectedUnlockQualIndex) : removeGenericItem('certs_quals', selectedCertQualIndex)"
+                    @click="activeLayer === 'prerequisite_quals' ? removeGenericItem('prerequisite_quals', selectedUnlockQualIndex) : removeGenericItem('final_audit_quals', selectedCertQualIndex)"
                   >
                     {{ copy.deleteQual }}
                   </button>
@@ -1553,10 +1632,10 @@ onMounted(() => {
                   <label class="grid gap-2 text-sm font-bold">
                     <span><span class="mr-1 text-red-500">*</span>{{ copy.qualificationDefinitionLabel }}</span>
                     <select
-                      :value="qualificationId(activeLayer === 'unlock_quals' ? selectedUnlockQual : selectedCertQual)"
+                      :value="qualificationId(activeLayer === 'prerequisite_quals' ? selectedUnlockQual : selectedCertQual)"
                       :disabled="isStructureLocked() || credentialOptionsLoading"
                       class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500"
-                      @change="applyQualification(activeLayer === 'unlock_quals' ? selectedUnlockQual : selectedCertQual, eventValue($event))"
+                      @change="applyQualification(activeLayer === 'prerequisite_quals' ? selectedUnlockQual : selectedCertQual, eventValue($event))"
                     >
                       <option value="">{{ credentialOptionsLoading ? copy.loadingQualifications : copy.selectQualification }}</option>
                       <option v-for="definition in credentialOptions" :key="credentialId(definition)" :value="credentialId(definition)">{{ credentialOptionLabel(definition) }}</option>
@@ -1566,16 +1645,16 @@ onMounted(() => {
                   <label class="grid gap-2 text-sm font-bold">
                     {{ copy.nameHintLabel }}
                     <input
-                      :value="fieldValue(activeLayer === 'unlock_quals' ? selectedUnlockQual : selectedCertQual, 'name_hint')"
+                      :value="fieldValue(activeLayer === 'prerequisite_quals' ? selectedUnlockQual : selectedCertQual, 'name_hint')"
                       :disabled="isStructureLocked()"
                       class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500"
-                      @input="setField(activeLayer === 'unlock_quals' ? selectedUnlockQual : selectedCertQual, 'name_hint', eventValue($event))"
+                      @input="setField(activeLayer === 'prerequisite_quals' ? selectedUnlockQual : selectedCertQual, 'name_hint', eventValue($event))"
                     />
                   </label>
                 </div>
                 <JsonPreview
                   :title="copy.jsonPreview"
-                  :value="activeLayer === 'unlock_quals' ? selectedUnlockQual : selectedCertQual"
+                  :value="activeLayer === 'prerequisite_quals' ? selectedUnlockQual : selectedCertQual"
                   :copy-label="copy.copyJson"
                   :copied-label="copy.copiedJson"
                   :copied-message="copy.toasts.jsonCopied"
@@ -1584,6 +1663,68 @@ onMounted(() => {
                 />
               </template>
               <div v-else class="p-12 text-center text-slate-500">{{ copy.selectOrAddQual }}</div>
+            </div>
+          </div>
+
+          <div v-else-if="activeLayer === 'forbidden_quals'" class="grid min-h-[560px] lg:grid-cols-[320px_minmax(0,1fr)]">
+            <div class="border-b border-slate-200 lg:border-b-0 lg:border-r">
+              <div class="flex items-center justify-between gap-3 border-b border-slate-200 p-4">
+                <div>
+                  <div class="font-black">{{ copy.forbiddenQualListTitle }}</div>
+                  <div class="text-xs text-slate-500">{{ copy.forbiddenQualListDescription }}</div>
+                </div>
+                <button v-if="!isStructureLocked()" class="rounded-xl border px-3 py-2 text-sm font-bold" type="button" @click="addForbiddenQual">{{ copy.add }}</button>
+              </div>
+              <button v-for="(qual, index) in forbiddenQuals" :key="index" class="w-full border-b border-slate-100 p-4 text-left hover:bg-sky-50" :class="selectedForbiddenQualIndex === index ? 'bg-sky-50' : ''" type="button" @click="selectedForbiddenQualIndex = index">
+                <div class="font-black">{{ itemTitle(qual, copy.forbiddenQualFallback(index + 1)) }}</div>
+                <div class="mt-2 break-all text-xs font-semibold text-slate-500">ID: {{ itemId(qual, ['qual_ulid']) || "-" }}</div>
+              </button>
+              <div v-if="!forbiddenQuals.length" class="p-8 text-center text-sm text-slate-500">{{ copy.noForbiddenQuals }}</div>
+            </div>
+            <div class="space-y-5 p-5">
+              <template v-if="selectedForbiddenQual">
+                <div class="flex items-center justify-between gap-3">
+                  <h4 class="text-lg font-black">{{ copy.qualDetailTitle }}</h4>
+                  <button v-if="!isStructureLocked()" class="rounded-xl border border-red-200 px-4 py-2 font-bold text-red-600" type="button" @click="removeGenericItem('forbidden_quals', selectedForbiddenQualIndex)">{{ copy.deleteQual }}</button>
+                </div>
+                <label class="grid gap-2 text-sm font-bold">
+                  <span><span class="mr-1 text-red-500">*</span>{{ copy.qualificationDefinitionLabel }}</span>
+                  <select :value="qualificationId(selectedForbiddenQual)" :disabled="isStructureLocked() || credentialOptionsLoading" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @change="applyQualification(selectedForbiddenQual, eventValue($event))">
+                    <option value="">{{ credentialOptionsLoading ? copy.loadingQualifications : copy.selectQualification }}</option>
+                    <option v-for="definition in credentialOptions" :key="credentialId(definition)" :value="credentialId(definition)">{{ credentialOptionLabel(definition) }}</option>
+                  </select>
+                  <p class="text-xs font-semibold text-slate-500">{{ copy.forbiddenQualificationHint }}</p>
+                </label>
+                <label class="grid gap-2 text-sm font-bold">
+                  {{ copy.nameHintLabel }}
+                  <input :value="fieldValue(selectedForbiddenQual, 'name_hint')" :disabled="isStructureLocked()" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedForbiddenQual, 'name_hint', eventValue($event))" />
+                </label>
+              </template>
+              <div v-else class="p-12 text-center text-slate-500">{{ copy.selectOrAddQual }}</div>
+            </div>
+          </div>
+
+          <div v-else-if="activeLayer === 'conflict_pipeline_gpaths'" class="min-h-[560px] space-y-5 p-5">
+            <div>
+              <h4 class="text-lg font-black">{{ copy.conflictPipelineListTitle }}</h4>
+              <p class="mt-1 text-sm text-slate-500">{{ copy.conflictPipelineListDescription }}</p>
+            </div>
+            <div v-if="!isStructureLocked()" class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+              <select v-model="pendingConflictPipelineGpath" :disabled="!conflictPipelineOptions.length" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500">
+                <option value="">{{ copy.selectConflictPipeline }}</option>
+                <option v-for="pipeline in conflictPipelineOptions" :key="pipelineUlid(pipeline)" :value="String(pipeline.pipeline_gpath || '')">{{ pipelineName(pipeline) }} · {{ pipeline.pipeline_gpath }}</option>
+              </select>
+              <button class="rounded-xl border px-4 py-3 font-bold disabled:opacity-50" type="button" :disabled="!pendingConflictPipelineGpath" @click="addConflictPipeline">{{ copy.add }}</button>
+            </div>
+            <div class="divide-y divide-slate-100 rounded-xl border border-slate-200">
+              <div v-for="(gpath, index) in conflictPipelineGpaths" :key="gpath" class="flex items-center justify-between gap-4 p-4">
+                <div class="min-w-0">
+                  <div class="font-bold">{{ pipelineName(pipelines.find((pipeline) => String(pipeline.pipeline_gpath || '') === gpath) || { name: gpath }) }}</div>
+                  <div class="mt-1 break-all text-xs font-semibold text-slate-500">{{ gpath }}</div>
+                </div>
+                <button v-if="!isStructureLocked()" class="shrink-0 rounded-lg border border-red-200 p-2 text-red-600" type="button" :title="copy.removeConflictPipeline" @click="removeConflictPipeline(index)"><Trash2 class="h-4 w-4" /></button>
+              </div>
+              <div v-if="!conflictPipelineGpaths.length" class="p-8 text-center text-sm text-slate-500">{{ copy.noConflictPipelines }}</div>
             </div>
           </div>
 

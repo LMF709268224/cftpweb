@@ -118,7 +118,7 @@ async function fetchData() {
       const pipelineBundle = isPipelineBundle(b, itemTypes)
       const membershipBundle = isMembershipBundle(b, itemTypes)
       const unitCount = stages.reduce((total: number, stage: any) => total + (Array.isArray(stage?.units) ? stage.units.length : 0), 0)
-      const finalQualCount = Array.isArray(b?.final_quals) ? b.final_quals.length : 0
+      const awardCertCount = Array.isArray(b?.award_certs) ? b.award_certs.length : 0
       const firstStageNames = stages.slice(0, 2).map((stage: any) => stage?.name).filter(Boolean).join(" / ")
       return {
         id: b.bundle_id,
@@ -144,7 +144,7 @@ async function fetchData() {
         stats: [
           { label: t.value.courses.stages, value: stages.length },
           { label: t.value.courses.units, value: unitCount },
-          { label: t.value.courses.finalQualifications, value: finalQualCount },
+          { label: t.value.courses.awardedCertificates, value: awardCertCount },
         ],
       }
     }))

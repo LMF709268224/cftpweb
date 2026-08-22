@@ -184,7 +184,7 @@ func (h *Handler) localizedPipeline(ctx context.Context, pipeline *gccpb.Pipelin
 	stageNames := make([]string, len(localized.GetStages()))
 	unitNames := make([][]string, len(localized.GetStages()))
 	qualificationNames := map[string]string{}
-	qualificationsByID := map[string][]*gccpb.Qualification{}
+	qualificationIDs := map[string]struct{}{}
 	var pipelineTranslation *gccpb.PipelineTranslation
 	var qualificationNamesMu sync.Mutex
 	var wg sync.WaitGroup
@@ -249,10 +249,10 @@ func (h *Handler) localizedPipeline(ctx context.Context, pipeline *gccpb.Pipelin
 			}()
 		}
 	}
-	for _, qualifications := range [][]*gccpb.Qualification{
-		localized.GetUnlockQuals(),
-		localized.GetCertsQuals(),
-		localized.GetCerts(),
+	for _, qualifications := range [][]*gccpb.QualificationRequirement{
+		localized.GetPrerequisiteQuals(),
+		localized.GetFinalAuditQuals(),
+		localized.GetForbiddenQuals(),
 	} {
 		for _, qualification := range qualifications {
 			if qualification == nil {
@@ -262,10 +262,19 @@ func (h *Handler) localizedPipeline(ctx context.Context, pipeline *gccpb.Pipelin
 			if qualificationID == "" {
 				continue
 			}
-			qualificationsByID[qualificationID] = append(qualificationsByID[qualificationID], qualification)
+			qualificationIDs[qualificationID] = struct{}{}
 		}
 	}
-	for qualificationID := range qualificationsByID {
+	for _, certificate := range localized.GetAwardCerts() {
+		if certificate == nil {
+			continue
+		}
+		qualificationID := strings.TrimSpace(certificate.GetQualUlid())
+		if qualificationID != "" {
+			qualificationIDs[qualificationID] = struct{}{}
+		}
+	}
+	for qualificationID := range qualificationIDs {
 		qualificationID := qualificationID
 		wg.Add(1)
 		go func() {
@@ -298,10 +307,23 @@ func (h *Handler) localizedPipeline(ctx context.Context, pipeline *gccpb.Pipelin
 			unit.Name = translatedText(unit.GetName(), unitNames[stageIndex][unitIndex])
 		}
 	}
-	for qualificationID, qualifications := range qualificationsByID {
+	for _, qualifications := range [][]*gccpb.QualificationRequirement{
+		localized.GetPrerequisiteQuals(),
+		localized.GetFinalAuditQuals(),
+		localized.GetForbiddenQuals(),
+	} {
 		for _, qualification := range qualifications {
-			qualification.NameHint = translatedText(qualification.GetNameHint(), qualificationNames[qualificationID])
+			if qualification == nil {
+				continue
+			}
+			qualification.NameHint = translatedText(qualification.GetNameHint(), qualificationNames[qualification.GetQualUlid()])
 		}
+	}
+	for _, certificate := range localized.GetAwardCerts() {
+		if certificate == nil {
+			continue
+		}
+		certificate.NameHint = translatedText(certificate.GetNameHint(), qualificationNames[certificate.GetQualUlid()])
 	}
 	return localized
 }

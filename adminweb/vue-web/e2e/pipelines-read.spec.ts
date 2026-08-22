@@ -26,9 +26,11 @@ async function installPipelineReadMocks(page: Page, requests: string[]) {
           description: "Read-only pipeline detail",
           version: 7,
           stages: [],
-          unlock_quals: [],
-          certs_quals: [],
-          certs: [],
+          prerequisite_quals: [],
+          final_audit_quals: [],
+          award_certs: [],
+          forbidden_quals: [],
+          conflict_pipeline_gpaths: [],
         },
       }
     }

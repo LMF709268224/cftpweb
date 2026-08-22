@@ -132,6 +132,13 @@ func (h *Handler) UpdatePipelineStructure(w http.ResponseWriter, r *http.Request
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
+	for _, obsolete := range []string{"unlock_quals", "certs_quals", "certs"} {
+		if _, exists := raw[obsolete]; exists {
+			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, obsolete+" is obsolete; use the current pipeline structure fields")
+			return
+		}
+	}
+
 	normalizePipelineStructureAliases(raw)
 	var req gccpb.UpdatePipelineStructureRequest
 	normalizedBody, err := json.Marshal(raw)
@@ -179,10 +186,6 @@ func (h *Handler) UpdatePipelineStructure(w http.ResponseWriter, r *http.Request
 }
 
 func normalizePipelineStructureAliases(raw map[string]any) {
-	for _, key := range []string{"unlock_quals", "certs_quals", "certs"} {
-		normalizeQualificationAliases(raw[key])
-	}
-
 	stages, _ := raw["stages"].([]any)
 	for _, stageValue := range stages {
 		stage, ok := stageValue.(map[string]any)
@@ -202,18 +205,6 @@ func normalizePipelineStructureAliases(raw map[string]any) {
 			copyAlias(unit, "cert_qual_ulid", "cert_qual_id")
 			copyAlias(unit, "cert_pdf_template_ulid", "cert_pdf_template_id")
 		}
-	}
-}
-
-func normalizeQualificationAliases(value any) {
-	items, _ := value.([]any)
-	for _, itemValue := range items {
-		item, ok := itemValue.(map[string]any)
-		if !ok {
-			continue
-		}
-		copyAlias(item, "qual_ulid", "qual_id")
-		copyAlias(item, "pdf_template_ulid", "pdf_template_id")
 	}
 }
 

@@ -75,29 +75,37 @@ type PipelineDetailRsp struct {
 }
 
 type PipelineConfig struct {
-	UnlockStripeProductId  string          `json:"unlock_stripe_product_id,omitempty"`
-	UnlockStripePriceId    string          `json:"unlock_stripe_price_id,omitempty"`
-	PackageStripeProductId string          `json:"package_stripe_product_id,omitempty"`
-	PackageStripePriceId   string          `json:"package_stripe_price_id,omitempty"`
-	PipelineUlid           string          `json:"pipeline_id,omitempty"`      // ULID (版本唯一ID) [required]
-	PipelineGuid           string          `json:"pipeline_guid,omitempty"`    // ULID (业务唯一ID) [required]
-	Version                uint32          `json:"version,omitempty"`          // 版本号[required]
-	Name                   string          `json:"name,omitempty"`             // 管线名称 [required]
-	CategoryTips           string          `json:"category_tips,omitempty"`    // 分类提示 [required]
-	UnlockFee              int64           `json:"unlock_fee,omitempty"`       // 解锁费用，单位：分[required]
-	PackageDiscount        int32           `json:"package_discount,omitempty"` // 套餐折扣，单位：基点（如 500 = 95%）[required]
-	UnlockQuals            []Qualification `json:"unlock_quals,omitempty"`     // 解锁条件 [required]
-	CertQuals              []Qualification `json:"cert_quals,omitempty"`       // 证书要求 [required]
-	Stages                 []StageConfig   `json:"stages,omitempty"`           // 阶段配置 [required]
-	Status                 string          `json:"status,omitempty"`           // 状态[required]
-	IsCurrent              bool            `json:"is_current,omitempty"`       // 是否为当前版本[required]
-	CreatedAt              string          `json:"created_at,omitempty"`       // 创建时间 [required]
-	FinalQuals             []Qualification `json:"final_quals,omitempty"`      // 结业资格 [required]
+	UnlockStripeProductId  string                     `json:"unlock_stripe_product_id,omitempty"`
+	UnlockStripePriceId    string                     `json:"unlock_stripe_price_id,omitempty"`
+	PackageStripeProductId string                     `json:"package_stripe_product_id,omitempty"`
+	PackageStripePriceId   string                     `json:"package_stripe_price_id,omitempty"`
+	PipelineUlid           string                     `json:"pipeline_id,omitempty"`      // ULID (版本唯一ID) [required]
+	PipelineGuid           string                     `json:"pipeline_guid,omitempty"`    // ULID (业务唯一ID) [required]
+	Version                uint32                     `json:"version,omitempty"`          // 版本号[required]
+	Name                   string                     `json:"name,omitempty"`             // 管线名称 [required]
+	CategoryTips           string                     `json:"category_tips,omitempty"`    // 分类提示 [required]
+	UnlockFee              int64                      `json:"unlock_fee,omitempty"`       // 解锁费用，单位：分[required]
+	PackageDiscount        int32                      `json:"package_discount,omitempty"` // 套餐折扣，单位：基点（如 500 = 95%）[required]
+	PrerequisiteQuals      []QualificationRequirement `json:"prerequisite_quals,omitempty"`
+	FinalAuditQuals        []QualificationRequirement `json:"final_audit_quals,omitempty"`
+	AwardCerts             []CertificateAward         `json:"award_certs,omitempty"`
+	ForbiddenQuals         []QualificationRequirement `json:"forbidden_quals,omitempty"`
+	ConflictPipelineGpaths []string                   `json:"conflict_pipeline_gpaths,omitempty"`
+	Stages                 []StageConfig              `json:"stages,omitempty"`     // 阶段配置 [required]
+	Status                 string                     `json:"status,omitempty"`     // 状态[required]
+	IsCurrent              bool                       `json:"is_current,omitempty"` // 是否为当前版本[required]
+	CreatedAt              string                     `json:"created_at,omitempty"` // 创建时间 [required]
 }
 
-type Qualification struct {
-	QualId   string `json:"qual_id,omitempty"`   // 资格 ULID 对应gcred中的cred catalog id [required]
-	NameHint string `json:"name_hint,omitempty"` // 资格名称 [required]
+type QualificationRequirement struct {
+	QualUlid string `json:"qual_ulid,omitempty"`
+	NameHint string `json:"name_hint,omitempty"`
+}
+
+type CertificateAward struct {
+	QualUlid        string `json:"qual_ulid,omitempty"`
+	PdfTemplateUlid string `json:"pdf_template_ulid,omitempty"`
+	NameHint        string `json:"name_hint,omitempty"`
 }
 
 type StageConfig struct {

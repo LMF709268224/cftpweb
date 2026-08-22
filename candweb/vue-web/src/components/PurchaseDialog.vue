@@ -441,7 +441,16 @@ function blockerTitle(blocker: EligibilityBlocker) {
   if (blocker.blocker_type === "ALREADY_PURCHASED") return copy.value.alreadyPurchased
   if (blocker.blocker_type === "IN_PROGRESS_PURCHASE") return copy.value.inProgressPurchase
   if (blocker.blocker_type === "PIPELINE_NOT_FOUND") return copy.value.pipelineNotFound
+  if (blocker.blocker_type === "FORBIDDEN_QUALIFICATION") return copy.value.forbiddenQualification
+  if (blocker.blocker_type === "CONFLICT_PIPELINE_IN_PROGRESS") return copy.value.conflictPipelineInProgress
+  if (blocker.blocker_type === "CONFLICT_CHECK_UNAVAILABLE") return copy.value.conflictCheckUnavailable
   return blocker.description || blocker.blocker_type || copy.value.unknownBlocker || t.value.common.unknown
+}
+
+function blockerDetailsLabel(blocker: EligibilityBlocker) {
+  if (blocker.blocker_type === "FORBIDDEN_QUALIFICATION") return copy.value.heldQualification
+  if (blocker.blocker_type === "CONFLICT_PIPELINE_IN_PROGRESS") return copy.value.conflictingPipeline
+  return copy.value.requiredItems
 }
 
 function qualLabel(qual: ExemptionQual) {
@@ -972,7 +981,7 @@ async function handlePaymentSessionError() {
             <li v-for="(blocker, index) in blockers" :key="`${blocker.blocker_type || 'blocker'}-${index}`" class="rounded-lg border border-amber-200 bg-white/80 p-3">
               <div class="font-medium text-amber-950">{{ blockerTitle(blocker) }}</div>
               <div v-if="Array.isArray(blocker.details) && blocker.details.map(detailText).filter(Boolean).length > 0" class="mt-2">
-                <div class="mb-1 text-xs font-medium text-muted-foreground">{{ copy.requiredItems }}</div>
+                <div class="mb-1 text-xs font-medium text-muted-foreground">{{ blockerDetailsLabel(blocker) }}</div>
                 <ul class="space-y-1">
                   <li v-for="(detail, detailIndex) in blocker.details.map(detailText).filter(Boolean)" :key="`${detail}-${detailIndex}`" class="flex items-center gap-2 rounded-md bg-amber-100/70 px-2 py-1.5 text-sm font-medium text-amber-950">
                     <AlertCircle class="h-3.5 w-3.5 shrink-0 text-amber-600" />
