@@ -108,6 +108,58 @@ test.beforeEach(async ({ page }) => {
   await seedAuthenticatedCandidate(page)
 })
 
+test("商城和结账页展示并拦截层级互斥资格", async ({ page }) => {
+  const blockerCases = [
+    {
+      id: "bundle-forbidden-qualification",
+      type: "FORBIDDEN_QUALIFICATION",
+      message: "已持有更高阶认证，不能报读",
+    },
+    {
+      id: "bundle-conflict-in-progress",
+      type: "CONFLICT_PIPELINE_IN_PROGRESS",
+      message: "有互斥认证正在进行",
+    },
+    {
+      id: "bundle-conflict-unavailable",
+      type: "CONFLICT_CHECK_UNAVAILABLE",
+      message: "暂时无法核验互斥认证状态",
+    },
+  ]
+  const blockedBundles = blockerCases.map((blocker) => ({
+    ...bundle,
+    bundle_id: blocker.id,
+    name: `Blocked ${blocker.id}`,
+    eligibility: { can_purchase: false, can_unlock: false, blockers: [{ blocker_type: blocker.type }] },
+    purchase_state: {
+      ...bundle.purchase_state,
+      eligibility: { can_purchase: false, can_unlock: false, blockers: [{ blocker_type: blocker.type }] },
+    },
+  }))
+
+  await installCandidateApiMocks(page, ({ pathname, method }) => {
+    if (pathname === "/api/mall/bundles" && method === "GET") return { data: { bundles: blockedBundles } }
+    const blockedBundle = blockedBundles.find((item) => pathname === `/api/mall/bundles/${item.bundle_id}`)
+    if (blockedBundle && method === "GET") return { data: blockedBundle }
+    if (pathname.endsWith("/pricing-detail")) return { data: {} }
+    return undefined
+  })
+
+  await page.goto("/certifications", { waitUntil: "domcontentloaded" })
+  for (const blocker of blockerCases) {
+    const card = page.locator(`[data-testid="certification-card"][data-bundle-id="${blocker.id}"]`)
+    await expect(card.getByText(blocker.message, { exact: true })).toBeVisible()
+  }
+
+  await page.locator(`[data-testid="certification-card"][data-bundle-id="${blockerCases[0].id}"]`).click()
+  await expect(page).toHaveURL(/\/certifications$/)
+
+  await page.goto(`/checkout/${blockerCases[1].id}`, { waitUntil: "domcontentloaded" })
+  const blockerPanel = page.getByTestId("checkout-eligibility-blockers")
+  await expect(blockerPanel).toContainText("你有互斥认证正在进行，请先完成或取消后再购买")
+  await expect(page.getByTestId("checkout-next")).toBeDisabled()
+})
+
 test("课程视频预览通过签名地址全屏播放", async ({ page }) => {
   let requestedSignedURL = false
   const signedURL = "https://iframe.videodelivery.net/signed-lesson-token"

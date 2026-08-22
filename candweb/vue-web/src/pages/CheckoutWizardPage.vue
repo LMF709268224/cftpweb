@@ -38,6 +38,12 @@ const route = useRoute()
 const router = useRouter()
 const { t, lang } = useTranslation()
 const { currentUser, fetchUser } = useUser()
+type EligibilityBlocker = { blocker_type?: string; description?: string }
+const HARD_ELIGIBILITY_BLOCKER_TYPES = new Set([
+  "FORBIDDEN_QUALIFICATION",
+  "CONFLICT_PIPELINE_IN_PROGRESS",
+  "CONFLICT_CHECK_UNAVAILABLE",
+])
 const bundleId = String(route.params.bundleId || route.query.bundleId || "")
 const TEMPORARY_IMPLICIT_UNLOCK_BUNDLE_GPATH = "/gcc/pipeline/core/cftp"
 const currentStep = ref(1)
@@ -1458,6 +1464,23 @@ function getEligibility(response: any) {
   return response?.purchase_state?.eligibility || response?.eligibility || {}
 }
 
+const hardEligibilityBlockers = computed<EligibilityBlocker[]>(() => {
+  const blockers = getEligibility(bundleData.value)?.blockers
+  if (!Array.isArray(blockers)) return []
+  return blockers.filter((blocker: EligibilityBlocker) => HARD_ELIGIBILITY_BLOCKER_TYPES.has(String(blocker?.blocker_type || "")))
+})
+
+const checkoutHardBlocked = computed(() => hardEligibilityBlockers.value.length > 0)
+
+function eligibilityBlockerMessage(blocker?: EligibilityBlocker) {
+  const copy = t.value.purchaseDialog
+  if (!blocker) return t.value.checkoutWizard.purchaseUnavailable
+  if (blocker?.blocker_type === "FORBIDDEN_QUALIFICATION") return copy.forbiddenQualification
+  if (blocker?.blocker_type === "CONFLICT_PIPELINE_IN_PROGRESS") return copy.conflictPipelineInProgress
+  if (blocker?.blocker_type === "CONFLICT_CHECK_UNAVAILABLE") return copy.conflictCheckUnavailable
+  return blocker?.description || copy.unknownBlocker || t.value.checkoutWizard.purchaseUnavailable
+}
+
 async function createPurchaseOrder() {
   const response = await apiClient(`/api/mall/bundles/${encodeURIComponent(bundleId)}/purchase`, {
     method: "POST",
@@ -1553,7 +1576,7 @@ async function confirmAndPay() {
       return
     }
 
-    throw new Error(t.value.checkoutWizard.purchaseUnavailable)
+    throw new Error(eligibilityBlockerMessage(hardEligibilityBlockers.value[0]))
   } catch (err) {
     console.error(err)
     toast.error(err instanceof Error && err.message
@@ -1618,6 +1641,22 @@ async function confirmAndPay() {
 
         <template v-else>
         <div class="checkout-card max-w-5xl rounded-[16px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+          <div
+            v-if="checkoutHardBlocked"
+            data-testid="checkout-eligibility-blockers"
+            class="mb-6 flex gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-950"
+            role="alert"
+          >
+            <CircleAlert class="mt-0.5 h-5 w-5 shrink-0" />
+            <div class="min-w-0">
+              <h2 class="text-sm font-semibold">{{ t.purchaseDialog.blockersTitle }}</h2>
+              <ul class="mt-2 space-y-1 text-sm">
+                <li v-for="(blocker, index) in hardEligibilityBlockers" :key="`${blocker.blocker_type || 'blocker'}-${index}`">
+                  {{ eligibilityBlockerMessage(blocker) }}
+                </li>
+              </ul>
+            </div>
+          </div>
           <!-- Step 1: Selection -->
           <div v-if="currentStep === 1" data-testid="checkout-step-selection" class="checkout-step-one space-y-8">
             <div class="checkout-step-one-title mb-4">
@@ -2000,7 +2039,7 @@ async function confirmAndPay() {
           <button
             data-testid="checkout-selection-next"
             class="checkout-next-button btn rounded-full px-8 py-3 text-white disabled:cursor-not-allowed disabled:opacity-50"
-            :disabled="hasExpandedQualificationEditors || Boolean(qualificationSubmittingUnitId) || (isExemptionSelected && !exemptionDeclarationChecked)"
+            :disabled="checkoutHardBlocked || hasExpandedQualificationEditors || Boolean(qualificationSubmittingUnitId) || (isExemptionSelected && !exemptionDeclarationChecked)"
             @click="nextFromStep1"
           >
             {{ t.checkoutWizard.saveAndContinue }}
@@ -2012,7 +2051,7 @@ async function confirmAndPay() {
             <ArrowLeft class="h-4 w-4" />
             {{ t.checkoutWizard.back }}
           </button>
-          <button form="checkout-registration-form" data-testid="checkout-next" type="submit" class="checkout-form-next-button btn rounded-full px-8 text-white" :disabled="loading">
+          <button form="checkout-registration-form" data-testid="checkout-next" type="submit" class="checkout-form-next-button btn rounded-full px-8 text-white" :disabled="loading || checkoutHardBlocked">
             <template v-if="loading"><Loader2 class="h-4 w-4 animate-spin" /> {{ t.examSignup.submitting }}</template>
             <template v-else>{{ t.checkoutWizard.next }} <Send class="ml-2 h-4 w-4" /></template>
           </button>
@@ -2023,7 +2062,7 @@ async function confirmAndPay() {
             <ArrowLeft class="h-4 w-4" />
             {{ t.checkoutWizard.back }}
           </button>
-          <button data-testid="checkout-confirm-pay" class="checkout-form-next-button btn btn-vivid" :disabled="loading" @click="confirmAndPay">
+          <button data-testid="checkout-confirm-pay" class="checkout-form-next-button btn btn-vivid" :disabled="loading || checkoutHardBlocked" @click="confirmAndPay">
             <template v-if="loading"><Loader2 class="h-4 w-4 animate-spin" /> {{ t.checkoutWizard.processing }}</template>
             <template v-else>{{ t.checkoutWizard.confirmAndPay }} <ArrowRight class="h-4 w-4" /></template>
           </button>

@@ -53,6 +53,11 @@ const currentEligibility = computed<EligibilityPreview | null>(() => freshBundle
 const currentActiveOrder = computed<ActiveOrderPreview | null>(() => freshBundle.value?.purchase_state?.active_order || freshBundle.value?.active_order || props.activeOrder || null)
 const currentActiveMembership = computed<Record<string, unknown> | null>(() => freshBundle.value?.active_membership || props.activeMembership || null)
 const blockers = computed(() => currentEligibility.value?.blockers || [])
+const hardBlockers = computed(() => blockers.value.filter((blocker) => [
+  "FORBIDDEN_QUALIFICATION",
+  "CONFLICT_PIPELINE_IN_PROGRESS",
+  "CONFLICT_CHECK_UNAVAILABLE",
+].includes(String(blocker.blocker_type || ""))))
 const isPipelineProduct = computed(() => Boolean(props.isPipelineBundle && props.pipelineId))
 const isMembershipProduct = computed(() => Boolean(props.isMembershipBundle || props.itemTypes?.some((type) => String(type).includes("membership"))))
 const isCombinationProduct = computed(() => isPipelineProduct.value && isMembershipProduct.value)
@@ -157,6 +162,10 @@ async function handleCardClick() {
   if (hasInProgressOrder.value) {
     toast.info(t.value.purchaseDialog?.inProgressPurchaseDesc || cardCopy.value.inProgressPurchase)
     router.push({ path: "/orders" })
+    return
+  }
+  if (hardBlockers.value.length) {
+    toast.info(blockerText(hardBlockers.value[0]))
     return
   }
   router.push(`/checkout/${encodeURIComponent(props.id)}`)

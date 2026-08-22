@@ -2937,7 +2937,7 @@ export const en: AdminTranslations = {
         noForbiddenQuals: "No forbidden qualifications",
         conflictPipelineListTitle: "Conflicting Pipelines",
         conflictPipelineListDescription: "Candidates with a pending order or active learning instance in a selected pipeline cannot purchase this certification. Configure the relationship on both pipelines.",
-        selectConflictPipeline: "Select a conflicting pipeline",
+        selectConflictPipeline: "Enter or select a conflicting pipeline GPath",
         removeConflictPipeline: "Remove conflicting pipeline",
         noConflictPipelines: "No conflicting pipelines",
         qualDetailTitle: "Qualification Details",

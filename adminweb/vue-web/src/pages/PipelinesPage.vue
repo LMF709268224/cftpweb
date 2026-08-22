@@ -661,9 +661,10 @@ function removeGenericItem(key: "award_certs" | "prerequisite_quals" | "final_au
 }
 
 function addConflictPipeline() {
-  if (isStructureLocked() || !pendingConflictPipelineGpath.value) return
+  const gpath = pendingConflictPipelineGpath.value.trim()
+  if (isStructureLocked() || !gpath) return
   const list = asStringArray(structure.value.conflict_pipeline_gpaths)
-  if (!list.includes(pendingConflictPipelineGpath.value)) list.push(pendingConflictPipelineGpath.value)
+  if (!list.includes(gpath)) list.push(gpath)
   structure.value.conflict_pipeline_gpaths = list
   pendingConflictPipelineGpath.value = ""
   syncStructureJson()
@@ -1710,11 +1711,11 @@ onMounted(() => {
               <p class="mt-1 text-sm text-slate-500">{{ copy.conflictPipelineListDescription }}</p>
             </div>
             <div v-if="!isStructureLocked()" class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
-              <select v-model="pendingConflictPipelineGpath" :disabled="!conflictPipelineOptions.length" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500">
-                <option value="">{{ copy.selectConflictPipeline }}</option>
-                <option v-for="pipeline in conflictPipelineOptions" :key="pipelineUlid(pipeline)" :value="String(pipeline.pipeline_gpath || '')">{{ pipelineName(pipeline) }} · {{ pipeline.pipeline_gpath }}</option>
-              </select>
-              <button class="rounded-xl border px-4 py-3 font-bold disabled:opacity-50" type="button" :disabled="!pendingConflictPipelineGpath" @click="addConflictPipeline">{{ copy.add }}</button>
+              <input v-model="pendingConflictPipelineGpath" list="conflict-pipeline-options" class="rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.selectConflictPipeline" />
+              <datalist id="conflict-pipeline-options">
+                <option v-for="pipeline in conflictPipelineOptions" :key="pipelineUlid(pipeline)" :value="String(pipeline.pipeline_gpath || '')">{{ pipelineName(pipeline) }}</option>
+              </datalist>
+              <button class="rounded-xl border px-4 py-3 font-bold disabled:opacity-50" type="button" :disabled="!pendingConflictPipelineGpath.trim()" @click="addConflictPipeline">{{ copy.add }}</button>
             </div>
             <div class="divide-y divide-slate-100 rounded-xl border border-slate-200">
               <div v-for="(gpath, index) in conflictPipelineGpaths" :key="gpath" class="flex items-center justify-between gap-4 p-4">

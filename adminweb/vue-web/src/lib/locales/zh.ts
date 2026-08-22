@@ -2935,7 +2935,7 @@ export const zh = {
         noForbiddenQuals: "暂无禁止报读资格",
         conflictPipelineListTitle: "互斥认证管线",
         conflictPipelineListDescription: "考生在所选管线有待支付订单或学习中实例时，不能购买当前认证。互斥关系需要在两侧管线分别配置。",
-        selectConflictPipeline: "请选择互斥认证管线",
+        selectConflictPipeline: "输入或选择互斥认证管线 GPath",
         removeConflictPipeline: "移除互斥管线",
         noConflictPipelines: "暂无互斥认证管线",
         qualDetailTitle: "资格详情",
