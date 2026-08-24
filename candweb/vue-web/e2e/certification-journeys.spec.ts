@@ -160,6 +160,91 @@ test("商城和结账页展示并拦截层级互斥资格", async ({ page }) => 
   await expect(page.getByTestId("checkout-next")).toBeDisabled()
 })
 
+test("已持有有效资格的课程自动免考且不可取消", async ({ page }) => {
+  const stageID = "stage-auto-exemption"
+  const unitID = "unit-auto-exemption"
+  const qualificationID = "qualification-auto-exemption"
+  const automaticExemptionBundle = {
+    ...bundle,
+    stages: [{
+      stage_id: stageID,
+      name: "Automatic Exemption Stage",
+      sort_order: 1,
+      units: [{ unit_id: unitID, name: "CFtA Course" }],
+    }],
+    purchase_state: {
+      ...bundle.purchase_state,
+      exemption_options: {
+        stages: [{
+          index: 0,
+          stage_id: stageID,
+          stage_name: "Automatic Exemption Stage",
+          units: [{
+            unit_id: unitID,
+            unit_name: "CFtA Course",
+            allow_exemption: true,
+            qualified: true,
+            exemption_quals: [{
+              qual_id: qualificationID,
+              name: "CFtA Certification",
+              eligible: true,
+              credential_status: "CREDENTIAL_STATUS_ACTIVE",
+            }],
+          }],
+        }],
+      },
+    },
+  }
+  let purchaseBody: unknown
+
+  await installCandidateApiMocks(page, ({ pathname, method, body }) => {
+    if (pathname === `/api/mall/bundles/${bundleID}` && method === "GET") return { data: automaticExemptionBundle }
+    if (pathname === `/api/mall/bundles/${bundleID}/pricing-detail`) {
+      return {
+        data: {
+          units: [{ unit_id: unitID, access: { amount: 10000, currency: "USD" } }],
+          memberships: [],
+        },
+      }
+    }
+    if (pathname === "/api/credentials/definitions") {
+      return { data: { definitions: [{ cred_def_ulid: qualificationID, name: "CFtA Certification" }] } }
+    }
+    if (pathname === "/api/credentials/applications") return { data: { applications: [] } }
+    if (pathname === "/api/user/me") return { data: candidateUser }
+    if (pathname === "/api/user/profile" && method === "PUT") return { data: { success: true } }
+    if (pathname === `/api/mall/bundles/${bundleID}/purchase` && method === "POST") {
+      purchaseBody = body
+      return {
+        data: {
+          bundle_order_ulid: "order-auto-exemption",
+          order_status: "COMPLETED",
+        },
+      }
+    }
+    return undefined
+  })
+
+  await page.goto(`/checkout/${bundleID}`, { waitUntil: "domcontentloaded" })
+
+  const automaticToggle = page.locator(`[data-testid="checkout-exemption-toggle"][data-unit-id="${unitID}"]`)
+  await expect(automaticToggle).toBeChecked()
+  await expect(automaticToggle).toBeDisabled()
+  await expect(page.getByText("系统自动免考", { exact: true })).toBeVisible()
+
+  await page.getByTestId("checkout-selection-next").click()
+  await waitForCheckoutProfile(page)
+  await page.getByTestId("checkout-agreement").check()
+  await page.getByTestId("checkout-next").click()
+  await page.getByTestId("checkout-confirm-pay").click()
+
+  await expect(page).toHaveURL(/\/checkout\/success\/order-auto-exemption/)
+  expect(purchaseBody).toEqual({
+    payment_mode: "FULL_PIPELINE",
+    selected_exemptions_json: JSON.stringify({}),
+  })
+})
+
 test("课程视频预览通过签名地址全屏播放", async ({ page }) => {
   let requestedSignedURL = false
   const signedURL = "https://iframe.videodelivery.net/signed-lesson-token"
@@ -233,7 +318,7 @@ test("认证从商城下单、Stripe 支付到已购认证完整闭环", async (
   )).toBeVisible()
   expect(purchaseBody).toEqual({
     payment_mode: "FULL_PIPELINE",
-    selected_exemptions_json: JSON.stringify({ [pipelineID]: { stages: [] } }),
+    selected_exemptions_json: JSON.stringify({}),
   })
 })
 

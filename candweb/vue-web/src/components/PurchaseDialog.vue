@@ -221,7 +221,7 @@ function hydrateFromInitialState() {
   couponInput.value = ""
   appliedCouponCodes.value = []
   couponError.value = ""
-  pruneSelectedExemptions(exemptionOptions.value)
+  syncAutomaticExemptions(exemptionOptions.value)
 }
 
 function applyBundlePurchaseState(bundle: any) {
@@ -233,7 +233,7 @@ function applyBundlePurchaseState(bundle: any) {
   exemptionError.value = ""
   activePaymentSession.value = null
   couponError.value = ""
-  pruneSelectedExemptions(exemptionOptions.value)
+  syncAutomaticExemptions(exemptionOptions.value)
 }
 
 async function loadBundlePurchaseState() {
@@ -487,56 +487,20 @@ function resetExemptionSelection() {
   selectedExemptionUnitIds.value = {}
 }
 
-function pruneSelectedExemptions(options: ExemptionOptions | null) {
-  const allowed = new Set<string>()
+function syncAutomaticExemptions(options: ExemptionOptions | null) {
+  const next: Record<string, boolean> = {}
   for (const stage of options?.stages || []) {
     for (const unit of stage.units || []) {
       if (unit.qualified && unit.unit_id) {
-        allowed.add(unit.unit_id)
+        next[unit.unit_id] = true
       }
-    }
-  }
-  const next: Record<string, boolean> = {}
-  for (const [unitId, selected] of Object.entries(selectedExemptionUnitIds.value)) {
-    if (selected && allowed.has(unitId)) {
-      next[unitId] = true
     }
   }
   selectedExemptionUnitIds.value = next
 }
 
-function onExemptionToggle(unit: ExemptionUnit, event: Event) {
-  const input = event.target as HTMLInputElement | null
-  if (!unit.qualified || !unit.unit_id) return
-  selectedExemptionUnitIds.value = {
-    ...selectedExemptionUnitIds.value,
-    [unit.unit_id]: Boolean(input?.checked),
-  }
-}
-
 function buildSelectedExemptionsJson() {
-  if (!shouldUsePipelineEligibility.value) {
-    return JSON.stringify({})
-  }
-
-  const stages = exemptionStages.value
-    .map((stage) => {
-      const exemptedUnitIds = (stage.units || [])
-        .filter((unit) => unit.qualified && unit.unit_id && selectedExemptionUnitIds.value[unit.unit_id])
-        .map((unit) => unit.unit_id)
-      return {
-        index: stage.index,
-        stage_cc_ulid: stage.stage_id,
-        exempted_unit_cc_ulids: exemptedUnitIds,
-      }
-    })
-    .filter((stage) => stage.exempted_unit_cc_ulids.length > 0)
-
-  return JSON.stringify({
-    [props.pipelineId]: {
-      stages
-    }
-  })
+  return JSON.stringify({})
 }
 
 async function latestCredentialApplication(qualId: string) {
@@ -1015,7 +979,7 @@ async function handlePaymentSessionError() {
                 <span class="badge text-xs">{{ stage.units?.length || 0 }} {{ copy.exemptionUnits }}</span>
               </div>
               <div class="space-y-2">
-                <label
+                <div
                   v-for="unit in stage.units"
                   :key="unit.unit_id"
                   :class="[
@@ -1023,17 +987,10 @@ async function handlePaymentSessionError() {
                     selectedExemptionUnitIds[unit.unit_id]
                       ? 'border-emerald-300 bg-emerald-50/70 shadow-sm ring-1 ring-emerald-100'
                       : unit.qualified
-                        ? 'cursor-pointer border-border bg-background hover:border-primary/30 hover:bg-primary/5'
+                        ? 'border-border bg-background'
                         : 'border-border bg-muted/30 opacity-75',
                   ]"
                 >
-                  <input
-                    type="checkbox"
-                    class="sr-only"
-                    :checked="Boolean(selectedExemptionUnitIds[unit.unit_id])"
-                    :disabled="!unit.qualified"
-                    @change="onExemptionToggle(unit, $event)"
-                  />
                   <span
                     :class="[
                       'mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-all duration-200',
@@ -1045,13 +1002,13 @@ async function handlePaymentSessionError() {
                     ]"
                     aria-hidden="true"
                   >
-                    <Check v-if="selectedExemptionUnitIds[unit.unit_id]" class="h-[18px] w-[18px] stroke-[3]" />
+                    <Check v-if="unit.qualified" class="h-[18px] w-[18px] stroke-[3]" />
                     <span v-else class="h-2 w-2 rounded-full bg-current opacity-0" />
                   </span>
                   <div class="min-w-0 flex-1">
                     <div class="flex flex-wrap items-center gap-2">
                       <span class="text-sm font-semibold text-foreground">{{ unit.unit_name || unit.unit_id }}</span>
-                      <span v-if="unit.qualified" class="badge border-emerald-200 bg-emerald-50 text-xs text-emerald-700">{{ copy.exemptionEligible }}</span>
+                      <span v-if="unit.qualified" class="badge border-emerald-200 bg-emerald-50 text-xs text-emerald-700">{{ copy.automaticExemptionApplied }}</span>
                       <span v-else class="badge border-amber-200 bg-amber-50 text-xs text-amber-700">{{ copy.exemptionMissing }}</span>
                     </div>
                     <div class="mt-2 flex flex-wrap gap-1.5">
@@ -1081,7 +1038,7 @@ async function handlePaymentSessionError() {
                       </button>
                     </div>
                   </div>
-                </label>
+                </div>
               </div>
             </div>
           </div>
