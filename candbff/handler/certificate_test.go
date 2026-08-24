@@ -19,6 +19,7 @@ type certificateRegressionClient struct {
 	listRequest       *gcredspb.ListCandidateCredentialsRequest
 	definitionRequest *gcredspb.GetCredentialDefinitionDetailRequest
 	detailRequest     *gcredspb.GetCredentialDetailRequest
+	listResponse      *gcredspb.ListCandidateCredentialsResponse
 	listErr           error
 	detailResponse    *gcredspb.Credential
 	detailErr         error
@@ -33,6 +34,9 @@ func (c *certificateRegressionClient) ListCandidateCredentials(
 	if c.listErr != nil {
 		return nil, c.listErr
 	}
+	if c.listResponse != nil {
+		return c.listResponse, nil
+	}
 	return &gcredspb.ListCandidateCredentialsResponse{
 		Credentials: []*gcredspb.CredentialSummary{
 			{
@@ -43,7 +47,7 @@ func (c *certificateRegressionClient) ListCandidateCredentials(
 				Version:       2,
 				Status:        gcredspb.CredentialStatus_CREDENTIAL_STATUS_ACTIVE,
 				ValidUntil:    "2027-08-05T00:00:00Z",
-				Source:        "application",
+				Source:        "pdf_cert",
 			},
 		},
 	}, nil
@@ -135,6 +139,53 @@ func TestListCertificatesUsesCandidateScopeAndEnrichesDetails(t *testing.T) {
 		len(certificate.Files) != 1 ||
 		certificate.Files[0].FileName != "certificate.pdf" {
 		t.Fatalf("certificate = %#v", certificate)
+	}
+}
+
+func TestListCertificatesExcludesApplicationCredentials(t *testing.T) {
+	client := &certificateRegressionClient{
+		listResponse: &gcredspb.ListCandidateCredentialsResponse{
+			Credentials: []*gcredspb.CredentialSummary{
+				{
+					CredUlid:      "manual-credential",
+					CandidateUlid: "candidate-1",
+					CredDefUlid:   "manual-definition",
+					Status:        gcredspb.CredentialStatus_CREDENTIAL_STATUS_ACTIVE,
+					Source:        "application",
+				},
+				{
+					CredUlid:      "certificate-credential",
+					CandidateUlid: "candidate-1",
+					CredDefUlid:   "certificate-definition",
+					Status:        gcredspb.CredentialStatus_CREDENTIAL_STATUS_ACTIVE,
+					Source:        "pdf_cert",
+				},
+			},
+		},
+	}
+	handler := &Handler{Creds: client}
+	recorder := httptest.NewRecorder()
+
+	handler.ListCertificates(
+		recorder,
+		newCandidateHandlerRequest(http.MethodGet, "/api/certificates", "", "candidate-1", nil),
+	)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body=%q", recorder.Code, http.StatusOK, recorder.Body.String())
+	}
+
+	var response struct {
+		Data ListCertificatesRsp `json:"data"`
+	}
+	if err := json.NewDecoder(recorder.Body).Decode(&response); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if len(response.Data.Certificates) != 1 {
+		t.Fatalf("certificates = %d, want 1", len(response.Data.Certificates))
+	}
+	if response.Data.Certificates[0].CredUlid != "certificate-credential" {
+		t.Fatalf("credential = %q, want certificate-credential", response.Data.Certificates[0].CredUlid)
 	}
 }
 

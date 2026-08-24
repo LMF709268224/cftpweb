@@ -27,6 +27,10 @@ func (h *Handler) ListCertificates(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, cred := range credsResp.GetCredentials() {
+		if cred == nil || strings.EqualFold(strings.TrimSpace(cred.GetSource()), "application") {
+			continue
+		}
+
 		item := CertificateItem{
 			CatalogId: cred.GetCredDefUlid(),
 		}
