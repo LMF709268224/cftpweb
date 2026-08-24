@@ -65,8 +65,6 @@ const qualificationUploadedFiles = ref<Record<string, Record<string, { name: str
 const qualificationUploadingKey = ref("")
 const qualificationSubmittingUnitId = ref("")
 const levelPlaceholder = "{" + "{level}}"
-const exemptionDeclarationChecked = ref(false)
-const isExemptionSelected = computed(() => Object.values(selectedExemptionUnitIds.value).some(Boolean))
 
 function selectedExemptedUnitIds() {
   return new Set(
@@ -630,17 +628,13 @@ async function refreshCheckoutQualificationDefinitions() {
 }
 
 function syncQualifiedExemptionSelections(stages: any[]) {
-  const previousSelections = selectedExemptionUnitIds.value
   const nextSelections: Record<string, boolean> = {}
 
   for (const stage of stages) {
     for (const unit of stage.units || []) {
       const unitId = String(unit?.unit_id || "").trim()
       if (!unitId || !unit?.qualified) continue
-
-      nextSelections[unitId] = Object.prototype.hasOwnProperty.call(previousSelections, unitId)
-        ? Boolean(previousSelections[unitId])
-        : true
+      nextSelections[unitId] = true
     }
   }
 
@@ -744,25 +738,7 @@ async function fetchBundleInfo() {
 }
 
 function buildSelectedExemptionsJson() {
-  const stages = exemptionStages.value
-    .map((stage) => {
-      const exemptedUnitIds = (stage.units || [])
-        .filter((unit: any) => unit.qualified && unit.unit_id && selectedExemptionUnitIds.value[unit.unit_id])
-        .map((unit: any) => unit.unit_id)
-      return {
-        index: stage.index,
-        stage_cc_ulid: stage.stage_id,
-        exempted_unit_cc_ulids: exemptedUnitIds,
-      }
-    })
-    .filter((stage) => stage.exempted_unit_cc_ulids.length > 0)
-
-  const pipelineId = bundleData.value?.pipeline_id || bundleData.value?.pipeline_cc_ulid || ""
-  return JSON.stringify({
-    [pipelineId]: {
-      stages
-    }
-  })
+  return JSON.stringify({})
 }
 
 
@@ -1260,15 +1236,9 @@ async function startQualificationApplication(unit: any) {
 async function onExemptionToggle(unit: any, event: Event) {
   const input = event.target as HTMLInputElement | null
   if (!unit?.unit_id) return
-  if (!unit.qualified) {
-    if (input?.checked) await startQualificationApplication(unit)
-    else closeQualificationEditor(unit.unit_id)
-    return
-  }
-  selectedExemptionUnitIds.value = {
-    ...selectedExemptionUnitIds.value,
-    [unit.unit_id]: Boolean(input?.checked),
-  }
+  if (unit.qualified) return
+  if (input?.checked) await startQualificationApplication(unit)
+  else closeQualificationEditor(unit.unit_id)
 }
 
 async function nextFromStep1() {
@@ -1709,7 +1679,7 @@ async function confirmAndPay() {
                     </div>
                     
                     <div class="checkout-unit-footer mt-auto pt-4 flex items-center justify-between border-t border-slate-100">
-                      <label class="checkout-unit-option cursor-pointer">
+                      <label :class="['checkout-unit-option', unit.qualified ? 'cursor-default' : 'cursor-pointer']">
                         <div class="relative flex items-center justify-center">
                           <input
                             data-testid="checkout-exemption-toggle"
@@ -1717,7 +1687,7 @@ async function confirmAndPay() {
                             type="checkbox"
                             class="peer sr-only"
                             :checked="unit.qualified ? Boolean(selectedExemptionUnitIds[unit.unit_id]) : isQualificationEditorExpanded(unit.unit_id)"
-                            :disabled="credentialApplicationLoadingUnitId === unit.unit_id || (!unit.qualified && exemptionCredentialState(unit) === 'pending')"
+                            :disabled="unit.qualified || credentialApplicationLoadingUnitId === unit.unit_id || exemptionCredentialState(unit) === 'pending'"
                             @change="onExemptionToggle(unit, $event)"
                           />
                           <div class="checkout-unit-checkbox h-6 w-6 rounded-md border-2 border-slate-300 bg-white transition-all peer-checked:border-emerald-500 peer-checked:bg-emerald-500"></div>
@@ -1725,13 +1695,13 @@ async function confirmAndPay() {
                           <Check v-else class="pointer-events-none absolute h-4 w-4 text-white opacity-0 transition-opacity peer-checked:opacity-100" />
                         </div>
                         <span class="checkout-unit-action font-medium text-slate-700">
-                          {{ unit.qualified ? t.checkoutWizard.applyForExemption : qualificationActionLabel(unit) }}
+                          {{ unit.qualified ? t.checkoutWizard.automaticExemptionApplied : qualificationActionLabel(unit) }}
                         </span>
                         <span
                           v-if="selectedExemptionUnitIds[unit.unit_id]"
                           class="checkout-unit-selected-price"
                         >
-                          {{ formatMoney(unitPriceDisplay[unit.unit_id]?.exemptionAmount ?? 0, unitPriceDisplay[unit.unit_id]?.currency) }}
+                          {{ formatMoney(0, unitPriceDisplay[unit.unit_id]?.currency) }}
                         </span>
                         <strong
                           v-else-if="unitPriceDisplay[unit.unit_id]?.accessAmount !== undefined"
@@ -1839,23 +1809,6 @@ async function confirmAndPay() {
                   </div>
                 </div>
               </div>
-              <div v-if="isExemptionSelected" class="checkout-declaration mt-8 rounded-xl border border-blue-200 bg-blue-50/50 p-5 transition-all">
-                <label class="flex cursor-pointer items-start gap-3">
-                  <div class="relative mt-0.5 flex shrink-0 items-center justify-center">
-                    <input
-                      v-model="exemptionDeclarationChecked"
-                      type="checkbox"
-                      class="peer sr-only"
-                    />
-                    <div class="h-5 w-5 rounded border border-slate-300 bg-white transition-all peer-checked:border-emerald-500 peer-checked:bg-emerald-500"></div>
-                    <Check class="pointer-events-none absolute h-3.5 w-3.5 text-white opacity-0 transition-opacity peer-checked:opacity-100" />
-                  </div>
-                  <span class="text-sm font-medium leading-relaxed text-slate-700">
-                    {{ t.checkoutWizard.declarationText }}
-                  </span>
-                </label>
-              </div>
-
               <div v-if="bundleData" class="checkout-step-actions mt-6 flex items-center justify-end">
                 <div class="checkout-total text-lg font-bold text-slate-900">
                   <template v-if="dynamicPaymentPreview">
@@ -2039,7 +1992,7 @@ async function confirmAndPay() {
           <button
             data-testid="checkout-selection-next"
             class="checkout-next-button btn rounded-full px-8 py-3 text-white disabled:cursor-not-allowed disabled:opacity-50"
-            :disabled="checkoutHardBlocked || hasExpandedQualificationEditors || Boolean(qualificationSubmittingUnitId) || (isExemptionSelected && !exemptionDeclarationChecked)"
+            :disabled="checkoutHardBlocked || hasExpandedQualificationEditors || Boolean(qualificationSubmittingUnitId)"
             @click="nextFromStep1"
           >
             {{ t.checkoutWizard.saveAndContinue }}
