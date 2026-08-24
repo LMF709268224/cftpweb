@@ -36,6 +36,7 @@ const page = ref(1)
 const pageSize = ref(10)
 const lastPageSize = ref(pageSize.value)
 const pageSizeOptions = [10, 30, 50, 100]
+let examsRequestId = 0
 const retakePaymentSession = ref<{
   paymentKey?: string
   orderId?: string
@@ -255,7 +256,12 @@ function handleVisibilityChange() {
 }
 
 async function loadExams(tab: TabId = activeTab.value, keyword = search.value, showLoading = true, suppressErrorToast = false) {
+  const requestId = ++examsRequestId
+  const requestedPage = page.value
+  const requestedLastPage = lastPage.value
+
   if (tab === "exemption" || tab === "records") {
+    loading.value = false
     loadError.value = false
     exams.value = []
     total.value = 0
@@ -274,9 +280,9 @@ async function loadExams(tab: TabId = activeTab.value, keyword = search.value, s
     params.set("page_size", String(pageSize.value))
     
     let cursor = ""
-    if (page.value > lastPage.value) {
+    if (requestedPage > requestedLastPage) {
       cursor = nextCursor.value
-    } else if (page.value < lastPage.value) {
+    } else if (requestedPage < requestedLastPage) {
       cursor = prevCursor.value
     }
     
@@ -284,24 +290,26 @@ async function loadExams(tab: TabId = activeTab.value, keyword = search.value, s
     if (tab === "history") params.set("status", "DONE")
     if (keyword.trim()) params.set("confirmation_number", keyword.trim())
     const res = await apiClient(`/api/exams?${params.toString()}`, { suppressErrorToast })
+    if (requestId !== examsRequestId) return
+
     const nextExams = res?.exams || []
     exams.value = nextExams
     syncPendingScheduleState(nextExams)
     total.value = Number(res?.total || 0)
     totalLabel.value = String(res?.total_label || total.value)
     totalPages.value = Number(res?.total_pages || Math.ceil(total.value / pageSize.value) || 0)
-    const isBackward = page.value < lastPage.value
+    const isBackward = requestedPage < requestedLastPage
     hasMore.value = isBackward ? true : Boolean(res?.has_more)
-    lastPage.value = page.value
-nextCursor.value = String(res?.next_cursor || "")
+    lastPage.value = requestedPage
+    nextCursor.value = String(res?.next_cursor || "")
     prevCursor.value = String(res?.prev_cursor || "")
-    lastPage.value = page.value
     loadError.value = false
   } catch (error) {
+    if (requestId !== examsRequestId) return
     console.error("Failed to load exams:", error)
     if (showLoading && !suppressErrorToast) loadError.value = true
   } finally {
-    if (showLoading) loading.value = false
+    if (requestId === examsRequestId) loading.value = false
   }
 }
 
@@ -409,6 +417,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  examsRequestId += 1
   window.removeEventListener("focus", refreshAfterScheduleReturn)
   document.removeEventListener("visibilitychange", handleVisibilityChange)
 })

@@ -239,3 +239,32 @@ test("待报名考试从列表进入对应报名页面", async ({ page }) => {
     "http://127.0.0.1:4173/exams/signup?unitId=course-unit-1&pipelineId=pipeline-1&returnTo=%2Fexams",
   )
 })
+
+test("考试列表只应用最后一次刷新返回的数据", async ({ page }) => {
+  let examRequests = 0
+  await installCandidateApiMocks(page, async ({ pathname }: ApiMockContext) => {
+    if (pathname !== "/api/exams") return undefined
+
+    examRequests += 1
+    if (examRequests === 2) {
+      await new Promise((resolve) => setTimeout(resolve, 1_000))
+      return { data: { exams: [{ exam_id: "stale-exam", exam_code: "STALE-EXAM" }], total: 1 } }
+    }
+
+    const examCode = examRequests === 1 ? "INITIAL-EXAM" : "LATEST-EXAM"
+    return { data: { exams: [{ exam_id: `exam-${examRequests}`, exam_code: examCode }], total: 1 } }
+  })
+
+  await page.goto("/exams", { waitUntil: "domcontentloaded" })
+  await expect(page.getByText("INITIAL-EXAM", { exact: true })).toBeVisible()
+
+  const refreshButton = page.locator(".exam-refresh-btn")
+  await refreshButton.dispatchEvent("click")
+  await expect.poll(() => examRequests).toBe(2)
+  await refreshButton.dispatchEvent("click")
+
+  await expect(page.getByText("LATEST-EXAM", { exact: true })).toBeVisible()
+  await page.waitForTimeout(1_100)
+  await expect(page.getByText("LATEST-EXAM", { exact: true })).toBeVisible()
+  await expect(page.getByText("STALE-EXAM", { exact: true })).toHaveCount(0)
+})
