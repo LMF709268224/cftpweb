@@ -6,6 +6,7 @@ const course = {
   title: "Regression Course",
   description: "Read-only LMS course",
   category_tips: "Automation",
+  course_gpath: "/courses/regression-course",
   duration_min: 90,
   status: "Active",
   is_published: true,
@@ -30,10 +31,20 @@ async function installLmsCourseReadMocks(page: Page, requests: string[]) {
             course,
             materials: [{ material_ulid: "material-1", title: "Regression Material" }],
             chapters: [
-              { chapter: { chapter_ulid: "chapter-1", title: "Regression Chapter" }, lessons: [{ lesson: { lesson_ulid: "lesson-1", title: "Regression Lesson" } }] },
-              { chapter: { chapter_ulid: "chapter-2", title: "Review Chapter" }, lessons: [{ lesson: { lesson_ulid: "lesson-2", title: "Review Lesson" } }, { lesson: { lesson_ulid: "lesson-3", title: "Final Lesson" } }] },
+              {
+                chapter: { chapter_ulid: "chapter-1", title: "Regression Chapter", sort_order: 1 },
+                lessons: [{ lesson: { lesson_ulid: "lesson-1", title: "Regression Lesson", sort_order: 1, lesson_type: 2, body: "Lesson body", meta_json: "{}" } }],
+                quizzes: [{
+                  quiz: { quiz_ulid: "quiz-1", title: "Regression Quiz", description: "Chapter review", passing_score: 70, time_limit: 30, randomize_questions: true, quiz_type: 1 },
+                  questions: [{
+                    question: { question_ulid: "question-1", question_text: "Regression question", question_type: 1, points: 10, sort_order: 1, is_required: true, explanation: "Regression explanation", media_items_json: "[]" },
+                    options: [{ option_ulid: "option-1", option_text: "Correct", is_correct: true, sort_order: 1 }],
+                  }],
+                }],
+              },
+              { chapter: { chapter_ulid: "chapter-2", title: "Review Chapter", sort_order: 2 }, lessons: [{ lesson: { lesson_ulid: "lesson-2", title: "Review Lesson", sort_order: 1, lesson_type: 2, body: "Review body" } }, { lesson: { lesson_ulid: "lesson-3", title: "Final Lesson", sort_order: 2, lesson_type: 2, body: "Final body" } }] },
             ],
-            quizzes: [{ quiz: { quiz_ulid: "quiz-1", title: "Regression Quiz" } }],
+            quizzes: [],
           },
         },
       }
@@ -74,6 +85,40 @@ test("LMS course detail reads counts and complete tree without editing", async (
   expect(requests).toContain("GET /api/lms/courses/course-1/complete")
   expect(requests.some((request) => request.includes("/publish") || request.includes("/import"))).toBe(false)
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
+})
+
+test("course detail exposes import-ready JSON with a GPath warning", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  const requests: string[] = []
+  await installLmsCourseReadMocks(page, requests)
+  await page.goto("/lms")
+
+  await page.getByRole("button", { name: "查看详情" }).first().click()
+  const dialog = page.getByRole("dialog")
+  await dialog.getByRole("tab", { name: "查看 JSON" }).click()
+
+  await expect(dialog.getByText("复制为新课程前必须修改 course_gpath", { exact: true })).toBeVisible()
+  await expect(dialog.getByText("course_gpath: /courses/regression-course", { exact: true })).toBeVisible()
+  await expect(dialog.getByText(/当前导入入口支持课程、章节、课时和章节测验/)).toBeVisible()
+  const jsonText = await dialog.locator("pre").textContent()
+  const exported = JSON.parse(jsonText || "{}")
+
+  expect(exported.course_gpath).toBe("/courses/regression-course")
+  expect(exported.chapters).toHaveLength(2)
+  expect(exported.chapters[0].lessons[0]).toMatchObject({ title: "Regression Lesson", lesson_type: 2, body: "Lesson body" })
+  expect(exported.quizzes[0]).toMatchObject({ chapter_title: "Regression Chapter", title: "Regression Quiz" })
+  expect(exported.quizzes[0].questions[0].options[0]).toEqual({ option_text: "Correct", is_correct: true, sort_order: 1 })
+  expect(JSON.stringify(exported)).not.toContain("course_ulid")
+  expect(JSON.stringify(exported)).not.toContain("chapter_ulid")
+  expect(JSON.stringify(exported)).not.toContain("lesson_ulid")
+  expect(JSON.stringify(exported)).not.toContain("quiz_ulid")
+  expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
+
+  await page.setViewportSize({ width: 390, height: 844 })
+  await expect(dialog.getByRole("tab", { name: "详情" })).toBeVisible()
+  await expect(dialog.getByRole("tab", { name: "查看 JSON" })).toBeVisible()
+  await expect(dialog.getByRole("button", { name: "关闭" })).toBeVisible()
+  await expect(dialog.getByRole("button", { name: "复制 JSON" })).toBeVisible()
 })
 
 test("course import stops without retry and keeps the failed draft ID", async ({ page }) => {

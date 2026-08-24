@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ChevronDown, FileJson, Info, Loader2, Plus, RefreshCw, Save, Trash2, UploadCloud, X } from "lucide-vue-next"
+import { ChevronDown, Copy, FileJson, Info, Loader2, Plus, RefreshCw, Save, Trash2, UploadCloud, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import ReadonlyField from "@/components/ReadonlyField.vue"
@@ -7,6 +7,7 @@ import LmsPrerequisitesTab from "@/components/LmsPrerequisitesTab.vue"
 import TranslationsEditor from "@/components/TranslationsEditor.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
+import { copyTextToClipboard } from "@/lib/clipboard"
 import { isVideoFile, MAX_BASIC_VIDEO_UPLOAD_BYTES, sha256Hex, uploadToDirectURL } from "@/lib/directUpload"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
@@ -215,6 +216,7 @@ const courseCreateContext = ref<CourseCreateContext | null>(null)
 const courseDetailDialogOpen = ref(false)
 const courseDetailDialogLoading = ref(false)
 const courseDetailDialogError = ref("")
+const courseDetailDialogView = ref<"detail" | "json">("detail")
 const courseDetailTarget = ref<JsonRecord | null>(null)
 const courseDetailDialogDetail = ref<JsonRecord | null>(null)
 const courseDetailDialogComplete = ref<JsonRecord | null>(null)
@@ -448,6 +450,9 @@ const courseDetailDialogMaterialCount = computed(() => {
     positiveCount(courseDetailDialogDetail.value?.material_count),
   )
 })
+const courseDetailDialogImportPackage = computed(() => buildCourseImportPackage(courseDetailDialogCompleteRecord.value))
+const courseDetailDialogImportJson = computed(() => courseDetailDialogImportPackage.value ? JSON.stringify(courseDetailDialogImportPackage.value, null, 2) : "")
+const courseDetailDialogGpath = computed(() => String(courseDetailDialogImportPackage.value?.course_gpath || ""))
 
 function emptyCourseForm(): CourseForm {
   return {
@@ -1034,6 +1039,118 @@ function extractQuizRecord(value: unknown) {
   return record.quiz && typeof record.quiz === "object" && !Array.isArray(record.quiz) ? record.quiz as JsonRecord : record
 }
 
+function extractNestedRecord(value: unknown, key: string) {
+  if (!isJsonRecord(value)) return null
+  return isJsonRecord(value[key]) ? value[key] as JsonRecord : value
+}
+
+function importLessonFromDetail(value: unknown) {
+  const lesson = extractNestedRecord(value, "lesson")
+  if (!lesson) return null
+  return {
+    title: String(lesson.title || ""),
+    sort_order: Number(lesson.sort_order || 0),
+    lesson_type: lesson.lesson_type ?? 0,
+    body: String(lesson.body || ""),
+    media_object_key: String(lesson.media_object_key || ""),
+    media_file_hash: String(lesson.media_file_hash || ""),
+    external_url: String(lesson.external_url || ""),
+    video_provider: String(lesson.video_provider || ""),
+    video_stream_uid: String(lesson.video_stream_uid || ""),
+    video_embed_code: String(lesson.video_embed_code || ""),
+    meta_json: String(lesson.meta_json || "{}"),
+  }
+}
+
+function importOptionFromDetail(value: unknown) {
+  const option = extractNestedRecord(value, "option")
+  if (!option) return null
+  return {
+    option_text: String(option.option_text || ""),
+    is_correct: Boolean(option.is_correct),
+    sort_order: Number(option.sort_order || 0),
+  }
+}
+
+function importQuestionFromDetail(value: unknown) {
+  if (!isJsonRecord(value)) return null
+  const question = extractNestedRecord(value, "question")
+  if (!question) return null
+  const options = (Array.isArray(value.options) ? value.options : [])
+    .map(importOptionFromDetail)
+    .filter((option): option is NonNullable<typeof option> => Boolean(option))
+  return {
+    question_text: String(question.question_text || ""),
+    question_type: question.question_type ?? 0,
+    points: Number(question.points || 0),
+    sort_order: Number(question.sort_order || 0),
+    is_required: Boolean(question.is_required),
+    explanation: String(question.explanation || ""),
+    media_items_json: String(question.media_items_json || "[]"),
+    options,
+  }
+}
+
+function importQuizFromDetail(value: unknown, chapterTitle: string) {
+  if (!isJsonRecord(value)) return null
+  const quiz = extractNestedRecord(value, "quiz")
+  if (!quiz) return null
+  const questions = (Array.isArray(value.questions) ? value.questions : [])
+    .map(importQuestionFromDetail)
+    .filter((question): question is NonNullable<typeof question> => Boolean(question))
+  return {
+    chapter_title: chapterTitle,
+    title: String(quiz.title || ""),
+    description: String(quiz.description || ""),
+    passing_score: Number(quiz.passing_score || 0),
+    time_limit: Number(quiz.time_limit || 0),
+    randomize_questions: Boolean(quiz.randomize_questions),
+    quiz_type: quiz.quiz_type ?? 0,
+    questions,
+  }
+}
+
+function buildCourseImportPackage(complete: JsonRecord | null | undefined): JsonRecord | null {
+  if (!complete) return null
+  const course = isJsonRecord(complete.course) ? complete.course : null
+  if (!course) return null
+
+  const chapters: JsonRecord[] = []
+  const quizzes: JsonRecord[] = []
+  for (const chapterDetail of Array.isArray(complete.chapters) ? complete.chapters : []) {
+    if (!isJsonRecord(chapterDetail)) continue
+    const chapter = extractNestedRecord(chapterDetail, "chapter")
+    if (!chapter) continue
+    const chapterTitle = String(chapter.title || "")
+    const lessons = (Array.isArray(chapterDetail.lessons) ? chapterDetail.lessons : [])
+      .map(importLessonFromDetail)
+      .filter((lesson): lesson is NonNullable<typeof lesson> => Boolean(lesson))
+    chapters.push({
+      title: chapterTitle,
+      sort_order: Number(chapter.sort_order || 0),
+      lessons,
+    })
+    for (const quizDetail of Array.isArray(chapterDetail.quizzes) ? chapterDetail.quizzes : []) {
+      const quiz = importQuizFromDetail(quizDetail, chapterTitle)
+      if (quiz) quizzes.push(quiz)
+    }
+  }
+
+  return {
+    category_tips: String(course.category_tips || ""),
+    title: String(course.title || ""),
+    description: String(course.description || ""),
+    thumbnail_object_key: String(course.thumbnail_object_key || ""),
+    thumbnail_file_hash: String(course.thumbnail_file_hash || ""),
+    duration_min: Number(course.duration_min || 0),
+    certification_enabled: Boolean(course.certification_enabled),
+    certification_def_ulid: String(course.certification_def_ulid || ""),
+    course_gpath: String(course.course_gpath || ""),
+    chapters,
+    quizzes,
+  }
+}
+
 function scopeFromQuizzableType(value: unknown): QuizScope {
   const type = Number(value || 0)
   if (type === 3) return "course"
@@ -1193,6 +1310,7 @@ async function openCourseDetailDialog(course: JsonRecord) {
   courseDetailDialogDetail.value = null
   courseDetailDialogComplete.value = null
   courseDetailDialogError.value = ""
+  courseDetailDialogView.value = "detail"
   courseDetailDialogLoading.value = true
   courseDetailDialogOpen.value = true
 
@@ -1232,9 +1350,21 @@ function closeCourseDetailDialog() {
   courseDetailDialogOpen.value = false
   courseDetailDialogLoading.value = false
   courseDetailDialogError.value = ""
+  courseDetailDialogView.value = "detail"
   courseDetailTarget.value = null
   courseDetailDialogDetail.value = null
   courseDetailDialogComplete.value = null
+}
+
+async function copyCourseImportJson() {
+  if (!courseDetailDialogImportJson.value) return
+  try {
+    await copyTextToClipboard(courseDetailDialogImportJson.value)
+    toast.success(copy.value.toasts.courseJsonCopied)
+  } catch (err) {
+    console.error(err)
+    toast.error(copy.value.toasts.courseJsonCopyFailed)
+  }
 }
 
 function clearCourseSelection() {
@@ -3215,12 +3345,21 @@ onMounted(() => {
     <Teleport to="body">
       <section v-if="courseDetailDialogOpen" v-modal-dialog="closeCourseDetailDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-0 md:p-6" role="dialog" aria-modal="true">
         <div class="flex h-full max-h-none w-full max-w-[980px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
-          <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
+          <div class="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
             <div class="min-w-0">
               <h2 class="text-xl font-black text-slate-950 md:text-2xl">{{ copy.courseTopData }}</h2>
               <p class="mt-1 break-all text-sm text-slate-500">{{ courseDetailDialogCourseId || "-" }}</p>
             </div>
             <div class="flex shrink-0 items-center gap-3">
+              <div class="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-slate-50 p-1" role="tablist" :aria-label="copy.courseDetailViewLabel">
+                <button class="h-8 rounded-lg px-3 text-sm font-bold transition" :class="courseDetailDialogView === 'detail' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-900'" type="button" role="tab" :aria-selected="courseDetailDialogView === 'detail'" @click="courseDetailDialogView = 'detail'">
+                  {{ copy.detailView }}
+                </button>
+                <button class="inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-40" :class="courseDetailDialogView === 'json' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-900'" type="button" role="tab" :aria-selected="courseDetailDialogView === 'json'" :disabled="!courseDetailDialogImportJson" @click="courseDetailDialogView = 'json'">
+                  <FileJson class="h-4 w-4" />
+                  {{ copy.viewCourseJson }}
+                </button>
+              </div>
               <button class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="copy.close" @click="closeCourseDetailDialog">
                 <X class="h-5 w-5" />
               </button>
@@ -3232,7 +3371,7 @@ onMounted(() => {
               <Loader2 class="h-7 w-7 animate-spin text-blue-600" />
               <span>{{ copy.loading }}</span>
             </div>
-            <template v-else>
+            <template v-else-if="courseDetailDialogView === 'detail'">
               <div v-if="courseDetailDialogError" class="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700" role="alert">
                 {{ courseDetailDialogError }}
               </div>
@@ -3260,6 +3399,35 @@ onMounted(() => {
                 <div class="max-h-[56vh] space-y-3 overflow-y-auto overscroll-contain pr-0 md:pr-2">
                   <ReadonlyField v-for="entry in courseRecordEntries(courseDetailTarget)" :key="`course-dialog-${entry.key}`" :label="courseReadonlyFieldLabel(entry.key)" :text="entry.value" min-height="48px" />
                 </div>
+              </div>
+            </template>
+            <template v-else>
+              <div v-if="courseDetailDialogError" class="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700" role="alert">
+                {{ courseDetailDialogError }}
+              </div>
+              <div class="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-amber-950" role="alert">
+                <div class="flex gap-3">
+                  <Info class="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
+                  <div class="min-w-0">
+                    <h3 class="font-black">{{ copy.courseGpathCopyWarningTitle }}</h3>
+                    <p class="mt-1 text-sm leading-6">{{ copy.courseGpathCopyWarningDescription }}</p>
+                    <div class="mt-2 break-all rounded-lg border border-amber-200 bg-white/70 px-3 py-2 font-mono text-xs font-bold">course_gpath: {{ courseDetailDialogGpath || "-" }}</div>
+                  </div>
+                </div>
+              </div>
+              <p class="mt-3 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold leading-6 text-sky-900">
+                {{ copy.courseImportJsonScopeNotice }}
+              </p>
+
+              <div class="mt-4 overflow-hidden rounded-xl bg-slate-950">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
+                  <span class="text-xs font-black uppercase text-slate-300">{{ copy.courseImportJsonTitle }}</span>
+                  <button class="inline-flex h-9 items-center gap-2 rounded-lg border border-white/20 px-3 text-xs font-bold text-white transition hover:bg-white/10 disabled:opacity-40" type="button" :disabled="!courseDetailDialogImportJson" @click="copyCourseImportJson">
+                    <Copy class="h-4 w-4" />
+                    {{ copy.copyCourseJson }}
+                  </button>
+                </div>
+                <pre class="max-h-[56vh] overflow-auto p-4 text-xs leading-6 text-slate-100 md:p-5">{{ courseDetailDialogImportJson }}</pre>
               </div>
             </template>
           </div>
