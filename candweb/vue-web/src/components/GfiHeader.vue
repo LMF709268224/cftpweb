@@ -6,7 +6,6 @@ import { ChevronDown, Languages, Menu, X } from "lucide-vue-next"
 import { isAuthenticated } from "@/lib/authStorage"
 import { startGfiLogin } from "@/lib/gfiLogin"
 import { useTranslation } from "@/lib/language"
-import { gfiNavGroups, localize } from "@/lib/gfiSite"
 
 const props = withDefaults(defineProps<{ theme?: "dark" | "light"; authTarget?: string; authNewTab?: boolean }>(), {
   theme: "dark",
@@ -16,7 +15,6 @@ const props = withDefaults(defineProps<{ theme?: "dark" | "light"; authTarget?: 
 
 const route = useRoute()
 const { t, lang, changeLanguage } = useTranslation()
-const openMenu = ref<number | null>(null)
 const languageOpen = ref(false)
 const mobileOpen = ref(false)
 const authenticated = ref(isAuthenticated())
@@ -36,11 +34,6 @@ async function beginAuthentication() {
     toast.error(t.value.loginPage.errorTitle)
     authStarting.value = false
   }
-}
-
-function toggleMenu(index: number) {
-  openMenu.value = openMenu.value === index ? null : index
-  languageOpen.value = false
 }
 
 function selectLanguage(next: "zh" | "en") {
@@ -67,7 +60,6 @@ watch(
   () => route.fullPath,
   () => {
     syncAuthentication()
-    openMenu.value = null
     languageOpen.value = false
     mobileOpen.value = false
   },
@@ -80,30 +72,6 @@ watch(
       <RouterLink to="/" class="gfi-brand" aria-label="Global Fintech Institute">
         <img :src="logo" alt="Global Fintech Institute" />
       </RouterLink>
-
-      <!-- <nav class="gfi-desktop-nav" :aria-label="lang === 'zh' ? '主导航' : 'Main navigation'">
-        <div
-          v-for="(group, index) in gfiNavGroups"
-          :key="group.label.en"
-          class="gfi-nav-group"
-          @mouseenter="openMenu = index"
-          @mouseleave="openMenu = null"
-        >
-          <button
-            :class="{ active: openMenu === index || isGroupActive(index) }"
-            :aria-expanded="openMenu === index"
-            @click="toggleMenu(index)"
-          >
-            {{ localize(group.label, lang) }}
-            <ChevronDown :class="{ rotated: openMenu === index }" />
-          </button>
-          <div v-show="openMenu === index" class="gfi-dropdown">
-            <RouterLink v-for="item in group.items" :key="item.to" :to="item.to">
-              {{ localize(item.label, lang) }}
-            </RouterLink>
-          </div>
-        </div>
-      </nav> -->
 
       <div class="gfi-header-actions">
         <div class="gfi-language" @mouseenter="languageOpen = true" @mouseleave="languageOpen = false">
@@ -146,15 +114,6 @@ watch(
     </div>
 
     <nav v-if="mobileOpen" class="gfi-mobile-nav">
-      <div v-for="(group, index) in gfiNavGroups" :key="group.label.en">
-        <button :aria-expanded="openMenu === index" @click="toggleMenu(index)">
-          {{ localize(group.label, lang) }}
-          <ChevronDown :class="{ rotated: openMenu === index }" />
-        </button>
-        <div v-show="openMenu === index" class="gfi-mobile-submenu">
-          <RouterLink v-for="item in group.items" :key="item.to" :to="item.to">{{ localize(item.label, lang) }}</RouterLink>
-        </div>
-      </div>
       <div class="gfi-mobile-language">
         <button :class="{ selected: lang === 'zh' }" @click="selectLanguage('zh')">中文</button>
         <button :class="{ selected: lang === 'en' }" @click="selectLanguage('en')">English</button>
@@ -191,17 +150,10 @@ watch(
 .gfi-brand { display: flex; width: 124px; flex: 0 0 124px; }
 .gfi-brand img { width: 100%; filter: brightness(0) invert(1); }
 .gfi-header--light .gfi-brand img { filter: none; }
-.gfi-desktop-nav { position: absolute; top: 0; left: calc(50% - 40px); display: flex; height: 94px; align-items: stretch; gap: 2px; transform: translateX(-50%); }
-.gfi-nav-group { position: relative; display: flex; align-items: center; }
-.gfi-nav-group > button, .gfi-language > button { display: inline-flex; height: 100%; align-items: center; gap: 8px; padding: 0 17px; border: 0; background: transparent; color: #fff; font-size: 16px; }
-.gfi-header--light .gfi-nav-group > button, .gfi-header--light .gfi-language > button { color: #0e1b3d; }
-.gfi-nav-group > button.active { background: rgba(255,255,255,.065); }
-.gfi-nav-group svg, .gfi-language svg:last-child { width: 15px; height: 15px; transition: transform .2s ease; }
+.gfi-language > button { display: inline-flex; height: 100%; align-items: center; gap: 8px; padding: 0 17px; border: 0; background: transparent; color: #fff; font-size: 16px; }
+.gfi-header--light .gfi-language > button { color: #0e1b3d; }
+.gfi-language svg:last-child { width: 15px; height: 15px; transition: transform .2s ease; }
 .rotated { transform: rotate(180deg); }
-.gfi-dropdown { position: absolute; top: calc(100% + 10px); left: 50%; width: max-content; min-width: 192px; max-width: 260px; padding: 10px; transform: translateX(-50%); border-radius: 5px; background: #fff; box-shadow: 0 16px 45px rgba(9,21,51,.2); }
-.gfi-dropdown::before { content: ""; position: absolute; top: -12px; left: 0; right: 0; height: 12px; }
-.gfi-dropdown a { display: block; padding: 11px 14px; border-radius: 3px; color: #333d50; font-size: 15px; line-height: 1.45; white-space: normal; }
-.gfi-dropdown a:hover, .gfi-dropdown a.router-link-active { background: #f1f5ff; color: #225edf; }
 .gfi-header-actions { position: absolute; top: 0; right: 40px; display: flex; height: 94px; align-items: center; gap: 13px; font-size: 15px; white-space: nowrap; }
 .gfi-header-actions > span { width: 1px; height: 18px; background: rgba(255,255,255,.4); }
 .gfi-header--light .gfi-header-actions > span { background: #cbd2df; }
@@ -224,18 +176,13 @@ watch(
 .gfi-menu-toggle svg { width: 26px; height: 26px; }
 .gfi-mobile-nav { position: absolute; top: calc(78px + var(--app-safe-area-top)); left: 0; right: 0; max-height: calc(var(--app-viewport-height) - 78px - var(--app-safe-area-top)); overflow-y: auto; padding-top: 10px; padding-right: calc(20px + var(--app-safe-area-right)); padding-bottom: calc(24px + var(--app-safe-area-bottom)); padding-left: calc(20px + var(--app-safe-area-left)); background: #101f47; border-top: 1px solid rgba(255,255,255,.1); }
 .gfi-mobile-nav > div > button { display: flex; width: 100%; align-items: center; justify-content: space-between; padding: 14px 0; border: 0; border-bottom: 1px solid rgba(255,255,255,.09); background: transparent; color: #fff; }
-.gfi-mobile-nav svg { width: 17px; height: 17px; }
-.gfi-mobile-submenu { display: grid; padding: 4px 0 9px 16px; }
-.gfi-mobile-submenu a { padding: 10px 0; color: rgba(255,255,255,.78); font-size: 14px; }
 .gfi-mobile-language { display: flex !important; gap: 8px; padding: 18px 0 10px; }
 .gfi-mobile-language button { width: auto !important; padding: 8px 14px !important; border: 1px solid rgba(255,255,255,.22) !important; border-radius: 18px; }
 .gfi-mobile-language button.selected { background: #fff !important; color: #101f47 !important; }
-.gfi-mobile-login { display:block; width:100%; margin-top:10px; padding:13px; border:0; border-radius:4px; background:#2864ff; color:#fff; cursor:pointer; text-align:center; font:inherit; font-weight:600; }
+.gfi-mobile-login { display:flex; width:100%; height:44px; align-items:center; justify-content:center; margin-top:10px; padding:0 13px; border:0; border-radius:4px; background:#2864ff; color:#fff; cursor:pointer; text-align:center; font:inherit; font-weight:600; }
 .gfi-mobile-login:disabled { cursor:wait; opacity:.75; }
 
 @media (max-width: 1180px) {
-  .gfi-nav-group > button { padding: 0 10px; font-size: 15px; }
-  .gfi-desktop-nav { left: 50%; }
   .gfi-header-actions { right: 24px; }
 }
 
@@ -243,7 +190,7 @@ watch(
   .gfi-header { height: calc(78px + var(--app-safe-area-top)); }
   .gfi-header-inner { width: calc(100% - 32px); padding-top: var(--app-safe-area-top); padding-right: var(--app-safe-area-right); padding-left: var(--app-safe-area-left); }
   .gfi-brand { width: 109px; flex-basis: 109px; }
-  .gfi-desktop-nav, .gfi-header-actions { display: none; }
+  .gfi-header-actions { display: none; }
   .gfi-menu-toggle { position: absolute; top: calc(18px + var(--app-safe-area-top)); right: calc(16px + var(--app-safe-area-right)); z-index: 90; display: inline-flex !important; margin-left: auto; background: transparent; visibility: visible !important; opacity: 1 !important; }
   .gfi-header--light .gfi-menu-toggle svg { display: block !important; color: #0e1b3d !important; stroke: #0e1b3d !important; }
 }

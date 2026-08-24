@@ -19,6 +19,63 @@ test("未登录访问受保护页面时保留目标地址并进入登录流程",
   await expect.poll(() => page.evaluate(() => sessionStorage.getItem("post_login_redirect"))).toBe("/orders")
 })
 
+test("公共商城移动端菜单只保留语言和认证入口", async ({ page }) => {
+  await page.setViewportSize({ width: 382, height: 739 })
+  await installCandidateApiMocks(page)
+
+  await page.goto("/", { waitUntil: "domcontentloaded" })
+  await page.getByRole("button", { name: "Open menu" }).click()
+
+  await expect(page.getByRole("button", { name: "关于", exact: true })).toHaveCount(0)
+  await expect(page.getByRole("button", { name: "中文", exact: true })).toBeVisible()
+  await expect(page.getByRole("button", { name: "English", exact: true })).toBeVisible()
+  await expect(page.getByRole("button", { name: "登录 / 注册", exact: true })).toBeVisible()
+})
+
+test("遥测不会发送页面或 API 地址中的查询参数和 hash", async ({ page }) => {
+  const telemetryEvents: Array<{
+    event_name?: string
+    payload?: { url?: string }
+    url?: string
+  }> = []
+
+  await installCandidateApiMocks(page, ({ pathname, body }) => {
+    if (pathname === "/api/e2e-telemetry-error") {
+      return { status: 500, code: 500, message: "expected telemetry test error" }
+    }
+    if (pathname === "/api/public/telemetry") {
+      const batch = body as { events?: typeof telemetryEvents } | undefined
+      telemetryEvents.push(...(batch?.events || []))
+    }
+    return undefined
+  })
+
+  await page.goto("/?code=oauth-code-secret&state=oauth-state-secret#oauth-hash-secret", { waitUntil: "domcontentloaded" })
+  await page.evaluate(async () => {
+    const modulePath = "/src/lib/apiClient.ts"
+    const { apiClient } = await import(modulePath)
+    try {
+      await apiClient("/api/e2e-telemetry-error?token=api-query-secret#api-hash-secret", {
+        suppressErrorToast: true,
+        suppressAuthRedirect: true,
+      })
+    } catch {
+      // This request fails intentionally so its telemetry payload can be inspected.
+    }
+  })
+
+  await expect.poll(() => telemetryEvents.some((event) => event.event_name === "api_error"), { timeout: 10_000 }).toBe(true)
+
+  const apiErrorEvent = telemetryEvents.find((event) => event.event_name === "api_error")
+  expect(apiErrorEvent?.url).toBe("http://127.0.0.1:4173/")
+  expect(apiErrorEvent?.payload?.url).toBe("/api/e2e-telemetry-error")
+  expect(JSON.stringify(telemetryEvents)).not.toContain("oauth-code-secret")
+  expect(JSON.stringify(telemetryEvents)).not.toContain("oauth-state-secret")
+  expect(JSON.stringify(telemetryEvents)).not.toContain("oauth-hash-secret")
+  expect(JSON.stringify(telemetryEvents)).not.toContain("api-query-secret")
+  expect(JSON.stringify(telemetryEvents)).not.toContain("api-hash-secret")
+})
+
 test("access token 过期时只刷新一次并继续停留在当前页面", async ({ page }) => {
   let userRequests = 0
   let refreshRequests = 0
