@@ -19,6 +19,19 @@ test("未登录访问受保护页面时保留目标地址并进入登录流程",
   await expect.poll(() => page.evaluate(() => sessionStorage.getItem("post_login_redirect"))).toBe("/orders")
 })
 
+test("公共商城移动端菜单只保留语言和认证入口", async ({ page }) => {
+  await page.setViewportSize({ width: 382, height: 739 })
+  await installCandidateApiMocks(page)
+
+  await page.goto("/", { waitUntil: "domcontentloaded" })
+  await page.getByRole("button", { name: "Open menu" }).click()
+
+  await expect(page.getByRole("button", { name: "关于", exact: true })).toHaveCount(0)
+  await expect(page.getByRole("button", { name: "中文", exact: true })).toBeVisible()
+  await expect(page.getByRole("button", { name: "English", exact: true })).toBeVisible()
+  await expect(page.getByRole("button", { name: "登录 / 注册", exact: true })).toBeVisible()
+})
+
 test("access token 过期时只刷新一次并继续停留在当前页面", async ({ page }) => {
   let userRequests = 0
   let refreshRequests = 0
