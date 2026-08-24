@@ -7,6 +7,28 @@ export type TelemetryEvent = {
   url?: string
 }
 
+function telemetryPageUrl() {
+  if (typeof window === "undefined") return ""
+  return `${window.location.origin}${window.location.pathname}`
+}
+
+function sanitizeTelemetryUrl(rawUrl: string) {
+  if (typeof window === "undefined") return ""
+
+  try {
+    const parsedUrl = new URL(rawUrl, window.location.href)
+    const isAbsoluteUrl = /^[a-z][a-z\d+.-]*:/i.test(rawUrl) || rawUrl.startsWith("//")
+    return isAbsoluteUrl ? `${parsedUrl.origin}${parsedUrl.pathname}` : parsedUrl.pathname
+  } catch {
+    return ""
+  }
+}
+
+function sanitizeTelemetryPayload(payload?: Record<string, unknown>) {
+  if (!payload || typeof payload.url !== "string") return payload
+  return { ...payload, url: sanitizeTelemetryUrl(payload.url) }
+}
+
 class TelemetryClient {
   private queue: TelemetryEvent[] = []
   private endpoint = "/api/telemetry"
@@ -30,9 +52,9 @@ class TelemetryClient {
   public track(eventName: string, payload?: Record<string, unknown>) {
     this.queue.push({
       event_name: eventName,
-      payload,
+      payload: sanitizeTelemetryPayload(payload),
       timestamp: new Date().toISOString(),
-      url: typeof window !== "undefined" ? window.location.href : "",
+      url: telemetryPageUrl(),
     })
 
     if (!this.flushTimer) {
