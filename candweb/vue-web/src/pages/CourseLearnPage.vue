@@ -1683,7 +1683,7 @@ watch(selectedMaterial, () => {
           </div>
 
           <div class="flex flex-wrap items-center gap-3 text-sm">
-              <span class="rounded-md border border-slate-200 bg-white px-4 py-2 font-medium text-slate-700 shadow-sm">{{ t.learning.certificationCurrentStep }}: <span class="text-primary">{{ visibleCertificationStep.label }}</span></span>
+              <span class="whitespace-nowrap rounded-md border border-slate-200 bg-white px-4 py-2 font-medium text-slate-700 shadow-sm">{{ t.learning.certificationCurrentStep }}: <span class="text-primary">{{ visibleCertificationStep.label }}</span></span>
               <span class="font-medium text-slate-700">{{ t.learning.certificationProgress }} <span class="ml-1 text-lg font-bold text-foreground">{{ completedCertificationStepCount }}</span> / {{ certificationFlowSteps.length }}</span>
             <button v-if="course" class="learn-sync-btn inline-flex h-9 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold" :disabled="syncing" @click="refreshProgress(true)">
               <Loader2 v-if="syncing" class="h-4 w-4 animate-spin" />
@@ -2026,7 +2026,7 @@ watch(selectedMaterial, () => {
                 <p class="mt-1 max-w-xs text-xs leading-5 text-muted-foreground">{{ t.learning.noChapterQuizzesDesc }}</p>
               </div>
               <div v-else class="flex flex-1 flex-col gap-2">
-                <div v-for="(task, index) in nonCourseQuizTasks" :key="task.key" class="flex min-h-[142px] flex-1 flex-col rounded-md border border-slate-100 bg-white p-3">
+                <div v-for="(task, index) in nonCourseQuizTasks" :key="task.key" class="flex min-h-[142px] shrink-0 flex-col rounded-md border border-slate-100 bg-white p-3">
                   <div class="mb-2 flex flex-wrap items-center gap-2">
                     <span class="badge border-slate-200 bg-slate-50 text-slate-700">{{ task.scopeLabel }}</span>
                     <span v-if="task.chapterTitle" class="badge border-slate-200 bg-slate-50 text-slate-700">{{ t.learning.chapters }}: {{ task.chapterTitle }}</span>
