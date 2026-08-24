@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/*
 import { Facebook, Instagram, Link2, Linkedin, MessageCircle } from "lucide-vue-next"
 import { useTranslation } from "@/lib/language"
 
@@ -55,10 +56,11 @@ const bottomLinks = [
   ["新闻中心", "Newsroom", "/gfi/publications/news"],
   ["联系我们", "Contact Us", "/gfi/contact"],
 ] as const
+*/
 </script>
 
 <template>
-  <footer class="gfi-footer">
+  <!-- <footer class="gfi-footer">
     <div class="footer-corner footer-corner-left" aria-hidden="true"></div>
     <div class="footer-corner footer-corner-right" aria-hidden="true"></div>
     <div class="gfi-footer-inner gfi-footer-grid">
@@ -99,7 +101,7 @@ const bottomLinks = [
         <p>{{ lang === "zh" ? "版权所有 2026" : "Copyright 2026" }} <i aria-hidden="true"></i> {{ lang === "zh" ? "全球金融科技学院保留所有权利" : "All Rights Reserved by Global Fintech Institute" }}</p>
       </div>
     </div>
-  </footer>
+  </footer> -->
 </template>
 
 <style scoped>
