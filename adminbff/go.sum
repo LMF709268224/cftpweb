@@ -1,5 +1,7 @@
 github.com/afnandelfin620-star/cftptest/cftp v0.0.0-20260822093612-3eed9b9f429d h1:gaxTD0YbSBuKmGKqVsLYeX29IWYQ2PgNz7DpxmeuSIs=
 github.com/afnandelfin620-star/cftptest/cftp v0.0.0-20260822093612-3eed9b9f429d/go.mod h1:00s9AuWPk/1OxEv2bjpjWVk9FQxV8xM+mWO9GchE1i4=
+github.com/afnandelfin620-star/cftptest/cftp v0.0.0-20260824041303-01219c57f1a5 h1:ZbxaRKZow2p8hLVAKInHrH26PuTKh3fXTJ/LOt/hbv0=
+github.com/afnandelfin620-star/cftptest/cftp v0.0.0-20260824041303-01219c57f1a5/go.mod h1:00s9AuWPk/1OxEv2bjpjWVk9FQxV8xM+mWO9GchE1i4=
 github.com/casdoor/casdoor-go-sdk v1.46.0 h1:a2LAon5daFoJes4E5FEQinaLC/QaH6XBtOEdrvJlVc4=
 github.com/casdoor/casdoor-go-sdk v1.46.0/go.mod h1:7aXOpfl6s5M5/yjHgIGuPBwdHeSCV/jha1iYsnE1MNc=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=

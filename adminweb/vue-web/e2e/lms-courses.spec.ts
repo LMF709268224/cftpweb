@@ -142,7 +142,8 @@ test("course import stops without retry and keeps the failed draft ID", async ({
   })
 
   await page.goto("/lms")
-  await page.getByRole("button", { name: "导入 JSON" }).click()
+  await page.getByRole("button", { name: "从 JSON 创建课程" }).click()
+  await expect(page.getByRole("dialog").getByRole("heading", { name: "从 JSON 创建课程" })).toBeVisible()
   await page.getByPlaceholder("也可以直接粘贴 JSON").fill(JSON.stringify({
     title: "Chunked Course",
     course_gpath: "/courses/chunked-course",

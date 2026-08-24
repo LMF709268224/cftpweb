@@ -3254,7 +3254,7 @@ onMounted(() => {
         </button>
         <button v-if="!isCreatingCourse" class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 font-bold shadow-sm" type="button" @click="importOpen = true">
           <FileJson class="h-4 w-4" />
-          {{ copy.importJson }}
+          {{ courseView === "list" ? copy.createCourseFromJson : copy.importJson }}
         </button>
         <button v-if="courseView === 'detail'" class="rounded-xl border bg-white px-4 py-3 font-bold shadow-sm" type="button" @click="backToCourseList">
           {{ copy.backToList }}
@@ -4756,7 +4756,9 @@ onMounted(() => {
     <div v-if="importOpen" v-modal-dialog="closeImportDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-0 md:p-6" @click.self="closeImportDialog()">
       <div class="flex h-full max-h-none w-full max-w-3xl flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
         <div class="flex items-center justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
-          <h2 class="min-w-0 text-xl font-black md:text-2xl">{{ copy.importTitle }}</h2>
+          <h2 class="min-w-0 text-xl font-black md:text-2xl">
+            {{ importScope === "course" ? copy.createCourseFromJson : copy.importChapterQuizFromJson }}
+          </h2>
           <button class="rounded-xl border px-3 py-2 font-bold disabled:opacity-50" type="button" :disabled="importing" @click="closeImportDialog()">{{ copy.close }}</button>
         </div>
         <div class="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
