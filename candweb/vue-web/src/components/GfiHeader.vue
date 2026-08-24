@@ -38,10 +38,6 @@ async function beginAuthentication() {
   }
 }
 
-function isGroupActive(index: number) {
-  return gfiNavGroups[index].items.some((item) => route.path === item.to || route.path.startsWith(`${item.to}/`))
-}
-
 function toggleMenu(index: number) {
   openMenu.value = openMenu.value === index ? null : index
   languageOpen.value = false
@@ -85,7 +81,7 @@ watch(
         <img :src="logo" alt="Global Fintech Institute" />
       </RouterLink>
 
-      <nav class="gfi-desktop-nav" :aria-label="lang === 'zh' ? '主导航' : 'Main navigation'">
+      <!-- <nav class="gfi-desktop-nav" :aria-label="lang === 'zh' ? '主导航' : 'Main navigation'">
         <div
           v-for="(group, index) in gfiNavGroups"
           :key="group.label.en"
@@ -107,7 +103,7 @@ watch(
             </RouterLink>
           </div>
         </div>
-      </nav>
+      </nav> -->
 
       <div class="gfi-header-actions">
         <div class="gfi-language" @mouseenter="languageOpen = true" @mouseleave="languageOpen = false">
