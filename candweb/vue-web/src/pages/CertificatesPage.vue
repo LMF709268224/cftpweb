@@ -6,6 +6,7 @@ import AppShell from "@/components/AppShell.vue"
 import rewGif from "@/assets/rew.gif"
 import { apiClient } from "@/lib/apiClient"
 import { useBodyScrollLock } from "@/lib/bodyScrollLock"
+import { useDialogAccessibility } from "@/lib/dialogAccessibility"
 import { formatBackendDateOnly } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
 
@@ -15,6 +16,7 @@ const loading = ref(false)
 const previewingCertificateId = ref("")
 const loadError = ref(false)
 const celebrationVisible = ref(false)
+const celebrationDialogRef = ref<HTMLElement | null>(null)
 const CERTIFICATE_PREVIEW_TIMEOUT_MS = 20000
 const CERTIFICATE_BLOB_URL_REVOKE_DELAY_MS = 60000
 const CERTIFICATE_CELEBRATED_IDS_KEY = "cftp-certificates-celebrated-ids"
@@ -117,6 +119,12 @@ function closeCelebrationModal() {
   }
 }
 
+useDialogAccessibility(
+  () => celebrationVisible.value && Boolean(featuredCertificate.value),
+  celebrationDialogRef,
+  closeCelebrationModal,
+)
+
 function normalizeCertificates(list: any[]) {
   return list
     .map((cert: any) => {
@@ -191,9 +199,20 @@ watch(lang, () => {
       v-if="celebrationVisible && featuredCertificate"
       class="app-safe-area-overlay-spacious fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm"
     >
-      <div class="app-dialog-viewport relative flex w-full max-w-[560px] flex-col overflow-hidden rounded-[20px] bg-white shadow-[0_24px_60px_rgba(16,30,67,0.28)]">
+      <div
+        ref="celebrationDialogRef"
+        class="app-dialog-viewport relative flex w-full max-w-[560px] flex-col overflow-hidden rounded-[20px] bg-white shadow-[0_24px_60px_rgba(16,30,67,0.28)]"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="certificate-celebration-title"
+        aria-describedby="certificate-celebration-description"
+        tabindex="-1"
+      >
         <button
+          type="button"
           class="absolute right-4 top-4 z-20 flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-500 transition hover:border-primary/25 hover:text-primary md:h-10 md:w-10"
+          :aria-label="t.common.close"
+          :title="t.common.close"
           @click="closeCelebrationModal"
         >
           <X class="h-5 w-5" />
@@ -211,10 +230,10 @@ watch(lang, () => {
               {{ t.certificatesPage.celebrationModalTitle }}
             </span>
 
-            <h2 class="mt-4 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
+            <h2 id="certificate-celebration-title" class="mt-4 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
               {{ t.certificatesPage.celebrationModalHeadline }}
             </h2>
-            <p class="mx-auto mt-4 max-w-[420px] text-sm leading-7 text-muted-foreground md:text-base">
+            <p id="certificate-celebration-description" class="mx-auto mt-4 max-w-[420px] text-sm leading-7 text-muted-foreground md:text-base">
               {{ t.certificatesPage.celebrationModalDesc }}
             </p>
 
