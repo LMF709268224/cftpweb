@@ -25,7 +25,7 @@ function orderFixture(overrides: Partial<OrderFixture> = {}): OrderFixture {
     payment_status: "UNPAID",
     amount: 63000,
     currency: "USD",
-    biz_type: "PIPELINE_BUNDLE",
+    biz_type: "BUNDLE_PURCHASE",
     biz_ref_ulid: "bundle-cftp",
     ...overrides,
   }
@@ -62,6 +62,40 @@ function completedOrderDetail(order: OrderFixture) {
       },
     },
     paid_at: "2026-08-05T10:00:00Z",
+    pricing: {
+      available: true,
+      source: "GPAY_INVOICE",
+      currency_code: "USD",
+      billable_subtotal_minor: 15000,
+      promotion_discount_minor: 2500,
+      tax_minor: 400,
+      total_minor: 12900,
+      amount_paid_minor: 12900,
+      exemption_amount_recorded: false,
+      items: [{
+        item_type: "course",
+        item_ulid: "course-1",
+        title: "Certification Course",
+        unit_price_minor: 15000,
+        quantity: 1,
+        subtotal_minor: 15000,
+      }],
+      coupons: [{ code: "PACKAGE", name: "Package offer" }],
+    },
+    exemptions: [{
+      course_cc_ulid: "course-exempted-1",
+      credential_ulid: "credential-1",
+    }],
+    business_detail: {
+      found: true,
+      detail: {
+        summary: {
+          bundle_order_ulid: order.biz_ref_ulid,
+          status: "COMPLETED",
+        },
+        completed_at: "2026-08-05T10:00:00Z",
+      },
+    },
   }
 }
 
@@ -106,6 +140,37 @@ test("订单状态与可执行按钮保持一致", async ({ page }) => {
   await expect(paidPendingRow.getByText("已支付，处理中", { exact: true })).toBeVisible()
   await expect(paidPendingRow.getByRole("button", { name: "继续支付" })).toHaveCount(0)
   await expect(paidPendingRow.getByRole("button", { name: "取消支付" })).toHaveCount(0)
+})
+
+test("订单详情展示价格拆分、免考与业务订单信息", async ({ page }) => {
+  const order = orderFixture({
+    order_id: "order-priced",
+    product_name: "CFtP Priced Bundle",
+    order_status: "COMPLETED",
+    payment_status: "PAID",
+    amount: 129,
+  })
+
+  await installCandidateApiMocks(page, ({ pathname }) => {
+    if (pathname === "/api/orders") return orderListResponse([order])
+    if (pathname === `/api/orders/${order.order_id}`) return { data: completedOrderDetail(order) }
+    return undefined
+  })
+
+  await page.goto("/orders", { waitUntil: "domcontentloaded" })
+  await page.locator(".order-row").filter({ hasText: order.product_name }).click()
+
+  const dialog = page.getByRole("dialog", { name: "订单详情" })
+  await expect(dialog).toBeVisible()
+  await expect(dialog.getByText("USD 150.00", { exact: true }).first()).toBeVisible()
+  await expect(dialog.getByText("-USD 25.00", { exact: true })).toBeVisible()
+  await expect(dialog.getByText("USD 129.00", { exact: true }).last()).toBeVisible()
+  await expect(dialog.getByText("Certification Course", { exact: true })).toBeVisible()
+  await expect(dialog.getByText("Package offer", { exact: true })).toBeVisible()
+  await expect(dialog.getByText("未记录", { exact: true })).toBeVisible()
+  await expect(dialog.getByText("course-exempted-1", { exact: true })).toBeVisible()
+  await expect(dialog.getByText("认证套餐订单 ID", { exact: true })).toBeVisible()
+  await expect(dialog.getByText(order.biz_ref_ulid || "", { exact: true })).toBeVisible()
 })
 
 test("订单筛选只应用最后一次请求返回的数据", async ({ page }) => {
@@ -271,7 +336,7 @@ test("取消未支付订单后刷新列表并隐藏该订单", async ({ page }) 
   await dialog.getByRole("button", { name: "取消订单" }).click()
 
   await expect.poll(() => cancelBody).toEqual({
-    biz_type: "PIPELINE_BUNDLE",
+    biz_type: "BUNDLE_PURCHASE",
     biz_ref_ulid: "bundle-order-cancel",
   })
   await expect.poll(() => orderListRequests).toBeGreaterThanOrEqual(2)

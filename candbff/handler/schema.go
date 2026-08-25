@@ -684,21 +684,61 @@ type OrderSummaryDetail struct {
 	Meta          OrderMetaDetail `json:"meta,omitempty"`
 }
 
+type OrderPricingDetail struct {
+	Available               bool             `json:"available"`
+	Source                  string           `json:"source,omitempty"`
+	CurrencyCode            string           `json:"currency_code,omitempty"`
+	BillableSubtotalMinor   *int64           `json:"billable_subtotal_minor,omitempty"`
+	ExemptionDiscountMinor  *int64           `json:"exemption_discount_minor,omitempty"`
+	PromotionDiscountMinor  *int64           `json:"promotion_discount_minor,omitempty"`
+	TaxMinor                *int64           `json:"tax_minor,omitempty"`
+	TotalMinor              *int64           `json:"total_minor,omitempty"`
+	AmountPaidMinor         *int64           `json:"amount_paid_minor,omitempty"`
+	ExemptionAmountRecorded bool             `json:"exemption_amount_recorded"`
+	Items                   []OrderPriceItem `json:"items,omitempty"`
+	Coupons                 []OrderCoupon    `json:"coupons,omitempty"`
+	PromoCodes              []string         `json:"promo_codes,omitempty"`
+	UnavailableReason       string           `json:"unavailable_reason,omitempty"`
+}
+
+type OrderPriceItem struct {
+	ItemType       string `json:"item_type,omitempty"`
+	ItemULID       string `json:"item_ulid,omitempty"`
+	Title          string `json:"title,omitempty"`
+	UnitPriceMinor int64  `json:"unit_price_minor"`
+	Quantity       int32  `json:"quantity"`
+	SubtotalMinor  int64  `json:"subtotal_minor"`
+}
+
+type OrderCoupon struct {
+	Code           string  `json:"code,omitempty"`
+	Name           string  `json:"name,omitempty"`
+	PercentOff     float64 `json:"percent_off,omitempty"`
+	AmountOffMinor int64   `json:"amount_off_minor,omitempty"`
+	CurrencyCode   string  `json:"currency_code,omitempty"`
+}
+
+type OrderExemption struct {
+	CourseCCULID   string `json:"course_cc_ulid"`
+	CredentialULID string `json:"credential_ulid,omitempty"`
+}
+
 type OrderDetailRsp struct {
-	Found               bool               `json:"found"`
-	Summary             OrderSummaryDetail `json:"summary"`
-	BusinessDetail      any                `json:"business_detail,omitempty"`
-	GpayOrderUlid       string             `json:"gpay_order_ulid,omitempty"`
-	HasPaymentKey       bool               `json:"has_payment_key"`
-	PaidAt              string             `json:"paid_at,omitempty"`
-	ClosedAt            string             `json:"closed_at,omitempty"`
-	LastReconciledAt    string             `json:"last_reconciled_at,omitempty"`
-	Version             uint32             `json:"version,omitempty"`
-	UpdatedAt           string             `json:"updated_at,omitempty"`
-	OrderStatusAt       string             `json:"order_status_at,omitempty"`
-	PaymentStatusAt     string             `json:"payment_status_at,omitempty"`
-	DiscountUnsupported bool               `json:"discount_unsupported"`
-	Raw                 any                `json:"raw,omitempty"`
+	Found            bool                `json:"found"`
+	Summary          OrderSummaryDetail  `json:"summary"`
+	BusinessDetail   any                 `json:"business_detail,omitempty"`
+	Pricing          *OrderPricingDetail `json:"pricing"`
+	Exemptions       []OrderExemption    `json:"exemptions,omitempty"`
+	GpayOrderUlid    string              `json:"gpay_order_ulid,omitempty"`
+	HasPaymentKey    bool                `json:"has_payment_key"`
+	PaidAt           string              `json:"paid_at,omitempty"`
+	ClosedAt         string              `json:"closed_at,omitempty"`
+	LastReconciledAt string              `json:"last_reconciled_at,omitempty"`
+	Version          uint32              `json:"version,omitempty"`
+	UpdatedAt        string              `json:"updated_at,omitempty"`
+	OrderStatusAt    string              `json:"order_status_at,omitempty"`
+	PaymentStatusAt  string              `json:"payment_status_at,omitempty"`
+	Raw              any                 `json:"raw,omitempty"`
 }
 
 type CancelOrderReq struct {
