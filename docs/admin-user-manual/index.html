@@ -1,0 +1,1791 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="CFTP 管理后台使用手册">
+  <title>CFTP 管理后台使用手册</title>
+  <style>
+    :root {
+      --ink: #142033;
+      --muted: #64748b;
+      --line: #dbe4ee;
+      --soft: #f4f7fb;
+      --paper: #ffffff;
+      --blue: #0756a6;
+      --blue-dark: #073b72;
+      --cyan: #00a6b2;
+      --green: #087a55;
+      --amber: #9a5b00;
+      --red: #b42318;
+      --shadow: 0 12px 28px rgba(20, 32, 51, 0.09);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--soft);
+      font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.7;
+      letter-spacing: 0;
+    }
+    button, input { font: inherit; letter-spacing: 0; }
+    button { cursor: pointer; }
+    a { color: inherit; }
+    code {
+      padding: 2px 6px;
+      border: 1px solid #d7e1eb;
+      border-radius: 4px;
+      color: #073b72;
+      background: #f3f7fb;
+      font-family: Consolas, "Courier New", monospace;
+      overflow-wrap: anywhere;
+    }
+    pre {
+      margin: 16px 0;
+      padding: 16px;
+      overflow-x: auto;
+      border: 1px solid #cbd8e5;
+      border-radius: 6px;
+      color: #e8f2fb;
+      background: #17324d;
+    }
+    pre code { padding: 0; border: 0; color: inherit; background: transparent; font-size: 13px; overflow-wrap: normal; }
+    h1, h2, h3, h4 { margin: 0; line-height: 1.3; letter-spacing: 0; }
+    p { margin: 0; }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 66px;
+      padding: 10px 28px;
+      color: white;
+      background: #073b72;
+      border-bottom: 4px solid var(--cyan);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      border: 1px solid rgba(255,255,255,.45);
+      border-radius: 6px;
+      font-weight: 900;
+      background: #0b61b5;
+    }
+    .brand strong { display: block; font-size: 17px; }
+    .brand small { display: block; color: #c9dcf0; }
+    .top-actions { display: flex; gap: 8px; }
+    .icon-button, .text-button {
+      min-height: 38px;
+      border: 1px solid rgba(255,255,255,.42);
+      border-radius: 6px;
+      color: white;
+      background: transparent;
+    }
+    .icon-button { width: 40px; font-size: 20px; }
+    .text-button { padding: 0 14px; font-weight: 700; }
+    .icon-button:hover, .text-button:hover { background: rgba(255,255,255,.12); }
+
+    .shell { max-width: 1440px; margin: 0 auto; padding: 28px; }
+    .catalog-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(260px, 380px);
+      gap: 28px;
+      align-items: end;
+      padding: 30px 0 24px;
+      border-bottom: 1px solid var(--line);
+    }
+    .eyebrow { margin-bottom: 8px; color: var(--blue); font-size: 13px; font-weight: 900; }
+    .catalog-head h1 { font-size: clamp(28px, 4vw, 46px); }
+    .catalog-head p { max-width: 720px; margin-top: 12px; color: var(--muted); }
+    .search-wrap label { display: block; margin-bottom: 7px; font-size: 13px; font-weight: 800; }
+    .search-wrap input {
+      width: 100%;
+      height: 44px;
+      padding: 0 13px;
+      border: 1px solid #b9c8d8;
+      border-radius: 6px;
+      color: var(--ink);
+      background: white;
+      outline: none;
+    }
+    .search-wrap input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(7,86,166,.12); }
+
+    .section-title { margin: 28px 0 12px; font-size: 20px; }
+    .module-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .module {
+      position: relative;
+      min-height: 156px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      text-align: left;
+      color: var(--ink);
+      background: white;
+      box-shadow: 0 4px 12px rgba(20,32,51,.04);
+    }
+    .module.ready:hover { border-color: #77aadd; box-shadow: var(--shadow); transform: translateY(-1px); }
+    .module.pending { cursor: default; color: #68768a; background: #f9fbfd; }
+    .module-icon {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      margin-bottom: 14px;
+      border-radius: 6px;
+      color: white;
+      background: var(--blue);
+      font-weight: 900;
+    }
+    .module h2 { font-size: 18px; }
+    .module p { margin-top: 7px; color: var(--muted); font-size: 13px; }
+    .module-state {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      padding: 2px 8px;
+      border: 1px solid #c7d4e2;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      color: #516173;
+      background: white;
+    }
+    .module.ready .module-state { border-color: #a9dfd1; color: var(--green); background: #effbf7; }
+    .catalog-foot { margin-top: 24px; padding: 18px 0; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+
+    .manual { display: none; }
+    .manual.active { display: block; }
+    .catalog.hidden { display: none; }
+    .breadcrumb {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin: 4px 0 20px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .breadcrumb button { padding: 0; border: 0; color: var(--blue); background: transparent; font-weight: 800; }
+    .manual-layout { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 24px; align-items: start; }
+    .side-nav {
+      position: sticky;
+      top: 94px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: white;
+    }
+    .side-nav strong { display: block; padding: 7px 10px 10px; font-size: 13px; }
+    .side-nav a {
+      display: block;
+      padding: 7px 10px;
+      border-left: 3px solid transparent;
+      color: #506076;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .side-nav a:hover, .side-nav a.active { border-left-color: var(--cyan); color: var(--blue-dark); background: #f1f7fc; font-weight: 800; }
+    .content { min-width: 0; }
+    .manual-title {
+      padding: 28px 30px;
+      border-radius: 8px;
+      color: white;
+      background: #0756a6;
+      box-shadow: var(--shadow);
+    }
+    .manual-title h1 { font-size: 36px; }
+    .manual-title p { max-width: 760px; margin-top: 12px; color: #e3effa; }
+    .manual-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+    .manual-meta span { padding: 3px 9px; border: 1px solid rgba(255,255,255,.35); border-radius: 999px; font-size: 12px; }
+
+    .doc-section {
+      scroll-margin-top: 90px;
+      padding: 30px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .doc-section > h2 { margin-bottom: 14px; font-size: 26px; }
+    .doc-section > h3 { margin: 24px 0 10px; font-size: 19px; }
+    .lead { color: var(--muted); font-size: 16px; }
+    .note, .warning, .danger {
+      margin: 16px 0;
+      padding: 14px 16px;
+      border-left: 4px solid;
+      border-radius: 4px;
+    }
+    .note { border-color: var(--blue); color: #123b63; background: #edf6ff; }
+    .warning { border-color: #d18a13; color: #684006; background: #fff8e8; }
+    .danger { border-color: var(--red); color: #78231c; background: #fff1f0; }
+    .note strong, .warning strong, .danger strong { display: block; margin-bottom: 3px; }
+
+    .shot { margin: 20px 0; border: 1px solid #cbd8e5; border-radius: 8px; overflow: hidden; background: white; box-shadow: var(--shadow); }
+    .shot img { display: block; width: 100%; height: auto; cursor: zoom-in; background: #edf2f7; }
+    .shot figcaption { padding: 11px 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+    .shot-missing {
+      display: none;
+      min-height: 230px;
+      place-items: center;
+      padding: 30px;
+      text-align: center;
+      color: #526377;
+      background: repeating-linear-gradient(135deg, #f7f9fc, #f7f9fc 16px, #eef3f8 16px, #eef3f8 32px);
+    }
+    .shot-missing strong { display: block; color: var(--ink); font-size: 16px; }
+    .shot-missing code { display: inline-block; margin-top: 8px; }
+
+    .term-grid, .action-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
+    .term, .action { padding: 16px 0; border-top: 3px solid #b9d6ef; }
+    .term h3, .action h3 { margin-bottom: 5px; font-size: 16px; }
+    .term p, .action p { color: var(--muted); font-size: 14px; }
+    .term.critical { border-color: #e1a43e; }
+
+    table { width: 100%; margin: 16px 0; border-collapse: collapse; background: white; }
+    th, td { padding: 11px 12px; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { color: #30435a; background: #edf3f8; font-size: 13px; }
+    td { font-size: 14px; }
+    .required { color: var(--red); font-weight: 900; }
+    .steps { margin: 16px 0; padding: 0; list-style: none; counter-reset: step; }
+    .steps li { position: relative; min-height: 48px; padding: 2px 0 18px 48px; counter-increment: step; }
+    .steps li::before {
+      content: counter(step);
+      position: absolute;
+      left: 0;
+      top: 0;
+      display: grid;
+      place-items: center;
+      width: 31px;
+      height: 31px;
+      border-radius: 50%;
+      color: white;
+      background: var(--blue);
+      font-weight: 900;
+    }
+    .steps li:not(:last-child)::after { content: ""; position: absolute; left: 15px; top: 34px; width: 1px; height: calc(100% - 32px); background: #b9c9d9; }
+    .steps strong { display: block; }
+    .steps span { color: var(--muted); font-size: 14px; }
+    .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin: 16px 0; }
+    .flow span { padding: 7px 10px; border: 1px solid #bfcddd; border-radius: 6px; background: white; font-weight: 800; font-size: 13px; }
+    .flow b { color: var(--cyan); }
+    .faq details { margin-top: 8px; border: 1px solid var(--line); border-radius: 6px; background: white; }
+    .faq summary { padding: 13px 15px; cursor: pointer; font-weight: 800; }
+    .faq details p { padding: 0 15px 15px; color: var(--muted); }
+    .checklist { columns: 2; column-gap: 28px; padding-left: 20px; }
+    .checklist li { break-inside: avoid; margin-bottom: 7px; }
+    .back-top { display: inline-block; margin-top: 18px; color: var(--blue); font-weight: 800; text-decoration: none; }
+
+    .toast {
+      position: fixed;
+      right: 22px;
+      bottom: 22px;
+      z-index: 40;
+      max-width: 360px;
+      padding: 12px 15px;
+      border-radius: 6px;
+      color: white;
+      background: #26384d;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
+      transition: .18s ease;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    @media (max-width: 980px) {
+      .module-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .manual-layout { grid-template-columns: 1fr; }
+      .side-nav { position: static; display: flex; gap: 4px; overflow-x: auto; }
+      .side-nav strong { display: none; }
+      .side-nav a { flex: 0 0 auto; border-left: 0; border-bottom: 3px solid transparent; }
+      .side-nav a:hover, .side-nav a.active { border-left-color: transparent; border-bottom-color: var(--cyan); }
+    }
+    @media (max-width: 680px) {
+      body { overflow-x: hidden; }
+      .topbar { padding: 9px 14px; }
+      .brand small, .text-button { display: none; }
+      .shell { width: 100vw; max-width: 100vw; padding: 16px; overflow-x: hidden; }
+      .catalog-head { grid-template-columns: 1fr; gap: 18px; }
+      .module-grid, .term-grid, .action-grid { grid-template-columns: 1fr; }
+      .manual-layout, .content { width: calc(100vw - 32px); min-width: 0; max-width: calc(100vw - 32px); }
+      .manual-title, .doc-section { width: 100%; min-width: 0; max-width: 100%; }
+      .side-nav { width: calc(100vw - 32px); max-width: calc(100vw - 32px); }
+      .manual-title { padding: 22px 20px; }
+      .manual-title h1 { font-size: 28px; overflow-wrap: anywhere; word-break: break-all; }
+      .manual-title p, .doc-section > p { overflow-wrap: anywhere; }
+      .flow { max-width: 100%; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 6px; }
+      .flow span { flex: 0 0 auto; }
+      .checklist { columns: 1; }
+      table { display: block; overflow-x: auto; white-space: nowrap; }
+    }
+    @media print {
+      body { background: white; font-size: 12px; }
+      .topbar, .side-nav, .breadcrumb, .back-top { display: none !important; }
+      .shell { max-width: none; padding: 0; }
+      .catalog.hidden { display: none; }
+      .manual { display: none; }
+      .manual.active { display: block; }
+      .manual-layout { display: block; }
+      .manual-title { box-shadow: none; print-color-adjust: exact; }
+      .doc-section { break-inside: avoid; }
+      .shot { box-shadow: none; break-inside: avoid; }
+    }
+  </style>
+</head>
+<body id="top">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">C</div>
+      <div><strong>CFTP 管理后台使用手册</strong><small>运营配置与日常维护指南</small></div>
+    </div>
+    <div class="top-actions">
+      <button class="text-button" type="button" onclick="showCatalog()">返回目录</button>
+      <button class="icon-button" type="button" title="打印或另存为 PDF" aria-label="打印或另存为 PDF" onclick="window.print()">&#128438;</button>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="catalog" id="catalog">
+      <div class="catalog-head">
+        <div>
+          <div class="eyebrow">ADMIN OPERATIONS GUIDE</div>
+          <h1>管理后台功能目录</h1>
+          <p>按业务模块查找配置方法、字段含义、操作顺序和发布前检查事项。当前版本已提供课程、认证、商品、资格定义、证书模板、资源包和资源文件配置完整手册，其余章节将按同一结构逐步补充。</p>
+        </div>
+        <div class="search-wrap">
+          <label for="module-search">查找模块</label>
+          <input id="module-search" type="search" placeholder="例如：课程、资格、资源包" oninput="filterModules(this.value)">
+        </div>
+      </div>
+
+      <h2 class="section-title">配置管理</h2>
+      <div class="module-grid" id="module-grid">
+        <button class="module ready" type="button" data-name="课程配置 GLMS 章节 课时 测验 资料" onclick="openManual('course')">
+          <span class="module-state">已完成</span><span class="module-icon">课</span>
+          <h2>课程配置</h2><p>创建课程，维护章节、课时、资料和测验，并管理版本与发布状态。</p>
+        </button>
+        <button class="module ready" type="button" data-name="认证配置 管线 阶段 单元 资格 证书 免考 互斥" onclick="openManual('certification')">
+          <span class="module-state">已完成</span><span class="module-icon">认</span>
+          <h2>认证配置</h2><p>维护认证管线、阶段、课程单元、资格条件、免考和证书。</p>
+        </button>
+        <button class="module ready" type="button" data-name="商品配置 Bundle 认证 会员 Stripe 价格 发布" onclick="openManual('product')">
+          <span class="module-state">已完成</span><span class="module-icon">商</span>
+          <h2>商品配置</h2><p>关联认证或会员方案，配置价格、优惠和商品发布状态。</p>
+        </button>
+        <button class="module ready" type="button" data-name="资格定义 认证资格 免考资格 通用资格 学业类 文件材料 资源路径" onclick="openManual('qualification')">
+          <span class="module-state">已完成</span><span class="module-icon">资</span>
+          <h2>资格定义</h2><p>定义证书、免考和终审材料等可复用资格。</p>
+        </button>
+        <button class="module ready" type="button" data-name="证书模板 PDF HTML 参数 预览 多语言 版本" onclick="openManual('certificate-template')">
+          <span class="module-state">已完成</span><span class="module-icon">证</span>
+          <h2>证书模板配置</h2><p>维护证书 HTML 模板、渲染预览、版本和名称描述翻译。</p>
+        </button>
+        <button class="module pending" type="button" data-name="会员方案配置 Membership" onclick="pendingModule('会员方案配置')">
+          <span class="module-state">待补充</span><span class="module-icon">会</span>
+          <h2>会员方案配置</h2><p>维护会员等级、有效期、权益和续费规则。</p>
+        </button>
+        <button class="module ready" type="button" data-name="资源包配置 资源文件 GLMS 视频 PDF ZIP 上传 发布 权限" onclick="openManual('resource-pack')">
+          <span class="module-state">已完成</span><span class="module-icon">源</span>
+          <h2>资源包与资源文件</h2><p>管理独立学习资源、文件上传、访问路径、版本和发布状态。</p>
+        </button>
+      </div>
+
+      <h2 class="section-title">业务运营</h2>
+      <div class="module-grid">
+        <button class="module pending" type="button" data-name="审核中心 资格申请" onclick="pendingModule('审核中心')">
+          <span class="module-state">待补充</span><span class="module-icon">审</span>
+          <h2>审核中心</h2><p>处理考生资格申请、材料补交、通过与拒绝。</p>
+        </button>
+        <button class="module pending" type="button" data-name="认证管理 实例 流程 证书任务" onclick="pendingModule('认证管理')">
+          <span class="module-state">待补充</span><span class="module-icon">管</span>
+          <h2>认证管理</h2><p>查看考生认证实例、进度、资格审核和证书任务。</p>
+        </button>
+        <button class="module pending" type="button" data-name="考试管理 预约 成绩" onclick="pendingModule('考试管理')">
+          <span class="module-state">待补充</span><span class="module-icon">考</span>
+          <h2>考试管理</h2><p>查询考试预约、考试状态、成绩和同步记录。</p>
+        </button>
+      </div>
+      <div class="catalog-foot">文档版本：2026-08-25 · 适用系统：CFTP 管理后台</div>
+    </section>
+
+    <article class="manual" id="course-manual">
+      <nav class="breadcrumb" aria-label="面包屑">
+        <button type="button" onclick="showCatalog()">管理后台目录</button><span>/</span><span>课程配置</span>
+      </nav>
+      <div class="manual-layout">
+        <nav class="side-nav" aria-label="课程配置章节">
+          <strong>课程配置</strong>
+          <a href="#course-overview">功能概览</a>
+          <a href="#course-concepts">关键概念</a>
+          <a href="#course-create">新建课程</a>
+          <a href="#course-actions">列表按钮</a>
+          <a href="#course-content">课程内容</a>
+          <a href="#course-json">JSON 创建</a>
+          <a href="#course-publish">发布流程</a>
+          <a href="#course-faq">常见问题</a>
+          <a href="#course-checklist">发布检查</a>
+        </nav>
+
+        <div class="content">
+          <header class="manual-title">
+            <div class="eyebrow" style="color:#9eeef1">配置管理 / GLMS</div>
+            <h1>课程配置使用手册</h1>
+            <p>面向管理后台运营人员，说明课程的创建、内容维护、JSON 复用、版本管理和发布操作。</p>
+            <div class="manual-meta"><span>角色：课程运营</span><span>难度：基础至进阶</span><span>更新：2026-08-25</span></div>
+          </header>
+
+          <section class="doc-section" id="course-overview">
+            <h2>1. 功能概览</h2>
+            <p class="lead">“课程配置”维护一门课程本身的学习内容。认证的阶段、价格、前置资格、免考和发证规则不在这里配置，它们分别属于“认证配置”和“商品配置”。</p>
+            <div class="flow" aria-label="课程配置结构">
+              <span>课程</span><b>→</b><span>章节</span><b>→</b><span>课时</span><b>→</b><span>正文 / 文件 / 视频</span>
+            </div>
+            <div class="note"><strong>先课程，后认证，再商品</strong>课程发布后，才能在认证配置的“课程单元”中选择；认证发布后，再由商品绑定并配置价格。</div>
+            <figure class="shot">
+              <img src="assets/course/course-list.png" alt="课程配置列表及顶部操作按钮" data-filename="course/course-list.png">
+              <div class="shot-missing"><div><strong>待补截图：课程配置列表</strong><code>assets/course/course-list.png</code></div></div>
+              <figcaption>图 1：课程配置列表。顶部提供刷新、从 JSON 创建课程和新建课程；每行提供查看详情、编辑和克隆。</figcaption>
+            </figure>
+          </section>
+
+          <section class="doc-section" id="course-concepts">
+            <h2>2. 先理解这些概念</h2>
+            <div class="term-grid">
+              <div class="term critical"><h3>课程 GPath</h3><p>课程业务系列的稳定标识，用来把同一门课程的不同版本关联起来。它不是课程标题，也不是文件地址。</p></div>
+              <div class="term"><h3>课程 ID / ULID</h3><p>某一个具体课程版本的唯一技术 ID，由系统生成。日常配置不需要手工填写。</p></div>
+              <div class="term"><h3>版本</h3><p>同一 GPath 下的版本号。克隆课程会创建同一门课程的新草稿版本。</p></div>
+              <div class="term"><h3>状态</h3><p>草稿可继续配置；已发布可供认证引用；已弃用是历史版本，不应继续用于新配置。</p></div>
+            </div>
+
+            <h3>课程 GPath 应该怎么填</h3>
+            <table>
+              <thead><tr><th>规则</th><th>说明</th><th>示例</th></tr></thead>
+              <tbody>
+                <tr><td>必须以 <code>/</code> 开头</td><td>使用分段路径表达业务归属。</td><td><code>/courses/fcrc-foundation</code></td></tr>
+                <tr><td>只使用小写字符</td><td>允许小写英文字母、数字、连字符 <code>-</code>、下划线 <code>_</code> 和斜杠。</td><td><code>/courses/cfta-level-1</code></td></tr>
+                <tr><td>新课程使用新 GPath</td><td>不同课程不得共用 GPath，即使标题相似也要分开。</td><td>A 与 B 使用不同路径</td></tr>
+                <tr><td>升级版本沿用 GPath</td><td>通过“克隆”创建同一课程的新版本时，系统自动沿用原 GPath。</td><td>v1、v2 共用一个 GPath</td></tr>
+                <tr><td>最长 255 个字符</td><td>建议保持简短、稳定，不写版本号、日期或人员姓名。</td><td>不要写 <code>-v2</code> 或 <code>-2026</code></td></tr>
+              </tbody>
+            </table>
+            <div class="danger"><strong>不要把 GPath 当成课程名称修改</strong>一门独立的新课程必须使用新的 GPath。复制其他课程的 JSON 后，也必须先修改 <code>course_gpath</code>，否则会与原课程系列发生冲突。</div>
+          </section>
+
+          <section class="doc-section" id="course-create">
+            <h2>3. 新建课程</h2>
+            <p class="lead">适用于从空白开始创建一门独立课程。点击页面右上角“新建课程”。</p>
+            <figure class="shot">
+              <img src="assets/course/course-create.png" alt="新建课程弹窗" data-filename="course/course-create.png">
+              <div class="shot-missing"><div><strong>待补截图：新建课程弹窗</strong><code>assets/course/course-create.png</code></div></div>
+              <figcaption>图 2：新建课程。课程标题与 GPath 为必填项，描述和时长用于运营展示及课程信息维护。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>字段</th><th>是否必填</th><th>填写说明</th></tr></thead>
+              <tbody>
+                <tr><td>课程标题</td><td class="required">必填</td><td>考生端和管理后台显示的课程名称。建议使用正式、可识别的名称。</td></tr>
+                <tr><td>描述</td><td>选填</td><td>说明课程目标、适用对象和内容范围。不要在这里填写内部备注。</td></tr>
+                <tr><td>课程 GPath</td><td class="required">必填</td><td>系统会随标题生成建议路径。新课程确认唯一即可，通常不要手动改成其他课程的路径。</td></tr>
+                <tr><td>时长分钟</td><td>选填</td><td>课程预计总学习时长，使用非负整数；未知时可以暂填 0，发布前补齐。</td></tr>
+              </tbody>
+            </table>
+            <ol class="steps">
+              <li><strong>填写课程标题和描述</strong><span>标题应与对外课程名称一致。</span></li>
+              <li><strong>展开“高级配置”检查 GPath</strong><span>确认是新路径，且不含大写字母、空格或中文。</span></li>
+              <li><strong>填写课程时长</strong><span>按全部课时的预计学习时间汇总。</span></li>
+              <li><strong>点击“保存课程”</strong><span>系统先创建草稿，随后进入课程详情继续配置内容。</span></li>
+            </ol>
+          </section>
+
+          <section class="doc-section" id="course-actions">
+            <h2>4. 列表页按钮和操作</h2>
+            <div class="action-grid">
+              <div class="action"><h3>刷新</h3><p>重新读取课程列表。其他管理员刚完成操作，或状态未及时更新时使用。</p></div>
+              <div class="action"><h3>从 JSON 创建课程</h3><p>把符合课程导入格式的 JSON 创建为新课程。适合复制既有课程结构后再调整。</p></div>
+              <div class="action"><h3>新建课程</h3><p>从空白草稿开始创建一门新课程。</p></div>
+              <div class="action"><h3>查看详情</h3><p>查看课程完整字段和可复制的课程 JSON，不直接修改数据。</p></div>
+              <div class="action"><h3>编辑</h3><p>进入课程详情，维护基础信息、章节、课时、资料和测验。</p></div>
+              <div class="action"><h3>克隆</h3><p>创建同一课程的新草稿版本，沿用原 GPath 和内容。不要用它创建另一门独立课程。</p></div>
+            </div>
+            <div class="warning"><strong>“克隆”和“从 JSON 创建课程”的区别</strong>克隆用于同一门课程升级版本；从 JSON 创建用于创建另一门课程，导入前必须改成新的 <code>course_gpath</code>。</div>
+          </section>
+
+          <section class="doc-section" id="course-content">
+            <h2>5. 维护课程内容</h2>
+            <p class="lead">课程草稿创建后，按章节、课时、资料和测验逐层维护。先建立章节，再把课时和章节测验挂到正确章节。</p>
+            <figure class="shot">
+              <img src="assets/course/course-content.png" alt="课程章节、课时和资料区域" data-filename="course/course-content.png">
+              <div class="shot-missing"><div><strong>待补截图：章节、课时和课程资料</strong><code>assets/course/course-content.png</code></div></div>
+              <figcaption>图 3：课程内容区域。章节是内容分组，课时承载具体学习内容；课程资料分为候选端辅助资料和普通文件资料。</figcaption>
+            </figure>
+
+            <h3>章节与课时</h3>
+            <table>
+              <thead><tr><th>对象</th><th>作用</th><th>配置要点</th></tr></thead>
+              <tbody>
+                <tr><td>章节</td><td>组织课程内容的一级目录。</td><td>填写标题和排序；建议先创建全部章节，再逐一添加课时。</td></tr>
+                <tr><td>课时</td><td>考生实际学习的内容单元。</td><td>选择所属章节、标题、排序和课时类型，再填写正文或上传对应资源。</td></tr>
+              </tbody>
+            </table>
+
+            <h3>两类课程资料</h3>
+            <table>
+              <thead><tr><th>类型</th><th>考生端用途</th><th>何时使用</th></tr></thead>
+              <tbody>
+                <tr><td>候选端辅助资料</td><td>显示在考生端“课程资料 / Supplementary Materials”列表。</td><td>按章节提供文章、视频、PDF 或外部链接时使用。优先通过单条表单维护。</td></tr>
+                <tr><td>普通文件资料</td><td>课程级文件资源。</td><td>提供下载文件或课程附件时使用，不等同于候选端辅助资料列表。</td></tr>
+              </tbody>
+            </table>
+            <div class="note"><strong>辅助资料看不到时检查什么</strong>确认已创建辅助资料配置，并且 <code>supplementary_material.data_json</code> 中存在有效记录；外部链接需要填写完整的 <code>https://</code> 地址。</div>
+
+            <figure class="shot">
+              <img src="assets/course/course-quizzes.png" alt="课程测验题库区域" data-filename="course/course-quizzes.png">
+              <div class="shot-missing"><div><strong>待补截图：测验题库</strong><code>assets/course/course-quizzes.png</code></div></div>
+              <figcaption>图 4：测验题库。测验可挂在课程、章节或课时下；新增前先确认挂载层级和所属对象。</figcaption>
+            </figure>
+            <h3>测验题库</h3>
+            <ol class="steps">
+              <li><strong>点击“加载测验”</strong><span>刷新当前课程下所有课程级、章节级和课时级测验。</span></li>
+              <li><strong>点击“新测验”</strong><span>选择挂载层级和所属对象，填写测验标题及规则。</span></li>
+              <li><strong>添加题目和选项</strong><span>设置题型、分值、必答、正确选项和排序。</span></li>
+              <li><strong>复核挂载位置</strong><span>挂错层级会导致考生在错误的学习节点看到测验。</span></li>
+            </ol>
+          </section>
+
+          <section class="doc-section" id="course-json">
+            <h2>6. 使用 JSON 创建课程</h2>
+            <p class="lead">适合以现有课程为模板快速创建结构相似的新课程。JSON 不是备份恢复文件，导入前仍需人工检查业务字段。</p>
+            <ol class="steps">
+              <li><strong>在源课程点击“查看详情”</strong><span>切换到“可导入 JSON”并点击“复制 JSON”。</span></li>
+              <li><strong>修改新课程字段</strong><span>至少修改标题和 <code>course_gpath</code>；按需要调整描述、时长、章节、课时和测验。</span></li>
+              <li><strong>点击“从 JSON 创建课程”</strong><span>上传 JSON 文件或直接粘贴内容。</span></li>
+              <li><strong>等待导入完成</strong><span>系统会依次创建课程草稿、章节、课时和章节测验，并在最后校验数量。</span></li>
+              <li><strong>进入草稿补充未覆盖配置</strong><span>逐项检查资料、测验和文件资源后再发布。</span></li>
+            </ol>
+            <div class="warning"><strong>当前 JSON 的覆盖范围</strong>支持课程基础信息、章节、课时和章节测验。普通资料、辅助资料、课程测验及课时测验需要在新课程中另行配置。</div>
+            <div class="danger"><strong>导入失败后不要连续点击重试</strong>失败时页面会保留已经创建的草稿 ID。先进入该草稿确认已导入到哪一步，避免重复创建章节或测验。</div>
+          </section>
+
+          <section class="doc-section" id="course-publish">
+            <h2>7. 推荐的配置与发布顺序</h2>
+            <div class="flow"><span>创建草稿</span><b>→</b><span>基础信息</span><b>→</b><span>章节</span><b>→</b><span>课时</span><b>→</b><span>资料</span><b>→</b><span>测验</span><b>→</b><span>复核</span><b>→</b><span>发布</span></div>
+            <p>发布会使课程成为可被认证配置引用的正式版本。同一 GPath 发布新版本时，旧的当前版本会进入历史状态，因此发布前应确认认证配置准备切换到哪个课程版本。</p>
+            <div class="warning"><strong>不要直接在生产内容上试配置</strong>先在草稿完成全部编辑和预览，再发布。已经发布的课程如果需要大幅调整，应使用“克隆”创建新草稿版本。</div>
+          </section>
+
+          <section class="doc-section faq" id="course-faq">
+            <h2>8. 常见问题</h2>
+            <details><summary>新课程和新版本有什么区别？</summary><p>新课程是独立业务对象，必须使用新的 GPath；新版本是同一课程的升级，使用“克隆”创建并沿用原 GPath。</p></details>
+            <details><summary>为什么 GPath 不能填中文或大写字母？</summary><p>GPath 是跨服务使用的稳定技术标识。系统只接受以斜杠开头的小写字母、数字、连字符、下划线和分段斜杠。</p></details>
+            <details><summary>改了课程标题，GPath 也要一起改吗？</summary><p>通常不需要。标题是展示名称，GPath 是业务系列标识。课程已经创建后，不要因文案调整随意改变 GPath。</p></details>
+            <details><summary>为什么认证配置里选不到刚创建的课程？</summary><p>先确认课程是否已发布。认证配置只能绑定可用的已发布课程，草稿、已下架或不可用版本不会出现在选择列表中。</p></details>
+            <details><summary>候选端为什么看不到课程资料？</summary><p>先判断要展示的是“辅助资料”还是“普通文件资料”。候选端 Supplementary Materials 依赖辅助资料配置及其 data_json；普通文件不会自动出现在该列表。</p></details>
+            <details><summary>JSON 导入后为什么有些资料或测验没有出现？</summary><p>当前导入范围不包含普通资料、辅助资料、课程测验和课时测验。这些内容需要进入新草稿后另行配置。</p></details>
+          </section>
+
+          <section class="doc-section" id="course-checklist">
+            <h2>9. 发布前检查清单</h2>
+            <ul class="checklist">
+              <li>课程标题和描述使用正式对外文案</li>
+              <li>GPath 与业务对象匹配且未误用其他课程路径</li>
+              <li>课程时长已填写</li>
+              <li>章节顺序正确且无空章节</li>
+              <li>每个课时挂载到正确章节</li>
+              <li>正文、文件或视频资源可正常打开</li>
+              <li>辅助资料在候选端展示位置正确</li>
+              <li>普通资料的文件名称和内容正确</li>
+              <li>测验挂载层级正确</li>
+              <li>题目分值、正确答案和排序已复核</li>
+              <li>JSON 创建的课程已补齐未导入内容</li>
+              <li>确认发布的是目标课程版本</li>
+            </ul>
+            <a class="back-top" href="#top">返回顶部</a>
+          </section>
+        </div>
+      </div>
+    </article>
+
+    <article class="manual" id="certification-manual">
+      <nav class="breadcrumb" aria-label="面包屑">
+        <button type="button" onclick="showCatalog()">管理后台目录</button><span>/</span><span>认证配置</span>
+      </nav>
+      <div class="manual-layout">
+        <nav class="side-nav" aria-label="认证配置章节">
+          <strong>认证配置</strong>
+          <a href="#certification-overview">功能概览</a>
+          <a href="#certification-concepts">关键概念</a>
+          <a href="#certification-create">新建与版本</a>
+          <a href="#certification-stages">阶段</a>
+          <a href="#certification-units">课程单元</a>
+          <a href="#certification-qualifications">资格与证书</a>
+          <a href="#certification-rules">报读限制</a>
+          <a href="#certification-example">CFTA / CFTP 示例</a>
+          <a href="#certification-publish">保存与发布</a>
+          <a href="#certification-faq">常见问题</a>
+          <a href="#certification-checklist">发布检查</a>
+        </nav>
+
+        <div class="content">
+          <header class="manual-title">
+            <div class="eyebrow" style="color:#9eeef1">配置管理 / GCC</div>
+            <h1>认证配置使用手册</h1>
+            <p>面向认证运营人员，说明认证管线的阶段、课程单元、免考、资格条件、证书、报读限制和版本发布。</p>
+            <div class="manual-meta"><span>角色：认证运营</span><span>难度：进阶</span><span>更新：2026-08-25</span></div>
+          </header>
+
+          <section class="doc-section" id="certification-overview">
+            <h2>1. 功能概览</h2>
+            <p class="lead">“认证配置”把已发布课程组织成一条可报读的认证管线，并规定购买门槛、课程免考、结业审核、最终发证和跨管线互斥规则。课程内容和商品价格不在这里维护。</p>
+            <div class="flow" aria-label="认证配置结构">
+              <span>认证管线</span><b>→</b><span>阶段</span><b>→</b><span>课程单元</span><b>→</b><span>终审</span><b>→</b><span>最终证书</span>
+            </div>
+            <div class="note"><strong>依赖关系</strong>先在“课程配置”发布课程，在“资格定义”和“证书模板配置”准备资格与 PDF 模板，再完成认证配置；认证发布后，商品才能引用并配置价格。</div>
+            <figure class="shot">
+              <img src="assets/certification/certification-list.png" alt="认证配置列表" data-filename="certification/certification-list.png">
+              <div class="shot-missing"><div><strong>待补截图：认证配置列表</strong><code>assets/certification/certification-list.png</code></div></div>
+              <figcaption>图 1：认证配置列表。可按分类和状态筛选，并区分当前版本、草稿、已发布和已下架版本。</figcaption>
+            </figure>
+          </section>
+
+          <section class="doc-section" id="certification-concepts">
+            <h2>2. 先理解这些概念</h2>
+            <div class="term-grid">
+              <div class="term critical"><h3>认证 GPath / 资源路径</h3><p>认证业务系列的稳定路径，也是跨服务识别管线的关键字段。同一认证的不同版本沿用它，不同认证必须使用不同路径。</p></div>
+              <div class="term"><h3>认证 ID / ULID</h3><p>某个具体认证版本的唯一 ID，由系统生成。商品和流水最终会关联到具体版本。</p></div>
+              <div class="term"><h3>阶段</h3><p>认证学习流程的分组，例如 L1、L2。阶段按排序依次展示，每个阶段至少包含一个课程单元。</p></div>
+              <div class="term"><h3>课程单元</h3><p>阶段中的学习和计费单位，绑定一门已发布课程，可附带考试、免考及单元证书规则。</p></div>
+            </div>
+            <table>
+              <thead><tr><th>对象</th><th>新业务对象</th><th>同一对象升级版本</th></tr></thead>
+              <tbody>
+                <tr><td>GPath</td><td>使用新的唯一 GPath</td><td>沿用原 GPath</td></tr>
+                <tr><td>创建方式</td><td>点击“新建认证”</td><td>在原版本上点击“克隆版本”</td></tr>
+                <tr><td>结果</td><td>形成独立认证系列</td><td>形成同一认证的下一草稿版本</td></tr>
+              </tbody>
+            </table>
+            <div class="danger"><strong>不要通过修改名称来区分不同认证</strong>名称只是展示文案。把另一条认证误用为相同 GPath，会被识别成同一认证的版本，影响发布切换、商品引用和互斥判断。</div>
+          </section>
+
+          <section class="doc-section" id="certification-create">
+            <h2>3. 新建认证与版本管理</h2>
+            <figure class="shot">
+              <img src="assets/certification/certification-create.png" alt="新建认证弹窗" data-filename="certification/certification-create.png">
+              <div class="shot-missing"><div><strong>待补截图：新建认证</strong><code>assets/certification/certification-create.png</code></div></div>
+              <figcaption>图 2：新建认证。填写名称、描述，并在高级配置中检查分类提示和资源路径。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>字段</th><th>是否必填</th><th>填写说明</th></tr></thead>
+              <tbody>
+                <tr><td>名称</td><td class="required">必填</td><td>管理后台和考生端显示的正式认证名称。</td></tr>
+                <tr><td>描述</td><td>选填</td><td>说明认证目标、对象和学习范围，不填写内部备注。</td></tr>
+                <tr><td>分类提示</td><td class="required">必填</td><td>用于列表分组和筛选，例如 <code>CFtP</code>、<code>CFtA</code>；同系列保持一致。</td></tr>
+                <tr><td>资源路径</td><td class="required">必填</td><td>即认证 GPath。建议采用系统生成值并确认唯一，例如 <code>/gcc/pipeline/core/cftp</code>。</td></tr>
+              </tbody>
+            </table>
+            <figure class="shot">
+              <img src="assets/certification/certification-overview.png" alt="认证基础信息及版本状态" data-filename="certification/certification-overview.png">
+              <div class="shot-missing"><div><strong>待补截图：认证基础信息</strong><code>assets/certification/certification-overview.png</code></div></div>
+              <figcaption>图 3：认证基础信息。截图为已下架版本示例，因此页面只读；要调整结构，应从可用版本克隆新草稿。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>状态</th><th>含义</th><th>允许的主要操作</th></tr></thead>
+              <tbody>
+                <tr><td>草稿</td><td>尚未对外生效</td><td>编辑基础信息和完整结构、删除、发布</td></tr>
+                <tr><td>已发布</td><td>当前可供商品和考生流程使用</td><td>查看、克隆新版本、下架</td></tr>
+                <tr><td>已下架</td><td>历史归档版本</td><td>只读查看，不再修改</td></tr>
+              </tbody>
+            </table>
+            <div class="warning"><strong>发布新版本会切换当前版本</strong>同一 GPath 下的新草稿发布后，原当前版本会进入已下架状态。先确认商品和运营流程已准备使用新版本。</div>
+          </section>
+
+          <section class="doc-section" id="certification-stages">
+            <h2>4. 配置阶段</h2>
+            <p class="lead">阶段用来表达认证的学习顺序和业务层级。先建立阶段，再进入“课程单元”页签绑定课程。</p>
+            <figure class="shot">
+              <img src="assets/certification/certification-stages.png" alt="认证阶段列表和详情" data-filename="certification/certification-stages.png">
+              <div class="shot-missing"><div><strong>待补截图：认证阶段</strong><code>assets/certification/certification-stages.png</code></div></div>
+              <figcaption>图 4：阶段列表。名称用于界面展示，排序决定阶段顺序；右侧同时汇总该阶段已有的课程单元。</figcaption>
+            </figure>
+            <ol class="steps">
+              <li><strong>点击“新阶段”</strong><span>按业务顺序创建 L1、L2 等阶段。</span></li>
+              <li><strong>填写名称和排序</strong><span>排序建议使用 1、2、3 等清晰序号，避免重复。</span></li>
+              <li><strong>为阶段添加课程单元</strong><span>每个阶段至少需要一个已绑定课程的单元，结构才能保存。</span></li>
+              <li><strong>检查阶段汇总</strong><span>确认单元名称、课程、考试代码和免考状态与预期一致。</span></li>
+            </ol>
+            <figure class="shot">
+              <img src="assets/certification/certification-stage-units.png" alt="阶段中的课程单元汇总" data-filename="certification/certification-stage-units.png">
+              <div class="shot-missing"><div><strong>待补截图：阶段单元汇总</strong><code>assets/certification/certification-stage-units.png</code></div></div>
+              <figcaption>图 5：阶段内单元汇总适合复核，完整字段仍需在“课程单元”页签维护。</figcaption>
+            </figure>
+          </section>
+
+          <section class="doc-section" id="certification-units">
+            <h2>5. 配置课程单元、考试与免考</h2>
+            <figure class="shot">
+              <img src="assets/certification/certification-unit-details.png" alt="课程单元详情" data-filename="certification/certification-unit-details.png">
+              <div class="shot-missing"><div><strong>待补截图：课程单元详情</strong><code>assets/certification/certification-unit-details.png</code></div></div>
+              <figcaption>图 6：课程单元基础字段。单元必须属于一个阶段，并绑定可用的已发布课程。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>字段</th><th>作用</th><th>配置要点</th></tr></thead>
+              <tbody>
+                <tr><td>所属阶段</td><td>决定单元位于认证的哪个学习阶段</td><td>调整后要保存结构；不要只依赖左侧列表位置判断。</td></tr>
+                <tr><td>名称</td><td>单元对外显示名称</td><td>可与课程名一致，也可使用认证体系内的正式单元名。</td></tr>
+                <tr><td>排序</td><td>决定同一阶段内的顺序</td><td>同阶段保持唯一且连续。</td></tr>
+                <tr><td>关联课程</td><td>指定实际学习内容</td><td>只能选择已发布且可绑定的课程；绑定的是具体课程版本。</td></tr>
+                <tr><td>Program / Exam Code / Form Code</td><td>对接考试项目、考试和试卷</td><td>仅在该单元涉及考试时按考试系统约定填写。</td></tr>
+              </tbody>
+            </table>
+            <figure class="shot">
+              <img src="assets/certification/certification-unit-rules.png" alt="课程单元考试、免考和单元证书配置" data-filename="certification/certification-unit-rules.png">
+              <div class="shot-missing"><div><strong>待补截图：单元规则</strong><code>assets/certification/certification-unit-rules.png</code></div></div>
+              <figcaption>图 7：单元规则。允许免考、豁免资格、单元完成资格和单元 PDF 模板是彼此独立的配置。</figcaption>
+            </figure>
+            <h3>免考规则怎么配</h3>
+            <ol class="steps">
+              <li><strong>勾选“允许免考”</strong><span>未勾选时，即使考生持有相关资格，后台也不会自动免除该单元。</span></li>
+              <li><strong>勾选一项或多项豁免资格</strong><span>考生持有其中任一有效资格即可满足该单元免考条件。</span></li>
+              <li><strong>保存认证结构</strong><span>商品下单时，GMALL 会自动识别考生已持资格，应用免考并计算减免后的金额。</span></li>
+            </ol>
+            <div class="note"><strong>考生端不需要重复勾选自动免考项</strong>系统会把自动识别的免考与考生手工补充的其他免考去重合并；如果某阶段全部单元都被免考，该阶段实例化后会自动完成。</div>
+            <div class="warning"><strong>单元证书不是最终认证证书</strong>“单元完成后签发的资格 / 单元证书 PDF 模板”只在完成该单元就要单独发证时填写。认证全部完成后的主证书，应配置在“最终颁发证书”。</div>
+          </section>
+
+          <section class="doc-section" id="certification-qualifications">
+            <h2>6. 区分三类资格与证书</h2>
+            <table>
+              <thead><tr><th>配置层级</th><th>检查时机</th><th>业务含义</th><th>典型示例</th></tr></thead>
+              <tbody>
+                <tr><td>前置准入资格</td><td>购买或进入认证前</td><td>必须已持有，否则不能报读</td><td>报读高阶认证必须已有初阶证书</td></tr>
+                <tr><td>发证前终审材料</td><td>全部课程完成后、发证前</td><td>需要提交并通过审核的资格或材料</td><td>工作经验证明、从业年限证明</td></tr>
+                <tr><td>最终颁发证书</td><td>通关并通过终审后</td><td>系统最终签发的资格和 PDF 证书</td><td>CFtP Certification</td></tr>
+              </tbody>
+            </table>
+            <figure class="shot">
+              <img src="assets/certification/certification-prerequisites.png" alt="前置准入资格配置" data-filename="certification/certification-prerequisites.png">
+              <div class="shot-missing"><div><strong>待补截图：前置准入资格</strong><code>assets/certification/certification-prerequisites.png</code></div></div>
+              <figcaption>图 8：前置准入资格。只有业务明确要求“持证后才可购买”时才配置；不要用它表达课程免考。</figcaption>
+            </figure>
+            <figure class="shot">
+              <img src="assets/certification/certification-final-audit.png" alt="发证前终审材料配置" data-filename="certification/certification-final-audit.png">
+              <div class="shot-missing"><div><strong>待补截图：发证前终审材料</strong><code>assets/certification/certification-final-audit.png</code></div></div>
+              <figcaption>图 9：发证前终审材料。截图示例要求通过 CFtP Work Experience Proof 后才能进入最终发证。</figcaption>
+            </figure>
+            <figure class="shot">
+              <img src="assets/certification/certification-awards.png" alt="最终颁发证书配置" data-filename="certification/certification-awards.png">
+              <div class="shot-missing"><div><strong>待补截图：最终颁发证书</strong><code>assets/certification/certification-awards.png</code></div></div>
+              <figcaption>图 10：最终颁发证书。每一项都必须同时选择证书对应资格和 PDF 模板。</figcaption>
+            </figure>
+            <div class="danger"><strong>不要混用字段</strong>前置准入和终审材料只保存资格要求，不包含 PDF 模板；最终颁发证书才同时包含资格定义和证书 PDF 模板。</div>
+          </section>
+
+          <section class="doc-section" id="certification-rules">
+            <h2>7. 配置禁止报读和互斥管线</h2>
+            <table>
+              <thead><tr><th>规则</th><th>判断对象</th><th>触发条件</th><th>配置方向</th></tr></thead>
+              <tbody>
+                <tr><td>禁止报读资格</td><td>考生已持有的有效资格</td><td>持有任一所选资格即禁止购买当前认证</td><td>只配置在需要被禁止购买的一侧</td></tr>
+                <tr><td>互斥认证管线</td><td>另一认证的进行中状态</td><td>存在待支付订单或学习中实例时禁止购买当前认证</td><td>两条认证必须分别配置对方 GPath</td></tr>
+              </tbody>
+            </table>
+            <figure class="shot">
+              <img src="assets/certification/certification-forbidden.png" alt="禁止报读资格配置" data-filename="certification/certification-forbidden.png">
+              <div class="shot-missing"><div><strong>待补截图：禁止报读资格</strong><code>assets/certification/certification-forbidden.png</code></div></div>
+              <figcaption>图 11：禁止报读资格的空配置示例。需要防止高阶持证人反向购买初阶认证时，点击新增并选择高阶资格。</figcaption>
+            </figure>
+            <figure class="shot">
+              <img src="assets/certification/certification-conflicts.png" alt="互斥认证管线配置" data-filename="certification/certification-conflicts.png">
+              <div class="shot-missing"><div><strong>待补截图：互斥认证管线</strong><code>assets/certification/certification-conflicts.png</code></div></div>
+              <figcaption>图 12：互斥认证管线使用对方的认证 GPath。CFTA 配 CFTP 后，还要在 CFTP 中反向配置 CFTA。</figcaption>
+            </figure>
+            <div class="warning"><strong>两种规则不能互相替代</strong>互斥处理“正在同时报读”的冲突；禁止报读处理“已经获得某资格后不能反向购买”。完成状态和进行中状态必须分别按业务规则配置。</div>
+          </section>
+
+          <section class="doc-section" id="certification-example">
+            <h2>8. CFTA / CFTP 推荐配置示例</h2>
+            <p class="lead">下面按“允许没有 CFTA 的考生直接购买 CFTP；已有 CFTA 的考生自动免除 CFTP 中的 CFTA 课程；两条管线进行中不能同时购买；取得 CFTP 后不能反向购买 CFTA”的业务规则配置。</p>
+            <table>
+              <thead><tr><th>配置项</th><th>CFTA 管线</th><th>CFTP 管线</th></tr></thead>
+              <tbody>
+                <tr><td>前置准入资格</td><td>通常留空</td><td>留空，允许未持 CFTA 的考生直接购买</td></tr>
+                <tr><td>CFTA 课程单元</td><td>按正常课程配置</td><td>加入 CFTA Course；勾选“允许免考”，豁免资格选择 CFTA Certification</td></tr>
+                <tr><td>禁止报读资格</td><td>选择 CFTP Certification</td><td>按业务需要，通常不配置 CFTA Certification</td></tr>
+                <tr><td>互斥认证管线</td><td>选择 CFTP 的 GPath</td><td>选择 CFTA 的 GPath</td></tr>
+                <tr><td>最终颁发证书</td><td>CFTA 资格 + CFTA PDF 模板</td><td>CFTP 资格 + CFTP PDF 模板</td></tr>
+              </tbody>
+            </table>
+            <div class="note"><strong>直接购买与自动免考可以同时成立</strong>CFTP 的“前置准入资格”留空，只表示没有 CFTA 也能购买；CFTP 中 CFTA 单元的免考配置，会让已持 CFTA 资格的考生在下单时自动免除该单元。</div>
+          </section>
+
+          <section class="doc-section" id="certification-publish">
+            <h2>9. 保存、复核与发布</h2>
+            <div class="flow"><span>创建草稿</span><b>→</b><span>阶段</span><b>→</b><span>课程单元</span><b>→</b><span>资格与证书</span><b>→</b><span>报读限制</span><b>→</b><span>保存结构</span><b>→</b><span>发布</span></div>
+            <ol class="steps">
+              <li><strong>先保存基础信息</strong><span>确认名称、分类、描述和 GPath。</span></li>
+              <li><strong>完成全部结构层级</strong><span>每次调整后点击“保存结构”，页面中的临时修改才会写入后台。</span></li>
+              <li><strong>使用“完整结构 JSON”复核</strong><span>高级编辑区适合检查底层结构；“应用到分层视图”只更新页面状态，仍需再次保存结构。</span></li>
+              <li><strong>发布前做跨模块检查</strong><span>确认课程已发布、资格定义可用、PDF 模板正确、商品准备绑定新版本。</span></li>
+              <li><strong>点击发布并回归购买流程</strong><span>用无资格、持初阶资格、持高阶资格和存在进行中订单的测试账号分别预检。</span></li>
+            </ol>
+            <div class="danger"><strong>已发布或已下架结构不可直接编辑</strong>需要调整时使用“克隆版本”，在新草稿完成修改和验证后再发布。不要通过下架当前版本来代替版本升级。</div>
+          </section>
+
+          <section class="doc-section faq" id="certification-faq">
+            <h2>10. 常见问题</h2>
+            <details><summary>为什么课程单元里选不到刚创建的课程？</summary><p>课程单元只显示可绑定的已发布课程。先到课程配置确认目标版本已发布，草稿、已下架或未启用课程不能绑定。</p></details>
+            <details><summary>没有 CFTA 的考生也要能购买 CFTP，是否应该删除 CFTA 前置资格？</summary><p>是。前置准入资格表示购买前必须持有。允许直接购买时应留空，并把 CFTA 课程加入 CFTP；已有 CFTA 的考生通过该单元的免考规则自动减免。</p></details>
+            <details><summary>配置了豁免资格，为什么没有自动免考？</summary><p>同时检查该课程单元是否勾选“允许免考”、豁免资格是否选择正确、考生持有的资格是否有效，以及认证结构是否已保存并随当前版本发布。</p></details>
+            <details><summary>为什么 CFTA 和 CFTP 互斥只在一个方向生效？</summary><p>互斥关系不是自动双向的。需要在 CFTA 中配置 CFTP GPath，同时在 CFTP 中配置 CFTA GPath。</p></details>
+            <details><summary>禁止报读资格与前置准入资格有什么区别？</summary><p>前置准入是“必须持有才可以买”；禁止报读是“持有任一项就不能买”。两者方向相反，不能配置成同一个业务含义。</p></details>
+            <details><summary>最终颁发证书只选资格定义可以吗？</summary><p>不可以。最终证书必须同时选择资格定义和证书 PDF 模板，否则发布前结构校验会失败，或后续无法正确生成证书。</p></details>
+          </section>
+
+          <section class="doc-section" id="certification-checklist">
+            <h2>11. 发布前检查清单</h2>
+            <ul class="checklist">
+              <li>认证名称、描述和分类提示为正式文案</li>
+              <li>GPath 属于正确认证系列且未误用其他管线路径</li>
+              <li>每个阶段名称、排序正确</li>
+              <li>每个阶段至少有一个课程单元</li>
+              <li>所有单元绑定正确的已发布课程版本</li>
+              <li>考试 Program、Exam Code、Form Code 已核对</li>
+              <li>需要免考的单元已勾选“允许免考”</li>
+              <li>豁免资格与单元业务规则一致</li>
+              <li>前置准入资格没有误当作免考条件</li>
+              <li>终审材料对应正确的资格定义</li>
+              <li>最终证书同时配置资格和 PDF 模板</li>
+              <li>禁止报读资格方向正确</li>
+              <li>互斥管线已在两侧分别配置</li>
+              <li>全部修改已点击“保存结构”</li>
+              <li>已用不同资格状态的测试账号完成购买预检</li>
+              <li>确认发布的是目标 GPath 的目标版本</li>
+            </ul>
+            <a class="back-top" href="#top">返回顶部</a>
+          </section>
+        </div>
+      </div>
+    </article>
+
+    <article class="manual" id="product-manual">
+      <nav class="breadcrumb" aria-label="面包屑">
+        <button type="button" onclick="showCatalog()">管理后台目录</button><span>/</span><span>商品配置</span>
+      </nav>
+      <div class="manual-layout">
+        <nav class="side-nav" aria-label="商品配置章节">
+          <strong>商品配置</strong>
+          <a href="#product-overview">功能概览</a>
+          <a href="#product-concepts">关键概念</a>
+          <a href="#product-create">新建商品</a>
+          <a href="#product-meta">概览与基础信息</a>
+          <a href="#product-pricing">课程单元价格</a>
+          <a href="#product-other-pricing">其他价格</a>
+          <a href="#product-preview">价格预览</a>
+          <a href="#product-version">版本与认证替换</a>
+          <a href="#product-publish">发布流程</a>
+          <a href="#product-faq">常见问题</a>
+          <a href="#product-checklist">发布检查</a>
+        </nav>
+
+        <div class="content">
+          <header class="manual-title">
+            <div class="eyebrow" style="color:#9eeef1">配置管理 / GMALL</div>
+            <h1>商品配置使用手册</h1>
+            <p>面向商品运营人员，说明商品与认证或会员的关联、Stripe 定价、版本升级、展示价格同步和发布操作。</p>
+            <div class="manual-meta"><span>角色：商品运营</span><span>难度：进阶</span><span>更新：2026-08-25</span></div>
+          </header>
+
+          <section class="doc-section" id="product-overview">
+            <h2>1. 功能概览</h2>
+            <p class="lead">“商品配置”决定商城实际卖什么、每个收费节点使用哪个 Stripe 价格，以及考生购买后获得哪条认证或会员权益。它不维护课程内容，也不定义认证的阶段和资格规则。</p>
+            <div class="flow" aria-label="商品配置流程">
+              <span>已发布认证 / 会员</span><b>→</b><span>商品草稿</span><b>→</b><span>Stripe 定价</span><b>→</b><span>价格复核</span><b>→</b><span>发布</span>
+            </div>
+            <div class="note"><strong>先准备交付内容和 Stripe 价格</strong>认证或会员方案需要先达到可用状态；收费项使用的 Stripe Product 和 Price 也应提前创建并核对环境、币种和金额。</div>
+            <figure class="shot">
+              <img src="assets/product/product-list.png" alt="商品配置列表" data-filename="product/product-list.png">
+              <div class="shot-missing"><div><strong>待补截图：商品配置列表</strong><code>assets/product/product-list.png</code></div></div>
+              <figcaption>图 1：商品列表展示名称、绑定内容、展示价格、状态和版本。顶部可新建商品、同步展示价格或刷新列表。</figcaption>
+            </figure>
+          </section>
+
+          <section class="doc-section" id="product-concepts">
+            <h2>2. 先理解这些概念</h2>
+            <div class="term-grid">
+              <div class="term critical"><h3>商品 GPath / 商品路径</h3><p>商城购买入口使用的稳定业务路径。同一商品的不同版本沿用它，独立商品必须使用新的唯一路径。</p></div>
+              <div class="term"><h3>Bundle ULID</h3><p>某个具体商品版本的唯一 ID，由系统生成。商品绑定和订单快照最终使用具体版本。</p></div>
+              <div class="term"><h3>关联内容</h3><p>购买后实际交付的认证或会员权益。当前管理页面支持最多一条认证和一个会员权益，也支持两者组合销售。</p></div>
+              <div class="term"><h3>价格配置</h3><p>商品各收费节点对应的 Stripe Product ID 和 Price ID，包括课程准入、重考、免考、会员和审核等。</p></div>
+              <div class="term"><h3>展示价格</h3><p>从 Stripe 价格计算出的列表区间，不是手工输入字段。最低价按首阶段课程准入价计算，最高价按全部阶段课程准入价计算，并叠加会员价格。</p></div>
+              <div class="term"><h3>版本</h3><p>同一商品 GPath 下的配置版本。克隆会复制关联内容、价格、封面和文案，形成新草稿版本。</p></div>
+            </div>
+            <table>
+              <thead><tr><th>场景</th><th>操作</th><th>商品 GPath</th></tr></thead>
+              <tbody>
+                <tr><td>创建另一种独立商品</td><td>新建商品</td><td>使用新的唯一路径</td></tr>
+                <tr><td>同一商品升级认证版本或价格</td><td>克隆为草稿</td><td>沿用原路径</td></tr>
+                <tr><td>认证与会员组合销售</td><td>新建或克隆后添加两类关联内容</td><td>使用能稳定代表该组合的路径</td></tr>
+              </tbody>
+            </table>
+            <div class="danger"><strong>不要把商品路径当成标题修改</strong>名称和描述可以调整，GPath 表示商品系列。误用其他商品的 GPath 会被识别为同一商品的新版本，发布时可能替换错误的商城入口。</div>
+          </section>
+
+          <section class="doc-section" id="product-create">
+            <h2>3. 新建商品</h2>
+            <p class="lead">新建时先选择购买后交付的内容，再填写展示信息。系统会根据选择生成关联内容 JSON，通常不需要手工编辑。</p>
+            <figure class="shot">
+              <img src="assets/product/product-create-link.png" alt="新建商品的关联内容区域" data-filename="product/product-create-link.png">
+              <div class="shot-missing"><div><strong>待补截图：商品关联内容</strong><code>assets/product/product-create-link.png</code></div></div>
+              <figcaption>图 2：商品关联内容。选择“认证”或“会员权益”，再选择具体交付对象；需要组合销售时点击“添加关联内容”。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>商品类型</th><th>选择对象</th><th>限制</th></tr></thead>
+              <tbody>
+                <tr><td>认证</td><td>具体认证版本</td><td>一个商品最多一条认证</td></tr>
+                <tr><td>会员权益</td><td>具体会员方案</td><td>一个商品最多一个会员权益</td></tr>
+                <tr><td>组合商品</td><td>一条认证 + 一个会员权益</td><td>两项不能重复，发布时两者都必须可用</td></tr>
+              </tbody>
+            </table>
+            <figure class="shot">
+              <img src="assets/product/product-create-basic.png" alt="新建商品的展示信息区域" data-filename="product/product-create-basic.png">
+              <div class="shot-missing"><div><strong>待补截图：商品展示信息</strong><code>assets/product/product-create-basic.png</code></div></div>
+              <figcaption>图 3：商品展示信息。名称必填；封面可上传，描述建议使用正式对外文案；商品路径位于高级配置。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>字段</th><th>是否必填</th><th>填写说明</th></tr></thead>
+              <tbody>
+                <tr><td>名称</td><td class="required">必填</td><td>后台识别和考生端可能展示的商品名称。</td></tr>
+                <tr><td>商品路径</td><td class="required">必填</td><td>稳定购买入口，例如 <code>/gcc/pipeline/core/cftp</code>；新商品确认唯一。</td></tr>
+                <tr><td>封面</td><td>选填</td><td>优先使用“上传封面图”，系统会填写 Object Key 和文件校验值。没有素材时两项都留空。</td></tr>
+                <tr><td>描述</td><td>选填</td><td>写明商品交付内容和适用对象，不填写内部价格备注。</td></tr>
+                <tr><td>高级 JSON</td><td>通常不修改</td><td><code>items_json</code> 由关联内容自动生成；创建时 <code>pricing_json</code> 可保持 <code>{}</code>，之后在结构与价格页维护。</td></tr>
+              </tbody>
+            </table>
+            <ol class="steps">
+              <li><strong>选择关联内容</strong><span>确认具体认证或会员版本，不要只看名称。</span></li>
+              <li><strong>填写名称、描述和封面</strong><span>封面上传后不要手工拆改 Object Key 与校验值。</span></li>
+              <li><strong>展开高级配置检查商品路径</strong><span>独立商品使用新路径，同一商品版本升级使用克隆。</span></li>
+              <li><strong>点击“创建草稿”</strong><span>进入商品详情继续维护结构和价格。</span></li>
+            </ol>
+          </section>
+
+          <section class="doc-section" id="product-meta">
+            <h2>4. 查看概览和维护基础信息</h2>
+            <figure class="shot">
+              <img src="assets/product/product-overview.png" alt="商品概览" data-filename="product/product-overview.png">
+              <div class="shot-missing"><div><strong>待补截图：商品概览</strong><code>assets/product/product-overview.png</code></div></div>
+              <figcaption>图 4：概览汇总展示价格、版本、描述、关联内容和商品路径，用于快速确认当前打开的是哪个商品版本。</figcaption>
+            </figure>
+            <figure class="shot">
+              <img src="assets/product/product-basic.png" alt="商品基础信息" data-filename="product/product-basic.png">
+              <div class="shot-missing"><div><strong>待补截图：商品基础信息</strong><code>assets/product/product-basic.png</code></div></div>
+              <figcaption>图 5：基础信息可维护名称、描述、封面路径、文件校验值和多语言文案；Bundle ULID 只读。</figcaption>
+            </figure>
+            <div class="warning"><strong>商品路径不会在基础信息中随名称更新</strong>它是版本系列标识。需要创建另一个独立商品时回到列表使用“新建商品”，不要克隆后只改名称。</div>
+          </section>
+
+          <section class="doc-section" id="product-pricing">
+            <h2>5. 配置课程单元价格</h2>
+            <p class="lead">进入“结构与价格”后，页面会读取当前关联认证的阶段和课程单元。每个收费项都必须填写 Stripe Product ID 与 Price ID，不能只填其中一个。</p>
+            <figure class="shot">
+              <img src="assets/product/product-pricing-overview.png" alt="商品结构与价格顶部" data-filename="product/product-pricing-overview.png">
+              <div class="shot-missing"><div><strong>待补截图：结构与价格</strong><code>assets/product/product-pricing-overview.png</code></div></div>
+              <figcaption>图 6：结构与价格顶部。已克隆的商品可以替换绑定认证；价格编辑区会读取新关联内容供选择。</figcaption>
+            </figure>
+            <figure class="shot">
+              <img src="assets/product/product-unit-pricing.png" alt="课程单元 Stripe 价格配置" data-filename="product/product-unit-pricing.png">
+              <div class="shot-missing"><div><strong>待补截图：课程单元价格</strong><code>assets/product/product-unit-pricing.png</code></div></div>
+              <figcaption>图 7：每个课程单元可分别配置首次访问、补考重修和免考申请价格。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>收费项</th><th>业务含义</th><th>什么时候填写</th></tr></thead>
+              <tbody>
+                <tr><td>首次访问（Access）</td><td>考生首次购买并进入该课程单元的费用</td><td>付费课程通常必须配置；真正免费时才留空</td></tr>
+                <tr><td>补考重修（Retake）</td><td>考试失败后重新参加或重修的费用</td><td>只有业务明确收费时填写</td></tr>
+                <tr><td>免考申请（Exemption）</td><td>人工申请免考时的申请费用</td><td>只有免考申请本身收费时填写；自动免考不要求配置该价格</td></tr>
+              </tbody>
+            </table>
+            <div class="danger"><strong>不要复制或猜测 Stripe ID</strong><code>prod_...</code> 表示 Stripe Product，<code>price_...</code> 表示该 Product 下的具体价格。两者必须成对且属于同一收费项，同时确认使用的是当前部署环境的 Stripe 数据。</div>
+          </section>
+
+          <section class="doc-section" id="product-other-pricing">
+            <h2>6. 其他价格和优惠配置</h2>
+            <figure class="shot">
+              <img src="assets/product/product-other-pricing.png" alt="会员、资格审核和认证解锁价格" data-filename="product/product-other-pricing.png">
+              <div class="shot-missing"><div><strong>待补截图：其他价格</strong><code>assets/product/product-other-pricing.png</code></div></div>
+              <figcaption>图 8：会员价格、资格审核价格和认证解锁价格都是按业务需要配置；未关联对应内容时按钮会禁用。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>配置</th><th>用途</th><th>关键限制</th></tr></thead>
+              <tbody>
+                <tr><td>整包优惠码</td><td>整包购买时自动使用的优惠码</td><td>填写前确认 Stripe 优惠规则和适用商品正确</td></tr>
+                <tr><td>会员价格</td><td>组合商品中的会员订阅价格</td><td>商品必须先关联会员；最多一项；Price 必须是 recurring，周期与会员方案月份一致</td></tr>
+                <tr><td>会员优惠码</td><td>把组合中的会员权益减免为赠送</td><td>后台要求有效的 100% Stripe 优惠码，并且适用于该会员 Product</td></tr>
+                <tr><td>资格审核价格</td><td>资格材料审核需要单独收费</td><td>填写资格 ID 和成对的 Stripe Product / Price</td></tr>
+                <tr><td>认证解锁价格</td><td>业务明确要求先购买认证解锁权限</td><td>普通认证套餐不要为了通过发布而补解锁价格</td></tr>
+              </tbody>
+            </table>
+            <div class="note"><strong>Stripe Price 类型要求</strong>会员价格必须是循环订阅价格；课程准入、重考、免考申请、资格审核和认证解锁必须使用一次性价格。后台发布时会验证 Price 是否属于填写的 Product。</div>
+            <div class="warning"><strong>自动免考与“免考申请价格”不是一回事</strong>自动免考由认证课程单元的“允许免考 + 豁免资格”决定；这里仅决定人工免考申请是否收费。</div>
+          </section>
+
+          <section class="doc-section" id="product-preview">
+            <h2>7. 复核价格预览和展示价格</h2>
+            <p class="lead">价格预览把关联内容和 Stripe ID 按业务含义展开，比直接阅读 JSON 更适合发布前复核。</p>
+            <figure class="shot">
+              <img src="assets/product/product-pricing-preview-top.png" alt="商品价格预览顶部" data-filename="product/product-pricing-preview-top.png">
+              <div class="shot-missing"><div><strong>待补截图：价格预览</strong><code>assets/product/product-pricing-preview-top.png</code></div></div>
+              <figcaption>图 9：价格预览顶部显示关联内容、优惠码、会员和审核价格项数量，以及每个课程单元的价格。</figcaption>
+            </figure>
+            <figure class="shot">
+              <img src="assets/product/product-pricing-preview-bottom.png" alt="商品价格预览底部" data-filename="product/product-pricing-preview-bottom.png">
+              <div class="shot-missing"><div><strong>待补截图：完整价格预览</strong><code>assets/product/product-pricing-preview-bottom.png</code></div></div>
+              <figcaption>图 10：继续向下检查全部单元和认证解锁价格；高级 JSON 只用于排查底层结构。</figcaption>
+            </figure>
+            <h3>“同步展示价格”做什么</h3>
+            <p>它会重新向支付服务验证 Stripe Price，计算并更新商品列表中的最低价、最高价和币种。保存结构与价格时会同步当前商品；列表顶部按钮可重新同步未弃用商品，适合 Stripe 金额调整后刷新展示。</p>
+            <div class="note"><strong>展示区间的计算范围</strong>最低价为会员价格加首阶段课程准入价，最高价为会员价格加全部阶段课程准入价。重考、免考申请、资格审核和解锁价格不计入这个展示区间。</div>
+            <div class="warning"><strong>币种必须一致</strong>商品中配置的全部 Stripe Price 必须使用同一币种，否则发布会失败。展示金额不在后台手填，以 Stripe Price 的实际值为准。</div>
+          </section>
+
+          <section class="doc-section" id="product-version">
+            <h2>8. 商品版本升级与替换认证</h2>
+            <p class="lead">认证发布新版本后，旧商品不会自动改绑。推荐先克隆商品为新草稿，再在“结构与价格”中替换绑定认证。</p>
+            <ol class="steps">
+              <li><strong>在当前商品点击“克隆为草稿”</strong><span>系统沿用商品 GPath，并复制文案、封面、关联内容和价格。</span></li>
+              <li><strong>选择新绑定认证</strong><span>确认新认证已经发布，名称相同也要核对认证 ULID。</span></li>
+              <li><strong>点击“替换认证并保存”</strong><span>系统更新关联认证，并按旧、新认证的课程单元顺序迁移单元价格 ID。</span></li>
+              <li><strong>逐项复核课程单元价格</strong><span>检查每个新单元对应的 Product / Price，补齐新增单元，删除不再存在的收费项。</span></li>
+              <li><strong>检查认证解锁价格</strong><span>旧认证 ID 会替换成新认证 ID；普通认证不需要解锁费时，应明确移除该项。</span></li>
+            </ol>
+            <div class="danger"><strong>单元价格迁移依赖顺序，不理解业务差异</strong>如果新认证调整了阶段、单元数量或排序，自动映射可能对应错误。替换完成只代表结构已迁移，不代表价格已经业务确认。</div>
+          </section>
+
+          <section class="doc-section" id="product-publish">
+            <h2>9. 状态操作和发布流程</h2>
+            <figure class="shot">
+              <img src="assets/product/product-actions-draft.png" alt="商品草稿状态操作" data-filename="product/product-actions-draft.png">
+              <div class="shot-missing"><div><strong>待补截图：草稿状态操作</strong><code>assets/product/product-actions-draft.png</code></div></div>
+              <figcaption>图 11：草稿可克隆、发布或删除。发布前先回到结构与价格完成保存和预览。</figcaption>
+            </figure>
+            <figure class="shot">
+              <img src="assets/product/product-actions-published.png" alt="已发布商品状态操作" data-filename="product/product-actions-published.png">
+              <div class="shot-missing"><div><strong>待补截图：已发布状态操作</strong><code>assets/product/product-actions-published.png</code></div></div>
+              <figcaption>图 12：已发布商品可克隆为新草稿或下架；已发布版本不能直接删除。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>状态</th><th>可用操作</th><th>说明</th></tr></thead>
+              <tbody>
+                <tr><td>草稿</td><td>编辑、克隆、发布、删除</td><td>发布前不会成为正式商城入口</td></tr>
+                <tr><td>已发布</td><td>查看、克隆、下架</td><td>当前 GPath 的正式版本</td></tr>
+                <tr><td>已弃用</td><td>查看</td><td>历史版本，不参与展示价格批量同步</td></tr>
+              </tbody>
+            </table>
+            <div class="flow"><span>克隆草稿</span><b>→</b><span>替换认证 / 会员</span><b>→</b><span>复核价格</span><b>→</b><span>保存</span><b>→</b><span>购买预检</span><b>→</b><span>发布</span></div>
+            <div class="warning"><strong>发布新版本会切换当前商品</strong>同一商品 GPath 下的新草稿发布后，原当前版本会被停用。不要先手工下架旧商品再慢慢配置新版本，以免商城入口暂时不可用。</div>
+          </section>
+
+          <section class="doc-section faq" id="product-faq">
+            <h2>10. 常见问题</h2>
+            <details><summary>新建商品时为什么选不到认证？</summary><p>先确认认证已经发布且处于可用状态，再刷新关联内容选项。商品最终发布时，后台也会重新校验关联认证或会员是否为 Active。</p></details>
+            <details><summary>为什么只填 Price ID 不能保存？</summary><p>每个收费项必须同时填写对应的 Stripe Product ID 和 Price ID；两者缺一都会被前端和微服务拒绝。</p></details>
+            <details><summary>已有 CFTA 资格自动免考，还要配置“免考申请价格”吗？</summary><p>不需要。自动免考由认证配置决定。只有业务对人工免考申请单独收费时，才配置该单元的免考申请 Product 和 Price。</p></details>
+            <details><summary>为什么普通认证商品不需要认证解锁价格？</summary><p>认证解锁价只用于先付解锁费再购买的特殊流程。普通认证套餐直接按课程单元收费，留空即可，不应为了发布而虚构一组 Stripe 价格。</p></details>
+            <details><summary>替换认证版本后，旧价格能直接发布吗？</summary><p>不能直接认定正确。系统按课程单元顺序迁移 ID，不会判断新旧单元的业务含义；必须逐项核对并处理新增、删除或重排的单元。</p></details>
+            <details><summary>为什么列表展示价格没有更新？</summary><p>先保存结构与价格，再点击“同步展示价格”。如果仍失败，检查 Stripe Price 是否有效、参与计算的价格是否同币种，以及支付服务是否可用。</p></details>
+            <details><summary>商品路径可以直接使用认证 GPath 吗？</summary><p>可以在不同服务中采用相同业务路径，当前页面也以此作为常见示例；但商品路径本身仍必须在商品系列内唯一。认证加会员的组合商品建议使用能明确代表组合的独立路径。</p></details>
+          </section>
+
+          <section class="doc-section" id="product-checklist">
+            <h2>11. 发布前检查清单</h2>
+            <ul class="checklist">
+              <li>商品名称和描述使用正式对外文案</li>
+              <li>商品 GPath 属于正确商品系列</li>
+              <li>关联的是目标认证或会员的正确版本</li>
+              <li>认证和会员在发布时均处于可用状态</li>
+              <li>封面 Object Key 与校验值同时有效或同时留空</li>
+              <li>每个收费项的 Product ID 与 Price ID 成对</li>
+              <li>Stripe ID 来自正确部署环境</li>
+              <li>课程首次访问价格完整且金额正确</li>
+              <li>重考、免考申请只在实际收费时配置</li>
+              <li>会员价格关联正确并填写有效月数</li>
+              <li>会员 Price 为正确周期的 recurring，其他 Price 为 one-time</li>
+              <li>会员优惠码为适用该 Product 的 100% 优惠</li>
+              <li>普通认证没有误配认证解锁价格</li>
+              <li>认证替换后的全部课程单元已逐项复核</li>
+              <li>展示价格区间和币种与预期一致</li>
+              <li>结构与价格已经保存</li>
+              <li>无资格、自动免考、全价和组合商品场景已回归购买</li>
+              <li>确认发布的是目标商品 GPath 的目标版本</li>
+            </ul>
+            <a class="back-top" href="#top">返回顶部</a>
+          </section>
+        </div>
+      </div>
+    </article>
+
+    <article class="manual" id="qualification-manual">
+      <nav class="breadcrumb" aria-label="面包屑">
+        <button type="button" onclick="showCatalog()">管理后台目录</button><span>/</span><span>资格定义</span>
+      </nav>
+      <div class="manual-layout">
+        <nav class="side-nav" aria-label="资格定义章节">
+          <strong>资格定义</strong>
+          <a href="#qualification-overview">功能概览</a>
+          <a href="#qualification-categories">资格分类</a>
+          <a href="#qualification-create">新建资格</a>
+          <a href="#qualification-files">文件约束</a>
+          <a href="#qualification-respath">资源路径</a>
+          <a href="#qualification-usage">在认证中使用</a>
+          <a href="#qualification-maintenance">查看与维护</a>
+          <a href="#qualification-faq">常见问题</a>
+          <a href="#qualification-checklist">检查清单</a>
+        </nav>
+
+        <div class="content">
+          <header class="manual-title">
+            <div class="eyebrow" style="color:#9eeef1">配置管理 / GCREDS</div>
+            <h1>资格定义使用手册</h1>
+            <p>面向管理后台运营人员，说明资格分类、资源路径、申请材料，以及资格在认证准入、终审、发证、禁购和免考中的用法。</p>
+            <div class="manual-meta"><span>角色：认证运营</span><span>难度：基础至进阶</span><span>更新：2026-08-25</span></div>
+          </header>
+
+          <section class="doc-section" id="qualification-overview">
+            <h2>1. 功能概览</h2>
+            <p class="lead">“资格定义”维护资格的基础字典，包括名称、分类、资源路径、获取说明和申请时所需材料。创建完成后，再到“认证配置”把它放到具体业务位置。</p>
+            <div class="flow" aria-label="资格配置关系"><span>资格定义</span><b>→</b><span>认证配置引用</span><b>→</b><span>申请 / 校验 / 发证 / 免考</span></div>
+            <div class="warning"><strong>分类不等于业务规则</strong>选择“认证资格”或“免考资格”只是在资格列表中标记用途。系统是否准入、禁购、终审、发证或免考，取决于该资格 ID 在认证配置中被引用的位置。</div>
+            <figure class="shot">
+              <img src="assets/qualification/qualification-list.png" alt="资格定义列表" data-filename="qualification/qualification-list.png">
+              <div class="shot-missing"><div><strong>待补截图：资格定义列表</strong><code>assets/qualification/qualification-list.png</code></div></div>
+              <figcaption>图 1：资格定义列表展示名称、资格 ID 和分类。点击“查看详情”可核对完整字段和复制原始 JSON。</figcaption>
+            </figure>
+          </section>
+
+          <section class="doc-section" id="qualification-categories">
+            <h2>2. 资格分类怎么选</h2>
+            <figure class="shot">
+              <img src="assets/qualification/qualification-categories.png" alt="资格分类下拉选项" data-filename="qualification/qualification-categories.png">
+              <div class="shot-missing"><div><strong>待补截图：资格分类</strong><code>assets/qualification/qualification-categories.png</code></div></div>
+              <figcaption>图 2：当前提供认证资格、免考资格、通用资格和学业类四种分类。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>分类</th><th>推荐用途</th><th>示例</th></tr></thead>
+              <tbody>
+                <tr><td>认证资格</td><td>由认证管线或课程单元正式颁发的证书资格</td><td>CFtA Certification、CFtP Certification</td></tr>
+                <tr><td>免考资格</td><td>通过人工申请取得、用于豁免某个课程单元的资格</td><td>CFtP L1A Finance Exemption</td></tr>
+                <tr><td>通用资格</td><td>工作经验、执业条件等非学位类材料资格</td><td>CFtP Work Experience Proof</td></tr>
+                <tr><td>学业类</td><td>学历、学位、成绩单等教育背景资格</td><td>学业证书</td></tr>
+              </tbody>
+            </table>
+            <div class="note"><strong>按资格本身的含义分类</strong>同一个资格可以在多个业务位置被引用。例如 CFtP Certification 属于“认证资格”，但仍可被 CFtA 管线放入“禁止报读资格”，实现取得高阶证书后不能反向购买初阶认证。</div>
+          </section>
+
+          <section class="doc-section" id="qualification-create">
+            <h2>3. 新建资格</h2>
+            <p class="lead">点击页面右上角“新建资格”，完成基础信息和文件约束后创建。资格 ID 由系统生成，不需要手工填写。</p>
+            <figure class="shot">
+              <img src="assets/qualification/qualification-create.png" alt="新建资格定义表单" data-filename="qualification/qualification-create.png">
+              <div class="shot-missing"><div><strong>待补截图：新建资格</strong><code>assets/qualification/qualification-create.png</code></div></div>
+              <figcaption>图 3：新建资格定义。名称、分类、资源路径和描述为必填；获取方式说明和文件约束按业务需要填写。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>字段</th><th>是否必填</th><th>填写说明</th></tr></thead>
+              <tbody>
+                <tr><td>名称</td><td class="required">必填</td><td>使用正式、可区分的资格名称；后续认证配置会按该名称供运营人员选择。</td></tr>
+                <tr><td>分类</td><td class="required">必填</td><td>按资格本身选择认证、免考、通用或学业类，不要按当前页面的临时使用位置分类。</td></tr>
+                <tr><td>资源路径</td><td class="required">必填</td><td>资格的唯一资源标识和材料上传权限对象，例如 <code>/gcc/credential/cftp-certification</code>。</td></tr>
+                <tr><td>获取方式说明</td><td>选填</td><td>面向考生说明如何取得该资格，例如完成指定认证或提交工作经验证明。</td></tr>
+                <tr><td>描述</td><td class="required">必填</td><td>说明资格代表什么、适用范围和审核口径。</td></tr>
+                <tr><td>文件约束</td><td>按场景</td><td>只有考生需要上传材料申请该资格时才添加；系统自动颁发的证书通常不需要。</td></tr>
+              </tbody>
+            </table>
+            <ol class="steps">
+              <li><strong>先确认资格是否已经存在</strong><span>按名称和业务含义检查列表，避免为同一资格重复创建多个 ID。</span></li>
+              <li><strong>选择分类并填写说明</strong><span>名称和描述应能让后续配置人员准确识别。</span></li>
+              <li><strong>确认唯一资源路径</strong><span>新资格使用新路径，不复制已有资格路径。</span></li>
+              <li><strong>按申请流程添加文件约束</strong><span>逐项确定文件名称、类型以及是否必填。</span></li>
+              <li><strong>创建后核对详情</strong><span>记录资格 ID，再到认证配置引用。</span></li>
+            </ol>
+          </section>
+
+          <section class="doc-section" id="qualification-files">
+            <h2>4. 文件约束怎么配置</h2>
+            <p class="lead">文件约束决定考生申请该资格时，上传页面要求哪些材料。点击“添加文件”可增加多项，每项包含材料名称、文件类型和必填状态。</p>
+            <table>
+              <thead><tr><th>设置</th><th>作用</th><th>建议</th></tr></thead>
+              <tbody>
+                <tr><td>材料名称</td><td>告诉考生和审核人员这份文件是什么</td><td>写具体用途，如 <code>Employment Certificate</code>，不要只写“附件”</td></tr>
+                <tr><td>不限 / Any</td><td>接受系统支持的任意文件类型</td><td>仅在确实无法限定格式时使用</td></tr>
+                <tr><td>图片 / Image</td><td>用于照片、证件扫描图等</td><td>适合单页图像材料</td></tr>
+                <tr><td>PDF 文档 / PDF</td><td>用于证明、证书、成绩单等文档</td><td>正式证明材料优先使用</td></tr>
+                <tr><td>视频 / Video</td><td>用于视频证明材料</td><td>只有审核流程明确需要时使用</td></tr>
+                <tr><td>文本 / Text</td><td>用于纯文本类材料</td><td>不要用来代替应上传的正式文件</td></tr>
+                <tr><td>必填 / 选填</td><td>控制提交申请时是否必须提供该材料</td><td>以审核能够作出结论的最低材料集为准</td></tr>
+              </tbody>
+            </table>
+            <div class="danger"><strong>文件约束不是证书 PDF 模板</strong>这里配置的是考生申请资格时上传的证据材料。系统最终颁发证书使用的模板，要在“证书模板配置”中创建，并在认证配置的“最终颁发证书”或课程单元证书中绑定。</div>
+          </section>
+
+          <section class="doc-section" id="qualification-respath">
+            <h2>5. 资源路径是什么</h2>
+            <p class="lead">资源路径（Resource Path）是资格在系统底层的稳定唯一标识之一，同时用于控制考生上传该资格材料的权限。它不是网页地址，也不是认证 GPath。</p>
+            <table>
+              <thead><tr><th>规则</th><th>说明</th><th>示例</th></tr></thead>
+              <tbody>
+                <tr><td>必须唯一</td><td>两个资格定义不能使用相同资源路径。</td><td>每个资格单独一条路径</td></tr>
+                <tr><td>使用绝对路径</td><td>建议始终以 <code>/</code> 开头；系统会清理末尾斜杠。</td><td><code>/gcc/credential/cfta</code></td></tr>
+                <tr><td>使用稳定英文标识</td><td>名称翻译或文案调整时不修改资源路径。</td><td><code>/gcc/credential/work-experience</code></td></tr>
+                <tr><td>不要复用其他模块 GPath</td><td>课程、认证、商品和资格是不同资源，即使业务相关也应使用各自路径。</td><td>资格统一放在 <code>/gcc/credential/...</code></td></tr>
+                <tr><td>不要写版本号</td><td>资源路径代表资格定义本身，不写日期、版本或人员姓名。</td><td>避免 <code>-v2</code>、<code>-2026</code></td></tr>
+              </tbody>
+            </table>
+            <div class="danger"><strong>创建前务必确认路径</strong>当前管理后台只提供新建和只读详情，没有资格定义编辑入口。路径写错后不能在此页面直接修正，也不要通过创建同名资格来掩盖错误。</div>
+          </section>
+
+          <section class="doc-section" id="qualification-usage">
+            <h2>6. 资格创建后在哪里使用</h2>
+            <table>
+              <thead><tr><th>认证配置位置</th><th>业务效果</th><th>常见资格</th></tr></thead>
+              <tbody>
+                <tr><td>前置准入资格</td><td>进入或购买认证前必须已持有</td><td>学历、基础认证</td></tr>
+                <tr><td>发证前终审材料</td><td>课程完成后、发放最终证书前还需提交并审核</td><td>工作经验证明</td></tr>
+                <tr><td>最终颁发证书</td><td>认证完成并通过终审后，由系统颁发该资格</td><td>CFtA / CFtP Certification</td></tr>
+                <tr><td>禁止报读资格</td><td>考生已持有任一所选资格时，禁止购买当前认证</td><td>CFtA 禁止持有 CFtP 的考生反向报读</td></tr>
+                <tr><td>课程单元豁免资格</td><td>考生持有该资格时，购买流程可自动应用课程免考</td><td>持有 CFtA Certification 免考 CFTP 中的 CFtA 课程单元</td></tr>
+                <tr><td>课程单元完成后签发</td><td>完成指定单元后颁发单元级资格或证书</td><td>课程完成证明</td></tr>
+              </tbody>
+            </table>
+            <div class="note"><strong>自动免考需要两层配置</strong>先存在可识别的资格定义，再在认证课程单元中启用“允许免考”并勾选该资格。仅创建“免考资格”分类不会自动豁免任何课程。</div>
+            <div class="warning"><strong>不要把 CFTA 同时设为 CFTP 的强制前置和自动免考依据</strong>若业务允许没有 CFTA 的考生直接购买 CFTP，就不应把 CFTA 放入 CFTP 的“前置准入资格”；只需在 CFTP 内对应课程单元配置 CFTA 资格为豁免条件。</div>
+          </section>
+
+          <section class="doc-section" id="qualification-maintenance">
+            <h2>7. 查看详情与后续维护</h2>
+            <div class="action-grid">
+              <div class="action"><h3>查看详情</h3><p>检查资格 ID、名称、分类、资源路径、描述、获取说明和文件约束。详情为只读。</p></div>
+              <div class="action"><h3>设置多语言</h3><p>在详情页维护名称、描述、获取方式和文件名称翻译；资源路径和资格 ID 不随语言变化。</p></div>
+              <div class="action"><h3>复制 JSON</h3><p>复制完整定义用于核对或向技术同事提供上下文；当前页面不支持从 JSON 导入资格。</p></div>
+              <div class="action"><h3>修改已建资格</h3><p>当前后台没有编辑或删除入口。发现错误时先停止在新认证中引用，再与技术团队确认处理方案。</p></div>
+            </div>
+            <div class="danger"><strong>资格 ID 一旦被引用就属于业务合同</strong>认证结构按资格 ID 判断持有、准入、免考、禁购和发证。名称相同的另一个资格 ID 不会自动继承旧资格记录，也不能替换现有关系。</div>
+          </section>
+
+          <section class="doc-section faq" id="qualification-faq">
+            <h2>8. 常见问题</h2>
+            <details><summary>“认证资格”和“免考资格”会自动触发不同流程吗？</summary><p>不会。分类用于表达资格性质和帮助运营识别；具体流程取决于资格 ID 被配置到前置、终审、最终证书、禁止报读或课程单元豁免中的哪一处。</p></details>
+            <details><summary>系统自动颁发的证书需要添加文件约束吗？</summary><p>通常不需要。文件约束用于考生手工申请资格时上传证明。系统颁发的证书应在认证配置中绑定资格定义和证书 PDF 模板。</p></details>
+            <details><summary>同名资格为什么不能互相替代？</summary><p>系统按资格定义 ID 判断，不按显示名称判断。重复创建同名资格会产生两个独立的业务对象。</p></details>
+            <details><summary>已有高阶资格禁止购买初阶认证，要配置在哪里？</summary><p>在初阶认证的“禁止报读资格”中选择高阶认证资格。互斥认证管线则在双方“互斥认证管线”中分别配置，两者作用不同。</p></details>
+            <details><summary>资源路径写错了，可以在页面修改吗？</summary><p>当前页面详情只读，没有编辑入口。不要继续引用错误定义，也不要擅自创建同名替代项；应提供资格 ID、错误路径和引用情况给技术团队处理。</p></details>
+          </section>
+
+          <section class="doc-section" id="qualification-checklist">
+            <h2>9. 创建与引用检查清单</h2>
+            <ul class="checklist">
+              <li>列表中不存在同一业务资格</li>
+              <li>名称能区分认证、免考和材料用途</li>
+              <li>分类符合资格本身的性质</li>
+              <li>资源路径唯一、稳定且使用英文</li>
+              <li>描述写明适用范围和审核口径</li>
+              <li>获取方式说明面向考生可理解</li>
+              <li>仅为人工申请资格添加文件约束</li>
+              <li>每项材料名称、类型和必填状态正确</li>
+              <li>创建后已记录并核对资格 ID</li>
+              <li>认证配置引用的是正确资格 ID</li>
+              <li>自动免考同时配置允许免考和豁免资格</li>
+              <li>禁止报读与互斥管线没有混淆</li>
+            </ul>
+            <a class="back-top" href="#top">返回顶部</a>
+          </section>
+        </div>
+      </div>
+    </article>
+
+    <article class="manual" id="certificate-template-manual">
+      <nav class="breadcrumb" aria-label="面包屑">
+        <button type="button" onclick="showCatalog()">管理后台目录</button><span>/</span><span>证书模板配置</span>
+      </nav>
+      <div class="manual-layout">
+        <nav class="side-nav" aria-label="证书模板配置章节">
+          <strong>证书模板配置</strong>
+          <a href="#certificate-template-overview">功能概览</a>
+          <a href="#certificate-template-concepts">关键概念</a>
+          <a href="#certificate-template-create">新建与编辑</a>
+          <a href="#certificate-template-variables">模板变量</a>
+          <a href="#certificate-template-html">HTML 与样式</a>
+          <a href="#certificate-template-preview">预览与多语言</a>
+          <a href="#certificate-template-version">版本与引用</a>
+          <a href="#certificate-template-faq">常见问题</a>
+          <a href="#certificate-template-checklist">上线检查</a>
+        </nav>
+
+        <div class="content">
+          <header class="manual-title">
+            <div class="eyebrow" style="color:#9eeef1">配置管理 / GCREDS + GPDF</div>
+            <h1>证书模板配置使用手册</h1>
+            <p>面向证书运营和模板维护人员，说明 HTML 证书模板的创建、变量、预览、样式、版本更新，以及与认证证书配置的关系。</p>
+            <div class="manual-meta"><span>角色：证书运营</span><span>难度：进阶</span><span>更新：2026-08-25</span></div>
+          </header>
+
+          <section class="doc-section" id="certificate-template-overview">
+            <h2>1. 功能概览</h2>
+            <p class="lead">“证书模板配置”维护生成 PDF 时使用的完整 HTML 和 CSS。模板本身不会发证；创建后必须在认证配置的最终证书或课程单元证书中绑定，系统发证时才会使用。</p>
+            <div class="flow" aria-label="证书生成关系"><span>资格定义</span><b>+</b><span>证书模板</span><b>→</b><span>认证配置绑定</span><b>→</b><span>完成条件</span><b>→</b><span>生成 PDF</span></div>
+            <figure class="shot">
+              <img src="assets/certificate-template/template-list.png" alt="证书模板配置列表" data-filename="certificate-template/template-list.png">
+              <div class="shot-missing"><div><strong>待补截图：证书模板列表</strong><code>assets/certificate-template/template-list.png</code></div></div>
+              <figcaption>图 1：模板列表显示模板名称、描述、模板 ID、版本和创建时间；每行可查看详情或编辑。</figcaption>
+            </figure>
+            <div class="warning"><strong>资格定义和证书模板缺一不可</strong>资格定义决定“颁发什么资格”，模板决定“证书 PDF 长什么样”。只创建模板不会让系统自动发证，只配置资格而不绑定模板也无法生成证书 PDF。</div>
+          </section>
+
+          <section class="doc-section" id="certificate-template-concepts">
+            <h2>2. 先理解这些概念</h2>
+            <div class="term-grid">
+              <div class="term"><h3>模板 ID / ULID</h3><p>模板的稳定唯一标识，由系统创建。认证结构引用的是这个 ID，不按模板名称查找。</p></div>
+              <div class="term"><h3>模板版本</h3><p>每次编辑并保存同一个模板，版本号增加，但模板 ID 不变。</p></div>
+              <div class="term critical"><h3>HTML 模板</h3><p>完整 HTML 文档，包含页面内容、CSS、图片和 Go 模板变量。</p></div>
+              <div class="term"><h3>模板参数</h3><p>发证服务传入的动态数据，例如姓名、证书编号、课程名和签发日期。</p></div>
+            </div>
+            <table>
+              <thead><tr><th>配置对象</th><th>负责内容</th><th>在哪里关联</th></tr></thead>
+              <tbody>
+                <tr><td>资格定义</td><td>证书代表的业务资格</td><td>认证配置的最终颁发证书或课程单元证书</td></tr>
+                <tr><td>证书模板</td><td>PDF 版式、文字、图片和变量位置</td><td>与资格定义一起绑定</td></tr>
+                <tr><td>模板变量</td><td>姓名、编号、课程、日期等运行时数据</td><td>由微服务按发证场景传入，不在本页面手工填写</td></tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section class="doc-section" id="certificate-template-create">
+            <h2>3. 新建和编辑模板</h2>
+            <p class="lead">新用途或需要保留旧版外观时使用“新建模板”；仅修正文案或样式且允许后续证书统一采用新外观时，可直接编辑现有模板。</p>
+            <figure class="shot">
+              <img src="assets/certificate-template/template-create.png" alt="新建证书模板表单" data-filename="certificate-template/template-create.png">
+              <div class="shot-missing"><div><strong>待补截图：新建证书模板</strong><code>assets/certificate-template/template-create.png</code></div></div>
+              <figcaption>图 2：新建模板。模板名称和 HTML 模板为必填；右侧实时显示 HTML 预览。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>字段</th><th>是否必填</th><th>填写说明</th></tr></thead>
+              <tbody>
+                <tr><td>模板 ID</td><td>系统生成</td><td>创建后只读，是认证配置实际保存的引用值。</td></tr>
+                <tr><td>模板名称</td><td class="required">必填</td><td>建议包含证书用途或认证名称，便于配置人员区分。</td></tr>
+                <tr><td>描述</td><td>选填</td><td>写明适用认证、版式或语言，避免使用“test”“新版”等模糊名称。</td></tr>
+                <tr><td>HTML 模板</td><td class="required">必填</td><td>填写完整、可独立渲染的 HTML 文档，并使用当前发证场景支持的变量。</td></tr>
+                <tr><td>参数结构</td><td>当前页面不编辑</td><td>详情“完整字段”中可能显示底层参数结构；管理后台当前没有单独输入项，不要把它当作日常配置字段。</td></tr>
+              </tbody>
+            </table>
+            <ol class="steps">
+              <li><strong>确定使用场景</strong><span>先确认是认证最终证书还是课程单元证书，两者可用变量不同。</span></li>
+              <li><strong>填写名称和描述</strong><span>明确认证、语言和版式用途。</span></li>
+              <li><strong>粘贴完整 HTML</strong><span>检查变量拼写、CSS、图片地址和打印尺寸。</span></li>
+              <li><strong>查看右侧预览</strong><span>核对布局、文字、图片和签名区域是否完整。</span></li>
+              <li><strong>保存并记录模板 ID</strong><span>再到认证配置选择该模板。</span></li>
+            </ol>
+          </section>
+
+          <section class="doc-section" id="certificate-template-variables">
+            <h2>4. 模板变量怎么使用</h2>
+            <p class="lead">PDF 模板使用 Go <code>html/template</code> 语法，变量必须写成 <code>{{ .Name }}</code> 这种形式。变量名区分大小写，点号和大括号都不能省略。</p>
+            <table>
+              <thead><tr><th>发证场景</th><th>可用变量</th><th>值的含义</th></tr></thead>
+              <tbody>
+                <tr><td>认证最终证书</td><td><code>{{ .Name }}</code></td><td>考生姓名</td></tr>
+                <tr><td>认证最终证书</td><td><code>{{ .CandidateNo }}</code></td><td>当前由发证流程传入的证书编号（degree number），不是考生 ULID，也不是登录账号</td></tr>
+                <tr><td>课程单元证书</td><td><code>{{ .Name }}</code></td><td>考生姓名</td></tr>
+                <tr><td>课程单元证书</td><td><code>{{ .Course }}</code></td><td>认证配置中该课程单元的名称提示</td></tr>
+                <tr><td>课程单元证书</td><td><code>{{ .IssueDate }}</code></td><td>签发日期，格式为 <code>YYYY-MM-DD</code>，例如 <code>2026-08-21</code></td></tr>
+              </tbody>
+            </table>
+            <div class="danger"><strong>不要跨场景使用变量</strong>当前认证最终证书只传入 <code>Name</code> 和 <code>CandidateNo</code>；课程单元证书传入 <code>Name</code>、<code>Course</code> 和 <code>IssueDate</code>。最终证书模板写 <code>{{ .IssueDate }}</code> 或 <code>{{ .Course }}</code> 不会自动从 PDF 请求的其他字段合并进来。</div>
+            <h3>最小示例</h3>
+            <pre><code>&lt;h1&gt;Certificate of Completion&lt;/h1&gt;
+&lt;p class="name"&gt;{{ .Name }}&lt;/p&gt;
+&lt;p class="course"&gt;{{ .Course }}&lt;/p&gt;
+&lt;p class="date"&gt;{{ .IssueDate }}&lt;/p&gt;</code></pre>
+            <div class="note"><strong>编号字段的显示文案由模板决定</strong>如需展示证书编号，可将 <code>{{ .CandidateNo }}</code> 放在 “Certificate No.” 或中英文都适用的标签旁；不要把它标成考生 ID，除非业务已确认其语义。</div>
+          </section>
+
+          <section class="doc-section" id="certificate-template-html">
+            <h2>5. HTML、CSS、图片和字体</h2>
+            <table>
+              <thead><tr><th>项目</th><th>配置建议</th><th>常见问题</th></tr></thead>
+              <tbody>
+                <tr><td>页面尺寸</td><td>在 CSS 中明确 <code>@page { size: A4 landscape; }</code> 或业务要求的尺寸，并把页面边距设为确定值。</td><td>未设打印尺寸会导致缩放、分页或边框被裁切。</td></tr>
+                <tr><td>固定布局</td><td>证书画布使用稳定宽高、定位和间距，不依赖浏览器窗口大小。</td><td>响应式网页布局在 PDF 中可能错位。</td></tr>
+                <tr><td>背景与颜色</td><td>使用 <code>print-color-adjust: exact</code>，同时保持文字与背景有足够对比。</td><td>打印渲染可能淡化背景色。</td></tr>
+                <tr><td>图片</td><td>使用 PDF 生成服务能够访问的稳定地址，保存前确认 Logo、边框和签名均能在预览中加载。</td><td>本机路径、登录后才能访问的地址或短期签名 URL 会失效。</td></tr>
+                <tr><td>字体</td><td>使用生成服务中可用的字体并提供通用回退字体；中文证书必须实际生成一张 PDF 验证汉字。</td><td>管理员电脑能显示不代表 GPDF 容器也安装了同一字体，缺字时可能显示方框。</td></tr>
+                <tr><td>动态文本</td><td>为姓名、课程名和编号预留足够宽度，允许合理换行或限制字号。</td><td>长姓名和长课程名容易覆盖固定文案或签名。</td></tr>
+              </tbody>
+            </table>
+            <div class="warning"><strong>预览通过不等于 PDF 一定相同</strong>右侧预览运行在管理后台浏览器，最终 PDF 由 GPDF 服务中的浏览器环境生成。字体、远程图片、打印分页和网络访问仍需用真实发证流程验证。</div>
+          </section>
+
+          <section class="doc-section" id="certificate-template-preview">
+            <h2>6. 预览和多语言</h2>
+            <figure class="shot">
+              <img src="assets/certificate-template/template-edit-preview.png" alt="编辑证书模板及 HTML 预览" data-filename="certificate-template/template-edit-preview.png">
+              <div class="shot-missing"><div><strong>待补截图：模板编辑预览</strong><code>assets/certificate-template/template-edit-preview.png</code></div></div>
+              <figcaption>图 3：编辑模板时左侧维护名称、描述和 HTML，右侧查看版式。预览中显示 <code>{{ .Name }}</code> 等占位符属于正常现象。</figcaption>
+            </figure>
+            <div class="action-grid">
+              <div class="action"><h3>HTML 预览</h3><p>用于快速检查页面布局和静态资源。它不会模拟真实考生数据，也不会替换模板变量。</p></div>
+              <div class="action"><h3>设置多语言</h3><p>当前可维护模板名称和描述的翻译，便于后台识别；HTML 模板正文不会自动生成另一种语言版本。</p></div>
+            </div>
+            <div class="note"><strong>需要不同语言证书时</strong>如果中英文证书正文、固定文案或布局不同，应分别建立明确命名的模板，并在对应认证版本中绑定；不要期待“设置多语言”自动翻译 HTML。</div>
+          </section>
+
+          <section class="doc-section" id="certificate-template-version">
+            <h2>7. 模板版本和认证引用</h2>
+            <p class="lead">编辑现有模板会保留模板 ID，并将版本号加一。所有仍引用该模板 ID 的认证，在之后新生成 PDF 时会使用最新模板内容。</p>
+            <table>
+              <thead><tr><th>操作</th><th>模板 ID</th><th>影响范围</th></tr></thead>
+              <tbody>
+                <tr><td>编辑并保存现有模板</td><td>不变</td><td>后续新生成或重试生成的 PDF 使用更新后的内容</td></tr>
+                <tr><td>新建模板</td><td>生成新 ID</td><td>不会自动替换任何认证，需要在认证配置中重新选择</td></tr>
+                <tr><td>查看已生成证书</td><td>无变化</td><td>已经生成并保存的旧 PDF 不会因模板编辑自动更新</td></tr>
+              </tbody>
+            </table>
+            <div class="danger"><strong>正式模板的大改动不要直接覆盖</strong>如果需要保留某批证书的旧版式，或新认证版本要使用不同法律文案，应新建模板，再创建或克隆认证草稿绑定新模板。直接编辑会影响所有继续引用旧模板 ID 的后续发证。</div>
+            <ol class="steps">
+              <li><strong>在模板列表核对模板 ID 和当前版本</strong><span>名称相似时以 ID 为准。</span></li>
+              <li><strong>在认证配置绑定正确组合</strong><span>同时核对资格定义 ID 和 PDF 模板 ID。</span></li>
+              <li><strong>使用测试考生完成一次真实发证</strong><span>验证姓名、编号、课程、日期、字体、图片和下载链接。</span></li>
+              <li><strong>再发布认证或投入正式使用</strong><span>已发布认证不能直接修改结构时，先克隆新草稿版本。</span></li>
+            </ol>
+          </section>
+
+          <section class="doc-section faq" id="certificate-template-faq">
+            <h2>8. 常见问题</h2>
+            <details><summary>为什么预览里仍然显示 {{ .Name }}？</summary><p>右侧预览只渲染当前 HTML，不注入测试考生参数，因此模板占位符会原样显示。真实发证时才由微服务传入对应值。</p></details>
+            <details><summary>为什么证书没有课程名或日期？</summary><p>先确认模板用于课程单元证书，并使用了正确大小写的 <code>{{ .Course }}</code> 与 <code>{{ .IssueDate }}</code>。认证最终证书当前不提供这两个模板变量。</p></details>
+            <details><summary>为什么 CandidateNo 不是考生 ID？</summary><p>这是现有接口字段名，当前发证流程传入的是证书编号（degree number）。模板上的固定标签应按证书编号表达，不要据字段名推断为考生 ULID 或登录账号。</p></details>
+            <details><summary>日期应该怎样显示才适合中英文？</summary><p>课程单元证书的 <code>IssueDate</code> 已格式化为 <code>YYYY-MM-DD</code>，例如 <code>2026-08-21</code>，无需在 HTML 中再次处理 RFC3339 时间。</p></details>
+            <details><summary>中文姓名显示方框，改 HTML 字体名就够了吗？</summary><p>不一定。最终 PDF 在 GPDF 容器中生成，所选中文字体必须在该环境中真实可用。保留回退字体后仍应生成 PDF 验证；缺字体需要由部署侧安装或提供可加载的字体资源。</p></details>
+            <details><summary>保存模板后，已有证书会自动更新吗？</summary><p>不会。已生成 PDF 是历史产物；模板更新只影响之后新生成或重新生成的证书。</p></details>
+          </section>
+
+          <section class="doc-section" id="certificate-template-checklist">
+            <h2>9. 上线前检查清单</h2>
+            <ul class="checklist">
+              <li>确认是最终证书还是课程单元证书</li>
+              <li>模板名称和描述能明确区分用途</li>
+              <li>使用了该发证场景实际支持的变量</li>
+              <li>变量大小写、点号和大括号正确</li>
+              <li>CandidateNo 按证书编号表达</li>
+              <li>课程日期显示为 YYYY-MM-DD</li>
+              <li>页面尺寸、方向、边距和分页正确</li>
+              <li>长姓名和长课程名不会覆盖其他内容</li>
+              <li>Logo、边框和签名资源长期可访问</li>
+              <li>中文字体已在真实 PDF 中验证</li>
+              <li>资格定义与模板 ID 组合绑定正确</li>
+              <li>已用测试考生走通生成、预览和下载</li>
+              <li>大改动使用新模板而非覆盖历史用途</li>
+              <li>明确已有 PDF 不会自动更新</li>
+            </ul>
+            <a class="back-top" href="#top">返回顶部</a>
+          </section>
+        </div>
+      </div>
+    </article>
+
+    <article class="manual" id="resource-pack-manual">
+      <nav class="breadcrumb" aria-label="面包屑">
+        <button type="button" onclick="showCatalog()">管理后台目录</button><span>/</span><span>资源包与资源文件</span>
+      </nav>
+      <div class="manual-layout">
+        <nav class="side-nav" aria-label="资源包与资源文件章节">
+          <strong>资源包与资源文件</strong>
+          <a href="#resource-pack-overview">功能概览</a>
+          <a href="#resource-pack-concepts">关键概念</a>
+          <a href="#resource-pack-create">新建资源包</a>
+          <a href="#resource-pack-path">路径、封面与权限</a>
+          <a href="#resource-file-list">资源文件列表</a>
+          <a href="#resource-file-create">新建与上传文件</a>
+          <a href="#resource-file-types">文件类型规则</a>
+          <a href="#resource-pack-version">克隆、版本与状态</a>
+          <a href="#resource-pack-faq">常见问题</a>
+          <a href="#resource-pack-checklist">发布检查</a>
+        </nav>
+
+        <div class="content">
+          <header class="manual-title">
+            <div class="eyebrow" style="color:#9eeef1">配置管理 / GLMS</div>
+            <h1>资源包与资源文件配置使用手册</h1>
+            <p>面向资源运营人员，说明资源包容器、资源路径、封面、视频/PDF/ZIP 文件、上传校验、版本克隆和发布状态。</p>
+            <div class="manual-meta"><span>角色：资源运营</span><span>难度：基础至进阶</span><span>更新：2026-08-25</span></div>
+          </header>
+
+          <section class="doc-section" id="resource-pack-overview">
+            <h2>1. 功能概览</h2>
+            <p class="lead">“资源包配置”维护一组可以独立授权和发布的学习资源；“资源文件配置”维护资源包内的具体视频、PDF 或 ZIP。必须先建立资源包，才能在它下面建立资源文件。</p>
+            <div class="flow" aria-label="资源配置关系"><span>资源包</span><b>→</b><span>资源路径与封面</span><b>→</b><span>资源文件</span><b>→</b><span>校验</span><b>→</b><span>上架</span></div>
+            <figure class="shot">
+              <img src="assets/resource-pack/resource-pack-list.png" alt="资源包配置列表" data-filename="resource-pack/resource-pack-list.png">
+              <div class="shot-missing"><div><strong>待补截图：资源包配置列表</strong><code>assets/resource-pack/resource-pack-list.png</code></div></div>
+              <figcaption>图 1：资源包列表显示标题、分类、资源路径、资源包 ID、版本和状态；不同状态提供查看、编辑、克隆、上架、下架或删除操作。</figcaption>
+            </figure>
+            <div class="note"><strong>推荐顺序</strong>新建草稿资源包 → 保存 → 编辑并上传封面 → 新建资源文件 → 保存 → 编辑并上传实际文件 → 检查所有字段 → 上架资源包。</div>
+          </section>
+
+          <section class="doc-section" id="resource-pack-concepts">
+            <h2>2. 先理解这些概念</h2>
+            <div class="term-grid">
+              <div class="term critical"><h3>资源路径（ResPath）</h3><p>资源包的业务路径，也是候选人访问权限和同系列版本识别的重要依据，不是普通备注。</p></div>
+              <div class="term"><h3>资源包 ID</h3><p>每条资源包记录的唯一标识。克隆会生成新 ID，即使资源路径保持不变。</p></div>
+              <div class="term"><h3>资源文件</h3><p>隶属于一个具体资源包的内容项，可为 Video、PDF 或 ZIP，并有独立标题、排序和存储字段。</p></div>
+              <div class="term"><h3>版本</h3><p>当前页面的版本值用于后端并发控制，随编辑和状态变更递增，不是运营人员自行命名的内容版本号。</p></div>
+            </div>
+            <table>
+              <thead><tr><th>对象</th><th>负责内容</th><th>候选端可见条件</th></tr></thead>
+              <tbody>
+                <tr><td>资源包</td><td>标题、分类、资源路径、封面、状态和一组文件</td><td>资源包为已上架，且考生拥有对应资源路径权限</td></tr>
+                <tr><td>资源文件</td><td>视频流或 PDF/ZIP 文件、缩略图、排序</td><td>所属资源包可见；文件字段满足其类型要求</td></tr>
+                <tr><td>分类</td><td>后台和候选端的展示分类，例如 <code>public</code>、<code>member</code></td><td>分类本身不授予访问权限</td></tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section class="doc-section" id="resource-pack-create">
+            <h2>3. 新建资源包</h2>
+            <figure class="shot">
+              <img src="assets/resource-pack/resource-pack-create.png" alt="新建资源包表单" data-filename="resource-pack/resource-pack-create.png">
+              <div class="shot-missing"><div><strong>待补截图：新建资源包</strong><code>assets/resource-pack/resource-pack-create.png</code></div></div>
+              <figcaption>图 2：新建资源包。首次保存前没有资源包 ID，因此“上传封面”不可用；先保存，再从列表进入编辑页上传封面。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>字段</th><th>是否必填</th><th>填写说明</th></tr></thead>
+              <tbody>
+                <tr><td>标题</td><td class="required">必填</td><td>候选端展示名称。建议直接说明资源主题和用途。</td></tr>
+                <tr><td>描述</td><td>选填</td><td>说明资源内容、适用对象和使用方式。</td></tr>
+                <tr><td>分类</td><td>建议填写</td><td>用于内容归类，例如 <code>public</code> 或 <code>member</code>；不要把它当作权限开关。</td></tr>
+                <tr><td>图标</td><td>选填</td><td>填写管理后台支持的图标标识，例如 <code>FileBarChart</code>。不确定时可留空。</td></tr>
+                <tr><td>资源路径</td><td class="required">必填</td><td>系统会按标题和分类生成建议路径。保存前必须确认它属于正确业务系列。</td></tr>
+                <tr><td>封面 Object Key</td><td>上架前必填</td><td>封面在对象存储中的键。推荐通过上传按钮自动填写。</td></tr>
+                <tr><td>封面文件 SHA256</td><td>上架前必填</td><td>64 位十六进制校验值。上传成功后自动计算并填写。</td></tr>
+                <tr><td>状态</td><td>系统设置</td><td>新建时为草稿；完成内容配置后再执行上架。</td></tr>
+              </tbody>
+            </table>
+            <ol class="steps">
+              <li><strong>填写标题、描述和分类</strong><span>明确资源包在候选端的用途。</span></li>
+              <li><strong>核对自动生成的资源路径</strong><span>新资源包使用新路径；同系列新版本保持原路径。</span></li>
+              <li><strong>先保存草稿</strong><span>系统生成资源包 ID。</span></li>
+              <li><strong>重新进入编辑页上传封面</strong><span>上传会自动填写 Object Key 和 SHA256，再保存一次。</span></li>
+              <li><strong>转到资源文件配置</strong><span>为这个资源包添加实际内容。</span></li>
+            </ol>
+          </section>
+
+          <section class="doc-section" id="resource-pack-path">
+            <h2>4. 资源路径、封面和访问权限</h2>
+            <div class="warning"><strong>资源路径的作用类似业务主键</strong>候选端会用它进行权限判断，同一路径还用于识别资源包的现行发布版本。随意修改可能导致原有授权失效，或把本应独立的资源误认为同一系列。</div>
+            <table>
+              <thead><tr><th>场景</th><th>资源路径怎么处理</th><th>结果</th></tr></thead>
+              <tbody>
+                <tr><td>建立全新的独立资源包</td><td>使用新的唯一路径</td><td>形成独立的授权和发布系列</td></tr>
+                <tr><td>克隆后制作同一资源包的新版本</td><td>保留原路径</td><td>新版本上架后，原已上架版本自动成为历史版本</td></tr>
+                <tr><td>从旧包复制内容制作另一个业务资源</td><td>保存前改成新的路径</td><td>避免覆盖旧系列，也避免沿用旧权限</td></tr>
+              </tbody>
+            </table>
+            <div class="danger"><strong><code>public</code> 不等于自动公开</strong>分类只描述内容类型。候选人是否可见仍由资源路径对应的权限决定；新路径发布前必须同步确认授权配置。</div>
+            <p>资源包上架前必须有可访问的封面 Object Key 和正确的 SHA256。优先使用上传按钮，不要手工猜测存储路径或复制其他资源的哈希值。新建页上传按钮不可用是正常现象，因为上传地址需要先取得资源包 ID。</p>
+          </section>
+
+          <section class="doc-section" id="resource-file-list">
+            <h2>5. 资源文件列表</h2>
+            <p class="lead">资源文件列表可按所属资源包筛选。每一行代表一个具体内容项，并显示所属资源包、文件类型、排序、版本和操作。</p>
+            <figure class="shot">
+              <img src="assets/resource-file/resource-file-list.png" alt="资源文件配置列表" data-filename="resource-file/resource-file-list.png">
+              <div class="shot-missing"><div><strong>待补截图：资源文件列表</strong><code>assets/resource-file/resource-file-list.png</code></div></div>
+              <figcaption>图 3：先使用顶部下拉框筛选资源包，再查看或维护其文件。文件不能在创建后改挂到另一个资源包。</figcaption>
+            </figure>
+            <div class="action-grid">
+              <div class="action"><h3>查看详情</h3><p>查看文件 ID、所属资源包、存储字段、排序、版本和时间等完整信息。</p></div>
+              <div class="action"><h3>编辑</h3><p>修改标题、描述、排序或重新上传内容。正式资源建议先处理资源包版本，再修改文件。</p></div>
+              <div class="action"><h3>删除</h3><p>只允许删除草稿资源包中的文件。删除配置不可恢复，操作前确认没有误选资源包。</p></div>
+            </div>
+          </section>
+
+          <section class="doc-section" id="resource-file-create">
+            <h2>6. 新建和上传资源文件</h2>
+            <figure class="shot">
+              <img src="assets/resource-file/resource-file-create-top.png" alt="新建资源文件上半部分" data-filename="resource-file/resource-file-create-top.png">
+              <div class="shot-missing"><div><strong>待补截图：新建资源文件上半部分</strong><code>assets/resource-file/resource-file-create-top.png</code></div></div>
+              <figcaption>图 4：选择所属资源包、填写标题和类型。文件 ID 在首次保存后生成，文件和缩略图上传按钮因此会在创建时保持不可用。</figcaption>
+            </figure>
+            <figure class="shot">
+              <img src="assets/resource-file/resource-file-create-bottom.png" alt="新建资源文件下半部分" data-filename="resource-file/resource-file-create-bottom.png">
+              <div class="shot-missing"><div><strong>待补截图：新建资源文件下半部分</strong><code>assets/resource-file/resource-file-create-bottom.png</code></div></div>
+              <figcaption>图 5：PDF/ZIP 使用文件名、字节数、Object Key 和 SHA256；缩略图有独立的 Object Key 和 SHA256；排序值决定候选端显示顺序。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>字段</th><th>填写方式</th><th>说明</th></tr></thead>
+              <tbody>
+                <tr><td>所属资源包</td><td class="required">创建时必选</td><td>只能选择目标资源包；创建后不可更换。</td></tr>
+                <tr><td>标题</td><td class="required">必填</td><td>候选端显示的文件名称。</td></tr>
+                <tr><td>类型</td><td class="required">必选</td><td>Video、PDF 或 ZIP；决定后续需要填写的存储字段。</td></tr>
+                <tr><td>描述</td><td>选填</td><td>说明内容范围、格式或使用方法。</td></tr>
+                <tr><td>排序</td><td>建议填写</td><td>数值越小越靠前；同一资源包内建议留出间隔，便于后续插入。</td></tr>
+                <tr><td>文件名 / 字节数</td><td>PDF/ZIP 必填</td><td>使用上传按钮时由文件自动填写；文件大小单位是字节。</td></tr>
+                <tr><td>文件 Object Key / SHA256</td><td>PDF/ZIP 必填</td><td>由上传流程自动填写并用于存在性和完整性校验。</td></tr>
+                <tr><td>视频流 UID</td><td>Video 必填</td><td>视频上传到流媒体服务后自动填写；Video 不使用普通文件 Object Key。</td></tr>
+                <tr><td>缩略图 Object Key / SHA256</td><td>选填</td><td>上传缩略图后自动填写，用于资源文件的封面展示。</td></tr>
+                <tr><td>版本</td><td>系统维护</td><td>并发控制字段，不要手工改成业务版本号。</td></tr>
+              </tbody>
+            </table>
+            <ol class="steps">
+              <li><strong>选择草稿资源包</strong><span>确认标题和资源包 ID，避免把文件建到同名包或历史版本。</span></li>
+              <li><strong>填写标题、类型和排序</strong><span>首次保存生成资源文件 ID。</span></li>
+              <li><strong>重新进入编辑页</strong><span>此时上传按钮可用。</span></li>
+              <li><strong>上传实际文件或视频</strong><span>等待 Object Key、SHA256、文件信息或视频 UID 自动回填。</span></li>
+              <li><strong>按需上传缩略图并保存</strong><span>不要在上传尚未完成时关闭页面。</span></li>
+            </ol>
+          </section>
+
+          <section class="doc-section" id="resource-file-types">
+            <h2>7. Video、PDF 和 ZIP 的字段规则</h2>
+            <table>
+              <thead><tr><th>类型</th><th>必须存在</th><th>必须为空或不使用</th><th>候选端行为</th></tr></thead>
+              <tbody>
+                <tr><td>Video</td><td>视频流 UID</td><td>普通文件名、大小、Object Key 和文件 SHA256</td><td>打开视频播放器</td></tr>
+                <tr><td>PDF</td><td>文件名、字节数、Object Key、64 位 SHA256</td><td>视频流 UID</td><td>打开 PDF 预览</td></tr>
+                <tr><td>ZIP</td><td>文件名、字节数、Object Key、64 位 SHA256</td><td>视频流 UID</td><td>获取文件地址并下载</td></tr>
+              </tbody>
+            </table>
+            <div class="note"><strong>切换类型会改变字段语义</strong>例如改为 Video 后，普通文件字段不再使用。不要通过手工复制 Object Key 或 UID 来绕过上传流程；上架时后端会校验对象是否真实存在。</div>
+            <div class="warning"><strong>同一资源包内不要重复内容</strong>相同文件名、文件哈希或视频 UID 可能触发重复校验。需要替换内容时，使用编辑上传或克隆资源包制作新版本。</div>
+          </section>
+
+          <section class="doc-section" id="resource-pack-version">
+            <h2>8. 克隆、版本和状态</h2>
+            <table>
+              <thead><tr><th>状态 / 操作</th><th>含义</th><th>运营要求</th></tr></thead>
+              <tbody>
+                <tr><td>草稿（Draft）</td><td>候选端不可见，可配置文件</td><td>在此状态完成封面、文件和权限检查</td></tr>
+                <tr><td>上架</td><td>校验资源包及全部文件后变为 Active</td><td>只有通过校验并具备权限的候选人可见</td></tr>
+                <tr><td>下架</td><td>Active 回到 Draft</td><td>候选端会立即不再返回该资源包；修改前评估影响</td></tr>
+                <tr><td>克隆</td><td>复制包信息和文件配置，生成新资源包 ID 和草稿</td><td>制作同系列新版本时保留资源路径，再检查复用的存储对象</td></tr>
+                <tr><td>已废弃（Deprecated）</td><td>同一路径的新版本上架后，旧 Active 自动转为历史版本</td><td>用于保留历史，不作为当前候选端资源</td></tr>
+                <tr><td>删除</td><td>删除资源包配置及所属文件记录</td><td>只允许草稿；不可恢复，正式数据优先保留版本历史</td></tr>
+              </tbody>
+            </table>
+            <div class="danger"><strong>不要直接把克隆当成独立资源包发布</strong>克隆默认沿用原资源路径。若实际要制作完全不同的资源，必须在草稿中改成新的资源路径并重新确认权限；否则新包上架会替代原路径下的旧 Active 版本。</div>
+            <p>克隆会复制资源包元数据和文件配置，但不代表每个底层存储对象都已重新上传。发布前应逐项打开或核对复用文件，确认对象仍存在、内容正确且没有跨业务复用风险。</p>
+          </section>
+
+          <section class="doc-section faq" id="resource-pack-faq">
+            <h2>9. 常见问题</h2>
+            <details><summary>为什么新建资源包时不能上传封面？</summary><p>上传接口需要资源包 ID。先保存草稿，从列表进入编辑页，再上传封面并保存。</p></details>
+            <details><summary>为什么新建资源文件时上传按钮不可用？</summary><p>同样需要先生成资源文件 ID。先保存所属资源包、标题和类型，再编辑上传文件或视频。</p></details>
+            <details><summary>分类选 public 后，所有考生都会看到吗？</summary><p>不会。分类用于归类，候选端还会检查资源路径权限。新资源路径必须同步完成授权配置。</p></details>
+            <details><summary>为什么资源包上架失败？</summary><p>先检查封面 Object Key 和 SHA256；再逐个检查文件。Video 必须有视频 UID，PDF/ZIP 必须有真实存在的 Object Key、文件信息和 64 位 SHA256。</p></details>
+            <details><summary>为什么不能删除已上架资源包或其中的文件？</summary><p>后端只允许删除草稿数据。需要停止展示时先下架；正式版本调整优先克隆新草稿，避免破坏历史。</p></details>
+            <details><summary>为什么上架新版本后旧版本显示“已废弃”？</summary><p>同一资源路径只保留一个现行 Active 版本。新版本上架后旧 Active 自动转为 Deprecated，这是正常的版本替换行为。</p></details>
+            <details><summary>版本字段可以改成 2.0 吗？</summary><p>不可以。它是后端乐观锁版本，保存和状态操作会自动递增，不是展示给用户的语义版本。</p></details>
+          </section>
+
+          <section class="doc-section" id="resource-pack-checklist">
+            <h2>10. 上架前检查清单</h2>
+            <ul class="checklist">
+              <li>标题和描述能清楚说明资源用途</li>
+              <li>新资源使用新路径，同系列版本保留原路径</li>
+              <li>资源路径对应的候选人权限已配置</li>
+              <li>分类没有被误当成访问权限</li>
+              <li>资源包封面已上传且可以访问</li>
+              <li>封面 SHA256 为正确的 64 位值</li>
+              <li>所有文件挂在目标资源包版本下</li>
+              <li>文件标题、描述和排序已复核</li>
+              <li>Video 均有有效视频流 UID</li>
+              <li>PDF/ZIP 的文件名、大小、Object Key 和 SHA256 完整</li>
+              <li>没有重复文件名、哈希或视频 UID</li>
+              <li>克隆版本复用的存储对象仍真实存在</li>
+              <li>多语言标题和描述已按需补充</li>
+              <li>已用有权限和无权限账号验证候选端结果</li>
+              <li>确认上架的是目标资源路径的正确草稿</li>
+            </ul>
+            <a class="back-top" href="#top">返回顶部</a>
+          </section>
+        </div>
+      </div>
+    </article>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script>
+    const catalog = document.getElementById("catalog");
+    const manuals = document.querySelectorAll(".manual");
+    const toast = document.getElementById("toast");
+    let toastTimer;
+
+    function openManual(name) {
+      const manual = document.getElementById(name + "-manual");
+      if (!manual) return;
+      catalog.classList.add("hidden");
+      manuals.forEach((item) => item.classList.remove("active"));
+      manual.classList.add("active");
+      history.replaceState(null, "", "#" + name);
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
+
+    function showCatalog() {
+      manuals.forEach((item) => item.classList.remove("active"));
+      catalog.classList.remove("hidden");
+      history.replaceState(null, "", location.pathname + location.search);
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
+
+    function pendingModule(name) {
+      clearTimeout(toastTimer);
+      toast.textContent = name + "手册尚未编写，将在后续版本补充。";
+      toast.classList.add("show");
+      toastTimer = setTimeout(() => toast.classList.remove("show"), 2600);
+    }
+
+    function filterModules(value) {
+      const query = value.trim().toLowerCase();
+      document.querySelectorAll(".module").forEach((module) => {
+        const text = (module.dataset.name + " " + module.textContent).toLowerCase();
+        module.style.display = !query || text.includes(query) ? "block" : "none";
+      });
+    }
+
+    document.querySelectorAll(".shot img").forEach((image) => {
+      image.addEventListener("error", () => {
+        image.style.display = "none";
+        const missing = image.nextElementSibling;
+        if (missing) missing.style.display = "grid";
+      });
+      image.addEventListener("click", () => window.open(image.src, "_blank", "noopener"));
+      image.title = "点击查看原图";
+    });
+
+    const sectionObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        document.querySelectorAll(".side-nav a").forEach((link) => {
+          link.classList.toggle("active", link.getAttribute("href") === "#" + entry.target.id);
+        });
+      });
+    }, { rootMargin: "-20% 0px -70% 0px" });
+    document.querySelectorAll(".doc-section").forEach((section) => sectionObserver.observe(section));
+
+    if (location.hash === "#course" || location.hash.startsWith("#course-")) openManual("course");
+    if (location.hash === "#certification" || location.hash.startsWith("#certification-")) openManual("certification");
+    if (location.hash === "#product" || location.hash.startsWith("#product-")) openManual("product");
+    if (location.hash === "#qualification" || location.hash.startsWith("#qualification-")) openManual("qualification");
+    if (location.hash === "#certificate-template" || location.hash.startsWith("#certificate-template-")) openManual("certificate-template");
+    if (location.hash === "#resource-pack" || location.hash.startsWith("#resource-pack-") || location.hash.startsWith("#resource-file-")) openManual("resource-pack");
+  </script>
+</body>
+</html>
