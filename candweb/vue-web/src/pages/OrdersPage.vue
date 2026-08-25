@@ -37,28 +37,6 @@ type DetailField = {
   value: string
 }
 
-type PriceMetric = {
-  key: string
-  label: string
-  value: string
-  note: string
-  tone: string
-}
-
-type OrderPriceItem = {
-  item_type?: string
-  item_ulid?: string
-  title?: string
-  unit_price_minor?: number
-  quantity?: number
-  subtotal_minor?: number
-}
-
-type OrderExemption = {
-  course_cc_ulid?: string
-  credential_ulid?: string
-}
-
 type OrderDetail = {
   found?: boolean
   summary?: {
@@ -96,12 +74,10 @@ type OrderDetail = {
     total_minor?: number
     amount_paid_minor?: number
     exemption_amount_recorded?: boolean
-    items?: OrderPriceItem[]
     coupons?: Array<{ code?: string; name?: string }>
     promo_codes?: string[]
     unavailable_reason?: string
   }
-  exemptions?: OrderExemption[]
   business_detail?: Record<string, unknown>
   raw?: unknown
 }
@@ -222,8 +198,6 @@ const hiddenBusinessDetailFields = new Set([
 ])
 const orderPricing = computed(() => selectedOrderDetail.value?.pricing || null)
 const pricingCurrency = computed(() => String(orderPricing.value?.currency_code || selectedOrderDetail.value?.summary?.currency || ""))
-const priceItems = computed(() => Array.isArray(orderPricing.value?.items) ? orderPricing.value!.items : [])
-const orderExemptions = computed(() => Array.isArray(selectedOrderDetail.value?.exemptions) ? selectedOrderDetail.value!.exemptions : [])
 const promotionLabels = computed(() => {
   const labels: string[] = []
   for (const coupon of orderPricing.value?.coupons || []) {
@@ -236,50 +210,14 @@ const promotionLabels = computed(() => {
   }
   return labels
 })
-const priceMetrics = computed<PriceMetric[]>(() => {
-  const pricing = orderPricing.value
-  if (!pricing) return []
-  const exemptionRecorded = pricing.exemption_amount_recorded === true
-  return [
-    {
-      key: "billable-subtotal",
-      label: t.value.orders.pricingBillableSubtotal,
-      value: minorAmountText(pricing.billable_subtotal_minor, pricingCurrency.value),
-      note: t.value.orders.pricingBillableSubtotalNote,
-      tone: "border-slate-200 bg-white text-slate-950",
-    },
-    {
-      key: "exemption-discount",
-      label: t.value.orders.pricingExemptionDiscount,
-      value: exemptionRecorded ? signedMinorAmountText(pricing.exemption_discount_minor, pricingCurrency.value, "-") : t.value.orders.pricingNotRecorded,
-      note: orderExemptions.value.length
-        ? t.value.orders.pricingExemptedUnits.replace("{{count}}", String(orderExemptions.value.length))
-        : t.value.orders.pricingExemptionNotRecorded,
-      tone: "border-amber-200 bg-amber-50 text-amber-950",
-    },
-    {
-      key: "promotion-discount",
-      label: t.value.orders.pricingPromotionDiscount,
-      value: signedMinorAmountText(pricing.promotion_discount_minor, pricingCurrency.value, "-"),
-      note: t.value.orders.pricingPromotionDiscountNote,
-      tone: "border-emerald-200 bg-emerald-50 text-emerald-950",
-    },
-    {
-      key: "tax",
-      label: t.value.orders.pricingTax,
-      value: signedMinorAmountText(pricing.tax_minor, pricingCurrency.value, "+"),
-      note: t.value.orders.pricingTaxNote,
-      tone: "border-slate-200 bg-slate-50 text-slate-950",
-    },
-    {
-      key: "paid",
-      label: t.value.orders.pricingAmountPaid,
-      value: minorAmountText(pricing.amount_paid_minor ?? pricing.total_minor, pricingCurrency.value),
-      note: t.value.orders.pricingAmountPaidNote,
-      tone: "border-blue-200 bg-blue-50 text-blue-950",
-    },
-  ]
-})
+const originalPriceText = computed(() => minorAmountText(orderPricing.value?.billable_subtotal_minor, pricingCurrency.value))
+const promotionDiscountText = computed(() => signedMinorAmountText(orderPricing.value?.promotion_discount_minor, pricingCurrency.value, "-"))
+const taxText = computed(() => signedMinorAmountText(orderPricing.value?.tax_minor, pricingCurrency.value, "+"))
+const finalPriceText = computed(() => minorAmountText(
+  orderPricing.value?.amount_paid_minor ?? orderPricing.value?.total_minor,
+  pricingCurrency.value,
+))
+const hasTax = computed(() => Number(orderPricing.value?.tax_minor || 0) !== 0)
 
 function recordValue(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null
@@ -310,12 +248,6 @@ function minorAmountText(value: unknown, currency: string) {
 function signedMinorAmountText(value: unknown, currency: string, sign: "+" | "-") {
   const formatted = minorAmountText(value, currency)
   return formatted === t.value.orders.pricingUnavailable ? formatted : `${sign}${formatted}`
-}
-
-function pricingSourceLabel(value: unknown) {
-  const source = String(value || "")
-  const labels = t.value.orders.pricingSources as Record<string, string>
-  return labels[source] || source
 }
 
 function normalizedStatus(value: unknown) {
@@ -1023,76 +955,41 @@ onBeforeUnmount(() => {
             </section>
 
             <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/60">
-              <div class="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 px-4 py-4 sm:px-5">
-                <div>
-                  <h3 class="font-semibold text-slate-950">{{ t.orders.pricingTitle }}</h3>
-                  <p class="mt-1 text-xs leading-5 text-slate-500">{{ t.orders.pricingDescription }}</p>
-                </div>
-                <span v-if="orderPricing?.source" class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
-                  {{ pricingSourceLabel(orderPricing.source) }}
-                </span>
-              </div>
+              <h3 class="border-b border-slate-100 px-4 py-4 font-semibold text-slate-950 sm:px-5">{{ t.orders.pricingTitle }}</h3>
 
               <template v-if="orderPricing">
-                <div class="grid gap-3 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-5">
-                  <div
-                    v-for="metric in priceMetrics"
-                    :key="metric.key"
-                    class="min-h-28 rounded-lg border p-4"
-                    :class="metric.tone"
-                  >
-                    <div class="text-xs font-black">{{ metric.label }}</div>
-                    <div class="mt-2 break-words text-lg font-black">{{ metric.value }}</div>
-                    <div class="mt-2 text-xs font-medium leading-5 opacity-70">{{ metric.note }}</div>
+                <dl class="divide-y divide-slate-100 px-4 sm:px-5">
+                  <div class="flex items-center justify-between gap-4 py-4">
+                    <dt class="text-sm font-semibold text-slate-600">{{ t.orders.pricingBillableSubtotal }}</dt>
+                    <dd class="text-base font-black text-slate-950">{{ originalPriceText }}</dd>
                   </div>
-                </div>
+                  <div class="flex items-start justify-between gap-4 py-4">
+                    <dt class="min-w-0">
+                      <div class="text-sm font-semibold text-slate-600">{{ t.orders.pricingPromotionDiscount }}</div>
+                      <div class="mt-2 flex flex-wrap gap-2">
+                        <span
+                          v-for="label in promotionLabels"
+                          :key="label"
+                          class="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-800"
+                        >
+                          {{ label }}
+                        </span>
+                        <span v-if="!promotionLabels.length" class="text-xs text-slate-500">{{ t.orders.pricingNoPromotion }}</span>
+                      </div>
+                      <div v-if="hasTax" class="mt-2 text-xs font-semibold text-slate-500">
+                        {{ t.orders.pricingTax }} {{ taxText }}
+                      </div>
+                    </dt>
+                    <dd class="shrink-0 text-base font-black text-emerald-700">{{ promotionDiscountText }}</dd>
+                  </div>
+                  <div class="flex items-center justify-between gap-4 bg-blue-50/70 py-4 -mx-4 px-4 sm:-mx-5 sm:px-5">
+                    <dt class="text-sm font-black text-slate-950">{{ t.orders.pricingAmountPaid }}</dt>
+                    <dd class="text-xl font-black text-primary">{{ finalPriceText }}</dd>
+                  </div>
+                </dl>
 
-                <div v-if="orderPricing.unavailable_reason" class="mx-4 mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900 sm:mx-5 sm:mb-5">
+                <div v-if="orderPricing.unavailable_reason" class="border-t border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900 sm:px-5">
                   {{ t.orders.pricingPartialUnavailable }}
-                </div>
-
-                <div v-if="promotionLabels.length" class="flex flex-wrap items-center gap-2 border-t border-slate-100 px-4 py-4 sm:px-5">
-                  <span class="text-xs font-black text-slate-500">{{ t.orders.pricingPromotions }}</span>
-                  <span v-for="label in promotionLabels" :key="label" class="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800">
-                    {{ label }}
-                  </span>
-                </div>
-
-                <div v-if="orderExemptions.length" class="border-t border-slate-100 px-4 py-4 sm:px-5">
-                  <div class="text-xs font-black text-slate-500">{{ t.orders.pricingExemptedItems }}</div>
-                  <div class="mt-2 grid gap-2 sm:grid-cols-2">
-                    <div v-for="item in orderExemptions" :key="`${item.course_cc_ulid}-${item.credential_ulid}`" class="min-w-0 border-l-2 border-amber-300 bg-amber-50 px-3 py-2">
-                      <div class="break-all text-xs font-bold text-amber-950">{{ item.course_cc_ulid }}</div>
-                      <div v-if="item.credential_ulid" class="mt-1 break-all text-xs text-amber-700">{{ item.credential_ulid }}</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div v-if="priceItems.length" class="border-t border-slate-100">
-                  <div class="bg-slate-50 px-4 py-3 text-sm font-black text-slate-800 sm:px-5">{{ t.orders.pricingItemsTitle }}</div>
-                  <div class="overflow-x-auto">
-                    <table class="w-full min-w-[620px] text-left text-sm">
-                      <thead class="border-y border-slate-200 bg-white text-xs text-slate-500">
-                        <tr>
-                          <th class="px-4 py-3 font-black sm:px-5">{{ t.orders.pricingItem }}</th>
-                          <th class="px-4 py-3 font-black">{{ t.orders.pricingUnitPrice }}</th>
-                          <th class="px-4 py-3 text-center font-black">{{ t.orders.pricingQuantity }}</th>
-                          <th class="px-4 py-3 text-right font-black sm:px-5">{{ t.orders.pricingSubtotal }}</th>
-                        </tr>
-                      </thead>
-                      <tbody class="divide-y divide-slate-100">
-                        <tr v-for="item in priceItems" :key="`${item.item_type}-${item.item_ulid}`">
-                          <td class="px-4 py-3 sm:px-5">
-                            <div class="font-bold text-slate-900">{{ item.title || item.item_ulid || t.orders.pricingUnnamedItem }}</div>
-                            <div class="mt-1 break-all text-xs text-slate-500">{{ item.item_type }}<span v-if="item.item_ulid"> · {{ item.item_ulid }}</span></div>
-                          </td>
-                          <td class="px-4 py-3 font-semibold text-slate-700">{{ minorAmountText(item.unit_price_minor, pricingCurrency) }}</td>
-                          <td class="px-4 py-3 text-center font-semibold text-slate-700">{{ item.quantity }}</td>
-                          <td class="px-4 py-3 text-right font-black text-slate-900 sm:px-5">{{ minorAmountText(item.subtotal_minor, pricingCurrency) }}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
                 </div>
               </template>
               <div v-else class="p-8 text-center text-sm text-slate-500">{{ t.orders.pricingUnavailableDetail }}</div>

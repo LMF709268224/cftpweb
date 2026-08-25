@@ -432,8 +432,34 @@ func (h *Handler) candidateOrderPricing(ctx context.Context, gpayOrderULID strin
 			pricing.Source = "GPAY_ORDER_ITEMS"
 			pricing.BillableSubtotalMinor = orderInt64Pointer(subtotal)
 		}
+		if len(pricing.Items) > 0 && priceDetail != nil {
+			reconcileLegacyOrderPriceDetail(pricing, subtotal)
+		}
 	}
 	return pricing
+}
+
+func reconcileLegacyOrderPriceDetail(pricing *OrderPricingDetail, itemSubtotal int64) {
+	if pricing == nil || pricing.BillableSubtotalMinor == nil || pricing.PromotionDiscountMinor == nil ||
+		pricing.TaxMinor == nil || pricing.TotalMinor == nil || itemSubtotal <= 0 {
+		return
+	}
+	// Older paid orders may have only the final amount backfilled into the price
+	// snapshot. Reconcile only when a promotion is recorded and the item snapshot
+	// provides a strictly larger original subtotal.
+	if len(pricing.Coupons) == 0 && len(pricing.PromoCodes) == 0 {
+		return
+	}
+	if *pricing.PromotionDiscountMinor != 0 || *pricing.BillableSubtotalMinor != *pricing.TotalMinor || itemSubtotal <= *pricing.TotalMinor {
+		return
+	}
+	discount := itemSubtotal + *pricing.TaxMinor - *pricing.TotalMinor
+	if discount <= 0 {
+		return
+	}
+	pricing.Source = "GMALL_ORDER_PRICE_DETAIL_LEGACY_RECONCILED"
+	pricing.BillableSubtotalMinor = orderInt64Pointer(itemSubtotal)
+	pricing.PromotionDiscountMinor = orderInt64Pointer(discount)
 }
 
 func orderInt64Pointer(value int64) *int64 {
