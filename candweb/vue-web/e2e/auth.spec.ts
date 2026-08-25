@@ -182,6 +182,6 @@ test("更新邮箱后只刷新一次并同步全局用户信息", async ({ page 
   await expect(page.getByText("邮箱更新成功", { exact: true })).toBeVisible()
   await expect.poll(() => userRequests).toBe(userRequestsBeforeUpdate + 1)
 
-  await page.getByRole("button", { name: "Regression Candidate", exact: true }).click()
+  await page.getByRole("button", { name: /Regression Candidate$/ }).click()
   await expect(page.getByText(updatedEmail, { exact: true })).toBeVisible()
 })

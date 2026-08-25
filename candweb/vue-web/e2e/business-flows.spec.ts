@@ -224,6 +224,7 @@ test("会员刷新只应用最后一次请求返回的记录", async ({ page }) 
   })
 
   await page.goto("/membership", { waitUntil: "domcontentloaded" })
+  await page.getByRole("button", { name: "会员历史", exact: true }).click()
   await expect(page.getByText("INITIAL-MEMBERSHIP", { exact: true })).toBeVisible()
 
   const refreshButton = page.locator(".membership-refresh-btn")
@@ -234,9 +235,8 @@ test("会员刷新只应用最后一次请求返回的记录", async ({ page }) 
 
   await expect.poll(() => historyRequests).toBe(3)
   await expect.poll(() => billingRequests).toBe(3)
-  await page.locator(".membership-tabs button").nth(2).click()
   await expect(page.getByText("LATEST-MEMBERSHIP", { exact: true })).toBeVisible()
-  await page.locator(".membership-tabs button").nth(3).click()
+  await page.getByRole("button", { name: "账单记录", exact: true }).click()
   await expect(page.getByText("LATEST-BILLING", { exact: true })).toBeVisible()
 
   await page.waitForTimeout(1_100)
