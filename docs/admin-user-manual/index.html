@@ -323,7 +323,7 @@
       .manual-title, .doc-section { width: 100%; min-width: 0; max-width: 100%; }
       .side-nav { width: calc(100vw - 32px); max-width: calc(100vw - 32px); }
       .manual-title { padding: 22px 20px; }
-      .manual-title h1 { font-size: 28px; }
+      .manual-title h1 { font-size: 28px; overflow-wrap: anywhere; word-break: break-all; }
       .manual-title p, .doc-section > p { overflow-wrap: anywhere; }
       .flow { max-width: 100%; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 6px; }
       .flow span { flex: 0 0 auto; }
@@ -362,11 +362,11 @@
         <div>
           <div class="eyebrow">ADMIN OPERATIONS GUIDE</div>
           <h1>管理后台功能目录</h1>
-          <p>按业务模块查找配置方法、字段含义、操作顺序和发布前检查事项。当前版本已提供课程、认证、商品、资格定义和证书模板配置完整手册，其余章节将按同一结构逐步补充。</p>
+          <p>按业务模块查找配置方法、字段含义、操作顺序和发布前检查事项。当前版本已提供课程、认证、商品、资格定义、证书模板、资源包和资源文件配置完整手册，其余章节将按同一结构逐步补充。</p>
         </div>
         <div class="search-wrap">
           <label for="module-search">查找模块</label>
-          <input id="module-search" type="search" placeholder="例如：课程、资格、证书模板" oninput="filterModules(this.value)">
+          <input id="module-search" type="search" placeholder="例如：课程、资格、资源包" oninput="filterModules(this.value)">
         </div>
       </div>
 
@@ -396,9 +396,9 @@
           <span class="module-state">待补充</span><span class="module-icon">会</span>
           <h2>会员方案配置</h2><p>维护会员等级、有效期、权益和续费规则。</p>
         </button>
-        <button class="module pending" type="button" data-name="资源包配置 资源文件" onclick="pendingModule('资源包与资源文件配置')">
-          <span class="module-state">待补充</span><span class="module-icon">源</span>
-          <h2>资源包与资源文件</h2><p>管理独立学习资源、上传文件及上下架状态。</p>
+        <button class="module ready" type="button" data-name="资源包配置 资源文件 GLMS 视频 PDF ZIP 上传 发布 权限" onclick="openManual('resource-pack')">
+          <span class="module-state">已完成</span><span class="module-icon">源</span>
+          <h2>资源包与资源文件</h2><p>管理独立学习资源、文件上传、访问路径、版本和发布状态。</p>
         </button>
       </div>
 
@@ -1500,6 +1500,225 @@
         </div>
       </div>
     </article>
+
+    <article class="manual" id="resource-pack-manual">
+      <nav class="breadcrumb" aria-label="面包屑">
+        <button type="button" onclick="showCatalog()">管理后台目录</button><span>/</span><span>资源包与资源文件</span>
+      </nav>
+      <div class="manual-layout">
+        <nav class="side-nav" aria-label="资源包与资源文件章节">
+          <strong>资源包与资源文件</strong>
+          <a href="#resource-pack-overview">功能概览</a>
+          <a href="#resource-pack-concepts">关键概念</a>
+          <a href="#resource-pack-create">新建资源包</a>
+          <a href="#resource-pack-path">路径、封面与权限</a>
+          <a href="#resource-file-list">资源文件列表</a>
+          <a href="#resource-file-create">新建与上传文件</a>
+          <a href="#resource-file-types">文件类型规则</a>
+          <a href="#resource-pack-version">克隆、版本与状态</a>
+          <a href="#resource-pack-faq">常见问题</a>
+          <a href="#resource-pack-checklist">发布检查</a>
+        </nav>
+
+        <div class="content">
+          <header class="manual-title">
+            <div class="eyebrow" style="color:#9eeef1">配置管理 / GLMS</div>
+            <h1>资源包与资源文件配置使用手册</h1>
+            <p>面向资源运营人员，说明资源包容器、资源路径、封面、视频/PDF/ZIP 文件、上传校验、版本克隆和发布状态。</p>
+            <div class="manual-meta"><span>角色：资源运营</span><span>难度：基础至进阶</span><span>更新：2026-08-25</span></div>
+          </header>
+
+          <section class="doc-section" id="resource-pack-overview">
+            <h2>1. 功能概览</h2>
+            <p class="lead">“资源包配置”维护一组可以独立授权和发布的学习资源；“资源文件配置”维护资源包内的具体视频、PDF 或 ZIP。必须先建立资源包，才能在它下面建立资源文件。</p>
+            <div class="flow" aria-label="资源配置关系"><span>资源包</span><b>→</b><span>资源路径与封面</span><b>→</b><span>资源文件</span><b>→</b><span>校验</span><b>→</b><span>上架</span></div>
+            <figure class="shot">
+              <img src="assets/resource-pack/resource-pack-list.png" alt="资源包配置列表" data-filename="resource-pack/resource-pack-list.png">
+              <div class="shot-missing"><div><strong>待补截图：资源包配置列表</strong><code>assets/resource-pack/resource-pack-list.png</code></div></div>
+              <figcaption>图 1：资源包列表显示标题、分类、资源路径、资源包 ID、版本和状态；不同状态提供查看、编辑、克隆、上架、下架或删除操作。</figcaption>
+            </figure>
+            <div class="note"><strong>推荐顺序</strong>新建草稿资源包 → 保存 → 编辑并上传封面 → 新建资源文件 → 保存 → 编辑并上传实际文件 → 检查所有字段 → 上架资源包。</div>
+          </section>
+
+          <section class="doc-section" id="resource-pack-concepts">
+            <h2>2. 先理解这些概念</h2>
+            <div class="term-grid">
+              <div class="term critical"><h3>资源路径（ResPath）</h3><p>资源包的业务路径，也是候选人访问权限和同系列版本识别的重要依据，不是普通备注。</p></div>
+              <div class="term"><h3>资源包 ID</h3><p>每条资源包记录的唯一标识。克隆会生成新 ID，即使资源路径保持不变。</p></div>
+              <div class="term"><h3>资源文件</h3><p>隶属于一个具体资源包的内容项，可为 Video、PDF 或 ZIP，并有独立标题、排序和存储字段。</p></div>
+              <div class="term"><h3>版本</h3><p>当前页面的版本值用于后端并发控制，随编辑和状态变更递增，不是运营人员自行命名的内容版本号。</p></div>
+            </div>
+            <table>
+              <thead><tr><th>对象</th><th>负责内容</th><th>候选端可见条件</th></tr></thead>
+              <tbody>
+                <tr><td>资源包</td><td>标题、分类、资源路径、封面、状态和一组文件</td><td>资源包为已上架，且考生拥有对应资源路径权限</td></tr>
+                <tr><td>资源文件</td><td>视频流或 PDF/ZIP 文件、缩略图、排序</td><td>所属资源包可见；文件字段满足其类型要求</td></tr>
+                <tr><td>分类</td><td>后台和候选端的展示分类，例如 <code>public</code>、<code>member</code></td><td>分类本身不授予访问权限</td></tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section class="doc-section" id="resource-pack-create">
+            <h2>3. 新建资源包</h2>
+            <figure class="shot">
+              <img src="assets/resource-pack/resource-pack-create.png" alt="新建资源包表单" data-filename="resource-pack/resource-pack-create.png">
+              <div class="shot-missing"><div><strong>待补截图：新建资源包</strong><code>assets/resource-pack/resource-pack-create.png</code></div></div>
+              <figcaption>图 2：新建资源包。首次保存前没有资源包 ID，因此“上传封面”不可用；先保存，再从列表进入编辑页上传封面。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>字段</th><th>是否必填</th><th>填写说明</th></tr></thead>
+              <tbody>
+                <tr><td>标题</td><td class="required">必填</td><td>候选端展示名称。建议直接说明资源主题和用途。</td></tr>
+                <tr><td>描述</td><td>选填</td><td>说明资源内容、适用对象和使用方式。</td></tr>
+                <tr><td>分类</td><td>建议填写</td><td>用于内容归类，例如 <code>public</code> 或 <code>member</code>；不要把它当作权限开关。</td></tr>
+                <tr><td>图标</td><td>选填</td><td>填写管理后台支持的图标标识，例如 <code>FileBarChart</code>。不确定时可留空。</td></tr>
+                <tr><td>资源路径</td><td class="required">必填</td><td>系统会按标题和分类生成建议路径。保存前必须确认它属于正确业务系列。</td></tr>
+                <tr><td>封面 Object Key</td><td>上架前必填</td><td>封面在对象存储中的键。推荐通过上传按钮自动填写。</td></tr>
+                <tr><td>封面文件 SHA256</td><td>上架前必填</td><td>64 位十六进制校验值。上传成功后自动计算并填写。</td></tr>
+                <tr><td>状态</td><td>系统设置</td><td>新建时为草稿；完成内容配置后再执行上架。</td></tr>
+              </tbody>
+            </table>
+            <ol class="steps">
+              <li><strong>填写标题、描述和分类</strong><span>明确资源包在候选端的用途。</span></li>
+              <li><strong>核对自动生成的资源路径</strong><span>新资源包使用新路径；同系列新版本保持原路径。</span></li>
+              <li><strong>先保存草稿</strong><span>系统生成资源包 ID。</span></li>
+              <li><strong>重新进入编辑页上传封面</strong><span>上传会自动填写 Object Key 和 SHA256，再保存一次。</span></li>
+              <li><strong>转到资源文件配置</strong><span>为这个资源包添加实际内容。</span></li>
+            </ol>
+          </section>
+
+          <section class="doc-section" id="resource-pack-path">
+            <h2>4. 资源路径、封面和访问权限</h2>
+            <div class="warning"><strong>资源路径的作用类似业务主键</strong>候选端会用它进行权限判断，同一路径还用于识别资源包的现行发布版本。随意修改可能导致原有授权失效，或把本应独立的资源误认为同一系列。</div>
+            <table>
+              <thead><tr><th>场景</th><th>资源路径怎么处理</th><th>结果</th></tr></thead>
+              <tbody>
+                <tr><td>建立全新的独立资源包</td><td>使用新的唯一路径</td><td>形成独立的授权和发布系列</td></tr>
+                <tr><td>克隆后制作同一资源包的新版本</td><td>保留原路径</td><td>新版本上架后，原已上架版本自动成为历史版本</td></tr>
+                <tr><td>从旧包复制内容制作另一个业务资源</td><td>保存前改成新的路径</td><td>避免覆盖旧系列，也避免沿用旧权限</td></tr>
+              </tbody>
+            </table>
+            <div class="danger"><strong><code>public</code> 不等于自动公开</strong>分类只描述内容类型。候选人是否可见仍由资源路径对应的权限决定；新路径发布前必须同步确认授权配置。</div>
+            <p>资源包上架前必须有可访问的封面 Object Key 和正确的 SHA256。优先使用上传按钮，不要手工猜测存储路径或复制其他资源的哈希值。新建页上传按钮不可用是正常现象，因为上传地址需要先取得资源包 ID。</p>
+          </section>
+
+          <section class="doc-section" id="resource-file-list">
+            <h2>5. 资源文件列表</h2>
+            <p class="lead">资源文件列表可按所属资源包筛选。每一行代表一个具体内容项，并显示所属资源包、文件类型、排序、版本和操作。</p>
+            <figure class="shot">
+              <img src="assets/resource-file/resource-file-list.png" alt="资源文件配置列表" data-filename="resource-file/resource-file-list.png">
+              <div class="shot-missing"><div><strong>待补截图：资源文件列表</strong><code>assets/resource-file/resource-file-list.png</code></div></div>
+              <figcaption>图 3：先使用顶部下拉框筛选资源包，再查看或维护其文件。文件不能在创建后改挂到另一个资源包。</figcaption>
+            </figure>
+            <div class="action-grid">
+              <div class="action"><h3>查看详情</h3><p>查看文件 ID、所属资源包、存储字段、排序、版本和时间等完整信息。</p></div>
+              <div class="action"><h3>编辑</h3><p>修改标题、描述、排序或重新上传内容。正式资源建议先处理资源包版本，再修改文件。</p></div>
+              <div class="action"><h3>删除</h3><p>只允许删除草稿资源包中的文件。删除配置不可恢复，操作前确认没有误选资源包。</p></div>
+            </div>
+          </section>
+
+          <section class="doc-section" id="resource-file-create">
+            <h2>6. 新建和上传资源文件</h2>
+            <figure class="shot">
+              <img src="assets/resource-file/resource-file-create-top.png" alt="新建资源文件上半部分" data-filename="resource-file/resource-file-create-top.png">
+              <div class="shot-missing"><div><strong>待补截图：新建资源文件上半部分</strong><code>assets/resource-file/resource-file-create-top.png</code></div></div>
+              <figcaption>图 4：选择所属资源包、填写标题和类型。文件 ID 在首次保存后生成，文件和缩略图上传按钮因此会在创建时保持不可用。</figcaption>
+            </figure>
+            <figure class="shot">
+              <img src="assets/resource-file/resource-file-create-bottom.png" alt="新建资源文件下半部分" data-filename="resource-file/resource-file-create-bottom.png">
+              <div class="shot-missing"><div><strong>待补截图：新建资源文件下半部分</strong><code>assets/resource-file/resource-file-create-bottom.png</code></div></div>
+              <figcaption>图 5：PDF/ZIP 使用文件名、字节数、Object Key 和 SHA256；缩略图有独立的 Object Key 和 SHA256；排序值决定候选端显示顺序。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>字段</th><th>填写方式</th><th>说明</th></tr></thead>
+              <tbody>
+                <tr><td>所属资源包</td><td class="required">创建时必选</td><td>只能选择目标资源包；创建后不可更换。</td></tr>
+                <tr><td>标题</td><td class="required">必填</td><td>候选端显示的文件名称。</td></tr>
+                <tr><td>类型</td><td class="required">必选</td><td>Video、PDF 或 ZIP；决定后续需要填写的存储字段。</td></tr>
+                <tr><td>描述</td><td>选填</td><td>说明内容范围、格式或使用方法。</td></tr>
+                <tr><td>排序</td><td>建议填写</td><td>数值越小越靠前；同一资源包内建议留出间隔，便于后续插入。</td></tr>
+                <tr><td>文件名 / 字节数</td><td>PDF/ZIP 必填</td><td>使用上传按钮时由文件自动填写；文件大小单位是字节。</td></tr>
+                <tr><td>文件 Object Key / SHA256</td><td>PDF/ZIP 必填</td><td>由上传流程自动填写并用于存在性和完整性校验。</td></tr>
+                <tr><td>视频流 UID</td><td>Video 必填</td><td>视频上传到流媒体服务后自动填写；Video 不使用普通文件 Object Key。</td></tr>
+                <tr><td>缩略图 Object Key / SHA256</td><td>选填</td><td>上传缩略图后自动填写，用于资源文件的封面展示。</td></tr>
+                <tr><td>版本</td><td>系统维护</td><td>并发控制字段，不要手工改成业务版本号。</td></tr>
+              </tbody>
+            </table>
+            <ol class="steps">
+              <li><strong>选择草稿资源包</strong><span>确认标题和资源包 ID，避免把文件建到同名包或历史版本。</span></li>
+              <li><strong>填写标题、类型和排序</strong><span>首次保存生成资源文件 ID。</span></li>
+              <li><strong>重新进入编辑页</strong><span>此时上传按钮可用。</span></li>
+              <li><strong>上传实际文件或视频</strong><span>等待 Object Key、SHA256、文件信息或视频 UID 自动回填。</span></li>
+              <li><strong>按需上传缩略图并保存</strong><span>不要在上传尚未完成时关闭页面。</span></li>
+            </ol>
+          </section>
+
+          <section class="doc-section" id="resource-file-types">
+            <h2>7. Video、PDF 和 ZIP 的字段规则</h2>
+            <table>
+              <thead><tr><th>类型</th><th>必须存在</th><th>必须为空或不使用</th><th>候选端行为</th></tr></thead>
+              <tbody>
+                <tr><td>Video</td><td>视频流 UID</td><td>普通文件名、大小、Object Key 和文件 SHA256</td><td>打开视频播放器</td></tr>
+                <tr><td>PDF</td><td>文件名、字节数、Object Key、64 位 SHA256</td><td>视频流 UID</td><td>打开 PDF 预览</td></tr>
+                <tr><td>ZIP</td><td>文件名、字节数、Object Key、64 位 SHA256</td><td>视频流 UID</td><td>获取文件地址并下载</td></tr>
+              </tbody>
+            </table>
+            <div class="note"><strong>切换类型会改变字段语义</strong>例如改为 Video 后，普通文件字段不再使用。不要通过手工复制 Object Key 或 UID 来绕过上传流程；上架时后端会校验对象是否真实存在。</div>
+            <div class="warning"><strong>同一资源包内不要重复内容</strong>相同文件名、文件哈希或视频 UID 可能触发重复校验。需要替换内容时，使用编辑上传或克隆资源包制作新版本。</div>
+          </section>
+
+          <section class="doc-section" id="resource-pack-version">
+            <h2>8. 克隆、版本和状态</h2>
+            <table>
+              <thead><tr><th>状态 / 操作</th><th>含义</th><th>运营要求</th></tr></thead>
+              <tbody>
+                <tr><td>草稿（Draft）</td><td>候选端不可见，可配置文件</td><td>在此状态完成封面、文件和权限检查</td></tr>
+                <tr><td>上架</td><td>校验资源包及全部文件后变为 Active</td><td>只有通过校验并具备权限的候选人可见</td></tr>
+                <tr><td>下架</td><td>Active 回到 Draft</td><td>候选端会立即不再返回该资源包；修改前评估影响</td></tr>
+                <tr><td>克隆</td><td>复制包信息和文件配置，生成新资源包 ID 和草稿</td><td>制作同系列新版本时保留资源路径，再检查复用的存储对象</td></tr>
+                <tr><td>已废弃（Deprecated）</td><td>同一路径的新版本上架后，旧 Active 自动转为历史版本</td><td>用于保留历史，不作为当前候选端资源</td></tr>
+                <tr><td>删除</td><td>删除资源包配置及所属文件记录</td><td>只允许草稿；不可恢复，正式数据优先保留版本历史</td></tr>
+              </tbody>
+            </table>
+            <div class="danger"><strong>不要直接把克隆当成独立资源包发布</strong>克隆默认沿用原资源路径。若实际要制作完全不同的资源，必须在草稿中改成新的资源路径并重新确认权限；否则新包上架会替代原路径下的旧 Active 版本。</div>
+            <p>克隆会复制资源包元数据和文件配置，但不代表每个底层存储对象都已重新上传。发布前应逐项打开或核对复用文件，确认对象仍存在、内容正确且没有跨业务复用风险。</p>
+          </section>
+
+          <section class="doc-section faq" id="resource-pack-faq">
+            <h2>9. 常见问题</h2>
+            <details><summary>为什么新建资源包时不能上传封面？</summary><p>上传接口需要资源包 ID。先保存草稿，从列表进入编辑页，再上传封面并保存。</p></details>
+            <details><summary>为什么新建资源文件时上传按钮不可用？</summary><p>同样需要先生成资源文件 ID。先保存所属资源包、标题和类型，再编辑上传文件或视频。</p></details>
+            <details><summary>分类选 public 后，所有考生都会看到吗？</summary><p>不会。分类用于归类，候选端还会检查资源路径权限。新资源路径必须同步完成授权配置。</p></details>
+            <details><summary>为什么资源包上架失败？</summary><p>先检查封面 Object Key 和 SHA256；再逐个检查文件。Video 必须有视频 UID，PDF/ZIP 必须有真实存在的 Object Key、文件信息和 64 位 SHA256。</p></details>
+            <details><summary>为什么不能删除已上架资源包或其中的文件？</summary><p>后端只允许删除草稿数据。需要停止展示时先下架；正式版本调整优先克隆新草稿，避免破坏历史。</p></details>
+            <details><summary>为什么上架新版本后旧版本显示“已废弃”？</summary><p>同一资源路径只保留一个现行 Active 版本。新版本上架后旧 Active 自动转为 Deprecated，这是正常的版本替换行为。</p></details>
+            <details><summary>版本字段可以改成 2.0 吗？</summary><p>不可以。它是后端乐观锁版本，保存和状态操作会自动递增，不是展示给用户的语义版本。</p></details>
+          </section>
+
+          <section class="doc-section" id="resource-pack-checklist">
+            <h2>10. 上架前检查清单</h2>
+            <ul class="checklist">
+              <li>标题和描述能清楚说明资源用途</li>
+              <li>新资源使用新路径，同系列版本保留原路径</li>
+              <li>资源路径对应的候选人权限已配置</li>
+              <li>分类没有被误当成访问权限</li>
+              <li>资源包封面已上传且可以访问</li>
+              <li>封面 SHA256 为正确的 64 位值</li>
+              <li>所有文件挂在目标资源包版本下</li>
+              <li>文件标题、描述和排序已复核</li>
+              <li>Video 均有有效视频流 UID</li>
+              <li>PDF/ZIP 的文件名、大小、Object Key 和 SHA256 完整</li>
+              <li>没有重复文件名、哈希或视频 UID</li>
+              <li>克隆版本复用的存储对象仍真实存在</li>
+              <li>多语言标题和描述已按需补充</li>
+              <li>已用有权限和无权限账号验证候选端结果</li>
+              <li>确认上架的是目标资源路径的正确草稿</li>
+            </ul>
+            <a class="back-top" href="#top">返回顶部</a>
+          </section>
+        </div>
+      </div>
+    </article>
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -1566,6 +1785,7 @@
     if (location.hash === "#product" || location.hash.startsWith("#product-")) openManual("product");
     if (location.hash === "#qualification" || location.hash.startsWith("#qualification-")) openManual("qualification");
     if (location.hash === "#certificate-template" || location.hash.startsWith("#certificate-template-")) openManual("certificate-template");
+    if (location.hash === "#resource-pack" || location.hash.startsWith("#resource-pack-") || location.hash.startsWith("#resource-file-")) openManual("resource-pack");
   </script>
 </body>
 </html>

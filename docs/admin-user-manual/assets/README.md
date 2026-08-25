@@ -51,5 +51,16 @@ Screenshots are grouped by manual module.
 - `certificate-template/template-create.png`: new template form and HTML preview
 - `certificate-template/template-edit-preview.png`: template editor and rendered preview
 
+## Resource pack
+
+- `resource-pack/resource-pack-list.png`: resource pack list, statuses, and actions
+- `resource-pack/resource-pack-create.png`: new resource pack form
+
+## Resource file
+
+- `resource-file/resource-file-list.png`: resource file list and pack filter
+- `resource-file/resource-file-create-top.png`: new resource file form and type-specific fields
+- `resource-file/resource-file-create-bottom.png`: resource file storage, thumbnail, and metadata fields
+
 The HTML displays a named placeholder when an image is missing, so adding these
 files does not require another HTML change.
