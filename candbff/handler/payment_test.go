@@ -421,7 +421,7 @@ func TestCandidateOrderPricingFallsBackWithoutPaymentReference(t *testing.T) {
 	}
 }
 
-func TestCandidateOrderPricingReconcilesLegacyPromotionSnapshot(t *testing.T) {
+func TestCandidateOrderPricingPreservesServicePriceDetail(t *testing.T) {
 	pricing := (&Handler{Gpay: &paymentOrderPayClientStub{}}).candidateOrderPricing(
 		context.Background(),
 		"pay-order-1",
@@ -436,27 +436,11 @@ func TestCandidateOrderPricingReconcilesLegacyPromotionSnapshot(t *testing.T) {
 		},
 	)
 
-	if pricing.Source != "GMALL_ORDER_PRICE_DETAIL_LEGACY_RECONCILED" ||
-		pricing.BillableSubtotalMinor == nil || *pricing.BillableSubtotalMinor != 70000 ||
-		pricing.PromotionDiscountMinor == nil || *pricing.PromotionDiscountMinor != 7000 ||
+	if pricing.Source != "GMALL_ORDER_PRICE_DETAIL" ||
+		pricing.BillableSubtotalMinor == nil || *pricing.BillableSubtotalMinor != 63000 ||
+		pricing.PromotionDiscountMinor == nil || *pricing.PromotionDiscountMinor != 0 ||
 		pricing.TotalMinor == nil || *pricing.TotalMinor != 63000 {
-		t.Fatalf("reconciled pricing = %+v", pricing)
-	}
-}
-
-func TestReconcileLegacyOrderPriceDetailRequiresRecordedPromotion(t *testing.T) {
-	pricing := &OrderPricingDetail{
-		Source:                 "GMALL_ORDER_PRICE_DETAIL",
-		BillableSubtotalMinor:  orderInt64Pointer(63000),
-		PromotionDiscountMinor: orderInt64Pointer(0),
-		TaxMinor:               orderInt64Pointer(0),
-		TotalMinor:             orderInt64Pointer(63000),
-	}
-
-	reconcileLegacyOrderPriceDetail(pricing, 70000)
-
-	if pricing.Source != "GMALL_ORDER_PRICE_DETAIL" || *pricing.BillableSubtotalMinor != 63000 || *pricing.PromotionDiscountMinor != 0 {
-		t.Fatalf("pricing without recorded promotion was changed: %+v", pricing)
+		t.Fatalf("service pricing was changed: %+v", pricing)
 	}
 }
 
