@@ -19,6 +19,28 @@ test("未登录访问受保护页面时保留目标地址并进入登录流程",
   await expect.poll(() => page.evaluate(() => sessionStorage.getItem("post_login_redirect"))).toBe("/orders")
 })
 
+test("登录回调成功后主动离开页面不会被旧定时器重新跳转", async ({ page }) => {
+  await installCandidateApiMocks(page, ({ pathname }) => {
+    if (pathname === "/api/auth/login") {
+      return { data: { user: candidateUser } }
+    }
+    return undefined
+  })
+
+  await page.goto("/callback?code=e2e-code&state=e2e-state", { waitUntil: "domcontentloaded" })
+  await expect(page.getByRole("heading", { name: "认证成功", exact: true })).toBeVisible()
+
+  await page.evaluate(async () => {
+    const modulePath = "/src/router/index.ts"
+    const { router } = await import(modulePath)
+    await router.push("/")
+  })
+  await expect(page).toHaveURL(/\/$/)
+
+  await page.waitForTimeout(1_200)
+  await expect(page).toHaveURL(/\/$/)
+})
+
 test("公共商城移动端菜单只保留语言和认证入口", async ({ page }) => {
   await page.setViewportSize({ width: 382, height: 739 })
   await installCandidateApiMocks(page)

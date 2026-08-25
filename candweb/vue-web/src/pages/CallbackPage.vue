@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue"
+import { onBeforeUnmount, onMounted, ref } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { CheckCircle2, Loader2, ShieldAlert } from "lucide-vue-next"
 import { getErrorMessage } from "@/lib/errorCodes"
@@ -12,6 +12,24 @@ const router = useRouter()
 const { t, lang } = useTranslation()
 const status = ref<"loading" | "success" | "error">("loading")
 const errorMsg = ref("")
+let redirectTimer: ReturnType<typeof setTimeout> | undefined
+let isUnmounted = false
+
+function scheduleRedirect(path: string, delay: number) {
+  if (isUnmounted) return
+
+  if (redirectTimer !== undefined) clearTimeout(redirectTimer)
+  redirectTimer = setTimeout(() => {
+    redirectTimer = undefined
+    void router.replace(path)
+  }, delay)
+}
+
+onBeforeUnmount(() => {
+  isUnmounted = true
+  if (redirectTimer !== undefined) clearTimeout(redirectTimer)
+  redirectTimer = undefined
+})
 
 onMounted(async () => {
   const code = String(route.query.code || "")
@@ -22,7 +40,7 @@ onMounted(async () => {
     status.value = "error"
     errorMsg.value = getErrorMessage("INVALID_REQUEST", currentLang)
     consumePostLoginRedirect()
-    setTimeout(() => router.replace("/"), 3000)
+    scheduleRedirect("/", 3000)
     return
   }
 
@@ -36,12 +54,12 @@ onMounted(async () => {
     const postLoginRedirect = consumePostLoginRedirect()
     const redirectPath = postLoginRedirect || "/dashboard"
     status.value = "success"
-    setTimeout(() => router.replace(redirectPath), 1000)
+    scheduleRedirect(redirectPath, 1000)
   } catch (err: any) {
     status.value = "error"
     errorMsg.value = getErrorMessage(err instanceof ApiClientError ? err.errorCode || "AUTH_FAILED" : err?.message || "AUTH_FAILED", currentLang)
     consumePostLoginRedirect()
-    setTimeout(() => router.replace("/"), 3000)
+    scheduleRedirect("/", 3000)
   }
 })
 </script>
