@@ -108,6 +108,51 @@ test("订单状态与可执行按钮保持一致", async ({ page }) => {
   await expect(paidPendingRow.getByRole("button", { name: "取消支付" })).toHaveCount(0)
 })
 
+test("订单筛选只应用最后一次请求返回的数据", async ({ page }) => {
+  const initialOrder = orderFixture({
+    order_id: "order-initial",
+    product_name: "INITIAL-ORDER",
+  })
+  const staleOrder = orderFixture({
+    order_id: "order-stale",
+    product_name: "STALE-ORDER",
+    order_status: "COMPLETED",
+    payment_status: "PAID",
+  })
+  const latestOrder = orderFixture({
+    order_id: "order-latest",
+    product_name: "LATEST-ORDER",
+    order_status: "CANCELLED",
+  })
+  let completedRequests = 0
+
+  await installCandidateApiMocks(page, async ({ pathname, url }) => {
+    if (pathname !== "/api/orders") return undefined
+
+    const status = url.searchParams.get("status")
+    if (status === "COMPLETED") {
+      completedRequests += 1
+      await new Promise((resolve) => setTimeout(resolve, 1_000))
+      return orderListResponse([staleOrder])
+    }
+    if (status === "CANCELLED") return orderListResponse([latestOrder])
+    return orderListResponse([initialOrder])
+  })
+
+  await page.goto("/orders", { waitUntil: "domcontentloaded" })
+  await expect(page.getByText("INITIAL-ORDER", { exact: true })).toBeVisible()
+
+  const statusFilter = page.locator("#order-status-filter")
+  await statusFilter.selectOption("COMPLETED")
+  await expect.poll(() => completedRequests).toBe(1)
+  await statusFilter.selectOption("CANCELLED")
+
+  await expect(page.getByText("LATEST-ORDER", { exact: true })).toBeVisible()
+  await page.waitForTimeout(1_100)
+  await expect(page.getByText("LATEST-ORDER", { exact: true })).toBeVisible()
+  await expect(page.getByText("STALE-ORDER", { exact: true })).toHaveCount(0)
+})
+
 test("从托管支付返回后清理查询参数并同步为已完成", async ({ page }) => {
   const order = orderFixture({
     order_id: "order-hosted-return",

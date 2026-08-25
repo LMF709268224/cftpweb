@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue"
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { RouterLink } from "vue-router"
 import { AlertCircle, Check, ChevronDown, Crown, Loader2, Percent, RefreshCw, ShoppingBag, Star, X, XCircle } from "lucide-vue-next"
 import { toast } from "vue-sonner"
@@ -44,6 +44,10 @@ const lastBillingPage = ref(1)
 const billingNextCursor = ref("")
 const billingHasMore = ref(false)
 const pageSizeOptions = [10, 30, 50, 100]
+let membershipRequestId = 0
+let membershipPlansRequestId = 0
+let membershipHistoryRequestId = 0
+let membershipBillingsRequestId = 0
 
 const tabs = computed(() => [
   { id: "overview", label: t.value.membership.tabsOverview },
@@ -231,53 +235,68 @@ function totalPagesFrom(data: any, total: number, pageSize: number) {
 }
 
 async function loadMembershipHistory(suppressErrorToast = false) {
-  const params = new URLSearchParams({ page_size: String(historyPageSize.value) })
+  const requestId = ++membershipHistoryRequestId
+  const requestedPage = historyPage.value
+  const requestedLastPage = lastHistoryPage.value
+  const requestedPageSize = historyPageSize.value
+  const params = new URLSearchParams({ page_size: String(requestedPageSize) })
   
   let cursor = ""
-  if (historyPage.value > lastHistoryPage.value) {
+  if (requestedPage > requestedLastPage) {
     cursor = historyNextCursor.value
-  } else if (historyPage.value < lastHistoryPage.value) {
+  } else if (requestedPage < requestedLastPage) {
     cursor = historyPrevCursor.value
   }
   
   if (cursor) params.set("cursor", cursor)
   const historyData = await apiClient(`/api/membership/history?${params.toString()}`, { suppressErrorToast })
+  if (requestId !== membershipHistoryRequestId) return null
+
   const nextHistory = listFrom(historyData, ["user_memberships", "memberships", "records", "items", "history"])
   history.value = nextHistory
   historyTotal.value = totalFrom(historyData, nextHistory)
-  historyTotalPages.value = totalPagesFrom(historyData, historyTotal.value, historyPageSize.value)
+  historyTotalPages.value = totalPagesFrom(historyData, historyTotal.value, requestedPageSize)
   historyHasMore.value = Boolean(historyData?.has_more)
   historyNextCursor.value = String(historyData?.next_cursor || "")
   historyPrevCursor.value = String(historyData?.prev_cursor || "")
-  lastHistoryPage.value = historyPage.value
+  lastHistoryPage.value = requestedPage
   return nextHistory
 }
 
 async function loadMembershipBillings(suppressErrorToast = false) {
-  const params = new URLSearchParams({ page_size: String(billingPageSize.value) })
+  const requestId = ++membershipBillingsRequestId
+  const requestedPage = billingPage.value
+  const requestedLastPage = lastBillingPage.value
+  const requestedPageSize = billingPageSize.value
+  const params = new URLSearchParams({ page_size: String(requestedPageSize) })
   
   let cursor = ""
-  if (billingPage.value > lastBillingPage.value) {
+  if (requestedPage > requestedLastPage) {
     cursor = billingNextCursor.value
-  } else if (billingPage.value < lastBillingPage.value) {
+  } else if (requestedPage < requestedLastPage) {
     cursor = billingPrevCursor.value
   }
   
   if (cursor) params.set("cursor", cursor)
   const billingData = await apiClient(`/api/membership/billings?${params.toString()}`, { suppressErrorToast })
+  if (requestId !== membershipBillingsRequestId) return null
+
   const nextBillings = listFrom(billingData, ["billings", "records", "items"])
   billings.value = nextBillings
   billingTotal.value = totalFrom(billingData, nextBillings)
-  billingTotalPages.value = totalPagesFrom(billingData, billingTotal.value, billingPageSize.value)
+  billingTotalPages.value = totalPagesFrom(billingData, billingTotal.value, requestedPageSize)
   billingHasMore.value = Boolean(billingData?.has_more)
   billingNextCursor.value = String(billingData?.next_cursor || "")
   billingPrevCursor.value = String(billingData?.prev_cursor || "")
-  lastBillingPage.value = billingPage.value
+  lastBillingPage.value = requestedPage
   return nextBillings
 }
 
 async function loadMembershipPlans(suppressErrorToast = false) {
+  const requestId = ++membershipPlansRequestId
   const planData = await apiClient("/api/membership/plans?page=1&page_size=50", { suppressErrorToast })
+  if (requestId !== membershipPlansRequestId) return null
+
   const nextPlans = listFrom(planData, ["memberships", "plans", "items"])
   plans.value = nextPlans
 
@@ -297,6 +316,7 @@ async function loadMembershipPlans(suppressErrorToast = false) {
 }
 
 async function loadMembership() {
+  const requestId = ++membershipRequestId
   loading.value = true
   loadError.value = false
   try {
@@ -305,12 +325,17 @@ async function loadMembership() {
       loadMembershipHistory(true),
       loadMembershipBillings(true),
     ])
-    activeMembership.value = await loadActiveMembershipFromHistory(nextHistory) || { user_memberships: nextHistory }
+    if (requestId !== membershipRequestId || nextHistory === null) return
+
+    const nextActiveMembership = await loadActiveMembershipFromHistory(nextHistory)
+    if (requestId !== membershipRequestId) return
+    activeMembership.value = nextActiveMembership || { user_memberships: nextHistory }
   } catch (err) {
+    if (requestId !== membershipRequestId) return
     console.error(err)
     loadError.value = true
   } finally {
-    loading.value = false
+    if (requestId === membershipRequestId) loading.value = false
   }
 }
 
@@ -407,6 +432,13 @@ function handleBillingPaginationChange() {
 
 onMounted(() => {
   void loadMembership()
+})
+
+onBeforeUnmount(() => {
+  membershipRequestId += 1
+  membershipPlansRequestId += 1
+  membershipHistoryRequestId += 1
+  membershipBillingsRequestId += 1
 })
 
 watch(lang, () => {

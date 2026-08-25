@@ -147,6 +147,7 @@ const paymentReturnSyncIntervalMs = 1500
 const paymentSyncingOrderId = ref("")
 let paymentSyncCancelled = false
 let detailRequestSequence = 0
+let ordersRequestId = 0
 
 const detailExtraFields = computed<DetailField[]>(() => {
   const detail = selectedOrderDetail.value
@@ -458,25 +459,35 @@ function orderStatusFilterLabel(status?: string) {
 }
 
 async function fetchOrders(showLoading = true, suppressErrorToast = false) {
+  const requestId = ++ordersRequestId
+  const requestedPage = page.value
+  const requestedLastPage = lastPage.value
+  const requestedPageSize = pageSize.value
+  const requestedBizType = selectedBizType.value
+  const requestedOrderStatus = selectedOrderStatus.value
+
   if (showLoading) {
     loading.value = true
     loadError.value = false
   }
   try {
-    if (page.value > lastPage.value) {
+    if (requestedPage > requestedLastPage) {
       currentCursor.value = nextCursor.value
-    } else if (page.value < lastPage.value) {
+    } else if (requestedPage < requestedLastPage) {
       currentCursor.value = prevCursor.value
     }
+    const requestedCursor = currentCursor.value
     
     const params = new URLSearchParams({
-      page_size: String(pageSize.value),
+      page_size: String(requestedPageSize),
     })
     
-    if (currentCursor.value) params.set("cursor", currentCursor.value)
-    if (selectedBizType.value) params.set("biz_type", selectedBizType.value)
-    if (selectedOrderStatus.value) params.set("status", selectedOrderStatus.value)
+    if (requestedCursor) params.set("cursor", requestedCursor)
+    if (requestedBizType) params.set("biz_type", requestedBizType)
+    if (requestedOrderStatus) params.set("status", requestedOrderStatus)
     const res = await apiClient(`/api/orders?${params.toString()}`, { suppressErrorToast })
+    if (requestId !== ordersRequestId) return
+
     totalOrders.value = Number(res.total_orders || 0)
     totalLabel.value = String(res.total_label || totalOrders.value)
     totalPages.value = Number(res.total_pages || 0)
@@ -486,9 +497,9 @@ async function fetchOrders(showLoading = true, suppressErrorToast = false) {
     
     // For cursorMode, hasMore controls the "Next" button.
     // When going backward, we naturally have a next page.
-    const isBackward = page.value < lastPage.value
+    const isBackward = requestedPage < requestedLastPage
     hasMore.value = isBackward ? true : Boolean(res.has_more)
-    lastPage.value = page.value
+    lastPage.value = requestedPage
 
     if (Array.isArray(res.orders)) {
       orders.value = res.orders.map((o: any) => ({
@@ -512,10 +523,11 @@ async function fetchOrders(showLoading = true, suppressErrorToast = false) {
     }
     loadError.value = false
   } catch (err) {
+    if (requestId !== ordersRequestId) return
     console.error("Failed to fetch orders:", err)
     if (showLoading && !suppressErrorToast) loadError.value = true
   } finally {
-    if (showLoading) loading.value = false
+    if (requestId === ordersRequestId) loading.value = false
   }
 }
 
@@ -626,6 +638,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   paymentSyncCancelled = true
+  ordersRequestId += 1
 })
 </script>
 

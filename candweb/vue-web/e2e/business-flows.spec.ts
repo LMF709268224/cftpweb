@@ -162,6 +162,89 @@ test("会员取消续费后刷新为已取消状态", async ({ page }) => {
   await expect(page.getByRole("button", { name: "已取消续费" })).toBeDisabled()
 })
 
+test("会员刷新只应用最后一次请求返回的记录", async ({ page }) => {
+  const membershipRecord = (id: string, name: string) => ({
+    membership_record_ulid: id,
+    membership_ulid: "membership-plan-1",
+    membership_gpath: "affiliate",
+    membership_name: name,
+    status: "ACTIVE",
+    started_at: "2026-01-01T00:00:00Z",
+    expires_at: "2027-01-01T00:00:00Z",
+  })
+  const billingRecord = (id: string, type: string) => ({
+    billing_record_ulid: id,
+    billing_type: type,
+    status: "PAID",
+    amount_minor: 1000,
+    currency: "USD",
+    period_start: "2026-01-01T00:00:00Z",
+    period_end: "2026-02-01T00:00:00Z",
+  })
+  let historyRequests = 0
+  let billingRequests = 0
+
+  await installCandidateApiMocks(page, async ({ pathname }: ApiMockContext) => {
+    if (pathname === "/api/membership/plans") {
+      return {
+        data: {
+          memberships: [{
+            membership_ulid: "membership-plan-1",
+            membership_gpath: "affiliate",
+            name: "Affiliate Membership",
+          }],
+        },
+      }
+    }
+    if (pathname === "/api/membership/history") {
+      const requestNumber = ++historyRequests
+      if (requestNumber === 2) await new Promise((resolve) => setTimeout(resolve, 1_000))
+      const record = requestNumber === 1
+        ? membershipRecord("membership-initial", "INITIAL-MEMBERSHIP")
+        : requestNumber === 2
+          ? membershipRecord("membership-stale", "STALE-MEMBERSHIP")
+          : membershipRecord("membership-latest", "LATEST-MEMBERSHIP")
+      return { data: { user_memberships: [record], total: 1 } }
+    }
+    if (pathname === "/api/membership/billings") {
+      const requestNumber = ++billingRequests
+      if (requestNumber === 2) await new Promise((resolve) => setTimeout(resolve, 1_000))
+      const record = requestNumber === 1
+        ? billingRecord("billing-initial", "INITIAL-BILLING")
+        : requestNumber === 2
+          ? billingRecord("billing-stale", "STALE-BILLING")
+          : billingRecord("billing-latest", "LATEST-BILLING")
+      return { data: { billings: [record], total: 1 } }
+    }
+    if (pathname === "/api/membership/active") {
+      const name = historyRequests >= 3 ? "LATEST-MEMBERSHIP" : "INITIAL-MEMBERSHIP"
+      return { data: { membership: membershipRecord("membership-active", name) } }
+    }
+    return undefined
+  })
+
+  await page.goto("/membership", { waitUntil: "domcontentloaded" })
+  await expect(page.getByText("INITIAL-MEMBERSHIP", { exact: true })).toBeVisible()
+
+  const refreshButton = page.locator(".membership-refresh-btn")
+  await refreshButton.dispatchEvent("click")
+  await expect.poll(() => historyRequests).toBe(2)
+  await expect.poll(() => billingRequests).toBe(2)
+  await refreshButton.dispatchEvent("click")
+
+  await expect.poll(() => historyRequests).toBe(3)
+  await expect.poll(() => billingRequests).toBe(3)
+  await page.locator(".membership-tabs button").nth(2).click()
+  await expect(page.getByText("LATEST-MEMBERSHIP", { exact: true })).toBeVisible()
+  await page.locator(".membership-tabs button").nth(3).click()
+  await expect(page.getByText("LATEST-BILLING", { exact: true })).toBeVisible()
+
+  await page.waitForTimeout(1_100)
+  await expect(page.getByText("STALE-MEMBERSHIP", { exact: true })).toHaveCount(0)
+  await expect(page.getByText("STALE-BILLING", { exact: true })).toHaveCount(0)
+  await expect(page.getByText("LATEST-BILLING", { exact: true })).toBeVisible()
+})
+
 test("测验选择答案后同步草稿并提交结果", async ({ page }) => {
   const requests: Array<{ pathname: string; body: unknown }> = []
 
