@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue"
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import { GraduationCap, Search } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
@@ -17,6 +17,13 @@ const refreshKey = ref(0)
 const allCourses = ref<any[]>([])
 const loading = ref(false)
 const loadError = ref(false)
+let paymentPollInterval: number | undefined
+
+function clearPaymentPollInterval() {
+  if (paymentPollInterval === undefined) return
+  window.clearInterval(paymentPollInterval)
+  paymentPollInterval = undefined
+}
 
 const emptyCopy = computed(() => t.value.courses)
 const categoryOptions = computed<Array<{ key: CourseCategoryFilter; label: string }>>(() => [
@@ -180,16 +187,17 @@ function handlePaymentReturn() {
 
     // Start a short polling loop to wait for the Stripe webhook to update the backend order status
     let attempts = 0
-    const pollInterval = setInterval(() => {
+    clearPaymentPollInterval()
+    paymentPollInterval = window.setInterval(() => {
       attempts++
       void fetchData().then(() => {
         const targetCourse = allCourses.value.find((c) => c.id === targetId || c.pipelineId === purchasedPipelineId)
         // If the active order has cleared, the webhook has finished processing
         if (targetCourse && !targetCourse.activeOrder) {
-          clearInterval(pollInterval)
+          clearPaymentPollInterval()
         }
       })
-      if (attempts >= 6) clearInterval(pollInterval)
+      if (attempts >= 6) clearPaymentPollInterval()
     }, 2500)
   } else if (paymentStatus === "cancelled") {
     toast.warning(copy.cancelled)
@@ -216,6 +224,8 @@ onMounted(() => {
   handlePaymentReturn()
   void fetchData()
 })
+
+onBeforeUnmount(clearPaymentPollInterval)
 </script>
 
 <template>

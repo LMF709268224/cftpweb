@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from "vue"
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
 import { Loader2, Settings } from "lucide-vue-next"
@@ -66,6 +66,13 @@ const isEmailCodeSending = ref(false)
 const emailCodeCountdown = ref(0)
 const resendCodeText = computed(() => t.value.settings.resendCode.replace('{{seconds}}', String(emailCodeCountdown.value)))
 let emailCodeInterval: number | undefined
+
+function clearEmailCodeInterval() {
+  if (emailCodeInterval === undefined) return
+  window.clearInterval(emailCodeInterval)
+  emailCodeInterval = undefined
+}
+
 const selectedCountryCode = ref("")
 const selectedProvinceCode = ref("")
 const orgPhonePrefixes = ref<PhonePrefixOption[]>([])
@@ -427,10 +434,11 @@ async function handleSendEmailCode() {
     })
     toast.success(t.value.settings.codeSent)
     emailCodeCountdown.value = 60
+    clearEmailCodeInterval()
     emailCodeInterval = window.setInterval(() => {
       emailCodeCountdown.value--
       if (emailCodeCountdown.value <= 0) {
-        clearInterval(emailCodeInterval)
+        clearEmailCodeInterval()
       }
     }, 1000)
   } catch (e) {
@@ -458,7 +466,7 @@ async function handleUpdateEmail() {
     toast.success(t.value.settings.updateEmailSuccess)
     emailUpdate.newEmail = ""
     emailUpdate.verificationCode = ""
-    clearInterval(emailCodeInterval)
+    clearEmailCodeInterval()
     emailCodeCountdown.value = 0
     const updatedUser = await fetchUser(true)
     if (updatedUser?.email) profile.email = updatedUser.email
@@ -468,6 +476,8 @@ async function handleUpdateEmail() {
     isEmailUpdating.value = false
   }
 }
+
+onBeforeUnmount(clearEmailCodeInterval)
 </script>
 
 <template>
