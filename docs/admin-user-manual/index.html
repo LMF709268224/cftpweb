@@ -44,6 +44,16 @@
       font-family: Consolas, "Courier New", monospace;
       overflow-wrap: anywhere;
     }
+    pre {
+      margin: 16px 0;
+      padding: 16px;
+      overflow-x: auto;
+      border: 1px solid #cbd8e5;
+      border-radius: 6px;
+      color: #e8f2fb;
+      background: #17324d;
+    }
+    pre code { padding: 0; border: 0; color: inherit; background: transparent; font-size: 13px; overflow-wrap: normal; }
     h1, h2, h3, h4 { margin: 0; line-height: 1.3; letter-spacing: 0; }
     p { margin: 0; }
 
@@ -352,11 +362,11 @@
         <div>
           <div class="eyebrow">ADMIN OPERATIONS GUIDE</div>
           <h1>管理后台功能目录</h1>
-          <p>按业务模块查找配置方法、字段含义、操作顺序和发布前检查事项。当前版本已提供课程、认证和商品配置完整手册，其余章节将按同一结构逐步补充。</p>
+          <p>按业务模块查找配置方法、字段含义、操作顺序和发布前检查事项。当前版本已提供课程、认证、商品、资格定义和证书模板配置完整手册，其余章节将按同一结构逐步补充。</p>
         </div>
         <div class="search-wrap">
           <label for="module-search">查找模块</label>
-          <input id="module-search" type="search" placeholder="例如：课程、认证、商品" oninput="filterModules(this.value)">
+          <input id="module-search" type="search" placeholder="例如：课程、资格、证书模板" oninput="filterModules(this.value)">
         </div>
       </div>
 
@@ -374,13 +384,13 @@
           <span class="module-state">已完成</span><span class="module-icon">商</span>
           <h2>商品配置</h2><p>关联认证或会员方案，配置价格、优惠和商品发布状态。</p>
         </button>
-        <button class="module pending" type="button" data-name="资格定义 认证资格 免考资格 材料" onclick="pendingModule('资格定义')">
-          <span class="module-state">待补充</span><span class="module-icon">资</span>
+        <button class="module ready" type="button" data-name="资格定义 认证资格 免考资格 通用资格 学业类 文件材料 资源路径" onclick="openManual('qualification')">
+          <span class="module-state">已完成</span><span class="module-icon">资</span>
           <h2>资格定义</h2><p>定义证书、免考和终审材料等可复用资格。</p>
         </button>
-        <button class="module pending" type="button" data-name="证书模板 PDF HTML 参数" onclick="pendingModule('证书模板配置')">
-          <span class="module-state">待补充</span><span class="module-icon">证</span>
-          <h2>证书模板配置</h2><p>维护证书 HTML 模板、模板参数和多语言内容。</p>
+        <button class="module ready" type="button" data-name="证书模板 PDF HTML 参数 预览 多语言 版本" onclick="openManual('certificate-template')">
+          <span class="module-state">已完成</span><span class="module-icon">证</span>
+          <h2>证书模板配置</h2><p>维护证书 HTML 模板、渲染预览、版本和名称描述翻译。</p>
         </button>
         <button class="module pending" type="button" data-name="会员方案配置 Membership" onclick="pendingModule('会员方案配置')">
           <span class="module-state">待补充</span><span class="module-icon">会</span>
@@ -1123,6 +1133,373 @@
         </div>
       </div>
     </article>
+
+    <article class="manual" id="qualification-manual">
+      <nav class="breadcrumb" aria-label="面包屑">
+        <button type="button" onclick="showCatalog()">管理后台目录</button><span>/</span><span>资格定义</span>
+      </nav>
+      <div class="manual-layout">
+        <nav class="side-nav" aria-label="资格定义章节">
+          <strong>资格定义</strong>
+          <a href="#qualification-overview">功能概览</a>
+          <a href="#qualification-categories">资格分类</a>
+          <a href="#qualification-create">新建资格</a>
+          <a href="#qualification-files">文件约束</a>
+          <a href="#qualification-respath">资源路径</a>
+          <a href="#qualification-usage">在认证中使用</a>
+          <a href="#qualification-maintenance">查看与维护</a>
+          <a href="#qualification-faq">常见问题</a>
+          <a href="#qualification-checklist">检查清单</a>
+        </nav>
+
+        <div class="content">
+          <header class="manual-title">
+            <div class="eyebrow" style="color:#9eeef1">配置管理 / GCREDS</div>
+            <h1>资格定义使用手册</h1>
+            <p>面向管理后台运营人员，说明资格分类、资源路径、申请材料，以及资格在认证准入、终审、发证、禁购和免考中的用法。</p>
+            <div class="manual-meta"><span>角色：认证运营</span><span>难度：基础至进阶</span><span>更新：2026-08-25</span></div>
+          </header>
+
+          <section class="doc-section" id="qualification-overview">
+            <h2>1. 功能概览</h2>
+            <p class="lead">“资格定义”维护资格的基础字典，包括名称、分类、资源路径、获取说明和申请时所需材料。创建完成后，再到“认证配置”把它放到具体业务位置。</p>
+            <div class="flow" aria-label="资格配置关系"><span>资格定义</span><b>→</b><span>认证配置引用</span><b>→</b><span>申请 / 校验 / 发证 / 免考</span></div>
+            <div class="warning"><strong>分类不等于业务规则</strong>选择“认证资格”或“免考资格”只是在资格列表中标记用途。系统是否准入、禁购、终审、发证或免考，取决于该资格 ID 在认证配置中被引用的位置。</div>
+            <figure class="shot">
+              <img src="assets/qualification/qualification-list.png" alt="资格定义列表" data-filename="qualification/qualification-list.png">
+              <div class="shot-missing"><div><strong>待补截图：资格定义列表</strong><code>assets/qualification/qualification-list.png</code></div></div>
+              <figcaption>图 1：资格定义列表展示名称、资格 ID 和分类。点击“查看详情”可核对完整字段和复制原始 JSON。</figcaption>
+            </figure>
+          </section>
+
+          <section class="doc-section" id="qualification-categories">
+            <h2>2. 资格分类怎么选</h2>
+            <figure class="shot">
+              <img src="assets/qualification/qualification-categories.png" alt="资格分类下拉选项" data-filename="qualification/qualification-categories.png">
+              <div class="shot-missing"><div><strong>待补截图：资格分类</strong><code>assets/qualification/qualification-categories.png</code></div></div>
+              <figcaption>图 2：当前提供认证资格、免考资格、通用资格和学业类四种分类。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>分类</th><th>推荐用途</th><th>示例</th></tr></thead>
+              <tbody>
+                <tr><td>认证资格</td><td>由认证管线或课程单元正式颁发的证书资格</td><td>CFtA Certification、CFtP Certification</td></tr>
+                <tr><td>免考资格</td><td>通过人工申请取得、用于豁免某个课程单元的资格</td><td>CFtP L1A Finance Exemption</td></tr>
+                <tr><td>通用资格</td><td>工作经验、执业条件等非学位类材料资格</td><td>CFtP Work Experience Proof</td></tr>
+                <tr><td>学业类</td><td>学历、学位、成绩单等教育背景资格</td><td>学业证书</td></tr>
+              </tbody>
+            </table>
+            <div class="note"><strong>按资格本身的含义分类</strong>同一个资格可以在多个业务位置被引用。例如 CFtP Certification 属于“认证资格”，但仍可被 CFtA 管线放入“禁止报读资格”，实现取得高阶证书后不能反向购买初阶认证。</div>
+          </section>
+
+          <section class="doc-section" id="qualification-create">
+            <h2>3. 新建资格</h2>
+            <p class="lead">点击页面右上角“新建资格”，完成基础信息和文件约束后创建。资格 ID 由系统生成，不需要手工填写。</p>
+            <figure class="shot">
+              <img src="assets/qualification/qualification-create.png" alt="新建资格定义表单" data-filename="qualification/qualification-create.png">
+              <div class="shot-missing"><div><strong>待补截图：新建资格</strong><code>assets/qualification/qualification-create.png</code></div></div>
+              <figcaption>图 3：新建资格定义。名称、分类、资源路径和描述为必填；获取方式说明和文件约束按业务需要填写。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>字段</th><th>是否必填</th><th>填写说明</th></tr></thead>
+              <tbody>
+                <tr><td>名称</td><td class="required">必填</td><td>使用正式、可区分的资格名称；后续认证配置会按该名称供运营人员选择。</td></tr>
+                <tr><td>分类</td><td class="required">必填</td><td>按资格本身选择认证、免考、通用或学业类，不要按当前页面的临时使用位置分类。</td></tr>
+                <tr><td>资源路径</td><td class="required">必填</td><td>资格的唯一资源标识和材料上传权限对象，例如 <code>/gcc/credential/cftp-certification</code>。</td></tr>
+                <tr><td>获取方式说明</td><td>选填</td><td>面向考生说明如何取得该资格，例如完成指定认证或提交工作经验证明。</td></tr>
+                <tr><td>描述</td><td class="required">必填</td><td>说明资格代表什么、适用范围和审核口径。</td></tr>
+                <tr><td>文件约束</td><td>按场景</td><td>只有考生需要上传材料申请该资格时才添加；系统自动颁发的证书通常不需要。</td></tr>
+              </tbody>
+            </table>
+            <ol class="steps">
+              <li><strong>先确认资格是否已经存在</strong><span>按名称和业务含义检查列表，避免为同一资格重复创建多个 ID。</span></li>
+              <li><strong>选择分类并填写说明</strong><span>名称和描述应能让后续配置人员准确识别。</span></li>
+              <li><strong>确认唯一资源路径</strong><span>新资格使用新路径，不复制已有资格路径。</span></li>
+              <li><strong>按申请流程添加文件约束</strong><span>逐项确定文件名称、类型以及是否必填。</span></li>
+              <li><strong>创建后核对详情</strong><span>记录资格 ID，再到认证配置引用。</span></li>
+            </ol>
+          </section>
+
+          <section class="doc-section" id="qualification-files">
+            <h2>4. 文件约束怎么配置</h2>
+            <p class="lead">文件约束决定考生申请该资格时，上传页面要求哪些材料。点击“添加文件”可增加多项，每项包含材料名称、文件类型和必填状态。</p>
+            <table>
+              <thead><tr><th>设置</th><th>作用</th><th>建议</th></tr></thead>
+              <tbody>
+                <tr><td>材料名称</td><td>告诉考生和审核人员这份文件是什么</td><td>写具体用途，如 <code>Employment Certificate</code>，不要只写“附件”</td></tr>
+                <tr><td>不限 / Any</td><td>接受系统支持的任意文件类型</td><td>仅在确实无法限定格式时使用</td></tr>
+                <tr><td>图片 / Image</td><td>用于照片、证件扫描图等</td><td>适合单页图像材料</td></tr>
+                <tr><td>PDF 文档 / PDF</td><td>用于证明、证书、成绩单等文档</td><td>正式证明材料优先使用</td></tr>
+                <tr><td>视频 / Video</td><td>用于视频证明材料</td><td>只有审核流程明确需要时使用</td></tr>
+                <tr><td>文本 / Text</td><td>用于纯文本类材料</td><td>不要用来代替应上传的正式文件</td></tr>
+                <tr><td>必填 / 选填</td><td>控制提交申请时是否必须提供该材料</td><td>以审核能够作出结论的最低材料集为准</td></tr>
+              </tbody>
+            </table>
+            <div class="danger"><strong>文件约束不是证书 PDF 模板</strong>这里配置的是考生申请资格时上传的证据材料。系统最终颁发证书使用的模板，要在“证书模板配置”中创建，并在认证配置的“最终颁发证书”或课程单元证书中绑定。</div>
+          </section>
+
+          <section class="doc-section" id="qualification-respath">
+            <h2>5. 资源路径是什么</h2>
+            <p class="lead">资源路径（Resource Path）是资格在系统底层的稳定唯一标识之一，同时用于控制考生上传该资格材料的权限。它不是网页地址，也不是认证 GPath。</p>
+            <table>
+              <thead><tr><th>规则</th><th>说明</th><th>示例</th></tr></thead>
+              <tbody>
+                <tr><td>必须唯一</td><td>两个资格定义不能使用相同资源路径。</td><td>每个资格单独一条路径</td></tr>
+                <tr><td>使用绝对路径</td><td>建议始终以 <code>/</code> 开头；系统会清理末尾斜杠。</td><td><code>/gcc/credential/cfta</code></td></tr>
+                <tr><td>使用稳定英文标识</td><td>名称翻译或文案调整时不修改资源路径。</td><td><code>/gcc/credential/work-experience</code></td></tr>
+                <tr><td>不要复用其他模块 GPath</td><td>课程、认证、商品和资格是不同资源，即使业务相关也应使用各自路径。</td><td>资格统一放在 <code>/gcc/credential/...</code></td></tr>
+                <tr><td>不要写版本号</td><td>资源路径代表资格定义本身，不写日期、版本或人员姓名。</td><td>避免 <code>-v2</code>、<code>-2026</code></td></tr>
+              </tbody>
+            </table>
+            <div class="danger"><strong>创建前务必确认路径</strong>当前管理后台只提供新建和只读详情，没有资格定义编辑入口。路径写错后不能在此页面直接修正，也不要通过创建同名资格来掩盖错误。</div>
+          </section>
+
+          <section class="doc-section" id="qualification-usage">
+            <h2>6. 资格创建后在哪里使用</h2>
+            <table>
+              <thead><tr><th>认证配置位置</th><th>业务效果</th><th>常见资格</th></tr></thead>
+              <tbody>
+                <tr><td>前置准入资格</td><td>进入或购买认证前必须已持有</td><td>学历、基础认证</td></tr>
+                <tr><td>发证前终审材料</td><td>课程完成后、发放最终证书前还需提交并审核</td><td>工作经验证明</td></tr>
+                <tr><td>最终颁发证书</td><td>认证完成并通过终审后，由系统颁发该资格</td><td>CFtA / CFtP Certification</td></tr>
+                <tr><td>禁止报读资格</td><td>考生已持有任一所选资格时，禁止购买当前认证</td><td>CFtA 禁止持有 CFtP 的考生反向报读</td></tr>
+                <tr><td>课程单元豁免资格</td><td>考生持有该资格时，购买流程可自动应用课程免考</td><td>持有 CFtA Certification 免考 CFTP 中的 CFtA 课程单元</td></tr>
+                <tr><td>课程单元完成后签发</td><td>完成指定单元后颁发单元级资格或证书</td><td>课程完成证明</td></tr>
+              </tbody>
+            </table>
+            <div class="note"><strong>自动免考需要两层配置</strong>先存在可识别的资格定义，再在认证课程单元中启用“允许免考”并勾选该资格。仅创建“免考资格”分类不会自动豁免任何课程。</div>
+            <div class="warning"><strong>不要把 CFTA 同时设为 CFTP 的强制前置和自动免考依据</strong>若业务允许没有 CFTA 的考生直接购买 CFTP，就不应把 CFTA 放入 CFTP 的“前置准入资格”；只需在 CFTP 内对应课程单元配置 CFTA 资格为豁免条件。</div>
+          </section>
+
+          <section class="doc-section" id="qualification-maintenance">
+            <h2>7. 查看详情与后续维护</h2>
+            <div class="action-grid">
+              <div class="action"><h3>查看详情</h3><p>检查资格 ID、名称、分类、资源路径、描述、获取说明和文件约束。详情为只读。</p></div>
+              <div class="action"><h3>设置多语言</h3><p>在详情页维护名称、描述、获取方式和文件名称翻译；资源路径和资格 ID 不随语言变化。</p></div>
+              <div class="action"><h3>复制 JSON</h3><p>复制完整定义用于核对或向技术同事提供上下文；当前页面不支持从 JSON 导入资格。</p></div>
+              <div class="action"><h3>修改已建资格</h3><p>当前后台没有编辑或删除入口。发现错误时先停止在新认证中引用，再与技术团队确认处理方案。</p></div>
+            </div>
+            <div class="danger"><strong>资格 ID 一旦被引用就属于业务合同</strong>认证结构按资格 ID 判断持有、准入、免考、禁购和发证。名称相同的另一个资格 ID 不会自动继承旧资格记录，也不能替换现有关系。</div>
+          </section>
+
+          <section class="doc-section faq" id="qualification-faq">
+            <h2>8. 常见问题</h2>
+            <details><summary>“认证资格”和“免考资格”会自动触发不同流程吗？</summary><p>不会。分类用于表达资格性质和帮助运营识别；具体流程取决于资格 ID 被配置到前置、终审、最终证书、禁止报读或课程单元豁免中的哪一处。</p></details>
+            <details><summary>系统自动颁发的证书需要添加文件约束吗？</summary><p>通常不需要。文件约束用于考生手工申请资格时上传证明。系统颁发的证书应在认证配置中绑定资格定义和证书 PDF 模板。</p></details>
+            <details><summary>同名资格为什么不能互相替代？</summary><p>系统按资格定义 ID 判断，不按显示名称判断。重复创建同名资格会产生两个独立的业务对象。</p></details>
+            <details><summary>已有高阶资格禁止购买初阶认证，要配置在哪里？</summary><p>在初阶认证的“禁止报读资格”中选择高阶认证资格。互斥认证管线则在双方“互斥认证管线”中分别配置，两者作用不同。</p></details>
+            <details><summary>资源路径写错了，可以在页面修改吗？</summary><p>当前页面详情只读，没有编辑入口。不要继续引用错误定义，也不要擅自创建同名替代项；应提供资格 ID、错误路径和引用情况给技术团队处理。</p></details>
+          </section>
+
+          <section class="doc-section" id="qualification-checklist">
+            <h2>9. 创建与引用检查清单</h2>
+            <ul class="checklist">
+              <li>列表中不存在同一业务资格</li>
+              <li>名称能区分认证、免考和材料用途</li>
+              <li>分类符合资格本身的性质</li>
+              <li>资源路径唯一、稳定且使用英文</li>
+              <li>描述写明适用范围和审核口径</li>
+              <li>获取方式说明面向考生可理解</li>
+              <li>仅为人工申请资格添加文件约束</li>
+              <li>每项材料名称、类型和必填状态正确</li>
+              <li>创建后已记录并核对资格 ID</li>
+              <li>认证配置引用的是正确资格 ID</li>
+              <li>自动免考同时配置允许免考和豁免资格</li>
+              <li>禁止报读与互斥管线没有混淆</li>
+            </ul>
+            <a class="back-top" href="#top">返回顶部</a>
+          </section>
+        </div>
+      </div>
+    </article>
+
+    <article class="manual" id="certificate-template-manual">
+      <nav class="breadcrumb" aria-label="面包屑">
+        <button type="button" onclick="showCatalog()">管理后台目录</button><span>/</span><span>证书模板配置</span>
+      </nav>
+      <div class="manual-layout">
+        <nav class="side-nav" aria-label="证书模板配置章节">
+          <strong>证书模板配置</strong>
+          <a href="#certificate-template-overview">功能概览</a>
+          <a href="#certificate-template-concepts">关键概念</a>
+          <a href="#certificate-template-create">新建与编辑</a>
+          <a href="#certificate-template-variables">模板变量</a>
+          <a href="#certificate-template-html">HTML 与样式</a>
+          <a href="#certificate-template-preview">预览与多语言</a>
+          <a href="#certificate-template-version">版本与引用</a>
+          <a href="#certificate-template-faq">常见问题</a>
+          <a href="#certificate-template-checklist">上线检查</a>
+        </nav>
+
+        <div class="content">
+          <header class="manual-title">
+            <div class="eyebrow" style="color:#9eeef1">配置管理 / GCREDS + GPDF</div>
+            <h1>证书模板配置使用手册</h1>
+            <p>面向证书运营和模板维护人员，说明 HTML 证书模板的创建、变量、预览、样式、版本更新，以及与认证证书配置的关系。</p>
+            <div class="manual-meta"><span>角色：证书运营</span><span>难度：进阶</span><span>更新：2026-08-25</span></div>
+          </header>
+
+          <section class="doc-section" id="certificate-template-overview">
+            <h2>1. 功能概览</h2>
+            <p class="lead">“证书模板配置”维护生成 PDF 时使用的完整 HTML 和 CSS。模板本身不会发证；创建后必须在认证配置的最终证书或课程单元证书中绑定，系统发证时才会使用。</p>
+            <div class="flow" aria-label="证书生成关系"><span>资格定义</span><b>+</b><span>证书模板</span><b>→</b><span>认证配置绑定</span><b>→</b><span>完成条件</span><b>→</b><span>生成 PDF</span></div>
+            <figure class="shot">
+              <img src="assets/certificate-template/template-list.png" alt="证书模板配置列表" data-filename="certificate-template/template-list.png">
+              <div class="shot-missing"><div><strong>待补截图：证书模板列表</strong><code>assets/certificate-template/template-list.png</code></div></div>
+              <figcaption>图 1：模板列表显示模板名称、描述、模板 ID、版本和创建时间；每行可查看详情或编辑。</figcaption>
+            </figure>
+            <div class="warning"><strong>资格定义和证书模板缺一不可</strong>资格定义决定“颁发什么资格”，模板决定“证书 PDF 长什么样”。只创建模板不会让系统自动发证，只配置资格而不绑定模板也无法生成证书 PDF。</div>
+          </section>
+
+          <section class="doc-section" id="certificate-template-concepts">
+            <h2>2. 先理解这些概念</h2>
+            <div class="term-grid">
+              <div class="term"><h3>模板 ID / ULID</h3><p>模板的稳定唯一标识，由系统创建。认证结构引用的是这个 ID，不按模板名称查找。</p></div>
+              <div class="term"><h3>模板版本</h3><p>每次编辑并保存同一个模板，版本号增加，但模板 ID 不变。</p></div>
+              <div class="term critical"><h3>HTML 模板</h3><p>完整 HTML 文档，包含页面内容、CSS、图片和 Go 模板变量。</p></div>
+              <div class="term"><h3>模板参数</h3><p>发证服务传入的动态数据，例如姓名、证书编号、课程名和签发日期。</p></div>
+            </div>
+            <table>
+              <thead><tr><th>配置对象</th><th>负责内容</th><th>在哪里关联</th></tr></thead>
+              <tbody>
+                <tr><td>资格定义</td><td>证书代表的业务资格</td><td>认证配置的最终颁发证书或课程单元证书</td></tr>
+                <tr><td>证书模板</td><td>PDF 版式、文字、图片和变量位置</td><td>与资格定义一起绑定</td></tr>
+                <tr><td>模板变量</td><td>姓名、编号、课程、日期等运行时数据</td><td>由微服务按发证场景传入，不在本页面手工填写</td></tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section class="doc-section" id="certificate-template-create">
+            <h2>3. 新建和编辑模板</h2>
+            <p class="lead">新用途或需要保留旧版外观时使用“新建模板”；仅修正文案或样式且允许后续证书统一采用新外观时，可直接编辑现有模板。</p>
+            <figure class="shot">
+              <img src="assets/certificate-template/template-create.png" alt="新建证书模板表单" data-filename="certificate-template/template-create.png">
+              <div class="shot-missing"><div><strong>待补截图：新建证书模板</strong><code>assets/certificate-template/template-create.png</code></div></div>
+              <figcaption>图 2：新建模板。模板名称和 HTML 模板为必填；右侧实时显示 HTML 预览。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>字段</th><th>是否必填</th><th>填写说明</th></tr></thead>
+              <tbody>
+                <tr><td>模板 ID</td><td>系统生成</td><td>创建后只读，是认证配置实际保存的引用值。</td></tr>
+                <tr><td>模板名称</td><td class="required">必填</td><td>建议包含证书用途或认证名称，便于配置人员区分。</td></tr>
+                <tr><td>描述</td><td>选填</td><td>写明适用认证、版式或语言，避免使用“test”“新版”等模糊名称。</td></tr>
+                <tr><td>HTML 模板</td><td class="required">必填</td><td>填写完整、可独立渲染的 HTML 文档，并使用当前发证场景支持的变量。</td></tr>
+                <tr><td>参数结构</td><td>当前页面不编辑</td><td>详情“完整字段”中可能显示底层参数结构；管理后台当前没有单独输入项，不要把它当作日常配置字段。</td></tr>
+              </tbody>
+            </table>
+            <ol class="steps">
+              <li><strong>确定使用场景</strong><span>先确认是认证最终证书还是课程单元证书，两者可用变量不同。</span></li>
+              <li><strong>填写名称和描述</strong><span>明确认证、语言和版式用途。</span></li>
+              <li><strong>粘贴完整 HTML</strong><span>检查变量拼写、CSS、图片地址和打印尺寸。</span></li>
+              <li><strong>查看右侧预览</strong><span>核对布局、文字、图片和签名区域是否完整。</span></li>
+              <li><strong>保存并记录模板 ID</strong><span>再到认证配置选择该模板。</span></li>
+            </ol>
+          </section>
+
+          <section class="doc-section" id="certificate-template-variables">
+            <h2>4. 模板变量怎么使用</h2>
+            <p class="lead">PDF 模板使用 Go <code>html/template</code> 语法，变量必须写成 <code>{{ .Name }}</code> 这种形式。变量名区分大小写，点号和大括号都不能省略。</p>
+            <table>
+              <thead><tr><th>发证场景</th><th>可用变量</th><th>值的含义</th></tr></thead>
+              <tbody>
+                <tr><td>认证最终证书</td><td><code>{{ .Name }}</code></td><td>考生姓名</td></tr>
+                <tr><td>认证最终证书</td><td><code>{{ .CandidateNo }}</code></td><td>当前由发证流程传入的证书编号（degree number），不是考生 ULID，也不是登录账号</td></tr>
+                <tr><td>课程单元证书</td><td><code>{{ .Name }}</code></td><td>考生姓名</td></tr>
+                <tr><td>课程单元证书</td><td><code>{{ .Course }}</code></td><td>认证配置中该课程单元的名称提示</td></tr>
+                <tr><td>课程单元证书</td><td><code>{{ .IssueDate }}</code></td><td>签发日期，格式为 <code>YYYY-MM-DD</code>，例如 <code>2026-08-21</code></td></tr>
+              </tbody>
+            </table>
+            <div class="danger"><strong>不要跨场景使用变量</strong>当前认证最终证书只传入 <code>Name</code> 和 <code>CandidateNo</code>；课程单元证书传入 <code>Name</code>、<code>Course</code> 和 <code>IssueDate</code>。最终证书模板写 <code>{{ .IssueDate }}</code> 或 <code>{{ .Course }}</code> 不会自动从 PDF 请求的其他字段合并进来。</div>
+            <h3>最小示例</h3>
+            <pre><code>&lt;h1&gt;Certificate of Completion&lt;/h1&gt;
+&lt;p class="name"&gt;{{ .Name }}&lt;/p&gt;
+&lt;p class="course"&gt;{{ .Course }}&lt;/p&gt;
+&lt;p class="date"&gt;{{ .IssueDate }}&lt;/p&gt;</code></pre>
+            <div class="note"><strong>编号字段的显示文案由模板决定</strong>如需展示证书编号，可将 <code>{{ .CandidateNo }}</code> 放在 “Certificate No.” 或中英文都适用的标签旁；不要把它标成考生 ID，除非业务已确认其语义。</div>
+          </section>
+
+          <section class="doc-section" id="certificate-template-html">
+            <h2>5. HTML、CSS、图片和字体</h2>
+            <table>
+              <thead><tr><th>项目</th><th>配置建议</th><th>常见问题</th></tr></thead>
+              <tbody>
+                <tr><td>页面尺寸</td><td>在 CSS 中明确 <code>@page { size: A4 landscape; }</code> 或业务要求的尺寸，并把页面边距设为确定值。</td><td>未设打印尺寸会导致缩放、分页或边框被裁切。</td></tr>
+                <tr><td>固定布局</td><td>证书画布使用稳定宽高、定位和间距，不依赖浏览器窗口大小。</td><td>响应式网页布局在 PDF 中可能错位。</td></tr>
+                <tr><td>背景与颜色</td><td>使用 <code>print-color-adjust: exact</code>，同时保持文字与背景有足够对比。</td><td>打印渲染可能淡化背景色。</td></tr>
+                <tr><td>图片</td><td>使用 PDF 生成服务能够访问的稳定地址，保存前确认 Logo、边框和签名均能在预览中加载。</td><td>本机路径、登录后才能访问的地址或短期签名 URL 会失效。</td></tr>
+                <tr><td>字体</td><td>使用生成服务中可用的字体并提供通用回退字体；中文证书必须实际生成一张 PDF 验证汉字。</td><td>管理员电脑能显示不代表 GPDF 容器也安装了同一字体，缺字时可能显示方框。</td></tr>
+                <tr><td>动态文本</td><td>为姓名、课程名和编号预留足够宽度，允许合理换行或限制字号。</td><td>长姓名和长课程名容易覆盖固定文案或签名。</td></tr>
+              </tbody>
+            </table>
+            <div class="warning"><strong>预览通过不等于 PDF 一定相同</strong>右侧预览运行在管理后台浏览器，最终 PDF 由 GPDF 服务中的浏览器环境生成。字体、远程图片、打印分页和网络访问仍需用真实发证流程验证。</div>
+          </section>
+
+          <section class="doc-section" id="certificate-template-preview">
+            <h2>6. 预览和多语言</h2>
+            <figure class="shot">
+              <img src="assets/certificate-template/template-edit-preview.png" alt="编辑证书模板及 HTML 预览" data-filename="certificate-template/template-edit-preview.png">
+              <div class="shot-missing"><div><strong>待补截图：模板编辑预览</strong><code>assets/certificate-template/template-edit-preview.png</code></div></div>
+              <figcaption>图 3：编辑模板时左侧维护名称、描述和 HTML，右侧查看版式。预览中显示 <code>{{ .Name }}</code> 等占位符属于正常现象。</figcaption>
+            </figure>
+            <div class="action-grid">
+              <div class="action"><h3>HTML 预览</h3><p>用于快速检查页面布局和静态资源。它不会模拟真实考生数据，也不会替换模板变量。</p></div>
+              <div class="action"><h3>设置多语言</h3><p>当前可维护模板名称和描述的翻译，便于后台识别；HTML 模板正文不会自动生成另一种语言版本。</p></div>
+            </div>
+            <div class="note"><strong>需要不同语言证书时</strong>如果中英文证书正文、固定文案或布局不同，应分别建立明确命名的模板，并在对应认证版本中绑定；不要期待“设置多语言”自动翻译 HTML。</div>
+          </section>
+
+          <section class="doc-section" id="certificate-template-version">
+            <h2>7. 模板版本和认证引用</h2>
+            <p class="lead">编辑现有模板会保留模板 ID，并将版本号加一。所有仍引用该模板 ID 的认证，在之后新生成 PDF 时会使用最新模板内容。</p>
+            <table>
+              <thead><tr><th>操作</th><th>模板 ID</th><th>影响范围</th></tr></thead>
+              <tbody>
+                <tr><td>编辑并保存现有模板</td><td>不变</td><td>后续新生成或重试生成的 PDF 使用更新后的内容</td></tr>
+                <tr><td>新建模板</td><td>生成新 ID</td><td>不会自动替换任何认证，需要在认证配置中重新选择</td></tr>
+                <tr><td>查看已生成证书</td><td>无变化</td><td>已经生成并保存的旧 PDF 不会因模板编辑自动更新</td></tr>
+              </tbody>
+            </table>
+            <div class="danger"><strong>正式模板的大改动不要直接覆盖</strong>如果需要保留某批证书的旧版式，或新认证版本要使用不同法律文案，应新建模板，再创建或克隆认证草稿绑定新模板。直接编辑会影响所有继续引用旧模板 ID 的后续发证。</div>
+            <ol class="steps">
+              <li><strong>在模板列表核对模板 ID 和当前版本</strong><span>名称相似时以 ID 为准。</span></li>
+              <li><strong>在认证配置绑定正确组合</strong><span>同时核对资格定义 ID 和 PDF 模板 ID。</span></li>
+              <li><strong>使用测试考生完成一次真实发证</strong><span>验证姓名、编号、课程、日期、字体、图片和下载链接。</span></li>
+              <li><strong>再发布认证或投入正式使用</strong><span>已发布认证不能直接修改结构时，先克隆新草稿版本。</span></li>
+            </ol>
+          </section>
+
+          <section class="doc-section faq" id="certificate-template-faq">
+            <h2>8. 常见问题</h2>
+            <details><summary>为什么预览里仍然显示 {{ .Name }}？</summary><p>右侧预览只渲染当前 HTML，不注入测试考生参数，因此模板占位符会原样显示。真实发证时才由微服务传入对应值。</p></details>
+            <details><summary>为什么证书没有课程名或日期？</summary><p>先确认模板用于课程单元证书，并使用了正确大小写的 <code>{{ .Course }}</code> 与 <code>{{ .IssueDate }}</code>。认证最终证书当前不提供这两个模板变量。</p></details>
+            <details><summary>为什么 CandidateNo 不是考生 ID？</summary><p>这是现有接口字段名，当前发证流程传入的是证书编号（degree number）。模板上的固定标签应按证书编号表达，不要据字段名推断为考生 ULID 或登录账号。</p></details>
+            <details><summary>日期应该怎样显示才适合中英文？</summary><p>课程单元证书的 <code>IssueDate</code> 已格式化为 <code>YYYY-MM-DD</code>，例如 <code>2026-08-21</code>，无需在 HTML 中再次处理 RFC3339 时间。</p></details>
+            <details><summary>中文姓名显示方框，改 HTML 字体名就够了吗？</summary><p>不一定。最终 PDF 在 GPDF 容器中生成，所选中文字体必须在该环境中真实可用。保留回退字体后仍应生成 PDF 验证；缺字体需要由部署侧安装或提供可加载的字体资源。</p></details>
+            <details><summary>保存模板后，已有证书会自动更新吗？</summary><p>不会。已生成 PDF 是历史产物；模板更新只影响之后新生成或重新生成的证书。</p></details>
+          </section>
+
+          <section class="doc-section" id="certificate-template-checklist">
+            <h2>9. 上线前检查清单</h2>
+            <ul class="checklist">
+              <li>确认是最终证书还是课程单元证书</li>
+              <li>模板名称和描述能明确区分用途</li>
+              <li>使用了该发证场景实际支持的变量</li>
+              <li>变量大小写、点号和大括号正确</li>
+              <li>CandidateNo 按证书编号表达</li>
+              <li>课程日期显示为 YYYY-MM-DD</li>
+              <li>页面尺寸、方向、边距和分页正确</li>
+              <li>长姓名和长课程名不会覆盖其他内容</li>
+              <li>Logo、边框和签名资源长期可访问</li>
+              <li>中文字体已在真实 PDF 中验证</li>
+              <li>资格定义与模板 ID 组合绑定正确</li>
+              <li>已用测试考生走通生成、预览和下载</li>
+              <li>大改动使用新模板而非覆盖历史用途</li>
+              <li>明确已有 PDF 不会自动更新</li>
+            </ul>
+            <a class="back-top" href="#top">返回顶部</a>
+          </section>
+        </div>
+      </div>
+    </article>
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -1187,6 +1564,8 @@
     if (location.hash === "#course" || location.hash.startsWith("#course-")) openManual("course");
     if (location.hash === "#certification" || location.hash.startsWith("#certification-")) openManual("certification");
     if (location.hash === "#product" || location.hash.startsWith("#product-")) openManual("product");
+    if (location.hash === "#qualification" || location.hash.startsWith("#qualification-")) openManual("qualification");
+    if (location.hash === "#certificate-template" || location.hash.startsWith("#certificate-template-")) openManual("certificate-template");
   </script>
 </body>
 </html>

@@ -39,5 +39,17 @@ Screenshots are grouped by manual module.
 - `product/product-actions-draft.png`: draft actions
 - `product/product-actions-published.png`: published actions
 
+## Qualification
+
+- `qualification/qualification-list.png`: qualification definition list
+- `qualification/qualification-create.png`: new qualification form
+- `qualification/qualification-categories.png`: qualification category options
+
+## Certificate template
+
+- `certificate-template/template-list.png`: PDF certificate template list
+- `certificate-template/template-create.png`: new template form and HTML preview
+- `certificate-template/template-edit-preview.png`: template editor and rendered preview
+
 The HTML displays a named placeholder when an image is missing, so adding these
 files does not require another HTML change.
