@@ -548,8 +548,8 @@ onMounted(async () => {
                 <span class="font-bold">{{ copy.send.messageType }}</span>
                 <select v-model.number="msgType" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-4">
                   <option :value="1">{{ copy.send.messageTypes.system }}</option>
-                  <option :value="2">{{ copy.send.messageTypes.announcement }}</option>
-                  <option :value="3">{{ copy.send.messageTypes.marketing }}</option>
+                  <option :value="2">{{ copy.send.messageTypes.examReminder }}</option>
+                  <option :value="3">{{ copy.send.messageTypes.scoreReport }}</option>
                   <option :value="4">{{ copy.send.messageTypes.payment }}</option>
                   <option :value="5">{{ copy.send.messageTypes.other }}</option>
                 </select>
@@ -579,8 +579,8 @@ onMounted(async () => {
               <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ copy.sent.totalText(total) }}</span>
               <select v-model="statusFilter" class="h-11 min-w-0 flex-1 rounded-xl border border-slate-200 px-4 text-sm sm:flex-none">
               <option value="">{{ copy.sent.allStatus }}</option>
-              <option value="1">{{ copy.sent.unread }}</option>
-              <option value="2">{{ copy.sent.read }}</option>
+              <option value="0">{{ copy.sent.unread }}</option>
+              <option value="1">{{ copy.sent.read }}</option>
             </select>
             </div>
           </div>

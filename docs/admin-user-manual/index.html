@@ -363,7 +363,7 @@
         <div>
           <div class="eyebrow">ADMIN OPERATIONS GUIDE</div>
           <h1>管理后台功能目录</h1>
-          <p>按业务模块查找配置方法、字段含义、操作顺序和发布前检查事项。当前版本已提供主要配置模块、审核中心、认证管理和考试管理手册，其余章节将按同一结构逐步补充。</p>
+          <p>按业务模块查找配置方法、字段含义、操作顺序和发布前检查事项。当前版本已提供主要配置模块、审核中心、认证管理、考试管理和站内信手册，其余章节将按同一结构逐步补充。</p>
         </div>
         <div class="search-wrap">
           <label for="module-search">查找模块</label>
@@ -416,6 +416,10 @@
         <button class="module ready" type="button" data-name="考试管理 预约 成绩 同步 状态流转 确认号" onclick="openManual('exam')">
           <span class="module-state">已完成</span><span class="module-icon">考</span>
           <h2>考试管理</h2><p>查询考试预约、考试状态、成绩和同步记录。</p>
+        </button>
+        <button class="module ready" type="button" data-name="站内信 消息通知 收件人 模板 Payload JSON Schema 发送记录" onclick="openManual('site-message')">
+          <span class="module-state">已完成</span><span class="module-icon">信</span>
+          <h2>站内信</h2><p>创建消息模板，向指定考生发送站内通知并查看发送记录。</p>
         </button>
       </div>
       <div class="catalog-foot">文档版本：2026-08-25 · 适用系统：CFTP 管理后台</div>
@@ -2111,6 +2115,190 @@
         </div>
       </div>
     </article>
+
+    <article class="manual" id="site-message-manual">
+      <nav class="breadcrumb" aria-label="面包屑">
+        <button type="button" onclick="showCatalog()">管理后台目录</button><span>/</span><span>站内信</span>
+      </nav>
+      <div class="manual-layout">
+        <nav class="side-nav" aria-label="站内信章节">
+          <strong>站内信</strong>
+          <a href="#site-message-overview">功能概览</a>
+          <a href="#site-message-send">发送步骤</a>
+          <a href="#site-message-payload">类型与 Payload</a>
+          <a href="#site-message-template">创建模板</a>
+          <a href="#site-message-template-rules">模板规则</a>
+          <a href="#site-message-history">发送记录</a>
+          <a href="#site-message-troubleshooting">常见问题</a>
+          <a href="#site-message-checklist">发送检查</a>
+        </nav>
+
+        <div class="content">
+          <header class="manual-title">
+            <div class="eyebrow" style="color:#9eeef1">消息通知 / GMSG</div>
+            <h1>站内信使用手册</h1>
+            <p>面向运营和客服人员，说明如何选择收件人、使用模板和 Payload 发送站内通知，以及维护模板、查看发送记录和处理失败。</p>
+            <div class="manual-meta"><span>角色：运营 / 客服</span><span>难度：基础至进阶</span><span>更新：2026-08-25</span></div>
+          </header>
+
+          <section class="doc-section" id="site-message-overview">
+            <h2>1. 功能概览</h2>
+            <p class="lead">站内信用于向考生端消息中心发送通知。消息正文不能在发送页面直接输入，而是由“模板 + Payload JSON”渲染生成；同一模板可以向一个或多个考生发送不同业务场景的通知。</p>
+            <div class="flow" aria-label="站内信发送流程"><span>准备模板</span><b>→</b><span>选择收件人</span><b>→</b><span>选择消息类型</span><b>→</b><span>填写 Payload</span><b>→</b><span>发送并复核</span></div>
+            <figure class="shot">
+              <img src="assets/site-message/site-message-send.png" alt="站内信发送页面" data-filename="site-message/site-message-send.png">
+              <div class="shot-missing"><div><strong>待补截图：站内信发送页面</strong><code>assets/site-message/site-message-send.png</code></div></div>
+              <figcaption>图 1：页面分为发送站内信、发送记录和模板管理；右上角可分别刷新用户与模板。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>页签</th><th>用途</th><th>是否会产生外部影响</th></tr></thead>
+              <tbody>
+                <tr><td>发送站内信</td><td>选择收件人、模板、消息类型和参数并立即发送</td><td>是，点击发送成功后考生端会出现消息</td></tr>
+                <tr><td>发送记录</td><td>查看系统自动消息和管理员手工消息的发送记录</td><td>否，只读查询</td></tr>
+                <tr><td>模板管理</td><td>创建自定义模板，查看或编辑已有模板</td><td>是，修改模板会影响后续使用该路径的消息</td></tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section class="doc-section" id="site-message-send">
+            <h2>2. 发送一封站内信</h2>
+            <ol class="steps">
+              <li><strong>刷新用户和模板</strong><span>进入页面后先点击右上角“刷新用户”和“刷新模板”，避免使用过期列表。</span></li>
+              <li><strong>选择收件用户</strong><span>按姓名与 26 位用户 ULID 双重核对。可以多选；“全选”只选择当前页面已经加载的用户列表。</span></li>
+              <li><strong>选择模板</strong><span>下拉框同时显示模板标题和唯一模板路径，优先按路径确认业务场景。</span></li>
+              <li><strong>选择消息类型</strong><span>根据实际内容选择系统通知、考试提醒、成绩报告、支付通知或其他。</span></li>
+              <li><strong>填写 Payload JSON</strong><span>将模板变量对应的空值替换为真实数据，确认字段名、类型和 JSON 格式。</span></li>
+              <li><strong>小范围验证后发送</strong><span>重要或批量通知先发送给测试账号，确认标题和正文渲染正确，再选择正式收件人。</span></li>
+              <li><strong>检查发送记录</strong><span>成功提示中的数量应与实际收件人数一致，并在发送记录中核对模板、收件人和参数。</span></li>
+            </ol>
+            <figure class="shot">
+              <img src="assets/site-message/site-message-template-select.png" alt="选择站内信模板" data-filename="site-message/site-message-template-select.png">
+              <div class="shot-missing"><div><strong>待补截图：选择站内信模板</strong><code>assets/site-message/site-message-template-select.png</code></div></div>
+              <figcaption>图 2：模板下拉框中的路径是模板唯一标识；名称相似时必须按完整路径区分。</figcaption>
+            </figure>
+            <div class="danger"><strong>发送成功后不能在当前页面修改或撤回</strong>页面没有撤回操作。使用“全选”或批量发送前必须再次核对收件人、模板和 Payload，不要把测试消息发送给正式考生。</div>
+          </section>
+
+          <section class="doc-section" id="site-message-payload">
+            <h2>3. 消息类型与 Payload JSON</h2>
+            <table>
+              <thead><tr><th>消息类型</th><th>适用内容</th><th>示例</th></tr></thead>
+              <tbody>
+                <tr><td>系统通知</td><td>一般系统状态或服务通知</td><td>资料更新、功能状态变化</td></tr>
+                <tr><td>考试提醒</td><td>考试预约、开考前提醒等</td><td>考试时间和确认号提醒</td></tr>
+                <tr><td>成绩报告</td><td>考试结果或成绩处理通知</td><td>成绩已发布、结果可查看</td></tr>
+                <tr><td>支付通知</td><td>付款、退款或支付异常</td><td>支付成功、支付失败</td></tr>
+                <tr><td>其他</td><td>无法归入以上类别的通知</td><td>经审批的临时运营通知</td></tr>
+              </tbody>
+            </table>
+            <p class="lead">选择模板后，页面会从标题和正文中的 <code>{{Variable}}</code> 自动提取变量，并生成带空值的 Payload。管理员必须填写真实值；Payload 必须是 JSON 对象，不能是数组、字符串或 <code>null</code>。</p>
+            <pre><code>{
+  "CandidateName": "Li Ming",
+  "PipelineName": "CFtP Accreditation Track"
+}</code></pre>
+            <div class="note"><strong>字段名必须完全一致</strong><code>CandidateName</code>、<code>candidateName</code> 和 <code>Candidate Name</code> 是三个不同字段。字段是否必填、值是字符串还是数字，以所选模板的“参数规则 JSON Schema”为准。</div>
+            <div class="warning"><strong>空字符串不等于已填写</strong>页面自动生成的变量值默认是空字符串。发送前应逐项替换；如果 Schema 没有限制空值，系统可能允许发送，但考生看到的标题或正文会缺少内容。</div>
+          </section>
+
+          <section class="doc-section" id="site-message-template">
+            <h2>4. 创建自定义模板</h2>
+            <figure class="shot">
+              <img src="assets/site-message/site-message-template-list.png" alt="站内信模板列表" data-filename="site-message/site-message-template-list.png">
+              <div class="shot-missing"><div><strong>待补截图：模板列表</strong><code>assets/site-message/site-message-template-list.png</code></div></div>
+              <figcaption>图 3：模板列表显示路径、说明、版本和更新时间，可查看详情、编辑或创建模板。</figcaption>
+            </figure>
+            <figure class="shot">
+              <img src="assets/site-message/site-message-template-create.png" alt="创建站内信模板基本字段" data-filename="site-message/site-message-template-create.png">
+              <div class="shot-missing"><div><strong>待补截图：创建模板基本字段</strong><code>assets/site-message/site-message-template-create.png</code></div></div>
+              <figcaption>图 4：路径、标题模板和内容模板为必填项；描述用于说明模板用途。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>字段</th><th>含义</th><th>配置规则</th></tr></thead>
+              <tbody>
+                <tr><td>路径</td><td>模板的唯一业务标识</td><td>建议使用 <code>/msg/业务/场景/admin</code>；保存后不可在编辑页修改</td></tr>
+                <tr><td>标题模板</td><td>考生消息列表显示的标题</td><td>必填，最多 255 个字符；变量使用 <code>{{Variable}}</code></td></tr>
+                <tr><td>内容模板</td><td>考生打开消息后看到的正文</td><td>必填；正文中的每个变量都要在 Schema 中定义</td></tr>
+                <tr><td>描述</td><td>给管理员看的用途说明</td><td>建议写明触发场景、维护团队和收件人范围</td></tr>
+                <tr><td>参数规则 JSON Schema</td><td>定义 Payload 可用字段、类型和必填项</td><td>必须是合法 JSON Schema；自定义模板建议显式限制必填字段</td></tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section class="doc-section" id="site-message-template-rules">
+            <h2>5. 模板变量与参数规则</h2>
+            <figure class="shot">
+              <img src="assets/site-message/site-message-template-schema.png" alt="站内信模板参数规则" data-filename="site-message/site-message-template-schema.png">
+              <div class="shot-missing"><div><strong>待补截图：模板参数规则</strong><code>assets/site-message/site-message-template-schema.png</code></div></div>
+              <figcaption>图 5：参数规则位于创建或编辑弹窗下方，用于约束发送时的 Payload。</figcaption>
+            </figure>
+            <pre><code>{
+  "type": "object",
+  "properties": {
+    "CandidateName": { "type": "string", "minLength": 1 },
+    "PipelineName": { "type": "string", "minLength": 1 }
+  },
+  "required": ["CandidateName", "PipelineName"],
+  "additionalProperties": false
+}</code></pre>
+            <div class="note"><strong>模板与 Schema 必须同步</strong>标题或正文新增 <code>{{PipelineName}}</code> 时，Schema 的 <code>properties</code> 也必须增加同名字段，否则模板保存会失败；发送时缺少 <code>required</code> 字段也会失败。</div>
+            <div class="warning"><strong>内置模板属于服务协议</strong>以 <code>/msg/...</code> 表示业务事件的现有模板可能被认证、商城、审核等服务自动调用。不要随意修改路径、变量名或参数结构；内置模板的参数 Schema 由微服务维护，运营仅在确认上下游兼容后修改文案。</div>
+          </section>
+
+          <section class="doc-section" id="site-message-history">
+            <h2>6. 发送记录与详情</h2>
+            <figure class="shot">
+              <img src="assets/site-message/site-message-history.png" alt="站内信发送记录" data-filename="site-message/site-message-history.png">
+              <div class="shot-missing"><div><strong>待补截图：发送记录</strong><code>assets/site-message/site-message-history.png</code></div></div>
+              <figcaption>图 6：发送记录包含自动系统消息与管理员手工消息，可按未读或已读筛选。</figcaption>
+            </figure>
+            <figure class="shot">
+              <img src="assets/site-message/site-message-detail.png" alt="站内信发送详情" data-filename="site-message/site-message-detail.png">
+              <div class="shot-missing"><div><strong>待补截图：站内信详情</strong><code>assets/site-message/site-message-detail.png</code></div></div>
+              <figcaption>图 7：详情显示记录 ID、消息编号、来源、类型、发送方、接收用户、模板路径和消息参数。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>字段</th><th>排查用途</th></tr></thead>
+              <tbody>
+                <tr><td>站内信编号</td><td>标识一次消息发送；批量发送时多名收件人可能共享同一消息编号</td></tr>
+                <tr><td>接收用户编号</td><td>确认实际写入的是哪个考生账号</td></tr>
+                <tr><td>消息来源 / 发送方</td><td>区分系统自动发送与管理员手工发送，并定位来源服务</td></tr>
+                <tr><td>使用模板</td><td>确认渲染采用的模板路径</td></tr>
+                <tr><td>消息参数</td><td>确认发送时保存的 Payload；不要在截图中暴露敏感信息</td></tr>
+                <tr><td>状态</td><td>未读表示考生尚未标记已读；已读表示考生端已经读取</td></tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section class="doc-section" id="site-message-troubleshooting">
+            <h2>7. 常见问题</h2>
+            <details><summary>选择模板后为什么 Payload 自动出现字段？</summary><p>页面会读取模板详情，并扫描标题和正文中的 Mustache 变量生成 JSON。它只是填写助手，最终仍以模板的 JSON Schema 校验结果为准。</p></details>
+            <details><summary>为什么提示 Payload JSON 格式错误？</summary><p>检查双引号、逗号和大括号，并确认最外层是对象。JSON 不支持单引号、注释或末尾多余逗号。</p></details>
+            <details><summary>JSON 格式正确，为什么仍然发送失败？</summary><p>通常是字段缺失、字段类型不符或存在 Schema 不允许的字段。打开模板详情核对参数规则，再检查每个变量名和取值。</p></details>
+            <details><summary>为什么找不到刚创建或修改的模板？</summary><p>点击右上角“刷新模板”；如果仍未出现，检查保存是否成功以及当前模板分页。</p></details>
+            <details><summary>发送成功但考生说没有看到怎么办？</summary><p>在发送记录中按时间定位消息，核对接收用户编号、模板和参数；确认考生登录的是同一账号，再由技术人员根据站内信编号排查。</p></details>
+            <details><summary>可以删除模板或撤回消息吗？</summary><p>当前管理页面没有提供模板删除和消息撤回操作。已发送消息应视为不可编辑；确需处理时记录消息编号并走技术与业务审批流程。</p></details>
+          </section>
+
+          <section class="doc-section" id="site-message-checklist">
+            <h2>8. 发送前后检查清单</h2>
+            <ul class="checklist">
+              <li>用户和模板列表已经刷新</li>
+              <li>收件人姓名与 26 位用户 ULID 已双重核对</li>
+              <li>没有误用“全选”发送给无关考生</li>
+              <li>模板路径与本次业务场景一致</li>
+              <li>消息类型与实际内容一致</li>
+              <li>Payload 是合法 JSON 对象</li>
+              <li>所有模板变量均已填写且字段名完全一致</li>
+              <li>字段类型和必填项符合模板 JSON Schema</li>
+              <li>批量发送前已经用测试账号验证标题和正文</li>
+              <li>发送成功数量与收件人数一致</li>
+              <li>发送记录中的用户、模板和参数已经复核</li>
+            </ul>
+            <a class="back-top" href="#top">返回顶部</a>
+          </section>
+        </div>
+      </div>
+    </article>
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -2181,6 +2369,7 @@
     if (location.hash === "#review-center" || location.hash.startsWith("#review-center-")) openManual("review-center");
     if (location.hash === "#exam" || location.hash.startsWith("#exam-")) openManual("exam");
     if (location.hash === "#certification-management" || location.hash.startsWith("#certification-management-")) openManual("certification-management");
+    if (location.hash === "#site-message" || location.hash.startsWith("#site-message-")) openManual("site-message");
   </script>
 </body>
 </html>

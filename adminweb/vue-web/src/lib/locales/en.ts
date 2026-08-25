@@ -669,9 +669,9 @@ export const en: AdminTranslations = {
             sendButton: "Send Message",
             messageTypes: {
                 system: "System Notification",
-                announcement: "Announcement",
-                marketing: "Marketing",
-                payment: "Payment",
+                examReminder: "Exam Reminder",
+                scoreReport: "Score Report",
+                payment: "Payment Notification",
                 other: "Other",
             },
         },

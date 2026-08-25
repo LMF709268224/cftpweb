@@ -667,9 +667,9 @@ export const zh = {
             sendButton: "发送站内信",
             messageTypes: {
                 system: "系统通知",
-                announcement: "公告",
-                marketing: "营销",
-                payment: "支付",
+                examReminder: "考试提醒",
+                scoreReport: "成绩报告",
+                payment: "支付通知",
                 other: "其他",
             },
         },

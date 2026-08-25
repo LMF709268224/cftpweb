@@ -18,8 +18,8 @@ const sentMessage = {
   created_at: "2026-08-11T01:00:00Z",
 }
 
-async function installMessageReadMocks(page: Page, requests: string[]) {
-  return installAdminApiMocks(page, ({ method, pathname }) => {
+async function installMessageReadMocks(page: Page, requests: string[], sentStatuses: string[] = []) {
+  return installAdminApiMocks(page, ({ method, pathname, url }) => {
     requests.push(`${method} ${pathname}`)
     if (method === "GET" && pathname === "/api/user/list") {
       return { data: { users: [{ id: "candidate-1", name: "Regression Candidate" }] } }
@@ -31,6 +31,7 @@ async function installMessageReadMocks(page: Page, requests: string[]) {
       return { data: { ...messageTemplate, title_tpl: "Regression {{.name}}", content_tpl: "Read-only notification", parameter_schema: '{"type":"object"}' } }
     }
     if (method === "GET" && pathname === "/api/messages/sent") {
+      sentStatuses.push(url.searchParams.get("status") ?? "")
       return { data: { messages: [sentMessage], total: 1, has_more: false, next_cursor: "" } }
     }
     return undefined
@@ -70,4 +71,19 @@ test("sent message history and detail reuse read-only list data", async ({ page 
 
   expect(requests).toContain("GET /api/messages/sent")
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
+})
+
+test("sent message status filters use the gmsg enum values", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  const requests: string[] = []
+  const sentStatuses: string[] = []
+  await installMessageReadMocks(page, requests, sentStatuses)
+  await page.goto("/messages")
+
+  await page.getByRole("button", { name: "发送记录" }).click()
+  const statusFilter = page.getByRole("combobox")
+  await statusFilter.selectOption({ label: "未读" })
+  await expect.poll(() => sentStatuses.at(-1)).toBe("0")
+  await statusFilter.selectOption({ label: "已读" })
+  await expect.poll(() => sentStatuses.at(-1)).toBe("1")
 })

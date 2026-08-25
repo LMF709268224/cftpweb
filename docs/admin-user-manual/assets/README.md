@@ -83,5 +83,15 @@ Screenshots are grouped by manual module.
 - `certification-management/certification-units.png`: course unit list and detail
 - `certification-management/certification-logs.png`: status transition logs
 
+## Site message
+
+- `site-message/site-message-send.png`: recipient selection and message form
+- `site-message/site-message-template-select.png`: template selector and paths
+- `site-message/site-message-history.png`: sent message history
+- `site-message/site-message-detail.png`: sent message detail
+- `site-message/site-message-template-list.png`: template list and actions
+- `site-message/site-message-template-create.png`: template path, title, content, and description
+- `site-message/site-message-template-schema.png`: template parameter JSON Schema
+
 The HTML displays a named placeholder when an image is missing, so adding these
 files does not require another HTML change.
