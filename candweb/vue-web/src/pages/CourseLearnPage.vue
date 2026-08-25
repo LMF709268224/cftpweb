@@ -364,6 +364,14 @@ const courseRuntimeUnitUlid = computed(() => {
   if (nextCourseId && nextCourseId !== courseId.value) return ""
   return nextStep.value?.course_unit_ulid || ""
 })
+const canSignupCurrentCourseExam = computed(() =>
+  !pipelineCancelled.value
+  && Boolean(courseRuntimeUnitUlid.value)
+  && isWaitingSignupExamStatus(courseRuntimeUnitStatus.value),
+)
+const currentCourseExamSignupLink = computed(() =>
+  `/exams/signup?unitId=${encodeURIComponent(courseRuntimeUnitUlid.value)}&pipelineId=${encodeURIComponent(pipelineId.value)}&courseId=${encodeURIComponent(courseId.value)}`,
+)
 
 const courseHasExam = computed(() => {
   const stages = runtime.value?.config?.stages || []
@@ -742,9 +750,13 @@ function normalizedCourseUnitStatus(status?: string | number | null) {
   return normalizeEnumValueUpper(status)
 }
 
+function isWaitingSignupExamStatus(status?: string | number | null) {
+  const normalized = normalizedCourseUnitStatus(status)
+  return normalized === "2" || normalized.includes("WAITING_SIGNUP_EXAM")
+}
+
 function isWaitingSignupExamUnit(exam: any) {
-  const status = normalizedCourseUnitStatus(exam?.course_unit_status)
-  return status === "2" || status.includes("WAITING_SIGNUP_EXAM")
+  return isWaitingSignupExamStatus(exam?.course_unit_status)
 }
 
 function isExamOpenUnit(exam: any) {
@@ -1525,21 +1537,6 @@ async function selectLesson(lessonId?: string) {
   await refreshProgress(false)
 }
 
-function nextStepLink() {
-  if (pipelineCancelled.value) return `/certifications/${encodeURIComponent(pipelineId.value)}`
-  if (nextStepState.value.action === "continue_learning") {
-    const nextCourseId = firstString(nextStep.value?.course_id, nextStep.value?.course_ulid, nextStep.value?.courseUlid) || courseId.value
-    return nextLearningLessonId.value
-      ? `/certifications/${encodeURIComponent(pipelineId.value)}/learn/${encodeURIComponent(nextCourseId)}/lessons/${encodeURIComponent(nextLearningLessonId.value)}`
-      : `/certifications/${encodeURIComponent(pipelineId.value)}/learn/${encodeURIComponent(courseId.value)}`
-  }
-  if (nextStepState.value.action === "view_certificate") return "/certificates"
-  if (nextStepState.value.action === "signup_exam" && nextStepBelongsToCurrentCourse.value) {
-    return `/exams/signup?unitId=${encodeURIComponent(nextStep.value?.course_unit_ulid || "")}&pipelineId=${encodeURIComponent(pipelineId.value)}&courseId=${encodeURIComponent(courseId.value)}`
-  }
-  return "/exams"
-}
-
 const courseStatusPolling = usePolling(
   () => loadRuntime(true),
   { shouldPoll: () => Boolean(pipelineId.value && courseId.value && pipelineIssuingCertificate.value) },
@@ -1856,12 +1853,12 @@ watch(selectedMaterial, () => {
             <h3 class="font-semibold text-foreground">{{ t.examsPage.noExams }}</h3>
             <p class="mt-2 text-sm text-muted-foreground">{{ t.examsPage.noExamsDesc }}</p>
             <RouterLink
-              v-if="nextStepState.action === 'signup_exam' && nextStepBelongsToCurrentCourse"
-              :to="nextStepLink()"
+              v-if="canSignupCurrentCourseExam"
+              :to="currentCourseExamSignupLink"
               data-testid="exam-signup-link"
               class="btn btn-primary mx-auto mt-4 w-fit rounded-lg"
             >
-              {{ nextStepState.label }}
+              {{ t.learning.actionSignupExam }}
               <ArrowRight class="ml-1 h-4 w-4" />
             </RouterLink>
           </div>

@@ -450,3 +450,98 @@ test("已购认证进入课程、完成课件并通过测验完整闭环", async
     }],
   }])
 })
+
+test("同阶段课程可分别进入各自的考试报名", async ({ page }) => {
+  const courseAID = "course-parallel-a"
+  const courseBID = "course-parallel-b"
+  const courseAUnitID = "course-unit-parallel-a"
+  const courseBUnitID = "course-unit-parallel-b"
+  const lessonBID = "lesson-parallel-b"
+
+  await installCandidateApiMocks(page, ({ pathname, method }) => {
+    if (pathname === `/api/mall/pipelines/${pipelineID}/runtime`) {
+      return {
+        data: {
+          instance: { pipeline_ulid: pipelineInstanceID },
+          config: {
+            pipeline_cc_ulid: pipelineID,
+            name: "Parallel Exam Certification",
+            stages: [{
+              stage_id: "stage-parallel",
+              name: "Parallel Stage",
+              runtime_status: "STAGE_STATUS_RUNNING",
+              units: [
+                {
+                  unit_id: "unit-parallel-a",
+                  course_unit_ulid: courseAUnitID,
+                  glms_course_id: courseAID,
+                  name: "Parallel Course A",
+                  program: "PROGRAM-A",
+                  runtime_status: "COURSE_UNIT_STATUS_WAITING_SIGNUP_EXAM",
+                },
+                {
+                  unit_id: "unit-parallel-b",
+                  course_unit_ulid: courseBUnitID,
+                  glms_course_id: courseBID,
+                  name: "Parallel Course B",
+                  program: "PROGRAM-B",
+                  runtime_status: "COURSE_UNIT_STATUS_WAITING_SIGNUP_EXAM",
+                },
+              ],
+            }],
+          },
+          next_step: {
+            action: "signup_exam",
+            course_id: courseAID,
+            course_unit_ulid: courseAUnitID,
+            status: "COURSE_UNIT_STATUS_WAITING_SIGNUP_EXAM",
+          },
+          pipeline_status: "PIPELINE_STATUS_RUNNING",
+          current_stage_status: "STAGE_STATUS_RUNNING",
+          current_unit_status: "COURSE_UNIT_STATUS_WAITING_SIGNUP_EXAM",
+        },
+      }
+    }
+    if (pathname === `/api/pipeline/courses/${courseBID}/complete`) {
+      return {
+        data: {
+          complete_course: {
+            course: { course_id: courseBID, title: "Parallel Course B", duration_min: 30 },
+            chapters: [{
+              chapter: { chapter_id: "chapter-parallel-b", title: "Parallel Chapter B" },
+              lessons: [{
+                lesson: {
+                  lesson_id: lessonBID,
+                  title: "Parallel Lesson B",
+                  lesson_type: "article",
+                  body: "<p>Completed course content</p>",
+                },
+                quizzes: [],
+              }],
+              quizzes: [],
+            }],
+            materials: [],
+            quizzes: [],
+          },
+          quiz_progress: {},
+        },
+      }
+    }
+    if (pathname === "/api/progress") return { data: { records: [{ material_id: lessonBID }] } }
+    if (pathname === `/api/progress/courses/${courseBID}/sync` && method === "POST") {
+      return { data: { progress_percentage: 100, completed_lessons_count: 1, passed_quizzes_count: 0 } }
+    }
+    if (pathname === "/api/exams") return { data: { exams: [], total: 0 } }
+    return undefined
+  })
+
+  await page.goto(`/certifications/${pipelineID}/learn/${courseBID}`, { waitUntil: "domcontentloaded" })
+  await page.locator('[data-testid="certification-flow-step"][data-step-id="exam"]').first().click()
+
+  const signupLink = page.getByTestId("exam-signup-link")
+  await expect(signupLink).toBeVisible()
+  await signupLink.click()
+  await expect(page).toHaveURL(
+    `http://127.0.0.1:4173/exams/signup?unitId=${courseBUnitID}&pipelineId=${pipelineID}&courseId=${courseBID}`,
+  )
+})
