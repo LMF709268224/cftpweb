@@ -75,5 +75,13 @@ Screenshots are grouped by manual module.
 - `exam/exam-list.png`: exam filters and list
 - `exam/exam-detail.png`: exam ownership, appointment, result, and transitions
 
+## Certification management
+
+- `certification-management/certification-instance-list.png`: certification instance filters and list
+- `certification-management/certification-overview.png`: certification instance overview
+- `certification-management/certification-stages.png`: stage list and detail
+- `certification-management/certification-units.png`: course unit list and detail
+- `certification-management/certification-logs.png`: status transition logs
+
 The HTML displays a named placeholder when an image is missing, so adding these
 files does not require another HTML change.

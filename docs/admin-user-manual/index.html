@@ -325,6 +325,7 @@
       .manual-title { padding: 22px 20px; }
       .manual-title h1 { font-size: 28px; overflow-wrap: anywhere; word-break: break-all; }
       .manual-title p, .doc-section > p { overflow-wrap: anywhere; }
+      .manual-meta span { flex: 0 0 auto; }
       .flow { max-width: 100%; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 6px; }
       .flow span { flex: 0 0 auto; }
       .checklist { columns: 1; }
@@ -362,11 +363,11 @@
         <div>
           <div class="eyebrow">ADMIN OPERATIONS GUIDE</div>
           <h1>管理后台功能目录</h1>
-          <p>按业务模块查找配置方法、字段含义、操作顺序和发布前检查事项。当前版本已提供主要配置模块、审核中心和考试管理手册，其余章节将按同一结构逐步补充。</p>
+          <p>按业务模块查找配置方法、字段含义、操作顺序和发布前检查事项。当前版本已提供主要配置模块、审核中心、认证管理和考试管理手册，其余章节将按同一结构逐步补充。</p>
         </div>
         <div class="search-wrap">
           <label for="module-search">查找模块</label>
-          <input id="module-search" type="search" placeholder="例如：课程、资格、资源包" oninput="filterModules(this.value)">
+          <input id="module-search" type="search" placeholder="例如：课程、认证管理、资源包" oninput="filterModules(this.value)">
         </div>
       </div>
 
@@ -408,9 +409,9 @@
           <span class="module-state">已完成</span><span class="module-icon">审</span>
           <h2>审核中心</h2><p>处理考生资格申请、材料补交、通过与拒绝。</p>
         </button>
-        <button class="module pending" type="button" data-name="认证管理 实例 流程 证书任务" onclick="pendingModule('认证管理')">
-          <span class="module-state">待补充</span><span class="module-icon">管</span>
-          <h2>认证管理</h2><p>查看考生认证实例、进度、资格审核和证书任务。</p>
+        <button class="module ready" type="button" data-name="认证管理 实例 阶段 课程单元 状态日志 证书任务 人工操作" onclick="openManual('certification-management')">
+          <span class="module-state">已完成</span><span class="module-icon">管</span>
+          <h2>认证管理</h2><p>查看考生认证实例和运行进度，处理异常流程与证书任务。</p>
         </button>
         <button class="module ready" type="button" data-name="考试管理 预约 成绩 同步 状态流转 确认号" onclick="openManual('exam')">
           <span class="module-state">已完成</span><span class="module-icon">考</span>
@@ -1943,6 +1944,173 @@
         </div>
       </div>
     </article>
+
+    <article class="manual" id="certification-management-manual">
+      <nav class="breadcrumb" aria-label="面包屑">
+        <button type="button" onclick="showCatalog()">管理后台目录</button><span>/</span><span>认证管理</span>
+      </nav>
+      <div class="manual-layout">
+        <nav class="side-nav" aria-label="认证管理章节">
+          <strong>认证管理</strong>
+          <a href="#certification-management-overview">功能概览</a>
+          <a href="#certification-management-status">筛选与状态</a>
+          <a href="#certification-management-detail">认证总览</a>
+          <a href="#certification-management-stages">阶段与课程单元</a>
+          <a href="#certification-management-logs">状态日志</a>
+          <a href="#certification-management-actions">人工操作</a>
+          <a href="#certification-management-certificates">证书任务</a>
+          <a href="#certification-management-checklist">排查检查</a>
+        </nav>
+
+        <div class="content">
+          <header class="manual-title">
+            <div class="eyebrow" style="color:#9eeef1">运行管理 / GPROG</div>
+            <h1>认证管理使用手册</h1>
+            <p>面向认证运营和客服人员，说明如何查询考生认证实例、判断阶段与课程单元进度、查看状态日志，以及谨慎处理异常认证流程。</p>
+            <div class="manual-meta"><span>角色：认证运营 / 客服</span><span>难度：进阶</span><span>更新：2026-08-25</span></div>
+          </header>
+
+          <section class="doc-section" id="certification-management-overview">
+            <h2>1. 功能概览</h2>
+            <p class="lead">认证管理展示商品购买后已经实例化的考生认证流程。这里管理的是每位考生的运行实例，不是“认证配置”中的认证结构；阶段和课程单元通常由系统事件自动推进，最终材料在审核中心处理，审核通过后自动进入发证流程。</p>
+            <div class="flow" aria-label="认证实例运行流程"><span>购买认证商品</span><b>→</b><span>创建认证实例</span><b>→</b><span>完成阶段与课程单元</span><b>→</b><span>终审资格</span><b>→</b><span>生成证书</span></div>
+            <figure class="shot">
+              <img src="assets/certification-management/certification-instance-list.png" alt="认证管理实例列表" data-filename="certification-management/certification-instance-list.png">
+              <div class="shot-missing"><div><strong>待补截图：认证实例列表</strong><code>assets/certification-management/certification-instance-list.png</code></div></div>
+              <figcaption>图 1：认证实例列表可按考生和状态筛选，并显示当前阶段、开始时间和更新时间。</figcaption>
+            </figure>
+            <div class="note"><strong>不要混淆两个模块</strong>“认证配置”决定未来实例采用什么结构；“认证管理”用于查看和处理已经创建的考生实例。修改认证配置不会自动改写已有实例。</div>
+          </section>
+
+          <section class="doc-section" id="certification-management-status">
+            <h2>2. 筛选条件与状态层级</h2>
+            <table>
+              <thead><tr><th>筛选项</th><th>用途</th><th>注意事项</th></tr></thead>
+              <tbody>
+                <tr><td>考生 ULID</td><td>精确查询一个考生的全部认证实例</td><td>必须输入完整的 26 位 ULID，不支持按姓名模糊搜索</td></tr>
+                <tr><td>认证状态</td><td>按运行中、等待最终资格、发证中、已完成或已取消查询</td><td>状态描述整条认证实例，不等于当前阶段或单元状态</td></tr>
+              </tbody>
+            </table>
+            <table>
+              <thead><tr><th>层级</th><th>常见状态</th><th>含义</th></tr></thead>
+              <tbody>
+                <tr><td>认证实例</td><td>运行中 / 等待最终资格 / 发证中 / 已完成 / 已取消</td><td>整条认证管线所处的生命周期</td></tr>
+                <tr><td>阶段</td><td>等待考生 / 运行中 / 已完成</td><td>认证中某一阶段的推进状态</td></tr>
+                <tr><td>课程单元</td><td>待学习 / 待预约考试 / 考试开放 / 已预约 / 考试失败 / 已完成</td><td>具体课程学习和考试的完成情况</td></tr>
+              </tbody>
+            </table>
+            <div class="warning"><strong>状态必须逐层判断</strong>认证显示“运行中”时，当前阶段或某个课程单元仍可能已经完成；排查卡点时应继续进入阶段、课程单元和状态日志查看。</div>
+          </section>
+
+          <section class="doc-section" id="certification-management-detail">
+            <h2>3. 认证总览</h2>
+            <figure class="shot">
+              <img src="assets/certification-management/certification-overview.png" alt="认证实例总览" data-filename="certification-management/certification-overview.png">
+              <div class="shot-missing"><div><strong>待补截图：认证实例总览</strong><code>assets/certification-management/certification-overview.png</code></div></div>
+              <figcaption>图 2：总览集中显示考生、认证配置、认证实例、当前阶段、状态和数量统计。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>字段</th><th>含义</th><th>使用建议</th></tr></thead>
+              <tbody>
+                <tr><td>认证配置 ID</td><td>创建该实例所依据的认证版本标识</td><td>用于核对实例来源，不是本次运行实例 ID</td></tr>
+                <tr><td>认证实例 ID</td><td>这位考生本次认证流程的唯一标识</td><td>日志排查和技术支持时优先提供</td></tr>
+                <tr><td>当前阶段 ID</td><td>当前正在处理的阶段实例</td><td>与阶段页中的阶段实例 ID 对照</td></tr>
+                <tr><td>阶段数 / 课程单元数</td><td>本实例快照中的结构数量</td><td>与认证配置数量不一致时，先确认实例创建时间和配置版本</td></tr>
+              </tbody>
+            </table>
+            <div class="note"><strong>配置 ID 与实例 ID 不同</strong>带有“配置”的 ID 指向定义；不带“配置”的实例 ID 指向本次运行记录。提交问题时不要只提供课程或认证名称。</div>
+          </section>
+
+          <section class="doc-section" id="certification-management-stages">
+            <h2>4. 阶段与课程单元</h2>
+            <figure class="shot">
+              <img src="assets/certification-management/certification-stages.png" alt="认证阶段列表与详情" data-filename="certification-management/certification-stages.png">
+              <div class="shot-missing"><div><strong>待补截图：阶段详情</strong><code>assets/certification-management/certification-stages.png</code></div></div>
+              <figcaption>图 3：阶段页显示阶段顺序、配置 ID、实例 ID、状态与开始时间。</figcaption>
+            </figure>
+            <figure class="shot">
+              <img src="assets/certification-management/certification-units.png" alt="认证课程单元列表与详情" data-filename="certification-management/certification-units.png">
+              <div class="shot-missing"><div><strong>待补截图：课程单元详情</strong><code>assets/certification-management/certification-units.png</code></div></div>
+              <figcaption>图 4：课程单元页显示所属阶段、完成进度、课程单元配置和实例 ID、考试 ID 与当前状态。</figcaption>
+            </figure>
+            <ol class="steps">
+              <li><strong>先看阶段顺序和当前阶段</strong><span>确认考生是否停留在预期阶段，避免检查错误阶段。</span></li>
+              <li><strong>再看该阶段的课程单元</strong><span>逐项确认学习进度、考试 ID 和单元状态。</span></li>
+              <li><strong>结合考试管理核对考试</strong><span>存在考试 ID 时，到考试管理确认预约、成绩和状态流转。</span></li>
+              <li><strong>最后查看状态日志</strong><span>确认系统是否已经接收并处理完成事件。</span></li>
+            </ol>
+          </section>
+
+          <section class="doc-section" id="certification-management-logs">
+            <h2>5. 状态日志</h2>
+            <p class="lead">状态日志记录认证、阶段和课程单元的状态变化。点击“加载状态日志”后，可按发生时间查看变更前后状态、对象类型和触发来源，并打开详情查看原因。</p>
+            <figure class="shot">
+              <img src="assets/certification-management/certification-logs.png" alt="认证状态流转日志" data-filename="certification-management/certification-logs.png">
+              <div class="shot-missing"><div><strong>待补截图：状态日志</strong><code>assets/certification-management/certification-logs.png</code></div></div>
+              <figcaption>图 5：状态日志用于确认哪个对象在什么时间由谁触发了哪次状态变化。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>日志字段</th><th>排查意义</th></tr></thead>
+              <tbody>
+                <tr><td>对象类型与对象 ID</td><td>区分变化发生在认证、阶段还是课程单元</td></tr>
+                <tr><td>原状态 / 新状态</td><td>确认实际发生的状态迁移</td></tr>
+                <tr><td>触发来源</td><td>区分系统、认证驱动、管理员或考生触发</td></tr>
+                <tr><td>原因代码与原因说明</td><td>判断正常自动推进、人工干预或异常原因</td></tr>
+                <tr><td>发生时间</td><td>与考试回调、审核记录和服务日志对齐</td></tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section class="doc-section" id="certification-management-actions">
+            <h2>6. 人工操作与限制</h2>
+            <p class="lead">人工操作用于处理经过确认的异常状态，不是日常推进认证的标准流程。操作前必须核对考生、认证实例和当前状态，并在原因中记录审批或工单依据。</p>
+            <table>
+              <thead><tr><th>操作</th><th>允许条件</th><th>结果与风险</th></tr></thead>
+              <tbody>
+                <tr><td>推进下一阶段</td><td>认证为“运行中”，且当前阶段已经“完成”</td><td>触发认证驱动继续推进；按钮禁用时应先查未完成单元和日志</td></tr>
+                <tr><td>终止认证</td><td>认证尚未“已完成”或“已取消”</td><td>认证变为“已取消”，当前未完成阶段和单元会被收尾；此页不提供恢复操作</td></tr>
+                <tr><td>强制完成课程单元</td><td>课程单元必须为 `EXAM_FAILED`</td><td>直接改为完成，并可能触发阶段继续推进；只能在业务审批后使用</td></tr>
+                <tr><td>重置为待预约考试</td><td>课程单元必须为 `EXAM_FAILED`</td><td>允许重新进入考试预约流程，不会改写原考试结果</td></tr>
+              </tbody>
+            </table>
+            <div class="danger"><strong>终止认证不会同步终止考试</strong>如果课程单元已经关联考试 ID，认证服务只记录告警，考试实例需要在考试侧另行核对和处理。终止前务必检查课程单元和考试管理。</div>
+            <div class="warning"><strong>不要连续点击人工操作</strong>系统会对状态和并发更新再次校验。失败时先刷新详情和日志；记录认证实例 ID、课程单元实例 ID、错误提示和操作原因后再处理。</div>
+          </section>
+
+          <section class="doc-section" id="certification-management-certificates">
+            <h2>7. 最终审核与证书任务</h2>
+            <p class="lead">课程阶段完成后，如果认证配置了发证前终审材料，认证会进入“等待最终资格”；材料应在审核中心处理。审核通过后进入发证流程，“证书任务”页签会在发证中或已完成时显示。</p>
+            <table>
+              <thead><tr><th>现象</th><th>处理方式</th></tr></thead>
+              <tbody>
+                <tr><td>等待最终资格</td><td>到审核中心核对该考生的终审材料，不要手工推进阶段</td></tr>
+                <tr><td>发证中</td><td>查看证书任务状态、模板参数和错误信息，等待任务完成</td></tr>
+                <tr><td>证书任务失败</td><td>先修复模板、参数、存储或服务异常，再执行一次重试</td></tr>
+                <tr><td>认证已完成</td><td>可查看已生成证书；下载链接过期时重新打开详情获取新链接</td></tr>
+              </tbody>
+            </table>
+            <div class="warning"><strong>重试不能修复配置错误</strong>模板缺失、模板参数不匹配或下游服务异常未解决时，重复重试只会再次失败。应先查看任务错误信息并处理根因。</div>
+          </section>
+
+          <section class="doc-section" id="certification-management-checklist">
+            <h2>8. 查询与排查检查清单</h2>
+            <ul class="checklist">
+              <li>考生 ULID 和认证实例 ID 已确认无误</li>
+              <li>已区分认证、阶段和课程单元三层状态</li>
+              <li>当前阶段与阶段顺序符合预期</li>
+              <li>每个未完成课程单元的学习进度和考试 ID 已核对</li>
+              <li>有关联考试时已在考试管理检查预约和成绩</li>
+              <li>状态日志中的对象、触发来源和发生时间已核对</li>
+              <li>等待最终资格时已到审核中心检查材料</li>
+              <li>发证失败时已先处理任务错误根因</li>
+              <li>人工操作前已取得审批并填写可追溯原因</li>
+              <li>终止认证时已另行确认关联考试是否需要处理</li>
+            </ul>
+            <a class="back-top" href="#top">返回顶部</a>
+          </section>
+        </div>
+      </div>
+    </article>
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -2005,13 +2173,14 @@
     document.querySelectorAll(".doc-section").forEach((section) => sectionObserver.observe(section));
 
     if (location.hash === "#course" || location.hash.startsWith("#course-")) openManual("course");
-    if (location.hash === "#certification" || location.hash.startsWith("#certification-")) openManual("certification");
+    if ((location.hash === "#certification" || location.hash.startsWith("#certification-")) && !location.hash.startsWith("#certification-management")) openManual("certification");
     if (location.hash === "#product" || location.hash.startsWith("#product-")) openManual("product");
     if (location.hash === "#qualification" || location.hash.startsWith("#qualification-")) openManual("qualification");
     if (location.hash === "#certificate-template" || location.hash.startsWith("#certificate-template-")) openManual("certificate-template");
     if (location.hash === "#resource-pack" || location.hash.startsWith("#resource-pack-") || location.hash.startsWith("#resource-file-")) openManual("resource-pack");
     if (location.hash === "#review-center" || location.hash.startsWith("#review-center-")) openManual("review-center");
     if (location.hash === "#exam" || location.hash.startsWith("#exam-")) openManual("exam");
+    if (location.hash === "#certification-management" || location.hash.startsWith("#certification-management-")) openManual("certification-management");
   </script>
 </body>
 </html>
