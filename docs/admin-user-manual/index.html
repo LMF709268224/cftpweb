@@ -303,13 +303,20 @@
       .side-nav a:hover, .side-nav a.active { border-left-color: transparent; border-bottom-color: var(--cyan); }
     }
     @media (max-width: 680px) {
+      body { overflow-x: hidden; }
       .topbar { padding: 9px 14px; }
       .brand small, .text-button { display: none; }
-      .shell { padding: 16px; }
+      .shell { width: 100vw; max-width: 100vw; padding: 16px; overflow-x: hidden; }
       .catalog-head { grid-template-columns: 1fr; gap: 18px; }
       .module-grid, .term-grid, .action-grid { grid-template-columns: 1fr; }
+      .manual-layout, .content { width: calc(100vw - 32px); min-width: 0; max-width: calc(100vw - 32px); }
+      .manual-title, .doc-section { width: 100%; min-width: 0; max-width: 100%; }
+      .side-nav { width: calc(100vw - 32px); max-width: calc(100vw - 32px); }
       .manual-title { padding: 22px 20px; }
       .manual-title h1 { font-size: 28px; }
+      .manual-title p, .doc-section > p { overflow-wrap: anywhere; }
+      .flow { max-width: 100%; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 6px; }
+      .flow span { flex: 0 0 auto; }
       .checklist { columns: 1; }
       table { display: block; overflow-x: auto; white-space: nowrap; }
     }
@@ -345,7 +352,7 @@
         <div>
           <div class="eyebrow">ADMIN OPERATIONS GUIDE</div>
           <h1>管理后台功能目录</h1>
-          <p>按业务模块查找配置方法、字段含义、操作顺序和发布前检查事项。当前版本已提供“课程配置”和“认证配置”完整手册，其余章节将按同一结构逐步补充。</p>
+          <p>按业务模块查找配置方法、字段含义、操作顺序和发布前检查事项。当前版本已提供课程、认证和商品配置完整手册，其余章节将按同一结构逐步补充。</p>
         </div>
         <div class="search-wrap">
           <label for="module-search">查找模块</label>
@@ -363,8 +370,8 @@
           <span class="module-state">已完成</span><span class="module-icon">认</span>
           <h2>认证配置</h2><p>维护认证管线、阶段、课程单元、资格条件、免考和证书。</p>
         </button>
-        <button class="module pending" type="button" data-name="商品配置 Bundle 价格 发布" onclick="pendingModule('商品配置')">
-          <span class="module-state">待补充</span><span class="module-icon">商</span>
+        <button class="module ready" type="button" data-name="商品配置 Bundle 认证 会员 Stripe 价格 发布" onclick="openManual('product')">
+          <span class="module-state">已完成</span><span class="module-icon">商</span>
           <h2>商品配置</h2><p>关联认证或会员方案，配置价格、优惠和商品发布状态。</p>
         </button>
         <button class="module pending" type="button" data-name="资格定义 认证资格 免考资格 材料" onclick="pendingModule('资格定义')">
@@ -859,6 +866,263 @@
         </div>
       </div>
     </article>
+
+    <article class="manual" id="product-manual">
+      <nav class="breadcrumb" aria-label="面包屑">
+        <button type="button" onclick="showCatalog()">管理后台目录</button><span>/</span><span>商品配置</span>
+      </nav>
+      <div class="manual-layout">
+        <nav class="side-nav" aria-label="商品配置章节">
+          <strong>商品配置</strong>
+          <a href="#product-overview">功能概览</a>
+          <a href="#product-concepts">关键概念</a>
+          <a href="#product-create">新建商品</a>
+          <a href="#product-meta">概览与基础信息</a>
+          <a href="#product-pricing">课程单元价格</a>
+          <a href="#product-other-pricing">其他价格</a>
+          <a href="#product-preview">价格预览</a>
+          <a href="#product-version">版本与认证替换</a>
+          <a href="#product-publish">发布流程</a>
+          <a href="#product-faq">常见问题</a>
+          <a href="#product-checklist">发布检查</a>
+        </nav>
+
+        <div class="content">
+          <header class="manual-title">
+            <div class="eyebrow" style="color:#9eeef1">配置管理 / GMALL</div>
+            <h1>商品配置使用手册</h1>
+            <p>面向商品运营人员，说明商品与认证或会员的关联、Stripe 定价、版本升级、展示价格同步和发布操作。</p>
+            <div class="manual-meta"><span>角色：商品运营</span><span>难度：进阶</span><span>更新：2026-08-25</span></div>
+          </header>
+
+          <section class="doc-section" id="product-overview">
+            <h2>1. 功能概览</h2>
+            <p class="lead">“商品配置”决定商城实际卖什么、每个收费节点使用哪个 Stripe 价格，以及考生购买后获得哪条认证或会员权益。它不维护课程内容，也不定义认证的阶段和资格规则。</p>
+            <div class="flow" aria-label="商品配置流程">
+              <span>已发布认证 / 会员</span><b>→</b><span>商品草稿</span><b>→</b><span>Stripe 定价</span><b>→</b><span>价格复核</span><b>→</b><span>发布</span>
+            </div>
+            <div class="note"><strong>先准备交付内容和 Stripe 价格</strong>认证或会员方案需要先达到可用状态；收费项使用的 Stripe Product 和 Price 也应提前创建并核对环境、币种和金额。</div>
+            <figure class="shot">
+              <img src="assets/product/product-list.png" alt="商品配置列表" data-filename="product/product-list.png">
+              <div class="shot-missing"><div><strong>待补截图：商品配置列表</strong><code>assets/product/product-list.png</code></div></div>
+              <figcaption>图 1：商品列表展示名称、绑定内容、展示价格、状态和版本。顶部可新建商品、同步展示价格或刷新列表。</figcaption>
+            </figure>
+          </section>
+
+          <section class="doc-section" id="product-concepts">
+            <h2>2. 先理解这些概念</h2>
+            <div class="term-grid">
+              <div class="term critical"><h3>商品 GPath / 商品路径</h3><p>商城购买入口使用的稳定业务路径。同一商品的不同版本沿用它，独立商品必须使用新的唯一路径。</p></div>
+              <div class="term"><h3>Bundle ULID</h3><p>某个具体商品版本的唯一 ID，由系统生成。商品绑定和订单快照最终使用具体版本。</p></div>
+              <div class="term"><h3>关联内容</h3><p>购买后实际交付的认证或会员权益。当前管理页面支持最多一条认证和一个会员权益，也支持两者组合销售。</p></div>
+              <div class="term"><h3>价格配置</h3><p>商品各收费节点对应的 Stripe Product ID 和 Price ID，包括课程准入、重考、免考、会员和审核等。</p></div>
+              <div class="term"><h3>展示价格</h3><p>从 Stripe 价格计算出的列表区间，不是手工输入字段。最低价按首阶段课程准入价计算，最高价按全部阶段课程准入价计算，并叠加会员价格。</p></div>
+              <div class="term"><h3>版本</h3><p>同一商品 GPath 下的配置版本。克隆会复制关联内容、价格、封面和文案，形成新草稿版本。</p></div>
+            </div>
+            <table>
+              <thead><tr><th>场景</th><th>操作</th><th>商品 GPath</th></tr></thead>
+              <tbody>
+                <tr><td>创建另一种独立商品</td><td>新建商品</td><td>使用新的唯一路径</td></tr>
+                <tr><td>同一商品升级认证版本或价格</td><td>克隆为草稿</td><td>沿用原路径</td></tr>
+                <tr><td>认证与会员组合销售</td><td>新建或克隆后添加两类关联内容</td><td>使用能稳定代表该组合的路径</td></tr>
+              </tbody>
+            </table>
+            <div class="danger"><strong>不要把商品路径当成标题修改</strong>名称和描述可以调整，GPath 表示商品系列。误用其他商品的 GPath 会被识别为同一商品的新版本，发布时可能替换错误的商城入口。</div>
+          </section>
+
+          <section class="doc-section" id="product-create">
+            <h2>3. 新建商品</h2>
+            <p class="lead">新建时先选择购买后交付的内容，再填写展示信息。系统会根据选择生成关联内容 JSON，通常不需要手工编辑。</p>
+            <figure class="shot">
+              <img src="assets/product/product-create-link.png" alt="新建商品的关联内容区域" data-filename="product/product-create-link.png">
+              <div class="shot-missing"><div><strong>待补截图：商品关联内容</strong><code>assets/product/product-create-link.png</code></div></div>
+              <figcaption>图 2：商品关联内容。选择“认证”或“会员权益”，再选择具体交付对象；需要组合销售时点击“添加关联内容”。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>商品类型</th><th>选择对象</th><th>限制</th></tr></thead>
+              <tbody>
+                <tr><td>认证</td><td>具体认证版本</td><td>一个商品最多一条认证</td></tr>
+                <tr><td>会员权益</td><td>具体会员方案</td><td>一个商品最多一个会员权益</td></tr>
+                <tr><td>组合商品</td><td>一条认证 + 一个会员权益</td><td>两项不能重复，发布时两者都必须可用</td></tr>
+              </tbody>
+            </table>
+            <figure class="shot">
+              <img src="assets/product/product-create-basic.png" alt="新建商品的展示信息区域" data-filename="product/product-create-basic.png">
+              <div class="shot-missing"><div><strong>待补截图：商品展示信息</strong><code>assets/product/product-create-basic.png</code></div></div>
+              <figcaption>图 3：商品展示信息。名称必填；封面可上传，描述建议使用正式对外文案；商品路径位于高级配置。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>字段</th><th>是否必填</th><th>填写说明</th></tr></thead>
+              <tbody>
+                <tr><td>名称</td><td class="required">必填</td><td>后台识别和考生端可能展示的商品名称。</td></tr>
+                <tr><td>商品路径</td><td class="required">必填</td><td>稳定购买入口，例如 <code>/gcc/pipeline/core/cftp</code>；新商品确认唯一。</td></tr>
+                <tr><td>封面</td><td>选填</td><td>优先使用“上传封面图”，系统会填写 Object Key 和文件校验值。没有素材时两项都留空。</td></tr>
+                <tr><td>描述</td><td>选填</td><td>写明商品交付内容和适用对象，不填写内部价格备注。</td></tr>
+                <tr><td>高级 JSON</td><td>通常不修改</td><td><code>items_json</code> 由关联内容自动生成；创建时 <code>pricing_json</code> 可保持 <code>{}</code>，之后在结构与价格页维护。</td></tr>
+              </tbody>
+            </table>
+            <ol class="steps">
+              <li><strong>选择关联内容</strong><span>确认具体认证或会员版本，不要只看名称。</span></li>
+              <li><strong>填写名称、描述和封面</strong><span>封面上传后不要手工拆改 Object Key 与校验值。</span></li>
+              <li><strong>展开高级配置检查商品路径</strong><span>独立商品使用新路径，同一商品版本升级使用克隆。</span></li>
+              <li><strong>点击“创建草稿”</strong><span>进入商品详情继续维护结构和价格。</span></li>
+            </ol>
+          </section>
+
+          <section class="doc-section" id="product-meta">
+            <h2>4. 查看概览和维护基础信息</h2>
+            <figure class="shot">
+              <img src="assets/product/product-overview.png" alt="商品概览" data-filename="product/product-overview.png">
+              <div class="shot-missing"><div><strong>待补截图：商品概览</strong><code>assets/product/product-overview.png</code></div></div>
+              <figcaption>图 4：概览汇总展示价格、版本、描述、关联内容和商品路径，用于快速确认当前打开的是哪个商品版本。</figcaption>
+            </figure>
+            <figure class="shot">
+              <img src="assets/product/product-basic.png" alt="商品基础信息" data-filename="product/product-basic.png">
+              <div class="shot-missing"><div><strong>待补截图：商品基础信息</strong><code>assets/product/product-basic.png</code></div></div>
+              <figcaption>图 5：基础信息可维护名称、描述、封面路径、文件校验值和多语言文案；Bundle ULID 只读。</figcaption>
+            </figure>
+            <div class="warning"><strong>商品路径不会在基础信息中随名称更新</strong>它是版本系列标识。需要创建另一个独立商品时回到列表使用“新建商品”，不要克隆后只改名称。</div>
+          </section>
+
+          <section class="doc-section" id="product-pricing">
+            <h2>5. 配置课程单元价格</h2>
+            <p class="lead">进入“结构与价格”后，页面会读取当前关联认证的阶段和课程单元。每个收费项都必须填写 Stripe Product ID 与 Price ID，不能只填其中一个。</p>
+            <figure class="shot">
+              <img src="assets/product/product-pricing-overview.png" alt="商品结构与价格顶部" data-filename="product/product-pricing-overview.png">
+              <div class="shot-missing"><div><strong>待补截图：结构与价格</strong><code>assets/product/product-pricing-overview.png</code></div></div>
+              <figcaption>图 6：结构与价格顶部。已克隆的商品可以替换绑定认证；价格编辑区会读取新关联内容供选择。</figcaption>
+            </figure>
+            <figure class="shot">
+              <img src="assets/product/product-unit-pricing.png" alt="课程单元 Stripe 价格配置" data-filename="product/product-unit-pricing.png">
+              <div class="shot-missing"><div><strong>待补截图：课程单元价格</strong><code>assets/product/product-unit-pricing.png</code></div></div>
+              <figcaption>图 7：每个课程单元可分别配置首次访问、补考重修和免考申请价格。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>收费项</th><th>业务含义</th><th>什么时候填写</th></tr></thead>
+              <tbody>
+                <tr><td>首次访问（Access）</td><td>考生首次购买并进入该课程单元的费用</td><td>付费课程通常必须配置；真正免费时才留空</td></tr>
+                <tr><td>补考重修（Retake）</td><td>考试失败后重新参加或重修的费用</td><td>只有业务明确收费时填写</td></tr>
+                <tr><td>免考申请（Exemption）</td><td>人工申请免考时的申请费用</td><td>只有免考申请本身收费时填写；自动免考不要求配置该价格</td></tr>
+              </tbody>
+            </table>
+            <div class="danger"><strong>不要复制或猜测 Stripe ID</strong><code>prod_...</code> 表示 Stripe Product，<code>price_...</code> 表示该 Product 下的具体价格。两者必须成对且属于同一收费项，同时确认使用的是当前部署环境的 Stripe 数据。</div>
+          </section>
+
+          <section class="doc-section" id="product-other-pricing">
+            <h2>6. 其他价格和优惠配置</h2>
+            <figure class="shot">
+              <img src="assets/product/product-other-pricing.png" alt="会员、资格审核和认证解锁价格" data-filename="product/product-other-pricing.png">
+              <div class="shot-missing"><div><strong>待补截图：其他价格</strong><code>assets/product/product-other-pricing.png</code></div></div>
+              <figcaption>图 8：会员价格、资格审核价格和认证解锁价格都是按业务需要配置；未关联对应内容时按钮会禁用。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>配置</th><th>用途</th><th>关键限制</th></tr></thead>
+              <tbody>
+                <tr><td>整包优惠码</td><td>整包购买时自动使用的优惠码</td><td>填写前确认 Stripe 优惠规则和适用商品正确</td></tr>
+                <tr><td>会员价格</td><td>组合商品中的会员订阅价格</td><td>商品必须先关联会员；最多一项；Price 必须是 recurring，周期与会员方案月份一致</td></tr>
+                <tr><td>会员优惠码</td><td>把组合中的会员权益减免为赠送</td><td>后台要求有效的 100% Stripe 优惠码，并且适用于该会员 Product</td></tr>
+                <tr><td>资格审核价格</td><td>资格材料审核需要单独收费</td><td>填写资格 ID 和成对的 Stripe Product / Price</td></tr>
+                <tr><td>认证解锁价格</td><td>业务明确要求先购买认证解锁权限</td><td>普通认证套餐不要为了通过发布而补解锁价格</td></tr>
+              </tbody>
+            </table>
+            <div class="note"><strong>Stripe Price 类型要求</strong>会员价格必须是循环订阅价格；课程准入、重考、免考申请、资格审核和认证解锁必须使用一次性价格。后台发布时会验证 Price 是否属于填写的 Product。</div>
+            <div class="warning"><strong>自动免考与“免考申请价格”不是一回事</strong>自动免考由认证课程单元的“允许免考 + 豁免资格”决定；这里仅决定人工免考申请是否收费。</div>
+          </section>
+
+          <section class="doc-section" id="product-preview">
+            <h2>7. 复核价格预览和展示价格</h2>
+            <p class="lead">价格预览把关联内容和 Stripe ID 按业务含义展开，比直接阅读 JSON 更适合发布前复核。</p>
+            <figure class="shot">
+              <img src="assets/product/product-pricing-preview-top.png" alt="商品价格预览顶部" data-filename="product/product-pricing-preview-top.png">
+              <div class="shot-missing"><div><strong>待补截图：价格预览</strong><code>assets/product/product-pricing-preview-top.png</code></div></div>
+              <figcaption>图 9：价格预览顶部显示关联内容、优惠码、会员和审核价格项数量，以及每个课程单元的价格。</figcaption>
+            </figure>
+            <figure class="shot">
+              <img src="assets/product/product-pricing-preview-bottom.png" alt="商品价格预览底部" data-filename="product/product-pricing-preview-bottom.png">
+              <div class="shot-missing"><div><strong>待补截图：完整价格预览</strong><code>assets/product/product-pricing-preview-bottom.png</code></div></div>
+              <figcaption>图 10：继续向下检查全部单元和认证解锁价格；高级 JSON 只用于排查底层结构。</figcaption>
+            </figure>
+            <h3>“同步展示价格”做什么</h3>
+            <p>它会重新向支付服务验证 Stripe Price，计算并更新商品列表中的最低价、最高价和币种。保存结构与价格时会同步当前商品；列表顶部按钮可重新同步未弃用商品，适合 Stripe 金额调整后刷新展示。</p>
+            <div class="note"><strong>展示区间的计算范围</strong>最低价为会员价格加首阶段课程准入价，最高价为会员价格加全部阶段课程准入价。重考、免考申请、资格审核和解锁价格不计入这个展示区间。</div>
+            <div class="warning"><strong>币种必须一致</strong>商品中配置的全部 Stripe Price 必须使用同一币种，否则发布会失败。展示金额不在后台手填，以 Stripe Price 的实际值为准。</div>
+          </section>
+
+          <section class="doc-section" id="product-version">
+            <h2>8. 商品版本升级与替换认证</h2>
+            <p class="lead">认证发布新版本后，旧商品不会自动改绑。推荐先克隆商品为新草稿，再在“结构与价格”中替换绑定认证。</p>
+            <ol class="steps">
+              <li><strong>在当前商品点击“克隆为草稿”</strong><span>系统沿用商品 GPath，并复制文案、封面、关联内容和价格。</span></li>
+              <li><strong>选择新绑定认证</strong><span>确认新认证已经发布，名称相同也要核对认证 ULID。</span></li>
+              <li><strong>点击“替换认证并保存”</strong><span>系统更新关联认证，并按旧、新认证的课程单元顺序迁移单元价格 ID。</span></li>
+              <li><strong>逐项复核课程单元价格</strong><span>检查每个新单元对应的 Product / Price，补齐新增单元，删除不再存在的收费项。</span></li>
+              <li><strong>检查认证解锁价格</strong><span>旧认证 ID 会替换成新认证 ID；普通认证不需要解锁费时，应明确移除该项。</span></li>
+            </ol>
+            <div class="danger"><strong>单元价格迁移依赖顺序，不理解业务差异</strong>如果新认证调整了阶段、单元数量或排序，自动映射可能对应错误。替换完成只代表结构已迁移，不代表价格已经业务确认。</div>
+          </section>
+
+          <section class="doc-section" id="product-publish">
+            <h2>9. 状态操作和发布流程</h2>
+            <figure class="shot">
+              <img src="assets/product/product-actions-draft.png" alt="商品草稿状态操作" data-filename="product/product-actions-draft.png">
+              <div class="shot-missing"><div><strong>待补截图：草稿状态操作</strong><code>assets/product/product-actions-draft.png</code></div></div>
+              <figcaption>图 11：草稿可克隆、发布或删除。发布前先回到结构与价格完成保存和预览。</figcaption>
+            </figure>
+            <figure class="shot">
+              <img src="assets/product/product-actions-published.png" alt="已发布商品状态操作" data-filename="product/product-actions-published.png">
+              <div class="shot-missing"><div><strong>待补截图：已发布状态操作</strong><code>assets/product/product-actions-published.png</code></div></div>
+              <figcaption>图 12：已发布商品可克隆为新草稿或下架；已发布版本不能直接删除。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>状态</th><th>可用操作</th><th>说明</th></tr></thead>
+              <tbody>
+                <tr><td>草稿</td><td>编辑、克隆、发布、删除</td><td>发布前不会成为正式商城入口</td></tr>
+                <tr><td>已发布</td><td>查看、克隆、下架</td><td>当前 GPath 的正式版本</td></tr>
+                <tr><td>已弃用</td><td>查看</td><td>历史版本，不参与展示价格批量同步</td></tr>
+              </tbody>
+            </table>
+            <div class="flow"><span>克隆草稿</span><b>→</b><span>替换认证 / 会员</span><b>→</b><span>复核价格</span><b>→</b><span>保存</span><b>→</b><span>购买预检</span><b>→</b><span>发布</span></div>
+            <div class="warning"><strong>发布新版本会切换当前商品</strong>同一商品 GPath 下的新草稿发布后，原当前版本会被停用。不要先手工下架旧商品再慢慢配置新版本，以免商城入口暂时不可用。</div>
+          </section>
+
+          <section class="doc-section faq" id="product-faq">
+            <h2>10. 常见问题</h2>
+            <details><summary>新建商品时为什么选不到认证？</summary><p>先确认认证已经发布且处于可用状态，再刷新关联内容选项。商品最终发布时，后台也会重新校验关联认证或会员是否为 Active。</p></details>
+            <details><summary>为什么只填 Price ID 不能保存？</summary><p>每个收费项必须同时填写对应的 Stripe Product ID 和 Price ID；两者缺一都会被前端和微服务拒绝。</p></details>
+            <details><summary>已有 CFTA 资格自动免考，还要配置“免考申请价格”吗？</summary><p>不需要。自动免考由认证配置决定。只有业务对人工免考申请单独收费时，才配置该单元的免考申请 Product 和 Price。</p></details>
+            <details><summary>为什么普通认证商品不需要认证解锁价格？</summary><p>认证解锁价只用于先付解锁费再购买的特殊流程。普通认证套餐直接按课程单元收费，留空即可，不应为了发布而虚构一组 Stripe 价格。</p></details>
+            <details><summary>替换认证版本后，旧价格能直接发布吗？</summary><p>不能直接认定正确。系统按课程单元顺序迁移 ID，不会判断新旧单元的业务含义；必须逐项核对并处理新增、删除或重排的单元。</p></details>
+            <details><summary>为什么列表展示价格没有更新？</summary><p>先保存结构与价格，再点击“同步展示价格”。如果仍失败，检查 Stripe Price 是否有效、参与计算的价格是否同币种，以及支付服务是否可用。</p></details>
+            <details><summary>商品路径可以直接使用认证 GPath 吗？</summary><p>可以在不同服务中采用相同业务路径，当前页面也以此作为常见示例；但商品路径本身仍必须在商品系列内唯一。认证加会员的组合商品建议使用能明确代表组合的独立路径。</p></details>
+          </section>
+
+          <section class="doc-section" id="product-checklist">
+            <h2>11. 发布前检查清单</h2>
+            <ul class="checklist">
+              <li>商品名称和描述使用正式对外文案</li>
+              <li>商品 GPath 属于正确商品系列</li>
+              <li>关联的是目标认证或会员的正确版本</li>
+              <li>认证和会员在发布时均处于可用状态</li>
+              <li>封面 Object Key 与校验值同时有效或同时留空</li>
+              <li>每个收费项的 Product ID 与 Price ID 成对</li>
+              <li>Stripe ID 来自正确部署环境</li>
+              <li>课程首次访问价格完整且金额正确</li>
+              <li>重考、免考申请只在实际收费时配置</li>
+              <li>会员价格关联正确并填写有效月数</li>
+              <li>会员 Price 为正确周期的 recurring，其他 Price 为 one-time</li>
+              <li>会员优惠码为适用该 Product 的 100% 优惠</li>
+              <li>普通认证没有误配认证解锁价格</li>
+              <li>认证替换后的全部课程单元已逐项复核</li>
+              <li>展示价格区间和币种与预期一致</li>
+              <li>结构与价格已经保存</li>
+              <li>无资格、自动免考、全价和组合商品场景已回归购买</li>
+              <li>确认发布的是目标商品 GPath 的目标版本</li>
+            </ul>
+            <a class="back-top" href="#top">返回顶部</a>
+          </section>
+        </div>
+      </div>
+    </article>
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -922,6 +1186,7 @@
 
     if (location.hash === "#course" || location.hash.startsWith("#course-")) openManual("course");
     if (location.hash === "#certification" || location.hash.startsWith("#certification-")) openManual("certification");
+    if (location.hash === "#product" || location.hash.startsWith("#product-")) openManual("product");
   </script>
 </body>
 </html>
