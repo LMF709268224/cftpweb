@@ -224,7 +224,7 @@ func (h *Handler) GetOrder(w http.ResponseWriter, r *http.Request) {
 
 	out := h.orderDetailResponse(resp)
 	out.BusinessDetail = businessDetail
-	out.Pricing = h.candidateOrderPricing(r.Context(), out.GpayOrderUlid, summary)
+	out.Pricing = h.candidateOrderPricing(r.Context(), out.GpayOrderUlid, summary, detail.GetPriceDetail())
 	out.Exemptions = candidateOrderExemptions(businessDetail)
 	WriteJSON(w, http.StatusOK, out)
 }
@@ -330,13 +330,25 @@ func (h *Handler) orderDetailResponse(resp *mallpb.GetOrderDetailResponse) Order
 	return out
 }
 
-func (h *Handler) candidateOrderPricing(ctx context.Context, gpayOrderULID string, summary *mallpb.OrderSummary) *OrderPricingDetail {
+func (h *Handler) candidateOrderPricing(ctx context.Context, gpayOrderULID string, summary *mallpb.OrderSummary, priceDetail *mallpb.OrderPriceDetail) *OrderPricingDetail {
 	pricing := &OrderPricingDetail{
 		Available:               true,
 		Source:                  "GMALL_ORDER_SUMMARY",
 		CurrencyCode:            strings.ToUpper(strings.TrimSpace(summary.GetCurrencyCode())),
 		TotalMinor:              orderInt64Pointer(summary.GetAmountMinor()),
 		ExemptionAmountRecorded: false,
+	}
+	if priceDetail != nil {
+		pricing.Source = "GMALL_ORDER_PRICE_DETAIL"
+		pricing.CurrencyCode = strings.ToUpper(strings.TrimSpace(priceDetail.GetCurrencyCode()))
+		pricing.BillableSubtotalMinor = orderInt64Pointer(priceDetail.GetSubtotalMinor())
+		pricing.PromotionDiscountMinor = orderInt64Pointer(priceDetail.GetDiscountTotalMinor())
+		pricing.TaxMinor = orderInt64Pointer(priceDetail.GetTaxTotalMinor())
+		pricing.TotalMinor = orderInt64Pointer(priceDetail.GetTotalMinor())
+		pricing.PromoCodes = append([]string(nil), priceDetail.GetPromoCodes()...)
+		for _, code := range priceDetail.GetCouponCodes() {
+			pricing.Coupons = append(pricing.Coupons, OrderCoupon{Code: code})
+		}
 	}
 	// Exempt units are removed before the payment order is created, so GPAY has
 	// no persisted monetary value for the exemption discount.
@@ -359,24 +371,39 @@ func (h *Handler) candidateOrderPricing(ctx context.Context, gpayOrderULID strin
 		return pricing
 	}
 
-	pricing.Source = "GPAY_ORDER"
-	pricing.CurrencyCode = strings.ToUpper(strings.TrimSpace(order.GetCurrency()))
-	pricing.TotalMinor = orderInt64Pointer(order.GetAmount())
-	if order.GetPaidAt() > 0 || strings.EqualFold(order.GetStripePaymentStatus(), "paid") {
-		pricing.AmountPaidMinor = orderInt64Pointer(order.GetAmount())
+	if priceDetail == nil {
+		pricing.Source = "GPAY_ORDER"
+		pricing.CurrencyCode = strings.ToUpper(strings.TrimSpace(order.GetCurrency()))
+		pricing.TotalMinor = orderInt64Pointer(order.GetAmount())
+		pricing.PromoCodes = append([]string(nil), order.GetPromoCodes()...)
 	}
-	pricing.PromoCodes = append([]string(nil), order.GetPromoCodes()...)
+	if order.GetPaidAt() > 0 || strings.EqualFold(order.GetStripePaymentStatus(), "paid") {
+		pricing.AmountPaidMinor = pricing.TotalMinor
+	}
 	for _, coupon := range order.GetCoupons() {
 		if coupon == nil {
 			continue
 		}
-		pricing.Coupons = append(pricing.Coupons, OrderCoupon{
+		mapped := OrderCoupon{
 			Code:           coupon.GetCode(),
 			Name:           coupon.GetName(),
 			PercentOff:     coupon.GetPercentOff(),
 			AmountOffMinor: coupon.GetAmountOff(),
 			CurrencyCode:   strings.ToUpper(strings.TrimSpace(coupon.GetCurrency())),
-		})
+		}
+		matched := false
+		for index := range pricing.Coupons {
+			if strings.EqualFold(strings.TrimSpace(pricing.Coupons[index].Code), strings.TrimSpace(mapped.Code)) {
+				pricing.Coupons[index] = mapped
+				matched = true
+				break
+			}
+		}
+		if priceDetail == nil || matched {
+			if !matched {
+				pricing.Coupons = append(pricing.Coupons, mapped)
+			}
+		}
 	}
 
 	items, itemsErr := h.Gpay.ListOrderItems(ctx, &gpaypb.ListOrderItemsRequest{OrderUlid: gpayOrderULID})
@@ -401,34 +428,10 @@ func (h *Handler) candidateOrderPricing(ctx context.Context, gpayOrderULID strin
 				SubtotalMinor:  itemSubtotal,
 			})
 		}
-		if len(pricing.Items) > 0 {
+		if len(pricing.Items) > 0 && priceDetail == nil {
 			pricing.Source = "GPAY_ORDER_ITEMS"
 			pricing.BillableSubtotalMinor = orderInt64Pointer(subtotal)
 		}
-	}
-
-	if strings.TrimSpace(order.GetStripeInvoiceId()) == "" {
-		return pricing
-	}
-	invoice, invoiceErr := h.Gpay.GetInvoice(ctx, &gpaypb.GetInvoiceRequest{
-		Lookup: &gpaypb.GetInvoiceRequest_StripeInvoiceId{StripeInvoiceId: order.GetStripeInvoiceId()},
-	})
-	if invoiceErr != nil {
-		slog.WarnContext(ctx, "candidate order invoice query failed", "gpay_order_ulid", gpayOrderULID, "stripe_invoice_id", order.GetStripeInvoiceId(), "error", invoiceErr)
-		pricing.UnavailableReason = "payment invoice detail is unavailable"
-		return pricing
-	}
-
-	pricing.Source = "GPAY_INVOICE"
-	pricing.CurrencyCode = strings.ToUpper(strings.TrimSpace(invoice.GetCurrency()))
-	pricing.BillableSubtotalMinor = orderInt64Pointer(invoice.GetSubtotal())
-	pricing.TaxMinor = orderInt64Pointer(invoice.GetTax())
-	pricing.TotalMinor = orderInt64Pointer(invoice.GetTotal())
-	pricing.AmountPaidMinor = orderInt64Pointer(invoice.GetAmountPaid())
-	// GPAY invoices currently have no shipping adjustment, so this identity is
-	// the exact invoice-level promotion discount rather than an estimate.
-	if discount := invoice.GetSubtotal() + invoice.GetTax() - invoice.GetTotal(); discount >= 0 {
-		pricing.PromotionDiscountMinor = orderInt64Pointer(discount)
 	}
 	return pricing
 }

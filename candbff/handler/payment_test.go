@@ -30,9 +30,8 @@ type paymentOrderMallClientStub struct {
 
 type paymentOrderPayClientStub struct {
 	gpaypb.PayServiceClient
-	orderRequest   *gpaypb.GetOrderRequest
-	itemsRequest   *gpaypb.ListOrderItemsRequest
-	invoiceRequest *gpaypb.GetInvoiceRequest
+	orderRequest *gpaypb.GetOrderRequest
+	itemsRequest *gpaypb.ListOrderItemsRequest
 }
 
 func (s *paymentOrderPayClientStub) GetOrder(
@@ -43,9 +42,8 @@ func (s *paymentOrderPayClientStub) GetOrder(
 	s.orderRequest = request
 	return &gpaypb.GetOrderResponse{
 		OrderUlid:           request.GetOrderUlid(),
-		Amount:              10000,
+		Amount:              63000,
 		Currency:            "usd",
-		StripeInvoiceId:     "in_order_1",
 		StripePaymentStatus: "paid",
 		Coupons: []*gpaypb.CouponInfo{{
 			Code:       "PACKAGE20",
@@ -67,25 +65,9 @@ func (s *paymentOrderPayClientStub) ListOrderItems(
 		ItemType:  "course",
 		ItemId:    "course-1",
 		Title:     "Course One",
-		BasePrice: 12000,
+		BasePrice: 70000,
 		Quantity:  1,
 	}}}, nil
-}
-
-func (s *paymentOrderPayClientStub) GetInvoice(
-	_ context.Context,
-	request *gpaypb.GetInvoiceRequest,
-	_ ...grpc.CallOption,
-) (*gpaypb.GetInvoiceResponse, error) {
-	s.invoiceRequest = request
-	return &gpaypb.GetInvoiceResponse{
-		StripeInvoiceId: request.GetStripeInvoiceId(),
-		Subtotal:        12000,
-		Tax:             1000,
-		Total:           10000,
-		AmountPaid:      10000,
-		Currency:        "usd",
-	}, nil
 }
 
 func (s *paymentOrderMallClientStub) ListOrders(
@@ -347,13 +329,22 @@ func TestGetOrderReturnsCandidateScopedBusinessDetail(t *testing.T) {
 					BizType:       orderBizBundlePurchase,
 					BizRefUlid:    "bundle-order-1",
 					CurrencyCode:  "sgd",
-					AmountMinor:   5000,
+					AmountMinor:   63000,
 					OrderStatus:   "COMPLETED",
 					PaymentStatus: "PAID",
 					Meta:          &mallpb.OrderMeta{ProductName: "Membership Package"},
 				},
 				GpayOrderUlid: "pay-order-1",
 				PaymentKey:    "secret-value",
+				PriceDetail: &mallpb.OrderPriceDetail{
+					CurrencyCode:       "sgd",
+					SubtotalMinor:      70000,
+					DiscountTotalMinor: 7000,
+					TaxTotalMinor:      0,
+					TotalMinor:         63000,
+					CouponCodes:        []string{"PACKAGE20"},
+					PromoCodes:         []string{"WELCOME"},
+				},
 			},
 		},
 		bundleDetailResponse: &mallpb.GetBundleOrderDetailResponse{Found: true},
@@ -385,9 +376,6 @@ func TestGetOrderReturnsCandidateScopedBusinessDetail(t *testing.T) {
 	if pay.itemsRequest == nil || pay.itemsRequest.GetOrderUlid() != "pay-order-1" {
 		t.Fatalf("ListOrderItems request = %+v", pay.itemsRequest)
 	}
-	if pay.invoiceRequest == nil || pay.invoiceRequest.GetStripeInvoiceId() != "in_order_1" {
-		t.Fatalf("GetInvoice request = %+v", pay.invoiceRequest)
-	}
 	var response struct {
 		Data OrderDetailRsp `json:"data"`
 	}
@@ -397,19 +385,20 @@ func TestGetOrderReturnsCandidateScopedBusinessDetail(t *testing.T) {
 	if response.Data.Summary.OrderID != "order-1" ||
 		response.Data.Summary.CandidateID != "candidate-1" ||
 		response.Data.Summary.Currency != "SGD" ||
-		response.Data.Summary.Amount != 50 ||
+		response.Data.Summary.Amount != 630 ||
 		!response.Data.HasPaymentKey {
 		t.Fatalf("order detail response = %+v", response.Data)
 	}
 	pricing := response.Data.Pricing
-	if pricing == nil || !pricing.Available || pricing.BillableSubtotalMinor == nil || *pricing.BillableSubtotalMinor != 12000 ||
-		pricing.PromotionDiscountMinor == nil || *pricing.PromotionDiscountMinor != 3000 ||
-		pricing.TaxMinor == nil || *pricing.TaxMinor != 1000 ||
-		pricing.TotalMinor == nil || *pricing.TotalMinor != 10000 ||
-		pricing.AmountPaidMinor == nil || *pricing.AmountPaidMinor != 10000 {
+	if pricing == nil || !pricing.Available || pricing.Source != "GMALL_ORDER_PRICE_DETAIL" ||
+		pricing.BillableSubtotalMinor == nil || *pricing.BillableSubtotalMinor != 70000 ||
+		pricing.PromotionDiscountMinor == nil || *pricing.PromotionDiscountMinor != 7000 ||
+		pricing.TaxMinor == nil || *pricing.TaxMinor != 0 ||
+		pricing.TotalMinor == nil || *pricing.TotalMinor != 63000 ||
+		pricing.AmountPaidMinor == nil || *pricing.AmountPaidMinor != 63000 {
 		t.Fatalf("order pricing = %+v", pricing)
 	}
-	if len(pricing.Items) != 1 || pricing.Items[0].Title != "Course One" || pricing.Items[0].SubtotalMinor != 12000 {
+	if len(pricing.Items) != 1 || pricing.Items[0].Title != "Course One" || pricing.Items[0].SubtotalMinor != 70000 {
 		t.Fatalf("order price items = %+v", pricing.Items)
 	}
 	if len(pricing.Coupons) != 1 || pricing.Coupons[0].Code != "PACKAGE20" || len(pricing.PromoCodes) != 1 || pricing.PromoCodes[0] != "WELCOME" {
@@ -422,7 +411,7 @@ func TestCandidateOrderPricingFallsBackWithoutPaymentReference(t *testing.T) {
 		OrderUlid:    "order-1",
 		AmountMinor:  5000,
 		CurrencyCode: "usd",
-	})
+	}, nil)
 
 	if !pricing.Available || pricing.TotalMinor == nil || *pricing.TotalMinor != 5000 {
 		t.Fatalf("fallback pricing = %+v", pricing)
