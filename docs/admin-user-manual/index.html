@@ -222,7 +222,7 @@
     .note strong, .warning strong, .danger strong { display: block; margin-bottom: 3px; }
 
     .shot { margin: 20px 0; border: 1px solid #cbd8e5; border-radius: 8px; overflow: hidden; background: white; box-shadow: var(--shadow); }
-    .shot img { display: block; width: 100%; height: auto; background: #edf2f7; }
+    .shot img { display: block; width: 100%; height: auto; cursor: zoom-in; background: #edf2f7; }
     .shot figcaption { padding: 11px 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
     .shot-missing {
       display: none;
@@ -642,6 +642,8 @@
         const missing = image.nextElementSibling;
         if (missing) missing.style.display = "grid";
       });
+      image.addEventListener("click", () => window.open(image.src, "_blank", "noopener"));
+      image.title = "点击查看原图";
     });
 
     const sectionObserver = new IntersectionObserver((entries) => {
