@@ -460,9 +460,8 @@ async function handleUpdateEmail() {
     emailUpdate.verificationCode = ""
     clearInterval(emailCodeInterval)
     emailCodeCountdown.value = 0
-    await fetchUser() // fetch latest profile to update global user
-    const payload = await apiClient("/api/user/me")
-    if (payload && payload.email) profile.email = payload.email
+    const updatedUser = await fetchUser(true)
+    if (updatedUser?.email) profile.email = updatedUser.email
   } catch (e) {
     // Error is handled by apiClient toast
   } finally {
