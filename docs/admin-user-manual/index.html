@@ -1,0 +1,660 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="CFTP 管理后台使用手册">
+  <title>CFTP 管理后台使用手册</title>
+  <style>
+    :root {
+      --ink: #142033;
+      --muted: #64748b;
+      --line: #dbe4ee;
+      --soft: #f4f7fb;
+      --paper: #ffffff;
+      --blue: #0756a6;
+      --blue-dark: #073b72;
+      --cyan: #00a6b2;
+      --green: #087a55;
+      --amber: #9a5b00;
+      --red: #b42318;
+      --shadow: 0 12px 28px rgba(20, 32, 51, 0.09);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--soft);
+      font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.7;
+      letter-spacing: 0;
+    }
+    button, input { font: inherit; letter-spacing: 0; }
+    button { cursor: pointer; }
+    a { color: inherit; }
+    code {
+      padding: 2px 6px;
+      border: 1px solid #d7e1eb;
+      border-radius: 4px;
+      color: #073b72;
+      background: #f3f7fb;
+      font-family: Consolas, "Courier New", monospace;
+      overflow-wrap: anywhere;
+    }
+    h1, h2, h3, h4 { margin: 0; line-height: 1.3; letter-spacing: 0; }
+    p { margin: 0; }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 66px;
+      padding: 10px 28px;
+      color: white;
+      background: #073b72;
+      border-bottom: 4px solid var(--cyan);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      border: 1px solid rgba(255,255,255,.45);
+      border-radius: 6px;
+      font-weight: 900;
+      background: #0b61b5;
+    }
+    .brand strong { display: block; font-size: 17px; }
+    .brand small { display: block; color: #c9dcf0; }
+    .top-actions { display: flex; gap: 8px; }
+    .icon-button, .text-button {
+      min-height: 38px;
+      border: 1px solid rgba(255,255,255,.42);
+      border-radius: 6px;
+      color: white;
+      background: transparent;
+    }
+    .icon-button { width: 40px; font-size: 20px; }
+    .text-button { padding: 0 14px; font-weight: 700; }
+    .icon-button:hover, .text-button:hover { background: rgba(255,255,255,.12); }
+
+    .shell { max-width: 1440px; margin: 0 auto; padding: 28px; }
+    .catalog-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(260px, 380px);
+      gap: 28px;
+      align-items: end;
+      padding: 30px 0 24px;
+      border-bottom: 1px solid var(--line);
+    }
+    .eyebrow { margin-bottom: 8px; color: var(--blue); font-size: 13px; font-weight: 900; }
+    .catalog-head h1 { font-size: clamp(28px, 4vw, 46px); }
+    .catalog-head p { max-width: 720px; margin-top: 12px; color: var(--muted); }
+    .search-wrap label { display: block; margin-bottom: 7px; font-size: 13px; font-weight: 800; }
+    .search-wrap input {
+      width: 100%;
+      height: 44px;
+      padding: 0 13px;
+      border: 1px solid #b9c8d8;
+      border-radius: 6px;
+      color: var(--ink);
+      background: white;
+      outline: none;
+    }
+    .search-wrap input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(7,86,166,.12); }
+
+    .section-title { margin: 28px 0 12px; font-size: 20px; }
+    .module-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .module {
+      position: relative;
+      min-height: 156px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      text-align: left;
+      color: var(--ink);
+      background: white;
+      box-shadow: 0 4px 12px rgba(20,32,51,.04);
+    }
+    .module.ready:hover { border-color: #77aadd; box-shadow: var(--shadow); transform: translateY(-1px); }
+    .module.pending { cursor: default; color: #68768a; background: #f9fbfd; }
+    .module-icon {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      margin-bottom: 14px;
+      border-radius: 6px;
+      color: white;
+      background: var(--blue);
+      font-weight: 900;
+    }
+    .module h2 { font-size: 18px; }
+    .module p { margin-top: 7px; color: var(--muted); font-size: 13px; }
+    .module-state {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      padding: 2px 8px;
+      border: 1px solid #c7d4e2;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      color: #516173;
+      background: white;
+    }
+    .module.ready .module-state { border-color: #a9dfd1; color: var(--green); background: #effbf7; }
+    .catalog-foot { margin-top: 24px; padding: 18px 0; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+
+    .manual { display: none; }
+    .manual.active { display: block; }
+    .catalog.hidden { display: none; }
+    .breadcrumb {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin: 4px 0 20px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .breadcrumb button { padding: 0; border: 0; color: var(--blue); background: transparent; font-weight: 800; }
+    .manual-layout { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 24px; align-items: start; }
+    .side-nav {
+      position: sticky;
+      top: 94px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: white;
+    }
+    .side-nav strong { display: block; padding: 7px 10px 10px; font-size: 13px; }
+    .side-nav a {
+      display: block;
+      padding: 7px 10px;
+      border-left: 3px solid transparent;
+      color: #506076;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .side-nav a:hover, .side-nav a.active { border-left-color: var(--cyan); color: var(--blue-dark); background: #f1f7fc; font-weight: 800; }
+    .content { min-width: 0; }
+    .manual-title {
+      padding: 28px 30px;
+      border-radius: 8px;
+      color: white;
+      background: #0756a6;
+      box-shadow: var(--shadow);
+    }
+    .manual-title h1 { font-size: 36px; }
+    .manual-title p { max-width: 760px; margin-top: 12px; color: #e3effa; }
+    .manual-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+    .manual-meta span { padding: 3px 9px; border: 1px solid rgba(255,255,255,.35); border-radius: 999px; font-size: 12px; }
+
+    .doc-section {
+      scroll-margin-top: 90px;
+      padding: 30px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .doc-section > h2 { margin-bottom: 14px; font-size: 26px; }
+    .doc-section > h3 { margin: 24px 0 10px; font-size: 19px; }
+    .lead { color: var(--muted); font-size: 16px; }
+    .note, .warning, .danger {
+      margin: 16px 0;
+      padding: 14px 16px;
+      border-left: 4px solid;
+      border-radius: 4px;
+    }
+    .note { border-color: var(--blue); color: #123b63; background: #edf6ff; }
+    .warning { border-color: #d18a13; color: #684006; background: #fff8e8; }
+    .danger { border-color: var(--red); color: #78231c; background: #fff1f0; }
+    .note strong, .warning strong, .danger strong { display: block; margin-bottom: 3px; }
+
+    .shot { margin: 20px 0; border: 1px solid #cbd8e5; border-radius: 8px; overflow: hidden; background: white; box-shadow: var(--shadow); }
+    .shot img { display: block; width: 100%; height: auto; background: #edf2f7; }
+    .shot figcaption { padding: 11px 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+    .shot-missing {
+      display: none;
+      min-height: 230px;
+      place-items: center;
+      padding: 30px;
+      text-align: center;
+      color: #526377;
+      background: repeating-linear-gradient(135deg, #f7f9fc, #f7f9fc 16px, #eef3f8 16px, #eef3f8 32px);
+    }
+    .shot-missing strong { display: block; color: var(--ink); font-size: 16px; }
+    .shot-missing code { display: inline-block; margin-top: 8px; }
+
+    .term-grid, .action-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
+    .term, .action { padding: 16px 0; border-top: 3px solid #b9d6ef; }
+    .term h3, .action h3 { margin-bottom: 5px; font-size: 16px; }
+    .term p, .action p { color: var(--muted); font-size: 14px; }
+    .term.critical { border-color: #e1a43e; }
+
+    table { width: 100%; margin: 16px 0; border-collapse: collapse; background: white; }
+    th, td { padding: 11px 12px; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { color: #30435a; background: #edf3f8; font-size: 13px; }
+    td { font-size: 14px; }
+    .required { color: var(--red); font-weight: 900; }
+    .steps { margin: 16px 0; padding: 0; list-style: none; counter-reset: step; }
+    .steps li { position: relative; min-height: 48px; padding: 2px 0 18px 48px; counter-increment: step; }
+    .steps li::before {
+      content: counter(step);
+      position: absolute;
+      left: 0;
+      top: 0;
+      display: grid;
+      place-items: center;
+      width: 31px;
+      height: 31px;
+      border-radius: 50%;
+      color: white;
+      background: var(--blue);
+      font-weight: 900;
+    }
+    .steps li:not(:last-child)::after { content: ""; position: absolute; left: 15px; top: 34px; width: 1px; height: calc(100% - 32px); background: #b9c9d9; }
+    .steps strong { display: block; }
+    .steps span { color: var(--muted); font-size: 14px; }
+    .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin: 16px 0; }
+    .flow span { padding: 7px 10px; border: 1px solid #bfcddd; border-radius: 6px; background: white; font-weight: 800; font-size: 13px; }
+    .flow b { color: var(--cyan); }
+    .faq details { margin-top: 8px; border: 1px solid var(--line); border-radius: 6px; background: white; }
+    .faq summary { padding: 13px 15px; cursor: pointer; font-weight: 800; }
+    .faq details p { padding: 0 15px 15px; color: var(--muted); }
+    .checklist { columns: 2; column-gap: 28px; padding-left: 20px; }
+    .checklist li { break-inside: avoid; margin-bottom: 7px; }
+    .back-top { display: inline-block; margin-top: 18px; color: var(--blue); font-weight: 800; text-decoration: none; }
+
+    .toast {
+      position: fixed;
+      right: 22px;
+      bottom: 22px;
+      z-index: 40;
+      max-width: 360px;
+      padding: 12px 15px;
+      border-radius: 6px;
+      color: white;
+      background: #26384d;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
+      transition: .18s ease;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    @media (max-width: 980px) {
+      .module-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .manual-layout { grid-template-columns: 1fr; }
+      .side-nav { position: static; display: flex; gap: 4px; overflow-x: auto; }
+      .side-nav strong { display: none; }
+      .side-nav a { flex: 0 0 auto; border-left: 0; border-bottom: 3px solid transparent; }
+      .side-nav a:hover, .side-nav a.active { border-left-color: transparent; border-bottom-color: var(--cyan); }
+    }
+    @media (max-width: 680px) {
+      .topbar { padding: 9px 14px; }
+      .brand small, .text-button { display: none; }
+      .shell { padding: 16px; }
+      .catalog-head { grid-template-columns: 1fr; gap: 18px; }
+      .module-grid, .term-grid, .action-grid { grid-template-columns: 1fr; }
+      .manual-title { padding: 22px 20px; }
+      .manual-title h1 { font-size: 28px; }
+      .checklist { columns: 1; }
+      table { display: block; overflow-x: auto; white-space: nowrap; }
+    }
+    @media print {
+      body { background: white; font-size: 12px; }
+      .topbar, .side-nav, .breadcrumb, .back-top { display: none !important; }
+      .shell { max-width: none; padding: 0; }
+      .catalog.hidden { display: none; }
+      .manual { display: block; }
+      .manual-layout { display: block; }
+      .manual-title { box-shadow: none; print-color-adjust: exact; }
+      .doc-section { break-inside: avoid; }
+      .shot { box-shadow: none; break-inside: avoid; }
+    }
+  </style>
+</head>
+<body id="top">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">C</div>
+      <div><strong>CFTP 管理后台使用手册</strong><small>运营配置与日常维护指南</small></div>
+    </div>
+    <div class="top-actions">
+      <button class="text-button" type="button" onclick="showCatalog()">返回目录</button>
+      <button class="icon-button" type="button" title="打印或另存为 PDF" aria-label="打印或另存为 PDF" onclick="window.print()">&#128438;</button>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="catalog" id="catalog">
+      <div class="catalog-head">
+        <div>
+          <div class="eyebrow">ADMIN OPERATIONS GUIDE</div>
+          <h1>管理后台功能目录</h1>
+          <p>按业务模块查找配置方法、字段含义、操作顺序和发布前检查事项。当前版本先提供“课程配置”完整手册，其余章节将按同一结构逐步补充。</p>
+        </div>
+        <div class="search-wrap">
+          <label for="module-search">查找模块</label>
+          <input id="module-search" type="search" placeholder="例如：课程、认证、商品" oninput="filterModules(this.value)">
+        </div>
+      </div>
+
+      <h2 class="section-title">配置管理</h2>
+      <div class="module-grid" id="module-grid">
+        <button class="module ready" type="button" data-name="课程配置 GLMS 章节 课时 测验 资料" onclick="openManual('course')">
+          <span class="module-state">已完成</span><span class="module-icon">课</span>
+          <h2>课程配置</h2><p>创建课程，维护章节、课时、资料和测验，并管理版本与发布状态。</p>
+        </button>
+        <button class="module pending" type="button" data-name="认证配置 管线 阶段 单元 资格 证书" onclick="pendingModule('认证配置')">
+          <span class="module-state">待补充</span><span class="module-icon">认</span>
+          <h2>认证配置</h2><p>维护认证管线、阶段、课程单元、资格条件、免考和证书。</p>
+        </button>
+        <button class="module pending" type="button" data-name="商品配置 Bundle 价格 发布" onclick="pendingModule('商品配置')">
+          <span class="module-state">待补充</span><span class="module-icon">商</span>
+          <h2>商品配置</h2><p>关联认证或会员方案，配置价格、优惠和商品发布状态。</p>
+        </button>
+        <button class="module pending" type="button" data-name="资格定义 认证资格 免考资格 材料" onclick="pendingModule('资格定义')">
+          <span class="module-state">待补充</span><span class="module-icon">资</span>
+          <h2>资格定义</h2><p>定义证书、免考和终审材料等可复用资格。</p>
+        </button>
+        <button class="module pending" type="button" data-name="证书模板 PDF HTML 参数" onclick="pendingModule('证书模板配置')">
+          <span class="module-state">待补充</span><span class="module-icon">证</span>
+          <h2>证书模板配置</h2><p>维护证书 HTML 模板、模板参数和多语言内容。</p>
+        </button>
+        <button class="module pending" type="button" data-name="会员方案配置 Membership" onclick="pendingModule('会员方案配置')">
+          <span class="module-state">待补充</span><span class="module-icon">会</span>
+          <h2>会员方案配置</h2><p>维护会员等级、有效期、权益和续费规则。</p>
+        </button>
+        <button class="module pending" type="button" data-name="资源包配置 资源文件" onclick="pendingModule('资源包与资源文件配置')">
+          <span class="module-state">待补充</span><span class="module-icon">源</span>
+          <h2>资源包与资源文件</h2><p>管理独立学习资源、上传文件及上下架状态。</p>
+        </button>
+      </div>
+
+      <h2 class="section-title">业务运营</h2>
+      <div class="module-grid">
+        <button class="module pending" type="button" data-name="审核中心 资格申请" onclick="pendingModule('审核中心')">
+          <span class="module-state">待补充</span><span class="module-icon">审</span>
+          <h2>审核中心</h2><p>处理考生资格申请、材料补交、通过与拒绝。</p>
+        </button>
+        <button class="module pending" type="button" data-name="认证管理 实例 流程 证书任务" onclick="pendingModule('认证管理')">
+          <span class="module-state">待补充</span><span class="module-icon">管</span>
+          <h2>认证管理</h2><p>查看考生认证实例、进度、资格审核和证书任务。</p>
+        </button>
+        <button class="module pending" type="button" data-name="考试管理 预约 成绩" onclick="pendingModule('考试管理')">
+          <span class="module-state">待补充</span><span class="module-icon">考</span>
+          <h2>考试管理</h2><p>查询考试预约、考试状态、成绩和同步记录。</p>
+        </button>
+      </div>
+      <div class="catalog-foot">文档版本：2026-08-25 · 适用系统：CFTP 管理后台</div>
+    </section>
+
+    <article class="manual" id="course-manual">
+      <nav class="breadcrumb" aria-label="面包屑">
+        <button type="button" onclick="showCatalog()">管理后台目录</button><span>/</span><span>课程配置</span>
+      </nav>
+      <div class="manual-layout">
+        <nav class="side-nav" aria-label="课程配置章节">
+          <strong>课程配置</strong>
+          <a href="#course-overview">功能概览</a>
+          <a href="#course-concepts">关键概念</a>
+          <a href="#course-create">新建课程</a>
+          <a href="#course-actions">列表按钮</a>
+          <a href="#course-content">课程内容</a>
+          <a href="#course-json">JSON 创建</a>
+          <a href="#course-publish">发布流程</a>
+          <a href="#course-faq">常见问题</a>
+          <a href="#course-checklist">发布检查</a>
+        </nav>
+
+        <div class="content">
+          <header class="manual-title">
+            <div class="eyebrow" style="color:#9eeef1">配置管理 / GLMS</div>
+            <h1>课程配置使用手册</h1>
+            <p>面向管理后台运营人员，说明课程的创建、内容维护、JSON 复用、版本管理和发布操作。</p>
+            <div class="manual-meta"><span>角色：课程运营</span><span>难度：基础至进阶</span><span>更新：2026-08-25</span></div>
+          </header>
+
+          <section class="doc-section" id="course-overview">
+            <h2>1. 功能概览</h2>
+            <p class="lead">“课程配置”维护一门课程本身的学习内容。认证的阶段、价格、前置资格、免考和发证规则不在这里配置，它们分别属于“认证配置”和“商品配置”。</p>
+            <div class="flow" aria-label="课程配置结构">
+              <span>课程</span><b>→</b><span>章节</span><b>→</b><span>课时</span><b>→</b><span>正文 / 文件 / 视频</span>
+            </div>
+            <div class="note"><strong>先课程，后认证，再商品</strong>课程发布后，才能在认证配置的“课程单元”中选择；认证发布后，再由商品绑定并配置价格。</div>
+            <figure class="shot">
+              <img src="assets/course-list.png" alt="课程配置列表及顶部操作按钮" data-filename="course-list.png">
+              <div class="shot-missing"><div><strong>待补截图：课程配置列表</strong><code>assets/course-list.png</code></div></div>
+              <figcaption>图 1：课程配置列表。顶部提供刷新、从 JSON 创建课程和新建课程；每行提供查看详情、编辑和克隆。</figcaption>
+            </figure>
+          </section>
+
+          <section class="doc-section" id="course-concepts">
+            <h2>2. 先理解这些概念</h2>
+            <div class="term-grid">
+              <div class="term critical"><h3>课程 GPath</h3><p>课程业务系列的稳定标识，用来把同一门课程的不同版本关联起来。它不是课程标题，也不是文件地址。</p></div>
+              <div class="term"><h3>课程 ID / ULID</h3><p>某一个具体课程版本的唯一技术 ID，由系统生成。日常配置不需要手工填写。</p></div>
+              <div class="term"><h3>版本</h3><p>同一 GPath 下的版本号。克隆课程会创建同一门课程的新草稿版本。</p></div>
+              <div class="term"><h3>状态</h3><p>草稿可继续配置；已发布可供认证引用；已弃用是历史版本，不应继续用于新配置。</p></div>
+            </div>
+
+            <h3>课程 GPath 应该怎么填</h3>
+            <table>
+              <thead><tr><th>规则</th><th>说明</th><th>示例</th></tr></thead>
+              <tbody>
+                <tr><td>必须以 <code>/</code> 开头</td><td>使用分段路径表达业务归属。</td><td><code>/courses/fcrc-foundation</code></td></tr>
+                <tr><td>只使用小写字符</td><td>允许小写英文字母、数字、连字符 <code>-</code>、下划线 <code>_</code> 和斜杠。</td><td><code>/courses/cfta-level-1</code></td></tr>
+                <tr><td>新课程使用新 GPath</td><td>不同课程不得共用 GPath，即使标题相似也要分开。</td><td>A 与 B 使用不同路径</td></tr>
+                <tr><td>升级版本沿用 GPath</td><td>通过“克隆”创建同一课程的新版本时，系统自动沿用原 GPath。</td><td>v1、v2 共用一个 GPath</td></tr>
+                <tr><td>最长 255 个字符</td><td>建议保持简短、稳定，不写版本号、日期或人员姓名。</td><td>不要写 <code>-v2</code> 或 <code>-2026</code></td></tr>
+              </tbody>
+            </table>
+            <div class="danger"><strong>不要把 GPath 当成课程名称修改</strong>一门独立的新课程必须使用新的 GPath。复制其他课程的 JSON 后，也必须先修改 <code>course_gpath</code>，否则会与原课程系列发生冲突。</div>
+          </section>
+
+          <section class="doc-section" id="course-create">
+            <h2>3. 新建课程</h2>
+            <p class="lead">适用于从空白开始创建一门独立课程。点击页面右上角“新建课程”。</p>
+            <figure class="shot">
+              <img src="assets/course-create.png" alt="新建课程弹窗" data-filename="course-create.png">
+              <div class="shot-missing"><div><strong>待补截图：新建课程弹窗</strong><code>assets/course-create.png</code></div></div>
+              <figcaption>图 2：新建课程。课程标题与 GPath 为必填项，描述和时长用于运营展示及课程信息维护。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>字段</th><th>是否必填</th><th>填写说明</th></tr></thead>
+              <tbody>
+                <tr><td>课程标题</td><td class="required">必填</td><td>考生端和管理后台显示的课程名称。建议使用正式、可识别的名称。</td></tr>
+                <tr><td>描述</td><td>选填</td><td>说明课程目标、适用对象和内容范围。不要在这里填写内部备注。</td></tr>
+                <tr><td>课程 GPath</td><td class="required">必填</td><td>系统会随标题生成建议路径。新课程确认唯一即可，通常不要手动改成其他课程的路径。</td></tr>
+                <tr><td>时长分钟</td><td>选填</td><td>课程预计总学习时长，使用非负整数；未知时可以暂填 0，发布前补齐。</td></tr>
+              </tbody>
+            </table>
+            <ol class="steps">
+              <li><strong>填写课程标题和描述</strong><span>标题应与对外课程名称一致。</span></li>
+              <li><strong>展开“高级配置”检查 GPath</strong><span>确认是新路径，且不含大写字母、空格或中文。</span></li>
+              <li><strong>填写课程时长</strong><span>按全部课时的预计学习时间汇总。</span></li>
+              <li><strong>点击“保存课程”</strong><span>系统先创建草稿，随后进入课程详情继续配置内容。</span></li>
+            </ol>
+          </section>
+
+          <section class="doc-section" id="course-actions">
+            <h2>4. 列表页按钮和操作</h2>
+            <div class="action-grid">
+              <div class="action"><h3>刷新</h3><p>重新读取课程列表。其他管理员刚完成操作，或状态未及时更新时使用。</p></div>
+              <div class="action"><h3>从 JSON 创建课程</h3><p>把符合课程导入格式的 JSON 创建为新课程。适合复制既有课程结构后再调整。</p></div>
+              <div class="action"><h3>新建课程</h3><p>从空白草稿开始创建一门新课程。</p></div>
+              <div class="action"><h3>查看详情</h3><p>查看课程完整字段和可复制的课程 JSON，不直接修改数据。</p></div>
+              <div class="action"><h3>编辑</h3><p>进入课程详情，维护基础信息、章节、课时、资料和测验。</p></div>
+              <div class="action"><h3>克隆</h3><p>创建同一课程的新草稿版本，沿用原 GPath 和内容。不要用它创建另一门独立课程。</p></div>
+            </div>
+            <div class="warning"><strong>“克隆”和“从 JSON 创建课程”的区别</strong>克隆用于同一门课程升级版本；从 JSON 创建用于创建另一门课程，导入前必须改成新的 <code>course_gpath</code>。</div>
+          </section>
+
+          <section class="doc-section" id="course-content">
+            <h2>5. 维护课程内容</h2>
+            <p class="lead">课程草稿创建后，按章节、课时、资料和测验逐层维护。先建立章节，再把课时和章节测验挂到正确章节。</p>
+            <figure class="shot">
+              <img src="assets/course-content.png" alt="课程章节、课时和资料区域" data-filename="course-content.png">
+              <div class="shot-missing"><div><strong>待补截图：章节、课时和课程资料</strong><code>assets/course-content.png</code></div></div>
+              <figcaption>图 3：课程内容区域。章节是内容分组，课时承载具体学习内容；课程资料分为候选端辅助资料和普通文件资料。</figcaption>
+            </figure>
+
+            <h3>章节与课时</h3>
+            <table>
+              <thead><tr><th>对象</th><th>作用</th><th>配置要点</th></tr></thead>
+              <tbody>
+                <tr><td>章节</td><td>组织课程内容的一级目录。</td><td>填写标题和排序；建议先创建全部章节，再逐一添加课时。</td></tr>
+                <tr><td>课时</td><td>考生实际学习的内容单元。</td><td>选择所属章节、标题、排序和课时类型，再填写正文或上传对应资源。</td></tr>
+              </tbody>
+            </table>
+
+            <h3>两类课程资料</h3>
+            <table>
+              <thead><tr><th>类型</th><th>考生端用途</th><th>何时使用</th></tr></thead>
+              <tbody>
+                <tr><td>候选端辅助资料</td><td>显示在考生端“课程资料 / Supplementary Materials”列表。</td><td>按章节提供文章、视频、PDF 或外部链接时使用。优先通过单条表单维护。</td></tr>
+                <tr><td>普通文件资料</td><td>课程级文件资源。</td><td>提供下载文件或课程附件时使用，不等同于候选端辅助资料列表。</td></tr>
+              </tbody>
+            </table>
+            <div class="note"><strong>辅助资料看不到时检查什么</strong>确认已创建辅助资料配置，并且 <code>supplementary_material.data_json</code> 中存在有效记录；外部链接需要填写完整的 <code>https://</code> 地址。</div>
+
+            <figure class="shot">
+              <img src="assets/course-quizzes.png" alt="课程测验题库区域" data-filename="course-quizzes.png">
+              <div class="shot-missing"><div><strong>待补截图：测验题库</strong><code>assets/course-quizzes.png</code></div></div>
+              <figcaption>图 4：测验题库。测验可挂在课程、章节或课时下；新增前先确认挂载层级和所属对象。</figcaption>
+            </figure>
+            <h3>测验题库</h3>
+            <ol class="steps">
+              <li><strong>点击“加载测验”</strong><span>刷新当前课程下所有课程级、章节级和课时级测验。</span></li>
+              <li><strong>点击“新测验”</strong><span>选择挂载层级和所属对象，填写测验标题及规则。</span></li>
+              <li><strong>添加题目和选项</strong><span>设置题型、分值、必答、正确选项和排序。</span></li>
+              <li><strong>复核挂载位置</strong><span>挂错层级会导致考生在错误的学习节点看到测验。</span></li>
+            </ol>
+          </section>
+
+          <section class="doc-section" id="course-json">
+            <h2>6. 使用 JSON 创建课程</h2>
+            <p class="lead">适合以现有课程为模板快速创建结构相似的新课程。JSON 不是备份恢复文件，导入前仍需人工检查业务字段。</p>
+            <ol class="steps">
+              <li><strong>在源课程点击“查看详情”</strong><span>切换到“可导入 JSON”并点击“复制 JSON”。</span></li>
+              <li><strong>修改新课程字段</strong><span>至少修改标题和 <code>course_gpath</code>；按需要调整描述、时长、章节、课时和测验。</span></li>
+              <li><strong>点击“从 JSON 创建课程”</strong><span>上传 JSON 文件或直接粘贴内容。</span></li>
+              <li><strong>等待导入完成</strong><span>系统会依次创建课程草稿、章节、课时和章节测验，并在最后校验数量。</span></li>
+              <li><strong>进入草稿补充未覆盖配置</strong><span>逐项检查资料、测验和文件资源后再发布。</span></li>
+            </ol>
+            <div class="warning"><strong>当前 JSON 的覆盖范围</strong>支持课程基础信息、章节、课时和章节测验。普通资料、辅助资料、课程测验及课时测验需要在新课程中另行配置。</div>
+            <div class="danger"><strong>导入失败后不要连续点击重试</strong>失败时页面会保留已经创建的草稿 ID。先进入该草稿确认已导入到哪一步，避免重复创建章节或测验。</div>
+          </section>
+
+          <section class="doc-section" id="course-publish">
+            <h2>7. 推荐的配置与发布顺序</h2>
+            <div class="flow"><span>创建草稿</span><b>→</b><span>基础信息</span><b>→</b><span>章节</span><b>→</b><span>课时</span><b>→</b><span>资料</span><b>→</b><span>测验</span><b>→</b><span>复核</span><b>→</b><span>发布</span></div>
+            <p>发布会使课程成为可被认证配置引用的正式版本。同一 GPath 发布新版本时，旧的当前版本会进入历史状态，因此发布前应确认认证配置准备切换到哪个课程版本。</p>
+            <div class="warning"><strong>不要直接在生产内容上试配置</strong>先在草稿完成全部编辑和预览，再发布。已经发布的课程如果需要大幅调整，应使用“克隆”创建新草稿版本。</div>
+          </section>
+
+          <section class="doc-section faq" id="course-faq">
+            <h2>8. 常见问题</h2>
+            <details><summary>新课程和新版本有什么区别？</summary><p>新课程是独立业务对象，必须使用新的 GPath；新版本是同一课程的升级，使用“克隆”创建并沿用原 GPath。</p></details>
+            <details><summary>为什么 GPath 不能填中文或大写字母？</summary><p>GPath 是跨服务使用的稳定技术标识。系统只接受以斜杠开头的小写字母、数字、连字符、下划线和分段斜杠。</p></details>
+            <details><summary>改了课程标题，GPath 也要一起改吗？</summary><p>通常不需要。标题是展示名称，GPath 是业务系列标识。课程已经创建后，不要因文案调整随意改变 GPath。</p></details>
+            <details><summary>为什么认证配置里选不到刚创建的课程？</summary><p>先确认课程是否已发布。认证配置只能绑定可用的已发布课程，草稿、已下架或不可用版本不会出现在选择列表中。</p></details>
+            <details><summary>候选端为什么看不到课程资料？</summary><p>先判断要展示的是“辅助资料”还是“普通文件资料”。候选端 Supplementary Materials 依赖辅助资料配置及其 data_json；普通文件不会自动出现在该列表。</p></details>
+            <details><summary>JSON 导入后为什么有些资料或测验没有出现？</summary><p>当前导入范围不包含普通资料、辅助资料、课程测验和课时测验。这些内容需要进入新草稿后另行配置。</p></details>
+          </section>
+
+          <section class="doc-section" id="course-checklist">
+            <h2>9. 发布前检查清单</h2>
+            <ul class="checklist">
+              <li>课程标题和描述使用正式对外文案</li>
+              <li>GPath 与业务对象匹配且未误用其他课程路径</li>
+              <li>课程时长已填写</li>
+              <li>章节顺序正确且无空章节</li>
+              <li>每个课时挂载到正确章节</li>
+              <li>正文、文件或视频资源可正常打开</li>
+              <li>辅助资料在候选端展示位置正确</li>
+              <li>普通资料的文件名称和内容正确</li>
+              <li>测验挂载层级正确</li>
+              <li>题目分值、正确答案和排序已复核</li>
+              <li>JSON 创建的课程已补齐未导入内容</li>
+              <li>确认发布的是目标课程版本</li>
+            </ul>
+            <a class="back-top" href="#top">返回顶部</a>
+          </section>
+        </div>
+      </div>
+    </article>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script>
+    const catalog = document.getElementById("catalog");
+    const courseManual = document.getElementById("course-manual");
+    const toast = document.getElementById("toast");
+    let toastTimer;
+
+    function openManual(name) {
+      if (name !== "course") return;
+      catalog.classList.add("hidden");
+      courseManual.classList.add("active");
+      history.replaceState(null, "", "#course");
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
+
+    function showCatalog() {
+      courseManual.classList.remove("active");
+      catalog.classList.remove("hidden");
+      history.replaceState(null, "", location.pathname + location.search);
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
+
+    function pendingModule(name) {
+      clearTimeout(toastTimer);
+      toast.textContent = name + "手册尚未编写，将在后续版本补充。";
+      toast.classList.add("show");
+      toastTimer = setTimeout(() => toast.classList.remove("show"), 2600);
+    }
+
+    function filterModules(value) {
+      const query = value.trim().toLowerCase();
+      document.querySelectorAll(".module").forEach((module) => {
+        const text = (module.dataset.name + " " + module.textContent).toLowerCase();
+        module.style.display = !query || text.includes(query) ? "block" : "none";
+      });
+    }
+
+    document.querySelectorAll(".shot img").forEach((image) => {
+      image.addEventListener("error", () => {
+        image.style.display = "none";
+        const missing = image.nextElementSibling;
+        if (missing) missing.style.display = "grid";
+      });
+    });
+
+    const sectionObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        document.querySelectorAll(".side-nav a").forEach((link) => {
+          link.classList.toggle("active", link.getAttribute("href") === "#" + entry.target.id);
+        });
+      });
+    }, { rootMargin: "-20% 0px -70% 0px" });
+    document.querySelectorAll(".doc-section").forEach((section) => sectionObserver.observe(section));
+
+    if (location.hash === "#course" || location.hash.startsWith("#course-")) openManual("course");
+  </script>
+</body>
+</html>
