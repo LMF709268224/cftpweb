@@ -2,13 +2,10 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
-	"log/slog"
 	"net/http"
 	"strings"
 
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
-	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -170,49 +167,9 @@ type adminOrderSummary struct {
 }
 
 type adminOrderDetailResponse struct {
-	Summary        *mallpb.OrderSummary  `json:"summary"`
-	BusinessDetail any                   `json:"business_detail"`
-	Pricing        *adminOrderPricing    `json:"pricing"`
-	Exemptions     []adminOrderExemption `json:"exemptions,omitempty"`
-}
-
-type adminOrderPricing struct {
-	Available               bool                  `json:"available"`
-	Source                  string                `json:"source,omitempty"`
-	CurrencyCode            string                `json:"currency_code,omitempty"`
-	BillableSubtotalMinor   *int64                `json:"billable_subtotal_minor,omitempty"`
-	ExemptionDiscountMinor  *int64                `json:"exemption_discount_minor,omitempty"`
-	PromotionDiscountMinor  *int64                `json:"promotion_discount_minor,omitempty"`
-	TaxMinor                *int64                `json:"tax_minor,omitempty"`
-	TotalMinor              *int64                `json:"total_minor,omitempty"`
-	AmountPaidMinor         *int64                `json:"amount_paid_minor,omitempty"`
-	ExemptionAmountRecorded bool                  `json:"exemption_amount_recorded"`
-	Items                   []adminOrderPriceItem `json:"items,omitempty"`
-	Coupons                 []adminOrderCoupon    `json:"coupons,omitempty"`
-	PromoCodes              []string              `json:"promo_codes,omitempty"`
-	UnavailableReason       string                `json:"unavailable_reason,omitempty"`
-}
-
-type adminOrderPriceItem struct {
-	ItemType       string `json:"item_type,omitempty"`
-	ItemULID       string `json:"item_ulid,omitempty"`
-	Title          string `json:"title,omitempty"`
-	UnitPriceMinor int64  `json:"unit_price_minor"`
-	Quantity       int32  `json:"quantity"`
-	SubtotalMinor  int64  `json:"subtotal_minor"`
-}
-
-type adminOrderCoupon struct {
-	Code           string  `json:"code,omitempty"`
-	Name           string  `json:"name,omitempty"`
-	PercentOff     float64 `json:"percent_off,omitempty"`
-	AmountOffMinor int64   `json:"amount_off_minor,omitempty"`
-	CurrencyCode   string  `json:"currency_code,omitempty"`
-}
-
-type adminOrderExemption struct {
-	CourseCCULID   string `json:"course_cc_ulid"`
-	CredentialULID string `json:"credential_ulid,omitempty"`
+	Summary        *mallpb.OrderSummary     `json:"summary"`
+	BusinessDetail any                      `json:"business_detail"`
+	PriceDetail    *mallpb.OrderPriceDetail `json:"price_detail,omitempty"`
 }
 
 func (h *Handler) GetOrderDetail(w http.ResponseWriter, r *http.Request) {
@@ -221,13 +178,14 @@ func (h *Handler) GetOrderDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	summaryResp, err := h.Mall.GetOrderSummary(r.Context(), &mallpb.GetOrderSummaryRequest{OrderUlid: orderULID})
+	orderResp, err := h.Mall.GetOrderDetail(r.Context(), &mallpb.GetOrderDetailRequest{OrderUlid: orderULID})
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
 	}
-	summary := summaryResp.GetSummary()
-	if !summaryResp.GetFound() || summary == nil {
+	orderDetail := orderResp.GetDetail()
+	summary := orderDetail.GetSummary()
+	if !orderResp.GetFound() || orderDetail == nil || summary == nil {
 		WriteError(w, http.StatusNotFound, ErrNotFound, "order not found")
 		return
 	}
@@ -241,167 +199,11 @@ func (h *Handler) GetOrderDetail(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	pricing := h.adminOrderPricing(r.Context(), summary)
 	WriteJSON(w, http.StatusOK, adminOrderDetailResponse{
 		Summary:        summary,
 		BusinessDetail: detail,
-		Pricing:        pricing,
-		Exemptions:     approvedOrderExemptions(detail),
+		PriceDetail:    orderDetail.GetPriceDetail(),
 	})
-}
-
-func (h *Handler) adminOrderPricing(ctx context.Context, summary *mallpb.OrderSummary) *adminOrderPricing {
-	pricing := &adminOrderPricing{
-		Available:               true,
-		Source:                  "GMALL_ORDER_SUMMARY",
-		CurrencyCode:            strings.ToUpper(strings.TrimSpace(summary.GetCurrencyCode())),
-		TotalMinor:              int64Pointer(summary.GetAmountMinor()),
-		ExemptionAmountRecorded: false,
-	}
-	// Exempt units are removed before the payment order is created, so GPAY has
-	// no persisted monetary value for the exemption discount.
-	if h.Gpay == nil {
-		pricing.UnavailableReason = "gpay client is unavailable"
-		return pricing
-	}
-
-	order, err := h.Gpay.GetOrder(ctx, &gpaypb.GetOrderRequest{
-		Lookup: &gpaypb.GetOrderRequest_OrderUlid{OrderUlid: summary.GetOrderUlid()},
-	})
-	if err != nil {
-		slog.WarnContext(ctx, "admin order pricing query failed", "order_ulid", summary.GetOrderUlid(), "error", err)
-		pricing.UnavailableReason = "payment order detail is unavailable"
-		return pricing
-	}
-
-	pricing.Source = "GPAY_ORDER"
-	pricing.CurrencyCode = strings.ToUpper(strings.TrimSpace(order.GetCurrency()))
-	pricing.TotalMinor = int64Pointer(order.GetAmount())
-	if order.GetPaidAt() > 0 || strings.EqualFold(order.GetStripePaymentStatus(), "paid") {
-		pricing.AmountPaidMinor = int64Pointer(order.GetAmount())
-	}
-	pricing.PromoCodes = append([]string(nil), order.GetPromoCodes()...)
-	for _, coupon := range order.GetCoupons() {
-		if coupon == nil {
-			continue
-		}
-		pricing.Coupons = append(pricing.Coupons, adminOrderCoupon{
-			Code:           coupon.GetCode(),
-			Name:           coupon.GetName(),
-			PercentOff:     coupon.GetPercentOff(),
-			AmountOffMinor: coupon.GetAmountOff(),
-			CurrencyCode:   strings.ToUpper(strings.TrimSpace(coupon.GetCurrency())),
-		})
-	}
-
-	items, itemsErr := h.Gpay.ListOrderItems(ctx, &gpaypb.ListOrderItemsRequest{OrderUlid: summary.GetOrderUlid()})
-	if itemsErr != nil {
-		slog.WarnContext(ctx, "admin order item query failed", "order_ulid", summary.GetOrderUlid(), "error", itemsErr)
-	} else {
-		var subtotal int64
-		for _, item := range items.GetItems() {
-			if item == nil {
-				continue
-			}
-			quantity := item.GetQuantity()
-			itemSubtotal := item.GetBasePrice() * int64(quantity)
-			subtotal += itemSubtotal
-			pricing.Items = append(pricing.Items, adminOrderPriceItem{
-				ItemType:       item.GetItemType(),
-				ItemULID:       item.GetItemId(),
-				Title:          item.GetTitle(),
-				UnitPriceMinor: item.GetBasePrice(),
-				Quantity:       quantity,
-				SubtotalMinor:  itemSubtotal,
-			})
-		}
-		if len(pricing.Items) > 0 {
-			pricing.Source = "GPAY_ORDER_ITEMS"
-			pricing.BillableSubtotalMinor = int64Pointer(subtotal)
-		}
-	}
-
-	if strings.TrimSpace(order.GetStripeInvoiceId()) == "" {
-		return pricing
-	}
-	invoice, invoiceErr := h.Gpay.GetInvoice(ctx, &gpaypb.GetInvoiceRequest{
-		Lookup: &gpaypb.GetInvoiceRequest_StripeInvoiceId{StripeInvoiceId: order.GetStripeInvoiceId()},
-	})
-	if invoiceErr != nil {
-		slog.WarnContext(ctx, "admin order invoice query failed", "order_ulid", summary.GetOrderUlid(), "stripe_invoice_id", order.GetStripeInvoiceId(), "error", invoiceErr)
-		return pricing
-	}
-
-	pricing.Source = "GPAY_INVOICE"
-	pricing.CurrencyCode = strings.ToUpper(strings.TrimSpace(invoice.GetCurrency()))
-	pricing.BillableSubtotalMinor = int64Pointer(invoice.GetSubtotal())
-	pricing.TaxMinor = int64Pointer(invoice.GetTax())
-	pricing.TotalMinor = int64Pointer(invoice.GetTotal())
-	pricing.AmountPaidMinor = int64Pointer(invoice.GetAmountPaid())
-	// GPAY invoices currently have no shipping adjustment, so this identity is
-	// the exact invoice-level promotion discount rather than an estimate.
-	if discount := invoice.GetSubtotal() + invoice.GetTax() - invoice.GetTotal(); discount >= 0 {
-		pricing.PromotionDiscountMinor = int64Pointer(discount)
-	}
-	return pricing
-}
-
-func int64Pointer(value int64) *int64 {
-	return &value
-}
-
-func approvedOrderExemptions(detail any) []adminOrderExemption {
-	var raw string
-	switch response := detail.(type) {
-	case *mallpb.GetPipelineOrderDetailResponse:
-		raw = response.GetDetail().GetFinalExemptionsJson()
-	case *mallpb.GetStageOrderDetailResponse:
-		raw = response.GetDetail().GetFinalExemptionsJson()
-	}
-	if strings.TrimSpace(raw) == "" {
-		return nil
-	}
-
-	type exemptionItem struct {
-		CourseCCULID   string `json:"course_cc_ulid"`
-		CredentialULID string `json:"credential_ulid"`
-		Approved       bool   `json:"approved"`
-	}
-	type exemptionStage struct {
-		Course []exemptionItem `json:"course"`
-	}
-	var payload struct {
-		Course []exemptionItem  `json:"course"`
-		Stages []exemptionStage `json:"stages"`
-	}
-	if err := json.Unmarshal([]byte(raw), &payload); err != nil {
-		return nil
-	}
-
-	seen := make(map[string]struct{})
-	result := make([]adminOrderExemption, 0, len(payload.Course))
-	appendApproved := func(items []exemptionItem) {
-		for _, item := range items {
-			courseULID := strings.TrimSpace(item.CourseCCULID)
-			if !item.Approved || courseULID == "" {
-				continue
-			}
-			key := courseULID + "\x00" + strings.TrimSpace(item.CredentialULID)
-			if _, exists := seen[key]; exists {
-				continue
-			}
-			seen[key] = struct{}{}
-			result = append(result, adminOrderExemption{
-				CourseCCULID:   courseULID,
-				CredentialULID: strings.TrimSpace(item.CredentialULID),
-			})
-		}
-	}
-	appendApproved(payload.Course)
-	for _, stage := range payload.Stages {
-		appendApproved(stage.Course)
-	}
-	return result
 }
 
 func (h *Handler) adminBusinessOrderDetail(ctx context.Context, bizType, bizRefULID string) (any, error) {

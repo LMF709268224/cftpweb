@@ -22,13 +22,6 @@ type SummaryField = {
   label: string
   value: string
 }
-type PriceMetric = {
-  key: string
-  label: string
-  value: string
-  note: string
-  tone: string
-}
 
 const { t, isZh } = useAdminLanguage()
 const copy = computed(() => t.value.orders)
@@ -37,7 +30,6 @@ const orders = ref<JsonRecord[]>([])
 const selected = ref<JsonRecord | null>(null)
 const businessDetail = ref<JsonRecord | null>(null)
 const pricing = ref<JsonRecord | null>(null)
-const exemptions = ref<JsonRecord[]>([])
 const loading = ref(false)
 const detailLoading = ref(false)
 const detailOpen = ref(false)
@@ -68,68 +60,11 @@ const detailTabs = computed(() => [
   { key: "actions" as const, title: copy.value.tabs.actions, count: isBundlePurchase.value ? 1 : 0 },
 ])
 const pricingCurrency = computed(() => String(pricing.value?.currency_code || pickFirst(selected.value || {}, ["currency_code", "currencyCode", "currency"]) || ""))
-const priceMetrics = computed<PriceMetric[]>(() => {
-  const detail = pricing.value
-  if (!detail) return []
-  const exemptionRecorded = detail.exemption_amount_recorded === true
-  return [
-    {
-      key: "billable-subtotal",
-      label: copy.value.pricing.billableSubtotal,
-      value: minorAmountText(detail.billable_subtotal_minor, pricingCurrency.value),
-      note: copy.value.pricing.billableSubtotalNote,
-      tone: "border-slate-200 bg-white text-slate-950",
-    },
-    {
-      key: "exemption-discount",
-      label: copy.value.pricing.exemptionDiscount,
-      value: exemptionRecorded ? signedMinorAmountText(detail.exemption_discount_minor, pricingCurrency.value, "-") : copy.value.pricing.notRecorded,
-      note: exemptions.value.length
-        ? copy.value.pricing.exemptedUnits(exemptions.value.length)
-        : copy.value.pricing.exemptionNotRecorded,
-      tone: "border-amber-200 bg-amber-50 text-amber-900",
-    },
-    {
-      key: "promotion-discount",
-      label: copy.value.pricing.promotionDiscount,
-      value: signedMinorAmountText(detail.promotion_discount_minor, pricingCurrency.value, "-"),
-      note: copy.value.pricing.promotionDiscountNote,
-      tone: "border-emerald-200 bg-emerald-50 text-emerald-900",
-    },
-    {
-      key: "tax",
-      label: copy.value.pricing.tax,
-      value: signedMinorAmountText(detail.tax_minor, pricingCurrency.value, "+"),
-      note: copy.value.pricing.taxNote,
-      tone: "border-slate-200 bg-slate-50 text-slate-900",
-    },
-    {
-      key: "paid",
-      label: copy.value.pricing.amountPaid,
-      value: minorAmountText(detail.amount_paid_minor ?? detail.total_minor, pricingCurrency.value),
-      note: copy.value.pricing.amountPaidNote,
-      tone: "border-blue-200 bg-blue-50 text-blue-900",
-    },
-  ]
-})
-const priceItems = computed<JsonRecord[]>(() => Array.isArray(pricing.value?.items)
-  ? pricing.value!.items.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
-  : [])
-const promotionLabels = computed(() => {
-  const labels: string[] = []
-  const coupons = Array.isArray(pricing.value?.coupons) ? pricing.value!.coupons : []
-  for (const value of coupons) {
-    const coupon = recordValue(value)
-    const label = String(coupon?.name || coupon?.code || "").trim()
-    if (label && !labels.includes(label)) labels.push(label)
-  }
-  const promoCodes = Array.isArray(pricing.value?.promo_codes) ? pricing.value!.promo_codes : []
-  for (const value of promoCodes) {
-    const label = String(value || "").trim()
-    if (label && !labels.includes(label)) labels.push(label)
-  }
-  return labels
-})
+const originalPriceText = computed(() => minorAmountText(pricing.value?.subtotal_minor, pricingCurrency.value))
+const discountTotalText = computed(() => signedMinorAmountText(pricing.value?.discount_total_minor, pricingCurrency.value, "-"))
+const taxText = computed(() => signedMinorAmountText(pricing.value?.tax_total_minor, pricingCurrency.value, "+"))
+const totalPriceText = computed(() => minorAmountText(pricing.value?.total_minor, pricingCurrency.value))
+const hasTax = computed(() => Number(pricing.value?.tax_total_minor || 0) > 0)
 const orderSummaryFields = computed<SummaryField[]>(() => {
   const order = selected.value
   if (!order) return []
@@ -226,12 +161,6 @@ function signedMinorAmountText(value: unknown, currency: string, sign: "+" | "-"
   return formatted === copy.value.pricing.unavailable ? formatted : `${sign}${formatted}`
 }
 
-function pricingSourceLabel(value: unknown) {
-  const source = String(value || "")
-  const labels = copy.value.pricing.sources as Record<string, string>
-  return labels[source] || source
-}
-
 function createdAt(order: JsonRecord | null | undefined) {
   const value = pickFirst(order || {}, ["created_at", "createdAt"])
   if (typeof value === "number") {
@@ -304,17 +233,13 @@ async function loadBusinessDetail(order: JsonRecord | null) {
   const requestId = ++detailRequestId
   businessDetail.value = null
   pricing.value = null
-  exemptions.value = []
   if (!order || !id) return
   detailLoading.value = true
   try {
     const response = await apiClient<JsonRecord>(`/api/mall/orders/${encodeURIComponent(id)}`)
     if (requestId !== detailRequestId || orderUlid(selected.value) !== id) return
     businessDetail.value = recordValue(response.business_detail)
-    pricing.value = recordValue(response.pricing)
-    exemptions.value = Array.isArray(response.exemptions)
-      ? response.exemptions.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
-      : []
+    pricing.value = recordValue(response.price_detail)
   } catch (err) {
     if (requestId !== detailRequestId || orderUlid(selected.value) !== id) return
     console.error(err)
@@ -332,7 +257,6 @@ async function selectOrder(order: JsonRecord, open = true) {
   detailOpen.value = open
   businessDetail.value = null
   pricing.value = null
-  exemptions.value = []
   detailLoading.value = false
   if (!open) {
     return
@@ -388,7 +312,6 @@ async function load(targetPage = page.value) {
       selected.value = null
       businessDetail.value = null
       pricing.value = null
-      exemptions.value = []
       detailOpen.value = false
       total.value = 0
       hasMore.value = false
@@ -417,7 +340,6 @@ nextCursor.value = String(data.next_cursor || "")
       selected.value = null
       businessDetail.value = null
       pricing.value = null
-      exemptions.value = []
       detailOpen.value = false
     }
   } catch (err) {
@@ -427,7 +349,6 @@ nextCursor.value = String(data.next_cursor || "")
     selected.value = null
     businessDetail.value = null
     pricing.value = null
-    exemptions.value = []
     detailOpen.value = false
     total.value = 0
     hasMore.value = false
@@ -674,86 +595,30 @@ onMounted(() => load(1))
                 </div>
 
                 <section class="border-y border-slate-200 py-5">
-                  <div class="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <h3 class="text-base font-black text-slate-950">{{ copy.pricing.title }}</h3>
-                      <p class="mt-1 text-sm text-slate-500">{{ copy.pricing.description }}</p>
-                    </div>
-                    <span v-if="pricing?.source" class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
-                      {{ pricingSourceLabel(pricing.source) }}
-                    </span>
-                  </div>
+                  <h3 class="text-base font-black text-slate-950">{{ copy.pricing.title }}</h3>
 
                   <div v-if="detailLoading" class="flex min-h-28 items-center justify-center text-sm text-slate-500">
                     <Loader2 class="mr-2 h-5 w-5 animate-spin" />
                     {{ copy.pricing.loading }}
                   </div>
-                  <template v-else-if="pricing">
-                    <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-                      <div
-                        v-for="metric in priceMetrics"
-                        :key="metric.key"
-                        class="min-h-28 rounded-lg border p-4"
-                        :class="metric.tone"
-                      >
-                        <div class="text-xs font-black">{{ metric.label }}</div>
-                        <div class="mt-2 break-words text-lg font-black">{{ metric.value }}</div>
-                        <div class="mt-2 text-xs font-medium opacity-70">{{ metric.note }}</div>
-                      </div>
+                  <dl v-else-if="pricing" class="mt-3 divide-y divide-slate-200 text-sm">
+                    <div class="flex items-center justify-between gap-4 py-3">
+                      <dt class="font-bold text-slate-600">{{ copy.pricing.billableSubtotal }}</dt>
+                      <dd class="font-black text-slate-950">{{ originalPriceText }}</dd>
                     </div>
-
-                    <div v-if="pricing.unavailable_reason" class="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
-                      {{ copy.pricing.partialUnavailable }}
+                    <div class="flex items-center justify-between gap-4 py-3">
+                      <dt class="font-bold text-slate-600">{{ copy.pricing.promotionDiscount }}</dt>
+                      <dd class="font-black text-emerald-700">{{ discountTotalText }}</dd>
                     </div>
-
-                    <div v-if="promotionLabels.length" class="mt-5 flex flex-wrap items-center gap-2">
-                      <span class="text-xs font-black text-slate-500">{{ copy.pricing.promotions }}</span>
-                      <span
-                        v-for="label in promotionLabels"
-                        :key="label"
-                        class="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800"
-                      >
-                        {{ label }}
-                      </span>
+                    <div v-if="hasTax" class="flex items-center justify-between gap-4 py-3">
+                      <dt class="font-bold text-slate-600">{{ copy.pricing.tax }}</dt>
+                      <dd class="font-black text-slate-950">{{ taxText }}</dd>
                     </div>
-
-                    <div v-if="exemptions.length" class="mt-5">
-                      <div class="text-xs font-black text-slate-500">{{ copy.pricing.exemptedItems }}</div>
-                      <div class="mt-2 grid gap-2 sm:grid-cols-2">
-                        <div v-for="item in exemptions" :key="String(item.course_cc_ulid)" class="min-w-0 border-l-2 border-amber-300 bg-amber-50 px-3 py-2">
-                          <div class="break-all text-xs font-bold text-amber-950">{{ item.course_cc_ulid }}</div>
-                          <div v-if="item.credential_ulid" class="mt-1 break-all text-xs text-amber-700">{{ item.credential_ulid }}</div>
-                        </div>
-                      </div>
+                    <div class="flex items-center justify-between gap-4 py-3">
+                      <dt class="font-black text-slate-950">{{ copy.pricing.amountPaid }}</dt>
+                      <dd class="text-lg font-black text-blue-700">{{ totalPriceText }}</dd>
                     </div>
-
-                    <div v-if="priceItems.length" class="mt-5 overflow-hidden border-y border-slate-200">
-                      <div class="bg-slate-50 px-4 py-3 text-sm font-black text-slate-800">{{ copy.pricing.itemsTitle }}</div>
-                      <div class="overflow-x-auto">
-                        <table class="w-full min-w-[620px] text-left text-sm">
-                          <thead class="border-y border-slate-200 bg-white text-xs text-slate-500">
-                            <tr>
-                              <th class="px-4 py-3 font-black">{{ copy.pricing.item }}</th>
-                              <th class="px-4 py-3 font-black">{{ copy.pricing.unitPrice }}</th>
-                              <th class="px-4 py-3 text-center font-black">{{ copy.pricing.quantity }}</th>
-                              <th class="px-4 py-3 text-right font-black">{{ copy.pricing.subtotal }}</th>
-                            </tr>
-                          </thead>
-                          <tbody class="divide-y divide-slate-100">
-                            <tr v-for="item in priceItems" :key="`${item.item_type}-${item.item_ulid}`">
-                              <td class="px-4 py-3">
-                                <div class="font-bold text-slate-900">{{ item.title || item.item_ulid || copy.pricing.unnamedItem }}</div>
-                                <div class="mt-1 break-all text-xs text-slate-500">{{ item.item_type }}<span v-if="item.item_ulid"> · {{ item.item_ulid }}</span></div>
-                              </td>
-                              <td class="px-4 py-3 font-semibold text-slate-700">{{ minorAmountText(item.unit_price_minor, pricingCurrency) }}</td>
-                              <td class="px-4 py-3 text-center font-semibold text-slate-700">{{ item.quantity }}</td>
-                              <td class="px-4 py-3 text-right font-black text-slate-900">{{ minorAmountText(item.subtotal_minor, pricingCurrency) }}</td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </template>
+                  </dl>
                   <div v-else class="mt-4 rounded-lg border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">
                     {{ copy.pricing.unavailableDetail }}
                   </div>

@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
-	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
 	"google.golang.org/grpc"
 )
 
@@ -26,48 +25,6 @@ type paymentOrderMallClientStub struct {
 	bundleDetailResponse *mallpb.GetBundleOrderDetailResponse
 	cancelRequest        *mallpb.CancelBusinessOrderRequest
 	cancelResponse       *mallpb.CancelBusinessOrderResponse
-}
-
-type paymentOrderPayClientStub struct {
-	gpaypb.PayServiceClient
-	orderRequest *gpaypb.GetOrderRequest
-	itemsRequest *gpaypb.ListOrderItemsRequest
-}
-
-func (s *paymentOrderPayClientStub) GetOrder(
-	_ context.Context,
-	request *gpaypb.GetOrderRequest,
-	_ ...grpc.CallOption,
-) (*gpaypb.GetOrderResponse, error) {
-	s.orderRequest = request
-	return &gpaypb.GetOrderResponse{
-		OrderUlid:           request.GetOrderUlid(),
-		Amount:              63000,
-		Currency:            "usd",
-		StripePaymentStatus: "paid",
-		Coupons: []*gpaypb.CouponInfo{{
-			Code:       "PACKAGE20",
-			Name:       "Package discount",
-			PercentOff: 20,
-		}},
-		PromoCodes: []string{"WELCOME"},
-	}, nil
-}
-
-func (s *paymentOrderPayClientStub) ListOrderItems(
-	_ context.Context,
-	request *gpaypb.ListOrderItemsRequest,
-	_ ...grpc.CallOption,
-) (*gpaypb.ListOrderItemsResponse, error) {
-	s.itemsRequest = request
-	return &gpaypb.ListOrderItemsResponse{Items: []*gpaypb.OrderItemSummary{{
-		OrderUlid: request.GetOrderUlid(),
-		ItemType:  "course",
-		ItemId:    "course-1",
-		Title:     "Course One",
-		BasePrice: 70000,
-		Quantity:  1,
-	}}}, nil
 }
 
 func (s *paymentOrderMallClientStub) ListOrders(
@@ -305,16 +262,12 @@ func TestGetOrderRejectsAnotherCandidatesOrder(t *testing.T) {
 		map[string]string{"orderId": "order-1"},
 	)
 	recorder := httptest.NewRecorder()
-	pay := &paymentOrderPayClientStub{}
 
-	(&Handler{Mall: mall, Gpay: pay}).GetOrder(recorder, request)
+	(&Handler{Mall: mall}).GetOrder(recorder, request)
 
 	assertHandlerAPIError(t, recorder, http.StatusNotFound, ErrNotFound)
 	if mall.bundleDetailRequest != nil {
 		t.Fatal("another candidate's order must not load business detail")
-	}
-	if pay.orderRequest != nil {
-		t.Fatal("another candidate's order must not load payment detail")
 	}
 }
 
@@ -357,9 +310,8 @@ func TestGetOrderReturnsCandidateScopedBusinessDetail(t *testing.T) {
 		map[string]string{"orderId": " order-1 "},
 	)
 	recorder := httptest.NewRecorder()
-	pay := &paymentOrderPayClientStub{}
 
-	(&Handler{Mall: mall, Gpay: pay}).GetOrder(recorder, request)
+	(&Handler{Mall: mall}).GetOrder(recorder, request)
 
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("status = %d, want %d; body=%q", recorder.Code, http.StatusOK, recorder.Body.String())
@@ -369,12 +321,6 @@ func TestGetOrderReturnsCandidateScopedBusinessDetail(t *testing.T) {
 	}
 	if mall.bundleDetailRequest == nil || mall.bundleDetailRequest.GetBundleOrderUlid() != "bundle-order-1" {
 		t.Fatalf("GetBundleOrderDetail request = %+v", mall.bundleDetailRequest)
-	}
-	if pay.orderRequest == nil || pay.orderRequest.GetOrderUlid() != "pay-order-1" {
-		t.Fatalf("GetOrder request = %+v", pay.orderRequest)
-	}
-	if pay.itemsRequest == nil || pay.itemsRequest.GetOrderUlid() != "pay-order-1" {
-		t.Fatalf("ListOrderItems request = %+v", pay.itemsRequest)
 	}
 	var response struct {
 		Data OrderDetailRsp `json:"data"`
@@ -389,69 +335,10 @@ func TestGetOrderReturnsCandidateScopedBusinessDetail(t *testing.T) {
 		!response.Data.HasPaymentKey {
 		t.Fatalf("order detail response = %+v", response.Data)
 	}
-	pricing := response.Data.Pricing
-	if pricing == nil || !pricing.Available || pricing.Source != "GMALL_ORDER_PRICE_DETAIL" ||
-		pricing.BillableSubtotalMinor == nil || *pricing.BillableSubtotalMinor != 70000 ||
-		pricing.PromotionDiscountMinor == nil || *pricing.PromotionDiscountMinor != 7000 ||
-		pricing.TaxMinor == nil || *pricing.TaxMinor != 0 ||
-		pricing.TotalMinor == nil || *pricing.TotalMinor != 63000 ||
-		pricing.AmountPaidMinor == nil || *pricing.AmountPaidMinor != 63000 {
-		t.Fatalf("order pricing = %+v", pricing)
-	}
-	if len(pricing.Items) != 1 || pricing.Items[0].Title != "Course One" || pricing.Items[0].SubtotalMinor != 70000 {
-		t.Fatalf("order price items = %+v", pricing.Items)
-	}
-	if len(pricing.Coupons) != 1 || pricing.Coupons[0].Code != "PACKAGE20" || len(pricing.PromoCodes) != 1 || pricing.PromoCodes[0] != "WELCOME" {
-		t.Fatalf("order promotions = coupons=%+v promo_codes=%+v", pricing.Coupons, pricing.PromoCodes)
-	}
-}
-
-func TestCandidateOrderPricingFallsBackWithoutPaymentReference(t *testing.T) {
-	pricing := (&Handler{}).candidateOrderPricing(context.Background(), "", &mallpb.OrderSummary{
-		OrderUlid:    "order-1",
-		AmountMinor:  5000,
-		CurrencyCode: "usd",
-	}, nil)
-
-	if !pricing.Available || pricing.TotalMinor == nil || *pricing.TotalMinor != 5000 {
-		t.Fatalf("fallback pricing = %+v", pricing)
-	}
-	if pricing.Source != "GMALL_ORDER_SUMMARY" || pricing.CurrencyCode != "USD" || pricing.UnavailableReason == "" {
-		t.Fatalf("fallback metadata = %+v", pricing)
-	}
-}
-
-func TestCandidateOrderPricingPreservesServicePriceDetail(t *testing.T) {
-	pricing := (&Handler{Gpay: &paymentOrderPayClientStub{}}).candidateOrderPricing(
-		context.Background(),
-		"pay-order-1",
-		&mallpb.OrderSummary{AmountMinor: 63000, CurrencyCode: "usd"},
-		&mallpb.OrderPriceDetail{
-			CurrencyCode:       "usd",
-			SubtotalMinor:      63000,
-			DiscountTotalMinor: 0,
-			TaxTotalMinor:      0,
-			TotalMinor:         63000,
-			CouponCodes:        []string{"PACKAGE20"},
-		},
-	)
-
-	if pricing.Source != "GMALL_ORDER_PRICE_DETAIL" ||
-		pricing.BillableSubtotalMinor == nil || *pricing.BillableSubtotalMinor != 63000 ||
-		pricing.PromotionDiscountMinor == nil || *pricing.PromotionDiscountMinor != 0 ||
-		pricing.TotalMinor == nil || *pricing.TotalMinor != 63000 {
-		t.Fatalf("service pricing was changed: %+v", pricing)
-	}
-}
-
-func TestCandidateOrderExemptionsReturnsOnlyApprovedUniqueItems(t *testing.T) {
-	detail := &mallpb.GetPipelineOrderDetailResponse{Detail: &mallpb.PipelineOrderDetail{
-		FinalExemptionsJson: `{"stages":[{"course":[{"course_cc_ulid":"course-1","credential_ulid":"credential-1","approved":true},{"course_cc_ulid":"course-2","credential_ulid":"credential-2","approved":false}]},{"course":[{"course_cc_ulid":"course-1","credential_ulid":"credential-1","approved":true}]}]}`,
-	}}
-
-	items := candidateOrderExemptions(detail)
-	if len(items) != 1 || items[0].CourseCCULID != "course-1" || items[0].CredentialULID != "credential-1" {
-		t.Fatalf("approved exemptions = %+v", items)
+	price := response.Data.PriceDetail
+	if price == nil || price.GetCurrencyCode() != "sgd" || price.GetSubtotalMinor() != 70000 ||
+		price.GetDiscountTotalMinor() != 7000 || price.GetTaxTotalMinor() != 0 || price.GetTotalMinor() != 63000 {
+		t.Fatalf("order price detail = %+v", price)
 	}
 }
 

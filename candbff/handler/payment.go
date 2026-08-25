@@ -2,13 +2,10 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
-	"log/slog"
 	"net/http"
 	"strings"
 
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
-	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
 	"github.com/go-chi/chi/v5"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -224,8 +221,7 @@ func (h *Handler) GetOrder(w http.ResponseWriter, r *http.Request) {
 
 	out := h.orderDetailResponse(resp)
 	out.BusinessDetail = businessDetail
-	out.Pricing = h.candidateOrderPricing(r.Context(), out.GpayOrderUlid, summary, detail.GetPriceDetail())
-	out.Exemptions = candidateOrderExemptions(businessDetail)
+	out.PriceDetail = detail.GetPriceDetail()
 	WriteJSON(w, http.StatusOK, out)
 }
 
@@ -328,171 +324,6 @@ func (h *Handler) orderDetailResponse(resp *mallpb.GetOrderDetailResponse) Order
 		"payment_status_at":  out.PaymentStatusAt,
 	}
 	return out
-}
-
-func (h *Handler) candidateOrderPricing(ctx context.Context, gpayOrderULID string, summary *mallpb.OrderSummary, priceDetail *mallpb.OrderPriceDetail) *OrderPricingDetail {
-	pricing := &OrderPricingDetail{
-		Available:               true,
-		Source:                  "GMALL_ORDER_SUMMARY",
-		CurrencyCode:            strings.ToUpper(strings.TrimSpace(summary.GetCurrencyCode())),
-		TotalMinor:              orderInt64Pointer(summary.GetAmountMinor()),
-		ExemptionAmountRecorded: false,
-	}
-	if priceDetail != nil {
-		pricing.Source = "GMALL_ORDER_PRICE_DETAIL"
-		pricing.CurrencyCode = strings.ToUpper(strings.TrimSpace(priceDetail.GetCurrencyCode()))
-		pricing.BillableSubtotalMinor = orderInt64Pointer(priceDetail.GetSubtotalMinor())
-		pricing.PromotionDiscountMinor = orderInt64Pointer(priceDetail.GetDiscountTotalMinor())
-		pricing.TaxMinor = orderInt64Pointer(priceDetail.GetTaxTotalMinor())
-		pricing.TotalMinor = orderInt64Pointer(priceDetail.GetTotalMinor())
-		pricing.PromoCodes = append([]string(nil), priceDetail.GetPromoCodes()...)
-		for _, code := range priceDetail.GetCouponCodes() {
-			pricing.Coupons = append(pricing.Coupons, OrderCoupon{Code: code})
-		}
-	}
-	// Exempt units are removed before the payment order is created, so GPAY has
-	// no persisted monetary value for the exemption discount.
-	gpayOrderULID = strings.TrimSpace(gpayOrderULID)
-	if gpayOrderULID == "" {
-		pricing.UnavailableReason = "payment order reference is unavailable"
-		return pricing
-	}
-	if h.Gpay == nil {
-		pricing.UnavailableReason = "gpay client is unavailable"
-		return pricing
-	}
-
-	order, err := h.Gpay.GetOrder(ctx, &gpaypb.GetOrderRequest{
-		Lookup: &gpaypb.GetOrderRequest_OrderUlid{OrderUlid: gpayOrderULID},
-	})
-	if err != nil {
-		slog.WarnContext(ctx, "candidate order pricing query failed", "gpay_order_ulid", gpayOrderULID, "error", err)
-		pricing.UnavailableReason = "payment order detail is unavailable"
-		return pricing
-	}
-
-	if priceDetail == nil {
-		pricing.Source = "GPAY_ORDER"
-		pricing.CurrencyCode = strings.ToUpper(strings.TrimSpace(order.GetCurrency()))
-		pricing.TotalMinor = orderInt64Pointer(order.GetAmount())
-		pricing.PromoCodes = append([]string(nil), order.GetPromoCodes()...)
-	}
-	if order.GetPaidAt() > 0 || strings.EqualFold(order.GetStripePaymentStatus(), "paid") {
-		pricing.AmountPaidMinor = pricing.TotalMinor
-	}
-	for _, coupon := range order.GetCoupons() {
-		if coupon == nil {
-			continue
-		}
-		mapped := OrderCoupon{
-			Code:           coupon.GetCode(),
-			Name:           coupon.GetName(),
-			PercentOff:     coupon.GetPercentOff(),
-			AmountOffMinor: coupon.GetAmountOff(),
-			CurrencyCode:   strings.ToUpper(strings.TrimSpace(coupon.GetCurrency())),
-		}
-		matched := false
-		for index := range pricing.Coupons {
-			if strings.EqualFold(strings.TrimSpace(pricing.Coupons[index].Code), strings.TrimSpace(mapped.Code)) {
-				pricing.Coupons[index] = mapped
-				matched = true
-				break
-			}
-		}
-		if priceDetail == nil || matched {
-			if !matched {
-				pricing.Coupons = append(pricing.Coupons, mapped)
-			}
-		}
-	}
-
-	items, itemsErr := h.Gpay.ListOrderItems(ctx, &gpaypb.ListOrderItemsRequest{OrderUlid: gpayOrderULID})
-	if itemsErr != nil {
-		slog.WarnContext(ctx, "candidate order item query failed", "gpay_order_ulid", gpayOrderULID, "error", itemsErr)
-		pricing.UnavailableReason = "payment order items are unavailable"
-	} else {
-		var subtotal int64
-		for _, item := range items.GetItems() {
-			if item == nil {
-				continue
-			}
-			quantity := item.GetQuantity()
-			itemSubtotal := item.GetBasePrice() * int64(quantity)
-			subtotal += itemSubtotal
-			pricing.Items = append(pricing.Items, OrderPriceItem{
-				ItemType:       item.GetItemType(),
-				ItemULID:       item.GetItemId(),
-				Title:          item.GetTitle(),
-				UnitPriceMinor: item.GetBasePrice(),
-				Quantity:       quantity,
-				SubtotalMinor:  itemSubtotal,
-			})
-		}
-		if len(pricing.Items) > 0 && priceDetail == nil {
-			pricing.Source = "GPAY_ORDER_ITEMS"
-			pricing.BillableSubtotalMinor = orderInt64Pointer(subtotal)
-		}
-	}
-	return pricing
-}
-
-func orderInt64Pointer(value int64) *int64 {
-	return &value
-}
-
-func candidateOrderExemptions(detail any) []OrderExemption {
-	var raw string
-	switch response := detail.(type) {
-	case *mallpb.GetPipelineOrderDetailResponse:
-		raw = response.GetDetail().GetFinalExemptionsJson()
-	case *mallpb.GetStageOrderDetailResponse:
-		raw = response.GetDetail().GetFinalExemptionsJson()
-	}
-	if strings.TrimSpace(raw) == "" {
-		return nil
-	}
-
-	type exemptionItem struct {
-		CourseCCULID   string `json:"course_cc_ulid"`
-		CredentialULID string `json:"credential_ulid"`
-		Approved       bool   `json:"approved"`
-	}
-	type exemptionStage struct {
-		Course []exemptionItem `json:"course"`
-	}
-	var payload struct {
-		Course []exemptionItem  `json:"course"`
-		Stages []exemptionStage `json:"stages"`
-	}
-	if err := json.Unmarshal([]byte(raw), &payload); err != nil {
-		return nil
-	}
-
-	seen := make(map[string]struct{})
-	result := make([]OrderExemption, 0, len(payload.Course))
-	appendApproved := func(items []exemptionItem) {
-		for _, item := range items {
-			courseULID := strings.TrimSpace(item.CourseCCULID)
-			if !item.Approved || courseULID == "" {
-				continue
-			}
-			credentialULID := strings.TrimSpace(item.CredentialULID)
-			key := courseULID + "\x00" + credentialULID
-			if _, exists := seen[key]; exists {
-				continue
-			}
-			seen[key] = struct{}{}
-			result = append(result, OrderExemption{
-				CourseCCULID:   courseULID,
-				CredentialULID: credentialULID,
-			})
-		}
-	}
-	appendApproved(payload.Course)
-	for _, stage := range payload.Stages {
-		appendApproved(stage.Course)
-	}
-	return result
 }
 
 func (h *Handler) verifyCandidatePaymentBizRef(ctx context.Context, candidateID, bizType, bizRefULID string) error {

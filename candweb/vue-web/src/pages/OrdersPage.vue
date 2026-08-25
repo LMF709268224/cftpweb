@@ -63,20 +63,12 @@ type OrderDetail = {
   updated_at?: string
   order_status_at?: string
   payment_status_at?: string
-  pricing?: {
-    available?: boolean
-    source?: string
+  price_detail?: {
     currency_code?: string
-    billable_subtotal_minor?: number
-    exemption_discount_minor?: number
-    promotion_discount_minor?: number
-    tax_minor?: number
+    subtotal_minor?: number
+    discount_total_minor?: number
+    tax_total_minor?: number
     total_minor?: number
-    amount_paid_minor?: number
-    exemption_amount_recorded?: boolean
-    coupons?: Array<{ code?: string; name?: string }>
-    promo_codes?: string[]
-    unavailable_reason?: string
   }
   business_detail?: Record<string, unknown>
   raw?: unknown
@@ -196,28 +188,13 @@ const hiddenBusinessDetailFields = new Set([
   "final_exemptions_json",
   "items_snapshot_json",
 ])
-const orderPricing = computed(() => selectedOrderDetail.value?.pricing || null)
+const orderPricing = computed(() => selectedOrderDetail.value?.price_detail || null)
 const pricingCurrency = computed(() => String(orderPricing.value?.currency_code || selectedOrderDetail.value?.summary?.currency || ""))
-const promotionLabels = computed(() => {
-  const labels: string[] = []
-  for (const coupon of orderPricing.value?.coupons || []) {
-    const label = String(coupon?.name || coupon?.code || "").trim()
-    if (label && !labels.includes(label)) labels.push(label)
-  }
-  for (const value of orderPricing.value?.promo_codes || []) {
-    const label = String(value || "").trim()
-    if (label && !labels.includes(label)) labels.push(label)
-  }
-  return labels
-})
-const originalPriceText = computed(() => minorAmountText(orderPricing.value?.billable_subtotal_minor, pricingCurrency.value))
-const promotionDiscountText = computed(() => signedMinorAmountText(orderPricing.value?.promotion_discount_minor, pricingCurrency.value, "-"))
-const taxText = computed(() => signedMinorAmountText(orderPricing.value?.tax_minor, pricingCurrency.value, "+"))
-const finalPriceText = computed(() => minorAmountText(
-  orderPricing.value?.amount_paid_minor ?? orderPricing.value?.total_minor,
-  pricingCurrency.value,
-))
-const hasTax = computed(() => Number(orderPricing.value?.tax_minor || 0) !== 0)
+const originalPriceText = computed(() => minorAmountText(orderPricing.value?.subtotal_minor, pricingCurrency.value))
+const promotionDiscountText = computed(() => signedMinorAmountText(orderPricing.value?.discount_total_minor, pricingCurrency.value, "-"))
+const taxText = computed(() => signedMinorAmountText(orderPricing.value?.tax_total_minor, pricingCurrency.value, "+"))
+const finalPriceText = computed(() => minorAmountText(orderPricing.value?.total_minor, pricingCurrency.value))
+const hasTax = computed(() => Number(orderPricing.value?.tax_total_minor || 0) > 0)
 
 function recordValue(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null
@@ -963,34 +940,19 @@ onBeforeUnmount(() => {
                     <dt class="text-sm font-semibold text-slate-600">{{ t.orders.pricingBillableSubtotal }}</dt>
                     <dd class="text-base font-black text-slate-950">{{ originalPriceText }}</dd>
                   </div>
-                  <div class="flex items-start justify-between gap-4 py-4">
-                    <dt class="min-w-0">
-                      <div class="text-sm font-semibold text-slate-600">{{ t.orders.pricingPromotionDiscount }}</div>
-                      <div class="mt-2 flex flex-wrap gap-2">
-                        <span
-                          v-for="label in promotionLabels"
-                          :key="label"
-                          class="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-800"
-                        >
-                          {{ label }}
-                        </span>
-                        <span v-if="!promotionLabels.length" class="text-xs text-slate-500">{{ t.orders.pricingNoPromotion }}</span>
-                      </div>
-                      <div v-if="hasTax" class="mt-2 text-xs font-semibold text-slate-500">
-                        {{ t.orders.pricingTax }} {{ taxText }}
-                      </div>
-                    </dt>
-                    <dd class="shrink-0 text-base font-black text-emerald-700">{{ promotionDiscountText }}</dd>
+                  <div class="flex items-center justify-between gap-4 py-4">
+                    <dt class="text-sm font-semibold text-slate-600">{{ t.orders.pricingPromotionDiscount }}</dt>
+                    <dd class="text-base font-black text-emerald-700">{{ promotionDiscountText }}</dd>
+                  </div>
+                  <div v-if="hasTax" class="flex items-center justify-between gap-4 py-4">
+                    <dt class="text-sm font-semibold text-slate-600">{{ t.orders.pricingTax }}</dt>
+                    <dd class="text-base font-black text-slate-950">{{ taxText }}</dd>
                   </div>
                   <div class="flex items-center justify-between gap-4 bg-blue-50/70 py-4 -mx-4 px-4 sm:-mx-5 sm:px-5">
                     <dt class="text-sm font-black text-slate-950">{{ t.orders.pricingAmountPaid }}</dt>
                     <dd class="text-xl font-black text-primary">{{ finalPriceText }}</dd>
                   </div>
                 </dl>
-
-                <div v-if="orderPricing.unavailable_reason" class="border-t border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900 sm:px-5">
-                  {{ t.orders.pricingPartialUnavailable }}
-                </div>
               </template>
               <div v-else class="p-8 text-center text-sm text-slate-500">{{ t.orders.pricingUnavailableDetail }}</div>
             </section>
