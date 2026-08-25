@@ -362,7 +362,7 @@
         <div>
           <div class="eyebrow">ADMIN OPERATIONS GUIDE</div>
           <h1>管理后台功能目录</h1>
-          <p>按业务模块查找配置方法、字段含义、操作顺序和发布前检查事项。当前版本已提供课程、认证、商品、资格定义、证书模板、资源包和资源文件配置完整手册，其余章节将按同一结构逐步补充。</p>
+          <p>按业务模块查找配置方法、字段含义、操作顺序和发布前检查事项。当前版本已提供主要配置模块、审核中心和考试管理手册，其余章节将按同一结构逐步补充。</p>
         </div>
         <div class="search-wrap">
           <label for="module-search">查找模块</label>
@@ -404,16 +404,16 @@
 
       <h2 class="section-title">业务运营</h2>
       <div class="module-grid">
-        <button class="module pending" type="button" data-name="审核中心 资格申请" onclick="pendingModule('审核中心')">
-          <span class="module-state">待补充</span><span class="module-icon">审</span>
+        <button class="module ready" type="button" data-name="审核中心 资格申请 材料 通过 打回重提 拒绝" onclick="openManual('review-center')">
+          <span class="module-state">已完成</span><span class="module-icon">审</span>
           <h2>审核中心</h2><p>处理考生资格申请、材料补交、通过与拒绝。</p>
         </button>
         <button class="module pending" type="button" data-name="认证管理 实例 流程 证书任务" onclick="pendingModule('认证管理')">
           <span class="module-state">待补充</span><span class="module-icon">管</span>
           <h2>认证管理</h2><p>查看考生认证实例、进度、资格审核和证书任务。</p>
         </button>
-        <button class="module pending" type="button" data-name="考试管理 预约 成绩" onclick="pendingModule('考试管理')">
-          <span class="module-state">待补充</span><span class="module-icon">考</span>
+        <button class="module ready" type="button" data-name="考试管理 预约 成绩 同步 状态流转 确认号" onclick="openManual('exam')">
+          <span class="module-state">已完成</span><span class="module-icon">考</span>
           <h2>考试管理</h2><p>查询考试预约、考试状态、成绩和同步记录。</p>
         </button>
       </div>
@@ -1719,6 +1719,230 @@
         </div>
       </div>
     </article>
+
+    <article class="manual" id="review-center-manual">
+      <nav class="breadcrumb" aria-label="面包屑">
+        <button type="button" onclick="showCatalog()">管理后台目录</button><span>/</span><span>审核中心</span>
+      </nav>
+      <div class="manual-layout">
+        <nav class="side-nav" aria-label="审核中心章节">
+          <strong>审核中心</strong>
+          <a href="#review-center-overview">功能概览</a>
+          <a href="#review-center-status">申请状态</a>
+          <a href="#review-center-detail">申请详情</a>
+          <a href="#review-center-materials">审核材料</a>
+          <a href="#review-center-actions">通过、打回与拒绝</a>
+          <a href="#review-center-checklist">审核检查</a>
+        </nav>
+
+        <div class="content">
+          <header class="manual-title">
+            <div class="eyebrow" style="color:#9eeef1">审核处理 / GCREDS</div>
+            <h1>审核中心使用手册</h1>
+            <p>面向资格审核人员，说明申请筛选、材料预览、资格有效期，以及通过、打回重提和最终拒绝的处理规则。</p>
+            <div class="manual-meta"><span>角色：资格审核员</span><span>难度：基础</span><span>更新：2026-08-25</span></div>
+          </header>
+
+          <section class="doc-section" id="review-center-overview">
+            <h2>1. 功能概览</h2>
+            <p class="lead">审核中心处理考生主动提交的资格申请，例如免考资格和工作经验证明。审核通过后系统按资格定义向考生授予资格；这里不审核课程进度、考试成绩或系统自动颁发的证书。</p>
+            <div class="flow" aria-label="资格申请审核流程"><span>考生提交申请</span><b>→</b><span>查看详情</span><b>→</b><span>核对材料</span><b>→</b><span>通过 / 打回 / 拒绝</span></div>
+            <figure class="shot">
+              <img src="assets/review-center/review-pending-list.png" alt="审核中心待审核申请列表" data-filename="review-center/review-pending-list.png">
+              <div class="shot-missing"><div><strong>待补截图：待审核申请列表</strong><code>assets/review-center/review-pending-list.png</code></div></div>
+              <figcaption>图 1：待审核列表。红点表示当前待处理数量；列表展示资格名称、考生、申请 ID、状态和提交时间。</figcaption>
+            </figure>
+            <div class="note"><strong>日常入口</strong>状态筛选选择“待审核”，逐条点击“查看详情”。不要只根据资格名称或文件名判断，应同时核对考生、资格定义 ID 和材料内容。</div>
+          </section>
+
+          <section class="doc-section" id="review-center-status">
+            <h2>2. 申请状态</h2>
+            <figure class="shot">
+              <img src="assets/review-center/review-all-statuses.png" alt="审核中心全部申请状态" data-filename="review-center/review-all-statuses.png">
+              <div class="shot-missing"><div><strong>待补截图：全部申请状态</strong><code>assets/review-center/review-all-statuses.png</code></div></div>
+              <figcaption>图 2：选择“全部”可查看已通过、已拒绝、需补交和待审核记录；顶部数量随筛选条件变化。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>状态</th><th>含义</th><th>管理员可做什么</th></tr></thead>
+              <tbody>
+                <tr><td>待审核</td><td>考生已提交或重新提交，等待人工决定</td><td>查看材料后选择通过、打回重提或最终拒绝</td></tr>
+                <tr><td>需补交</td><td>上次材料不足，等待考生重新上传</td><td>查看历史信息；考生重新提交前不能再次审核</td></tr>
+                <tr><td>已通过</td><td>申请已批准，相关资格已按审核结果处理</td><td>只读查看，不可重复审核</td></tr>
+                <tr><td>已拒绝</td><td>申请已最终拒绝</td><td>只读查看，不可改为通过</td></tr>
+              </tbody>
+            </table>
+            <div class="warning"><strong>审核动作不是普通编辑</strong>提交后会改变申请状态，并可能授予考生资格。已通过、已拒绝和等待补交的申请不会显示“审核操作”页签。</div>
+          </section>
+
+          <section class="doc-section" id="review-center-detail">
+            <h2>3. 申请详情</h2>
+            <figure class="shot">
+              <img src="assets/review-center/review-overview.png" alt="资格申请详情" data-filename="review-center/review-overview.png">
+              <div class="shot-missing"><div><strong>待补截图：资格申请详情</strong><code>assets/review-center/review-overview.png</code></div></div>
+              <figcaption>图 3：“详情”页签展示申请 ID、考生 ID、资格名称、资格定义 ID、状态、审核人、备注、时间和更新次数。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>重点字段</th><th>审核用途</th></tr></thead>
+              <tbody>
+                <tr><td>申请 ID</td><td>定位本次申请；沟通或排查时应提供此 ID。</td></tr>
+                <tr><td>考生姓名 / 考生 ID</td><td>确认材料所属人员，避免审核同名考生的错误记录。</td></tr>
+                <tr><td>资格名称 / 资格定义 ID</td><td>确认申请的是哪一种资格。名称相似时以资格定义 ID 为准。</td></tr>
+                <tr><td>审核状态</td><td>判断当前是否仍允许操作。</td></tr>
+                <tr><td>审核备注 / 审核人 / 审核时间</td><td>追溯已经执行的人工决定。</td></tr>
+                <tr><td>更新次数</td><td>辅助判断考生是否多次补交，但不能代替材料内容核验。</td></tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section class="doc-section" id="review-center-materials">
+            <h2>4. 查看申请材料</h2>
+            <figure class="shot">
+              <img src="assets/review-center/review-materials.png" alt="资格申请材料预览与下载" data-filename="review-center/review-materials.png">
+              <div class="shot-missing"><div><strong>待补截图：申请材料</strong><code>assets/review-center/review-materials.png</code></div></div>
+              <figcaption>图 4：“申请材料”页签展示用途、文件大小、格式和 SHA256，并提供预览和下载。</figcaption>
+            </figure>
+            <ol class="steps">
+              <li><strong>先核对文件数量与用途</strong><span>确认满足资格定义要求的材料均已提交。</span></li>
+              <li><strong>优先点击预览</strong><span>检查姓名、日期、机构、内容完整性和清晰度。</span></li>
+              <li><strong>必要时下载原文件</strong><span>用于预览不完整或需要放大核对的情况。</span></li>
+              <li><strong>记录具体问题</strong><span>需要补交或拒绝时，在备注中明确指出缺失或不合格内容。</span></li>
+            </ol>
+            <div class="warning"><strong>SHA256 不是材料真实性证明</strong>它用于识别文件内容是否变化，不能证明文件由真实机构签发。业务真实性仍需审核人员判断。</div>
+          </section>
+
+          <section class="doc-section" id="review-center-actions">
+            <h2>5. 通过、打回重提和最终拒绝</h2>
+            <figure class="shot">
+              <img src="assets/review-center/review-actions.png" alt="资格申请审核操作" data-filename="review-center/review-actions.png">
+              <div class="shot-missing"><div><strong>待补截图：审核操作</strong><code>assets/review-center/review-actions.png</code></div></div>
+              <figcaption>图 5：审核操作包含资格有效期、审核备注以及三个互斥动作。打回重提或最终拒绝时备注必填。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>动作</th><th>什么时候使用</th><th>必填内容与结果</th></tr></thead>
+              <tbody>
+                <tr><td>通过</td><td>材料完整、有效且符合资格规则</td><td>有效期必须晚于当前时间；系统批准申请并处理资格授予</td></tr>
+                <tr><td>打回重提</td><td>材料有机会补正，例如缺页、模糊、过期或信息不完整</td><td>必须填写具体备注；申请变为“需补交”，等待考生重新提交</td></tr>
+                <tr><td>最终拒绝</td><td>申请明确不符合规则，不应继续沿本次申请补交</td><td>必须填写拒绝原因；申请进入终态，不能在当前记录上改为通过</td></tr>
+              </tbody>
+            </table>
+            <div class="danger"><strong>点击前再次核对动作</strong>“打回重提”和“最终拒绝”含义不同。可以补正的材料使用打回；确定不符合资格要求才使用最终拒绝。当前表单始终要求选择有效期，通过时默认两年但应按实际资格规则调整。</div>
+          </section>
+
+          <section class="doc-section" id="review-center-checklist">
+            <h2>6. 提交审核前检查清单</h2>
+            <ul class="checklist">
+              <li>申请 ID、考生和资格定义 ID 均已核对</li>
+              <li>全部要求的申请材料均已打开检查</li>
+              <li>姓名、机构、日期和材料内容相互一致</li>
+              <li>没有把 SHA256 当作真实性证明</li>
+              <li>通过时有效期符合该资格的业务规则</li>
+              <li>打回备注说明了需要补交的具体内容</li>
+              <li>最终拒绝备注说明了明确原因</li>
+              <li>已确认选择的是通过、打回还是最终拒绝</li>
+            </ul>
+            <a class="back-top" href="#top">返回顶部</a>
+          </section>
+        </div>
+      </div>
+    </article>
+
+    <article class="manual" id="exam-manual">
+      <nav class="breadcrumb" aria-label="面包屑">
+        <button type="button" onclick="showCatalog()">管理后台目录</button><span>/</span><span>考试管理</span>
+      </nav>
+      <div class="manual-layout">
+        <nav class="side-nav" aria-label="考试管理章节">
+          <strong>考试管理</strong>
+          <a href="#exam-overview">功能概览</a>
+          <a href="#exam-search">筛选与状态</a>
+          <a href="#exam-detail">考试详情</a>
+          <a href="#exam-sync">同步考试结果</a>
+          <a href="#exam-checklist">排查检查</a>
+        </nav>
+
+        <div class="content">
+          <header class="manual-title">
+            <div class="eyebrow" style="color:#9eeef1">审核处理 / GEXAM</div>
+            <h1>考试管理使用手册</h1>
+            <p>面向考试运营和客服人员，说明考试实例筛选、预约和成绩状态、详情与状态流转，以及结果同步的适用范围。</p>
+            <div class="manual-meta"><span>角色：考试运营 / 客服</span><span>难度：基础</span><span>更新：2026-08-25</span></div>
+          </header>
+
+          <section class="doc-section" id="exam-overview">
+            <h2>1. 功能概览</h2>
+            <p class="lead">考试管理用于查询系统已经创建的考试实例及外部考试系统返回的预约和成绩。页面以查看为主，只提供受控的结果同步，不提供手工创建考试、修改预约时间或录入成绩。</p>
+            <div class="flow" aria-label="考试信息流程"><span>认证课程单元</span><b>→</b><span>考试实例</span><b>→</b><span>外部预约</span><b>→</b><span>成绩返回</span><b>→</b><span>认证进度</span></div>
+            <figure class="shot">
+              <img src="assets/exam/exam-list.png" alt="考试管理筛选与列表" data-filename="exam/exam-list.png">
+              <div class="shot-missing"><div><strong>待补截图：考试管理列表</strong><code>assets/exam/exam-list.png</code></div></div>
+              <figcaption>图 1：考试列表显示考试代码和 ID、考生、成绩状态、确认号、预约时间和流程状态。</figcaption>
+            </figure>
+          </section>
+
+          <section class="doc-section" id="exam-search">
+            <h2>2. 筛选条件和两类状态</h2>
+            <table>
+              <thead><tr><th>筛选项</th><th>用途</th><th>注意事项</th></tr></thead>
+              <tbody>
+                <tr><td>流程状态</td><td>按待预约、已预约、已完成或已取消查询</td><td>描述考试流程，不等于成绩是否已同步</td></tr>
+                <tr><td>成绩状态</td><td>按考试未开始、成绩已出、成绩已拉取、未到或绕过等查询</td><td>描述成绩处理阶段，不等于考试流程状态</td></tr>
+                <tr><td>考生 ULID</td><td>精确定位一个考生的考试</td><td>必须填写完整的 26 位 ULID，不支持姓名模糊搜索</td></tr>
+                <tr><td>确认号</td><td>按外部考试预约确认号定位</td><td>适合处理考生提供的预约凭证</td></tr>
+                <tr><td>课程单元 ULID</td><td>查看某个认证课程单元产生的考试</td><td>必须填写完整的 26 位 ULID</td></tr>
+              </tbody>
+            </table>
+            <div class="note"><strong>流程状态与成绩状态要组合判断</strong>例如流程“已完成”但成绩仍“成绩已出”，表示考试结束但结果处理尚未走完；排查时不要只看其中一个状态。</div>
+          </section>
+
+          <section class="doc-section" id="exam-detail">
+            <h2>3. 考试详情</h2>
+            <figure class="shot">
+              <img src="assets/exam/exam-detail.png" alt="考试详情、预约与成绩信息" data-filename="exam/exam-detail.png">
+              <div class="shot-missing"><div><strong>待补截图：考试详情</strong><code>assets/exam/exam-detail.png</code></div></div>
+              <figcaption>图 2：详情显示考试归属、考生、预约、成绩和状态流转；底部按钮只在满足同步条件时出现。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>区域</th><th>主要内容</th><th>排查用途</th></tr></thead>
+              <tbody>
+                <tr><td>归属关系</td><td>认证实例、课程单元、认证项目</td><td>确认成绩应回写到哪条认证进度</td></tr>
+                <tr><td>考生信息</td><td>姓名、邮箱、考生 ULID</td><td>确认考试与考生身份一致</td></tr>
+                <tr><td>预约信息</td><td>确认号、考点、开始和结束时间</td><td>核对外部预约是否已同步</td></tr>
+                <tr><td>成绩信息</td><td>成绩状态、总分、是否通过</td><td>确认结果是否已获取以及判定结果</td></tr>
+                <tr><td>状态流转</td><td>预约、改期、取消、成绩生成和拉取记录</td><td>按时间定位流程停在哪一步</td></tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section class="doc-section" id="exam-sync">
+            <h2>4. 同步考试结果</h2>
+            <p class="lead">“同步考试结果”调用考试服务重新获取该考试的结果并刷新详情和列表。按钮是否显示由当前考试和成绩状态决定，不是每条记录都有。</p>
+            <div class="danger"><strong>同步不是手工改分</strong>管理员不能在此输入总分或修改是否通过。同步后的内容以考试服务和外部考试系统返回结果为准。</div>
+            <ol class="steps">
+              <li><strong>核对考试 ID、考生和确认号</strong><span>确保打开的是目标考试实例。</span></li>
+              <li><strong>查看成绩状态与状态流转</strong><span>确认是否确实需要重新同步，而不是考试尚未结束。</span></li>
+              <li><strong>点击“同步考试结果”一次</strong><span>等待成功或失败提示，不要连续重复点击。</span></li>
+              <li><strong>刷新并复核结果</strong><span>检查成绩状态、总分、是否通过及新增流转记录。</span></li>
+            </ol>
+            <div class="warning"><strong>同步失败时不要补造数据</strong>记录考试 ID、确认号和错误提示，再到 Webhook 审计或日志中核对外部回调；必要时交由技术人员处理。</div>
+          </section>
+
+          <section class="doc-section" id="exam-checklist">
+            <h2>5. 查询与排查检查清单</h2>
+            <ul class="checklist">
+              <li>考试 ID、考生 ULID 和确认号对应同一记录</li>
+              <li>流程状态和成绩状态已分别检查</li>
+              <li>预约时间和考点与外部凭证一致</li>
+              <li>归属的认证实例和课程单元正确</li>
+              <li>状态流转中没有遗漏改期或取消事件</li>
+              <li>考试结束后再判断成绩是否需要同步</li>
+              <li>同步后已复核总分和是否通过</li>
+              <li>失败时已记录考试 ID、确认号和错误提示</li>
+            </ul>
+            <a class="back-top" href="#top">返回顶部</a>
+          </section>
+        </div>
+      </div>
+    </article>
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -1786,6 +2010,8 @@
     if (location.hash === "#qualification" || location.hash.startsWith("#qualification-")) openManual("qualification");
     if (location.hash === "#certificate-template" || location.hash.startsWith("#certificate-template-")) openManual("certificate-template");
     if (location.hash === "#resource-pack" || location.hash.startsWith("#resource-pack-") || location.hash.startsWith("#resource-file-")) openManual("resource-pack");
+    if (location.hash === "#review-center" || location.hash.startsWith("#review-center-")) openManual("review-center");
+    if (location.hash === "#exam" || location.hash.startsWith("#exam-")) openManual("exam");
   </script>
 </body>
 </html>

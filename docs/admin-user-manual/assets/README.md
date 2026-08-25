@@ -62,5 +62,18 @@ Screenshots are grouped by manual module.
 - `resource-file/resource-file-create-top.png`: new resource file form and type-specific fields
 - `resource-file/resource-file-create-bottom.png`: resource file storage, thumbnail, and metadata fields
 
+## Review center
+
+- `review-center/review-pending-list.png`: pending credential application list
+- `review-center/review-all-statuses.png`: applications across all review statuses
+- `review-center/review-overview.png`: application overview fields
+- `review-center/review-materials.png`: submitted material preview and download
+- `review-center/review-actions.png`: approve, resubmit, and reject actions
+
+## Exam
+
+- `exam/exam-list.png`: exam filters and list
+- `exam/exam-detail.png`: exam ownership, appointment, result, and transitions
+
 The HTML displays a named placeholder when an image is missing, so adding these
 files does not require another HTML change.
