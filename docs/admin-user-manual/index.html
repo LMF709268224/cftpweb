@@ -318,7 +318,8 @@
       .topbar, .side-nav, .breadcrumb, .back-top { display: none !important; }
       .shell { max-width: none; padding: 0; }
       .catalog.hidden { display: none; }
-      .manual { display: block; }
+      .manual { display: none; }
+      .manual.active { display: block; }
       .manual-layout { display: block; }
       .manual-title { box-shadow: none; print-color-adjust: exact; }
       .doc-section { break-inside: avoid; }
@@ -344,7 +345,7 @@
         <div>
           <div class="eyebrow">ADMIN OPERATIONS GUIDE</div>
           <h1>管理后台功能目录</h1>
-          <p>按业务模块查找配置方法、字段含义、操作顺序和发布前检查事项。当前版本先提供“课程配置”完整手册，其余章节将按同一结构逐步补充。</p>
+          <p>按业务模块查找配置方法、字段含义、操作顺序和发布前检查事项。当前版本已提供“课程配置”和“认证配置”完整手册，其余章节将按同一结构逐步补充。</p>
         </div>
         <div class="search-wrap">
           <label for="module-search">查找模块</label>
@@ -358,8 +359,8 @@
           <span class="module-state">已完成</span><span class="module-icon">课</span>
           <h2>课程配置</h2><p>创建课程，维护章节、课时、资料和测验，并管理版本与发布状态。</p>
         </button>
-        <button class="module pending" type="button" data-name="认证配置 管线 阶段 单元 资格 证书" onclick="pendingModule('认证配置')">
-          <span class="module-state">待补充</span><span class="module-icon">认</span>
+        <button class="module ready" type="button" data-name="认证配置 管线 阶段 单元 资格 证书 免考 互斥" onclick="openManual('certification')">
+          <span class="module-state">已完成</span><span class="module-icon">认</span>
           <h2>认证配置</h2><p>维护认证管线、阶段、课程单元、资格条件、免考和证书。</p>
         </button>
         <button class="module pending" type="button" data-name="商品配置 Bundle 价格 发布" onclick="pendingModule('商品配置')">
@@ -436,8 +437,8 @@
             </div>
             <div class="note"><strong>先课程，后认证，再商品</strong>课程发布后，才能在认证配置的“课程单元”中选择；认证发布后，再由商品绑定并配置价格。</div>
             <figure class="shot">
-              <img src="assets/course-list.png" alt="课程配置列表及顶部操作按钮" data-filename="course-list.png">
-              <div class="shot-missing"><div><strong>待补截图：课程配置列表</strong><code>assets/course-list.png</code></div></div>
+              <img src="assets/course/course-list.png" alt="课程配置列表及顶部操作按钮" data-filename="course/course-list.png">
+              <div class="shot-missing"><div><strong>待补截图：课程配置列表</strong><code>assets/course/course-list.png</code></div></div>
               <figcaption>图 1：课程配置列表。顶部提供刷新、从 JSON 创建课程和新建课程；每行提供查看详情、编辑和克隆。</figcaption>
             </figure>
           </section>
@@ -469,8 +470,8 @@
             <h2>3. 新建课程</h2>
             <p class="lead">适用于从空白开始创建一门独立课程。点击页面右上角“新建课程”。</p>
             <figure class="shot">
-              <img src="assets/course-create.png" alt="新建课程弹窗" data-filename="course-create.png">
-              <div class="shot-missing"><div><strong>待补截图：新建课程弹窗</strong><code>assets/course-create.png</code></div></div>
+              <img src="assets/course/course-create.png" alt="新建课程弹窗" data-filename="course/course-create.png">
+              <div class="shot-missing"><div><strong>待补截图：新建课程弹窗</strong><code>assets/course/course-create.png</code></div></div>
               <figcaption>图 2：新建课程。课程标题与 GPath 为必填项，描述和时长用于运营展示及课程信息维护。</figcaption>
             </figure>
             <table>
@@ -507,8 +508,8 @@
             <h2>5. 维护课程内容</h2>
             <p class="lead">课程草稿创建后，按章节、课时、资料和测验逐层维护。先建立章节，再把课时和章节测验挂到正确章节。</p>
             <figure class="shot">
-              <img src="assets/course-content.png" alt="课程章节、课时和资料区域" data-filename="course-content.png">
-              <div class="shot-missing"><div><strong>待补截图：章节、课时和课程资料</strong><code>assets/course-content.png</code></div></div>
+              <img src="assets/course/course-content.png" alt="课程章节、课时和资料区域" data-filename="course/course-content.png">
+              <div class="shot-missing"><div><strong>待补截图：章节、课时和课程资料</strong><code>assets/course/course-content.png</code></div></div>
               <figcaption>图 3：课程内容区域。章节是内容分组，课时承载具体学习内容；课程资料分为候选端辅助资料和普通文件资料。</figcaption>
             </figure>
 
@@ -532,8 +533,8 @@
             <div class="note"><strong>辅助资料看不到时检查什么</strong>确认已创建辅助资料配置，并且 <code>supplementary_material.data_json</code> 中存在有效记录；外部链接需要填写完整的 <code>https://</code> 地址。</div>
 
             <figure class="shot">
-              <img src="assets/course-quizzes.png" alt="课程测验题库区域" data-filename="course-quizzes.png">
-              <div class="shot-missing"><div><strong>待补截图：测验题库</strong><code>assets/course-quizzes.png</code></div></div>
+              <img src="assets/course/course-quizzes.png" alt="课程测验题库区域" data-filename="course/course-quizzes.png">
+              <div class="shot-missing"><div><strong>待补截图：测验题库</strong><code>assets/course/course-quizzes.png</code></div></div>
               <figcaption>图 4：测验题库。测验可挂在课程、章节或课时下；新增前先确认挂载层级和所属对象。</figcaption>
             </figure>
             <h3>测验题库</h3>
@@ -597,25 +598,288 @@
         </div>
       </div>
     </article>
+
+    <article class="manual" id="certification-manual">
+      <nav class="breadcrumb" aria-label="面包屑">
+        <button type="button" onclick="showCatalog()">管理后台目录</button><span>/</span><span>认证配置</span>
+      </nav>
+      <div class="manual-layout">
+        <nav class="side-nav" aria-label="认证配置章节">
+          <strong>认证配置</strong>
+          <a href="#certification-overview">功能概览</a>
+          <a href="#certification-concepts">关键概念</a>
+          <a href="#certification-create">新建与版本</a>
+          <a href="#certification-stages">阶段</a>
+          <a href="#certification-units">课程单元</a>
+          <a href="#certification-qualifications">资格与证书</a>
+          <a href="#certification-rules">报读限制</a>
+          <a href="#certification-example">CFTA / CFTP 示例</a>
+          <a href="#certification-publish">保存与发布</a>
+          <a href="#certification-faq">常见问题</a>
+          <a href="#certification-checklist">发布检查</a>
+        </nav>
+
+        <div class="content">
+          <header class="manual-title">
+            <div class="eyebrow" style="color:#9eeef1">配置管理 / GCC</div>
+            <h1>认证配置使用手册</h1>
+            <p>面向认证运营人员，说明认证管线的阶段、课程单元、免考、资格条件、证书、报读限制和版本发布。</p>
+            <div class="manual-meta"><span>角色：认证运营</span><span>难度：进阶</span><span>更新：2026-08-25</span></div>
+          </header>
+
+          <section class="doc-section" id="certification-overview">
+            <h2>1. 功能概览</h2>
+            <p class="lead">“认证配置”把已发布课程组织成一条可报读的认证管线，并规定购买门槛、课程免考、结业审核、最终发证和跨管线互斥规则。课程内容和商品价格不在这里维护。</p>
+            <div class="flow" aria-label="认证配置结构">
+              <span>认证管线</span><b>→</b><span>阶段</span><b>→</b><span>课程单元</span><b>→</b><span>终审</span><b>→</b><span>最终证书</span>
+            </div>
+            <div class="note"><strong>依赖关系</strong>先在“课程配置”发布课程，在“资格定义”和“证书模板配置”准备资格与 PDF 模板，再完成认证配置；认证发布后，商品才能引用并配置价格。</div>
+            <figure class="shot">
+              <img src="assets/certification/certification-list.png" alt="认证配置列表" data-filename="certification/certification-list.png">
+              <div class="shot-missing"><div><strong>待补截图：认证配置列表</strong><code>assets/certification/certification-list.png</code></div></div>
+              <figcaption>图 1：认证配置列表。可按分类和状态筛选，并区分当前版本、草稿、已发布和已下架版本。</figcaption>
+            </figure>
+          </section>
+
+          <section class="doc-section" id="certification-concepts">
+            <h2>2. 先理解这些概念</h2>
+            <div class="term-grid">
+              <div class="term critical"><h3>认证 GPath / 资源路径</h3><p>认证业务系列的稳定路径，也是跨服务识别管线的关键字段。同一认证的不同版本沿用它，不同认证必须使用不同路径。</p></div>
+              <div class="term"><h3>认证 ID / ULID</h3><p>某个具体认证版本的唯一 ID，由系统生成。商品和流水最终会关联到具体版本。</p></div>
+              <div class="term"><h3>阶段</h3><p>认证学习流程的分组，例如 L1、L2。阶段按排序依次展示，每个阶段至少包含一个课程单元。</p></div>
+              <div class="term"><h3>课程单元</h3><p>阶段中的学习和计费单位，绑定一门已发布课程，可附带考试、免考及单元证书规则。</p></div>
+            </div>
+            <table>
+              <thead><tr><th>对象</th><th>新业务对象</th><th>同一对象升级版本</th></tr></thead>
+              <tbody>
+                <tr><td>GPath</td><td>使用新的唯一 GPath</td><td>沿用原 GPath</td></tr>
+                <tr><td>创建方式</td><td>点击“新建认证”</td><td>在原版本上点击“克隆版本”</td></tr>
+                <tr><td>结果</td><td>形成独立认证系列</td><td>形成同一认证的下一草稿版本</td></tr>
+              </tbody>
+            </table>
+            <div class="danger"><strong>不要通过修改名称来区分不同认证</strong>名称只是展示文案。把另一条认证误用为相同 GPath，会被识别成同一认证的版本，影响发布切换、商品引用和互斥判断。</div>
+          </section>
+
+          <section class="doc-section" id="certification-create">
+            <h2>3. 新建认证与版本管理</h2>
+            <figure class="shot">
+              <img src="assets/certification/certification-create.png" alt="新建认证弹窗" data-filename="certification/certification-create.png">
+              <div class="shot-missing"><div><strong>待补截图：新建认证</strong><code>assets/certification/certification-create.png</code></div></div>
+              <figcaption>图 2：新建认证。填写名称、描述，并在高级配置中检查分类提示和资源路径。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>字段</th><th>是否必填</th><th>填写说明</th></tr></thead>
+              <tbody>
+                <tr><td>名称</td><td class="required">必填</td><td>管理后台和考生端显示的正式认证名称。</td></tr>
+                <tr><td>描述</td><td>选填</td><td>说明认证目标、对象和学习范围，不填写内部备注。</td></tr>
+                <tr><td>分类提示</td><td class="required">必填</td><td>用于列表分组和筛选，例如 <code>CFtP</code>、<code>CFtA</code>；同系列保持一致。</td></tr>
+                <tr><td>资源路径</td><td class="required">必填</td><td>即认证 GPath。建议采用系统生成值并确认唯一，例如 <code>/gcc/pipeline/core/cftp</code>。</td></tr>
+              </tbody>
+            </table>
+            <figure class="shot">
+              <img src="assets/certification/certification-overview.png" alt="认证基础信息及版本状态" data-filename="certification/certification-overview.png">
+              <div class="shot-missing"><div><strong>待补截图：认证基础信息</strong><code>assets/certification/certification-overview.png</code></div></div>
+              <figcaption>图 3：认证基础信息。截图为已下架版本示例，因此页面只读；要调整结构，应从可用版本克隆新草稿。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>状态</th><th>含义</th><th>允许的主要操作</th></tr></thead>
+              <tbody>
+                <tr><td>草稿</td><td>尚未对外生效</td><td>编辑基础信息和完整结构、删除、发布</td></tr>
+                <tr><td>已发布</td><td>当前可供商品和考生流程使用</td><td>查看、克隆新版本、下架</td></tr>
+                <tr><td>已下架</td><td>历史归档版本</td><td>只读查看，不再修改</td></tr>
+              </tbody>
+            </table>
+            <div class="warning"><strong>发布新版本会切换当前版本</strong>同一 GPath 下的新草稿发布后，原当前版本会进入已下架状态。先确认商品和运营流程已准备使用新版本。</div>
+          </section>
+
+          <section class="doc-section" id="certification-stages">
+            <h2>4. 配置阶段</h2>
+            <p class="lead">阶段用来表达认证的学习顺序和业务层级。先建立阶段，再进入“课程单元”页签绑定课程。</p>
+            <figure class="shot">
+              <img src="assets/certification/certification-stages.png" alt="认证阶段列表和详情" data-filename="certification/certification-stages.png">
+              <div class="shot-missing"><div><strong>待补截图：认证阶段</strong><code>assets/certification/certification-stages.png</code></div></div>
+              <figcaption>图 4：阶段列表。名称用于界面展示，排序决定阶段顺序；右侧同时汇总该阶段已有的课程单元。</figcaption>
+            </figure>
+            <ol class="steps">
+              <li><strong>点击“新阶段”</strong><span>按业务顺序创建 L1、L2 等阶段。</span></li>
+              <li><strong>填写名称和排序</strong><span>排序建议使用 1、2、3 等清晰序号，避免重复。</span></li>
+              <li><strong>为阶段添加课程单元</strong><span>每个阶段至少需要一个已绑定课程的单元，结构才能保存。</span></li>
+              <li><strong>检查阶段汇总</strong><span>确认单元名称、课程、考试代码和免考状态与预期一致。</span></li>
+            </ol>
+            <figure class="shot">
+              <img src="assets/certification/certification-stage-units.png" alt="阶段中的课程单元汇总" data-filename="certification/certification-stage-units.png">
+              <div class="shot-missing"><div><strong>待补截图：阶段单元汇总</strong><code>assets/certification/certification-stage-units.png</code></div></div>
+              <figcaption>图 5：阶段内单元汇总适合复核，完整字段仍需在“课程单元”页签维护。</figcaption>
+            </figure>
+          </section>
+
+          <section class="doc-section" id="certification-units">
+            <h2>5. 配置课程单元、考试与免考</h2>
+            <figure class="shot">
+              <img src="assets/certification/certification-unit-details.png" alt="课程单元详情" data-filename="certification/certification-unit-details.png">
+              <div class="shot-missing"><div><strong>待补截图：课程单元详情</strong><code>assets/certification/certification-unit-details.png</code></div></div>
+              <figcaption>图 6：课程单元基础字段。单元必须属于一个阶段，并绑定可用的已发布课程。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>字段</th><th>作用</th><th>配置要点</th></tr></thead>
+              <tbody>
+                <tr><td>所属阶段</td><td>决定单元位于认证的哪个学习阶段</td><td>调整后要保存结构；不要只依赖左侧列表位置判断。</td></tr>
+                <tr><td>名称</td><td>单元对外显示名称</td><td>可与课程名一致，也可使用认证体系内的正式单元名。</td></tr>
+                <tr><td>排序</td><td>决定同一阶段内的顺序</td><td>同阶段保持唯一且连续。</td></tr>
+                <tr><td>关联课程</td><td>指定实际学习内容</td><td>只能选择已发布且可绑定的课程；绑定的是具体课程版本。</td></tr>
+                <tr><td>Program / Exam Code / Form Code</td><td>对接考试项目、考试和试卷</td><td>仅在该单元涉及考试时按考试系统约定填写。</td></tr>
+              </tbody>
+            </table>
+            <figure class="shot">
+              <img src="assets/certification/certification-unit-rules.png" alt="课程单元考试、免考和单元证书配置" data-filename="certification/certification-unit-rules.png">
+              <div class="shot-missing"><div><strong>待补截图：单元规则</strong><code>assets/certification/certification-unit-rules.png</code></div></div>
+              <figcaption>图 7：单元规则。允许免考、豁免资格、单元完成资格和单元 PDF 模板是彼此独立的配置。</figcaption>
+            </figure>
+            <h3>免考规则怎么配</h3>
+            <ol class="steps">
+              <li><strong>勾选“允许免考”</strong><span>未勾选时，即使考生持有相关资格，后台也不会自动免除该单元。</span></li>
+              <li><strong>勾选一项或多项豁免资格</strong><span>考生持有其中任一有效资格即可满足该单元免考条件。</span></li>
+              <li><strong>保存认证结构</strong><span>商品下单时，GMALL 会自动识别考生已持资格，应用免考并计算减免后的金额。</span></li>
+            </ol>
+            <div class="note"><strong>考生端不需要重复勾选自动免考项</strong>系统会把自动识别的免考与考生手工补充的其他免考去重合并；如果某阶段全部单元都被免考，该阶段实例化后会自动完成。</div>
+            <div class="warning"><strong>单元证书不是最终认证证书</strong>“单元完成后签发的资格 / 单元证书 PDF 模板”只在完成该单元就要单独发证时填写。认证全部完成后的主证书，应配置在“最终颁发证书”。</div>
+          </section>
+
+          <section class="doc-section" id="certification-qualifications">
+            <h2>6. 区分三类资格与证书</h2>
+            <table>
+              <thead><tr><th>配置层级</th><th>检查时机</th><th>业务含义</th><th>典型示例</th></tr></thead>
+              <tbody>
+                <tr><td>前置准入资格</td><td>购买或进入认证前</td><td>必须已持有，否则不能报读</td><td>报读高阶认证必须已有初阶证书</td></tr>
+                <tr><td>发证前终审材料</td><td>全部课程完成后、发证前</td><td>需要提交并通过审核的资格或材料</td><td>工作经验证明、从业年限证明</td></tr>
+                <tr><td>最终颁发证书</td><td>通关并通过终审后</td><td>系统最终签发的资格和 PDF 证书</td><td>CFtP Certification</td></tr>
+              </tbody>
+            </table>
+            <figure class="shot">
+              <img src="assets/certification/certification-prerequisites.png" alt="前置准入资格配置" data-filename="certification/certification-prerequisites.png">
+              <div class="shot-missing"><div><strong>待补截图：前置准入资格</strong><code>assets/certification/certification-prerequisites.png</code></div></div>
+              <figcaption>图 8：前置准入资格。只有业务明确要求“持证后才可购买”时才配置；不要用它表达课程免考。</figcaption>
+            </figure>
+            <figure class="shot">
+              <img src="assets/certification/certification-final-audit.png" alt="发证前终审材料配置" data-filename="certification/certification-final-audit.png">
+              <div class="shot-missing"><div><strong>待补截图：发证前终审材料</strong><code>assets/certification/certification-final-audit.png</code></div></div>
+              <figcaption>图 9：发证前终审材料。截图示例要求通过 CFtP Work Experience Proof 后才能进入最终发证。</figcaption>
+            </figure>
+            <figure class="shot">
+              <img src="assets/certification/certification-awards.png" alt="最终颁发证书配置" data-filename="certification/certification-awards.png">
+              <div class="shot-missing"><div><strong>待补截图：最终颁发证书</strong><code>assets/certification/certification-awards.png</code></div></div>
+              <figcaption>图 10：最终颁发证书。每一项都必须同时选择证书对应资格和 PDF 模板。</figcaption>
+            </figure>
+            <div class="danger"><strong>不要混用字段</strong>前置准入和终审材料只保存资格要求，不包含 PDF 模板；最终颁发证书才同时包含资格定义和证书 PDF 模板。</div>
+          </section>
+
+          <section class="doc-section" id="certification-rules">
+            <h2>7. 配置禁止报读和互斥管线</h2>
+            <table>
+              <thead><tr><th>规则</th><th>判断对象</th><th>触发条件</th><th>配置方向</th></tr></thead>
+              <tbody>
+                <tr><td>禁止报读资格</td><td>考生已持有的有效资格</td><td>持有任一所选资格即禁止购买当前认证</td><td>只配置在需要被禁止购买的一侧</td></tr>
+                <tr><td>互斥认证管线</td><td>另一认证的进行中状态</td><td>存在待支付订单或学习中实例时禁止购买当前认证</td><td>两条认证必须分别配置对方 GPath</td></tr>
+              </tbody>
+            </table>
+            <figure class="shot">
+              <img src="assets/certification/certification-forbidden.png" alt="禁止报读资格配置" data-filename="certification/certification-forbidden.png">
+              <div class="shot-missing"><div><strong>待补截图：禁止报读资格</strong><code>assets/certification/certification-forbidden.png</code></div></div>
+              <figcaption>图 11：禁止报读资格的空配置示例。需要防止高阶持证人反向购买初阶认证时，点击新增并选择高阶资格。</figcaption>
+            </figure>
+            <figure class="shot">
+              <img src="assets/certification/certification-conflicts.png" alt="互斥认证管线配置" data-filename="certification/certification-conflicts.png">
+              <div class="shot-missing"><div><strong>待补截图：互斥认证管线</strong><code>assets/certification/certification-conflicts.png</code></div></div>
+              <figcaption>图 12：互斥认证管线使用对方的认证 GPath。CFTA 配 CFTP 后，还要在 CFTP 中反向配置 CFTA。</figcaption>
+            </figure>
+            <div class="warning"><strong>两种规则不能互相替代</strong>互斥处理“正在同时报读”的冲突；禁止报读处理“已经获得某资格后不能反向购买”。完成状态和进行中状态必须分别按业务规则配置。</div>
+          </section>
+
+          <section class="doc-section" id="certification-example">
+            <h2>8. CFTA / CFTP 推荐配置示例</h2>
+            <p class="lead">下面按“允许没有 CFTA 的考生直接购买 CFTP；已有 CFTA 的考生自动免除 CFTP 中的 CFTA 课程；两条管线进行中不能同时购买；取得 CFTP 后不能反向购买 CFTA”的业务规则配置。</p>
+            <table>
+              <thead><tr><th>配置项</th><th>CFTA 管线</th><th>CFTP 管线</th></tr></thead>
+              <tbody>
+                <tr><td>前置准入资格</td><td>通常留空</td><td>留空，允许未持 CFTA 的考生直接购买</td></tr>
+                <tr><td>CFTA 课程单元</td><td>按正常课程配置</td><td>加入 CFTA Course；勾选“允许免考”，豁免资格选择 CFTA Certification</td></tr>
+                <tr><td>禁止报读资格</td><td>选择 CFTP Certification</td><td>按业务需要，通常不配置 CFTA Certification</td></tr>
+                <tr><td>互斥认证管线</td><td>选择 CFTP 的 GPath</td><td>选择 CFTA 的 GPath</td></tr>
+                <tr><td>最终颁发证书</td><td>CFTA 资格 + CFTA PDF 模板</td><td>CFTP 资格 + CFTP PDF 模板</td></tr>
+              </tbody>
+            </table>
+            <div class="note"><strong>直接购买与自动免考可以同时成立</strong>CFTP 的“前置准入资格”留空，只表示没有 CFTA 也能购买；CFTP 中 CFTA 单元的免考配置，会让已持 CFTA 资格的考生在下单时自动免除该单元。</div>
+          </section>
+
+          <section class="doc-section" id="certification-publish">
+            <h2>9. 保存、复核与发布</h2>
+            <div class="flow"><span>创建草稿</span><b>→</b><span>阶段</span><b>→</b><span>课程单元</span><b>→</b><span>资格与证书</span><b>→</b><span>报读限制</span><b>→</b><span>保存结构</span><b>→</b><span>发布</span></div>
+            <ol class="steps">
+              <li><strong>先保存基础信息</strong><span>确认名称、分类、描述和 GPath。</span></li>
+              <li><strong>完成全部结构层级</strong><span>每次调整后点击“保存结构”，页面中的临时修改才会写入后台。</span></li>
+              <li><strong>使用“完整结构 JSON”复核</strong><span>高级编辑区适合检查底层结构；“应用到分层视图”只更新页面状态，仍需再次保存结构。</span></li>
+              <li><strong>发布前做跨模块检查</strong><span>确认课程已发布、资格定义可用、PDF 模板正确、商品准备绑定新版本。</span></li>
+              <li><strong>点击发布并回归购买流程</strong><span>用无资格、持初阶资格、持高阶资格和存在进行中订单的测试账号分别预检。</span></li>
+            </ol>
+            <div class="danger"><strong>已发布或已下架结构不可直接编辑</strong>需要调整时使用“克隆版本”，在新草稿完成修改和验证后再发布。不要通过下架当前版本来代替版本升级。</div>
+          </section>
+
+          <section class="doc-section faq" id="certification-faq">
+            <h2>10. 常见问题</h2>
+            <details><summary>为什么课程单元里选不到刚创建的课程？</summary><p>课程单元只显示可绑定的已发布课程。先到课程配置确认目标版本已发布，草稿、已下架或未启用课程不能绑定。</p></details>
+            <details><summary>没有 CFTA 的考生也要能购买 CFTP，是否应该删除 CFTA 前置资格？</summary><p>是。前置准入资格表示购买前必须持有。允许直接购买时应留空，并把 CFTA 课程加入 CFTP；已有 CFTA 的考生通过该单元的免考规则自动减免。</p></details>
+            <details><summary>配置了豁免资格，为什么没有自动免考？</summary><p>同时检查该课程单元是否勾选“允许免考”、豁免资格是否选择正确、考生持有的资格是否有效，以及认证结构是否已保存并随当前版本发布。</p></details>
+            <details><summary>为什么 CFTA 和 CFTP 互斥只在一个方向生效？</summary><p>互斥关系不是自动双向的。需要在 CFTA 中配置 CFTP GPath，同时在 CFTP 中配置 CFTA GPath。</p></details>
+            <details><summary>禁止报读资格与前置准入资格有什么区别？</summary><p>前置准入是“必须持有才可以买”；禁止报读是“持有任一项就不能买”。两者方向相反，不能配置成同一个业务含义。</p></details>
+            <details><summary>最终颁发证书只选资格定义可以吗？</summary><p>不可以。最终证书必须同时选择资格定义和证书 PDF 模板，否则发布前结构校验会失败，或后续无法正确生成证书。</p></details>
+          </section>
+
+          <section class="doc-section" id="certification-checklist">
+            <h2>11. 发布前检查清单</h2>
+            <ul class="checklist">
+              <li>认证名称、描述和分类提示为正式文案</li>
+              <li>GPath 属于正确认证系列且未误用其他管线路径</li>
+              <li>每个阶段名称、排序正确</li>
+              <li>每个阶段至少有一个课程单元</li>
+              <li>所有单元绑定正确的已发布课程版本</li>
+              <li>考试 Program、Exam Code、Form Code 已核对</li>
+              <li>需要免考的单元已勾选“允许免考”</li>
+              <li>豁免资格与单元业务规则一致</li>
+              <li>前置准入资格没有误当作免考条件</li>
+              <li>终审材料对应正确的资格定义</li>
+              <li>最终证书同时配置资格和 PDF 模板</li>
+              <li>禁止报读资格方向正确</li>
+              <li>互斥管线已在两侧分别配置</li>
+              <li>全部修改已点击“保存结构”</li>
+              <li>已用不同资格状态的测试账号完成购买预检</li>
+              <li>确认发布的是目标 GPath 的目标版本</li>
+            </ul>
+            <a class="back-top" href="#top">返回顶部</a>
+          </section>
+        </div>
+      </div>
+    </article>
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script>
     const catalog = document.getElementById("catalog");
-    const courseManual = document.getElementById("course-manual");
+    const manuals = document.querySelectorAll(".manual");
     const toast = document.getElementById("toast");
     let toastTimer;
 
     function openManual(name) {
-      if (name !== "course") return;
+      const manual = document.getElementById(name + "-manual");
+      if (!manual) return;
       catalog.classList.add("hidden");
-      courseManual.classList.add("active");
-      history.replaceState(null, "", "#course");
+      manuals.forEach((item) => item.classList.remove("active"));
+      manual.classList.add("active");
+      history.replaceState(null, "", "#" + name);
       window.scrollTo({ top: 0, behavior: "instant" });
     }
 
     function showCatalog() {
-      courseManual.classList.remove("active");
+      manuals.forEach((item) => item.classList.remove("active"));
       catalog.classList.remove("hidden");
       history.replaceState(null, "", location.pathname + location.search);
       window.scrollTo({ top: 0, behavior: "instant" });
@@ -657,6 +921,7 @@
     document.querySelectorAll(".doc-section").forEach((section) => sectionObserver.observe(section));
 
     if (location.hash === "#course" || location.hash.startsWith("#course-")) openManual("course");
+    if (location.hash === "#certification" || location.hash.startsWith("#certification-")) openManual("certification");
   </script>
 </body>
 </html>
