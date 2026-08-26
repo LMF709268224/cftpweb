@@ -18,8 +18,8 @@ import (
 )
 
 const (
-	adminRouteCount       = 277
-	adminRouteFingerprint = "e8f505774d9e4a5d652b6d2b030b3ba7a493d769d9cd88aacbcaecfe32156184"
+	adminRouteCount       = 285
+	adminRouteFingerprint = "8e28347b4074838e6ddbe97b6da3041dbc65994279ce01bdd7db68935775d995"
 )
 
 var adminPublicRoutes = map[string]struct{}{

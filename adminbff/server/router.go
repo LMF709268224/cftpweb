@@ -206,6 +206,17 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 				r.Delete("/{lesson_id}", h.DeleteLmsLesson)
 			})
 
+			r.Route("/external-coursewares", func(r chi.Router) {
+				r.Get("/", h.ListExternalCoursewares)
+				r.Post("/", h.CreateExternalCourseware)
+				r.Get("/{courseware_id}", h.GetExternalCourseware)
+				r.Put("/{courseware_id}", h.UpdateExternalCourseware)
+				r.Delete("/{courseware_id}", h.DeleteExternalCourseware)
+				r.Post("/{courseware_id}/tokens/import", h.ImportExternalCoursewareTokens)
+				r.Get("/{courseware_id}/tokens", h.ListExternalCoursewareTokens)
+				r.Get("/{courseware_id}/token-stats", h.GetExternalCoursewareTokenStats)
+			})
+
 			r.Route("/prerequisites", func(r chi.Router) {
 				r.Get("/", h.ListLmsPrerequisites)
 				r.Post("/", h.CreateLmsPrerequisite)

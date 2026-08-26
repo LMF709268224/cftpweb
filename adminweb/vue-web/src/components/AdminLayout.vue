@@ -12,6 +12,7 @@ import {
   GitBranch,
   GraduationCap,
   Languages,
+  KeyRound,
   LogOut,
   Mail,
   Menu,
@@ -81,6 +82,7 @@ const navGroups = computed(() => [
     label: copy.value.groups.config,
     items: [
       { path: "/lms", label: copy.value.nav.lms, icon: BookOpen },
+      { path: "/external-coursewares", label: copy.value.nav.externalCoursewares, icon: KeyRound },
       { path: "/pipelines", label: copy.value.nav.pipelines, icon: FileBadge },
       { path: "/bundles", label: copy.value.nav.bundles, icon: Boxes },
       { path: "/memberships", label: copy.value.nav.memberships, icon: Settings },

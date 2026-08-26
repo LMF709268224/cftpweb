@@ -62,6 +62,7 @@ type LessonForm = {
   asset_object_key: string
   asset_file_hash: string
   video_stream_uid: string
+  external_courseware_ulid: string
 }
 
 type QuizScope = "course" | "chapter" | "lesson"
@@ -187,6 +188,7 @@ const completeCourse = ref<JsonRecord | null>(null)
 const chapters = ref<JsonRecord[]>([])
 const selectedChapter = ref<JsonRecord | null>(null)
 const lessons = ref<JsonRecord[]>([])
+const externalCoursewares = ref<JsonRecord[]>([])
 const materials = ref<JsonRecord[]>([])
 const selectedMaterial = ref<JsonRecord | null>(null)
 const supplementaryMaterial = ref<JsonRecord | null>(null)
@@ -488,6 +490,7 @@ function emptyLessonForm(): LessonForm {
     asset_object_key: "",
     asset_file_hash: "",
     video_stream_uid: "",
+    external_courseware_ulid: "",
   }
 }
 
@@ -711,6 +714,7 @@ function lessonTypeLabel(value: unknown) {
   if (type === 5) return copy.value.lessonTypes.audio
   if (type === 6) return copy.value.lessonTypes.file
   if (type === 7) return copy.value.lessonTypes.link
+  if (type === 8) return copy.value.lessonTypes.tokenLink
   return copy.value.unspecified
 }
 
@@ -1814,6 +1818,19 @@ async function loadLessons() {
   }
 }
 
+async function loadExternalCoursewares() {
+  try {
+    const data = await apiClient<JsonRecord>("/api/lms/external-coursewares?page_size=100")
+    externalCoursewares.value = Array.isArray(data.items)
+      ? data.items.filter((item): item is JsonRecord => Boolean(item) && typeof item === "object" && !Array.isArray(item))
+      : []
+  } catch (err) {
+    console.error(err)
+    externalCoursewares.value = []
+    toast.error(apiErrorMessage(err, copy.value.toasts.externalCoursewaresLoadFailed))
+  }
+}
+
 function editLesson(lesson: JsonRecord, openDialog = true) {
   editingLessonId.value = lessonId(lesson)
   const ownerChapter = allLessonItems.value.find((item) => lessonId(item.lesson) === editingLessonId.value)?.chapter
@@ -1829,6 +1846,7 @@ function editLesson(lesson: JsonRecord, openDialog = true) {
     asset_object_key: String(lesson.media_object_key || lesson.asset_object_key || lesson.file_object_key || ""),
     asset_file_hash: String(lesson.media_file_hash || lesson.asset_file_hash || lesson.file_hash || ""),
     video_stream_uid: String(lesson.video_stream_uid || ""),
+    external_courseware_ulid: String(lesson.external_courseware_ulid || ""),
   }
   if (quizForm.value.scope === "lesson") {
     newQuiz("lesson")
@@ -1951,6 +1969,10 @@ async function saveLesson(): Promise<boolean> {
     toast.error(copy.value.toasts.externalUrlRequired)
     return false
   }
+  if (type === 8 && !lessonForm.value.external_courseware_ulid.trim()) {
+    toast.error(copy.value.toasts.externalCoursewareRequired)
+    return false
+  }
 
   const targetSort = Number(lessonForm.value.sort_order || 1)
   const isConflict = allLessonItems.value.some(item => chapterId(item.chapter) === targetChapterId && Number(item.lesson.sort_order || 0) === targetSort && lessonId(item.lesson) !== editingLessonId.value)
@@ -1966,10 +1988,11 @@ async function saveLesson(): Promise<boolean> {
       title: lessonForm.value.title.trim(),
       sort_order: Number(lessonForm.value.sort_order || 1),
       lesson_type: type,
-      body: lessonForm.value.body,
-      media_object_key: [1, 2, 7].includes(type) ? "" : lessonForm.value.asset_object_key.trim(),
-      media_file_hash: [1, 2, 7].includes(type) ? "" : lessonForm.value.asset_file_hash.trim(),
+      body: type === 8 ? "" : lessonForm.value.body,
+      media_object_key: [1, 2, 7, 8].includes(type) ? "" : lessonForm.value.asset_object_key.trim(),
+      media_file_hash: [1, 2, 7, 8].includes(type) ? "" : lessonForm.value.asset_file_hash.trim(),
       external_url: type === 7 ? lessonForm.value.asset_object_key.trim() : "",
+      external_courseware_ulid: type === 8 ? lessonForm.value.external_courseware_ulid.trim() : "",
       video_provider: type === 1 && lessonForm.value.video_stream_uid.trim() ? "cloudflare" : "",
       video_stream_uid: type === 1 ? lessonForm.value.video_stream_uid.trim() : "",
       version: selectedLessonRecord.value?.version || 0,
@@ -3446,6 +3469,7 @@ watch(() => lessonForm.value.chapter_id, (newId, oldId) => {
 
 onMounted(() => {
   void loadCourses()
+  void loadExternalCoursewares()
 })
 </script>
 
@@ -4083,17 +4107,28 @@ onMounted(() => {
                       <option value="5">{{ copy.lessonTypes.audio }}</option>
                       <option value="6">{{ copy.lessonTypes.file }}</option>
                       <option value="7">{{ copy.lessonTypes.link }}</option>
+                      <option value="8">{{ copy.lessonTypes.tokenLink }}</option>
                     </select>
                     <span class="mt-1 block text-xs text-transparent select-none">{{ copy.sortOrderHint }}</span>
                   </label>
                 </div>
-                <label class="block">
+                <label v-if="lessonForm.lesson_type !== '8'" class="block">
                   <span class="text-sm font-bold">
                     <span v-if="lessonForm.lesson_type === '2'" class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.lessonFieldLabels.body }}
                   </span>
                   <textarea v-model="lessonForm.body" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.lessonBodyPlaceholder" />
                 </label>
-                <template v-if="lessonForm.lesson_type === '7'">
+                <template v-if="lessonForm.lesson_type === '8'">
+                  <label class="block">
+                    <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.externalCourseware }}</span>
+                    <select v-model="lessonForm.external_courseware_ulid" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3">
+                      <option value="">{{ copy.selectExternalCourseware }}</option>
+                      <option v-for="item in externalCoursewares" :key="String(item.courseware_ulid)" :value="String(item.courseware_ulid)">{{ item.name }} · {{ item.courseware_ulid }}</option>
+                    </select>
+                    <span class="mt-2 block text-xs text-slate-500">{{ copy.externalCoursewareHint }}</span>
+                  </label>
+                </template>
+                <template v-else-if="lessonForm.lesson_type === '7'">
                   <label class="block">
                     <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.externalUrl }}</span>
                     <input v-model="lessonForm.asset_object_key" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" placeholder="https://" />
@@ -4108,7 +4143,7 @@ onMounted(() => {
                     </span>
                   </label>
                 </template>
-                <template v-else-if="lessonForm.lesson_type !== '2'">
+                <template v-else-if="lessonForm.lesson_type !== '2' && lessonForm.lesson_type !== '8'">
                   <label class="block">
                     <span class="text-sm font-bold">{{ copy.assetObjectKeyLabel }}</span>
                     <input v-model="lessonForm.asset_object_key" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.assetObjectKeyPlaceholder" />
@@ -4130,7 +4165,7 @@ onMounted(() => {
             </div>
 
             <div v-if="canEditCourseContent && lessonDialogMode !== 'detail' && lessonActiveTab === 'basic'" class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-white px-4 py-4 md:px-5">
-                <div class="min-w-0 flex-1" v-if="editingLessonId && lessonForm.lesson_type !== '7' && lessonForm.lesson_type !== '2'">
+                <div class="min-w-0 flex-1" v-if="editingLessonId && lessonForm.lesson_type !== '7' && lessonForm.lesson_type !== '2' && lessonForm.lesson_type !== '8'">
                 <input type="file" ref="lessonFileInput" class="hidden" @change="handleLessonFileUpload" />
                 <button type="button" class="flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50" :disabled="uploadingLesson" @click="lessonFileInput?.click()">
                   <Loader2 v-if="uploadingLesson" class="h-4 w-4 animate-spin" />

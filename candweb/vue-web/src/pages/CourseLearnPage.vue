@@ -127,6 +127,15 @@ type Lesson = {
   lesson_type?: number
   body?: string
   external_url?: string
+  external_courseware_ulid?: string
+}
+
+type LessonAccessToken = {
+  token?: string
+  base_url?: string
+  token_param_name?: string
+  courseware_name?: string
+  is_fallback?: boolean
 }
 
 type CourseMaterialSummary = {
@@ -204,6 +213,7 @@ const openingMaterialId = ref("")
 const downloadingMaterialId = ref("")
 const startingQuizId = ref("")
 const markingLessonComplete = ref(false)
+const openingTokenLesson = ref(false)
 const activeMaterialGroup = ref<MaterialGroupKey>("all")
 const runtime = ref<any>(null)
 const scheduleLoading = ref(false)
@@ -919,6 +929,8 @@ function lessonTypeLabel(lessonType?: number) {
       return t.value.learning.lessonTypeFile
     case 7:
       return t.value.learning.lessonTypeLink
+    case 8:
+      return t.value.learning.lessonTypeTokenLink
     default:
       return t.value.learning.lessonTypeUnknown
   }
@@ -1436,6 +1448,48 @@ function openExternalLesson() {
     return
   }
   window.open(url, "_blank", "noopener,noreferrer")
+}
+
+function externalCoursewareUrl(access: LessonAccessToken) {
+  const token = String(access.token || "").trim()
+  const baseUrl = String(access.base_url || "").trim()
+  if (!token || !baseUrl) throw new Error("missing external courseware access data")
+
+  const rawUrl = baseUrl.includes("{token}")
+    ? baseUrl.replaceAll("{token}", encodeURIComponent(token))
+    : baseUrl
+  const url = new URL(rawUrl)
+  if (url.protocol !== "https:" && url.protocol !== "http:") {
+    throw new Error("unsupported external courseware protocol")
+  }
+  if (!baseUrl.includes("{token}")) {
+    url.searchParams.set(String(access.token_param_name || "token").trim() || "token", token)
+  }
+  return url.toString()
+}
+
+async function openTokenLesson() {
+  if (openingTokenLesson.value) return
+  const lessonId = currentLessonId.value
+  if (!lessonId) {
+    toast.error(t.value.learning.externalCoursewareOpenFailed)
+    return
+  }
+
+  const target = window.open("about:blank", "_blank")
+  if (target) target.opener = null
+  openingTokenLesson.value = true
+  try {
+    const access = await apiClient(`/api/pipeline/lessons/${encodeURIComponent(lessonId)}/access-token`, { method: "POST" }) as LessonAccessToken
+    const url = externalCoursewareUrl(access)
+    if (target) target.location.replace(url)
+    else window.open(url, "_blank", "noopener,noreferrer")
+  } catch {
+    target?.close()
+    toast.error(t.value.learning.externalCoursewareOpenFailed)
+  } finally {
+    openingTokenLesson.value = false
+  }
 }
 
 async function markCompleted() {
@@ -2219,6 +2273,17 @@ watch(selectedMaterial, () => {
                   <button class="btn btn-primary max-w-full flex-wrap rounded-lg text-left leading-snug" @click="openLessonPdf">
                     <FileText class="mr-2 h-4 w-4" />
                     {{ t.learning.openLessonPdf }} <span v-if="lesson?.title" class="ml-1 font-normal opacity-90">- {{ lesson.title }}</span>
+                  </button>
+                </div>
+                <div v-else-if="lesson?.lesson_type === 8" class="space-y-4">
+                  <div class="rounded-md bg-slate-50 p-4 text-sm text-muted-foreground">
+                    <div v-if="sanitizedLessonBody" class="prose max-w-none text-sm text-foreground" v-html="sanitizedLessonBody" />
+                    <p v-else>{{ t.learning.externalCoursewareHint }}</p>
+                  </div>
+                  <button class="btn btn-primary max-w-full flex-wrap rounded-lg text-left leading-snug" :disabled="openingTokenLesson" @click="openTokenLesson">
+                    <Loader2 v-if="openingTokenLesson" class="mr-2 h-4 w-4 animate-spin" />
+                    <ExternalLink v-else class="mr-2 h-4 w-4" />
+                    {{ t.learning.openExternalCourseware }} <span v-if="lesson?.title" class="ml-1 font-normal opacity-90">- {{ lesson.title }}</span>
                   </button>
                 </div>
                 <div v-else-if="lesson?.external_url" class="space-y-4">

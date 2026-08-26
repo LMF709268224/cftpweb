@@ -372,6 +372,25 @@ func (h *Handler) CompletePipelineLesson(w http.ResponseWriter, r *http.Request)
 	WriteJSON(w, http.StatusOK, resp)
 }
 
+func (h *Handler) GetLessonAccessToken(w http.ResponseWriter, r *http.Request) {
+	candidateID := CandidateID(r)
+	lessonID := strings.TrimSpace(chi.URLParam(r, "lessonId"))
+	if !requireRequestFields(w, candidateID, "candidate_id", lessonID, "lesson_id") {
+		return
+	}
+
+	resp, err := h.Lms.GetLessonAccessToken(r.Context(), &lmspb.GetLessonAccessTokenRequest{
+		CandidateUlid: candidateID,
+		LessonUlid:    lessonID,
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, resp)
+}
+
 func (h *Handler) ListCandidateEnrollments(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
 	if !requireRequestField(w, candidateID, "candidate_id") {

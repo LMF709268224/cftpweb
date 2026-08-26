@@ -11,6 +11,7 @@ const CallbackPage = () => import("@/pages/CallbackPage.vue")
 const CredentialsPage = () => import("@/pages/CredentialsPage.vue")
 const DashboardPage = () => import("@/pages/DashboardPage.vue")
 const ExamsPage = () => import("@/pages/ExamsPage.vue")
+const ExternalCoursewaresPage = () => import("@/pages/ExternalCoursewaresPage.vue")
 const InvoicesPage = () => import("@/pages/InvoicesPage.vue")
 const LmsPage = () => import("@/pages/LmsPage.vue")
 const LoginPage = () => import("@/pages/LoginPage.vue")
@@ -101,6 +102,17 @@ export const resourceRoutes: RouteRecordRaw[] = [
       copyKey: "lms",
       endpoint: "/api/lms/courses",
       itemKeys: ["courses", "items"],
+      pagination: "page",
+    } satisfies ResourceRouteMeta,
+  },
+  {
+    path: "/external-coursewares",
+    name: "external-coursewares",
+    component: ExternalCoursewaresPage,
+    meta: {
+      copyKey: "lms",
+      endpoint: "/api/lms/external-coursewares",
+      itemKeys: ["items"],
       pagination: "page",
     } satisfies ResourceRouteMeta,
   },
