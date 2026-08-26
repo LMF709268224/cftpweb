@@ -4,6 +4,7 @@ import (
 	gcreds "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
 	gmsgpb "github.com/afnandelfin620-star/cftptest/cftp/gmsg"
+	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
 )
 
 type LoginInput struct {
@@ -686,20 +687,20 @@ type OrderSummaryDetail struct {
 }
 
 type OrderDetailRsp struct {
-	Found            bool                     `json:"found"`
-	Summary          OrderSummaryDetail       `json:"summary"`
-	BusinessDetail   any                      `json:"business_detail,omitempty"`
-	PriceDetail      *mallpb.OrderPriceDetail `json:"price_detail,omitempty"`
-	GpayOrderUlid    string                   `json:"gpay_order_ulid,omitempty"`
-	HasPaymentKey    bool                     `json:"has_payment_key"`
-	PaidAt           string                   `json:"paid_at,omitempty"`
-	ClosedAt         string                   `json:"closed_at,omitempty"`
-	LastReconciledAt string                   `json:"last_reconciled_at,omitempty"`
-	Version          uint32                   `json:"version,omitempty"`
-	UpdatedAt        string                   `json:"updated_at,omitempty"`
-	OrderStatusAt    string                   `json:"order_status_at,omitempty"`
-	PaymentStatusAt  string                   `json:"payment_status_at,omitempty"`
-	Raw              any                      `json:"raw,omitempty"`
+	Found            bool                       `json:"found"`
+	Summary          OrderSummaryDetail         `json:"summary"`
+	PriceDetail      *mallpb.OrderPriceDetail   `json:"price_detail,omitempty"`
+	Items            []*gpaypb.OrderItemSummary `json:"items,omitempty"`
+	GpayOrderUlid    string                     `json:"gpay_order_ulid,omitempty"`
+	HasPaymentKey    bool                       `json:"has_payment_key"`
+	PaidAt           string                     `json:"paid_at,omitempty"`
+	ClosedAt         string                     `json:"closed_at,omitempty"`
+	LastReconciledAt string                     `json:"last_reconciled_at,omitempty"`
+	Version          uint32                     `json:"version,omitempty"`
+	UpdatedAt        string                     `json:"updated_at,omitempty"`
+	OrderStatusAt    string                     `json:"order_status_at,omitempty"`
+	PaymentStatusAt  string                     `json:"payment_status_at,omitempty"`
+	Raw              any                        `json:"raw,omitempty"`
 }
 
 type CancelOrderReq struct {

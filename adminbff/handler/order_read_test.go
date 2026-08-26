@@ -8,16 +8,16 @@ import (
 	"testing"
 
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
+	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
 	"github.com/go-chi/chi/v5"
 	"google.golang.org/grpc"
 )
 
 type orderReadMallClientStub struct {
 	mallpb.MallServiceClient
-	listRequest         *mallpb.ListOrdersRequest
-	countRequest        *mallpb.GetOrderCountRequest
-	detailRequest       *mallpb.GetOrderDetailRequest
-	bundleDetailRequest *mallpb.AdminGetBundleOrderDetailRequest
+	listRequest   *mallpb.ListOrdersRequest
+	countRequest  *mallpb.GetOrderCountRequest
+	detailRequest *mallpb.GetOrderDetailRequest
 }
 
 func (s *orderReadMallClientStub) ListOrders(
@@ -81,18 +81,25 @@ func (s *orderReadMallClientStub) GetOrderDetail(
 	}, nil
 }
 
-func (s *orderReadMallClientStub) AdminGetBundleOrderDetail(
+type orderReadPayClientStub struct {
+	gpaypb.PayServiceClient
+	itemsRequest *gpaypb.ListOrderItemsRequest
+}
+
+func (s *orderReadPayClientStub) ListOrderItems(
 	_ context.Context,
-	req *mallpb.AdminGetBundleOrderDetailRequest,
+	req *gpaypb.ListOrderItemsRequest,
 	_ ...grpc.CallOption,
-) (*mallpb.AdminGetBundleOrderDetailResponse, error) {
-	s.bundleDetailRequest = req
-	return &mallpb.AdminGetBundleOrderDetailResponse{
-		Found: true,
-		Detail: &mallpb.AdminBundleOrderDetail{
-			UpdatedAt: "2026-08-11T01:00:00Z",
-		},
-	}, nil
+) (*gpaypb.ListOrderItemsResponse, error) {
+	s.itemsRequest = req
+	return &gpaypb.ListOrderItemsResponse{Items: []*gpaypb.OrderItemSummary{{
+		OrderUlid: req.GetOrderUlid(),
+		ItemType:  "course",
+		ItemId:    "course-1",
+		Title:     "Certification Course",
+		BasePrice: 15000,
+		Quantity:  1,
+	}}}, nil
 }
 
 func TestListOrdersReturnsFilteredReadOnlyPage(t *testing.T) {
@@ -146,9 +153,10 @@ func TestListOrdersReturnsFilteredReadOnlyPage(t *testing.T) {
 	}
 }
 
-func TestGetOrderDetailReturnsReadOnlyBusinessDetail(t *testing.T) {
+func TestGetOrderDetailReturnsReadOnlyOrderItems(t *testing.T) {
 	client := &orderReadMallClientStub{}
-	h := &Handler{Mall: client}
+	pay := &orderReadPayClientStub{}
+	h := &Handler{Mall: client, Gpay: pay}
 	recorder := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/api/mall/orders/order-1", nil)
 	routeContext := chi.NewRouteContext()
@@ -163,20 +171,19 @@ func TestGetOrderDetailReturnsReadOnlyBusinessDetail(t *testing.T) {
 	if client.detailRequest == nil || client.detailRequest.GetOrderUlid() != "order-1" {
 		t.Fatalf("detail request = %+v", client.detailRequest)
 	}
-	if client.bundleDetailRequest == nil || client.bundleDetailRequest.GetBundleOrderUlid() != "bundle-order-1" {
-		t.Fatalf("bundle detail request = %+v", client.bundleDetailRequest)
+	if pay.itemsRequest == nil || pay.itemsRequest.GetOrderUlid() != "order-1" {
+		t.Fatalf("order items request = %+v", pay.itemsRequest)
 	}
 	var payload struct {
 		Data struct {
 			Summary struct {
 				OrderULID string `json:"order_ulid"`
 			} `json:"summary"`
-			BusinessDetail struct {
-				Found  bool `json:"found"`
-				Detail struct {
-					UpdatedAt string `json:"updated_at"`
-				} `json:"detail"`
-			} `json:"business_detail"`
+			Items []struct {
+				Title     string `json:"title"`
+				BasePrice int64  `json:"base_price"`
+				Quantity  int32  `json:"quantity"`
+			} `json:"items"`
 			PriceDetail struct {
 				CurrencyCode       string `json:"currency_code"`
 				SubtotalMinor      int64  `json:"subtotal_minor"`
@@ -189,7 +196,8 @@ func TestGetOrderDetailReturnsReadOnlyBusinessDetail(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
 		t.Fatalf("decode response: %v", err)
 	}
-	if payload.Data.Summary.OrderULID != "order-1" || !payload.Data.BusinessDetail.Found || payload.Data.BusinessDetail.Detail.UpdatedAt != "2026-08-11T01:00:00Z" {
+	if payload.Data.Summary.OrderULID != "order-1" || len(payload.Data.Items) != 1 ||
+		payload.Data.Items[0].Title != "Certification Course" || payload.Data.Items[0].BasePrice != 15000 || payload.Data.Items[0].Quantity != 1 {
 		t.Fatalf("order detail = %+v", payload.Data)
 	}
 	price := payload.Data.PriceDetail
