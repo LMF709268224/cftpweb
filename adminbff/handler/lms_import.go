@@ -40,17 +40,18 @@ type importChapterJSON struct {
 }
 
 type importLessonJSON struct {
-	Title          string `json:"title"`
-	SortOrder      uint32 `json:"sort_order,omitempty"`
-	LessonType     any    `json:"lesson_type"`
-	Body           string `json:"body"`
-	MediaObjectKey string `json:"media_object_key"`
-	MediaFileHash  string `json:"media_file_hash"`
-	ExternalURL    string `json:"external_url"`
-	VideoProvider  string `json:"video_provider"`
-	VideoStreamUID string `json:"video_stream_uid"`
-	VideoEmbedCode string `json:"video_embed_code"`
-	MetaJSON       string `json:"meta_json"`
+	Title                  string `json:"title"`
+	SortOrder              uint32 `json:"sort_order,omitempty"`
+	LessonType             any    `json:"lesson_type"`
+	Body                   string `json:"body"`
+	MediaObjectKey         string `json:"media_object_key"`
+	MediaFileHash          string `json:"media_file_hash"`
+	ExternalURL            string `json:"external_url"`
+	ExternalCoursewareULID string `json:"external_courseware_ulid"`
+	VideoProvider          string `json:"video_provider"`
+	VideoStreamUID         string `json:"video_stream_uid"`
+	VideoEmbedCode         string `json:"video_embed_code"`
+	MetaJSON               string `json:"meta_json"`
 }
 
 // importChapterQuizJSON is the optional package extension used by adminweb.
@@ -400,6 +401,11 @@ func validateImportLessonPayload(w http.ResponseWriter, lesson importLessonJSON,
 			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, lessonPath+".external_url is required")
 			return false
 		}
+	case "token_link":
+		if strings.TrimSpace(lesson.ExternalCoursewareULID) == "" {
+			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, lessonPath+".external_courseware_ulid is required")
+			return false
+		}
 	case "video", "pdf", "image", "audio", "file":
 		if strings.TrimSpace(lesson.MediaObjectKey) == "" && strings.TrimSpace(lesson.VideoStreamUID) == "" {
 			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, lessonPath+".media_object_key or video_stream_uid is required")
@@ -439,6 +445,8 @@ func normalizeImportLessonType(value any) string {
 			return "link"
 		case int(lmspb.LessonType_LESSON_TYPE_FILE):
 			return "file"
+		case int(lmspb.LessonType_LESSON_TYPE_TOKEN_LINK):
+			return "token_link"
 		}
 	}
 	return ""
@@ -461,6 +469,8 @@ func buildImportLessonRequest(chapterID string, lesson importLessonJSON, fallbac
 		lessonType = lmspb.LessonType_LESSON_TYPE_FILE
 	case "link":
 		lessonType = lmspb.LessonType_LESSON_TYPE_LINK
+	case "token_link":
+		lessonType = lmspb.LessonType_LESSON_TYPE_TOKEN_LINK
 	}
 
 	sortOrder := lesson.SortOrder
@@ -473,18 +483,19 @@ func buildImportLessonRequest(chapterID string, lesson importLessonJSON, fallbac
 	}
 
 	return &lmspb.CreateLessonRequest{
-		LessonUlid:     newLmsID(),
-		ChapterUlid:    chapterID,
-		Title:          strings.TrimSpace(lesson.Title),
-		SortOrder:      sortOrder,
-		LessonType:     lessonType,
-		Body:           lesson.Body,
-		MediaObjectKey: strings.TrimSpace(lesson.MediaObjectKey),
-		MediaFileHash:  strings.TrimSpace(lesson.MediaFileHash),
-		ExternalUrl:    strings.TrimSpace(lesson.ExternalURL),
-		VideoProvider:  strings.TrimSpace(lesson.VideoProvider),
-		VideoStreamUid: strings.TrimSpace(lesson.VideoStreamUID),
-		VideoEmbedCode: strings.TrimSpace(lesson.VideoEmbedCode),
-		MetaJson:       metaJSON,
+		LessonUlid:             newLmsID(),
+		ChapterUlid:            chapterID,
+		Title:                  strings.TrimSpace(lesson.Title),
+		SortOrder:              sortOrder,
+		LessonType:             lessonType,
+		Body:                   lesson.Body,
+		MediaObjectKey:         strings.TrimSpace(lesson.MediaObjectKey),
+		MediaFileHash:          strings.TrimSpace(lesson.MediaFileHash),
+		ExternalUrl:            strings.TrimSpace(lesson.ExternalURL),
+		ExternalCoursewareUlid: strings.TrimSpace(lesson.ExternalCoursewareULID),
+		VideoProvider:          strings.TrimSpace(lesson.VideoProvider),
+		VideoStreamUid:         strings.TrimSpace(lesson.VideoStreamUID),
+		VideoEmbedCode:         strings.TrimSpace(lesson.VideoEmbedCode),
+		MetaJson:               metaJSON,
 	}
 }

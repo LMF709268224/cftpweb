@@ -106,6 +106,26 @@ func TestBuildImportLessonRequestPreservesCloudflareVideoFields(t *testing.T) {
 	}
 }
 
+func TestBuildImportLessonRequestPreservesTokenCourseware(t *testing.T) {
+	recorder := httptest.NewRecorder()
+	lesson := importLessonJSON{
+		Title:                  "Partner Courseware",
+		LessonType:             float64(lmspb.LessonType_LESSON_TYPE_TOKEN_LINK),
+		ExternalCoursewareULID: "01KZCOURSEWARE000000000000",
+	}
+	if !validateImportLessonPayload(recorder, lesson, "chapter.lessons[0]") {
+		t.Fatalf("expected token link lesson to be valid, got status %d: %s", recorder.Code, recorder.Body.String())
+	}
+
+	req := buildImportLessonRequest("01KZCHAPTER00000000000000", lesson, 1)
+	if req.GetLessonType() != lmspb.LessonType_LESSON_TYPE_TOKEN_LINK {
+		t.Fatalf("expected token link lesson type, got %v", req.GetLessonType())
+	}
+	if req.GetExternalCoursewareUlid() != lesson.ExternalCoursewareULID {
+		t.Fatalf("external courseware ID was not preserved: %#v", req)
+	}
+}
+
 func TestBuildImportCoursePayloadPreservesGLMSFieldsAndRemovesPackageFields(t *testing.T) {
 	payload, err := buildImportCoursePayload(`{
 		"package_type":"cftp-lms-course-package",

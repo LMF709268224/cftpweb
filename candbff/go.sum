@@ -4,6 +4,8 @@ github.com/afnandelfin620-star/cftptest/cftp v0.0.0-20260824041303-01219c57f1a5 
 github.com/afnandelfin620-star/cftptest/cftp v0.0.0-20260824041303-01219c57f1a5/go.mod h1:00s9AuWPk/1OxEv2bjpjWVk9FQxV8xM+mWO9GchE1i4=
 github.com/afnandelfin620-star/cftptest/cftp v0.0.0-20260825092213-15694aa3950b h1:dLJ4oOoKbKSu0aUY/GC5Nthb9TMGUJU3738PNQw37Pc=
 github.com/afnandelfin620-star/cftptest/cftp v0.0.0-20260825092213-15694aa3950b/go.mod h1:00s9AuWPk/1OxEv2bjpjWVk9FQxV8xM+mWO9GchE1i4=
+github.com/afnandelfin620-star/cftptest/cftp v0.0.0-20260826022830-e635a1e278c1 h1:aCDvUr/K5XJJwpiY9TnIHXzNJlDHgJjHYx6Rm01ZPrw=
+github.com/afnandelfin620-star/cftptest/cftp v0.0.0-20260826022830-e635a1e278c1/go.mod h1:00s9AuWPk/1OxEv2bjpjWVk9FQxV8xM+mWO9GchE1i4=
 github.com/alicebob/miniredis/v2 v2.35.0 h1:QwLphYqCEAo1eu1TqPRN2jgVMPBweeQcR21jeqDCONI=
 github.com/alicebob/miniredis/v2 v2.35.0/go.mod h1:TcL7YfarKPGDAthEtl5NBeHZfeUQj6OXMm/+iu5cLMM=
 github.com/bsm/ginkgo/v2 v2.12.0 h1:Ny8MWAHyOepLGlLKYmXG4IEkioBysk6GpaRTLC8zwWs=

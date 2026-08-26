@@ -31,8 +31,12 @@ type CourseImportChapter = JsonRecord & {
 }
 
 type CourseImportQuiz = JsonRecord & {
-  chapter_title: string
   title: string
+  quizzable_type: number
+  chapter_index?: number
+  lesson_index?: number
+  chapter_title?: string
+  lesson_title?: string
 }
 
 type CourseImportPackage = JsonRecord & {
@@ -40,6 +44,8 @@ type CourseImportPackage = JsonRecord & {
   course_gpath: string
   chapters: CourseImportChapter[]
   quizzes: CourseImportQuiz[]
+  materials: JsonRecord[]
+  supplementary_material: JsonRecord | null
 }
 
 type ChapterForm = {
@@ -1058,7 +1064,29 @@ function importLessonFromDetail(value: unknown) {
     video_provider: String(lesson.video_provider || ""),
     video_stream_uid: String(lesson.video_stream_uid || ""),
     video_embed_code: String(lesson.video_embed_code || ""),
+    external_courseware_ulid: String(lesson.external_courseware_ulid || ""),
     meta_json: String(lesson.meta_json || "{}"),
+  }
+}
+
+function importMaterialFromDetail(value: unknown) {
+  if (!isJsonRecord(value)) return null
+  return {
+    title: String(value.title || ""),
+    material_type: value.material_type ?? 0,
+    description: String(value.description || ""),
+    file_object_key: String(value.file_object_key || ""),
+    file_hash: String(value.file_hash || ""),
+    file_size: Number(value.file_size || 0),
+    sort_order: Number(value.sort_order || 0),
+  }
+}
+
+function importSupplementaryMaterialFromDetail(value: unknown) {
+  if (!isJsonRecord(value) || !String(value.kind || "").trim()) return null
+  return {
+    kind: String(value.kind || ""),
+    data_json: String(value.data_json || "[]"),
   }
 }
 
@@ -1091,7 +1119,7 @@ function importQuestionFromDetail(value: unknown) {
   }
 }
 
-function importQuizFromDetail(value: unknown, chapterTitle: string) {
+function importQuizFromDetail(value: unknown, target: Pick<CourseImportQuiz, "quizzable_type" | "chapter_index" | "lesson_index" | "chapter_title" | "lesson_title">) {
   if (!isJsonRecord(value)) return null
   const quiz = extractNestedRecord(value, "quiz")
   if (!quiz) return null
@@ -1099,7 +1127,7 @@ function importQuizFromDetail(value: unknown, chapterTitle: string) {
     .map(importQuestionFromDetail)
     .filter((question): question is NonNullable<typeof question> => Boolean(question))
   return {
-    chapter_title: chapterTitle,
+    ...target,
     title: String(quiz.title || ""),
     description: String(quiz.description || ""),
     passing_score: Number(quiz.passing_score || 0),
@@ -1117,12 +1145,14 @@ function buildCourseImportPackage(complete: JsonRecord | null | undefined): Json
 
   const chapters: JsonRecord[] = []
   const quizzes: JsonRecord[] = []
-  for (const chapterDetail of Array.isArray(complete.chapters) ? complete.chapters : []) {
+  const completeChapters = Array.isArray(complete.chapters) ? complete.chapters : []
+  for (const [chapterIndex, chapterDetail] of completeChapters.entries()) {
     if (!isJsonRecord(chapterDetail)) continue
     const chapter = extractNestedRecord(chapterDetail, "chapter")
     if (!chapter) continue
     const chapterTitle = String(chapter.title || "")
-    const lessons = (Array.isArray(chapterDetail.lessons) ? chapterDetail.lessons : [])
+    const lessonDetails = Array.isArray(chapterDetail.lessons) ? chapterDetail.lessons : []
+    const lessons = lessonDetails
       .map(importLessonFromDetail)
       .filter((lesson): lesson is NonNullable<typeof lesson> => Boolean(lesson))
     chapters.push({
@@ -1131,10 +1161,34 @@ function buildCourseImportPackage(complete: JsonRecord | null | undefined): Json
       lessons,
     })
     for (const quizDetail of Array.isArray(chapterDetail.quizzes) ? chapterDetail.quizzes : []) {
-      const quiz = importQuizFromDetail(quizDetail, chapterTitle)
+      const quiz = importQuizFromDetail(quizDetail, { quizzable_type: 2, chapter_index: chapterIndex, chapter_title: chapterTitle })
       if (quiz) quizzes.push(quiz)
     }
+    for (const [lessonIndex, lessonDetail] of lessonDetails.entries()) {
+      if (!isJsonRecord(lessonDetail)) continue
+      const lesson = extractNestedRecord(lessonDetail, "lesson")
+      const lessonTitleValue = String(lesson?.title || "")
+      for (const quizDetail of Array.isArray(lessonDetail.quizzes) ? lessonDetail.quizzes : []) {
+        const quiz = importQuizFromDetail(quizDetail, {
+          quizzable_type: 1,
+          chapter_index: chapterIndex,
+          lesson_index: lessonIndex,
+          chapter_title: chapterTitle,
+          lesson_title: lessonTitleValue,
+        })
+        if (quiz) quizzes.push(quiz)
+      }
+    }
   }
+  for (const quizDetail of Array.isArray(complete.quizzes) ? complete.quizzes : []) {
+    const quiz = importQuizFromDetail(quizDetail, { quizzable_type: 3 })
+    if (quiz) quizzes.push(quiz)
+  }
+
+  const materials = (Array.isArray(complete.materials) ? complete.materials : [])
+    .map(importMaterialFromDetail)
+    .filter((material): material is NonNullable<typeof material> => Boolean(material))
+  const supplementaryMaterial = importSupplementaryMaterialFromDetail(complete.supplementary_material)
 
   return {
     category_tips: String(course.category_tips || ""),
@@ -1147,6 +1201,8 @@ function buildCourseImportPackage(complete: JsonRecord | null | undefined): Json
     certification_def_ulid: String(course.certification_def_ulid || ""),
     course_gpath: String(course.course_gpath || ""),
     chapters,
+    materials,
+    supplementary_material: supplementaryMaterial,
     quizzes,
   }
 }
@@ -3015,19 +3071,32 @@ async function confirmDetailDelete() {
   }
 }
 
+const sha256Pattern = /^[0-9a-f]{64}$/i
+
+function requireImportAssetHash(objectKey: unknown, fileHash: unknown, path: string) {
+  if (!String(objectKey || "").trim()) return
+  if (!sha256Pattern.test(String(fileHash || "").trim())) {
+    throw new Error(copy.value.toasts.importAssetHashInvalid(path))
+  }
+}
+
 function parseCourseImportPackage(value: unknown): CourseImportPackage {
   if (!isJsonRecord(value)) throw new Error(copy.value.toasts.importInvalidPackage)
   const title = String(value.title || "").trim()
   const courseGpath = String(value.course_gpath || "").trim()
   const rawChapters = Array.isArray(value.chapters) ? value.chapters : []
   const rawQuizzes = value.quizzes === undefined ? [] : Array.isArray(value.quizzes) ? value.quizzes : null
-  if (!title || !courseGpath || rawChapters.length === 0 || rawQuizzes === null) {
+  const rawMaterials = value.materials === undefined ? [] : Array.isArray(value.materials) ? value.materials : null
+  const rawSupplementaryMaterial = value.supplementary_material
+  if (!title || !courseGpath || rawChapters.length === 0 || rawQuizzes === null || rawMaterials === null) {
     throw new Error(copy.value.toasts.importInvalidPackage)
   }
+  requireImportAssetHash(value.thumbnail_object_key, value.thumbnail_file_hash, "thumbnail_object_key")
 
   const chapters: CourseImportChapter[] = []
   const chapterTitles = new Set<string>()
-  for (const rawChapter of rawChapters) {
+  const chapterIndexesByTitle = new Map<string, number>()
+  for (const [chapterIndex, rawChapter] of rawChapters.entries()) {
     if (!isJsonRecord(rawChapter)) throw new Error(copy.value.toasts.importInvalidPackage)
     const chapterTitle = String(rawChapter.title || "").trim()
     const rawLessons = Array.isArray(rawChapter.lessons) ? rawChapter.lessons : []
@@ -3036,7 +3105,38 @@ function parseCourseImportPackage(value: unknown): CourseImportPackage {
       throw new Error(copy.value.toasts.importInvalidPackage)
     }
     chapterTitles.add(chapterTitle)
+    chapterIndexesByTitle.set(chapterTitle, chapterIndex)
+    for (const [lessonIndex, lesson] of lessons.entries()) {
+      if (!String(lesson.title || "").trim()) throw new Error(copy.value.toasts.importInvalidPackage)
+      requireImportAssetHash(
+        lesson.media_object_key,
+        lesson.media_file_hash,
+        `chapters[${chapterIndex}].lessons[${lessonIndex}].media_object_key`,
+      )
+    }
     chapters.push({ ...rawChapter, title: chapterTitle, lessons })
+  }
+
+  const materials: JsonRecord[] = []
+  for (const [materialIndex, rawMaterial] of rawMaterials.entries()) {
+    if (!isJsonRecord(rawMaterial) || !String(rawMaterial.title || "").trim() || Number(rawMaterial.material_type || 0) <= 0) {
+      throw new Error(copy.value.toasts.importInvalidPackage)
+    }
+    requireImportAssetHash(rawMaterial.file_object_key, rawMaterial.file_hash, `materials[${materialIndex}].file_object_key`)
+    materials.push(rawMaterial)
+  }
+
+  let supplementaryMaterial: JsonRecord | null = null
+  if (rawSupplementaryMaterial !== undefined && rawSupplementaryMaterial !== null) {
+    if (!isJsonRecord(rawSupplementaryMaterial) || !String(rawSupplementaryMaterial.kind || "").trim()) {
+      throw new Error(copy.value.toasts.importInvalidPackage)
+    }
+    try {
+      JSON.parse(String(rawSupplementaryMaterial.data_json || ""))
+    } catch {
+      throw new Error(copy.value.toasts.importInvalidPackage)
+    }
+    supplementaryMaterial = rawSupplementaryMaterial
   }
 
   const quizzes: CourseImportQuiz[] = []
@@ -3044,13 +3144,35 @@ function parseCourseImportPackage(value: unknown): CourseImportPackage {
     if (!isJsonRecord(rawQuiz)) throw new Error(copy.value.toasts.importInvalidPackage)
     const chapterTitle = String(rawQuiz.chapter_title || "").trim()
     const quizTitle = String(rawQuiz.title || "").trim()
-    if (!chapterTitle || !quizTitle || !chapterTitles.has(chapterTitle)) {
+    const quizzableType = Number(rawQuiz.quizzable_type || (chapterTitle ? 2 : 0))
+    let chapterIndex = Number(rawQuiz.chapter_index)
+    if (!Number.isInteger(chapterIndex)) chapterIndex = chapterIndexesByTitle.get(chapterTitle) ?? -1
+    const lessonIndex = Number(rawQuiz.lesson_index)
+    const chapter = chapters[chapterIndex]
+    const targetIsValid = quizzableType === 3
+      || (quizzableType === 2 && Boolean(chapter))
+      || (quizzableType === 1 && Boolean(chapter) && Number.isInteger(lessonIndex) && Boolean(chapter.lessons[lessonIndex]))
+    if (!quizTitle || !targetIsValid) {
       throw new Error(copy.value.toasts.importInvalidPackage)
     }
-    quizzes.push({ ...rawQuiz, chapter_title: chapterTitle, title: quizTitle })
+    quizzes.push({
+      ...rawQuiz,
+      title: quizTitle,
+      quizzable_type: quizzableType,
+      ...(quizzableType === 3 ? {} : { chapter_index: chapterIndex }),
+      ...(quizzableType === 1 ? { lesson_index: lessonIndex } : {}),
+    })
   }
 
-  return { ...value, title, course_gpath: courseGpath, chapters, quizzes }
+  return {
+    ...value,
+    title,
+    course_gpath: courseGpath,
+    chapters,
+    quizzes,
+    materials,
+    supplementary_material: supplementaryMaterial,
+  }
 }
 
 function courseImportPayload(coursePackage: CourseImportPackage): JsonRecord {
@@ -3074,13 +3196,21 @@ function verifyImportedCourse(data: JsonRecord, coursePackage: CourseImportPacka
   const actualLessonCount = chapterDetails.reduce((count, chapter) => {
     return count + (Array.isArray(chapter.lessons) ? chapter.lessons.length : 0)
   }, 0)
-  const actualQuizCount = chapterDetails.reduce((count, chapter) => {
-    return count + (Array.isArray(chapter.quizzes) ? chapter.quizzes.length : 0)
-  }, 0)
+  let actualQuizCount = Array.isArray(complete.quizzes) ? complete.quizzes.length : 0
+  for (const chapter of chapterDetails) {
+    actualQuizCount += Array.isArray(chapter.quizzes) ? chapter.quizzes.length : 0
+    for (const lesson of Array.isArray(chapter.lessons) ? chapter.lessons.filter(isJsonRecord) : []) {
+      actualQuizCount += Array.isArray(lesson.quizzes) ? lesson.quizzes.length : 0
+    }
+  }
+  const actualMaterialCount = Array.isArray(complete.materials) ? complete.materials.length : 0
+  const actualSupplementaryMaterial = isJsonRecord(complete.supplementary_material)
   if (
     chapterDetails.length !== coursePackage.chapters.length
     || actualLessonCount !== expectedLessonCount
     || actualQuizCount !== coursePackage.quizzes.length
+    || actualMaterialCount !== coursePackage.materials.length
+    || actualSupplementaryMaterial !== Boolean(coursePackage.supplementary_material)
   ) {
     throw new Error(copy.value.toasts.importVerificationFailed)
   }
@@ -3088,7 +3218,11 @@ function verifyImportedCourse(data: JsonRecord, coursePackage: CourseImportPacka
 
 async function importCourseInSteps(coursePackage: CourseImportPackage) {
   importProgressCurrent.value = 0
-  importProgressTotal.value = coursePackage.chapters.length + coursePackage.quizzes.length + 2
+  importProgressTotal.value = coursePackage.chapters.length
+    + coursePackage.materials.length
+    + coursePackage.quizzes.length
+    + (coursePackage.supplementary_material ? 1 : 0)
+    + 2
   importProgressLabel.value = `${copy.value.importCreatingCourse}: ${coursePackage.title}`
 
   const createdCourse = await apiClient<JsonRecord>("/api/lms/courses", {
@@ -3100,7 +3234,7 @@ async function importCourseInSteps(coursePackage: CourseImportPackage) {
   importDraftCourseId.value = draftCourseID
   importProgressCurrent.value = 1
 
-  const chapterIDs = new Map<string, string>()
+  const chapterIDs: string[] = []
   for (const [chapterIndex, chapter] of coursePackage.chapters.entries()) {
     importProgressLabel.value = `${copy.value.importCreatingChapter}: ${chapter.title}`
     const result = await apiClient<JsonRecord>(`/api/lms/courses/${encodeURIComponent(draftCourseID)}/chapters/import`, {
@@ -3109,21 +3243,65 @@ async function importCourseInSteps(coursePackage: CourseImportPackage) {
     })
     const importedChapterID = chapterId(result)
     if (!importedChapterID) throw new Error(copy.value.toasts.importMissingChapterId)
-    chapterIDs.set(chapter.title, importedChapterID)
+    chapterIDs.push(importedChapterID)
     importProgressCurrent.value += 1
+  }
+
+  for (const material of coursePackage.materials) {
+    importProgressLabel.value = `${copy.value.importCreatingMaterial}: ${String(material.title || "")}`
+    await apiClient(`/api/lms/courses/${encodeURIComponent(draftCourseID)}/materials`, {
+      method: "POST",
+      body: JSON.stringify(material),
+    })
+    importProgressCurrent.value += 1
+  }
+
+  if (coursePackage.supplementary_material) {
+    importProgressLabel.value = copy.value.importCreatingSupplementaryMaterial
+    await apiClient(`/api/lms/courses/${encodeURIComponent(draftCourseID)}/supplementary-material`, {
+      method: "POST",
+      body: JSON.stringify(coursePackage.supplementary_material),
+    })
+    importProgressCurrent.value += 1
+  }
+
+  let importedChapterDetails: JsonRecord[] = []
+  if (coursePackage.quizzes.some(quiz => quiz.quizzable_type === 1)) {
+    const importedStructureResponse = await apiClient<JsonRecord>(`/api/lms/courses/${encodeURIComponent(draftCourseID)}/complete`)
+    const importedStructure = isJsonRecord(importedStructureResponse.complete_course)
+      ? importedStructureResponse.complete_course
+      : importedStructureResponse
+    importedChapterDetails = Array.isArray(importedStructure.chapters)
+      ? importedStructure.chapters.filter(isJsonRecord)
+      : []
   }
 
   for (const quiz of coursePackage.quizzes) {
     importProgressLabel.value = `${copy.value.importCreatingQuiz}: ${quiz.title}`
-    const targetChapterID = chapterIDs.get(quiz.chapter_title) || ""
-    if (!targetChapterID) throw new Error(copy.value.toasts.importQuizNeedsChapter)
-    const quizPayload = Object.fromEntries(Object.entries(quiz).filter(([key]) => key !== "chapter_title"))
+    let targetID = draftCourseID
+    if (quiz.quizzable_type === 2) {
+      targetID = chapterIDs[Number(quiz.chapter_index)] || ""
+    } else if (quiz.quizzable_type === 1) {
+      const chapterDetail = importedChapterDetails[Number(quiz.chapter_index)]
+      const lessonDetail = Array.isArray(chapterDetail?.lessons)
+        ? chapterDetail.lessons.filter(isJsonRecord)[Number(quiz.lesson_index)]
+        : null
+      targetID = lessonId(extractNestedRecord(lessonDetail, "lesson"))
+    }
+    if (!targetID) throw new Error(copy.value.toasts.importQuizTargetMissing(quiz.title))
+    const quizPayload = Object.fromEntries(Object.entries(quiz).filter(([key]) => ![
+      "quizzable_type",
+      "chapter_index",
+      "lesson_index",
+      "chapter_title",
+      "lesson_title",
+    ].includes(key)))
     await apiClient("/api/lms/import", {
       method: "POST",
       body: JSON.stringify({
         scope: "quiz",
-        quizzable_type: 2,
-        quizzable_id: targetChapterID,
+        quizzable_type: quiz.quizzable_type,
+        quizzable_id: targetID,
         quiz_json: JSON.stringify(quizPayload),
       }),
     })
