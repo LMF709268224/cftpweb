@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue"
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { RouterLink } from "vue-router"
 import { ArrowRight, CalendarClock, PackageOpen, RefreshCw, Search } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
@@ -23,6 +23,7 @@ const loadError = ref(false)
 const search = ref("")
 const packs = ref<ResourcePack[]>([])
 const nextPageToken = ref("")
+let packsRequestId = 0
 
 const copy = computed(() => t.value.resourcePacksPage)
 
@@ -35,6 +36,7 @@ const filteredPacks = computed(() => {
 })
 
 async function loadPacks(pageToken = "") {
+  const requestId = ++packsRequestId
   const showPageError = !pageToken && packs.value.length === 0
   loading.value = true
   if (!pageToken) loadError.value = false
@@ -42,16 +44,18 @@ async function loadPacks(pageToken = "") {
     const params = new URLSearchParams({ page_size: "20" })
     if (pageToken) params.set("page_token", pageToken)
     const resp = await apiClient(`/api/resource-packs?${params.toString()}`)
+    if (requestId !== packsRequestId) return
     if (!Array.isArray(resp?.packs)) throw new Error("RESOURCE_PACKS_INVALID_RESPONSE")
     const list = resp.packs
     packs.value = pageToken ? packs.value.concat(list) : list
     nextPageToken.value = resp?.next_page_token || ""
     loadError.value = false
   } catch (error) {
+    if (requestId !== packsRequestId) return
     console.error(error)
     if (showPageError) loadError.value = true
   } finally {
-    loading.value = false
+    if (requestId === packsRequestId) loading.value = false
   }
 }
 
@@ -68,6 +72,10 @@ onMounted(() => {
 watch(lang, () => {
   search.value = ""
   void loadPacks()
+})
+
+onBeforeUnmount(() => {
+  packsRequestId += 1
 })
 </script>
 

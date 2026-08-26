@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue"
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { RouterLink, useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
 import { ArrowLeft, CalendarDays, Clock, Eye, FileArchive, Play, RefreshCw, Search } from "lucide-vue-next"
@@ -38,6 +38,8 @@ const files = ref<ResourcePackFile[]>([])
 const thumbnailUrls = ref<Record<string, string>>({})
 const thumbnailLoading = ref<Record<string, boolean>>({})
 const nextPageToken = ref("")
+let filesRequestId = 0
+let thumbnailGeneration = 0
 
 const packId = computed(() => String(route.params.packId || route.query.id || ""))
 const storedPackTitle = computed(() => (packId.value ? sessionStorage.getItem(`resource-pack-title:${packId.value}`) || "" : ""))
@@ -147,7 +149,8 @@ function thumbnailFor(file: ResourcePackFile) {
   return thumbnailUrls.value[file.file_id] || file.thumbnail_url || ""
 }
 
-async function loadThumbnail(file: ResourcePackFile) {
+async function loadThumbnail(file: ResourcePackFile, generation: number) {
+  if (generation !== thumbnailGeneration) return
   if (!file.file_id || thumbnailUrls.value[file.file_id] || thumbnailLoading.value[file.file_id]) return
   if (file.thumbnail_url) {
     thumbnailUrls.value[file.file_id] = file.thumbnail_url
@@ -160,34 +163,47 @@ async function loadThumbnail(file: ResourcePackFile) {
     const resp = await apiClient(`/api/resource-pack-files/${encodeURIComponent(file.file_id)}/thumbnail-url`, {
       suppressErrorToast: true,
     })
+    if (generation !== thumbnailGeneration) return
     if (resp?.url) thumbnailUrls.value[file.file_id] = resp.url
   } catch (err) {
+    if (generation !== thumbnailGeneration) return
     console.warn("Failed to load resource thumbnail", err)
   } finally {
-    thumbnailLoading.value[file.file_id] = false
+    if (generation === thumbnailGeneration) thumbnailLoading.value[file.file_id] = false
   }
 }
 
 async function loadFiles(pageToken = "") {
-  if (!packId.value) return
+  const requestId = ++filesRequestId
+  const thumbnailRequestGeneration = pageToken ? thumbnailGeneration : ++thumbnailGeneration
+  const requestedPackId = packId.value
+  if (!requestedPackId) {
+    loading.value = false
+    return
+  }
   const showPageError = !pageToken && files.value.length === 0
   loading.value = true
-  if (!pageToken) loadError.value = false
+  if (!pageToken) {
+    loadError.value = false
+    thumbnailLoading.value = {}
+  }
   try {
     const params = new URLSearchParams({ page_size: "20" })
     if (pageToken) params.set("page_token", pageToken)
-    const resp = await apiClient(`/api/resource-packs/${encodeURIComponent(packId.value)}/files?${params.toString()}`)
+    const resp = await apiClient(`/api/resource-packs/${encodeURIComponent(requestedPackId)}/files?${params.toString()}`)
+    if (requestId !== filesRequestId) return
     if (!Array.isArray(resp?.files)) throw new Error("RESOURCE_PACK_FILES_INVALID_RESPONSE")
     const list = resp.files
     files.value = pageToken ? files.value.concat(list) : list
     nextPageToken.value = resp?.next_page_token || ""
-    void Promise.all(list.map((file: ResourcePackFile) => loadThumbnail(file)))
+    void Promise.all(list.map((file: ResourcePackFile) => loadThumbnail(file, thumbnailRequestGeneration)))
     loadError.value = false
   } catch (error) {
+    if (requestId !== filesRequestId) return
     console.error(error)
     if (showPageError) loadError.value = true
   } finally {
-    loading.value = false
+    if (requestId === filesRequestId) loading.value = false
   }
 }
 
@@ -227,17 +243,24 @@ async function openFile(file: ResourcePackFile) {
 watch(packId, () => {
   files.value = []
   thumbnailUrls.value = {}
+  thumbnailLoading.value = {}
   void loadFiles()
 })
 
 watch(lang, () => {
   files.value = []
   thumbnailUrls.value = {}
+  thumbnailLoading.value = {}
   void loadFiles()
 })
 
 onMounted(() => {
   void loadFiles()
+})
+
+onBeforeUnmount(() => {
+  filesRequestId += 1
+  thumbnailGeneration += 1
 })
 </script>
 

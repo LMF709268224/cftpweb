@@ -1,5 +1,11 @@
-import { expect, test } from "@playwright/test"
+import { expect, test, type Page } from "@playwright/test"
 import { installCandidateApiMocks, seedAuthenticatedCandidate } from "./support/candidate"
+
+async function waitForRenderedResponse(page: Page) {
+  await page.evaluate(() => new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+  }))
+}
 
 type AsyncPageCase = {
   name: string
@@ -165,4 +171,90 @@ test("首页统计全部加载失败后可以重试", async ({ page }) => {
   for (const endpoint of Object.keys(responses)) {
     expect(requestCounts.get(endpoint)).toBe(2)
   }
+})
+
+test("资源包列表只应用最后一次请求返回的数据", async ({ page }) => {
+  let requestCount = 0
+  let firstRequestStarted = false
+  let releaseFirstRequest!: () => void
+  const firstRequestGate = new Promise<void>((resolve) => {
+    releaseFirstRequest = resolve
+  })
+
+  await seedAuthenticatedCandidate(page)
+  await installCandidateApiMocks(page, async ({ pathname }) => {
+    if (pathname !== "/api/resource-packs") return undefined
+
+    requestCount += 1
+    if (requestCount === 1) {
+      firstRequestStarted = true
+      await firstRequestGate
+      return { data: { packs: [{ pack_id: "pack-stale", title: "STALE RESOURCE PACK" }], next_page_token: "" } }
+    }
+    return { data: { packs: [{ pack_id: "pack-latest", title: "LATEST RESOURCE PACK" }], next_page_token: "" } }
+  })
+
+  await page.goto("/resource-packs", { waitUntil: "domcontentloaded" })
+  await expect.poll(() => firstRequestStarted).toBe(true)
+  await page.evaluate(() => {
+    localStorage.setItem("app_lang", "en")
+    window.dispatchEvent(new Event("lang_change"))
+  })
+  await expect(page.getByRole("heading", { name: "LATEST RESOURCE PACK", exact: true })).toBeVisible()
+  expect(requestCount).toBe(2)
+
+  const staleResponse = page.waitForResponse(async (response) => {
+    if (new URL(response.url()).pathname !== "/api/resource-packs") return false
+    const body = await response.json()
+    return body?.data?.packs?.[0]?.title === "STALE RESOURCE PACK"
+  })
+  releaseFirstRequest()
+  await staleResponse
+  await waitForRenderedResponse(page)
+
+  await expect(page.getByRole("heading", { name: "LATEST RESOURCE PACK", exact: true })).toBeVisible()
+  await expect(page.getByText("STALE RESOURCE PACK", { exact: true })).toHaveCount(0)
+})
+
+test("资源包详情只应用最后一次请求返回的文件", async ({ page }) => {
+  let requestCount = 0
+  let firstRequestStarted = false
+  let releaseFirstRequest!: () => void
+  const firstRequestGate = new Promise<void>((resolve) => {
+    releaseFirstRequest = resolve
+  })
+
+  await seedAuthenticatedCandidate(page)
+  await installCandidateApiMocks(page, async ({ pathname }) => {
+    if (pathname !== "/api/resource-packs/pack-regression/files") return undefined
+
+    requestCount += 1
+    if (requestCount === 1) {
+      firstRequestStarted = true
+      await firstRequestGate
+      return { data: { files: [{ file_id: "file-stale", file_type: 3, title: "STALE RESOURCE FILE" }], next_page_token: "" } }
+    }
+    return { data: { files: [{ file_id: "file-latest", file_type: 3, title: "LATEST RESOURCE FILE" }], next_page_token: "" } }
+  })
+
+  await page.goto("/resource-packs/pack-regression", { waitUntil: "domcontentloaded" })
+  await expect.poll(() => firstRequestStarted).toBe(true)
+  await page.evaluate(() => {
+    localStorage.setItem("app_lang", "en")
+    window.dispatchEvent(new Event("lang_change"))
+  })
+  await expect(page.getByRole("heading", { name: "LATEST RESOURCE FILE", exact: true })).toBeVisible()
+  expect(requestCount).toBe(2)
+
+  const staleResponse = page.waitForResponse(async (response) => {
+    if (new URL(response.url()).pathname !== "/api/resource-packs/pack-regression/files") return false
+    const body = await response.json()
+    return body?.data?.files?.[0]?.title === "STALE RESOURCE FILE"
+  })
+  releaseFirstRequest()
+  await staleResponse
+  await waitForRenderedResponse(page)
+
+  await expect(page.getByRole("heading", { name: "LATEST RESOURCE FILE", exact: true })).toBeVisible()
+  await expect(page.getByText("STALE RESOURCE FILE", { exact: true })).toHaveCount(0)
 })
