@@ -243,7 +243,9 @@ test("资源包详情只应用最后一次请求返回的文件", async ({ page 
     localStorage.setItem("app_lang", "en")
     window.dispatchEvent(new Event("lang_change"))
   })
-  await expect(page.getByRole("heading", { name: "LATEST RESOURCE FILE", exact: true })).toBeVisible()
+  const latestFileCard = page.locator("article.resource-detail-card").filter({ hasText: "LATEST RESOURCE FILE" })
+  await expect(latestFileCard).toHaveCount(1)
+  await expect(latestFileCard).toBeVisible()
   expect(requestCount).toBe(2)
 
   const staleResponse = page.waitForResponse(async (response) => {
@@ -255,6 +257,6 @@ test("资源包详情只应用最后一次请求返回的文件", async ({ page 
   await staleResponse
   await waitForRenderedResponse(page)
 
-  await expect(page.getByRole("heading", { name: "LATEST RESOURCE FILE", exact: true })).toBeVisible()
-  await expect(page.getByText("STALE RESOURCE FILE", { exact: true })).toHaveCount(0)
+  await expect(latestFileCard).toHaveCount(1)
+  await expect(page.locator("article.resource-detail-card").filter({ hasText: "STALE RESOURCE FILE" })).toHaveCount(0)
 })
