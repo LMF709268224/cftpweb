@@ -1655,7 +1655,7 @@ watch(selectedMaterial, () => {
               <BookOpen class="h-5 w-5" />
             </div>
             <div class="min-w-0">
-              <h1 class="text-xl font-bold text-foreground">{{ certificationTitle }}</h1>
+              <h1 class="course-learn-heading text-xl font-bold text-foreground">{{ certificationTitle }}</h1>
               <p :class="['mt-1.5 text-sm leading-6 text-muted-foreground', !courseDescriptionExpanded && 'line-clamp-2']">
                 {{ courseDescription }}
               </p>
@@ -1755,7 +1755,7 @@ watch(selectedMaterial, () => {
       <section id="course-learn-content" class="grid gap-4 xl:grid-cols-[280px_minmax(0,1fr)]">
         <aside class="rounded-md border border-slate-200 bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.06)] xl:sticky xl:top-4 xl:self-start">
           <div class="mb-6">
-            <h2 class="text-xl font-bold text-foreground">{{ t.learning.certificationMaterialsTitle }}</h2>
+            <h2 class="course-learn-heading text-xl font-bold text-foreground">{{ t.learning.certificationMaterialsTitle }}</h2>
           </div>
           <div class="space-y-2">
             <button
@@ -1823,7 +1823,7 @@ watch(selectedMaterial, () => {
             <div>
               <div class="mb-2 flex items-center gap-2">
                 <CalendarClock class="h-5 w-5 text-primary" />
-                <h2 class="text-xl font-semibold text-foreground">{{ t.sidebar.exams }}</h2>
+                <h2 class="course-learn-heading text-xl font-semibold text-foreground">{{ t.sidebar.exams }}</h2>
               </div>
               <p class="text-sm text-muted-foreground">{{ t.learning.nextStepGoToExamsDesc }}</p>
             </div>
@@ -2109,7 +2109,7 @@ watch(selectedMaterial, () => {
                     {{ activeLesson.chapterTitle }}
                   </span>
                 </div>
-                <h2 class="mt-3 line-clamp-2 text-[20px] font-bold leading-snug text-foreground" :title="lesson?.title">
+                <h2 class="course-learn-heading mt-3 line-clamp-2 text-[20px] font-bold leading-snug text-foreground" :title="lesson?.title">
                   {{ lesson?.title || t.common.unknownCourse }}
                 </h2>
               </div>
@@ -2312,7 +2312,7 @@ watch(selectedMaterial, () => {
                     <span v-if="selectedMaterial.sort_order !== undefined" class="badge">{{ t.learning.materialSortOrder }} {{ selectedMaterial.sort_order }}</span>
                   </div>
                   <div>
-                    <h4 class="text-xl font-semibold text-foreground">{{ selectedMaterial.title || t.learning.unknownMaterial }}</h4>
+                    <h4 class="course-learn-heading text-xl font-semibold text-foreground">{{ selectedMaterial.title || t.learning.unknownMaterial }}</h4>
                     <p class="mt-2 text-sm text-muted-foreground">{{ selectedMaterial.file_object_key || t.learning.materialFileKeyUnknown }}</p>
                   </div>
 
@@ -2435,6 +2435,12 @@ watch(selectedMaterial, () => {
 .learn-sync-btn:disabled {
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+@media (max-width: 767px) {
+  .course-learn-heading {
+    font-size: 18px;
+  }
 }
 
 @media (min-width: 1280px) {
