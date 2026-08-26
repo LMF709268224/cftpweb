@@ -121,9 +121,9 @@ test("membership list ignores a stale response after creation refreshes it", asy
 
   await page.getByRole("button", { name: "新增会员方案" }).click()
   const editor = page.getByRole("dialog", { name: "新增会员方案" })
-  await editor.getByLabel("会员方案路径", { exact: true }).fill("/memberships/latest")
-  await editor.getByLabel("名称", { exact: true }).fill("Latest Membership")
-  await editor.getByLabel("Casdoor 角色名称", { exact: true }).fill("member-latest")
+  await editor.getByLabel(/会员方案路径/).fill("/memberships/latest")
+  await editor.getByLabel(/^\*?\s*名称$/).fill("Latest Membership")
+  await editor.getByLabel(/Casdoor 角色名称/).fill("member-latest")
   await editor.getByRole("button", { name: "创建会员方案" }).click()
 
   await expect(page.getByText("Latest Membership", { exact: true })).toBeVisible()
