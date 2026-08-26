@@ -63,14 +63,13 @@ type OrderDetail = {
   updated_at?: string
   order_status_at?: string
   payment_status_at?: string
-  price_detail?: {
-    currency_code?: string
-    subtotal_minor?: number
-    discount_total_minor?: number
-    tax_total_minor?: number
-    total_minor?: number
-  }
-  business_detail?: Record<string, unknown>
+  items?: Array<{
+    item_type?: string
+    item_id?: string
+    title?: string
+    base_price?: number
+    quantity?: number
+  }>
   raw?: unknown
 }
 
@@ -163,68 +162,18 @@ const detailExtraFields = computed<DetailField[]>(() => {
   ].filter((field) => field.value !== "")
 })
 
-const businessDetailFields = computed<DetailField[]>(() => {
-  const response = selectedOrderDetail.value?.business_detail
-  if (!response || typeof response !== "object" || Array.isArray(response)) return []
-  const detail = recordValue(response.detail) || response
-  const summary = recordValue(detail.summary)
-  const values = {
-    ...(summary || {}),
-    ...Object.fromEntries(Object.entries(detail).filter(([key]) => key !== "summary")),
-  }
-  return Object.entries(values)
-    .filter(([key, value]) => !hiddenBusinessDetailFields.has(key) && value !== undefined && value !== null && value !== "")
-    .map(([key, value]) => ({
-      label: businessDetailFieldLabel(key),
-      value: displayBusinessValue(value),
-    }))
-})
-const hiddenBusinessDetailFields = new Set([
-  "candidate_ulid",
-  "amount_minor",
-  "currency_code",
-  "created_at",
-  "candidate_selected_exemptions_json",
-  "final_exemptions_json",
-  "items_snapshot_json",
-])
-const orderPricing = computed(() => selectedOrderDetail.value?.price_detail || null)
-const pricingCurrency = computed(() => String(orderPricing.value?.currency_code || selectedOrderDetail.value?.summary?.currency || ""))
-const originalPriceText = computed(() => minorAmountText(orderPricing.value?.subtotal_minor, pricingCurrency.value))
-const promotionDiscountText = computed(() => signedMinorAmountText(orderPricing.value?.discount_total_minor, pricingCurrency.value, "-"))
-const taxText = computed(() => signedMinorAmountText(orderPricing.value?.tax_total_minor, pricingCurrency.value, "+"))
-const finalPriceText = computed(() => minorAmountText(orderPricing.value?.total_minor, pricingCurrency.value))
-const hasTax = computed(() => Number(orderPricing.value?.tax_total_minor || 0) > 0)
-
-function recordValue(value: unknown): Record<string, unknown> | null {
-  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null
-}
-
-function displayBusinessValue(value: unknown) {
-  if (typeof value === "string") return value
-  if (typeof value === "number" || typeof value === "boolean") return String(value)
-  try {
-    return JSON.stringify(value)
-  } catch {
-    return String(value)
-  }
-}
-
-function businessDetailFieldLabel(key: string) {
-  const labels = t.value.orders.businessFieldLabels as Record<string, string>
-  return labels[key] || key
-}
+const orderItems = computed(() => selectedOrderDetail.value?.items || [])
+const itemCurrency = computed(() => String(selectedOrderDetail.value?.summary?.currency || selectedOrderItem.value?.currency || ""))
 
 function minorAmountText(value: unknown, currency: string) {
-  if (value === undefined || value === null || value === "") return t.value.orders.pricingUnavailable
+  if (value === undefined || value === null || value === "") return "-"
   const amount = Number(value)
-  if (!Number.isFinite(amount)) return t.value.orders.pricingUnavailable
+  if (!Number.isFinite(amount)) return "-"
   return `${currency ? `${currency.toUpperCase()} ` : ""}${(amount / 100).toFixed(2)}`
 }
 
-function signedMinorAmountText(value: unknown, currency: string, sign: "+" | "-") {
-  const formatted = minorAmountText(value, currency)
-  return formatted === t.value.orders.pricingUnavailable ? formatted : `${sign}${formatted}`
+function orderItemTitle(item: NonNullable<OrderDetail["items"]>[number]) {
+  return item.title || item.item_id || t.value.orders.productItemUnnamed
 }
 
 function normalizedStatus(value: unknown) {
@@ -932,29 +881,23 @@ onBeforeUnmount(() => {
             </section>
 
             <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/60">
-              <h3 class="border-b border-slate-100 px-4 py-4 font-semibold text-slate-950 sm:px-5">{{ t.orders.pricingTitle }}</h3>
-
-              <template v-if="orderPricing">
-                <dl class="divide-y divide-slate-100 px-4 sm:px-5">
-                  <div class="flex items-center justify-between gap-4 py-4">
-                    <dt class="text-sm font-semibold text-slate-600">{{ t.orders.pricingBillableSubtotal }}</dt>
-                    <dd class="text-base font-black text-slate-950">{{ originalPriceText }}</dd>
+              <h3 class="border-b border-slate-100 px-4 py-4 font-semibold text-slate-950 sm:px-5">{{ t.orders.productItemsTitle }}</h3>
+              <div v-if="orderItems.length" class="divide-y divide-slate-100">
+                <div v-for="item in orderItems" :key="`${item.item_type}-${item.item_id}`" class="grid gap-3 px-4 py-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center sm:px-5">
+                  <div class="min-w-0">
+                    <div class="break-words text-sm font-bold text-slate-950">{{ orderItemTitle(item) }}</div>
+                    <div class="mt-1 break-all text-xs text-slate-500">{{ item.item_type || "-" }}<template v-if="item.item_id"> · {{ item.item_id }}</template></div>
                   </div>
-                  <div class="flex items-center justify-between gap-4 py-4">
-                    <dt class="text-sm font-semibold text-slate-600">{{ t.orders.pricingPromotionDiscount }}</dt>
-                    <dd class="text-base font-black text-emerald-700">{{ promotionDiscountText }}</dd>
+                  <div class="text-sm text-slate-600">
+                    <span class="font-semibold">{{ t.orders.productItemQuantity }}</span> {{ item.quantity || 0 }}
                   </div>
-                  <div v-if="hasTax" class="flex items-center justify-between gap-4 py-4">
-                    <dt class="text-sm font-semibold text-slate-600">{{ t.orders.pricingTax }}</dt>
-                    <dd class="text-base font-black text-slate-950">{{ taxText }}</dd>
+                  <div class="text-left sm:min-w-32 sm:text-right">
+                    <div class="text-xs font-semibold text-slate-500">{{ t.orders.productItemUnitPrice }}</div>
+                    <div class="mt-1 text-base font-black text-slate-950">{{ minorAmountText(item.base_price, itemCurrency) }}</div>
                   </div>
-                  <div class="flex items-center justify-between gap-4 bg-blue-50/70 py-4 -mx-4 px-4 sm:-mx-5 sm:px-5">
-                    <dt class="text-sm font-black text-slate-950">{{ t.orders.pricingAmountPaid }}</dt>
-                    <dd class="text-xl font-black text-primary">{{ finalPriceText }}</dd>
-                  </div>
-                </dl>
-              </template>
-              <div v-else class="p-8 text-center text-sm text-slate-500">{{ t.orders.pricingUnavailableDetail }}</div>
+                </div>
+              </div>
+              <div v-else class="p-8 text-center text-sm text-slate-500">{{ t.orders.productItemsEmpty }}</div>
             </section>
 
             <section v-if="detailExtraFields.length" class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/60">
@@ -963,16 +906,6 @@ onBeforeUnmount(() => {
                 <div v-for="field in detailExtraFields" :key="field.label" class="rounded-2xl border border-slate-100 bg-slate-50/80 px-4 py-3">
                   <dt class="text-xs font-semibold text-slate-500">{{ field.label }}</dt>
                   <dd class="mt-1.5 break-words text-sm font-bold leading-snug text-slate-950">{{ field.value }}</dd>
-                </div>
-              </dl>
-            </section>
-
-            <section v-if="businessDetailFields.length" class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/60">
-              <h3 class="border-b border-slate-100 bg-white px-4 py-3 font-semibold text-slate-950 sm:px-5">{{ t.orders.detailBusinessInfo }}</h3>
-              <dl class="grid gap-3 p-4 sm:grid-cols-2 sm:p-5">
-                <div v-for="field in businessDetailFields" :key="field.label" class="rounded-2xl border border-slate-100 bg-slate-50/80 px-4 py-3">
-                  <dt class="break-all text-xs font-semibold text-slate-500">{{ field.label }}</dt>
-                  <dd class="mt-1.5 break-all text-sm font-bold leading-snug text-slate-950">{{ field.value }}</dd>
                 </div>
               </dl>
             </section>

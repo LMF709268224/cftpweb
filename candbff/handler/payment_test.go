@@ -8,23 +8,22 @@ import (
 	"testing"
 
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
+	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
 	"google.golang.org/grpc"
 )
 
 type paymentOrderMallClientStub struct {
 	mallpb.MallServiceClient
-	listRequest          *mallpb.ListOrdersRequest
-	listRequests         []*mallpb.ListOrdersRequest
-	listResponse         *mallpb.ListOrdersResponse
-	listResponses        []*mallpb.ListOrdersResponse
-	countRequest         *mallpb.GetOrderCountRequest
-	countResponse        *mallpb.GetOrderCountResponse
-	detailRequest        *mallpb.GetOrderDetailRequest
-	detailResponse       *mallpb.GetOrderDetailResponse
-	bundleDetailRequest  *mallpb.GetBundleOrderDetailRequest
-	bundleDetailResponse *mallpb.GetBundleOrderDetailResponse
-	cancelRequest        *mallpb.CancelBusinessOrderRequest
-	cancelResponse       *mallpb.CancelBusinessOrderResponse
+	listRequest    *mallpb.ListOrdersRequest
+	listRequests   []*mallpb.ListOrdersRequest
+	listResponse   *mallpb.ListOrdersResponse
+	listResponses  []*mallpb.ListOrdersResponse
+	countRequest   *mallpb.GetOrderCountRequest
+	countResponse  *mallpb.GetOrderCountResponse
+	detailRequest  *mallpb.GetOrderDetailRequest
+	detailResponse *mallpb.GetOrderDetailResponse
+	cancelRequest  *mallpb.CancelBusinessOrderRequest
+	cancelResponse *mallpb.CancelBusinessOrderResponse
 }
 
 func (s *paymentOrderMallClientStub) ListOrders(
@@ -60,15 +59,6 @@ func (s *paymentOrderMallClientStub) GetOrderDetail(
 	return s.detailResponse, nil
 }
 
-func (s *paymentOrderMallClientStub) GetBundleOrderDetail(
-	_ context.Context,
-	request *mallpb.GetBundleOrderDetailRequest,
-	_ ...grpc.CallOption,
-) (*mallpb.GetBundleOrderDetailResponse, error) {
-	s.bundleDetailRequest = request
-	return s.bundleDetailResponse, nil
-}
-
 func (s *paymentOrderMallClientStub) CancelBusinessOrder(
 	_ context.Context,
 	request *mallpb.CancelBusinessOrderRequest,
@@ -76,6 +66,27 @@ func (s *paymentOrderMallClientStub) CancelBusinessOrder(
 ) (*mallpb.CancelBusinessOrderResponse, error) {
 	s.cancelRequest = request
 	return s.cancelResponse, nil
+}
+
+type paymentOrderPayClientStub struct {
+	gpaypb.PayServiceClient
+	itemsRequest *gpaypb.ListOrderItemsRequest
+}
+
+func (s *paymentOrderPayClientStub) ListOrderItems(
+	_ context.Context,
+	request *gpaypb.ListOrderItemsRequest,
+	_ ...grpc.CallOption,
+) (*gpaypb.ListOrderItemsResponse, error) {
+	s.itemsRequest = request
+	return &gpaypb.ListOrderItemsResponse{Items: []*gpaypb.OrderItemSummary{{
+		OrderUlid: request.GetOrderUlid(),
+		ItemType:  "course",
+		ItemId:    "course-1",
+		Title:     "CFtP Course",
+		BasePrice: 150000,
+		Quantity:  1,
+	}}}, nil
 }
 
 func TestCandidateOrderRawStatus(t *testing.T) {
@@ -263,15 +274,16 @@ func TestGetOrderRejectsAnotherCandidatesOrder(t *testing.T) {
 	)
 	recorder := httptest.NewRecorder()
 
-	(&Handler{Mall: mall}).GetOrder(recorder, request)
+	pay := &paymentOrderPayClientStub{}
+	(&Handler{Mall: mall, Gpay: pay}).GetOrder(recorder, request)
 
 	assertHandlerAPIError(t, recorder, http.StatusNotFound, ErrNotFound)
-	if mall.bundleDetailRequest != nil {
-		t.Fatal("another candidate's order must not load business detail")
+	if pay.itemsRequest != nil {
+		t.Fatal("another candidate's order must not load payment items")
 	}
 }
 
-func TestGetOrderReturnsCandidateScopedBusinessDetail(t *testing.T) {
+func TestGetOrderReturnsCandidateScopedOrderItems(t *testing.T) {
 	mall := &paymentOrderMallClientStub{
 		detailResponse: &mallpb.GetOrderDetailResponse{
 			Found: true,
@@ -300,8 +312,8 @@ func TestGetOrderReturnsCandidateScopedBusinessDetail(t *testing.T) {
 				},
 			},
 		},
-		bundleDetailResponse: &mallpb.GetBundleOrderDetailResponse{Found: true},
 	}
+	pay := &paymentOrderPayClientStub{}
 	request := newCandidateHandlerRequest(
 		http.MethodGet,
 		"/api/orders/order-1",
@@ -311,7 +323,7 @@ func TestGetOrderReturnsCandidateScopedBusinessDetail(t *testing.T) {
 	)
 	recorder := httptest.NewRecorder()
 
-	(&Handler{Mall: mall}).GetOrder(recorder, request)
+	(&Handler{Mall: mall, Gpay: pay}).GetOrder(recorder, request)
 
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("status = %d, want %d; body=%q", recorder.Code, http.StatusOK, recorder.Body.String())
@@ -319,8 +331,8 @@ func TestGetOrderReturnsCandidateScopedBusinessDetail(t *testing.T) {
 	if mall.detailRequest == nil || mall.detailRequest.GetOrderUlid() != "order-1" {
 		t.Fatalf("GetOrderDetail request = %+v", mall.detailRequest)
 	}
-	if mall.bundleDetailRequest == nil || mall.bundleDetailRequest.GetBundleOrderUlid() != "bundle-order-1" {
-		t.Fatalf("GetBundleOrderDetail request = %+v", mall.bundleDetailRequest)
+	if pay.itemsRequest == nil || pay.itemsRequest.GetOrderUlid() != "order-1" {
+		t.Fatalf("ListOrderItems request = %+v", pay.itemsRequest)
 	}
 	var response struct {
 		Data OrderDetailRsp `json:"data"`
@@ -339,6 +351,10 @@ func TestGetOrderReturnsCandidateScopedBusinessDetail(t *testing.T) {
 	if price == nil || price.GetCurrencyCode() != "sgd" || price.GetSubtotalMinor() != 70000 ||
 		price.GetDiscountTotalMinor() != 7000 || price.GetTaxTotalMinor() != 0 || price.GetTotalMinor() != 63000 {
 		t.Fatalf("order price detail = %+v", price)
+	}
+	if len(response.Data.Items) != 1 || response.Data.Items[0].GetTitle() != "CFtP Course" ||
+		response.Data.Items[0].GetBasePrice() != 150000 || response.Data.Items[0].GetQuantity() != 1 {
+		t.Fatalf("order items = %+v", response.Data.Items)
 	}
 }
 

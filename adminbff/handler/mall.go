@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
+	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -167,9 +168,9 @@ type adminOrderSummary struct {
 }
 
 type adminOrderDetailResponse struct {
-	Summary        *mallpb.OrderSummary     `json:"summary"`
-	BusinessDetail any                      `json:"business_detail"`
-	PriceDetail    *mallpb.OrderPriceDetail `json:"price_detail,omitempty"`
+	Summary     *mallpb.OrderSummary       `json:"summary"`
+	PriceDetail *mallpb.OrderPriceDetail   `json:"price_detail,omitempty"`
+	Items       []*gpaypb.OrderItemSummary `json:"items,omitempty"`
 }
 
 func (h *Handler) GetOrderDetail(w http.ResponseWriter, r *http.Request) {
@@ -190,40 +191,16 @@ func (h *Handler) GetOrderDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	detail, err := h.adminBusinessOrderDetail(r.Context(), summary.GetBizType(), summary.GetBizRefUlid())
+	items, err := h.Gpay.ListOrderItems(r.Context(), &gpaypb.ListOrderItemsRequest{OrderUlid: orderULID})
 	if err != nil {
-		if appErr, ok := err.(*AppError); ok {
-			HandleAppError(w, appErr)
-		} else {
-			HandleGrpcError(w, err)
-		}
+		HandleGrpcError(w, err)
 		return
 	}
 	WriteJSON(w, http.StatusOK, adminOrderDetailResponse{
-		Summary:        summary,
-		BusinessDetail: detail,
-		PriceDetail:    orderDetail.GetPriceDetail(),
+		Summary:     summary,
+		PriceDetail: orderDetail.GetPriceDetail(),
+		Items:       items.GetItems(),
 	})
-}
-
-func (h *Handler) adminBusinessOrderDetail(ctx context.Context, bizType, bizRefULID string) (any, error) {
-	bizRefULID = strings.TrimSpace(bizRefULID)
-	switch strings.ToUpper(strings.TrimSpace(bizType)) {
-	case "PIPELINE_PAYMENT":
-		return h.Mall.GetPipelineOrderDetail(ctx, &mallpb.GetPipelineOrderDetailRequest{PipelineOrderUlid: bizRefULID})
-	case "STAGE_PAYMENT":
-		return h.Mall.GetStageOrderDetail(ctx, &mallpb.GetStageOrderDetailRequest{StageOrderUlid: bizRefULID})
-	case "COURSE_RETAKE_PAYMENT":
-		return h.Mall.GetCourseRetakeOrderDetail(ctx, &mallpb.GetCourseRetakeOrderDetailRequest{CourseRetakeOrderUlid: bizRefULID})
-	case "PIPELINE_UNLOCK":
-		return h.Mall.GetPipelineUnlockOrderDetail(ctx, &mallpb.GetPipelineUnlockOrderDetailRequest{PipelineUnlockOrderUlid: bizRefULID})
-	case "CREDENTIAL_APPLICATION":
-		return h.Mall.GetCredentialApplicationOrderDetail(ctx, &mallpb.GetCredentialApplicationOrderDetailRequest{ApplicationOrderUlid: bizRefULID})
-	case "BUNDLE_PURCHASE":
-		return h.Mall.AdminGetBundleOrderDetail(ctx, &mallpb.AdminGetBundleOrderDetailRequest{BundleOrderUlid: bizRefULID})
-	default:
-		return nil, NewError(http.StatusBadRequest, ErrInvalidRequest, "unsupported biz_type")
-	}
 }
 
 // AdminSyncOrderMeta POST /api/mall/orders/sync-meta

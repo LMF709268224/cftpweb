@@ -62,27 +62,17 @@ function completedOrderDetail(order: OrderFixture) {
       },
     },
     paid_at: "2026-08-05T10:00:00Z",
-    price_detail: {
-      currency_code: "USD",
-      subtotal_minor: 70000,
-      discount_total_minor: 7000,
-      tax_total_minor: 0,
-      total_minor: 63000,
-    },
+    items: [{
+      item_type: "course",
+      item_id: "course-1",
+      title: "CFtP Certification Course",
+      base_price: 150000,
+      quantity: 1,
+    }],
     exemptions: [{
       course_cc_ulid: "course-exempted-1",
       credential_ulid: "credential-1",
     }],
-    business_detail: {
-      found: true,
-      detail: {
-        summary: {
-          bundle_order_ulid: order.biz_ref_ulid,
-          status: "COMPLETED",
-        },
-        completed_at: "2026-08-05T10:00:00Z",
-      },
-    },
   }
 }
 
@@ -129,7 +119,7 @@ test("订单状态与可执行按钮保持一致", async ({ page }) => {
   await expect(paidPendingRow.getByRole("button", { name: "取消支付" })).toHaveCount(0)
 })
 
-test("订单详情直接展示价格汇总", async ({ page }) => {
+test("订单详情展示商品明细", async ({ page }) => {
   const order = orderFixture({
     order_id: "order-priced",
     product_name: "CFtP Priced Bundle",
@@ -149,16 +139,12 @@ test("订单详情直接展示价格汇总", async ({ page }) => {
 
   const dialog = page.getByRole("dialog", { name: "订单详情" })
   await expect(dialog).toBeVisible()
-  const originalPriceRow = dialog.getByText("原价", { exact: true }).locator("..")
-  const discountRow = dialog.getByText("优惠总额", { exact: true }).locator("..")
-  const finalPriceRow = dialog.getByText("实际支付", { exact: true }).locator("..")
-  await expect(originalPriceRow.getByText("USD 700.00", { exact: true })).toBeVisible()
-  await expect(discountRow.getByText("-USD 70.00", { exact: true })).toBeVisible()
-  await expect(finalPriceRow.getByText("USD 630.00", { exact: true })).toBeVisible()
-  await expect(dialog.getByText("税费", { exact: true })).toHaveCount(0)
-  await expect(dialog.getByText("Affiliate membership 特惠", { exact: true })).toHaveCount(0)
-  await expect(dialog.getByText("认证套餐订单 ID", { exact: true })).toBeVisible()
-  await expect(dialog.getByText(order.biz_ref_ulid || "", { exact: true })).toBeVisible()
+  await expect(dialog.getByText("商品明细", { exact: true })).toBeVisible()
+  await expect(dialog.getByText("CFtP Certification Course", { exact: true })).toBeVisible()
+  await expect(dialog.getByText("USD 1500.00", { exact: true })).toBeVisible()
+  await expect(dialog.getByText("数量", { exact: true })).toBeVisible()
+  await expect(dialog.getByText("价格", { exact: true })).toHaveCount(0)
+  await expect(dialog.getByText("业务订单详情", { exact: true })).toHaveCount(0)
 })
 
 test("订单筛选只应用最后一次请求返回的数据", async ({ page }) => {

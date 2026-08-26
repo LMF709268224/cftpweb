@@ -17,7 +17,7 @@ import {
   pickFirst,
 } from "@/lib/status"
 
-type DetailTab = "summary" | "business-detail" | "actions"
+type DetailTab = "summary" | "actions"
 type SummaryField = {
   label: string
   value: string
@@ -28,8 +28,7 @@ const copy = computed(() => t.value.orders)
 
 const orders = ref<JsonRecord[]>([])
 const selected = ref<JsonRecord | null>(null)
-const businessDetail = ref<JsonRecord | null>(null)
-const pricing = ref<JsonRecord | null>(null)
+const orderItems = ref<JsonRecord[]>([])
 const loading = ref(false)
 const detailLoading = ref(false)
 const detailOpen = ref(false)
@@ -56,15 +55,9 @@ const localizedBizTypeOptions = computed(() => localizeOptions(bizTypeOptions, "
 const localizedOrderStatusOptions = computed(() => localizeOptions(orderStatusOptions, "orderStatuses"))
 const detailTabs = computed(() => [
   { key: "summary" as const, title: copy.value.tabs.summary, count: selected.value ? 1 : 0 },
-  { key: "business-detail" as const, title: copy.value.tabs.bundleDetail, count: businessDetail.value ? 1 : 0 },
   { key: "actions" as const, title: copy.value.tabs.actions, count: isBundlePurchase.value ? 1 : 0 },
 ])
-const pricingCurrency = computed(() => String(pricing.value?.currency_code || pickFirst(selected.value || {}, ["currency_code", "currencyCode", "currency"]) || ""))
-const originalPriceText = computed(() => minorAmountText(pricing.value?.subtotal_minor, pricingCurrency.value))
-const discountTotalText = computed(() => signedMinorAmountText(pricing.value?.discount_total_minor, pricingCurrency.value, "-"))
-const taxText = computed(() => signedMinorAmountText(pricing.value?.tax_total_minor, pricingCurrency.value, "+"))
-const totalPriceText = computed(() => minorAmountText(pricing.value?.total_minor, pricingCurrency.value))
-const hasTax = computed(() => Number(pricing.value?.tax_total_minor || 0) > 0)
+const itemCurrency = computed(() => String(pickFirst(selected.value || {}, ["currency_code", "currencyCode", "currency"]) || ""))
 const orderSummaryFields = computed<SummaryField[]>(() => {
   const order = selected.value
   if (!order) return []
@@ -84,20 +77,6 @@ const orderSummaryFields = computed<SummaryField[]>(() => {
     { label: copy.value.fields.createdAt, value: createdAt(order) },
   ]
 })
-const businessSummaryFields = computed<SummaryField[]>(() => {
-  const detail = businessDetail.value
-  if (!detail) return []
-  const source = businessDetailSource(detail)
-  const summary = recordValue(source.summary)
-  const values = {
-    ...(summary || {}),
-    ...Object.fromEntries(Object.entries(source).filter(([key]) => key !== "summary")),
-  }
-  return Object.entries(values)
-    .filter(([, value]) => value !== undefined && value !== null && value !== "")
-    .map(([key, value]) => ({ label: businessFieldLabel(key), value: displayBusinessValue(key, value) }))
-})
-
 function localizeOptions(options: LabelOption[], group: "bizTypes" | "orderStatuses" | "paymentStatuses") {
   return options.map((option) => ({
     ...option,
@@ -150,15 +129,14 @@ function amountText(order: JsonRecord | null | undefined) {
 }
 
 function minorAmountText(value: unknown, currency: string) {
-  if (value === undefined || value === null || value === "") return copy.value.pricing.unavailable
+  if (value === undefined || value === null || value === "") return "-"
   const amount = Number(value)
-  if (!Number.isFinite(amount)) return copy.value.pricing.unavailable
+  if (!Number.isFinite(amount)) return "-"
   return `${currency ? `${currency.toUpperCase()} ` : ""}${(amount / 100).toFixed(2)}`
 }
 
-function signedMinorAmountText(value: unknown, currency: string, sign: "+" | "-") {
-  const formatted = minorAmountText(value, currency)
-  return formatted === copy.value.pricing.unavailable ? formatted : `${sign}${formatted}`
+function orderItemTitle(item: JsonRecord) {
+  return String(item.title || item.item_id || copy.value.productItems.unnamed)
 }
 
 function createdAt(order: JsonRecord | null | undefined) {
@@ -175,75 +153,24 @@ function stringValue(value: unknown) {
   return String(value)
 }
 
-function isTimeField(key: string) {
-  return /(^|_)(created|updated|paid|expired|completed)_at$|At$/i.test(key)
-}
-
-function businessFieldLabel(key: string) {
-  return copy.value.businessFields?.[key as keyof typeof copy.value.businessFields] || key.replaceAll("_", " ")
-}
-
-function paymentModeLabel(value: unknown) {
-  const raw = String(value || "").trim()
-  const normalized = normalizeStatus(raw)
-  const labels = copy.value.paymentModes as Record<string, string>
-  return labels[normalized] || raw || "-"
-}
-
-function dateValue(value: unknown) {
-  if (typeof value === "number") {
-    const ms = value > 1_000_000_000_000 ? value : value * 1000
-    return formatDate(new Date(ms).toISOString())
-  }
-  return formatDate(String(value || ""))
-}
-
-function recordValue(value: unknown): JsonRecord | null {
-  return value && typeof value === "object" && !Array.isArray(value) ? value as JsonRecord : null
-}
-
-function displayBusinessValue(key: string, value: unknown) {
-  if (key === "payment_mode") return paymentModeLabel(value)
-  if (isTimeField(key)) return dateValue(value)
-  if (typeof value === "string") return value
-  if (typeof value === "number" || typeof value === "boolean") return String(value)
-  try {
-    return JSON.stringify(value)
-  } catch {
-    return String(value)
-  }
-}
-
-function businessDetailSource(detail: JsonRecord) {
-  const nestedDetail = detail.detail
-  if (nestedDetail && typeof nestedDetail === "object" && !Array.isArray(nestedDetail)) {
-    const summary = (nestedDetail as JsonRecord).summary
-    if (summary && typeof summary === "object" && !Array.isArray(summary)) return summary as JsonRecord
-    return nestedDetail as JsonRecord
-  }
-  const summary = detail.summary
-  if (summary && typeof summary === "object" && !Array.isArray(summary)) return summary as JsonRecord
-  return detail
-}
-
 let detailRequestId = 0
 
-async function loadBusinessDetail(order: JsonRecord | null) {
+async function loadOrderItems(order: JsonRecord | null) {
   const id = orderUlid(order)
   const requestId = ++detailRequestId
-  businessDetail.value = null
-  pricing.value = null
+  orderItems.value = []
   if (!order || !id) return
   detailLoading.value = true
   try {
     const response = await apiClient<JsonRecord>(`/api/mall/orders/${encodeURIComponent(id)}`)
     if (requestId !== detailRequestId || orderUlid(selected.value) !== id) return
-    businessDetail.value = recordValue(response.business_detail)
-    pricing.value = recordValue(response.price_detail)
+    orderItems.value = Array.isArray(response.items)
+      ? response.items.filter((item): item is JsonRecord => Boolean(item) && typeof item === "object" && !Array.isArray(item))
+      : []
   } catch (err) {
     if (requestId !== detailRequestId || orderUlid(selected.value) !== id) return
     console.error(err)
-    toast.error(copy.value.toasts.bundleLoadFailed)
+    toast.error(copy.value.toasts.itemsLoadFailed)
   } finally {
     if (requestId === detailRequestId && orderUlid(selected.value) === id) detailLoading.value = false
   }
@@ -255,13 +182,12 @@ async function selectOrder(order: JsonRecord, open = true) {
   activeTab.value = "summary"
   showPurgeConfirm.value = false
   detailOpen.value = open
-  businessDetail.value = null
-  pricing.value = null
+  orderItems.value = []
   detailLoading.value = false
   if (!open) {
     return
   }
-  await loadBusinessDetail(order)
+  await loadOrderItems(order)
 }
 
 function closeDetail() {
@@ -310,8 +236,7 @@ async function load(targetPage = page.value) {
       toast.error(copy.value.invalidCandidateUlid)
       orders.value = []
       selected.value = null
-      businessDetail.value = null
-      pricing.value = null
+      orderItems.value = []
       detailOpen.value = false
       total.value = 0
       hasMore.value = false
@@ -338,8 +263,7 @@ nextCursor.value = String(data.next_cursor || "")
       void selectOrder(orders.value[0], detailOpen.value)
     } else {
       selected.value = null
-      businessDetail.value = null
-      pricing.value = null
+      orderItems.value = []
       detailOpen.value = false
     }
   } catch (err) {
@@ -347,8 +271,7 @@ nextCursor.value = String(data.next_cursor || "")
     console.error(err)
     orders.value = []
     selected.value = null
-    businessDetail.value = null
-    pricing.value = null
+    orderItems.value = []
     detailOpen.value = false
     total.value = 0
     hasMore.value = false
@@ -595,32 +518,29 @@ onMounted(() => load(1))
                 </div>
 
                 <section class="border-y border-slate-200 py-5">
-                  <h3 class="text-base font-black text-slate-950">{{ copy.pricing.title }}</h3>
+                  <h3 class="text-base font-black text-slate-950">{{ copy.productItems.title }}</h3>
 
                   <div v-if="detailLoading" class="flex min-h-28 items-center justify-center text-sm text-slate-500">
                     <Loader2 class="mr-2 h-5 w-5 animate-spin" />
-                    {{ copy.pricing.loading }}
+                    {{ copy.productItems.loading }}
                   </div>
-                  <dl v-else-if="pricing" class="mt-3 divide-y divide-slate-200 text-sm">
-                    <div class="flex items-center justify-between gap-4 py-3">
-                      <dt class="font-bold text-slate-600">{{ copy.pricing.billableSubtotal }}</dt>
-                      <dd class="font-black text-slate-950">{{ originalPriceText }}</dd>
+                  <div v-else-if="orderItems.length" class="mt-3 divide-y divide-slate-200">
+                    <div v-for="item in orderItems" :key="`${item.item_type}-${item.item_id}`" class="grid gap-3 py-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
+                      <div class="min-w-0">
+                        <div class="break-words text-sm font-black text-slate-950">{{ orderItemTitle(item) }}</div>
+                        <div class="mt-1 break-all text-xs text-slate-500">{{ item.item_type || "-" }}<template v-if="item.item_id"> · {{ item.item_id }}</template></div>
+                      </div>
+                      <div class="text-sm text-slate-600">
+                        <span class="font-bold">{{ copy.productItems.quantity }}</span> {{ Number(item.quantity || 0) }}
+                      </div>
+                      <div class="text-left sm:min-w-32 sm:text-right">
+                        <div class="text-xs font-bold text-slate-500">{{ copy.productItems.unitPrice }}</div>
+                        <div class="mt-1 text-base font-black text-slate-950">{{ minorAmountText(item.base_price, itemCurrency) }}</div>
+                      </div>
                     </div>
-                    <div class="flex items-center justify-between gap-4 py-3">
-                      <dt class="font-bold text-slate-600">{{ copy.pricing.promotionDiscount }}</dt>
-                      <dd class="font-black text-emerald-700">{{ discountTotalText }}</dd>
-                    </div>
-                    <div v-if="hasTax" class="flex items-center justify-between gap-4 py-3">
-                      <dt class="font-bold text-slate-600">{{ copy.pricing.tax }}</dt>
-                      <dd class="font-black text-slate-950">{{ taxText }}</dd>
-                    </div>
-                    <div class="flex items-center justify-between gap-4 py-3">
-                      <dt class="font-black text-slate-950">{{ copy.pricing.amountPaid }}</dt>
-                      <dd class="text-lg font-black text-blue-700">{{ totalPriceText }}</dd>
-                    </div>
-                  </dl>
+                  </div>
                   <div v-else class="mt-4 rounded-lg border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">
-                    {{ copy.pricing.unavailableDetail }}
+                    {{ copy.productItems.empty }}
                   </div>
                 </section>
 
@@ -634,26 +554,6 @@ onMounted(() => load(1))
                     <div class="mt-2 break-all text-sm font-black text-slate-800">{{ field.value }}</div>
                   </div>
                 </div>
-              </div>
-
-              <div v-else-if="activeTab === 'business-detail'" class="space-y-4">
-                <div v-if="detailLoading" class="p-12 text-center text-slate-500">
-                  <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-                  {{ copy.bundleLoading }}
-                </div>
-                <div v-else-if="businessDetail" class="space-y-4">
-                  <div class="grid gap-4 md:grid-cols-2">
-                    <div
-                      v-for="field in businessSummaryFields"
-                      :key="field.label"
-                      class="rounded-2xl border border-slate-200 bg-slate-50 p-4"
-                    >
-                      <div class="text-xs font-black uppercase text-slate-400">{{ field.label }}</div>
-                      <div class="mt-2 break-all text-sm font-black text-slate-800">{{ field.value }}</div>
-                    </div>
-                  </div>
-                </div>
-                <div v-else class="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-500">{{ copy.bundleEmpty }}</div>
               </div>
 
               <div v-else-if="activeTab === 'actions'" class="space-y-4">

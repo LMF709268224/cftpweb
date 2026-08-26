@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
+	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
 	"github.com/go-chi/chi/v5"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -209,19 +210,15 @@ func (h *Handler) GetOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	businessDetail, err := h.businessOrderDetail(r.Context(), summary.GetBizType(), summary.GetBizRefUlid())
+	items, err := h.Gpay.ListOrderItems(r.Context(), &gpaypb.ListOrderItemsRequest{OrderUlid: orderID})
 	if err != nil {
-		if appErr, ok := err.(*AppError); ok {
-			HandleAppError(w, appErr)
-		} else {
-			HandleGrpcError(w, err)
-		}
+		HandleGrpcError(w, err)
 		return
 	}
 
 	out := h.orderDetailResponse(resp)
-	out.BusinessDetail = businessDetail
 	out.PriceDetail = detail.GetPriceDetail()
+	out.Items = items.GetItems()
 	WriteJSON(w, http.StatusOK, out)
 }
 
@@ -552,26 +549,6 @@ func canCancelBusinessOrder(bizType, rawStatus string) bool {
 
 func candidateOrderRawStatus(raw string) string {
 	return strings.ToUpper(strings.TrimSpace(raw))
-}
-
-func (h *Handler) businessOrderDetail(ctx context.Context, bizType, bizRefULID string) (any, error) {
-	bizRefULID = strings.TrimSpace(bizRefULID)
-	switch normalizeOrderBizType(bizType) {
-	case orderBizPipelinePayment:
-		return h.Mall.GetPipelineOrderDetail(ctx, &mallpb.GetPipelineOrderDetailRequest{PipelineOrderUlid: bizRefULID})
-	case orderBizStagePayment:
-		return h.Mall.GetStageOrderDetail(ctx, &mallpb.GetStageOrderDetailRequest{StageOrderUlid: bizRefULID})
-	case orderBizCourseRetakePayment:
-		return h.Mall.GetCourseRetakeOrderDetail(ctx, &mallpb.GetCourseRetakeOrderDetailRequest{CourseRetakeOrderUlid: bizRefULID})
-	case orderBizPipelineUnlock:
-		return h.Mall.GetPipelineUnlockOrderDetail(ctx, &mallpb.GetPipelineUnlockOrderDetailRequest{PipelineUnlockOrderUlid: bizRefULID})
-	case orderBizCredentialApply:
-		return h.Mall.GetCredentialApplicationOrderDetail(ctx, &mallpb.GetCredentialApplicationOrderDetailRequest{ApplicationOrderUlid: bizRefULID})
-	case orderBizBundlePurchase:
-		return h.Mall.GetBundleOrderDetail(ctx, &mallpb.GetBundleOrderDetailRequest{BundleOrderUlid: bizRefULID})
-	default:
-		return nil, NewError(http.StatusBadRequest, ErrInvalidRequest, "unsupported biz_type")
-	}
 }
 
 func orderBizTypeLabel(bizType string) string {
