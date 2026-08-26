@@ -147,7 +147,8 @@ test("course detail exposes import-ready JSON with a GPath warning", async ({ pa
     data_json: JSON.stringify([{ title: "Reference article", type: "Article", url: "https://example.test/article" }]),
   })
   expect(exported.quizzes).toHaveLength(3)
-  expect(exported.quizzes[0]).toMatchObject({ quizzable_type: 2, chapter_index: 0, chapter_title: "Regression Chapter", title: "Regression Quiz" })
+  expect(exported.quizzes[0]).toMatchObject({ quizzable_type: 2, chapter_index: 0, chapter_title: "Regression Chapter", title: "Regression Quiz", quiz_type: "must_pass" })
+  expect(exported.quizzes[0].questions[0].question_type).toBe("SINGLE_CHOICE")
   expect(exported.quizzes[0].questions[0].options[0]).toEqual({ option_text: "Correct", is_correct: true, sort_order: 1 })
   expect(exported.quizzes[1]).toMatchObject({ quizzable_type: 1, chapter_index: 0, lesson_index: 0, title: "Lesson Quiz" })
   expect(exported.quizzes[2]).toMatchObject({ quizzable_type: 3, title: "Final Quiz" })
@@ -200,12 +201,12 @@ test("course import rejects a referenced asset without a SHA-256 hash before cre
 test("course import restores materials, supplementary content, and every quiz scope", async ({ page }) => {
   await seedAuthenticatedAdmin(page)
   const requests: string[] = []
-  const quizTargets: Array<{ quizzable_type: number; quizzable_id: string }> = []
+  const quizRequests: Array<{ quizzable_type: number; quizzable_id: string; quiz_json: string }> = []
   let completeReads = 0
   page.on("request", request => {
     if (request.method() !== "POST" || new URL(request.url()).pathname !== "/api/lms/import") return
-    const body = request.postDataJSON() as { quizzable_type: number; quizzable_id: string }
-    quizTargets.push({ quizzable_type: body.quizzable_type, quizzable_id: body.quizzable_id })
+    const body = request.postDataJSON() as { quizzable_type: number; quizzable_id: string; quiz_json: string }
+    quizRequests.push(body)
   })
   await installAdminApiMocks(page, ({ method, pathname }) => {
     requests.push(`${method} ${pathname}`)
@@ -220,7 +221,7 @@ test("course import restores materials, supplementary content, and every quiz sc
     }
     if (method === "POST" && pathname === "/api/lms/courses/draft-course-1/materials") return { data: {} }
     if (method === "POST" && pathname === "/api/lms/courses/draft-course-1/supplementary-material") return { data: {} }
-    if (method === "POST" && pathname === "/api/lms/import") return { data: { quiz_ulid: `quiz-${quizTargets.length}` } }
+    if (method === "POST" && pathname === "/api/lms/import") return { data: { quiz_ulid: `quiz-${quizRequests.length}` } }
     if (method === "GET" && pathname === "/api/lms/courses/draft-course-1/complete") {
       completeReads += 1
       const includeImportedContent = completeReads > 1
@@ -270,9 +271,9 @@ test("course import restores materials, supplementary content, and every quiz sc
     }],
     supplementary_material: { kind: "supplementary_materials", data_json: "[]" },
     quizzes: [
-      { title: "Course Quiz", quizzable_type: 3, questions: [] },
-      { title: "Chapter Quiz", quizzable_type: 2, chapter_index: 0, questions: [] },
-      { title: "Lesson Quiz", quizzable_type: 1, chapter_index: 0, lesson_index: 0, questions: [] },
+      { title: "Course Quiz", quizzable_type: 3, quiz_type: 1, questions: [{ question_text: "Course question", question_type: 1, options: [] }] },
+      { title: "Chapter Quiz", quizzable_type: 2, chapter_index: 0, quiz_type: 2, questions: [{ question_text: "Chapter question", question_type: 2, options: [] }] },
+      { title: "Lesson Quiz", quizzable_type: 1, chapter_index: 0, lesson_index: 0, quiz_type: "must_pass", questions: [{ question_text: "Lesson question", question_type: "TRUE_FALSE", options: [] }] },
     ],
   }))
   await page.getByRole("button", { name: "开始导入" }).click()
@@ -280,10 +281,15 @@ test("course import restores materials, supplementary content, and every quiz sc
   await expect(page.getByText("导入完成", { exact: true })).toBeVisible()
   expect(requests).toContain("POST /api/lms/courses/draft-course-1/materials")
   expect(requests).toContain("POST /api/lms/courses/draft-course-1/supplementary-material")
-  expect(quizTargets).toEqual([
+  expect(quizRequests.map(({ quizzable_type, quizzable_id }) => ({ quizzable_type, quizzable_id }))).toEqual([
     { quizzable_type: 3, quizzable_id: "draft-course-1" },
     { quizzable_type: 2, quizzable_id: "chapter-1" },
     { quizzable_type: 1, quizzable_id: "lesson-1" },
+  ])
+  expect(quizRequests.map(({ quiz_json }) => JSON.parse(quiz_json))).toEqual([
+    expect.objectContaining({ quiz_type: "must_pass", questions: [expect.objectContaining({ question_type: "SINGLE_CHOICE" })] }),
+    expect.objectContaining({ quiz_type: "skippable", questions: [expect.objectContaining({ question_type: "MULTIPLE_CHOICE" })] }),
+    expect.objectContaining({ quiz_type: "must_pass", questions: [expect.objectContaining({ question_type: "TRUE_FALSE" })] }),
   ])
   expect(completeReads).toBe(2)
 })

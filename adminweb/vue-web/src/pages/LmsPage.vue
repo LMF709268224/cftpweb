@@ -1100,6 +1100,23 @@ function importOptionFromDetail(value: unknown) {
   }
 }
 
+function normalizeImportQuizType(value: unknown) {
+  const normalized = String(value ?? "").trim().toLowerCase()
+  if (!normalized || normalized === "0" || normalized === "quiz_type_unspecified") return "must_pass"
+  if (normalized === "1" || normalized === "must_pass" || normalized === "quiz_type_must_pass") return "must_pass"
+  if (normalized === "2" || normalized === "skippable" || normalized === "quiz_type_skippable") return "skippable"
+  return ""
+}
+
+function normalizeImportQuestionType(value: unknown) {
+  const normalized = String(value ?? "").trim().toUpperCase()
+  if (normalized === "1" || normalized === "SINGLE_CHOICE" || normalized === "QUIZ_QUESTION_TYPE_SINGLE_CHOICE") return "SINGLE_CHOICE"
+  if (normalized === "2" || normalized === "MULTIPLE_CHOICE" || normalized === "QUIZ_QUESTION_TYPE_MULTIPLE_CHOICE") return "MULTIPLE_CHOICE"
+  if (normalized === "3" || normalized === "TRUE_FALSE" || normalized === "QUIZ_QUESTION_TYPE_TRUE_FALSE") return "TRUE_FALSE"
+  if (normalized === "4" || normalized === "ESSAY" || normalized === "QUIZ_QUESTION_TYPE_ESSAY") return "ESSAY"
+  return ""
+}
+
 function importQuestionFromDetail(value: unknown) {
   if (!isJsonRecord(value)) return null
   const question = extractNestedRecord(value, "question")
@@ -1109,7 +1126,7 @@ function importQuestionFromDetail(value: unknown) {
     .filter((option): option is NonNullable<typeof option> => Boolean(option))
   return {
     question_text: String(question.question_text || ""),
-    question_type: question.question_type ?? 0,
+    question_type: normalizeImportQuestionType(question.question_type),
     points: Number(question.points || 0),
     sort_order: Number(question.sort_order || 0),
     is_required: Boolean(question.is_required),
@@ -1133,7 +1150,7 @@ function importQuizFromDetail(value: unknown, target: Pick<CourseImportQuiz, "qu
     passing_score: Number(quiz.passing_score || 0),
     time_limit: Number(quiz.time_limit || 0),
     randomize_questions: Boolean(quiz.randomize_questions),
-    quiz_type: quiz.quiz_type ?? 0,
+    quiz_type: normalizeImportQuizType(quiz.quiz_type),
     questions,
   }
 }
@@ -3152,12 +3169,26 @@ function parseCourseImportPackage(value: unknown): CourseImportPackage {
     const targetIsValid = quizzableType === 3
       || (quizzableType === 2 && Boolean(chapter))
       || (quizzableType === 1 && Boolean(chapter) && Number.isInteger(lessonIndex) && Boolean(chapter.lessons[lessonIndex]))
-    if (!quizTitle || !targetIsValid) {
+    const quizType = normalizeImportQuizType(rawQuiz.quiz_type)
+    const rawQuestions = Array.isArray(rawQuiz.questions) ? rawQuiz.questions : null
+    if (!quizTitle || !targetIsValid || !quizType || !rawQuestions?.length) {
       throw new Error(copy.value.toasts.importInvalidPackage)
     }
+    const questions = rawQuestions.map((rawQuestion) => {
+      if (!isJsonRecord(rawQuestion) || !String(rawQuestion.question_text || "").trim()) {
+        throw new Error(copy.value.toasts.importInvalidPackage)
+      }
+      const questionType = normalizeImportQuestionType(rawQuestion.question_type)
+      if (!questionType || !Array.isArray(rawQuestion.options)) {
+        throw new Error(copy.value.toasts.importInvalidPackage)
+      }
+      return { ...rawQuestion, question_type: questionType }
+    })
     quizzes.push({
       ...rawQuiz,
       title: quizTitle,
+      quiz_type: quizType,
+      questions,
       quizzable_type: quizzableType,
       ...(quizzableType === 3 ? {} : { chapter_index: chapterIndex }),
       ...(quizzableType === 1 ? { lesson_index: lessonIndex } : {}),
