@@ -65,3 +65,75 @@ test("membership detail reads configuration fields without editing", async ({ pa
   expect(requests.some((request) => request.includes("/deprecate") || request.startsWith("POST ") || request.startsWith("PUT ") || request.startsWith("PATCH ") || request.startsWith("DELETE "))).toBe(false)
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
 })
+
+test("membership list ignores a stale response after creation refreshes it", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  await installAdminApiMocks(page, ({ method, pathname }) => {
+    if (method === "POST" && pathname === "/api/memberships") {
+      return { data: { membership_ulid: "01KZZKAW2FZDZD9S68NFAYPAN5" } }
+    }
+    return undefined
+  })
+
+  const staleMembership = {
+    ...membershipSummary,
+    membership_ulid: "membership-stale",
+    membership_gpath: "/memberships/stale",
+    name: "Stale Membership",
+  }
+  const latestMembership = {
+    ...membershipSummary,
+    membership_ulid: "membership-latest",
+    membership_gpath: "/memberships/latest",
+    name: "Latest Membership",
+  }
+  let listReads = 0
+  let releaseStaleResponse: () => void = () => {}
+  const staleResponseGate = new Promise<void>((resolve) => {
+    releaseStaleResponse = () => resolve()
+  })
+
+  await page.route("**/api/memberships/configs**", async (route) => {
+    listReads += 1
+    const isStaleResponse = listReads === 1
+    if (isStaleResponse) await staleResponseGate
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      headers: { "x-membership-response": isStaleResponse ? "stale" : "latest" },
+      json: {
+        code: 200,
+        error_code: "OK",
+        message: "OK",
+        data: {
+          memberships: [isStaleResponse ? staleMembership : latestMembership],
+          has_more: false,
+          next_cursor: "",
+          prev_cursor: "",
+        },
+      },
+    })
+  })
+
+  const initialRequest = page.waitForRequest((request) => new URL(request.url()).pathname === "/api/memberships/configs")
+  await page.goto("/memberships")
+  await initialRequest
+
+  await page.getByRole("button", { name: "新增会员方案" }).click()
+  const editor = page.getByRole("dialog", { name: "新增会员方案" })
+  await editor.getByLabel(/会员方案路径/).fill("/memberships/latest")
+  await editor.getByLabel(/^\*?\s*名称$/).fill("Latest Membership")
+  await editor.getByLabel(/Casdoor 角色名称/).fill("member-latest")
+  await editor.getByRole("button", { name: "创建会员方案" }).click()
+
+  await expect(page.getByText("Latest Membership", { exact: true })).toBeVisible()
+  expect(listReads).toBe(2)
+
+  const staleResponse = page.waitForResponse((response) => response.headers()["x-membership-response"] === "stale")
+  releaseStaleResponse()
+  await (await staleResponse).finished()
+  await page.waitForTimeout(50)
+
+  await expect(page.getByText("Latest Membership", { exact: true })).toBeVisible()
+  await expect(page.getByText("Stale Membership", { exact: true })).toHaveCount(0)
+})

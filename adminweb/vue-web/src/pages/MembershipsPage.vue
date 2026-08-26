@@ -38,6 +38,7 @@ const GPATH_PATTERN = /^\/[a-z0-9_-]+(?:\/[a-z0-9_-]+)*$/
 const memberships = ref<JsonRecord[]>([])
 const selected = ref<JsonRecord | null>(null)
 const loading = ref(false)
+let listRequestId = 0
 const detailLoading = ref(false)
 const dialogOpen = ref(false)
 const editorOpen = ref(false)
@@ -220,15 +221,19 @@ function collectFeatureEntries(raw: unknown) {
 }
 
 async function load() {
+  const requestId = ++listRequestId
   loading.value = true
   try {
-    memberships.value = await fetchAllCursorRecords("/api/memberships/configs", "memberships")
+    const nextMemberships = await fetchAllCursorRecords("/api/memberships/configs", "memberships")
+    if (requestId !== listRequestId) return
+    memberships.value = nextMemberships
   } catch (err) {
+    if (requestId !== listRequestId) return
     console.error(err)
     memberships.value = []
     toast.error(copy.value.toasts.loadFailed)
   } finally {
-    loading.value = false
+    if (requestId === listRequestId) loading.value = false
   }
 }
 
