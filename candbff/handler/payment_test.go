@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
-	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
 	"google.golang.org/grpc"
 )
 
@@ -26,66 +25,6 @@ type paymentOrderMallClientStub struct {
 	bundleDetailResponse *mallpb.GetBundleOrderDetailResponse
 	cancelRequest        *mallpb.CancelBusinessOrderRequest
 	cancelResponse       *mallpb.CancelBusinessOrderResponse
-}
-
-type paymentOrderPayClientStub struct {
-	gpaypb.PayServiceClient
-	orderRequest   *gpaypb.GetOrderRequest
-	itemsRequest   *gpaypb.ListOrderItemsRequest
-	invoiceRequest *gpaypb.GetInvoiceRequest
-}
-
-func (s *paymentOrderPayClientStub) GetOrder(
-	_ context.Context,
-	request *gpaypb.GetOrderRequest,
-	_ ...grpc.CallOption,
-) (*gpaypb.GetOrderResponse, error) {
-	s.orderRequest = request
-	return &gpaypb.GetOrderResponse{
-		OrderUlid:           request.GetOrderUlid(),
-		Amount:              10000,
-		Currency:            "usd",
-		StripeInvoiceId:     "in_order_1",
-		StripePaymentStatus: "paid",
-		Coupons: []*gpaypb.CouponInfo{{
-			Code:       "PACKAGE20",
-			Name:       "Package discount",
-			PercentOff: 20,
-		}},
-		PromoCodes: []string{"WELCOME"},
-	}, nil
-}
-
-func (s *paymentOrderPayClientStub) ListOrderItems(
-	_ context.Context,
-	request *gpaypb.ListOrderItemsRequest,
-	_ ...grpc.CallOption,
-) (*gpaypb.ListOrderItemsResponse, error) {
-	s.itemsRequest = request
-	return &gpaypb.ListOrderItemsResponse{Items: []*gpaypb.OrderItemSummary{{
-		OrderUlid: request.GetOrderUlid(),
-		ItemType:  "course",
-		ItemId:    "course-1",
-		Title:     "Course One",
-		BasePrice: 12000,
-		Quantity:  1,
-	}}}, nil
-}
-
-func (s *paymentOrderPayClientStub) GetInvoice(
-	_ context.Context,
-	request *gpaypb.GetInvoiceRequest,
-	_ ...grpc.CallOption,
-) (*gpaypb.GetInvoiceResponse, error) {
-	s.invoiceRequest = request
-	return &gpaypb.GetInvoiceResponse{
-		StripeInvoiceId: request.GetStripeInvoiceId(),
-		Subtotal:        12000,
-		Tax:             1000,
-		Total:           10000,
-		AmountPaid:      10000,
-		Currency:        "usd",
-	}, nil
 }
 
 func (s *paymentOrderMallClientStub) ListOrders(
@@ -323,16 +262,12 @@ func TestGetOrderRejectsAnotherCandidatesOrder(t *testing.T) {
 		map[string]string{"orderId": "order-1"},
 	)
 	recorder := httptest.NewRecorder()
-	pay := &paymentOrderPayClientStub{}
 
-	(&Handler{Mall: mall, Gpay: pay}).GetOrder(recorder, request)
+	(&Handler{Mall: mall}).GetOrder(recorder, request)
 
 	assertHandlerAPIError(t, recorder, http.StatusNotFound, ErrNotFound)
 	if mall.bundleDetailRequest != nil {
 		t.Fatal("another candidate's order must not load business detail")
-	}
-	if pay.orderRequest != nil {
-		t.Fatal("another candidate's order must not load payment detail")
 	}
 }
 
@@ -347,13 +282,22 @@ func TestGetOrderReturnsCandidateScopedBusinessDetail(t *testing.T) {
 					BizType:       orderBizBundlePurchase,
 					BizRefUlid:    "bundle-order-1",
 					CurrencyCode:  "sgd",
-					AmountMinor:   5000,
+					AmountMinor:   63000,
 					OrderStatus:   "COMPLETED",
 					PaymentStatus: "PAID",
 					Meta:          &mallpb.OrderMeta{ProductName: "Membership Package"},
 				},
 				GpayOrderUlid: "pay-order-1",
 				PaymentKey:    "secret-value",
+				PriceDetail: &mallpb.OrderPriceDetail{
+					CurrencyCode:       "sgd",
+					SubtotalMinor:      70000,
+					DiscountTotalMinor: 7000,
+					TaxTotalMinor:      0,
+					TotalMinor:         63000,
+					CouponCodes:        []string{"PACKAGE20"},
+					PromoCodes:         []string{"WELCOME"},
+				},
 			},
 		},
 		bundleDetailResponse: &mallpb.GetBundleOrderDetailResponse{Found: true},
@@ -366,9 +310,8 @@ func TestGetOrderReturnsCandidateScopedBusinessDetail(t *testing.T) {
 		map[string]string{"orderId": " order-1 "},
 	)
 	recorder := httptest.NewRecorder()
-	pay := &paymentOrderPayClientStub{}
 
-	(&Handler{Mall: mall, Gpay: pay}).GetOrder(recorder, request)
+	(&Handler{Mall: mall}).GetOrder(recorder, request)
 
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("status = %d, want %d; body=%q", recorder.Code, http.StatusOK, recorder.Body.String())
@@ -379,15 +322,6 @@ func TestGetOrderReturnsCandidateScopedBusinessDetail(t *testing.T) {
 	if mall.bundleDetailRequest == nil || mall.bundleDetailRequest.GetBundleOrderUlid() != "bundle-order-1" {
 		t.Fatalf("GetBundleOrderDetail request = %+v", mall.bundleDetailRequest)
 	}
-	if pay.orderRequest == nil || pay.orderRequest.GetOrderUlid() != "pay-order-1" {
-		t.Fatalf("GetOrder request = %+v", pay.orderRequest)
-	}
-	if pay.itemsRequest == nil || pay.itemsRequest.GetOrderUlid() != "pay-order-1" {
-		t.Fatalf("ListOrderItems request = %+v", pay.itemsRequest)
-	}
-	if pay.invoiceRequest == nil || pay.invoiceRequest.GetStripeInvoiceId() != "in_order_1" {
-		t.Fatalf("GetInvoice request = %+v", pay.invoiceRequest)
-	}
 	var response struct {
 		Data OrderDetailRsp `json:"data"`
 	}
@@ -397,49 +331,14 @@ func TestGetOrderReturnsCandidateScopedBusinessDetail(t *testing.T) {
 	if response.Data.Summary.OrderID != "order-1" ||
 		response.Data.Summary.CandidateID != "candidate-1" ||
 		response.Data.Summary.Currency != "SGD" ||
-		response.Data.Summary.Amount != 50 ||
+		response.Data.Summary.Amount != 630 ||
 		!response.Data.HasPaymentKey {
 		t.Fatalf("order detail response = %+v", response.Data)
 	}
-	pricing := response.Data.Pricing
-	if pricing == nil || !pricing.Available || pricing.BillableSubtotalMinor == nil || *pricing.BillableSubtotalMinor != 12000 ||
-		pricing.PromotionDiscountMinor == nil || *pricing.PromotionDiscountMinor != 3000 ||
-		pricing.TaxMinor == nil || *pricing.TaxMinor != 1000 ||
-		pricing.TotalMinor == nil || *pricing.TotalMinor != 10000 ||
-		pricing.AmountPaidMinor == nil || *pricing.AmountPaidMinor != 10000 {
-		t.Fatalf("order pricing = %+v", pricing)
-	}
-	if len(pricing.Items) != 1 || pricing.Items[0].Title != "Course One" || pricing.Items[0].SubtotalMinor != 12000 {
-		t.Fatalf("order price items = %+v", pricing.Items)
-	}
-	if len(pricing.Coupons) != 1 || pricing.Coupons[0].Code != "PACKAGE20" || len(pricing.PromoCodes) != 1 || pricing.PromoCodes[0] != "WELCOME" {
-		t.Fatalf("order promotions = coupons=%+v promo_codes=%+v", pricing.Coupons, pricing.PromoCodes)
-	}
-}
-
-func TestCandidateOrderPricingFallsBackWithoutPaymentReference(t *testing.T) {
-	pricing := (&Handler{}).candidateOrderPricing(context.Background(), "", &mallpb.OrderSummary{
-		OrderUlid:    "order-1",
-		AmountMinor:  5000,
-		CurrencyCode: "usd",
-	})
-
-	if !pricing.Available || pricing.TotalMinor == nil || *pricing.TotalMinor != 5000 {
-		t.Fatalf("fallback pricing = %+v", pricing)
-	}
-	if pricing.Source != "GMALL_ORDER_SUMMARY" || pricing.CurrencyCode != "USD" || pricing.UnavailableReason == "" {
-		t.Fatalf("fallback metadata = %+v", pricing)
-	}
-}
-
-func TestCandidateOrderExemptionsReturnsOnlyApprovedUniqueItems(t *testing.T) {
-	detail := &mallpb.GetPipelineOrderDetailResponse{Detail: &mallpb.PipelineOrderDetail{
-		FinalExemptionsJson: `{"stages":[{"course":[{"course_cc_ulid":"course-1","credential_ulid":"credential-1","approved":true},{"course_cc_ulid":"course-2","credential_ulid":"credential-2","approved":false}]},{"course":[{"course_cc_ulid":"course-1","credential_ulid":"credential-1","approved":true}]}]}`,
-	}}
-
-	items := candidateOrderExemptions(detail)
-	if len(items) != 1 || items[0].CourseCCULID != "course-1" || items[0].CredentialULID != "credential-1" {
-		t.Fatalf("approved exemptions = %+v", items)
+	price := response.Data.PriceDetail
+	if price == nil || price.GetCurrencyCode() != "sgd" || price.GetSubtotalMinor() != 70000 ||
+		price.GetDiscountTotalMinor() != 7000 || price.GetTaxTotalMinor() != 0 || price.GetTotalMinor() != 63000 {
+		t.Fatalf("order price detail = %+v", price)
 	}
 }
 

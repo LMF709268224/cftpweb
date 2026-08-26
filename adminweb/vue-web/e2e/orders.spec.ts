@@ -39,30 +39,13 @@ async function installOrderReadMocks(page: Page, requests: string[]) {
               updated_at: "2026-08-11T01:00:00Z",
             },
           },
-          pricing: {
-            available: true,
-            source: "GPAY_INVOICE",
+          price_detail: {
             currency_code: "USD",
-            billable_subtotal_minor: 15000,
-            promotion_discount_minor: 2500,
-            tax_minor: 400,
-            total_minor: 12900,
-            amount_paid_minor: 12900,
-            exemption_amount_recorded: false,
-            items: [{
-              item_type: "course",
-              item_ulid: "course-1",
-              title: "Certification Course",
-              unit_price_minor: 15000,
-              quantity: 1,
-              subtotal_minor: 15000,
-            }],
-            coupons: [{ code: "PACKAGE", name: "Package offer" }],
+            subtotal_minor: 70000,
+            discount_total_minor: 7000,
+            tax_total_minor: 0,
+            total_minor: 63000,
           },
-          exemptions: [{
-            course_cc_ulid: "course-exempted-1",
-            credential_ulid: "credential-1",
-          }],
         },
       }
     }
@@ -84,7 +67,7 @@ test("order list renders the returned read-only summary", async ({ page }) => {
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
 })
 
-test("order detail displays business metadata without a mutation", async ({ page }) => {
+test("order detail displays price summary and business metadata without a mutation", async ({ page }) => {
   await seedAuthenticatedAdmin(page)
   const requests: string[] = []
   await installOrderReadMocks(page, requests)
@@ -93,12 +76,13 @@ test("order detail displays business metadata without a mutation", async ({ page
   await page.getByRole("button", { name: "查看详情" }).click()
   const detailDialog = page.getByRole("dialog", { name: "Regression Bundle" })
   await expect(detailDialog.getByText("order-1", { exact: true }).first()).toBeVisible()
-  await expect(detailDialog.getByText("USD 150.00", { exact: true })).toBeVisible()
-  await expect(detailDialog.getByText("-USD 25.00", { exact: true })).toBeVisible()
-  await expect(detailDialog.getByText("USD 129.00", { exact: true }).last()).toBeVisible()
-  await expect(detailDialog.getByText("Certification Course", { exact: true })).toBeVisible()
-  await expect(detailDialog.getByText("Package offer", { exact: true })).toBeVisible()
-  await expect(detailDialog.getByText("未记录", { exact: true })).toBeVisible()
+  const originalPriceRow = detailDialog.getByText("原价", { exact: true }).locator("..")
+  const discountRow = detailDialog.getByText("优惠总额", { exact: true }).locator("..")
+  const amountPaidRow = detailDialog.getByText("实际支付", { exact: true }).locator("..")
+  await expect(originalPriceRow.getByText("USD 700.00", { exact: true })).toBeVisible()
+  await expect(discountRow.getByText("-USD 70.00", { exact: true })).toBeVisible()
+  await expect(amountPaidRow.getByText("USD 630.00", { exact: true })).toBeVisible()
+  await expect(detailDialog.getByText("税费", { exact: true })).toHaveCount(0)
   await detailDialog.getByRole("button", { name: /业务详情/ }).click()
   await expect(detailDialog.getByText("bundle-order-1", { exact: true })).toBeVisible()
   await expect(detailDialog.getByText("整套认证一次性支付", { exact: true })).toBeVisible()
