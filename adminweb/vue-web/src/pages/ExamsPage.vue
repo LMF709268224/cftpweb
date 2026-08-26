@@ -113,6 +113,11 @@ function normalizedResultStatus(value: unknown) {
   return normalizedStatus(value).replace(/^RESULT_STATUS_/, "")
 }
 
+function hasPublishedExamResult(value: unknown) {
+  const status = normalizedResultStatus(value)
+  return status === "AVAILABLE" || status === "FETCHED"
+}
+
 function examStatusLabel(value: unknown) {
   const status = normalizedStatus(value)
   if (["OPEN", "CREATED", "EXAM_STATUS_OPEN"].includes(status)) return copy.value.statusOptions.open
@@ -276,15 +281,18 @@ async function loadExamDetail(id: string) {
   const requestId = ++detailRequestId
   detailLoading.value = true
   try {
-    const [detailData, resultData, transitionsData] = await Promise.all([
+    const [detailData, transitionsData] = await Promise.all([
       apiClient<JsonRecord>(`/api/exams/${encodeURIComponent(id)}`),
-      loadExamResult(id),
       apiClient<JsonRecord>(`/api/exams/${encodeURIComponent(id)}/transitions`),
     ])
     if (!isCurrentDetailRequest(requestId, id)) return
-    if (!responseMatchesExam(detailData, id) || !responseMatchesExam(resultData, id) || !responseMatchesExam(transitionsData, id)) {
+    if (!responseMatchesExam(detailData, id) || !responseMatchesExam(transitionsData, id)) {
       throw new Error(`Exam detail response ID does not match ${id}`)
     }
+    const resultStatus = detailData.result_status || selectedSummary.value?.result_status
+    const resultData = hasPublishedExamResult(resultStatus) ? await loadExamResult(id) : null
+    if (!isCurrentDetailRequest(requestId, id)) return
+    if (resultData && !responseMatchesExam(resultData, id)) throw new Error(`Exam result response ID does not match ${id}`)
     detail.value = detailData
     result.value = resultData
     transitions.value = asArray(transitionsData.transitions)

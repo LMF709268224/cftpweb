@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { Loader2, Plus, RefreshCw, Trash2, X } from "lucide-vue-next"
+import { Download, Loader2, Plus, RefreshCw, Trash2, Upload, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import TranslationsEditor from "@/components/TranslationsEditor.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
+import { sha256Hex, uploadToDirectURL } from "@/lib/directUpload"
 import { type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 import { pickFirst } from "@/lib/status"
@@ -13,6 +14,19 @@ type FileConstraint = {
   name: string
   type: number
   is_required: boolean
+}
+
+type CredentialAttachment = {
+  attachment_id?: string
+  name: string
+  description?: string
+  file_name: string
+  file_type: number
+  file_ext: string
+  file_size: number
+  file_hash: string
+  download_url?: string
+  file_key: string
 }
 
 type DetailMode = "detail" | "create"
@@ -30,6 +44,12 @@ const description = ref("")
 const respath = ref("")
 const acquisitionMethod = ref("")
 const constraints = ref<FileConstraint[]>([])
+const attachmentName = ref("")
+const attachmentDescription = ref("")
+const attachmentFileType = ref(0)
+const attachmentFile = ref<File | null>(null)
+const attachmentInput = ref<HTMLInputElement | null>(null)
+const savingAttachment = ref(false)
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.credentials)
 let listRequestId = 0
@@ -93,6 +113,123 @@ function definitionAcquisitionMethod(definition: JsonRecord | null | undefined) 
 function fileConstraints(definition: JsonRecord | null | undefined) {
   const value = definition?.file_constraints
   return Array.isArray(value) ? value.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item)) : []
+}
+
+function credentialAttachments(definition: JsonRecord | null | undefined): CredentialAttachment[] {
+  const value = definition?.attachments
+  if (!Array.isArray(value)) return []
+  return value.filter((item): item is CredentialAttachment => !!item && typeof item === "object" && !Array.isArray(item))
+}
+
+function formatFileSize(value: unknown) {
+  const bytes = Number(value)
+  if (!Number.isFinite(bytes) || bytes <= 0) return "-"
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+}
+
+function attachmentPayload(attachment: CredentialAttachment) {
+  return {
+    name: String(attachment.name || "").trim(),
+    description: String(attachment.description || "").trim(),
+    file_name: String(attachment.file_name || "").trim(),
+    file_type: Number(attachment.file_type),
+    file_ext: String(attachment.file_ext || "").trim().replace(/^\./, ""),
+    file_size: Number(attachment.file_size),
+    file_hash: String(attachment.file_hash || "").trim(),
+    file_key: String(attachment.file_key || "").trim(),
+  }
+}
+
+function onAttachmentFile(event: Event) {
+  attachmentFile.value = (event.target as HTMLInputElement).files?.[0] || null
+  if (attachmentFile.value && !attachmentName.value.trim()) attachmentName.value = attachmentFile.value.name
+}
+
+function resetAttachmentForm() {
+  attachmentName.value = ""
+  attachmentDescription.value = ""
+  attachmentFileType.value = 0
+  attachmentFile.value = null
+  if (attachmentInput.value) attachmentInput.value.value = ""
+}
+
+async function replaceAttachments(attachments: CredentialAttachment[]) {
+  if (!selected.value) return
+  const id = definitionUlid(selected.value)
+  await apiClient(`/api/credentials/definitions/${encodeURIComponent(id)}/attachments`, {
+    method: "PUT",
+    body: JSON.stringify({ attachments: attachments.map(attachmentPayload) }),
+  })
+  await loadDefinitionDetail(selected.value)
+}
+
+async function uploadAttachment() {
+  const file = attachmentFile.value
+  if (!selected.value || !file || !attachmentName.value.trim() || attachmentFileType.value === 0) {
+    toast.error(copy.value.toasts.attachmentRequired)
+    return
+  }
+  if (!file.type) {
+    toast.error(copy.value.toasts.attachmentContentTypeMissing)
+    return
+  }
+  const fileExt = file.name.includes(".") ? file.name.split(".").pop()?.toLowerCase() || "" : ""
+  if (!fileExt) {
+    toast.error(copy.value.toasts.attachmentExtensionMissing)
+    return
+  }
+
+  savingAttachment.value = true
+  try {
+    const id = definitionUlid(selected.value)
+    const fileHash = await sha256Hex(file)
+    const upload = await apiClient<JsonRecord>(`/api/credentials/definitions/${encodeURIComponent(id)}/attachments/upload-url`, {
+      method: "POST",
+      body: JSON.stringify({
+        file_name: file.name,
+        file_ext: fileExt,
+        content_type: file.type,
+        file_hash: fileHash,
+      }),
+    })
+    await uploadToDirectURL(file, upload)
+    const next: CredentialAttachment = {
+      name: attachmentName.value.trim(),
+      description: attachmentDescription.value.trim(),
+      file_name: file.name,
+      file_type: attachmentFileType.value,
+      file_ext: fileExt,
+      file_size: file.size,
+      file_hash: fileHash,
+      file_key: String(upload.file_key || "").trim(),
+    }
+    if (!next.file_key) throw new Error(copy.value.toasts.attachmentFileKeyMissing)
+    await replaceAttachments([...credentialAttachments(selected.value), next])
+    resetAttachmentForm()
+    toast.success(copy.value.toasts.attachmentSaved)
+  } catch (err) {
+    console.error(err)
+    toast.error(apiErrorMessage(err, copy.value.toasts.attachmentSaveFailed))
+  } finally {
+    savingAttachment.value = false
+  }
+}
+
+async function removeAttachment(index: number) {
+  if (!selected.value || savingAttachment.value) return
+  savingAttachment.value = true
+  try {
+    const next = credentialAttachments(selected.value).filter((_, current) => current !== index)
+    await replaceAttachments(next)
+    toast.success(copy.value.toasts.attachmentRemoved)
+  } catch (err) {
+    console.error(err)
+    toast.error(apiErrorMessage(err, copy.value.toasts.attachmentRemoveFailed))
+  } finally {
+    savingAttachment.value = false
+  }
 }
 
 function normalizeTranslationKey(value: string) {
@@ -430,6 +567,68 @@ onMounted(load)
                     </div>
                   </div>
                 </div>
+
+                <section class="border-t border-slate-200 pt-5">
+                  <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h3 class="text-base font-black">{{ copy.attachments.title }}</h3>
+                      <p class="mt-1 text-sm text-slate-500">{{ copy.attachments.description }}</p>
+                    </div>
+                    <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{{ copy.attachments.count(credentialAttachments(selected).length) }}</span>
+                  </div>
+
+                  <div v-if="credentialAttachments(selected).length" class="mt-4 divide-y divide-slate-200 border-y border-slate-200">
+                    <div v-for="(attachment, index) in credentialAttachments(selected)" :key="attachment.attachment_id || attachment.file_key || `${attachment.file_name}-${index}`" class="grid gap-3 py-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+                      <div class="min-w-0">
+                        <div class="break-words font-bold text-slate-950">{{ attachment.name || attachment.file_name }}</div>
+                        <p v-if="attachment.description" class="mt-1 whitespace-pre-wrap break-words text-sm text-slate-600">{{ attachment.description }}</p>
+                        <div class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs font-semibold text-slate-500">
+                          <span>{{ attachment.file_name }}</span>
+                          <span>{{ fileTypeLabel(attachment.file_type) }}</span>
+                          <span>{{ formatFileSize(attachment.file_size) }}</span>
+                        </div>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <a v-if="attachment.download_url" class="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-300 px-3 text-sm font-bold text-blue-700" :href="attachment.download_url" target="_blank" rel="noopener noreferrer">
+                          <Download class="h-4 w-4" /> {{ copy.attachments.download }}
+                        </a>
+                        <button class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-red-200 text-red-600 disabled:opacity-50" type="button" :aria-label="copy.attachments.remove" :disabled="savingAttachment" @click="removeAttachment(index)">
+                          <Trash2 class="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div v-else class="mt-4 border-y border-slate-200 py-6 text-center text-sm text-slate-500">{{ copy.attachments.empty }}</div>
+
+                  <div class="mt-5 grid gap-4 border border-slate-200 bg-slate-50 p-4 md:grid-cols-2">
+                    <label class="grid gap-2 text-sm font-bold">
+                      {{ copy.attachments.name }}
+                      <input v-model="attachmentName" class="rounded-lg border border-slate-200 bg-white px-3 py-2.5" maxlength="120" :placeholder="copy.attachments.namePlaceholder" />
+                    </label>
+                    <label class="grid gap-2 text-sm font-bold">
+                      {{ copy.attachments.fileType }}
+                      <select v-model.number="attachmentFileType" class="rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+                        <option :value="0">{{ copy.attachments.selectFileType }}</option>
+                        <option v-for="option in fileTypes.filter((item) => item.value !== 0)" :key="option.value" :value="option.value">{{ option.label }}</option>
+                      </select>
+                    </label>
+                    <label class="grid gap-2 text-sm font-bold md:col-span-2">
+                      {{ copy.attachments.instructions }}
+                      <textarea v-model="attachmentDescription" class="min-h-20 rounded-lg border border-slate-200 bg-white px-3 py-2.5" maxlength="500" :placeholder="copy.attachments.instructionsPlaceholder" />
+                    </label>
+                    <label class="grid gap-2 text-sm font-bold md:col-span-2">
+                      {{ copy.attachments.file }}
+                      <input ref="attachmentInput" class="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm" type="file" @change="onAttachmentFile" />
+                    </label>
+                    <div class="flex justify-end md:col-span-2">
+                      <button class="inline-flex h-10 items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-bold text-white disabled:opacity-50" type="button" :disabled="savingAttachment" @click="uploadAttachment">
+                        <Loader2 v-if="savingAttachment" class="h-4 w-4 animate-spin" />
+                        <Upload v-else class="h-4 w-4" />
+                        {{ savingAttachment ? copy.attachments.saving : copy.attachments.upload }}
+                      </button>
+                    </div>
+                  </div>
+                </section>
               </div>
             </template>
           </section>

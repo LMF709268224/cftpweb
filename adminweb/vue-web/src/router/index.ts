@@ -11,6 +11,7 @@ const CallbackPage = () => import("@/pages/CallbackPage.vue")
 const CredentialsPage = () => import("@/pages/CredentialsPage.vue")
 const DashboardPage = () => import("@/pages/DashboardPage.vue")
 const ExamsPage = () => import("@/pages/ExamsPage.vue")
+const ExamGradingPage = () => import("@/pages/ExamGradingPage.vue")
 const ExternalCoursewaresPage = () => import("@/pages/ExternalCoursewaresPage.vue")
 const InvoicesPage = () => import("@/pages/InvoicesPage.vue")
 const LmsPage = () => import("@/pages/LmsPage.vue")
@@ -164,6 +165,17 @@ export const resourceRoutes: RouteRecordRaw[] = [
       copyKey: "exams",
       endpoint: "/api/exams",
       itemKeys: ["exams", "items"],
+      pagination: "page",
+    } satisfies ResourceRouteMeta,
+  },
+  {
+    path: "/exam-grading",
+    name: "exam-grading",
+    component: ExamGradingPage,
+    meta: {
+      copyKey: "exams",
+      endpoint: "/api/exams/pending-grading",
+      itemKeys: ["items"],
       pagination: "page",
     } satisfies ResourceRouteMeta,
   },

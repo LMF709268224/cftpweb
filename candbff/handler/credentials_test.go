@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -14,6 +15,7 @@ type credentialClientStub struct {
 	gcredspb.CredentialServiceClient
 	listCandidateApplicationsResponse *gcredspb.ListApplicationsResponse
 	listCandidateApplicationsRequest  *gcredspb.ListApplicationsRequest
+	definitionDetailResponse          *gcredspb.CredentialDefinition
 }
 
 func (s *credentialClientStub) ListCandidateApplications(
@@ -23,6 +25,71 @@ func (s *credentialClientStub) ListCandidateApplications(
 ) (*gcredspb.ListApplicationsResponse, error) {
 	s.listCandidateApplicationsRequest = req
 	return s.listCandidateApplicationsResponse, nil
+}
+
+func (s *credentialClientStub) GetCredentialDefinitionDetail(
+	_ context.Context,
+	req *gcredspb.GetCredentialDefinitionDetailRequest,
+	_ ...grpc.CallOption,
+) (*gcredspb.CredentialDefinition, error) {
+	if s.definitionDetailResponse != nil {
+		return s.definitionDetailResponse, nil
+	}
+	return &gcredspb.CredentialDefinition{CredDefUlid: req.GetCredDefUlid()}, nil
+}
+
+func TestListCredentialDefinitionsIncludesReferenceAttachments(t *testing.T) {
+	const definitionID = "01J00000000000000000000001"
+	client := &credentialClientStub{
+		listCandidateApplicationsResponse: &gcredspb.ListApplicationsResponse{},
+		definitionDetailResponse: &gcredspb.CredentialDefinition{
+			CredDefUlid: definitionID,
+			Name:        "Work Experience Qualification",
+			Attachments: []*gcredspb.CredentialAttachment{{
+				AttachmentId: "attachment-1",
+				Name:         "Work Experience Template",
+				FileName:     "work-experience.docx",
+				FileType:     gcredspb.CredentialFileType_CREDENTIAL_FILE_TYPE_TEXT,
+				FileExt:      "docx",
+				FileSize:     4096,
+				DownloadUrl:  "https://downloads.example/work-experience.docx",
+			}},
+		},
+	}
+	recorder := httptest.NewRecorder()
+	request := newCandidateHandlerRequest(
+		http.MethodGet,
+		"/api/credentials/definitions?qual_ulids="+definitionID,
+		"",
+		"01J00000000000000000000000",
+		nil,
+	)
+
+	(&Handler{Creds: client}).ListCredentialDefinitions(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body=%s", recorder.Code, http.StatusOK, recorder.Body.String())
+	}
+	var payload struct {
+		Data struct {
+			Definitions []struct {
+				Attachments []struct {
+					Name        string `json:"name"`
+					DownloadURL string `json:"download_url"`
+				} `json:"attachments"`
+			} `json:"definitions"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if len(payload.Data.Definitions) != 1 || len(payload.Data.Definitions[0].Attachments) != 1 {
+		t.Fatalf("definitions = %#v", payload.Data.Definitions)
+	}
+	attachment := payload.Data.Definitions[0].Attachments[0]
+	if attachment.Name != "Work Experience Template" || attachment.DownloadURL != "https://downloads.example/work-experience.docx" {
+		t.Fatalf("attachment = %#v", attachment)
+	}
 }
 
 func TestLatestCredentialApplicationUsesCandidateScopedLatestQuery(t *testing.T) {

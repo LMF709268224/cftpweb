@@ -172,6 +172,45 @@ test("支付成功页在移动端不会因长 ID 横向溢出", async ({ page })
   await expect.poll(() => card.evaluate((element) => getComputedStyle(element).paddingLeft)).toBe("20px");
 });
 
+test("资格申请详情提供官方模板与参考附件下载", async ({ page }) => {
+  await seedAuthenticatedCandidate(page)
+  await installCandidateApiMocks(page, ({ pathname }) => {
+    if (pathname === "/api/credentials/definitions") {
+      return {
+        data: {
+          definitions: [{
+            cred_def_ulid: "credential-with-template",
+            name: "Work Experience Qualification",
+            category: "Qualification",
+            description: "Upload signed work experience evidence.",
+            file_constraints: [],
+            attachments: [{
+              attachment_id: "attachment-template-1",
+              name: "工作经验证明模板",
+              description: "下载填写并签字后再上传。",
+              file_name: "work-experience-template.docx",
+              file_ext: "docx",
+              file_size: 4096,
+              download_url: "https://downloads.example/work-experience-template.docx",
+            }],
+          }],
+        },
+      }
+    }
+    if (pathname === "/api/credentials/applications") return { data: { applications: [], total: 0 } }
+    return undefined
+  })
+
+  await page.goto("/credentials?qual_ulids=credential-with-template", { waitUntil: "domcontentloaded" })
+  const dialog = page.locator(".credentials-apply-dialog")
+  await expect(dialog.getByText("模板与参考文件", { exact: true })).toBeVisible()
+  await expect(dialog.getByText("工作经验证明模板", { exact: true })).toBeVisible()
+  await expect(dialog.getByRole("link", { name: "下载文件" })).toHaveAttribute(
+    "href",
+    "https://downloads.example/work-experience-template.docx",
+  )
+})
+
 test("资格申请弹窗在移动端保持操作区可见", async ({ page }) => {
   await page.setViewportSize({ width: 382, height: 739 });
   await seedAuthenticatedCandidate(page);

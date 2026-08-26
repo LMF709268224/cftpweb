@@ -122,7 +122,10 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 
 		r.Route("/exams", func(r chi.Router) {
 			r.Get("/", h.ListAdminExams)
+			r.Get("/pending-grading", h.ListPendingGradingExams)
 			r.Get("/{exam_ulid}", h.GetAdminExamDetail)
+			r.Get("/{exam_ulid}/essay-details", h.GetExamEssayDetails)
+			r.Post("/{exam_ulid}/essay-grade", h.SubmitExamEssayGrade)
 			r.Get("/{exam_ulid}/result", h.GetAdminExamResult)
 			r.Get("/{exam_ulid}/transitions", h.GetAdminExamTransitions)
 			r.Post("/{exam_ulid}/sync-result", h.SyncAdminExamResult)
@@ -338,6 +341,8 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Get("/definitions/{cred_def_ulid}", h.GetCredentialDefinitionDetail)
 			r.Get("/definitions/{cred_def_ulid}/translations", h.GetCredDefTranslations)
 			r.Put("/definitions/{cred_def_ulid}/translations", h.SetCredDefTranslations)
+			r.Post("/definitions/{cred_def_ulid}/attachments/upload-url", h.RequestCredentialDefinitionAttachmentUploadURL)
+			r.Put("/definitions/{cred_def_ulid}/attachments", h.UpdateCredentialDefinitionAttachments)
 			r.Post("/definitions", h.CreateCredentialDefinition)
 		})
 

@@ -40,6 +40,7 @@ func (h *Handler) ListCredentialDefinitions(w http.ResponseWriter, r *http.Reque
 				"category":           def.GetCategory(),
 				"respath":            def.GetRespath(),
 				"acquisition_method": def.GetAcquisitionMethod(),
+				"attachments":        def.GetAttachments(),
 				"latest_application": latestApplication,
 			})
 		}
@@ -81,6 +82,7 @@ func (h *Handler) ListCredentialDefinitions(w http.ResponseWriter, r *http.Reque
 				"category":           detailRes.GetCategory(),
 				"respath":            detailRes.GetRespath(),
 				"acquisition_method": detailRes.GetAcquisitionMethod(),
+				"attachments":        detailRes.GetAttachments(),
 				"latest_application": latestApplication,
 			})
 			continue

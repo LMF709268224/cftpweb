@@ -92,3 +92,33 @@ test("exam detail reads metadata, result, and transitions without synchronizing"
   expect(requests.some((request) => request.includes("sync-result"))).toBe(false)
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
 })
+
+test("pending grading exam detail does not request an unpublished result", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  const requests: string[] = []
+  const pendingExam = { ...examSummary, result_status: "PENDING_GRADING", total_score: 0, is_passed: false }
+  await installAdminApiMocks(page, ({ method, pathname }) => {
+    requests.push(`${method} ${pathname}`)
+    if (method === "GET" && pathname === "/api/exams") {
+      return { data: { exams: [pendingExam], total: 1, has_more: false } }
+    }
+    if (method === "GET" && pathname === "/api/exams/exam-1") {
+      return { data: { ...pendingExam, certification_name: "Pending Essay Certification" } }
+    }
+    if (method === "GET" && pathname === "/api/exams/exam-1/transitions") {
+      return { data: { exam_ulid: "exam-1", transitions: [] } }
+    }
+    if (method === "GET" && pathname === "/api/exams/exam-1/result") {
+      return { status: 404, errorCode: "NOT_FOUND", message: "result is not published" }
+    }
+    return undefined
+  })
+
+  await page.goto("/exams")
+  await page.getByRole("button", { name: "查看详情" }).last().click()
+  const dialog = page.getByRole("dialog", { name: "考试详情" })
+  await expect(dialog.getByText("Pending Essay Certification", { exact: true })).toBeVisible()
+  expect(requests).toContain("GET /api/exams/exam-1")
+  expect(requests).toContain("GET /api/exams/exam-1/transitions")
+  expect(requests).not.toContain("GET /api/exams/exam-1/result")
+})

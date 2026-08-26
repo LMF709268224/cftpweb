@@ -75,6 +75,7 @@ const navGroups = computed(() => [
     items: [
       { path: "/applications", label: copy.value.nav.applications, icon: ClipboardCheck },
       { path: "/exams", label: copy.value.nav.exams, icon: ClipboardCheck },
+      { path: "/exam-grading", label: copy.value.nav.examGrading, icon: ClipboardCheck },
       { path: "/prog", label: copy.value.nav.prog, icon: GitBranch },
     ],
   },

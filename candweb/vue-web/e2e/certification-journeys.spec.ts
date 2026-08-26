@@ -263,6 +263,81 @@ test("课程视频预览通过签名地址全屏播放", async ({ page }) => {
   expect(requestedSignedURL).toBe(true)
 })
 
+test("Token 外部课件使用考生凭证打开并保留手动完成流程", async ({ page }) => {
+  const tokenLessonID = "lesson-token-courseware"
+  let accessTokenRequested = false
+  let lessonCompleted = false
+
+  await page.context().route("https://partner.example/**", async (route) => {
+    await route.fulfill({ status: 200, contentType: "text/html", body: "<title>Partner courseware</title>" })
+  })
+  await installCandidateApiMocks(page, ({ pathname, method }) => {
+    if (pathname === `/api/mall/pipelines/${pipelineID}/runtime`) return { data: pipelineRuntime() }
+    if (pathname === `/api/mall/courses/${courseID}`) {
+      return { data: { course_id: courseID, title: "Regression Learning Course", duration_min: 30 } }
+    }
+    if (pathname === `/api/mall/courses/${courseID}/thumbnail-url`) return { data: {} }
+    if (pathname === `/api/pipeline/courses/${courseID}/complete`) {
+      return {
+        data: {
+          complete_course: {
+            course: { course_id: courseID, title: "Regression Learning Course", duration_min: 30 },
+            chapters: [{
+              chapter: { chapter_id: "chapter-token", title: "External Content" },
+              lessons: [{
+                lesson: {
+                  lesson_id: tokenLessonID,
+                  title: "Partner Token Lesson",
+                  lesson_type: 8,
+                  external_courseware_ulid: "courseware-1",
+                },
+                quizzes: [],
+              }],
+              quizzes: [],
+            }],
+            materials: [],
+            quizzes: [],
+          },
+          quiz_progress: {},
+        },
+      }
+    }
+    if (pathname === "/api/progress") {
+      return { data: { records: lessonCompleted ? [{ material_id: tokenLessonID }] : [] } }
+    }
+    if (pathname === `/api/progress/courses/${courseID}/sync` && method === "POST") {
+      return { data: { progress_percentage: lessonCompleted ? 100 : 0 } }
+    }
+    if (pathname === `/api/pipeline/lessons/${tokenLessonID}/access-token` && method === "POST") {
+      accessTokenRequested = true
+      return {
+        data: {
+          token: "candidate access/value",
+          base_url: "https://partner.example/learn/{token}",
+          token_param_name: "auth_token",
+          courseware_name: "Partner Academy",
+        },
+      }
+    }
+    if (pathname === `/api/pipeline/lessons/${tokenLessonID}/complete` && method === "POST") {
+      lessonCompleted = true
+      return { data: { success: true } }
+    }
+    return undefined
+  })
+
+  await page.goto(`/certifications/${pipelineID}/learn/${courseID}`, { waitUntil: "domcontentloaded" })
+  const popupPromise = page.waitForEvent("popup")
+  await page.getByRole("button", { name: /打开外部课件/ }).click()
+  const popup = await popupPromise
+  await expect.poll(() => popup.url()).toBe("https://partner.example/learn/candidate%20access%2Fvalue")
+  expect(accessTokenRequested).toBe(true)
+
+  await page.getByTestId("complete-lesson").click()
+  await expect(page.locator(`[data-testid="course-lesson"][data-lesson-id="${tokenLessonID}"]`)).toHaveAttribute("data-completed", "true")
+  expect(lessonCompleted).toBe(true)
+})
+
 test("认证从商城下单、Stripe 支付到已购认证完整闭环", async ({ page }) => {
   let paid = false
   let purchaseBody: unknown

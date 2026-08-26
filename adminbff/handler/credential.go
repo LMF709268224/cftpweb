@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -94,6 +95,103 @@ func (h *Handler) CreateCredentialDefinition(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	WriteJSON(w, http.StatusOK, res)
+}
+
+// RequestCredentialDefinitionAttachmentUploadURL requests a direct-upload URL for a definition attachment.
+func (h *Handler) RequestCredentialDefinitionAttachmentUploadURL(w http.ResponseWriter, r *http.Request) {
+	credDefULID, ok := requiredURLParam(w, r, "cred_def_ulid")
+	if !ok {
+		return
+	}
+
+	var body struct {
+		FileName    string `json:"file_name"`
+		FileExt     string `json:"file_ext"`
+		ContentType string `json:"content_type"`
+		FileHash    string `json:"file_hash"`
+	}
+	if err := ReadJSON(r, &body); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid request body")
+		return
+	}
+	body.FileName = strings.TrimSpace(body.FileName)
+	body.FileExt = strings.TrimPrefix(strings.TrimSpace(body.FileExt), ".")
+	body.ContentType = strings.TrimSpace(body.ContentType)
+	body.FileHash = strings.TrimSpace(body.FileHash)
+	if !requireRequestFields(
+		w,
+		body.FileName, "file_name",
+		body.FileExt, "file_ext",
+		body.ContentType, "content_type",
+		body.FileHash, "file_hash",
+	) {
+		return
+	}
+
+	res, err := h.Creds.AdminRequestDefinitionAttachmentUploadUrl(r.Context(), &gcredspb.AdminRequestDefinitionAttachmentUploadUrlRequest{
+		CredDefUlid: credDefULID,
+		FileName:    body.FileName,
+		FileExt:     body.FileExt,
+		ContentType: body.ContentType,
+		FileHash:    body.FileHash,
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, res)
+}
+
+// UpdateCredentialDefinitionAttachments replaces the complete attachment list for a definition.
+func (h *Handler) UpdateCredentialDefinitionAttachments(w http.ResponseWriter, r *http.Request) {
+	credDefULID, ok := requiredURLParam(w, r, "cred_def_ulid")
+	if !ok {
+		return
+	}
+
+	var body struct {
+		Attachments []*gcredspb.CredentialAttachment `json:"attachments"`
+	}
+	if err := ReadJSON(r, &body); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid request body")
+		return
+	}
+	for index, attachment := range body.Attachments {
+		if attachment == nil {
+			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, fmt.Sprintf("attachments[%d] is required", index))
+			return
+		}
+		attachment.Name = strings.TrimSpace(attachment.GetName())
+		attachment.Description = strings.TrimSpace(attachment.GetDescription())
+		attachment.FileName = strings.TrimSpace(attachment.GetFileName())
+		attachment.FileExt = strings.TrimPrefix(strings.TrimSpace(attachment.GetFileExt()), ".")
+		attachment.FileHash = strings.TrimSpace(attachment.GetFileHash())
+		attachment.FileKey = strings.TrimSpace(attachment.GetFileKey())
+		if !requireRequestFields(
+			w,
+			attachment.Name, fmt.Sprintf("attachments[%d].name", index),
+			attachment.FileName, fmt.Sprintf("attachments[%d].file_name", index),
+			attachment.FileExt, fmt.Sprintf("attachments[%d].file_ext", index),
+			attachment.FileHash, fmt.Sprintf("attachments[%d].file_hash", index),
+			attachment.FileKey, fmt.Sprintf("attachments[%d].file_key", index),
+		) {
+			return
+		}
+		if attachment.GetFileType() == gcredspb.CredentialFileType_CREDENTIAL_FILE_TYPE_UNSPECIFIED || attachment.GetFileSize() == 0 {
+			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, fmt.Sprintf("attachments[%d] file_type and file_size are required", index))
+			return
+		}
+	}
+
+	res, err := h.Creds.AdminUpdateCredentialDefinitionAttachments(r.Context(), &gcredspb.AdminUpdateCredentialDefinitionAttachmentsRequest{
+		CredDefUlid: credDefULID,
+		Attachments: body.Attachments,
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
 	WriteJSON(w, http.StatusOK, res)
 }
 
