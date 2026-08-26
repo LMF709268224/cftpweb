@@ -39,8 +39,9 @@ import LoadingState from "@/components/LoadingState.vue"
 import PageFeedback from "@/components/PageFeedback.vue"
 import PaymentSessionDialog from "@/components/PaymentSessionDialog.vue"
 import StageExemptionDialog from "@/components/StageExemptionDialog.vue"
-import { apiClient } from "@/lib/apiClient"
+import { ApiClientError, apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
+import { telemetry } from "@/lib/telemetry"
 import { formatBackendDate } from "@/lib/utils"
 import { usePolling } from "@/lib/polling"
 import { sanitizeCourseContent } from "@/lib/sanitizeHtml"
@@ -1122,26 +1123,69 @@ async function refreshProgress(showToast = false) {
   }
 }
 
+function quizStartErrorMessage(error: unknown) {
+  if (!(error instanceof ApiClientError)) return t.value.learning.quizStartFailed
+
+  const errorCode = String(error.errorCode || "").trim().toUpperCase()
+  const status = Number(error.status || 0)
+
+  if (errorCode === "PRECONDITION_FAILED" || status === 409) {
+    return t.value.learning.quizStartPrerequisiteRequired
+  }
+  if (errorCode === "FORBIDDEN" || status === 403) {
+    return t.value.learning.quizStartForbidden
+  }
+  if (errorCode === "NOT_FOUND" || status === 404) {
+    return t.value.learning.quizStartNotFound
+  }
+  if (errorCode === "INVALID_ARGUMENT" || status === 400 || status === 422) {
+    return t.value.learning.quizStartInvalid
+  }
+  if (
+    ["NETWORK_ERROR", "REQUEST_TIMEOUT", "SERVICE_UNAVAILABLE"].includes(errorCode)
+    || status === 429
+    || status >= 500
+  ) {
+    return t.value.learning.quizStartUnavailable
+  }
+  return t.value.learning.quizStartFailed
+}
+
 async function startQuiz(quizId: string) {
   if (!quizId || startingQuizId.value) {
-    if (!quizId) toast.error(t.value.common.error)
+    if (!quizId) toast.error(t.value.learning.quizStartInvalid)
     return
   }
   startingQuizId.value = quizId
   try {
-    const res = await apiClient(`/api/quizzes/${quizId}/take`, { method: "POST" })
-    if (res?.attempt_id) {
+    const res = await apiClient(`/api/quizzes/${quizId}/take`, {
+      method: "POST",
+      suppressErrorToast: true,
+    })
+    const attemptId = String(res?.attempt_id || "").trim()
+    if (!attemptId) {
+      telemetry.track("quiz_start_response_missing_attempt", { quiz_id: quizId })
+      toast.error(t.value.learning.quizStartMissingAttempt)
+      return
+    }
+
+    try {
       await router.push({
         path: "/quizzes",
         query: {
-          attemptId: res.attempt_id,
+          attemptId,
           returnTo: route.fullPath,
         },
       })
+    } catch (error) {
+      telemetry.track("quiz_start_navigation_failed", {
+        quiz_id: quizId,
+        error_name: error instanceof Error ? error.name : "unknown",
+      })
+      toast.error(t.value.learning.quizStartNavigationFailed)
     }
-    else toast.error(t.value.common.error)
-  } catch {
-    toast.error(t.value.common.error)
+  } catch (error) {
+    toast.error(quizStartErrorMessage(error))
   } finally {
     startingQuizId.value = ""
   }

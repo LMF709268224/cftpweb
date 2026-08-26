@@ -325,6 +325,7 @@ test("认证从商城下单、Stripe 支付到已购认证完整闭环", async (
 test("已购认证进入课程、完成课件并通过测验完整闭环", async ({ page }) => {
   let lessonCompleted = false
   let quizPassed = false
+  let quizStartRequests = 0
   const submittedBodies: unknown[] = []
 
   await installCandidateApiMocks(page, ({ pathname, method, body }) => {
@@ -378,6 +379,10 @@ test("已购认证进入课程、完成课件并通过测验完整闭环", async
       return { data: { success: true } }
     }
     if (pathname === `/api/quizzes/${quizID}/take` && method === "POST") {
+      quizStartRequests += 1
+      if (quizStartRequests === 1) {
+        return { status: 503, message: "quiz service temporarily unavailable" }
+      }
       return { data: { attempt_id: "attempt-regression" } }
     }
     if (pathname === "/api/quizzes/attempts/attempt-regression/paper") {
@@ -424,6 +429,9 @@ test("已购认证进入课程、完成课件并通过测验完整闭环", async
   await page.locator('[data-testid="certification-flow-step"][data-step-id="quiz"]').first().click()
   await page.getByTestId("open-quiz-list").click()
   await page.locator(`[data-testid="start-quiz"][data-quiz-id="${quizID}"]`).click()
+  await expect(page.getByText("测验服务暂时繁忙，请稍后重试。", { exact: true })).toBeVisible()
+  await expect(page.getByText("操作失败", { exact: true })).toHaveCount(0)
+  await page.locator(`[data-testid="start-quiz"][data-quiz-id="${quizID}"]`).click()
   await page.locator('[data-testid="quiz-option"][data-option-id="option-correct"]').click()
   await page.getByTestId("quiz-submit").click()
   await page.getByTestId("quiz-submit-confirm").click()
@@ -449,6 +457,7 @@ test("已购认证进入课程、完成课件并通过测验完整闭环", async
       selected_option_ids: ["option-correct"],
     }],
   }])
+  expect(quizStartRequests).toBe(2)
 })
 
 test("同阶段课程可分别进入各自的考试报名", async ({ page }) => {
