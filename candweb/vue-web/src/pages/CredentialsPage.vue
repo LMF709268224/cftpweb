@@ -442,7 +442,7 @@ watch(lang, () => {
         </div>
         <div v-else class="overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
           <div class="space-y-3 p-3 md:space-y-2 md:p-0">
-            <div v-for="app in applications" :key="applicationId(app) || applicationCredentialDefinitionId(app)" class="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-3 rounded-xl border border-slate-100 bg-white px-3 py-4 shadow-sm shadow-slate-100/80 transition-colors hover:bg-primary/10 md:items-center md:rounded-none md:border-0 md:px-4 md:shadow-none md:gap-x-6 lg:grid-cols-[minmax(320px,2.4fr)_minmax(160px,1fr)_minmax(128px,auto)_minmax(104px,auto)] lg:gap-x-8">
+            <div v-for="app in applications" :key="applicationId(app) || applicationCredentialDefinitionId(app)" class="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-3 rounded-xl border border-slate-100 bg-white px-3 py-4 shadow-sm shadow-slate-100/80 transition-colors hover:bg-primary/10 md:items-center md:rounded-none md:border-0 md:px-4 md:shadow-none md:gap-x-6 lg:grid-cols-[minmax(320px,2.4fr)_minmax(160px,1fr)_minmax(128px,180px)_104px] lg:gap-x-8">
               <div class="min-w-0 lg:col-span-1">
                 <div class="break-words text-base font-semibold leading-6 text-foreground md:truncate md:font-medium" :title="applicationTitle(app)">{{ applicationTitle(app) }}</div>
                 <div class="mt-1 break-words text-sm leading-5 text-muted-foreground md:truncate" :title="applicationMeta(app)">{{ applicationMeta(app) }}</div>

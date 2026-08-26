@@ -243,14 +243,14 @@ onBeforeUnmount(clearPaymentPollInterval)
         </div>
 
         <div class="courses-page-controls mb-4 flex flex-col gap-3 rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] lg:flex-row lg:items-center lg:justify-between">
-          <div class="overflow-x-auto">
-            <div class="inline-flex min-w-max rounded-lg bg-[#f6fafb] p-1">
+          <div class="courses-category-scroll overflow-x-auto">
+            <div class="courses-category-filter inline-flex min-w-max rounded-lg bg-[#f6fafb] p-1">
               <button
                 v-for="option in categoryOptions"
                 :key="option.key"
                 type="button"
                 :class="[
-                  'h-9 rounded-md px-3 text-sm font-semibold transition-colors',
+                  'courses-category-option h-9 rounded-md px-3 text-sm font-semibold transition-colors',
                   activeCategory === option.key ? 'bg-primary text-white shadow-sm shadow-primary/20' : 'text-muted-foreground hover:bg-white hover:text-foreground',
                 ]"
                 @click="activeCategory = option.key"
@@ -308,7 +308,26 @@ onBeforeUnmount(clearPaymentPollInterval)
   .courses-page-controls {
     gap: 8px;
     margin-bottom: 12px;
-    padding: 12px;
+    padding: 8px;
+  }
+
+  .courses-category-scroll {
+    overflow-x: hidden;
+  }
+
+  .courses-category-filter {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: 100%;
+    min-width: 0;
+  }
+
+  .courses-category-option {
+    min-width: 0;
+    height: 32px;
+    padding-inline: 4px;
+    font-size: 11px;
+    line-height: 1;
   }
 
   .courses-page-grid {

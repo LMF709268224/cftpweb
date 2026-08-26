@@ -214,6 +214,11 @@ watch(lang, () => {
     margin-top: 16px;
   }
 
+  .my-certification-action > a {
+    min-height: 40px !important;
+    height: 40px;
+  }
+
   .my-certification-meta {
     flex-direction: column;
     gap: 4px;
