@@ -828,6 +828,8 @@ export const en: AppTranslations = {
         statusFailed: "Failed",
         statusPending: "Pending",
         statusExamCompleted: "Exam completed, awaiting result",
+        statusPendingGrading: "Awaiting professor grading",
+        pendingGradingDesc: "The exam is complete and its essay responses are awaiting professor grading. The final score and pass status will be published after grading.",
         statusQualified: "Qualified",
         statusUnqualified: "Not qualified",
         statusWaitingExamConfirmation: "Waiting for exam provider confirmation",

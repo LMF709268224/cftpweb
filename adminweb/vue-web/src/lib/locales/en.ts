@@ -1148,6 +1148,7 @@ export const en: AdminTranslations = {
             cancelled: "Cancelled",
             allResult: "All Result Statuses",
             none: "Not Started",
+            pendingGrading: "Awaiting professor grading",
             available: "Result Available",
             fetched: "Result Fetched",
             noShow: "No Show",

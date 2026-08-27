@@ -64,6 +64,7 @@ const statusOptions = computed(() => [
 const resultOptions = computed(() => [
   { value: "", label: copy.value.statusOptions.allResult },
   { value: "NONE", label: copy.value.statusOptions.none },
+  { value: "PENDING_GRADING", label: copy.value.statusOptions.pendingGrading },
   { value: "AVAILABLE", label: copy.value.statusOptions.available },
   { value: "FETCHED", label: copy.value.statusOptions.fetched },
   { value: "CANCELLED", label: copy.value.statusOptions.cancelled },
@@ -118,7 +119,12 @@ function hasPublishedExamResult(value: unknown) {
   return status === "AVAILABLE" || status === "FETCHED"
 }
 
-function examStatusLabel(value: unknown) {
+function isPendingGrading(value: unknown) {
+  return normalizedResultStatus(value) === "PENDING_GRADING"
+}
+
+function examStatusLabel(value: unknown, resultStatus?: unknown) {
+  if (isPendingGrading(resultStatus)) return copy.value.statusOptions.pendingGrading
   const status = normalizedStatus(value)
   if (["OPEN", "CREATED", "EXAM_STATUS_OPEN"].includes(status)) return copy.value.statusOptions.open
   if (["SCHEDULED", "EXAM_STATUS_SCHEDULED"].includes(status)) return copy.value.statusOptions.scheduled
@@ -127,7 +133,8 @@ function examStatusLabel(value: unknown) {
   return status || "-"
 }
 
-function examStatusBadgeClass(value: unknown) {
+function examStatusBadgeClass(value: unknown, resultStatus?: unknown) {
+  if (isPendingGrading(resultStatus)) return "border-amber-200 bg-amber-50 text-amber-800"
   const status = normalizedStatus(value)
   if (["OPEN", "CREATED", "EXAM_STATUS_OPEN"].includes(status)) return "border-blue-200 bg-blue-50 text-blue-700"
   if (["SCHEDULED", "EXAM_STATUS_SCHEDULED"].includes(status)) return "border-cyan-200 bg-cyan-50 text-cyan-700"
@@ -139,6 +146,7 @@ function examStatusBadgeClass(value: unknown) {
 function resultStatusLabel(value: unknown, passed?: unknown) {
   const status = normalizedResultStatus(value)
   if (status === "NONE") return copy.value.statusOptions.none
+  if (status === "PENDING_GRADING") return copy.value.statusOptions.pendingGrading
   if (status === "AVAILABLE") return copy.value.statusOptions.available
   if (status === "FETCHED") return copy.value.statusOptions.fetched
   if (status === "CANCELLED" || status === "CANCELED") return copy.value.statusOptions.cancelled
@@ -147,6 +155,14 @@ function resultStatusLabel(value: unknown, passed?: unknown) {
   if (!status && passed === true) return copy.value.statusOptions.fetched
   if (!status && passed === false) return copy.value.statusOptions.available
   return status || "-"
+}
+
+function resultStatusBadgeClass(value: unknown) {
+  const status = normalizedResultStatus(value)
+  if (status === "PENDING_GRADING") return "bg-amber-50 text-amber-800"
+  if (["AVAILABLE", "FETCHED", "BYPASSED"].includes(status)) return "bg-emerald-50 text-emerald-700"
+  if (["CANCELLED", "CANCELED", "NO_SHOW"].includes(status)) return "bg-red-50 text-red-700"
+  return "bg-slate-100 text-slate-600"
 }
 
 function transitionStatusTypeLabel(value: unknown) {
@@ -535,7 +551,7 @@ onMounted(() => loadExams(1))
             <div class="grid gap-2">
               <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
                 <span class="text-xs font-black text-slate-400">{{ copy.columns.result }}</span>
-                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">{{ resultStatusLabel(exam.result_status, exam.is_passed) }}</span>
+                <span class="rounded-full px-2.5 py-1 text-xs font-black" :class="resultStatusBadgeClass(exam.result_status)">{{ resultStatusLabel(exam.result_status, exam.is_passed) }}</span>
               </div>
               <div class="grid gap-1 rounded-2xl bg-slate-50 px-3 py-2">
                 <span class="text-xs font-black text-slate-400">{{ copy.columns.confirmation }}</span>
@@ -547,8 +563,8 @@ onMounted(() => loadExams(1))
               </div>
               <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
                 <span class="text-xs font-black text-slate-400">{{ copy.columns.status }}</span>
-                <span class="whitespace-nowrap rounded-full border px-3 py-1 text-xs font-black" :class="examStatusBadgeClass(exam.exam_status)">
-                  {{ examStatusLabel(exam.exam_status) }}
+                <span class="whitespace-nowrap rounded-full border px-3 py-1 text-xs font-black" :class="examStatusBadgeClass(exam.exam_status, exam.result_status)">
+                  {{ examStatusLabel(exam.exam_status, exam.result_status) }}
                 </span>
               </div>
             </div>
@@ -581,15 +597,15 @@ onMounted(() => loadExams(1))
                   <div v-if="candidateIdentifier(exam)" class="mt-1 max-w-[220px] truncate font-mono text-xs text-slate-400">{{ candidateIdentifier(exam) }}</div>
                 </td>
                 <td class="px-5 py-4">
-                  <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">{{ resultStatusLabel(exam.result_status, exam.is_passed) }}</span>
+                  <span class="rounded-full px-2.5 py-1 text-xs font-black" :class="resultStatusBadgeClass(exam.result_status)">{{ resultStatusLabel(exam.result_status, exam.is_passed) }}</span>
                 </td>
                 <td class="px-5 py-4">
                   <span class="break-all font-mono text-xs font-bold text-slate-600">{{ label(exam.confirmation_number) }}</span>
                 </td>
                 <td class="whitespace-nowrap px-5 py-4 font-semibold text-slate-700">{{ formatDate(String(exam.appointment_start_time || "")) || "-" }}</td>
                 <td class="px-5 py-4">
-                  <span class="whitespace-nowrap rounded-full border px-3 py-1 text-xs font-black" :class="examStatusBadgeClass(exam.exam_status)">
-                    {{ examStatusLabel(exam.exam_status) }}
+                  <span class="whitespace-nowrap rounded-full border px-3 py-1 text-xs font-black" :class="examStatusBadgeClass(exam.exam_status, exam.result_status)">
+                    {{ examStatusLabel(exam.exam_status, exam.result_status) }}
                   </span>
                 </td>
                 <td class="w-32 whitespace-nowrap px-5 py-4 text-right">
@@ -643,8 +659,8 @@ onMounted(() => loadExams(1))
                 <h3 class="mt-1 break-all text-xl font-black md:text-2xl">{{ field(detail || selectedSummary, ["exam_code", "exam_ulid"]) }}</h3>
                 <p class="mt-1 break-all font-mono text-sm font-bold text-blue-800">{{ selectedExamUlid }}</p>
               </div>
-              <span class="rounded-full border px-3 py-1 text-sm font-black" :class="examStatusBadgeClass((detail || selectedSummary)?.exam_status)">
-                {{ examStatusLabel((detail || selectedSummary)?.exam_status) }}
+              <span class="rounded-full border px-3 py-1 text-sm font-black" :class="examStatusBadgeClass((detail || selectedSummary)?.exam_status, (detail || selectedSummary)?.result_status)">
+                {{ examStatusLabel((detail || selectedSummary)?.exam_status, (detail || selectedSummary)?.result_status) }}
               </span>
             </div>
           </div>
@@ -722,11 +738,11 @@ onMounted(() => loadExams(1))
                 </div>
                 <div class="rounded-xl bg-slate-50 p-3">
                   <div class="text-xs font-black uppercase text-slate-400">{{ copy.labels.totalScore }}</div>
-                  <div class="mt-1 font-bold">{{ field(result || detail, ["total_score"]) }}</div>
+                  <div class="mt-1 font-bold">{{ isPendingGrading((result || detail || selectedSummary)?.result_status) ? "-" : field(result || detail, ["total_score"]) }}</div>
                 </div>
                 <div class="rounded-xl bg-slate-50 p-3">
                   <div class="text-xs font-black uppercase text-slate-400">{{ copy.labels.passed }}</div>
-                  <div class="mt-1 font-bold">{{ (result || detail)?.is_passed === true ? copy.yes : (result || detail)?.is_passed === false ? copy.no : "-" }}</div>
+                  <div class="mt-1 font-bold">{{ isPendingGrading((result || detail || selectedSummary)?.result_status) ? "-" : (result || detail)?.is_passed === true ? copy.yes : (result || detail)?.is_passed === false ? copy.no : "-" }}</div>
                 </div>
               </div>
             </article>

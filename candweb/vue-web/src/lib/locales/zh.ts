@@ -826,6 +826,8 @@ export const zh = {
     statusFailed: "未通过",
     statusPending: "待定",
     statusExamCompleted: "考试已完成，等待结果",
+    statusPendingGrading: "等待教授批卷",
+    pendingGradingDesc: "考试已经完成，主观题正在等待教授批改。最终成绩和通过状态将在批卷完成后公布。",
     statusQualified: "合格",
     statusUnqualified: "不合格",
     statusWaitingExamConfirmation: "等待考试系统确认",

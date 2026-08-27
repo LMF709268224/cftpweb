@@ -1146,6 +1146,7 @@ export const zh = {
             cancelled: "已取消",
             allResult: "全部成绩状态",
             none: "考试未开始",
+            pendingGrading: "待教授批卷",
             available: "成绩已出",
             fetched: "成绩已拉取",
             noShow: "考生未到",

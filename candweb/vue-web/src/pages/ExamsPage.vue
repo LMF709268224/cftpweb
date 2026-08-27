@@ -75,6 +75,12 @@ const filtered = computed(() => exams.value.filter((exam) => [
 function normalizedExamStatus(status?: string | number | null) {
   return normalizeEnumValueUpper(status)
 }
+function normalizedResultStatus(status?: string | number | null) {
+  return normalizedExamStatus(status).replace(/^RESULT_STATUS_/, "")
+}
+function isPendingGradingExam(exam: any) {
+  return normalizedResultStatus(exam?.result_status) === "PENDING_GRADING"
+}
 function normalizedCourseUnitStatus(status?: string | number | null) {
   return normalizeEnumValueUpper(status)
 }
@@ -101,11 +107,13 @@ function shouldShowStoredExamDetails(exam: any) {
 }
 function hasExamResult(exam: any) {
   if (shouldUseCurrentCourseUnitState(exam)) return false
-  const normalized = normalizedExamStatus(exam.result_status)
-  return typeof exam.total_score === "number" || typeof exam.is_passed === "boolean" || ["DONE", "PASSED", "FAILED", "NO_SHOW", "RESULT_STATUS_PASSED", "RESULT_STATUS_FAILED"].includes(normalized)
+  const normalized = normalizedResultStatus(exam.result_status)
+  if (normalized === "PENDING_GRADING") return false
+  if (normalized) return ["AVAILABLE", "FETCHED", "DONE", "PASSED", "FAILED", "NO_SHOW", "BYPASSED"].includes(normalized)
+  return typeof exam.is_passed === "boolean"
 }
 function hasExplicitPassStatus(exam: any) {
-  if (shouldUseCurrentCourseUnitState(exam)) return false
+  if (shouldUseCurrentCourseUnitState(exam) || isPendingGradingExam(exam)) return false
   return typeof exam.is_passed === "boolean"
 }
 function hasPassStatusBadge(exam: any) {
@@ -113,7 +121,7 @@ function hasPassStatusBadge(exam: any) {
   return hasExamResult(exam) || hasExplicitPassStatus(exam)
 }
 function shouldShowPrimaryExamStatusBadge(exam: any) {
-  return shouldShowStoredExamDetails(exam) && shouldShowExamStatus(exam.exam_status) && !hasPassStatusBadge(exam)
+  return shouldShowStoredExamDetails(exam) && shouldShowExamStatus(exam.exam_status) && !isPendingGradingExam(exam) && !hasPassStatusBadge(exam)
 }
 function hasText(value?: string | null) {
   return Boolean(value?.trim())
@@ -161,6 +169,9 @@ function isExamCompletedWithoutResult(exam: any) {
   return status.includes("PASSED") || status.includes("DONE") || status.includes("COMPLETED")
 }
 function examStatusLabel(exam: any) {
+  if (isPendingGradingExam(exam)) {
+    return t.value.examsPage.statusPendingGrading
+  }
   if (isExamCompletedWithoutResult(exam)) {
     return (t.value.examsPage as any).statusExamCompleted || t.value.examsPage.statusScheduled
   }
@@ -503,6 +514,7 @@ onBeforeUnmount(() => {
                 <div class="flex flex-wrap items-center gap-2">
                   <span v-if="isExamFailedUnit(exam)" :class="['badge', statusBadgeClassForStatusValue('FAILED')]">{{ t.examsPage.examFailedTitle }}</span>
                   <template v-else>
+                    <span v-if="isPendingGradingExam(exam)" :class="['badge', statusBadgeClassForStatusValue('PENDING')]">{{ t.examsPage.statusPendingGrading }}</span>
                     <span v-if="shouldShowPrimaryExamStatusBadge(exam)" :class="['badge', examStatusBadgeClass(exam.exam_status)]">{{ examStatusLabel(exam) }}</span>
                     <span v-if="isWaitingScheduleSync(exam)" :class="['badge', statusBadgeClassForStatusValue('PENDING')]">{{ scheduleSyncPendingLabel() }}</span>
                   </template>
@@ -538,7 +550,13 @@ onBeforeUnmount(() => {
                       <div class="text-xs">{{ t.examsPage.waitingExamConfirmationDesc }}</div>
                     </div>
                   </div>
-                  <div v-if="!isWaitingScheduleSync(exam) && !isWaitingExamConfirmation(exam) && !hasAppointmentDetails(exam) && !hasExamResult(exam)" class="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-blue-700 sm:col-span-2">
+                  <div v-else-if="isPendingGradingExam(exam)" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800 sm:col-span-2">
+                    <div class="flex items-start gap-2">
+                      <CalendarClock class="mt-0.5 h-4 w-4 shrink-0" />
+                      <div class="text-xs">{{ t.examsPage.pendingGradingDesc }}</div>
+                    </div>
+                  </div>
+                  <div v-if="!isPendingGradingExam(exam) && !isWaitingScheduleSync(exam) && !isWaitingExamConfirmation(exam) && !hasAppointmentDetails(exam) && !hasExamResult(exam)" class="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-blue-700 sm:col-span-2">
                     <div class="flex items-start gap-2">
                       <CalendarClock class="mt-0.5 h-4 w-4 shrink-0" />
                       <div>
@@ -575,6 +593,7 @@ onBeforeUnmount(() => {
                   {{ t.learning.actionScheduleExam }}
                 </button>
                 <RouterLink v-if="hasExamResult(exam)" :to="`/exams/result?examId=${encodeURIComponent(exam.exam_id)}`" class="btn btn-primary h-10 w-full rounded-lg px-5 shadow-sm shadow-primary/20 sm:w-auto">{{ t.examsPage.viewResult }}</RouterLink>
+                <span v-else-if="isPendingGradingExam(exam)" class="inline-flex h-10 w-full items-center justify-center rounded-lg border border-amber-200 bg-amber-50 px-5 text-sm font-semibold text-amber-800 sm:w-auto">{{ t.examsPage.statusPendingGrading }}</span>
               </div>
             </div>
           </div>

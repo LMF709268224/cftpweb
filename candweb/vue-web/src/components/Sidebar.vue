@@ -77,7 +77,7 @@ const navItems = computed(() => [
   { href: "/my-certifications", label: t.value.sidebar.myCertifications, group: t.value.sidebar.groupLearning },
   { href: "/exams", label: t.value.sidebar.exams, group: t.value.sidebar.groupLearning },
   { href: "/resource-packs", label: t.value.sidebar.resourcePacks, group: t.value.sidebar.groupLearning },
-  { href: "/credentials", label: t.value.sidebar.credentials, group: t.value.sidebar.groupLearning, badge: actionableCredentialCount.value > 0 ? badgeCountLabel(actionableCredentialCount.value) : undefined },
+//   { href: "/credentials", label: t.value.sidebar.credentials, group: t.value.sidebar.groupLearning, badge: actionableCredentialCount.value > 0 ? badgeCountLabel(actionableCredentialCount.value) : undefined },
   { href: "/certificates", label: t.value.sidebar.certificates, group: t.value.sidebar.groupMine },
   { href: "/membership", label: t.value.sidebar.membership, group: t.value.sidebar.groupMine },
   { href: "/orders", label: t.value.sidebar.orders, group: t.value.sidebar.groupMine },
