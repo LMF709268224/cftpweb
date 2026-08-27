@@ -1,15 +1,13 @@
 import { expect, test } from "@playwright/test"
 import { installAdminApiMocks, seedAuthenticatedAdmin } from "./support/admin"
 
-test("essay grading submits scores without accepting a web-supplied grader identity", async ({ page }) => {
+test("essay grading exports a workbook and imports professor grades after preview", async ({ page }) => {
   await seedAuthenticatedAdmin(page)
-  let submittedBody: Record<string, unknown> | undefined
+  const mutations: string[] = []
   let submitted = false
 
   page.on("request", (request) => {
-    if (request.method() === "POST" && new URL(request.url()).pathname === "/api/exams/exam-essay-1/essay-grade") {
-      submittedBody = request.postDataJSON()
-    }
+    if (request.method() === "POST") mutations.push(new URL(request.url()).pathname)
   })
   await installAdminApiMocks(page, ({ method, pathname }) => {
     if (method === "GET" && pathname === "/api/exams/pending-grading") {
@@ -45,7 +43,22 @@ test("essay grading submits scores without accepting a web-supplied grader ident
         },
       }
     }
-    if (method === "POST" && pathname === "/api/exams/exam-essay-1/essay-grade") {
+    if (method === "POST" && pathname === "/api/exams/exam-essay-1/essay-grade/import/preview") {
+      return {
+        data: {
+          exam_ulid: "exam-essay-1",
+          grader_name: "Professor Lee",
+          grader_id: "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+          is_passed: true,
+          objective_score: 72,
+          essay_score: 18,
+          final_score: 90,
+          overall_comment: "Meets the standard.",
+          items: [{ question_seq: 1, question_name: "Risk analysis", max_score: 20, score: 18, comment: "Clear analysis" }],
+        },
+      }
+    }
+    if (method === "POST" && pathname === "/api/exams/exam-essay-1/essay-grade/import") {
       submitted = true
       return { data: { success: true, final_total_score: 90 } }
     }
@@ -56,18 +69,21 @@ test("essay grading submits scores without accepting a web-supplied grader ident
   await page.getByText("Ada Lovelace", { exact: true }).click()
   const dialog = page.getByRole("dialog", { name: "主观题阅卷详情" })
   await expect(dialog.getByText("A complete regression answer.", { exact: true })).toBeVisible()
-  await dialog.getByLabel("本题得分").fill("18")
-  await dialog.getByLabel("单题评语").fill("Clear and complete")
-  await dialog.getByLabel("通过", { exact: true }).check()
-  await dialog.getByLabel(/我已复核全部作答/).check()
-  await dialog.getByRole("button", { name: "提交评分" }).click()
+  await expect(dialog.getByRole("link", { name: "导出阅卷表" })).toHaveAttribute("href", "/api/exams/exam-essay-1/essay-grade/export")
 
-  await expect(page.getByText("主观题评分已提交", { exact: true })).toBeVisible()
-  expect(submittedBody).toEqual({
-    is_passed: true,
-    overall_comment: "",
-    items: [{ question_seq: 1, score: 18, comment: "Clear and complete" }],
+  await dialog.getByLabel("选择评分文件").setInputFiles({
+    name: "essay-grading-exam-essay-1.xlsx",
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: Buffer.from("workbook"),
   })
-  expect(submittedBody).not.toHaveProperty("grader_id")
-  expect(submittedBody).not.toHaveProperty("grader_name")
+  await expect(dialog.getByText("Professor Lee", { exact: true })).toBeVisible()
+  await expect(dialog.getByText("18 / 20", { exact: true })).toBeVisible()
+  await dialog.getByLabel(/我已核对批改教授/).check()
+  await dialog.getByRole("button", { name: "确认导入并提交" }).click()
+
+  await expect(page.getByText("教授评分已导入并提交", { exact: true })).toBeVisible()
+  expect(mutations).toEqual([
+    "/api/exams/exam-essay-1/essay-grade/import/preview",
+    "/api/exams/exam-essay-1/essay-grade/import",
+  ])
 })
