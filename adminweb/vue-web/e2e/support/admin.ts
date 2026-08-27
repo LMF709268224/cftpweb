@@ -21,6 +21,7 @@ function emptyAdminData(pathname: string) {
     return {
       applications: 0,
       exams: 0,
+      exam_grading: 0,
       prog: 0,
       orders: 0,
       invoices: 0,

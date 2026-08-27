@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
+	gexampb "github.com/afnandelfin620-star/cftptest/cftp/gexam"
 	gmailpb "github.com/afnandelfin620-star/cftptest/cftp/gmail"
 	"google.golang.org/grpc"
 )
@@ -33,6 +34,20 @@ type systemMailClientStub struct {
 	err      error
 }
 
+type systemExamClientStub struct {
+	gexampb.GExamServiceClient
+	response *gexampb.GetPendingGradingExamCountResponse
+	err      error
+}
+
+func (s *systemExamClientStub) GetPendingGradingExamCount(
+	_ context.Context,
+	_ *gexampb.GetPendingGradingExamCountRequest,
+	_ ...grpc.CallOption,
+) (*gexampb.GetPendingGradingExamCountResponse, error) {
+	return s.response, s.err
+}
+
 func (s *systemMailClientStub) GetMailCount(
 	_ context.Context,
 	_ *gmailpb.GetMailCountRequest,
@@ -44,6 +59,7 @@ func (s *systemMailClientStub) GetMailCount(
 func TestGetSystemRedDotsSeparatesMessageAndMailCounts(t *testing.T) {
 	h := &Handler{
 		Creds: &systemCredentialClientStub{response: &gcredspb.GetApplicationCountResponse{Count: 3}},
+		Gexam: &systemExamClientStub{response: &gexampb.GetPendingGradingExamCountResponse{Count: 7}},
 		Gmail: &systemMailClientStub{response: &gmailpb.GetMailCountResponse{Count: 5}},
 	}
 	recorder := httptest.NewRecorder()
@@ -59,8 +75,8 @@ func TestGetSystemRedDotsSeparatesMessageAndMailCounts(t *testing.T) {
 	if err := json.NewDecoder(recorder.Body).Decode(&response); err != nil {
 		t.Fatalf("decode response: %v", err)
 	}
-	if response.Data.Applications != 3 || response.Data.Mails != 5 || response.Data.Messages != 0 {
-		t.Fatalf("red dots = %+v, want applications=3 mails=5 messages=0", response.Data)
+	if response.Data.Applications != 3 || response.Data.ExamGrading != 7 || response.Data.Mails != 5 || response.Data.Messages != 0 {
+		t.Fatalf("red dots = %+v, want applications=3 exam_grading=7 mails=5 messages=0", response.Data)
 	}
 }
 
@@ -68,9 +84,11 @@ func TestGetSystemRedDotsReportsDownstreamFailure(t *testing.T) {
 	tests := []struct {
 		name     string
 		credsErr error
+		examErr  error
 		mailErr  error
 	}{
 		{name: "application count failure", credsErr: errors.New("credentials unavailable")},
+		{name: "essay grading count failure", examErr: errors.New("exam unavailable")},
 		{name: "mail count failure", mailErr: errors.New("mail unavailable")},
 	}
 
@@ -80,6 +98,10 @@ func TestGetSystemRedDotsReportsDownstreamFailure(t *testing.T) {
 				Creds: &systemCredentialClientStub{
 					response: &gcredspb.GetApplicationCountResponse{},
 					err:      test.credsErr,
+				},
+				Gexam: &systemExamClientStub{
+					response: &gexampb.GetPendingGradingExamCountResponse{},
+					err:      test.examErr,
 				},
 				Gmail: &systemMailClientStub{
 					response: &gmailpb.GetMailCountResponse{},
