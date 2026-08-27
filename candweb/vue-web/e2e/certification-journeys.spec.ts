@@ -328,7 +328,7 @@ test("Token 外部课件使用考生凭证打开并保留手动完成流程", as
   const popupPromise = page.waitForEvent("popup")
   await page.getByRole("button", { name: /打开外部课件/ }).click()
   const popup = await popupPromise
-  await expect.poll(() => popup.url()).toBe("https://partner.example/learn/candidate%20access%2Fvalue")
+  await expect.poll(() => popup.url()).toBe("https://partner.example/learn/candidate-access-value")
   expect(accessURLRequested).toBe(true)
 
   await page.getByTestId("complete-lesson").click()
