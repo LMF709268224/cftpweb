@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from "vue"
 import { useRoute } from "vue-router"
-import { AlertCircle, Award, CheckCircle, Clock, Download, FileText, Loader2, X, XCircle } from "lucide-vue-next"
+import { AlertCircle, Award, CheckCircle, Clock, FileText, Loader2, X, XCircle } from "lucide-vue-next"
 import { getFileConstraintInfo } from "../lib/fileConstraints"
 import { CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, CANDIDATE_APPLICATION_STATUS_LABELS, statusEnumNameForStatus, statusLabel } from "@/lib/status-labels"
 import AppPagination from "@/components/AppPagination.vue"
 import AppShell from "@/components/AppShell.vue"
+import CredentialAttachmentList from "@/components/CredentialAttachmentList.vue"
 import PageFeedback from "@/components/PageFeedback.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useBodyScrollLock } from "@/lib/bodyScrollLock"
@@ -39,28 +40,6 @@ const uploadedFiles = ref<Record<string, { name: string; url: string; ext: strin
 const isSubmitting = ref(false)
 const uploadingConstraintName = ref("")
 
-function definitionAttachments(definition: any) {
-  return Array.isArray(definition?.attachments) ? definition.attachments.filter((item: any) => item && typeof item === "object") : []
-}
-
-function attachmentURL(value: unknown) {
-  const text = String(value || "").trim()
-  if (!text) return ""
-  try {
-    const parsed = new URL(text)
-    return parsed.protocol === "https:" || parsed.protocol === "http:" ? parsed.toString() : ""
-  } catch {
-    return ""
-  }
-}
-
-function formatAttachmentSize(value: unknown) {
-  const bytes = Number(value)
-  if (!Number.isFinite(bytes) || bytes <= 0) return ""
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
-}
 const UPLOAD_TIMEOUT_MS = 30000
 
 async function sha256Hex(file: File) {
@@ -508,27 +487,7 @@ watch(lang, () => {
         </div>
         <div class="credentials-apply-body space-y-4 py-4">
           <p class="text-sm text-muted-foreground">{{ t.credentialsPage.description }}: {{ selectedDef?.description }}</p>
-          <section v-if="definitionAttachments(selectedDef).length" class="space-y-3 border-t border-border pt-4">
-            <div>
-              <h4 class="text-sm font-semibold">{{ t.credentialsPage.referenceAttachments }}</h4>
-              <p class="mt-1 text-xs leading-5 text-muted-foreground">{{ t.credentialsPage.referenceAttachmentsHint }}</p>
-            </div>
-            <div class="divide-y divide-border rounded-lg border border-border bg-muted/40">
-              <div v-for="(attachment, index) in definitionAttachments(selectedDef)" :key="attachment.attachment_id || attachment.file_key || `${attachment.file_name}-${index}`" class="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between">
-                <div class="min-w-0">
-                  <div class="break-words text-sm font-semibold text-foreground">{{ attachment.name || attachment.file_name }}</div>
-                  <p v-if="attachment.description" class="mt-1 whitespace-pre-wrap break-words text-xs leading-5 text-muted-foreground">{{ attachment.description }}</p>
-                  <div class="mt-1 flex flex-wrap gap-x-2 text-xs text-muted-foreground">
-                    <span>{{ attachment.file_name }}</span>
-                    <span v-if="formatAttachmentSize(attachment.file_size)">{{ formatAttachmentSize(attachment.file_size) }}</span>
-                  </div>
-                </div>
-                <a v-if="attachmentURL(attachment.download_url)" class="btn btn-outline inline-flex h-9 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-lg px-3 text-xs hover:border-primary/25 hover:bg-primary/10 hover:text-primary" :href="attachmentURL(attachment.download_url)" target="_blank" rel="noopener noreferrer">
-                  <Download class="h-4 w-4" /> {{ t.credentialsPage.downloadAttachment }}
-                </a>
-              </div>
-            </div>
-          </section>
+          <CredentialAttachmentList :attachments="selectedDef?.attachments" class="border-t border-border pt-4" />
           <div class="space-y-4 border-t border-border pt-4">
             <h4 class="text-sm font-semibold">{{ t.credentialsPage.uploadMaterials }}</h4>
             <div v-for="constraint in selectedDef?.file_constraints || []" :key="constraint.name" class="space-y-2 rounded-lg bg-muted p-3">

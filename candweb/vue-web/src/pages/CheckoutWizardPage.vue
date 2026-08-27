@@ -4,6 +4,7 @@ import { useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
 import { ArrowLeft, ArrowRight, ClipboardList, Loader2, Send, Check, CheckCircle2, CircleAlert, Clock, UploadCloud, X } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
+import CredentialAttachmentList from "@/components/CredentialAttachmentList.vue"
 import LocalizedDatePicker from "@/components/LocalizedDatePicker.vue"
 import LoadingState from "@/components/LoadingState.vue"
 import CheckoutPaymentPanel from "@/components/CheckoutPaymentPanel.vue"
@@ -1791,6 +1792,11 @@ function closePaymentEditDialog() {
                             </p>
                           </div>
                         </div>
+
+                        <CredentialAttachmentList
+                          :attachments="qualificationDefinitionForUnit(unit)?.attachments"
+                          class="mt-5 border-t border-blue-100 pt-5"
+                        />
 
                         <div
                           v-if="Array.isArray(qualificationDefinitionForUnit(unit)?.file_constraints)"

@@ -245,6 +245,75 @@ test("已持有有效资格的课程自动免考且不可取消", async ({ page 
   })
 })
 
+test("结账资格申请提供官方模板预览与下载", async ({ page }) => {
+  const stageID = "stage-template-application"
+  const unitID = "unit-template-application"
+  const qualificationID = "qualification-template-application"
+  const checkoutBundle = {
+    ...bundle,
+    stages: [{
+      stage_id: stageID,
+      name: "Template Application Stage",
+      sort_order: 1,
+      units: [{ unit_id: unitID, name: "Template Application Course" }],
+    }],
+    purchase_state: {
+      ...bundle.purchase_state,
+      exemption_options: {
+        stages: [{
+          index: 0,
+          stage_id: stageID,
+          stage_name: "Template Application Stage",
+          units: [{
+            unit_id: unitID,
+            unit_name: "Template Application Course",
+            allow_exemption: true,
+            qualified: false,
+            exemption_quals: [{ qual_id: qualificationID, name: "Work Experience Qualification" }],
+          }],
+        }],
+      },
+    },
+  }
+
+  await installCandidateApiMocks(page, ({ pathname, method }) => {
+    if (pathname === `/api/mall/bundles/${bundleID}` && method === "GET") return { data: checkoutBundle }
+    if (pathname === `/api/mall/bundles/${bundleID}/pricing-detail`) return { data: { units: [], memberships: [] } }
+    if (pathname === "/api/credentials/definitions") {
+      return {
+        data: {
+          definitions: [{
+            cred_def_ulid: qualificationID,
+            name: "Work Experience Qualification",
+            description: "Upload signed work experience evidence.",
+            file_constraints: [],
+            attachments: [{
+              attachment_id: "checkout-template-1",
+              name: "工作经验证明模板",
+              file_name: "work-experience-template.docx",
+              file_size: 4096,
+              download_url: "https://downloads.example/work-experience-template.docx",
+            }],
+          }],
+        },
+      }
+    }
+    if (pathname === "/api/credentials/applications") return { data: { applications: [] } }
+    if (pathname === "/api/credentials/upload-permission") return { data: { granted: true } }
+    return undefined
+  })
+
+  await page.goto(`/checkout/${bundleID}`, { waitUntil: "domcontentloaded" })
+  await page.locator(`[data-testid="checkout-exemption-toggle"][data-unit-id="${unitID}"]`).check()
+
+  await expect(page.getByText("模板与参考文件", { exact: true })).toBeVisible()
+  await expect(page.getByRole("link", { name: "预览模板" })).toHaveAttribute(
+    "href",
+    "https://downloads.example/work-experience-template.docx",
+  )
+  await expect(page.getByRole("link", { name: "下载模板" })).toHaveAttribute("download", "work-experience-template.docx")
+})
+
 test("课程视频预览通过签名地址全屏播放", async ({ page }) => {
   let requestedSignedURL = false
   const signedURL = "https://iframe.videodelivery.net/signed-lesson-token"
