@@ -7,6 +7,7 @@ import CourseCard from "@/components/CourseCard.vue"
 import PageFeedback from "@/components/PageFeedback.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
+import { preloadCheckoutWizard } from "@/router"
 
 const { t, lang } = useTranslation()
 type CourseCategoryFilter = "all" | "certification" | "bundle" | "membership"
@@ -18,6 +19,7 @@ const allCourses = ref<any[]>([])
 const loading = ref(false)
 const loadError = ref(false)
 let paymentPollInterval: number | undefined
+let checkoutPreloadTimer: number | undefined
 
 function clearPaymentPollInterval() {
   if (paymentPollInterval === undefined) return
@@ -222,10 +224,15 @@ watch([refreshKey, lang], () => {
 
 onMounted(() => {
   handlePaymentReturn()
-  void fetchData()
+  void fetchData().finally(() => {
+    checkoutPreloadTimer = window.setTimeout(() => void preloadCheckoutWizard(), 500)
+  })
 })
 
-onBeforeUnmount(clearPaymentPollInterval)
+onBeforeUnmount(() => {
+  clearPaymentPollInterval()
+  if (checkoutPreloadTimer !== undefined) window.clearTimeout(checkoutPreloadTimer)
+})
 </script>
 
 <template>

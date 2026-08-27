@@ -9,6 +9,7 @@ import { fetchActionableCredentialCount, getCachedActionableCredentialCount, onA
 import { useTranslation } from "@/lib/language"
 import { initializeSidebarCollapse, useSidebarCollapse } from "@/lib/sidebar"
 import { useBodyScrollLock } from "@/lib/bodyScrollLock"
+import { preloadCandidateRoute } from "@/router"
 import { useUser } from "@/lib/user"
 import { usePolling } from "@/lib/polling"
 import brandLogo from "@/assets/favicon.png"
@@ -236,6 +237,8 @@ async function handleLogout() {
               isNavItemActive(item.href) ? 'bg-sidebar-accent font-semibold text-white' : 'text-white/80 hover:bg-white/10 hover:text-white',
             ]"
             @click="mobileMenuOpen = false"
+            @pointerenter="preloadCandidateRoute(item.href)"
+            @focus="preloadCandidateRoute(item.href)"
           >
             <span class="flex min-w-0 items-center gap-3">
               <component :is="navIconFor(item.href)" class="h-4 w-4 shrink-0 text-current" :stroke-width="1.5" />
@@ -314,6 +317,8 @@ async function handleLogout() {
             isSidebarCollapsed ? 'mx-auto w-9 justify-center px-0' : 'justify-between px-4',
             isNavItemActive(item.href) ? 'bg-sidebar-accent font-semibold text-white' : 'text-white/80 hover:bg-white/10 hover:text-white',
           ]"
+          @pointerenter="preloadCandidateRoute(item.href)"
+          @focus="preloadCandidateRoute(item.href)"
         >
           <span :class="['flex min-w-0 items-center', isSidebarCollapsed ? 'justify-center' : 'gap-3']">
             <component :is="navIconFor(item.href)" class="h-4 w-4 shrink-0 text-current" :stroke-width="1.5" />
