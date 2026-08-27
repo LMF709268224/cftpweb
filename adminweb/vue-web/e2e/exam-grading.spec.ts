@@ -58,7 +58,7 @@ test("essay grading submits scores without accepting a web-supplied grader ident
   await expect(dialog.getByText("A complete regression answer.", { exact: true })).toBeVisible()
   await dialog.getByLabel("本题得分").fill("18")
   await dialog.getByLabel("单题评语").fill("Clear and complete")
-  await dialog.getByLabel("通过").check()
+  await dialog.getByLabel("通过", { exact: true }).check()
   await dialog.getByLabel(/我已复核全部作答/).check()
   await dialog.getByRole("button", { name: "提交评分" }).click()
 
