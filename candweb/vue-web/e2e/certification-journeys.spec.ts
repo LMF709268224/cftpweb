@@ -424,12 +424,23 @@ test("支付步骤说明锁定原因并允许取消订单后返回修改", async
   await page.getByTestId("checkout-confirm-pay").click()
 
   await expect(page.getByTestId("checkout-step-payment")).toBeVisible()
-  await expect(page.getByText("待支付订单已经创建，价格和报名选择已锁定，不能直接返回修改。如需调整，请先取消当前订单。", { exact: true })).toBeVisible()
-  page.once("dialog", dialog => dialog.accept())
-  await page.getByTestId("checkout-cancel-and-edit").click()
+  await expect(page.getByTestId("checkout-cancel-and-edit")).toHaveCount(0)
 
-  await expect(page.getByTestId("checkout-step-review")).toBeVisible()
-  await page.getByRole("button", { name: "返回" }).click()
+  await page.getByTestId("checkout-progress-step-1").click()
+  let editDialog = page.getByRole("dialog", { name: "返回修改报名信息？" })
+  await expect(editDialog.getByText("待支付订单已经创建，价格和报名选择已锁定，不能直接返回修改。如需调整，请先取消当前订单。", { exact: true })).toBeVisible()
+  await editDialog.getByRole("button", { name: "继续支付" }).click()
+  await expect(editDialog).toHaveCount(0)
+
+  await page.getByTestId("checkout-progress-step-3").click()
+  editDialog = page.getByRole("dialog", { name: "返回修改报名信息？" })
+  await expect(editDialog).toBeVisible()
+  await editDialog.getByRole("button", { name: "继续支付" }).click()
+
+  await page.getByTestId("checkout-progress-step-2").click()
+  editDialog = page.getByRole("dialog", { name: "返回修改报名信息？" })
+  await editDialog.getByTestId("checkout-cancel-and-edit").click()
+
   await expect(page.getByTestId("checkout-step-registration")).toBeVisible()
   expect(cancelBody).toEqual({
     biz_type: "BUNDLE_PURCHASE",

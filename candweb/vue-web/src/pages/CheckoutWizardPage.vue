@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
-import { ArrowLeft, ArrowRight, ClipboardList, Loader2, Send, Check, CheckCircle2, CircleAlert, Clock, UploadCloud } from "lucide-vue-next"
+import { ArrowLeft, ArrowRight, ClipboardList, Loader2, Send, Check, CheckCircle2, CircleAlert, Clock, UploadCloud, X } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import LocalizedDatePicker from "@/components/LocalizedDatePicker.vue"
 import LoadingState from "@/components/LoadingState.vue"
@@ -216,6 +216,8 @@ const registrationTitle = computed(() => {
 
 const loading = ref(false)
 const cancellingPaymentOrder = ref(false)
+const paymentEditDialogOpen = ref(false)
+const paymentReturnStep = ref(3)
 const initialLoading = ref(true)
 const pipelineId = computed(() =>
   String(bundleData.value?.pipeline_id || bundleData.value?.pipeline_cc_ulid || "").trim()
@@ -1561,7 +1563,6 @@ async function confirmAndPay() {
 async function cancelPaymentOrderAndReturn() {
   const orderId = activeOrderId.value.trim()
   if (!orderId || cancellingPaymentOrder.value) return
-  if (!window.confirm(t.value.checkoutWizard.cancelPaymentOrderConfirm)) return
 
   const action = activeOrderAction.value
   cancellingPaymentOrder.value = true
@@ -1581,9 +1582,12 @@ async function cancelPaymentOrderAndReturn() {
       activeCredentialUnitId.value = ""
       currentStep.value = 1
     } else {
-      currentStep.value = 3
+      currentStep.value = paymentReturnStep.value === 1 && exemptionStages.value.length === 0
+        ? 2
+        : paymentReturnStep.value
     }
     activeOrderAction.value = "purchase"
+    paymentEditDialogOpen.value = false
     toast.success(t.value.checkoutWizard.cancelPaymentOrderSuccess)
   } catch (error) {
     console.error(error)
@@ -1593,6 +1597,27 @@ async function cancelPaymentOrderAndReturn() {
   } finally {
     cancellingPaymentOrder.value = false
   }
+}
+
+function checkoutStepLabel(step: number) {
+  const labels = [
+    t.value.checkoutWizard.step1,
+    t.value.checkoutWizard.step2,
+    t.value.checkoutWizard.step3,
+    t.value.checkoutWizard.step4,
+  ]
+  return String(labels[step - 1] || "").replace(/^\d+\s*/, "")
+}
+
+function requestPaymentStepEdit(step: number) {
+  if (currentStep.value !== 4 || step < 1 || step > 3) return
+  paymentReturnStep.value = step
+  paymentEditDialogOpen.value = true
+}
+
+function closePaymentEditDialog() {
+  if (cancellingPaymentOrder.value) return
+  paymentEditDialogOpen.value = false
 }
 </script>
 
@@ -1620,22 +1645,20 @@ async function cancelPaymentOrderAndReturn() {
             <span v-else>{{ registrationTitle }}</span>
           </h1>
           <div class="checkout-progress" aria-label="Checkout progress">
-            <div class="checkout-progress-step" :class="{ active: currentStep === 1 }" :aria-current="currentStep === 1 ? 'step' : undefined">
-              <span class="checkout-progress-node">1</span>
-              <span class="checkout-progress-label">{{ t.checkoutWizard.step1.replace(/^\d+\s*/, "") }}</span>
-            </div>
-            <div class="checkout-progress-step" :class="{ active: currentStep === 2 }" :aria-current="currentStep === 2 ? 'step' : undefined">
-              <span class="checkout-progress-node">2</span>
-              <span class="checkout-progress-label">{{ t.checkoutWizard.step2.replace(/^\d+\s*/, "") }}</span>
-            </div>
-            <div class="checkout-progress-step" :class="{ active: currentStep === 3 }" :aria-current="currentStep === 3 ? 'step' : undefined">
-              <span class="checkout-progress-node">3</span>
-              <span class="checkout-progress-label">{{ t.checkoutWizard.step3.replace(/^\d+\s*/, "") }}</span>
-            </div>
-            <div class="checkout-progress-step" :class="{ active: currentStep === 4 }" :aria-current="currentStep === 4 ? 'step' : undefined">
-              <span class="checkout-progress-node">4</span>
-              <span class="checkout-progress-label">{{ t.checkoutWizard.step4.replace(/^\d+\s*/, "") }}</span>
-            </div>
+            <button
+              v-for="step in 4"
+              :key="step"
+              :data-testid="`checkout-progress-step-${step}`"
+              class="checkout-progress-step"
+              :class="{ active: currentStep === step, actionable: currentStep === 4 && step < 4 }"
+              type="button"
+              :disabled="currentStep !== 4 || step === 4 || cancellingPaymentOrder"
+              :aria-current="currentStep === step ? 'step' : undefined"
+              @click="requestPaymentStepEdit(step)"
+            >
+              <span class="checkout-progress-node">{{ step }}</span>
+              <span class="checkout-progress-label">{{ checkoutStepLabel(step) }}</span>
+            </button>
           </div>
         </div>
         
@@ -2010,23 +2033,6 @@ async function cancelPaymentOrderAndReturn() {
                 {{ t.checkoutWizard.qualificationPaymentDesc }}
               </p>
             </div>
-            <div class="flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950 sm:flex-row sm:items-center sm:justify-between">
-              <div class="flex min-w-0 items-start gap-3">
-                <CircleAlert class="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
-                <p class="leading-6">{{ t.checkoutWizard.paymentOrderLockedHint }}</p>
-              </div>
-              <button
-                data-testid="checkout-cancel-and-edit"
-                class="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-amber-700 bg-white px-4 font-bold text-amber-900 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
-                type="button"
-                :disabled="cancellingPaymentOrder"
-                @click="cancelPaymentOrderAndReturn"
-              >
-                <Loader2 v-if="cancellingPaymentOrder" class="h-4 w-4 animate-spin" />
-                <ArrowLeft v-else class="h-4 w-4" />
-                {{ t.checkoutWizard.cancelPaymentOrderAndEdit }}
-              </button>
-            </div>
             <CheckoutPaymentPanel
               v-if="activeOrderId"
               :biz-type="paymentBizType"
@@ -2077,6 +2083,46 @@ async function cancelPaymentOrderAndReturn() {
         </div>
         </template>
       </main>
+
+      <Teleport to="body">
+        <div v-if="paymentEditDialogOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
+          <section
+            v-modal-dialog="closePaymentEditDialog"
+            class="w-full max-w-[560px] overflow-hidden rounded-lg bg-white shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="checkout-payment-edit-title"
+          >
+            <header class="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+              <div class="flex min-w-0 items-start gap-3">
+                <CircleAlert class="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+                <div>
+                  <h2 id="checkout-payment-edit-title" class="text-lg font-black text-slate-950">{{ t.checkoutWizard.paymentEditDialogTitle }}</h2>
+                  <p class="mt-2 text-sm leading-6 text-slate-600">{{ t.checkoutWizard.paymentOrderLockedHint }}</p>
+                </div>
+              </div>
+              <button class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50" type="button" :aria-label="t.common.close" :disabled="cancellingPaymentOrder" @click="closePaymentEditDialog">
+                <X class="h-4 w-4" />
+              </button>
+            </header>
+            <footer class="flex flex-col-reverse gap-3 bg-slate-50 px-5 py-4 sm:flex-row sm:justify-end">
+              <button class="inline-flex min-h-10 items-center justify-center rounded-lg border border-slate-300 bg-white px-4 font-bold text-slate-700 hover:bg-slate-100" type="button" :disabled="cancellingPaymentOrder" @click="closePaymentEditDialog">
+                {{ t.checkoutWizard.continuePayment }}
+              </button>
+              <button
+                data-testid="checkout-cancel-and-edit"
+                class="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-red-600 px-4 font-bold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                type="button"
+                :disabled="cancellingPaymentOrder"
+                @click="cancelPaymentOrderAndReturn"
+              >
+                <Loader2 v-if="cancellingPaymentOrder" class="h-4 w-4 animate-spin" />
+                {{ t.checkoutWizard.cancelPaymentOrderAndEdit }}
+              </button>
+            </footer>
+          </section>
+        </div>
+      </Teleport>
     </div>
   </AppShell>
 </template>
@@ -2175,7 +2221,25 @@ async function cancelPaymentOrderAndReturn() {
   align-items: center;
   flex-direction: column;
   gap: 7px;
+  padding: 0;
+  border: 0;
   color: #52617a;
+  background: transparent;
+  font: inherit;
+}
+
+.checkout-progress-step.actionable {
+  cursor: pointer;
+}
+
+.checkout-progress-step.actionable:hover .checkout-progress-node {
+  background: #cbdcf8;
+}
+
+.checkout-progress-step.actionable:focus-visible {
+  border-radius: 6px;
+  outline: 2px solid #0957f9;
+  outline-offset: 4px;
 }
 
 .checkout-progress-step:not(:last-child)::after {
