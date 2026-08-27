@@ -1166,7 +1166,7 @@
             <div class="eyebrow" style="color:#9eeef1">配置管理 / GCREDS</div>
             <h1>资格定义使用手册</h1>
             <p>面向管理后台运营人员，说明资格分类、资源路径、申请材料，以及资格在认证准入、终审、发证、禁购和免考中的用法。</p>
-            <div class="manual-meta"><span>角色：认证运营</span><span>难度：基础至进阶</span><span>更新：2026-08-25</span></div>
+            <div class="manual-meta"><span>角色：认证运营</span><span>难度：基础至进阶</span><span>更新：2026-08-27</span></div>
           </header>
 
           <section class="doc-section" id="qualification-overview">
@@ -1255,10 +1255,13 @@
                 <tr><td>必须唯一</td><td>两个资格定义不能使用相同资源路径。</td><td>每个资格单独一条路径</td></tr>
                 <tr><td>使用绝对路径</td><td>建议始终以 <code>/</code> 开头；系统会清理末尾斜杠。</td><td><code>/gcc/credential/cfta</code></td></tr>
                 <tr><td>使用稳定英文标识</td><td>名称翻译或文案调整时不修改资源路径。</td><td><code>/gcc/credential/work-experience</code></td></tr>
+                <tr><td>系统管理资格使用 <code>/system/</code></td><td>路径中使用独立的 <code>system</code> 段后，考生端不会展示该资格的人工申请入口，也不会在购买流程中展示对应的资格申请项；资格由后台业务流程自动判断。</td><td><code>/gcc/credential/system/cfta-certification</code></td></tr>
                 <tr><td>不要复用其他模块 GPath</td><td>课程、认证、商品和资格是不同资源，即使业务相关也应使用各自路径。</td><td>资格统一放在 <code>/gcc/credential/...</code></td></tr>
                 <tr><td>不要写版本号</td><td>资源路径代表资格定义本身，不写日期、版本或人员姓名。</td><td>避免 <code>-v2</code>、<code>-2026</code></td></tr>
               </tbody>
             </table>
+            <div class="note"><strong>什么时候使用 <code>system</code></strong>仅用于不允许考生自行提交材料、必须由系统根据课程、考试、认证或其他后台结果自动判定的资格。普通人工申请资格不要加入该路径段，否则考生将看不到申请入口。</div>
+            <div class="warning"><strong><code>system</code> 必须是独立路径段</strong>请使用 <code>/system/</code>，例如 <code>/gcc/credential/system/cfta-certification</code>。不要写成 <code>/system-cfta</code>，也不要仅在资格名称或描述中填写 system，这些写法不会触发候选端隐藏规则。</div>
             <div class="danger"><strong>创建前务必确认路径</strong>当前管理后台只提供新建和只读详情，没有资格定义编辑入口。路径写错后不能在此页面直接修正，也不要通过创建同名资格来掩盖错误。</div>
           </section>
 
@@ -1306,6 +1309,7 @@
               <li>名称能区分认证、免考和材料用途</li>
               <li>分类符合资格本身的性质</li>
               <li>资源路径唯一、稳定且使用英文</li>
+              <li>仅系统自动判定的资格使用独立的 <code>/system/</code> 路径段</li>
               <li>描述写明适用范围和审核口径</li>
               <li>获取方式说明面向考生可理解</li>
               <li>仅为人工申请资格添加文件约束</li>

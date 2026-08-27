@@ -9,6 +9,7 @@ import LocalizedDatePicker from "@/components/LocalizedDatePicker.vue"
 import LoadingState from "@/components/LoadingState.vue"
 import CheckoutPaymentPanel from "@/components/CheckoutPaymentPanel.vue"
 import { ApiClientError, apiClient } from "@/lib/apiClient"
+import { isSystemCredentialDefinition } from "@/lib/credentialDefinitions"
 import { useTranslation } from "@/lib/language"
 import { useUser } from "@/lib/user"
 import {
@@ -590,24 +591,37 @@ function qualificationIdsForStages(stages: any[]) {
 }
 
 function applyQualificationDefinitionsToStages(definitions: Record<string, any>) {
-  exemptionStages.value = exemptionStages.value.map((stage: any) => ({
-    ...stage,
-    units: (stage.units || []).map((unit: any) => ({
-      ...unit,
-      exemption_quals: (unit.exemption_quals || []).map((qualification: any) => {
-        const qualificationId = String(qualification?.qual_id || "").trim()
-        const definition = definitions[qualificationId]
-        if (!definition) return qualification
-        return {
-          ...qualification,
-          name: definition.name || qualification.name,
-          description: definition.description || qualification.description,
-          acquisition_method: definition.acquisition_method || qualification.acquisition_method,
-          file_constraints: definition.file_constraints || qualification.file_constraints,
-        }
-      }),
-    })),
-  }))
+  exemptionStages.value = exemptionStages.value
+    .map((stage: any) => ({
+      ...stage,
+      units: (stage.units || [])
+        .map((unit: any) => ({
+          ...unit,
+          exemption_quals: (unit.exemption_quals || [])
+            .filter((qualification: any) => {
+              const qualificationId = String(qualification?.qual_id || "").trim()
+              const definition = definitions[qualificationId]
+              return !definition || !isSystemCredentialDefinition(definition)
+            })
+            .map((qualification: any) => {
+              const qualificationId = String(qualification?.qual_id || "").trim()
+              const definition = definitions[qualificationId]
+              if (!definition) return qualification
+              return {
+                ...qualification,
+                name: definition.name || qualification.name,
+                description: definition.description || qualification.description,
+                acquisition_method: definition.acquisition_method || qualification.acquisition_method,
+                file_constraints: definition.file_constraints || qualification.file_constraints,
+              }
+            }),
+        }))
+        .filter((unit: any) => (unit.exemption_quals?.length || 0) > 0),
+    }))
+    .filter((stage: any) => (stage.units?.length || 0) > 0)
+
+  syncQualifiedExemptionSelections(exemptionStages.value)
+  if (exemptionStages.value.length === 0 && currentStep.value === 1) currentStep.value = 2
 }
 
 async function refreshCheckoutQualificationDefinitions() {

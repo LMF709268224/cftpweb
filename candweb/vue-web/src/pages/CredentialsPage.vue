@@ -10,6 +10,7 @@ import CredentialAttachmentList from "@/components/CredentialAttachmentList.vue"
 import PageFeedback from "@/components/PageFeedback.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useBodyScrollLock } from "@/lib/bodyScrollLock"
+import { candidateVisibleCredentialDefinitions } from "@/lib/credentialDefinitions"
 import { formatBackendDateOnly } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
 import { toast } from "vue-sonner"
@@ -106,7 +107,7 @@ async function fetchData(openSingleDefinition = true) {
     const qualIds = String(route.query.qual_ulids || route.query.qual_ids || "").trim()
     const definitionsEndpoint = qualIds ? `/api/credentials/definitions?qual_ulids=${encodeURIComponent(qualIds)}` : "/api/credentials/definitions"
     const defsRes = await apiClient(definitionsEndpoint, { suppressErrorToast: true })
-    definitions.value = defsRes?.definitions || []
+    definitions.value = candidateVisibleCredentialDefinitions(defsRes?.definitions)
     await fetchApplications({ suppressErrorToast: true })
     if (openSingleDefinition && qualIds && definitions.value.length === 1 && !isApplyOpen.value) {
       handleDefinitionAction(definitions.value[0])

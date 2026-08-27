@@ -249,13 +249,18 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
   const stageID = "stage-template-application"
   const unitID = "unit-template-application"
   const qualificationID = "qualification-template-application"
+  const systemUnitID = "unit-system-qualification"
+  const systemQualificationID = "qualification-system-only"
   const checkoutBundle = {
     ...bundle,
     stages: [{
       stage_id: stageID,
       name: "Template Application Stage",
       sort_order: 1,
-      units: [{ unit_id: unitID, name: "Template Application Course" }],
+      units: [
+        { unit_id: unitID, name: "Template Application Course" },
+        { unit_id: systemUnitID, name: "System Only Course" },
+      ],
     }],
     purchase_state: {
       ...bundle.purchase_state,
@@ -264,13 +269,22 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
           index: 0,
           stage_id: stageID,
           stage_name: "Template Application Stage",
-          units: [{
-            unit_id: unitID,
-            unit_name: "Template Application Course",
-            allow_exemption: true,
-            qualified: false,
-            exemption_quals: [{ qual_id: qualificationID, name: "Work Experience Qualification" }],
-          }],
+          units: [
+            {
+              unit_id: unitID,
+              unit_name: "Template Application Course",
+              allow_exemption: true,
+              qualified: false,
+              exemption_quals: [{ qual_id: qualificationID, name: "Work Experience Qualification" }],
+            },
+            {
+              unit_id: systemUnitID,
+              unit_name: "System Only Course",
+              allow_exemption: true,
+              qualified: false,
+              exemption_quals: [{ qual_id: systemQualificationID, name: "System Managed Qualification" }],
+            },
+          ],
         }],
       },
     },
@@ -282,19 +296,28 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
     if (pathname === "/api/credentials/definitions") {
       return {
         data: {
-          definitions: [{
-            cred_def_ulid: qualificationID,
-            name: "Work Experience Qualification",
-            description: "Upload signed work experience evidence.",
-            file_constraints: [],
-            attachments: [{
-              attachment_id: "checkout-template-1",
-              name: "工作经验证明模板",
-              file_name: "work-experience-template.docx",
-              file_size: 4096,
-              download_url: "https://downloads.example/work-experience-template.docx",
-            }],
-          }],
+          definitions: [
+            {
+              cred_def_ulid: qualificationID,
+              name: "Work Experience Qualification",
+              description: "Upload signed work experience evidence.",
+              respath: "/gcreds/core/work-experience",
+              file_constraints: [],
+              attachments: [{
+                attachment_id: "checkout-template-1",
+                name: "工作经验证明模板",
+                file_name: "work-experience-template.docx",
+                file_size: 4096,
+                download_url: "https://downloads.example/work-experience-template.docx",
+              }],
+            },
+            {
+              cred_def_ulid: systemQualificationID,
+              name: "System Managed Qualification",
+              respath: "/gcc/credential/system/internal-certification",
+              file_constraints: [],
+            },
+          ],
         },
       }
     }
@@ -304,6 +327,7 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
   })
 
   await page.goto(`/checkout/${bundleID}`, { waitUntil: "domcontentloaded" })
+  await expect(page.getByText("System Only Course", { exact: true })).toHaveCount(0)
   await page.locator(`[data-testid="checkout-exemption-toggle"][data-unit-id="${unitID}"]`).check()
 
   await expect(page.getByText("模板与参考文件", { exact: true })).toBeVisible()
