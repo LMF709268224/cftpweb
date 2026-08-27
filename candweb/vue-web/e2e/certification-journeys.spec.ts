@@ -395,6 +395,48 @@ test("认证从商城下单、Stripe 支付到已购认证完整闭环", async (
   })
 })
 
+test("支付步骤说明锁定原因并允许取消订单后返回修改", async ({ page }) => {
+  let cancelBody: unknown
+
+  await installCandidateApiMocks(page, ({ pathname, method, body }) => {
+    if (pathname === `/api/mall/bundles/${bundleID}` && method === "GET") return { data: bundle }
+    if (pathname === `/api/mall/bundles/${bundleID}/pricing-detail`) return { data: {} }
+    if (pathname === "/api/user/me") return { data: candidateUser }
+    if (pathname === "/api/user/profile" && method === "PUT") return { data: { success: true } }
+    if (pathname === `/api/mall/bundles/${bundleID}/purchase` && method === "POST") {
+      return { data: { bundle_order_ulid: "order-cancel-regression", order_status: "WAIT_PAYMENT" } }
+    }
+    if (pathname === "/api/mall/payments/preview" && method === "POST") {
+      return { data: bundle.purchase_state.payment_preview }
+    }
+    if (pathname === "/api/orders/cancel" && method === "POST") {
+      cancelBody = body
+      return { data: { success: true, order_status: "CANCELLED" } }
+    }
+    return undefined
+  })
+
+  await page.goto(`/checkout/${bundleID}`, { waitUntil: "domcontentloaded" })
+  await expect(page.getByTestId("checkout-step-registration")).toBeVisible()
+  await waitForCheckoutProfile(page)
+  await page.getByTestId("checkout-agreement").check()
+  await page.getByTestId("checkout-next").click()
+  await page.getByTestId("checkout-confirm-pay").click()
+
+  await expect(page.getByTestId("checkout-step-payment")).toBeVisible()
+  await expect(page.getByText("待支付订单已经创建，价格和报名选择已锁定，不能直接返回修改。如需调整，请先取消当前订单。", { exact: true })).toBeVisible()
+  page.once("dialog", dialog => dialog.accept())
+  await page.getByTestId("checkout-cancel-and-edit").click()
+
+  await expect(page.getByTestId("checkout-step-review")).toBeVisible()
+  await page.getByRole("button", { name: "返回" }).click()
+  await expect(page.getByTestId("checkout-step-registration")).toBeVisible()
+  expect(cancelBody).toEqual({
+    biz_type: "BUNDLE_PURCHASE",
+    biz_ref_ulid: "order-cancel-regression",
+  })
+})
+
 test("已购认证进入课程、完成课件并通过测验完整闭环", async ({ page }) => {
   let lessonCompleted = false
   let quizPassed = false

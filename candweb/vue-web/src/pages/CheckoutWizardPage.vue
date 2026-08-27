@@ -215,6 +215,7 @@ const registrationTitle = computed(() => {
 })
 
 const loading = ref(false)
+const cancellingPaymentOrder = ref(false)
 const initialLoading = ref(true)
 const pipelineId = computed(() =>
   String(bundleData.value?.pipeline_id || bundleData.value?.pipeline_cc_ulid || "").trim()
@@ -1556,6 +1557,43 @@ async function confirmAndPay() {
     loading.value = false
   }
 }
+
+async function cancelPaymentOrderAndReturn() {
+  const orderId = activeOrderId.value.trim()
+  if (!orderId || cancellingPaymentOrder.value) return
+  if (!window.confirm(t.value.checkoutWizard.cancelPaymentOrderConfirm)) return
+
+  const action = activeOrderAction.value
+  cancellingPaymentOrder.value = true
+  try {
+    const response = await apiClient("/api/orders/cancel", {
+      method: "POST",
+      body: JSON.stringify({
+        biz_type: paymentBizType.value,
+        biz_ref_ulid: orderId,
+      }),
+    })
+    if (response?.success === false) throw new Error(response?.message || t.value.checkoutWizard.cancelPaymentOrderFailed)
+
+    activeOrderId.value = ""
+    if (action === "credential_application") {
+      activeCredentialQualIds.value = []
+      activeCredentialUnitId.value = ""
+      currentStep.value = 1
+    } else {
+      currentStep.value = 3
+    }
+    activeOrderAction.value = "purchase"
+    toast.success(t.value.checkoutWizard.cancelPaymentOrderSuccess)
+  } catch (error) {
+    console.error(error)
+    toast.error(error instanceof Error && error.message
+      ? error.message
+      : t.value.checkoutWizard.cancelPaymentOrderFailed)
+  } finally {
+    cancellingPaymentOrder.value = false
+  }
+}
 </script>
 
 <template>
@@ -1971,6 +2009,23 @@ async function confirmAndPay() {
               <p v-if="activeOrderAction === 'credential_application'" class="mt-2 text-sm text-muted-foreground">
                 {{ t.checkoutWizard.qualificationPaymentDesc }}
               </p>
+            </div>
+            <div class="flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950 sm:flex-row sm:items-center sm:justify-between">
+              <div class="flex min-w-0 items-start gap-3">
+                <CircleAlert class="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
+                <p class="leading-6">{{ t.checkoutWizard.paymentOrderLockedHint }}</p>
+              </div>
+              <button
+                data-testid="checkout-cancel-and-edit"
+                class="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-amber-700 bg-white px-4 font-bold text-amber-900 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
+                type="button"
+                :disabled="cancellingPaymentOrder"
+                @click="cancelPaymentOrderAndReturn"
+              >
+                <Loader2 v-if="cancellingPaymentOrder" class="h-4 w-4 animate-spin" />
+                <ArrowLeft v-else class="h-4 w-4" />
+                {{ t.checkoutWizard.cancelPaymentOrderAndEdit }}
+              </button>
             </div>
             <CheckoutPaymentPanel
               v-if="activeOrderId"
