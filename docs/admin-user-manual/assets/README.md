@@ -93,5 +93,14 @@ Screenshots are grouped by manual module.
 - `site-message/site-message-template-create.png`: template path, title, content, and description
 - `site-message/site-message-template-schema.png`: template parameter JSON Schema
 
+## Mail
+
+- `mail/mail-send.png`: email statistics, recipient selection, and send form
+- `mail/mail-history.png`: sent email history and status filter
+- `mail/mail-template-list.png`: email template list and actions
+- `mail/mail-template-create.png`: template creation form
+- `mail/mail-template-detail.png`: template metadata and raw detail
+- `mail/mail-detail.png`: rendered email detail and status/raw JSON sections
+
 The HTML displays a named placeholder when an image is missing, so adding these
 files does not require another HTML change.

@@ -363,7 +363,7 @@
         <div>
           <div class="eyebrow">ADMIN OPERATIONS GUIDE</div>
           <h1>管理后台功能目录</h1>
-          <p>按业务模块查找配置方法、字段含义、操作顺序和发布前检查事项。当前版本已提供主要配置模块、审核中心、认证管理、考试管理和站内信手册，其余章节将按同一结构逐步补充。</p>
+          <p>按业务模块查找配置方法、字段含义、操作顺序和发布前检查事项。当前版本已提供主要配置模块、审核中心、认证管理、考试管理、站内信和邮件中心手册，其余章节将按同一结构逐步补充。</p>
         </div>
         <div class="search-wrap">
           <label for="module-search">查找模块</label>
@@ -421,8 +421,12 @@
           <span class="module-state">已完成</span><span class="module-icon">信</span>
           <h2>站内信</h2><p>创建消息模板，向指定考生发送站内通知并查看发送记录。</p>
         </button>
+        <button class="module ready" type="button" data-name="邮件中心 邮件通知 收件人 模板 HTML Payload JSON 投递记录 取消" onclick="openManual('mail')">
+          <span class="module-state">已完成</span><span class="module-icon">邮</span>
+          <h2>邮件中心</h2><p>直接发送或使用模板发送邮件，维护模板并查看投递状态。</p>
+        </button>
       </div>
-      <div class="catalog-foot">文档版本：2026-08-25 · 适用系统：CFTP 管理后台</div>
+      <div class="catalog-foot">文档版本：2026-08-27 · 适用系统：CFTP 管理后台</div>
     </section>
 
     <article class="manual" id="course-manual">
@@ -2299,6 +2303,190 @@
         </div>
       </div>
     </article>
+
+    <article class="manual" id="mail-manual">
+      <nav class="breadcrumb" aria-label="面包屑">
+        <button type="button" onclick="showCatalog()">管理后台目录</button><span>/</span><span>邮件中心</span>
+      </nav>
+      <div class="manual-layout">
+        <nav class="side-nav" aria-label="邮件中心章节">
+          <strong>邮件中心</strong>
+          <a href="#mail-overview">功能概览</a>
+          <a href="#mail-send">发送邮件</a>
+          <a href="#mail-payload">模板与 Payload</a>
+          <a href="#mail-template">创建模板</a>
+          <a href="#mail-template-rules">模板安全规则</a>
+          <a href="#mail-history">发送记录</a>
+          <a href="#mail-troubleshooting">常见问题</a>
+          <a href="#mail-checklist">发送检查</a>
+        </nav>
+
+        <div class="content">
+          <header class="manual-title">
+            <div class="eyebrow" style="color:#9eeef1">消息通知 / GMAIL</div>
+            <h1>邮件中心使用手册</h1>
+            <p>面向运营和客服人员，说明如何向考生发送邮件、维护 HTML 邮件模板、填写模板参数，以及查看投递记录和取消尚未发送的邮件。</p>
+            <div class="manual-meta"><span>角色：运营 / 客服</span><span>难度：基础至进阶</span><span>更新：2026-08-27</span></div>
+          </header>
+
+          <section class="doc-section" id="mail-overview">
+            <h2>1. 功能概览</h2>
+            <p class="lead">邮件中心既展示系统自动发送的业务邮件，也允许管理员手工发送邮件。手工发送有两种方式：选择已有模板并填写 Payload，或不使用模板、直接填写主题和 HTML / 文本正文。</p>
+            <div class="flow" aria-label="邮件发送流程"><span>刷新数据</span><b>→</b><span>选择收件人</span><b>→</b><span>选择发送方式</span><b>→</b><span>预检内容</span><b>→</b><span>发送并查记录</span></div>
+            <figure class="shot">
+              <img src="assets/mail/mail-send.png" alt="邮件中心发送页面" data-filename="mail/mail-send.png">
+              <div class="shot-missing"><div><strong>待补截图：邮件发送页面</strong><code>assets/mail/mail-send.png</code></div></div>
+              <figcaption>图 1：邮件中心包含邮件统计、发送邮件、发送记录和模板管理；右上角可刷新用户与模板。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>区域</th><th>用途</th><th>注意事项</th></tr></thead>
+              <tbody>
+                <tr><td>邮件统计</td><td>按状态汇总邮件总数、已发送、已取消等数量</td><td>用于运营概览，不代表收件人已经阅读邮件</td></tr>
+                <tr><td>发送邮件</td><td>选择一个或多个收件人并立即创建邮件</td><td>发送属于外部操作，提交前必须复核</td></tr>
+                <tr><td>发送记录</td><td>查看自动邮件和手工邮件的投递状态、时间与详情</td><td>只有仍处于“调度中”的邮件可以取消</td></tr>
+                <tr><td>模板管理</td><td>创建、查看和编辑邮件模板</td><td>修改业务模板会影响后续自动邮件</td></tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section class="doc-section" id="mail-send">
+            <h2>2. 发送邮件</h2>
+            <ol class="steps">
+              <li><strong>刷新用户和模板</strong><span>先点击右上角“刷新用户”和“刷新模板”，确保使用最新邮箱地址和模板版本。</span></li>
+              <li><strong>选择收件用户</strong><span>同时核对用户姓名和邮箱地址。可以多选；“全选”会选择当前已经加载且具有邮箱地址的用户。</span></li>
+              <li><strong>选择发送方式</strong><span>固定业务通知优先使用已有模板；临时邮件选择“不使用模板，直接发送正文”。</span></li>
+              <li><strong>填写内容</strong><span>模板方式填写 Payload JSON；直接发送方式填写邮件主题和“邮件正文 HTML / Text”。</span></li>
+              <li><strong>先用测试账号验证</strong><span>检查标题、变量替换、链接、换行、中文和移动端显示，再发送给正式收件人。</span></li>
+              <li><strong>发送并检查记录</strong><span>成功数量应与收件人数一致，再到发送记录核对每封邮件的收件人和状态。</span></li>
+            </ol>
+            <div class="note"><strong>直接发送与模板发送的必填项不同</strong>不使用模板时，主题和正文都必须填写；使用模板时主题可以留空，正文输入框会切换为 Payload JSON。</div>
+            <div class="danger"><strong>不要直接对正式用户测试</strong>每个所选用户都会创建一封独立邮件。批量发送前先清空无关收件人，并用内部测试邮箱验证最终内容。</div>
+          </section>
+
+          <section class="doc-section" id="mail-payload">
+            <h2>3. 模板与 Payload JSON</h2>
+            <p class="lead">选择模板后，页面会读取模板主题和 HTML 正文中的 <code>{{Variable}}</code>，自动生成带空值的 JSON 对象。管理员要把空值替换为本次邮件的真实数据。</p>
+            <pre><code>{
+  "CandidateName": "Li Ming",
+  "PaymentUrl": "https://example.com/payment/ORDER_ID"
+}</code></pre>
+            <table>
+              <thead><tr><th>内容</th><th>规则</th><th>错误表现</th></tr></thead>
+              <tbody>
+                <tr><td>模板路径</td><td>标识具体业务场景，例如 <code>/mail/payment/stage-required</code></td><td>选错模板会发送错误文案或错误链接</td></tr>
+                <tr><td>变量名</td><td>区分大小写，必须与主题或正文中的变量完全一致</td><td>邮件中出现空白或未替换的占位符</td></tr>
+                <tr><td>Payload</td><td>最外层必须是 JSON 对象，不能是数组、字符串或 <code>null</code></td><td>页面提示 JSON 格式或参数校验失败</td></tr>
+                <tr><td>变量值</td><td>必须符合模板参数规则中的类型、格式和必填要求</td><td>发送失败，或链接、金额等内容显示错误</td></tr>
+              </tbody>
+            </table>
+            <div class="warning"><strong>自动生成只负责提取变量</strong>页面生成的空字符串不是有效业务数据，也不能替代模板的 JSON Schema 校验。必须逐项确认值的来源和含义。</div>
+          </section>
+
+          <section class="doc-section" id="mail-template">
+            <h2>4. 创建和查看模板</h2>
+            <figure class="shot">
+              <img src="assets/mail/mail-template-list.png" alt="邮件模板列表" data-filename="mail/mail-template-list.png">
+              <div class="shot-missing"><div><strong>待补截图：邮件模板列表</strong><code>assets/mail/mail-template-list.png</code></div></div>
+              <figcaption>图 2：模板列表显示名称、路径、描述、版本和更新时间，可查看详情、编辑模板或创建模板。</figcaption>
+            </figure>
+            <figure class="shot">
+              <img src="assets/mail/mail-template-create.png" alt="创建邮件模板" data-filename="mail/mail-template-create.png">
+              <div class="shot-missing"><div><strong>待补截图：创建邮件模板</strong><code>assets/mail/mail-template-create.png</code></div></div>
+              <figcaption>图 3：路径、名称、主题模板和 HTML 正文为必填；描述和参数规则用于维护说明与发送校验。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>字段</th><th>含义</th><th>配置规则</th></tr></thead>
+              <tbody>
+                <tr><td>路径</td><td>模板的唯一业务标识</td><td>建议使用 <code>/mail/业务/场景</code>；创建后编辑页不可修改</td></tr>
+                <tr><td>名称</td><td>后台模板列表中的识别名称</td><td>写清业务和触发场景，不要只写“通知模板”</td></tr>
+                <tr><td>主题模板</td><td>收件箱显示的邮件主题</td><td>必填；动态内容使用 <code>{{Variable}}</code></td></tr>
+                <tr><td>HTML 正文</td><td>收件人看到的邮件内容</td><td>必填；同时注意邮件客户端兼容性和纯文本可读性</td></tr>
+                <tr><td>描述</td><td>给维护人员看的用途说明</td><td>建议写明触发服务、收件人、变量来源和负责人</td></tr>
+                <tr><td>参数规则 JSON Schema</td><td>约束 Payload 字段、类型和必填项</td><td>必须是合法 JSON；模板变量变化时同步更新</td></tr>
+              </tbody>
+            </table>
+            <figure class="shot">
+              <img src="assets/mail/mail-template-detail.png" alt="邮件模板详情" data-filename="mail/mail-template-detail.png">
+              <div class="shot-missing"><div><strong>待补截图：邮件模板详情</strong><code>assets/mail/mail-template-detail.png</code></div></div>
+              <figcaption>图 4：模板详情用于核对业务单元、模板路径、版本、主题、正文和参数规则；原始 JSON 主要供技术排查。</figcaption>
+            </figure>
+          </section>
+
+          <section class="doc-section" id="mail-template-rules">
+            <h2>5. 模板安全规则</h2>
+            <pre><code>{
+  "type": "object",
+  "properties": {
+    "CandidateName": { "type": "string", "minLength": 1 },
+    "PaymentUrl": { "type": "string", "format": "uri" }
+  },
+  "required": ["CandidateName", "PaymentUrl"],
+  "additionalProperties": false
+}</code></pre>
+            <ul class="checklist">
+              <li>模板中的每个变量都在 <code>properties</code> 中声明，大小写完全一致</li>
+              <li>关键姓名、金额、日期和链接列入 <code>required</code>，必要时限制格式</li>
+              <li>链接只使用确认过的 HTTPS 域名，不把用户输入直接拼入 HTML</li>
+              <li>不要在正文、Payload 或截图中放密码、支付密钥、访问令牌等敏感数据</li>
+              <li>修改后先给内部邮箱发送测试邮件，并检查桌面端和移动端</li>
+            </ul>
+            <div class="warning"><strong>内置模板属于服务接口的一部分</strong>现有 <code>/mail/...</code> 模板可能由认证、商城、资格审核、会员等服务自动调用。不要擅自修改路径、删除变量或改变变量语义；需要调整时先确认调用方 Payload 与模板 Schema 同步。</div>
+          </section>
+
+          <section class="doc-section" id="mail-history">
+            <h2>6. 发送记录、详情与取消</h2>
+            <figure class="shot">
+              <img src="assets/mail/mail-history.png" alt="邮件发送记录" data-filename="mail/mail-history.png">
+              <div class="shot-missing"><div><strong>待补截图：邮件发送记录</strong><code>assets/mail/mail-history.png</code></div></div>
+              <figcaption>图 5：发送记录可按状态筛选，并显示主题、邮件 ID、收件邮箱、状态和时间。</figcaption>
+            </figure>
+            <figure class="shot">
+              <img src="assets/mail/mail-detail.png" alt="邮件详情和正文预览" data-filename="mail/mail-detail.png">
+              <div class="shot-missing"><div><strong>待补截图：邮件详情</strong><code>assets/mail/mail-detail.png</code></div></div>
+              <figcaption>图 6：邮件详情显示渲染后的最终正文；状态详情和原始 JSON 可展开用于技术排查。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>状态</th><th>含义</th><th>处理方式</th></tr></thead>
+              <tbody>
+                <tr><td>调度中</td><td>邮件已创建，仍在等待发送</td><td>这是唯一可在详情中点击“取消邮件”的状态</td></tr>
+                <tr><td>已发送</td><td>邮件服务已完成发送</td><td>不能取消；不等于收件人一定已阅读</td></tr>
+                <tr><td>失败</td><td>邮件未成功发送</td><td>记录邮件 ID、收件人和状态详情，交技术人员排查</td></tr>
+                <tr><td>已取消</td><td>调度中的邮件已被取消</td><td>如仍需发送，应重新创建并再次核对内容</td></tr>
+              </tbody>
+            </table>
+            <div class="note"><strong>排查时先看最终正文</strong>如果邮件内容错误，核对模板路径和 Payload；如果内容正确但未收到，再根据邮件 ID、收件邮箱、状态详情和发送时间排查投递。</div>
+          </section>
+
+          <section class="doc-section" id="mail-troubleshooting">
+            <h2>7. 常见问题</h2>
+            <details><summary>为什么用户列表里找不到某位考生？</summary><p>发送页只列出具有邮箱地址的用户。先点击“刷新用户”，再确认该账号已经维护有效邮箱；不要自行猜测邮箱地址。</p></details>
+            <details><summary>选择模板后为什么输入框变成 Payload JSON？</summary><p>模板已经包含主题和正文，发送时只需要提供变量数据。页面会从模板中提取变量生成 JSON 初稿，管理员必须填写真实值。</p></details>
+            <details><summary>为什么 Payload 看起来正确仍发送失败？</summary><p>打开模板详情，核对参数规则 JSON Schema。常见原因包括字段名大小写不一致、必填字段为空、数字写成字符串，或多传了不允许的字段。</p></details>
+            <details><summary>邮件状态是“已发送”，为什么考生没收到？</summary><p>“已发送”表示邮件服务完成发送，不保证邮件一定进入收件箱。先核对收件邮箱，再请考生检查垃圾邮件；记录邮件 ID 和时间供技术人员查询投递日志。</p></details>
+            <details><summary>为什么详情里没有“取消邮件”按钮？</summary><p>只有“调度中”的邮件可以取消。已发送、失败或已取消的邮件不会显示取消按钮。</p></details>
+            <details><summary>可以删除模板或撤回已发送邮件吗？</summary><p>当前页面没有模板删除功能，已发送邮件也不能撤回。错误邮件应立即通知业务负责人，并按既定流程发送更正邮件。</p></details>
+          </section>
+
+          <section class="doc-section" id="mail-checklist">
+            <h2>8. 发送前后检查清单</h2>
+            <ul class="checklist">
+              <li>用户和模板列表已经刷新</li>
+              <li>收件人的姓名与邮箱地址已经逐项核对</li>
+              <li>没有误选“全选”或无关用户</li>
+              <li>已明确使用模板还是直接发送正文</li>
+              <li>模板路径与业务场景一致</li>
+              <li>Payload 是合法 JSON 对象，所有变量均有真实值</li>
+              <li>字段类型和必填项符合模板参数规则</li>
+              <li>邮件中的金额、日期、订单号和链接已经核对</li>
+              <li>批量发送前已经用内部测试邮箱验证最终正文</li>
+              <li>发送成功数量与收件人数一致</li>
+              <li>发送记录中的收件人、状态和时间已经复核</li>
+            </ul>
+            <a class="back-top" href="#top">返回顶部</a>
+          </section>
+        </div>
+      </div>
+    </article>
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -2370,6 +2558,7 @@
     if (location.hash === "#exam" || location.hash.startsWith("#exam-")) openManual("exam");
     if (location.hash === "#certification-management" || location.hash.startsWith("#certification-management-")) openManual("certification-management");
     if (location.hash === "#site-message" || location.hash.startsWith("#site-message-")) openManual("site-message");
+    if (location.hash === "#mail" || location.hash.startsWith("#mail-")) openManual("mail");
   </script>
 </body>
 </html>
