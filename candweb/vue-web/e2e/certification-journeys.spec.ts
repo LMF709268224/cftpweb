@@ -265,7 +265,7 @@ test("课程视频预览通过签名地址全屏播放", async ({ page }) => {
 
 test("Token 外部课件使用考生凭证打开并保留手动完成流程", async ({ page }) => {
   const tokenLessonID = "lesson-token-courseware"
-  let accessTokenRequested = false
+  let accessURLRequested = false
   let lessonCompleted = false
 
   await page.context().route("https://partner.example/**", async (route) => {
@@ -308,13 +308,11 @@ test("Token 外部课件使用考生凭证打开并保留手动完成流程", as
     if (pathname === `/api/progress/courses/${courseID}/sync` && method === "POST") {
       return { data: { progress_percentage: lessonCompleted ? 100 : 0 } }
     }
-    if (pathname === `/api/pipeline/lessons/${tokenLessonID}/access-token` && method === "POST") {
-      accessTokenRequested = true
+    if (pathname === `/api/pipeline/lessons/${tokenLessonID}/access-url` && method === "POST") {
+      accessURLRequested = true
       return {
         data: {
-          token: "candidate access/value",
-          base_url: "https://partner.example/learn/{token}",
-          token_param_name: "auth_token",
+          access_url: "https://partner.example/learn/candidate-access-value",
           courseware_name: "Partner Academy",
         },
       }
@@ -331,7 +329,7 @@ test("Token 外部课件使用考生凭证打开并保留手动完成流程", as
   await page.getByRole("button", { name: /打开外部课件/ }).click()
   const popup = await popupPromise
   await expect.poll(() => popup.url()).toBe("https://partner.example/learn/candidate%20access%2Fvalue")
-  expect(accessTokenRequested).toBe(true)
+  expect(accessURLRequested).toBe(true)
 
   await page.getByTestId("complete-lesson").click()
   await expect(page.locator(`[data-testid="course-lesson"][data-lesson-id="${tokenLessonID}"]`)).toHaveAttribute("data-completed", "true")

@@ -33,10 +33,6 @@ func (h *Handler) CreateExternalCourseware(w http.ResponseWriter, r *http.Reques
 	req.CoursewareUlid = newLmsID()
 	req.Name = strings.TrimSpace(req.Name)
 	req.BaseUrl = strings.TrimSpace(req.BaseUrl)
-	req.TokenParamName = strings.TrimSpace(req.TokenParamName)
-	if req.TokenParamName == "" {
-		req.TokenParamName = "token"
-	}
 	if !requireRequestFields(w, req.Name, "name", req.BaseUrl, "base_url") {
 		return
 	}
@@ -74,10 +70,6 @@ func (h *Handler) UpdateExternalCourseware(w http.ResponseWriter, r *http.Reques
 	req.CoursewareUlid = id
 	req.Name = strings.TrimSpace(req.Name)
 	req.BaseUrl = strings.TrimSpace(req.BaseUrl)
-	req.TokenParamName = strings.TrimSpace(req.TokenParamName)
-	if req.TokenParamName == "" {
-		req.TokenParamName = "token"
-	}
 	if !requireRequestFields(w, req.Name, "name", req.BaseUrl, "base_url") || !requirePositiveVersion(w, req.Version) {
 		return
 	}
@@ -108,29 +100,29 @@ func (h *Handler) ImportExternalCoursewareTokens(w http.ResponseWriter, r *http.
 		return
 	}
 	var body struct {
-		Tokens []string `json:"tokens"`
+		TokenURLs []string `json:"token_urls"`
 	}
 	if err := ReadJSON(r, &body); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-	tokens := make([]string, 0, len(body.Tokens))
-	for _, token := range body.Tokens {
-		if value := strings.TrimSpace(token); value != "" {
-			tokens = append(tokens, value)
+	tokenURLs := make([]string, 0, len(body.TokenURLs))
+	for _, tokenURL := range body.TokenURLs {
+		if value := strings.TrimSpace(tokenURL); value != "" {
+			tokenURLs = append(tokenURLs, value)
 		}
 	}
-	if len(tokens) == 0 {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "tokens is required")
+	if len(tokenURLs) == 0 {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "token_urls is required")
 		return
 	}
-	if len(tokens) > 1000 {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "tokens must contain at most 1000 items")
+	if len(tokenURLs) > 1000 {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "token_urls must contain at most 1000 items")
 		return
 	}
 	resp, err := h.Lms.ImportCoursewareTokensAdmin(r.Context(), &lmspb.ImportCoursewareTokensRequest{
 		CoursewareUlid: id,
-		Tokens:         tokens,
+		TokenUrls:      tokenURLs,
 	})
 	if err != nil {
 		writeLmsError(w, err)

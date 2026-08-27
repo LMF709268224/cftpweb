@@ -130,10 +130,8 @@ type Lesson = {
   external_courseware_ulid?: string
 }
 
-type LessonAccessToken = {
-  token?: string
-  base_url?: string
-  token_param_name?: string
+type LessonAccessURL = {
+  access_url?: string
   courseware_name?: string
   is_fallback?: boolean
 }
@@ -1450,20 +1448,10 @@ function openExternalLesson() {
   window.open(url, "_blank", "noopener,noreferrer")
 }
 
-function externalCoursewareUrl(access: LessonAccessToken) {
-  const token = String(access.token || "").trim()
-  const baseUrl = String(access.base_url || "").trim()
-  if (!token || !baseUrl) throw new Error("missing external courseware access data")
-
-  const rawUrl = baseUrl.includes("{token}")
-    ? baseUrl.replaceAll("{token}", encodeURIComponent(token))
-    : baseUrl
-  const url = new URL(rawUrl)
+function externalCoursewareURL(access: LessonAccessURL) {
+  const url = new URL(String(access.access_url || "").trim())
   if (url.protocol !== "https:" && url.protocol !== "http:") {
     throw new Error("unsupported external courseware protocol")
-  }
-  if (!baseUrl.includes("{token}")) {
-    url.searchParams.set(String(access.token_param_name || "token").trim() || "token", token)
   }
   return url.toString()
 }
@@ -1480,8 +1468,8 @@ async function openTokenLesson() {
   if (target) target.opener = null
   openingTokenLesson.value = true
   try {
-    const access = await apiClient(`/api/pipeline/lessons/${encodeURIComponent(lessonId)}/access-token`, { method: "POST" }) as LessonAccessToken
-    const url = externalCoursewareUrl(access)
+    const access = await apiClient(`/api/pipeline/lessons/${encodeURIComponent(lessonId)}/access-url`, { method: "POST" }) as LessonAccessURL
+    const url = externalCoursewareURL(access)
     if (target) target.location.replace(url)
     else window.open(url, "_blank", "noopener,noreferrer")
   } catch {
