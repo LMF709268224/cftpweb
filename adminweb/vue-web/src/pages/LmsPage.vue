@@ -650,6 +650,7 @@ function isLessonEmpty(lesson: JsonRecord | null | undefined) {
   if (type === "1") return !lesson.video_stream_uid
   if (type === "2") return !lesson.body
   if (type === "7") return !lesson.external_url && !lesson.asset_object_key
+  if (type === "8") return !lesson.external_courseware_ulid
   return !lesson.asset_object_key && !lesson.media_object_key && !lesson.media_file_hash
 }
 
