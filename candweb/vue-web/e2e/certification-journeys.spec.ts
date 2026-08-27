@@ -328,7 +328,9 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
 
   await page.goto(`/checkout/${bundleID}`, { waitUntil: "domcontentloaded" })
   await expect(page.getByText("System Only Course", { exact: true })).toHaveCount(0)
-  await page.locator(`[data-testid="checkout-exemption-toggle"][data-unit-id="${unitID}"]`).check()
+  const exemptionToggle = page.locator(`[data-testid="checkout-exemption-toggle"][data-unit-id="${unitID}"]`)
+  await exemptionToggle.locator("xpath=ancestor::label").click()
+  await expect(exemptionToggle).toBeChecked()
 
   await expect(page.getByText("模板与参考文件", { exact: true })).toBeVisible()
   await expect(page.getByRole("link", { name: "预览模板" })).toHaveAttribute(
