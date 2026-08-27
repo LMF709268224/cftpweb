@@ -377,6 +377,10 @@
           <span class="module-state">已完成</span><span class="module-icon">课</span>
           <h2>课程配置</h2><p>创建课程，维护章节、课时、资料和测验，并管理版本与发布状态。</p>
         </button>
+        <button class="module ready" type="button" data-name="外部课件 Token 专属访问 URL 资产池 兜底 URL GLMS" onclick="openManual('external-courseware')">
+          <span class="module-state">已完成</span><span class="module-icon">链</span>
+          <h2>外部课件</h2><p>维护第三方课件入口、专属访问 URL 资产池，并绑定到课程课时。</p>
+        </button>
         <button class="module ready" type="button" data-name="认证配置 管线 阶段 单元 资格 证书 免考 互斥" onclick="openManual('certification')">
           <span class="module-state">已完成</span><span class="module-icon">认</span>
           <h2>认证配置</h2><p>维护认证管线、阶段、课程单元、资格条件、免考和证书。</p>
@@ -618,6 +622,184 @@
               <li>题目分值、正确答案和排序已复核</li>
               <li>JSON 创建的课程已补齐未导入内容</li>
               <li>确认发布的是目标课程版本</li>
+            </ul>
+            <a class="back-top" href="#top">返回顶部</a>
+          </section>
+        </div>
+      </div>
+    </article>
+
+    <article class="manual" id="external-courseware-manual">
+      <nav class="breadcrumb" aria-label="面包屑">
+        <button type="button" onclick="showCatalog()">管理后台目录</button><span>/</span><span>外部课件</span>
+      </nav>
+      <div class="manual-layout">
+        <nav class="side-nav" aria-label="外部课件章节">
+          <strong>外部课件</strong>
+          <a href="#external-courseware-overview">功能概览</a>
+          <a href="#external-courseware-concepts">关键概念</a>
+          <a href="#external-courseware-create">新建课件</a>
+          <a href="#external-courseware-import">导入专属 URL</a>
+          <a href="#external-courseware-inventory">查看资产池</a>
+          <a href="#external-courseware-bind">绑定课程课时</a>
+          <a href="#external-courseware-candidate">考生端行为</a>
+          <a href="#external-courseware-maintain">编辑与删除</a>
+          <a href="#external-courseware-faq">常见问题</a>
+          <a href="#external-courseware-checklist">检查清单</a>
+        </nav>
+
+        <div class="content">
+          <header class="manual-title">
+            <div class="eyebrow" style="color:#9eeef1">配置管理 / GLMS</div>
+            <h1>外部课件使用手册</h1>
+            <p>面向课程运营人员，说明第三方课件入口、专属访问 URL 资产池、课程课时绑定和日常库存维护。</p>
+            <div class="manual-meta"><span>角色：课程运营</span><span>难度：进阶</span><span>更新：2026-08-27</span></div>
+          </header>
+
+          <section class="doc-section" id="external-courseware-overview">
+            <h2>1. 功能概览</h2>
+            <p class="lead">“外部课件”用于接入需要为每位考生分配独立访问地址的第三方学习内容。管理员先建立课件并导入供应方提供的专属 URL，再把该课件绑定到课程中的“外部 Token 课件”课时。</p>
+            <div class="flow" aria-label="外部课件配置流程">
+              <span>新建外部课件</span><b>→</b><span>导入专属 URL</span><b>→</b><span>绑定课程课时</span><b>→</b><span>考生打开课件</span><b>→</b><span>分配并跳转</span>
+            </div>
+            <div class="note"><strong>当前导入的是完整 URL</strong>每一行应是供应方提供的完整 <code>http://</code> 或 <code>https://</code> 访问地址，不要只截取地址中的 token，也不需要管理员自行拼接参数。</div>
+          </section>
+
+          <section class="doc-section" id="external-courseware-concepts">
+            <h2>2. 先理解这些概念</h2>
+            <div class="term-grid">
+              <div class="term"><h3>外部课件</h3><p>一项第三方学习内容的配置对象，包含课件名称、说明和基础/兜底 URL。</p></div>
+              <div class="term critical"><h3>专属访问 URL</h3><p>供应方为单个考生准备的完整访问地址。系统首次分配后，会为同一考生复用该地址。</p></div>
+              <div class="term"><h3>基础/兜底 URL</h3><p>专属 URL 已用完时返回的公共入口。它必须是可以直接打开且允许考生使用的有效地址。</p></div>
+              <div class="term"><h3>资产池</h3><p>某个外部课件下全部专属 URL 的集合，分为可分配和已分配两种状态。</p></div>
+            </div>
+            <table>
+              <thead><tr><th>统计项</th><th>含义</th><th>运营动作</th></tr></thead>
+              <tbody>
+                <tr><td>总数</td><td>该课件已导入的专属 URL 总量。</td><td>用于核对供应方交付数量。</td></tr>
+                <tr><td>可分配</td><td>尚未绑定考生的专属 URL 数量。</td><td>接近 0 时及时补充。</td></tr>
+                <tr><td>已分配</td><td>已经绑定考生的专属 URL 数量。</td><td>可在列表中查看考生和分配时间。</td></tr>
+              </tbody>
+            </table>
+            <div class="warning"><strong>专属 URL 按访问凭证管理</strong>不要把完整 URL 发到群聊、工单截图或公开文档中。管理后台列表会对地址进行遮罩显示，日常核对使用统计和考生信息即可。</div>
+          </section>
+
+          <section class="doc-section" id="external-courseware-create">
+            <h2>3. 新建外部课件</h2>
+            <p class="lead">进入左侧“外部课件”，点击右上角“新建课件”。一个外部课件配置应对应一个明确的第三方学习内容。</p>
+            <figure class="shot">
+              <img src="assets/external-courseware/external-courseware-create.png" alt="新建外部课件弹窗" data-filename="external-courseware/external-courseware-create.png">
+              <div class="shot-missing"><div><strong>待补截图：新建外部课件</strong><code>assets/external-courseware/external-courseware-create.png</code></div></div>
+              <figcaption>图 1：填写课件名称、基础/兜底 URL 和说明后保存。课件创建完成后再导入专属 URL。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>字段</th><th>是否必填</th><th>填写说明</th></tr></thead>
+              <tbody>
+                <tr><td>课件名称</td><td class="required">必填</td><td>用于管理后台选择和识别，建议与供应方或课程中的正式名称一致，例如 <code>L1 Book</code>。</td></tr>
+                <tr><td>基础/兜底 URL</td><td class="required">必填</td><td>专属 URL 池耗尽时使用的公共入口，必须填写完整且可直接访问的 HTTP/HTTPS 地址。</td></tr>
+                <tr><td>说明</td><td>选填</td><td>记录适用课程、供应方、批次或运营注意事项，不要写入真实 token。</td></tr>
+              </tbody>
+            </table>
+            <ol class="steps">
+              <li><strong>填写可识别的课件名称</strong><span>同一层级或系列建议保持一致的命名规则。</span></li>
+              <li><strong>验证兜底 URL</strong><span>在无登录信息的新窗口中确认地址可以按业务预期打开。</span></li>
+              <li><strong>填写说明并保存</strong><span>保存后在左侧列表选择该课件，继续导入专属 URL。</span></li>
+            </ol>
+          </section>
+
+          <section class="doc-section" id="external-courseware-import">
+            <h2>4. 导入专属访问 URL</h2>
+            <p class="lead">选择目标课件，点击“导入专属 URL”。导入前先确认供应方文件中的每个地址都属于当前课件，避免把 L1、L2 或不同产品的地址混在一起。</p>
+            <figure class="shot">
+              <img src="assets/external-courseware/external-courseware-import.png" alt="批量导入专属访问 URL 弹窗" data-filename="external-courseware/external-courseware-import.png">
+              <div class="shot-missing"><div><strong>待补截图：导入专属访问 URL</strong><code>assets/external-courseware/external-courseware-import.png</code></div></div>
+              <figcaption>图 2：每行粘贴一个完整访问 URL，单次最多 1000 条；重复地址会被系统忽略。</figcaption>
+            </figure>
+            <ol class="steps">
+              <li><strong>整理供应方交付文件</strong><span>从 Excel 中复制需要导入的那一列，不要包含表头、空白说明或两个层级的地址。</span></li>
+              <li><strong>每行放一个完整 URL</strong><span>必须以 <code>http://</code> 或 <code>https://</code> 开头；不要只复制 token 片段。</span></li>
+              <li><strong>确认目标课件后导入</strong><span>单次最多 1000 条，数量更多时分批操作。</span></li>
+              <li><strong>核对导入结果和统计</strong><span>总数应按新增的有效且不重复地址增加。</span></li>
+            </ol>
+            <div class="danger"><strong>不要把地址导入到错误课件</strong>专属 URL 一旦被考生分配就形成访问绑定。导入前必须核对当前左侧选中的课件名称和 ID。</div>
+          </section>
+
+          <section class="doc-section" id="external-courseware-inventory">
+            <h2>5. 查看和维护 URL 资产池</h2>
+            <figure class="shot">
+              <img src="assets/external-courseware/external-courseware-list.png" alt="外部课件详情及 URL 资产池" data-filename="external-courseware/external-courseware-list.png">
+              <div class="shot-missing"><div><strong>待补截图：外部课件与 URL 资产池</strong><code>assets/external-courseware/external-courseware-list.png</code></div></div>
+              <figcaption>图 3：左侧选择课件，右侧查看基础信息、URL 数量、可分配数量、已分配数量及分配记录。</figcaption>
+            </figure>
+            <div class="action-grid">
+              <div class="action"><h3>查看可用量</h3><p>“可分配”代表还可供新考生认领的专属 URL。建议在课程开放前按预计人数留足余量。</p></div>
+              <div class="action"><h3>查看分配记录</h3><p>已分配记录会显示考生和分配时间；同一考生再次打开同一课件时复用原地址。</p></div>
+              <div class="action"><h3>刷新</h3><p>其他管理员刚导入地址或考生刚访问课件时，刷新可取得最新库存和分配状态。</p></div>
+            </div>
+            <div class="note"><strong>库存耗尽不会重新分配他人的地址</strong>系统不会把已分配 URL 转给另一位考生；没有可分配地址时会使用基础/兜底 URL。若兜底 URL 也不可用，考生将无法打开课件。</div>
+          </section>
+
+          <section class="doc-section" id="external-courseware-bind">
+            <h2>6. 绑定到课程课时</h2>
+            <p class="lead">外部课件及 URL 池准备好后，还要在课程配置中创建或编辑课时。仅建立外部课件不会自动出现在考生课程里。</p>
+            <ol class="steps">
+              <li><strong>进入“课程配置”并编辑目标草稿</strong><span>已发布课程需要先按版本流程克隆为新草稿。</span></li>
+              <li><strong>选择章节并新建或编辑课时</strong><span>填写课时标题和排序。</span></li>
+              <li><strong>课时类型选择“外部 Token 课件”</strong><span>页面会显示外部课件选择框。</span></li>
+              <li><strong>选择正确的外部课件</strong><span>核对名称和外部课件 ID，避免把 L1 课时绑定到 L2 资产池。</span></li>
+              <li><strong>保存课时并查看详情</strong><span>详情中应显示“外部课件 ID”，课程列表不再提示该课时“缺少内容”。</span></li>
+              <li><strong>完成课程其余内容并发布</strong><span>按课程发布流程确认考生端可见。</span></li>
+            </ol>
+            <div class="warning"><strong>该类型只绑定外部课件 ID</strong>“外部 Token 课件”不使用正文、媒体 Object Key 或普通外部链接 URL。管理后台会按课时类型显示对应字段，不要通过复制 JSON 同时保留这些互斥字段。</div>
+          </section>
+
+          <section class="doc-section" id="external-courseware-candidate">
+            <h2>7. 考生端会发生什么</h2>
+            <div class="flow"><span>点击打开外部课件</span><b>→</b><span>检查课程访问权限</span><b>→</b><span>读取已有分配</span><b>→</b><span>分配可用 URL</span><b>→</b><span>新标签页打开</span></div>
+            <table>
+              <thead><tr><th>情况</th><th>系统行为</th><th>管理员看到的变化</th></tr></thead>
+              <tbody>
+                <tr><td>考生首次打开且有可用 URL</td><td>原子分配一个专属 URL，并直接打开完整地址。</td><td>可分配减 1，已分配加 1，记录考生和时间。</td></tr>
+                <tr><td>同一考生再次打开</td><td>复用此前分配的专属 URL，不重复消耗库存。</td><td>统计不变。</td></tr>
+                <tr><td>专属 URL 池已空</td><td>打开基础/兜底 URL。</td><td>可分配保持 0，不新增专属分配记录。</td></tr>
+              </tbody>
+            </table>
+            <div class="note"><strong>学习完成仍由考生确认</strong>打开第三方课件不会自动把本平台课时标记为完成。考生返回课程页后，按页面流程手动完成该课时。</div>
+          </section>
+
+          <section class="doc-section" id="external-courseware-maintain">
+            <h2>8. 编辑与删除</h2>
+            <div class="action-grid">
+              <div class="action"><h3>编辑课件</h3><p>可调整名称、说明和基础/兜底 URL。修改前确认是否影响已经开放的课程。</p></div>
+              <div class="action"><h3>补充 URL</h3><p>直接再次导入新批次即可；系统会忽略重复地址，不会覆盖已分配记录。</p></div>
+              <div class="action"><h3>删除课件</h3><p>已被课程课时引用时不能删除。先在课程草稿中解除或替换绑定，再评估历史分配记录后操作。</p></div>
+            </div>
+            <div class="danger"><strong>不要把“换一批 URL”理解成删除课件</strong>日常补库存只需要再次导入。删除是结构性操作，可能影响课程课时及考生访问，应仅用于确认未被使用的错误配置。</div>
+          </section>
+
+          <section class="doc-section faq" id="external-courseware-faq">
+            <h2>9. 常见问题</h2>
+            <details><summary>供应方给的是 Excel，两列 L1 和 L2，应该怎样导入？</summary><p>分别建立 L1、L2 外部课件。选择 L1 课件时只复制 L1 列的数据，选择 L2 课件时只复制 L2 列；不要复制表头，每行保留一个完整 URL。</p></details>
+            <details><summary>为什么导入后的总数少于粘贴行数？</summary><p>空行不会提交，重复 URL 会被系统忽略；如果存在不是 HTTP/HTTPS 的内容，页面会拒绝整次导入并要求先修正。单次最多接受 1000 条有效地址。</p></details>
+            <details><summary>为什么课时仍显示“缺少内容”？</summary><p>确认课时类型是“外部 Token 课件”，并且已经选择外部课件后成功保存。重新进入课时详情，应能看到外部课件 ID；只有建立外部课件但没有绑定 ID，仍属于缺少内容。</p></details>
+            <details><summary>为什么考生打开的是公共页面，不是专属地址？</summary><p>通常表示该课件的可分配 URL 已经用完。检查右侧“可分配”统计并补充专属 URL，同时确认基础/兜底 URL 符合业务预期。</p></details>
+            <details><summary>为什么同一考生多次打开，可分配数量没有继续减少？</summary><p>这是正常行为。同一考生在同一外部课件下会复用首次分配的专属 URL。</p></details>
+            <details><summary>为什么不能删除外部课件？</summary><p>先检查它是否已经绑定某个课程课时。被引用的外部课件不能直接删除，应先在正确的课程草稿版本中解除或替换绑定。</p></details>
+          </section>
+
+          <section class="doc-section" id="external-courseware-checklist">
+            <h2>10. 开放给考生前检查清单</h2>
+            <ul class="checklist">
+              <li>课件名称能明确区分层级、课程或供应方内容</li>
+              <li>基础/兜底 URL 是完整且可访问的 HTTP/HTTPS 地址</li>
+              <li>专属 URL 已按正确课件分列导入，没有包含表头</li>
+              <li>导入后总数与供应方有效交付数量一致</li>
+              <li>可分配数量能覆盖预计新增考生并留有余量</li>
+              <li>课程课时类型选择为“外部 Token 课件”</li>
+              <li>课时绑定的外部课件名称和 ID 正确</li>
+              <li>课时详情不再显示“缺少内容”</li>
+              <li>使用测试考生验证可打开新标签页并返回手动完成课时</li>
+              <li>完整专属 URL 未出现在公开截图、文档或消息中</li>
             </ul>
             <a class="back-top" href="#top">返回顶部</a>
           </section>
@@ -2553,6 +2735,7 @@
     document.querySelectorAll(".doc-section").forEach((section) => sectionObserver.observe(section));
 
     if (location.hash === "#course" || location.hash.startsWith("#course-")) openManual("course");
+    if (location.hash === "#external-courseware" || location.hash.startsWith("#external-courseware-")) openManual("external-courseware");
     if ((location.hash === "#certification" || location.hash.startsWith("#certification-")) && !location.hash.startsWith("#certification-management")) openManual("certification");
     if (location.hash === "#product" || location.hash.startsWith("#product-")) openManual("product");
     if (location.hash === "#qualification" || location.hash.startsWith("#qualification-")) openManual("qualification");

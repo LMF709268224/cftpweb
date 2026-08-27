@@ -9,6 +9,12 @@ Screenshots are grouped by manual module.
 - `course/course-content.png`: chapters, lessons, and course materials
 - `course/course-quizzes.png`: quiz bank section
 
+## External courseware
+
+- `external-courseware/external-courseware-list.png`: courseware detail, URL inventory statistics, and allocation list
+- `external-courseware/external-courseware-create.png`: new external courseware dialog
+- `external-courseware/external-courseware-import.png`: dedicated access URL batch import dialog
+
 ## Certification
 
 - `certification/certification-list.png`: certification list
