@@ -81,6 +81,13 @@ Screenshots are grouped by manual module.
 - `exam/exam-list.png`: exam filters and list
 - `exam/exam-detail.png`: exam ownership, appointment, result, and transitions
 
+## Exam grading
+
+- `exam-grading/exam-grading-list.png`: pending Prometric Essay grading queue, filters, and navigation badge
+- `exam-grading/exam-grading-detail-top.png`: exam metadata, objective score, and read-only candidate responses
+- `exam-grading/exam-grading-detail-import.png`: grading workbook upload area below the candidate responses
+- `exam-grading/exam-grading-workbook.png`: exported workbook and professor-editable yellow cells
+
 ## Certification management
 
 - `certification-management/certification-instance-list.png`: certification instance filters and list
