@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -103,6 +104,7 @@ func TestCreateStageOrderUsesCompletedByStageOrderContext(t *testing.T) {
 		pipelineOrderID = "01KYN000000000000000000006"
 		bundleOrderID   = "01KYN000000000000000000007"
 		createdStageID  = "01KYN000000000000000000008"
+		selectionJSON   = `{"stages":[{"stage_cc_ulid":"01KYN000000000000000000004","exempted_unit_cc_ulids":[],"waived_unit_cc_ulids":[]}]}`
 	)
 
 	mall := &stageOrderMallClientStub{
@@ -153,7 +155,7 @@ func TestCreateStageOrderUsesCompletedByStageOrderContext(t *testing.T) {
 	req := httptest.NewRequest(
 		http.MethodPost,
 		"/api/mall/pipelines/"+pipelineCcUlid+"/stages/"+stageCcUlid+"/purchase",
-		strings.NewReader(`{"pipeline_ulid":"`+pipelineUlid+`","stage_ulid":"`+stageUlid+`"}`),
+		strings.NewReader(`{"pipeline_ulid":"`+pipelineUlid+`","stage_ulid":"`+stageUlid+`","selected_exemptions_json":`+strconv.Quote(selectionJSON)+`}`),
 	)
 	routeCtx := chi.NewRouteContext()
 	routeCtx.URLParams.Add("pipelineId", pipelineCcUlid)
@@ -188,7 +190,8 @@ func TestCreateStageOrderUsesCompletedByStageOrderContext(t *testing.T) {
 		mall.createReq.GetPipelineOrderUlid() != pipelineOrderID ||
 		mall.createReq.GetStageUlid() != stageUlid ||
 		mall.createReq.GetStageCcUlid() != stageCcUlid ||
-		mall.createReq.GetBundleOrderUlid() != bundleOrderID {
+		mall.createReq.GetBundleOrderUlid() != bundleOrderID ||
+		mall.createReq.GetSelectedExemptionsJson() != selectionJSON {
 		t.Fatalf("create stage order request = %+v", mall.createReq)
 	}
 }
@@ -200,6 +203,7 @@ func TestSelectStageExemptionsVerifiesOwnershipAndForwardsSelection(t *testing.T
 		stageCcUlid  = "01KYN000000000000000000023"
 		firstUnitID  = "01KYN000000000000000000024"
 		secondUnitID = "01KYN000000000000000000025"
+		waivedUnitID = "01KYN000000000000000000026"
 	)
 
 	mall := &stageOrderMallClientStub{
@@ -222,7 +226,7 @@ func TestSelectStageExemptionsVerifiesOwnershipAndForwardsSelection(t *testing.T
 	req := httptest.NewRequest(
 		http.MethodPost,
 		"/api/mall/stage-orders/"+stageOrderID+"/exemptions",
-		strings.NewReader(`{"stage_cc_ulid":"`+stageCcUlid+`","exempted_unit_cc_ulids":["`+firstUnitID+`"," `+firstUnitID+` ","`+secondUnitID+`"]}`),
+		strings.NewReader(`{"stage_cc_ulid":"`+stageCcUlid+`","exempted_unit_cc_ulids":["`+firstUnitID+`"," `+firstUnitID+` ","`+secondUnitID+`"],"waived_unit_cc_ulids":[" `+waivedUnitID+` ","`+waivedUnitID+`"]}`),
 	)
 	routeCtx := chi.NewRouteContext()
 	routeCtx.URLParams.Add("stageOrderId", stageOrderID)
@@ -241,7 +245,7 @@ func TestSelectStageExemptionsVerifiesOwnershipAndForwardsSelection(t *testing.T
 	if mall.selectReq.GetStageOrderUlid() != stageOrderID {
 		t.Fatalf("select stage exemptions request = %+v", mall.selectReq)
 	}
-	const expectedJSON = `{"exempted_unit_cc_ulids":["01KYN000000000000000000024","01KYN000000000000000000025"],"stage_cc_ulid":"01KYN000000000000000000023"}`
+	const expectedJSON = `{"exempted_unit_cc_ulids":["01KYN000000000000000000024","01KYN000000000000000000025"],"stage_cc_ulid":"01KYN000000000000000000023","waived_unit_cc_ulids":["01KYN000000000000000000026"]}`
 	if mall.selectReq.GetExemptionsJson() != expectedJSON {
 		t.Fatalf("exemptions json = %s, want %s", mall.selectReq.GetExemptionsJson(), expectedJSON)
 	}

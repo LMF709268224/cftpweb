@@ -843,6 +843,48 @@ function resetStageExemptionSelection() {
   stageExemptionStage.value = null
 }
 
+function stageHasExemptionChoices(stage: StageConfig) {
+  return (stage.units || []).some((unit) =>
+    Boolean(unit.allow_exemption || (unit.exemption_quals || []).length > 0),
+  )
+}
+
+function stageExemptionSelectionJSON(
+  stageCcUlid: string,
+  exemptedUnitIds: string[] = [],
+  waivedUnitIds: string[] = [],
+) {
+  if (exemptedUnitIds.length === 0 && waivedUnitIds.length === 0) {
+    return JSON.stringify({ stages: [] })
+  }
+  return JSON.stringify({
+    stages: [{
+      stage_cc_ulid: stageCcUlid,
+      exempted_unit_cc_ulids: exemptedUnitIds,
+      waived_unit_cc_ulids: waivedUnitIds,
+    }],
+  })
+}
+
+async function createStageOrder(
+  stage: StageConfig,
+  exemptedUnitIds: string[] = [],
+  waivedUnitIds: string[] = [],
+) {
+  const stageCcUlid = firstString(stage.stage_id)
+  const stageUlid = firstString(nextStep.value?.stage_id)
+  if (!stageCcUlid || !pipelineId.value || !instancePipelineId.value || !stageUlid) return null
+
+  return apiClient(`/api/mall/pipelines/${encodeURIComponent(pipelineId.value)}/stages/${encodeURIComponent(stageCcUlid)}/purchase`, {
+    method: "POST",
+    body: JSON.stringify({
+      pipeline_ulid: instancePipelineId.value,
+      stage_ulid: stageUlid,
+      selected_exemptions_json: stageExemptionSelectionJSON(stageCcUlid, exemptedUnitIds, waivedUnitIds),
+    }),
+  })
+}
+
 async function openStagePayment(stageOrderId: string, stage: StageConfig) {
   const returnPath = `${window.location.pathname}${window.location.search}${window.location.hash}`
   const stageId = firstString(stage.stage_id)
@@ -890,6 +932,7 @@ async function continueStageOrder(orderResponse: any, stage: StageConfig) {
     await loadDetail(false)
     return
   }
+  // Existing pre-v9 orders may still be waiting for the old second-step declaration.
   if (orderStatus === "WAIT_EXEMPTION_SELECTION") {
     stageExemptionOrderId.value = stageOrderId
     stageExemptionStage.value = stage
@@ -908,17 +951,18 @@ async function handleStagePaymentClick(stage: StageConfig) {
   if (stagePaymentLoading.value) return
   if (!stage.stage_id || !pipelineId.value || !instancePipelineId.value || !nextStep.value?.stage_id) return
 
+  if (stageHasExemptionChoices(stage)) {
+    stageExemptionOrderId.value = ""
+    stageExemptionStage.value = stage
+    stageExemptionDialogOpen.value = true
+    return
+  }
+
   stagePaymentLoading.value = true
   stagePaymentStageId.value = stage.stage_id
   try {
-    const orderResponse = await apiClient(`/api/mall/pipelines/${encodeURIComponent(pipelineId.value)}/stages/${encodeURIComponent(stage.stage_id)}/purchase`, {
-      method: "POST",
-      body: JSON.stringify({
-        pipeline_ulid: instancePipelineId.value,
-        stage_ulid: nextStep.value.stage_id,
-      }),
-    })
-    await continueStageOrder(orderResponse, stage)
+    const orderResponse = await createStageOrder(stage)
+    if (orderResponse) await continueStageOrder(orderResponse, stage)
   } catch (err: any) {
     toast.error(err.message || t.value.common.error)
   } finally {
@@ -927,22 +971,29 @@ async function handleStagePaymentClick(stage: StageConfig) {
   }
 }
 
-async function handleStageExemptionSubmit(selectedUnitIds: string[]) {
-  const stageOrderId = stageExemptionOrderId.value
+async function handleStageExemptionSubmit(selection: { exemptedUnitIds: string[]; waivedUnitIds: string[] }) {
   const stage = stageExemptionStage.value
   const stageCcUlid = firstString(stage?.stage_id)
-  if (!stageOrderId || !stage || !stageCcUlid || stageExemptionSubmitting.value) return
+  if (!stage || !stageCcUlid || stageExemptionSubmitting.value) return
 
   stageExemptionSubmitting.value = true
   try {
-    const response = await apiClient(`/api/mall/stage-orders/${encodeURIComponent(stageOrderId)}/exemptions`, {
-      method: "POST",
-      body: JSON.stringify({
-        stage_cc_ulid: stageCcUlid,
-        exempted_unit_cc_ulids: selectedUnitIds,
-      }),
-    })
-    await continueStageOrder(response, stage)
+    const existingOrderId = stageExemptionOrderId.value
+    const orderResponse = existingOrderId
+      ? await apiClient(`/api/mall/stage-orders/${encodeURIComponent(existingOrderId)}/exemptions`, {
+          method: "POST",
+          body: JSON.stringify({
+            stage_cc_ulid: stageCcUlid,
+            exempted_unit_cc_ulids: selection.exemptedUnitIds,
+            waived_unit_cc_ulids: selection.waivedUnitIds,
+          }),
+        })
+      : await createStageOrder(
+          stage,
+          selection.exemptedUnitIds,
+          selection.waivedUnitIds,
+        )
+    if (orderResponse) await continueStageOrder(orderResponse, stage)
   } catch (err: any) {
     toast.error(err.message || t.value.common.error)
   } finally {

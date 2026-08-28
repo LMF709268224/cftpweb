@@ -997,11 +997,10 @@ test.describe("candidate live certification purchase, learning, quiz, and exam j
 
       const selectionStep = page.getByTestId("checkout-step-selection")
       if (await selectionStep.isVisible().catch(() => false)) {
-        const selectedExemptions = selectionStep.locator(
-          '[data-testid="checkout-exemption-toggle"]:checked',
-        )
-        while (await selectedExemptions.count() > 0) {
-          await selectedExemptions.first().uncheck({ force: true })
+        const waiveExemptions = selectionStep.locator('[data-testid="checkout-exemption-waive"]')
+        const waiverCount = await waiveExemptions.count()
+        for (let index = 0; index < waiverCount; index += 1) {
+          await waiveExemptions.nth(index).click()
         }
         const selectionNext = page.getByTestId("checkout-selection-next")
         await expect(selectionNext).toBeEnabled()

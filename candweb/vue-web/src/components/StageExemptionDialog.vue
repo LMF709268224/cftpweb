@@ -38,11 +38,13 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   "update:open": [value: boolean]
-  submit: [selectedUnitIds: string[]]
+  submit: [selection: { exemptedUnitIds: string[]; waivedUnitIds: string[] }]
 }>()
 
 const { t } = useTranslation()
-const selectedUnitIds = ref<Record<string, boolean>>({})
+type ExemptionDecision = "exempt" | "waive"
+
+const exemptionDecisions = ref<Record<string, ExemptionDecision>>({})
 const eligibleQualificationIds = ref<Set<string>>(new Set())
 const eligibilityLoading = ref(false)
 const eligibilityLoadFailed = ref(false)
@@ -81,7 +83,10 @@ const exemptionUnits = computed(() =>
 )
 
 const selectedCount = computed(() =>
-  exemptionUnits.value.filter((unit) => unit.unit_id && selectedUnitIds.value[unit.unit_id]).length,
+  exemptionUnits.value.filter((unit) => unit.unit_id && exemptionDecisions.value[unit.unit_id] === "exempt").length,
+)
+const undecidedCount = computed(() =>
+  exemptionUnits.value.filter((unit) => unit.unit_id && !exemptionDecisions.value[unit.unit_id]).length,
 )
 const selectedCountText = computed(() =>
   t.value.learning.stageExemptionSelected.replace("{{count}}", String(selectedCount.value)),
@@ -111,23 +116,27 @@ function close() {
   emit("update:open", false)
 }
 
-function toggleUnit(unit: StageExemptionUnit, checked: boolean) {
-  if (!unit.unit_id || !unitIsEligible(unit)) return
-  selectedUnitIds.value = {
-    ...selectedUnitIds.value,
-    [unit.unit_id]: checked,
+function setUnitDecision(unit: StageExemptionUnit, decision: ExemptionDecision) {
+  if (!unit.unit_id || (decision === "exempt" && !unitIsEligible(unit))) return
+  exemptionDecisions.value = {
+    ...exemptionDecisions.value,
+    [unit.unit_id]: decision,
   }
 }
 
 function submit() {
-  const selected = exemptionUnits.value
-    .filter((unit) => unit.unit_id && unitIsEligible(unit) && selectedUnitIds.value[unit.unit_id])
+  if (undecidedCount.value > 0) return
+  const exemptedUnitIds = exemptionUnits.value
+    .filter((unit) => unit.unit_id && exemptionDecisions.value[unit.unit_id] === "exempt")
     .map((unit) => String(unit.unit_id))
-  emit("submit", selected)
+  const waivedUnitIds = exemptionUnits.value
+    .filter((unit) => unit.unit_id && exemptionDecisions.value[unit.unit_id] === "waive")
+    .map((unit) => String(unit.unit_id))
+  emit("submit", { exemptedUnitIds, waivedUnitIds })
 }
 
 async function loadEligibility() {
-  selectedUnitIds.value = {}
+  exemptionDecisions.value = {}
   eligibleQualificationIds.value = new Set()
   eligibilityLoadFailed.value = false
 
@@ -155,6 +164,11 @@ async function loadEligibility() {
         )
         .map((qualification: any) => firstString(qualification?.qual_id, qualification?.cred_def_ulid))
         .filter(Boolean),
+    )
+    exemptionDecisions.value = Object.fromEntries(
+      exemptionUnits.value
+        .filter((unit) => unit.unit_id && unitIsEligible(unit))
+        .map((unit) => [String(unit.unit_id), "exempt" as const]),
     )
   } catch (error) {
     console.error("Failed to load stage exemption eligibility", error)
@@ -218,61 +232,74 @@ watch(
         </div>
 
         <div v-else class="mt-4 space-y-3">
-          <label
+          <div
             v-for="unit in exemptionUnits"
             :key="unit.unit_id || unitLabel(unit)"
             :class="[
-              'flex gap-3 rounded-xl border p-4 transition-colors',
-              unitIsEligible(unit)
-                ? 'cursor-pointer border-slate-200 hover:border-primary/40 hover:bg-blue-50/40'
-                : 'cursor-not-allowed border-slate-100 bg-slate-50 opacity-75',
-              unit.unit_id && selectedUnitIds[unit.unit_id]
+              'rounded-xl border border-slate-200 p-4 transition-colors',
+              unit.unit_id && exemptionDecisions[unit.unit_id] === 'exempt'
                 ? 'border-emerald-300 bg-emerald-50/70 ring-1 ring-emerald-100'
-                : '',
+                : unit.unit_id && exemptionDecisions[unit.unit_id] === 'waive'
+                  ? 'border-blue-300 bg-blue-50/60 ring-1 ring-blue-100'
+                  : '',
             ]"
           >
-            <input
-              class="sr-only"
-              type="checkbox"
-              :checked="Boolean(unit.unit_id && selectedUnitIds[unit.unit_id])"
-              :disabled="!unitIsEligible(unit)"
-              @change="toggleUnit(unit, ($event.target as HTMLInputElement).checked)"
-            />
-            <span
-              :class="[
-                'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border',
-                unit.unit_id && selectedUnitIds[unit.unit_id]
-                  ? 'border-emerald-500 bg-emerald-500 text-white'
-                  : 'border-slate-300 bg-white text-transparent',
-              ]"
-            >
-              <Check class="h-3.5 w-3.5 stroke-[3]" />
-            </span>
-            <span class="min-w-0 flex-1">
-              <span class="flex flex-wrap items-center gap-2">
-                <span class="font-semibold text-slate-950">{{ unitLabel(unit) }}</span>
-                <span
-                  :class="[
-                    'badge text-xs',
-                    unitIsEligible(unit)
-                      ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                      : 'border-amber-200 bg-amber-50 text-amber-700',
-                  ]"
-                >
-                  {{ unitIsEligible(unit) ? t.learning.stageExemptionEligible : t.learning.stageExemptionUnavailable }}
+            <div class="flex min-w-0 items-start gap-3">
+              <span
+                :class="[
+                  'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border',
+                  unit.unit_id && exemptionDecisions[unit.unit_id] === 'exempt'
+                    ? 'border-emerald-500 bg-emerald-500 text-white'
+                    : 'border-slate-300 bg-white text-transparent',
+                ]"
+              >
+                <Check class="h-3.5 w-3.5 stroke-[3]" />
+              </span>
+              <span class="min-w-0 flex-1">
+                <span class="flex flex-wrap items-center gap-2">
+                  <span class="font-semibold text-slate-950">{{ unitLabel(unit) }}</span>
+                  <span
+                    :class="[
+                      'badge text-xs',
+                      unitIsEligible(unit)
+                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                        : 'border-amber-200 bg-amber-50 text-amber-700',
+                    ]"
+                  >
+                    {{ unitIsEligible(unit) ? t.learning.stageExemptionEligible : t.learning.stageExemptionUnavailable }}
+                  </span>
+                </span>
+                <span class="mt-2 flex flex-wrap gap-1.5">
+                  <span
+                    v-for="qualification in unit.exemption_quals || []"
+                    :key="qualificationId(qualification)"
+                    class="rounded-full border border-slate-200 bg-white px-2 py-1 text-xs text-slate-500"
+                  >
+                    {{ qualificationLabel(qualification) }}
+                  </span>
                 </span>
               </span>
-              <span class="mt-2 flex flex-wrap gap-1.5">
-                <span
-                  v-for="qualification in unit.exemption_quals || []"
-                  :key="qualificationId(qualification)"
-                  class="rounded-full border border-slate-200 bg-white px-2 py-1 text-xs text-slate-500"
-                >
-                  {{ qualificationLabel(qualification) }}
-                </span>
-              </span>
-            </span>
-          </label>
+            </div>
+            <div class="mt-4 grid gap-2 sm:grid-cols-2" role="group" :aria-label="t.learning.stageExemptionDecisionLabel">
+              <button
+                type="button"
+                class="btn min-h-10 rounded-lg border px-3 text-sm"
+                :class="exemptionDecisions[String(unit.unit_id)] === 'exempt' ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-300 bg-white text-slate-700'"
+                :disabled="!unitIsEligible(unit)"
+                @click="setUnitDecision(unit, 'exempt')"
+              >
+                {{ t.learning.stageExemptionApply }}
+              </button>
+              <button
+                type="button"
+                class="btn min-h-10 rounded-lg border px-3 text-sm"
+                :class="exemptionDecisions[String(unit.unit_id)] === 'waive' ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300 bg-white text-slate-700'"
+                @click="setUnitDecision(unit, 'waive')"
+              >
+                {{ t.learning.stageExemptionWaive }}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -287,15 +314,13 @@ watch(
           <button
             type="button"
             class="btn btn-primary rounded-lg"
-            :disabled="eligibilityLoading || submitting"
+            :disabled="eligibilityLoading || submitting || undecidedCount > 0"
             @click="submit"
           >
             <Loader2 v-if="submitting" class="mr-2 h-4 w-4 animate-spin" />
             {{ submitting
               ? t.learning.stageExemptionSubmitting
-              : selectedCount > 0
-                ? t.learning.stageExemptionConfirm
-                : t.learning.stageExemptionContinueWithout
+              : t.learning.stageExemptionConfirm
             }}
           </button>
         </div>

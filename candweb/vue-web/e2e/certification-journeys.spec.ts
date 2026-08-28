@@ -243,18 +243,18 @@ test("已持有有效资格的课程自动免考且不可取消", async ({ page 
 
   await page.goto(`/checkout/${bundleID}`, { waitUntil: "domcontentloaded" })
 
-  const automaticToggle = page.locator(`[data-testid="checkout-exemption-toggle"][data-unit-id="${unitID}"]`)
-  await expect(automaticToggle).toBeChecked()
-  await expect(automaticToggle).toBeDisabled()
+  await expect(page.locator(`[data-testid="checkout-exemption-apply"][data-unit-id="${unitID}"]`)).toHaveCount(0)
+  await expect(page.locator(`[data-testid="checkout-exemption-waive"][data-unit-id="${unitID}"]`)).toHaveCount(0)
   await expect(page.getByText("系统自动免考", { exact: true })).toBeVisible()
   await expect(page.getByTestId("checkout-included-items")).toBeVisible()
   await expect(page.getByTestId("checkout-included-item")).toHaveCount(3)
   for (const unit of includedUnits) {
     const item = page.locator(`[data-testid="checkout-included-item"][data-item-id="${unit.unit_id}"]`)
     await expect(item).toContainText(unit.name)
-    await expect(item).toContainText(`US$${(unit.amount / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}`)
+    await expect(item).toContainText((unit.amount / 100).toLocaleString("en-US", { minimumFractionDigits: 2 }))
   }
-  await expect(page.locator(".checkout-total")).toContainText("基础总额 US$3,700.00")
+  await expect(page.locator(".checkout-total")).toContainText("基础总额")
+  await expect(page.locator(".checkout-total")).toContainText("3,700.00")
 
   await page.getByTestId("checkout-selection-next").click()
   await waitForCheckoutProfile(page)
@@ -265,7 +265,13 @@ test("已持有有效资格的课程自动免考且不可取消", async ({ page 
   await expect(page).toHaveURL(/\/checkout\/success\/order-auto-exemption/)
   expect(purchaseBody).toEqual({
     payment_mode: "FULL_PIPELINE",
-    selected_exemptions_json: JSON.stringify({}),
+    selected_exemptions_json: JSON.stringify({
+      stages: [{
+        stage_cc_ulid: stageID,
+        exempted_unit_cc_ulids: [unitID],
+        waived_unit_cc_ulids: [],
+      }],
+    }),
   })
 })
 
@@ -456,9 +462,7 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
 
   await page.goto(`/checkout/${bundleID}`, { waitUntil: "domcontentloaded" })
   await expect(page.getByText("System Only Course", { exact: true })).toHaveCount(0)
-  const exemptionToggle = page.locator(`[data-testid="checkout-exemption-toggle"][data-unit-id="${unitID}"]`)
-  await exemptionToggle.locator("xpath=ancestor::label").click()
-  await expect(exemptionToggle).toBeChecked()
+  await page.locator(`[data-testid="checkout-exemption-apply"][data-unit-id="${unitID}"]`).click()
 
   await expect(page.getByText("模板与参考文件", { exact: true })).toBeVisible()
   await expect(page.getByRole("link", { name: "预览模板" })).toHaveAttribute(
@@ -467,6 +471,10 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
   )
   await expect(page.getByRole("link", { name: "下载模板" })).toHaveAttribute("download", "work-experience-template.docx")
   await expect(page.getByText("雇佣证明", { exact: true })).toBeVisible()
+  await expect(page.locator(`[id="qualification-file-${unitID}-Employment Certificate"]`)).toHaveCount(0)
+
+  await page.getByTestId("checkout-apply-selected-exemptions").click()
+  await expect(page.locator(`[id="qualification-file-${unitID}-Employment Certificate"]`)).toHaveCount(1)
 
   await page.locator(`[id="qualification-file-${unitID}-Employment Certificate"]`).setInputFiles({
     name: "employment-certificate.pdf",
@@ -479,6 +487,201 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
   expect(uploadRequest.file_usage).toBe("Employment Certificate")
   expect(submitRequest.files).toHaveLength(1)
   expect(submitRequest.files[0].file_usage).toBe("Employment Certificate")
+})
+
+test("免考选择完成后才合并创建所选资格订单", async ({ page }) => {
+  const selectionBundleID = "bundle-explicit-exemption-decisions"
+  const stageID = "stage-explicit-exemption-decisions"
+  const applyUnitID = "unit-apply-exemption"
+  const waiveUnitID = "unit-waive-exemption"
+  const applyQualificationID = "qualification-apply-exemption"
+  const waiveQualificationID = "qualification-waive-exemption"
+  let applicationOrderBody: any
+
+  const selectionBundle = {
+    ...bundle,
+    bundle_id: selectionBundleID,
+    stages: [{
+      stage_id: stageID,
+      name: "Explicit Exemption Decisions",
+      sort_order: 1,
+      units: [
+        { unit_id: applyUnitID, name: "Apply Exemption Course" },
+        { unit_id: waiveUnitID, name: "Full Price Course" },
+      ],
+    }],
+    purchase_state: {
+      ...bundle.purchase_state,
+      exemption_options: {
+        stages: [{
+          stage_id: stageID,
+          stage_name: "Explicit Exemption Decisions",
+          units: [
+            {
+              unit_id: applyUnitID,
+              unit_name: "Apply Exemption Course",
+              allow_exemption: true,
+              qualified: false,
+              exemption_quals: [{ qual_id: applyQualificationID, name: "Apply Qualification" }],
+            },
+            {
+              unit_id: waiveUnitID,
+              unit_name: "Full Price Course",
+              allow_exemption: true,
+              qualified: false,
+              exemption_quals: [{ qual_id: waiveQualificationID, name: "Waive Qualification" }],
+            },
+          ],
+        }],
+      },
+    },
+  }
+
+  await installCandidateApiMocks(page, ({ pathname, method, body }) => {
+    if (pathname === `/api/mall/bundles/${selectionBundleID}` && method === "GET") return { data: selectionBundle }
+    if (pathname === `/api/mall/bundles/${selectionBundleID}/pricing-detail`) return { data: { can_checkout: true } }
+    if (pathname === "/api/credentials/definitions") {
+      return {
+        data: {
+          definitions: [
+            { cred_def_ulid: applyQualificationID, name: "Apply Qualification", respath: "/gcreds/core/apply" },
+            { cred_def_ulid: waiveQualificationID, name: "Waive Qualification", respath: "/gcreds/core/waive" },
+          ],
+        },
+      }
+    }
+    if (pathname === "/api/credentials/applications") return { data: { applications: [] } }
+    if (pathname === "/api/credentials/upload-permission") return { data: { granted: false } }
+    if (pathname === "/api/credentials/application-orders" && method === "POST") {
+      applicationOrderBody = body
+      return {
+        data: {
+          application_order_ulid: "application-order-explicit-selection",
+          order_status: "WAIT_REVIEW_FEE_PAYMENT",
+        },
+      }
+    }
+    if (pathname === "/api/mall/payments/preview" && method === "POST") {
+      return { data: bundle.purchase_state.payment_preview }
+    }
+    return undefined
+  })
+
+  await page.goto(`/checkout/${selectionBundleID}`, { waitUntil: "domcontentloaded" })
+  await page.locator(`[data-testid="checkout-exemption-apply"][data-unit-id="${applyUnitID}"]`).click()
+  await page.locator(`[data-testid="checkout-exemption-waive"][data-unit-id="${waiveUnitID}"]`).click()
+
+  expect(applicationOrderBody).toBeUndefined()
+  await expect(page.getByText("这里仅展示申请要求和官方模板。请先完成所有免考选择并支付资格审核费，付款成功后才能上传证明材料。", { exact: true })).toBeVisible()
+
+  await page.getByTestId("checkout-apply-selected-exemptions").click()
+
+  await expect.poll(() => applicationOrderBody).toEqual({
+    pipeline_cc_ulid: pipelineID,
+    bundle_ulid: selectionBundleID,
+    qual_ulids: [applyQualificationID],
+  })
+  await expect(page.getByTestId("checkout-step-payment")).toBeVisible()
+})
+
+test("分阶段购买先完成免考声明再创建阶段订单", async ({ page }) => {
+  const stageID = "stage-by-stage-exemption"
+  const stageInstanceID = "stage-instance-by-stage-exemption"
+  const exemptedUnitID = "unit-stage-exempted"
+  const waivedUnitID = "unit-stage-waived"
+  const exemptedQualificationID = "qualification-stage-exempted"
+  const waivedQualificationID = "qualification-stage-waived"
+  let stageOrderBody: any
+
+  const runtime = {
+    instance: { pipeline_ulid: pipelineInstanceID },
+    config: {
+      pipeline_cc_ulid: pipelineID,
+      name: "By-stage Exemption Certification",
+      stages: [{
+        stage_id: stageID,
+        name: "By-stage Exemption Stage",
+        sort_order: 1,
+        runtime_status: "STAGE_STATUS_WAIT_CANDIDATE",
+        units: [
+          {
+            unit_id: exemptedUnitID,
+            name: "Eligible Exemption Course",
+            allow_exemption: true,
+            exemption_quals: [{
+              qual_id: exemptedQualificationID,
+              name: "Eligible Stage Qualification",
+              eligible: true,
+              credential_status: "CREDENTIAL_STATUS_ACTIVE",
+            }],
+          },
+          {
+            unit_id: waivedUnitID,
+            name: "Waived Exemption Course",
+            allow_exemption: true,
+            exemption_quals: [{
+              qual_id: waivedQualificationID,
+              name: "Unavailable Stage Qualification",
+            }],
+          },
+        ],
+      }],
+    },
+    next_step: {
+      action: "wait_candidate",
+      stage_id: stageInstanceID,
+      status: "STAGE_STATUS_WAIT_CANDIDATE",
+    },
+    pipeline_status: "PIPELINE_STATUS_LEARNING",
+    current_stage_name: "By-stage Exemption Stage",
+    current_stage_status: "STAGE_STATUS_WAIT_CANDIDATE",
+  }
+
+  await installCandidateApiMocks(page, ({ pathname, method, body }) => {
+    if (pathname === `/api/mall/pipelines/${pipelineID}/runtime`) return { data: runtime }
+    if (pathname === "/api/credentials/qualifications") {
+      return {
+        data: {
+          qualifications: [{
+            qual_id: exemptedQualificationID,
+            eligible: true,
+            credential_status: "CREDENTIAL_STATUS_ACTIVE",
+          }],
+        },
+      }
+    }
+    if (pathname === `/api/mall/pipelines/${pipelineID}/stages/${stageID}/purchase` && method === "POST") {
+      stageOrderBody = body
+      return {
+        data: {
+          stage_order_ulid: "stage-order-explicit-selection",
+          order_status: "COMPLETED",
+        },
+      }
+    }
+    return undefined
+  })
+
+  await page.goto(`/certifications/${pipelineID}`, { waitUntil: "domcontentloaded" })
+  await page.getByRole("button", { name: "解锁当前阶段", exact: true }).click()
+
+  await expect(page.getByText("选择当前阶段免考", { exact: true })).toBeVisible()
+  expect(stageOrderBody).toBeUndefined()
+
+  await page.getByRole("button", { name: "放弃免考，原价购买", exact: true }).last().click()
+  await page.getByRole("button", { name: "确认并继续", exact: true }).click()
+
+  await expect.poll(() => stageOrderBody).toEqual({
+    pipeline_ulid: pipelineInstanceID,
+    stage_ulid: stageInstanceID,
+    selected_exemptions_json: JSON.stringify({
+      stages: [{
+        stage_cc_ulid: stageID,
+        exempted_unit_cc_ulids: [exemptedUnitID],
+        waived_unit_cc_ulids: [waivedUnitID],
+      }],
+    }),
+  })
 })
 
 test("课程视频预览通过签名地址全屏播放", async ({ page }) => {
@@ -627,7 +830,7 @@ test("认证从商城下单、Stripe 支付到已购认证完整闭环", async (
   )).toBeVisible()
   expect(purchaseBody).toEqual({
     payment_mode: "FULL_PIPELINE",
-    selected_exemptions_json: JSON.stringify({}),
+    selected_exemptions_json: JSON.stringify({ stages: [] }),
   })
 })
 
