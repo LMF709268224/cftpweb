@@ -806,6 +806,7 @@ export const zh = {
         listTitle: "申请列表",
         listDescription: "选择申请后查看材料和审核详情。",
         totalText: (total: number) => `共 ${total} 条`,
+        statusSubtotalsLabel: "申请状态统计",
         statusOptions: {
             all: "全部",
             pending: "待审核",

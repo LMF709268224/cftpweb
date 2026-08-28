@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CheckCircle2, Download, Eye, FileText, Loader2, RefreshCw, RotateCcw, X, XCircle } from "lucide-vue-next"
+import { CheckCircle2, Clock3, Download, Eye, FileText, ListFilter, Loader2, RefreshCw, RotateCcw, X, XCircle } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
@@ -10,7 +10,16 @@ import { badgeClass, pickFirst } from "@/lib/status"
 
 type DetailTab = "overview" | "files" | "audit"
 
+type StatusSubtotal = {
+  status: string
+  count: number
+  count_label?: string
+  exact?: boolean
+}
+
 const applications = ref<JsonRecord[]>([])
+const statusSubtotals = ref<StatusSubtotal[]>([])
+const statusSubtotalsLoaded = ref(false)
 const selected = ref<JsonRecord | null>(null)
 const loading = ref(false)
 const detailLoading = ref(false)
@@ -34,6 +43,20 @@ const copy = computed(() => t.value.applications)
 const canPrev = computed(() => page.value > 1)
 const canNext = computed(() => hasMore.value)
 const applicationFieldLabels = computed<Record<string, string>>(() => copy.value.fieldLabels || {})
+const applicationStatuses = ["", "Pending", "Approved", "Rejected", "Reupload"]
+const displayedStatusSubtotals = computed(() => {
+  const subtotalsByStatus = new Map(
+    statusSubtotals.value.map((subtotal) => [subtotal.status.trim().toUpperCase(), subtotal]),
+  )
+  return applicationStatuses.map((status) => {
+    return subtotalsByStatus.get(status.toUpperCase()) || {
+      status,
+      count: 0,
+      count_label: statusSubtotalsLoaded.value ? "0" : "-",
+      exact: statusSubtotalsLoaded.value,
+    }
+  })
+})
 const applicationIdKeys = new Set(["app_ulid", "app_id", "application_ulid", "application_id"])
 const credentialDefinitionIdKeys = new Set(["cred_def_ulid", "cred_def_id"])
 const hiddenOverviewFieldKeys = new Set([
@@ -124,6 +147,28 @@ function candidate(app: JsonRecord | null | undefined) {
 
 function credential(app: JsonRecord | null | undefined) {
   return String(pickFirst(app || {}, ["cred_def_name", "credential_name", "cred_def_ulid", "cred_def_id"]) || "-")
+}
+
+function statusSubtotalLabel(status: string) {
+  return status ? applicationLabel(status) : copy.value.statusOptions.all
+}
+
+function statusSubtotalIcon(status: string) {
+  const normalized = String(status || "").trim().toUpperCase()
+  if (normalized === "PENDING") return Clock3
+  if (normalized === "APPROVED") return CheckCircle2
+  if (normalized === "REJECTED") return XCircle
+  if (normalized === "REUPLOAD") return RotateCcw
+  return ListFilter
+}
+
+function statusSubtotalTone(status: string) {
+  const normalized = String(status || "").trim().toUpperCase()
+  if (normalized === "PENDING") return "text-amber-600"
+  if (normalized === "APPROVED") return "text-emerald-600"
+  if (normalized === "REJECTED") return "text-red-600"
+  if (normalized === "REUPLOAD") return "text-cyan-600"
+  return "text-blue-600"
 }
 
 function status(app: JsonRecord | null | undefined) {
@@ -273,6 +318,7 @@ async function load(targetPage = page.value) {
     const params = new URLSearchParams({
       page_size: String(pageSize),
       status: statusFilter.value,
+      include_status_subtotals: String(targetPage === page.value),
     })
 
     let cursor = ""
@@ -298,6 +344,17 @@ async function load(targetPage = page.value) {
     const list = Array.isArray(data.applications) ? data.applications : []
 
     applications.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
+    if (Array.isArray(data.status_subtotals)) {
+      statusSubtotalsLoaded.value = true
+      statusSubtotals.value = data.status_subtotals
+        .filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
+        .map((item) => ({
+          status: String(item.status || ""),
+          count: Number(item.count || 0),
+          count_label: String(item.count_label || item.count || 0),
+          exact: item.exact !== false,
+        }))
+    }
     total.value = Number(data.total || applications.value.length) || 0
     const isBackward = page.value < lastPage.value
     hasMore.value = isBackward ? true : Boolean(data.has_more)
@@ -435,6 +492,21 @@ onMounted(() => load(1))
         {{ copy.refresh }}
       </button>
     </header>
+
+    <section class="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-5" :aria-label="copy.statusSubtotalsLabel">
+      <article
+        v-for="subtotal in displayedStatusSubtotals"
+        :key="subtotal.status || 'all'"
+        class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5"
+        data-testid="application-status-subtotal"
+      >
+        <div class="flex items-center justify-between gap-3">
+          <p class="truncate text-sm font-bold text-slate-600" :title="statusSubtotalLabel(subtotal.status)">{{ statusSubtotalLabel(subtotal.status) }}</p>
+          <component :is="statusSubtotalIcon(subtotal.status)" class="h-5 w-5 shrink-0 text-slate-300" />
+        </div>
+        <p class="mt-4 text-3xl font-black md:mt-5 md:text-4xl" :class="statusSubtotalTone(subtotal.status)">{{ subtotal.count_label || subtotal.count }}</p>
+      </article>
+    </section>
 
     <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm md:rounded-3xl">
         <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-4 md:p-5">

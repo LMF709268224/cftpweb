@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
+	"sync"
 	"testing"
 
 	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
@@ -15,7 +17,9 @@ import (
 type applicationReadClientStub struct {
 	gcredspb.CredentialServiceClient
 	listRequest   *gcredspb.ListApplicationsRequest
+	countRequests []*gcredspb.GetApplicationCountRequest
 	detailRequest *gcredspb.GetApplicationDetailRequest
+	countMu       sync.Mutex
 }
 
 func (s *applicationReadClientStub) ListApplications(
@@ -38,10 +42,26 @@ func (s *applicationReadClientStub) ListApplications(
 
 func (s *applicationReadClientStub) GetApplicationCount(
 	_ context.Context,
-	_ *gcredspb.GetApplicationCountRequest,
+	req *gcredspb.GetApplicationCountRequest,
 	_ ...grpc.CallOption,
 ) (*gcredspb.GetApplicationCountResponse, error) {
-	return &gcredspb.GetApplicationCountResponse{Count: 1}, nil
+	s.countMu.Lock()
+	s.countRequests = append(s.countRequests, req)
+	s.countMu.Unlock()
+	statuses := req.GetFilters().GetStatuses()
+	if len(statuses) == 0 {
+		return &gcredspb.GetApplicationCountResponse{Count: 10}, nil
+	}
+	switch strings.ToUpper(statuses[0]) {
+	case "PENDING":
+		return &gcredspb.GetApplicationCountResponse{Count: 5}, nil
+	case "APPROVED":
+		return &gcredspb.GetApplicationCountResponse{Count: 3}, nil
+	case "REJECTED", "REUPLOAD":
+		return &gcredspb.GetApplicationCountResponse{Count: 1}, nil
+	default:
+		return &gcredspb.GetApplicationCountResponse{}, nil
+	}
 }
 
 func (s *applicationReadClientStub) ListCredentialDefinitions(
@@ -49,7 +69,12 @@ func (s *applicationReadClientStub) ListCredentialDefinitions(
 	_ *gcredspb.ListCredentialDefinitionsRequest,
 	_ ...grpc.CallOption,
 ) (*gcredspb.ListCredentialDefinitionsResponse, error) {
-	return &gcredspb.ListCredentialDefinitionsResponse{}, nil
+	return &gcredspb.ListCredentialDefinitionsResponse{
+		Definitions: []*gcredspb.CredentialDefinitionSummary{{
+			CredDefUlid: "credential-1",
+			Name:        "Regression Credential",
+		}},
+	}, nil
 }
 
 func (s *applicationReadClientStub) GetApplicationDetail(
@@ -95,20 +120,42 @@ func TestListApplicationsReturnsReadOnlyApplicationPage(t *testing.T) {
 	if client.listRequest.GetPageSize() != 10 {
 		t.Fatalf("page_size = %d, want 10", client.listRequest.GetPageSize())
 	}
+	countRequestsByStatus := make(map[string]int)
+	for _, countRequest := range client.countRequests {
+		statuses := countRequest.GetFilters().GetStatuses()
+		key := "ALL"
+		if len(statuses) > 0 {
+			key = strings.ToUpper(statuses[0])
+		}
+		countRequestsByStatus[key]++
+	}
+	for _, status := range []string{"ALL", "PENDING", "APPROVED", "REJECTED", "REUPLOAD"} {
+		if countRequestsByStatus[status] == 0 {
+			t.Fatalf("application status subtotal did not count %s: %+v", status, countRequestsByStatus)
+		}
+	}
 
 	var payload struct {
 		Data struct {
-			Applications []map[string]interface{} `json:"applications"`
-			Total        uint32                   `json:"total"`
-			NextCursor   string                   `json:"next_cursor"`
-			HasMore      bool                     `json:"has_more"`
+			Applications    []map[string]interface{}    `json:"applications"`
+			Total           uint32                      `json:"total"`
+			StatusSubtotals []applicationStatusSubtotal `json:"status_subtotals"`
+			NextCursor      string                      `json:"next_cursor"`
+			HasMore         bool                        `json:"has_more"`
 		} `json:"data"`
 	}
 	if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
 		t.Fatalf("decode response: %v", err)
 	}
-	if len(payload.Data.Applications) != 1 || payload.Data.Total != 1 || payload.Data.NextCursor != "next-page" || !payload.Data.HasMore {
+	if len(payload.Data.Applications) != 1 || payload.Data.Total != 5 || payload.Data.NextCursor != "next-page" || !payload.Data.HasMore {
 		t.Fatalf("application page = %+v", payload.Data)
+	}
+	subtotals := make(map[string]uint32, len(payload.Data.StatusSubtotals))
+	for _, subtotal := range payload.Data.StatusSubtotals {
+		subtotals[subtotal.Status] = subtotal.Count
+	}
+	if payload.Data.Applications[0]["cred_def_name"] != "Regression Credential" || len(subtotals) != 5 || subtotals[""] != 10 || subtotals["Pending"] != 5 || subtotals["Approved"] != 3 || subtotals["Rejected"] != 1 || subtotals["Reupload"] != 1 {
+		t.Fatalf("application status subtotals = %+v / %+v", payload.Data.Applications[0], payload.Data.StatusSubtotals)
 	}
 }
 

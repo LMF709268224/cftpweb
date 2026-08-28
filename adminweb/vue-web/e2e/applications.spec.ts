@@ -28,6 +28,13 @@ async function installApplicationReadMocks(page: Page, requests: string[]) {
         data: {
           applications: [pendingApplication],
           total: 1,
+          status_subtotals: [
+            { status: "", count: 5, count_label: "5", exact: true },
+            { status: "Pending", count: 1, count_label: "1", exact: true },
+            { status: "Approved", count: 2, count_label: "2", exact: true },
+            { status: "Rejected", count: 1, count_label: "1", exact: true },
+            { status: "Reupload", count: 1, count_label: "1", exact: true },
+          ],
           has_more: false,
           next_cursor: "",
         },
@@ -50,6 +57,13 @@ test("application list renders the returned read-only summary", async ({ page })
   await expect(page.getByText("Regression Credential").first()).toBeVisible()
   await expect(page.getByText(/Regression Candidate/).first()).toBeVisible()
   await expect(page.getByText(/app-1/).first()).toBeVisible()
+  const statusSubtotals = page.getByTestId("application-status-subtotal")
+  await expect(statusSubtotals).toHaveCount(5)
+  await expect(statusSubtotals.filter({ hasText: "全部" })).toContainText("5")
+  await expect(statusSubtotals.filter({ hasText: "待审核" })).toContainText("1")
+  await expect(statusSubtotals.filter({ hasText: "已通过" })).toContainText("2")
+  await expect(statusSubtotals.filter({ hasText: "已拒绝" })).toContainText("1")
+  await expect(statusSubtotals.filter({ hasText: "需补交" })).toContainText("1")
   expect(requests).toContain("GET /api/applications")
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
 })

@@ -808,6 +808,7 @@ export const en: AdminTranslations = {
         listTitle: "Application List",
         listDescription: "Select an application to review files and audit details.",
         totalText: (total: number) => `${total} total`,
+        statusSubtotalsLabel: "Application status subtotals",
         statusOptions: {
             all: "All",
             pending: "Pending Review",

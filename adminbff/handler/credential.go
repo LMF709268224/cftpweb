@@ -313,6 +313,13 @@ type ListApplicationsReq struct {
 	Status     string `json:"status"` // PENDING, APPROVED, REJECTED, RESUBMIT
 }
 
+type applicationStatusSubtotal struct {
+	Status     string `json:"status"`
+	Count      uint32 `json:"count"`
+	CountLabel string `json:"count_label"`
+	Exact      bool   `json:"exact"`
+}
+
 // ListApplications 查询考生资格申请
 func (h *Handler) ListApplications(w http.ResponseWriter, r *http.Request) {
 	page := parseCursorPage(r, 20)
@@ -349,7 +356,17 @@ func (h *Handler) ListApplications(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	includeStatusSubtotals := !strings.EqualFold(strings.TrimSpace(r.URL.Query().Get("include_status_subtotals")), "false")
+	var statusSubtotals []applicationStatusSubtotal
+	if includeStatusSubtotals {
+		statusSubtotals, err = h.applicationStatusSubtotals(r.Context())
+		if err != nil {
+			HandleGrpcError(w, err)
+			return
+		}
+	}
 	credentialNames := h.credentialDefinitionNames(r)
+
 	applications := make([]map[string]interface{}, 0, len(res.GetApplications()))
 	for _, app := range res.GetApplications() {
 		if app == nil {
@@ -364,14 +381,18 @@ func (h *Handler) ListApplications(w http.ResponseWriter, r *http.Request) {
 		applications = append(applications, item)
 	}
 
-	WriteJSON(w, http.StatusOK, map[string]interface{}{
+	payload := map[string]interface{}{
 		"applications": applications,
 		"total":        total.Total,
 		"total_label":  total.Label(),
 		"total_exact":  total.Exact,
 		"next_cursor":  res.GetNextCursor(),
 		"has_more":     res.GetHasMore(),
-	})
+	}
+	if includeStatusSubtotals {
+		payload["status_subtotals"] = statusSubtotals
+	}
+	WriteJSON(w, http.StatusOK, payload)
 }
 
 // GetApplication 查询考生资格申请详情
@@ -422,6 +443,64 @@ func (h *Handler) applicationDetailPayload(r *http.Request, app *gcredspb.Applic
 	}
 	h.attachCandidateName(payload, app.GetCandidateUlid())
 	return payload
+}
+
+func (h *Handler) applicationStatusSubtotals(ctx context.Context) ([]applicationStatusSubtotal, error) {
+	buckets := []struct {
+		status   string
+		statuses []string
+	}{
+		{status: ""},
+		{status: "Pending", statuses: []string{"Pending"}},
+		{status: "Approved", statuses: []string{"Approved"}},
+		{status: "Rejected", statuses: []string{"Rejected"}},
+		{status: "Reupload", statuses: []string{"Reupload"}},
+	}
+	type subtotalResult struct {
+		index    int
+		subtotal applicationStatusSubtotal
+		err      error
+	}
+	results := make(chan subtotalResult, len(buckets))
+	for index, bucket := range buckets {
+		go func(index int, status string, statuses []string) {
+			count, err := countCursorAll(ctx, func(ctx context.Context, cursor string, limit uint32) (uint32, string, error) {
+				resp, err := h.Creds.GetApplicationCount(ctx, &gcredspb.GetApplicationCountRequest{
+					Filters: &gcredspb.ApplicationFilters{Statuses: append([]string(nil), statuses...)},
+					Limit:   limit,
+					Cursor:  cursor,
+				})
+				if err != nil {
+					return 0, "", err
+				}
+				return resp.GetCount(), resp.GetNextCursor(), nil
+			})
+			results <- subtotalResult{
+				index: index,
+				subtotal: applicationStatusSubtotal{
+					Status:     status,
+					Count:      count.Total,
+					CountLabel: count.Label(),
+					Exact:      count.Exact,
+				},
+				err: err,
+			}
+		}(index, bucket.status, bucket.statuses)
+	}
+
+	subtotals := make([]applicationStatusSubtotal, len(buckets))
+	var firstError error
+	for range buckets {
+		result := <-results
+		if result.err != nil && firstError == nil {
+			firstError = result.err
+		}
+		subtotals[result.index] = result.subtotal
+	}
+	if firstError != nil {
+		return nil, firstError
+	}
+	return subtotals, nil
 }
 
 func (h *Handler) credentialDefinitionNames(r *http.Request) map[string]string {
