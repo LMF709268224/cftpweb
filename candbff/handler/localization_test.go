@@ -294,7 +294,7 @@ func TestLocalizedPipelineOverlaysConfiguredTranslations(t *testing.T) {
 	}
 }
 
-func TestLocalizedCredentialDefinitionTranslatesFileConstraint(t *testing.T) {
+func TestLocalizedCredentialDefinitionPreservesFileConstraintIdentifier(t *testing.T) {
 	handler := &Handler{Creds: localizationCredentialClient{}}
 	base := &gcredspb.CredentialDefinition{
 		CredDefUlid:       "credential-1",
@@ -306,14 +306,18 @@ func TestLocalizedCredentialDefinitionTranslatesFileConstraint(t *testing.T) {
 		}},
 	}
 
-	localized := handler.localizedCredentialDefinition(context.Background(), base, "zh-CN")
+	localized, translation := handler.localizedCredentialDefinitionWithTranslation(context.Background(), base, "zh-CN")
 	if localized.GetName() != "工作经验证明" ||
 		localized.GetDescription() != "提交工作经验证明材料" ||
 		localized.GetAcquisitionMethod() != "提交后等待审核" {
 		t.Fatalf("credential translation was not applied: %#v", localized)
 	}
-	if localized.GetFileConstraints()[0].GetName() != "雇佣证明" {
-		t.Fatalf("file constraint translation was not applied: %#v", localized.GetFileConstraints()[0])
+	if localized.GetFileConstraints()[0].GetName() != "Employment Certificate" {
+		t.Fatalf("file constraint identifier was translated: %#v", localized.GetFileConstraints()[0])
+	}
+	payloads := credentialFileConstraintPayloads(localized, translation)
+	if len(payloads) != 1 || payloads[0].Name != "Employment Certificate" || payloads[0].DisplayName != "雇佣证明" {
+		t.Fatalf("file constraint payload = %#v", payloads)
 	}
 	if base.GetFileConstraints()[0].GetName() != "Employment Certificate" {
 		t.Fatal("localization mutated the source credential definition")

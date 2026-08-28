@@ -16,6 +16,7 @@ type credentialClientStub struct {
 	listCandidateApplicationsResponse *gcredspb.ListApplicationsResponse
 	listCandidateApplicationsRequest  *gcredspb.ListApplicationsRequest
 	definitionDetailResponse          *gcredspb.CredentialDefinition
+	definitionTranslationResponse     *gcredspb.GetCredDefTranslationsResponse
 }
 
 func (s *credentialClientStub) ListCandidateApplications(
@@ -38,6 +39,17 @@ func (s *credentialClientStub) GetCredentialDefinitionDetail(
 	return &gcredspb.CredentialDefinition{CredDefUlid: req.GetCredDefUlid()}, nil
 }
 
+func (s *credentialClientStub) GetCredDefTranslations(
+	_ context.Context,
+	_ *gcredspb.GetCredDefTranslationsRequest,
+	_ ...grpc.CallOption,
+) (*gcredspb.GetCredDefTranslationsResponse, error) {
+	if s.definitionTranslationResponse != nil {
+		return s.definitionTranslationResponse, nil
+	}
+	return &gcredspb.GetCredDefTranslationsResponse{}, nil
+}
+
 func TestListCredentialDefinitionsIncludesReferenceAttachments(t *testing.T) {
 	const definitionID = "01J00000000000000000000001"
 	client := &credentialClientStub{
@@ -45,6 +57,11 @@ func TestListCredentialDefinitionsIncludesReferenceAttachments(t *testing.T) {
 		definitionDetailResponse: &gcredspb.CredentialDefinition{
 			CredDefUlid: definitionID,
 			Name:        "Work Experience Qualification",
+			FileConstraints: []*gcredspb.CredentialFileConstraint{{
+				Name:       "Employment Certificate",
+				Type:       gcredspb.CredentialFileType_CREDENTIAL_FILE_TYPE_PDF,
+				IsRequired: true,
+			}},
 			Attachments: []*gcredspb.CredentialAttachment{{
 				AttachmentId: "attachment-1",
 				Name:         "Work Experience Template",
@@ -55,6 +72,16 @@ func TestListCredentialDefinitionsIncludesReferenceAttachments(t *testing.T) {
 				DownloadUrl:  "https://downloads.example/work-experience.docx",
 			}},
 		},
+		definitionTranslationResponse: &gcredspb.GetCredDefTranslationsResponse{
+			Translations: map[string]*gcredspb.CredDefTranslation{
+				"zh-CN": {
+					Name: "工作经验证明",
+					FileConstraintNames: map[string]string{
+						"employment_certificate": "雇佣证明",
+					},
+				},
+			},
+		},
 	}
 	recorder := httptest.NewRecorder()
 	request := newCandidateHandlerRequest(
@@ -64,6 +91,7 @@ func TestListCredentialDefinitionsIncludesReferenceAttachments(t *testing.T) {
 		"01J00000000000000000000000",
 		nil,
 	)
+	request.Header.Set("Accept-Language", "zh-CN")
 
 	(&Handler{Creds: client}).ListCredentialDefinitions(recorder, request)
 
@@ -73,6 +101,11 @@ func TestListCredentialDefinitionsIncludesReferenceAttachments(t *testing.T) {
 	var payload struct {
 		Data struct {
 			Definitions []struct {
+				Name            string `json:"name"`
+				FileConstraints []struct {
+					Name        string `json:"name"`
+					DisplayName string `json:"display_name"`
+				} `json:"file_constraints"`
 				Attachments []struct {
 					Name        string `json:"name"`
 					DownloadURL string `json:"download_url"`
@@ -89,6 +122,14 @@ func TestListCredentialDefinitionsIncludesReferenceAttachments(t *testing.T) {
 	attachment := payload.Data.Definitions[0].Attachments[0]
 	if attachment.Name != "Work Experience Template" || attachment.DownloadURL != "https://downloads.example/work-experience.docx" {
 		t.Fatalf("attachment = %#v", attachment)
+	}
+	definition := payload.Data.Definitions[0]
+	if definition.Name != "工作经验证明" || len(definition.FileConstraints) != 1 {
+		t.Fatalf("definition = %#v", definition)
+	}
+	constraint := definition.FileConstraints[0]
+	if constraint.Name != "Employment Certificate" || constraint.DisplayName != "雇佣证明" {
+		t.Fatalf("file constraint = %#v", constraint)
 	}
 }
 

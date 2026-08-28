@@ -983,6 +983,10 @@ function qualificationFormatHint(constraint: any) {
     .replace("{{limit}}", info.maxLabel)
 }
 
+function qualificationConstraintDisplayName(constraint: any) {
+  return String(constraint?.display_name || constraint?.name || "")
+}
+
 function qualificationUploadSuccessText(fileName: string) {
   return t.value.credentialsPage.uploadSuccess.replace("{{fileName}}", fileName)
 }
@@ -1823,7 +1827,7 @@ function closePaymentEditDialog() {
                           >
                             <div class="flex items-center gap-1 text-sm font-semibold text-slate-800">
                               <span v-if="constraint.is_required" class="text-rose-500">*</span>
-                              <span>{{ constraint.name }}</span>
+                              <span>{{ qualificationConstraintDisplayName(constraint) }}</span>
                             </div>
                             <p class="mt-1 text-xs text-slate-500">{{ qualificationFormatHint(constraint) }}</p>
                             <div class="mt-3 flex flex-wrap items-center gap-3">

@@ -251,6 +251,8 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
   const qualificationID = "qualification-template-application"
   const systemUnitID = "unit-system-qualification"
   const systemQualificationID = "qualification-system-only"
+  let uploadRequest: any
+  let submitRequest: any
   const checkoutBundle = {
     ...bundle,
     stages: [{
@@ -290,7 +292,10 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
     },
   }
 
-  await installCandidateApiMocks(page, ({ pathname, method }) => {
+  await page.route("https://uploads.example/**", async (route) => {
+    await route.fulfill({ status: 200, body: "" })
+  })
+  await installCandidateApiMocks(page, ({ pathname, method, body }) => {
     if (pathname === `/api/mall/bundles/${bundleID}` && method === "GET") return { data: checkoutBundle }
     if (pathname === `/api/mall/bundles/${bundleID}/pricing-detail`) return { data: { units: [], memberships: [] } }
     if (pathname === "/api/credentials/definitions") {
@@ -302,7 +307,12 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
               name: "Work Experience Qualification",
               description: "Upload signed work experience evidence.",
               respath: "/gcreds/core/work-experience",
-              file_constraints: [],
+              file_constraints: [{
+                name: "Employment Certificate",
+                display_name: "雇佣证明",
+                type: 2,
+                is_required: true,
+              }],
               attachments: [{
                 attachment_id: "checkout-template-1",
                 name: "工作经验证明模板",
@@ -323,6 +333,20 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
     }
     if (pathname === "/api/credentials/applications") return { data: { applications: [] } }
     if (pathname === "/api/credentials/upload-permission") return { data: { granted: true } }
+    if (pathname === "/api/credentials/upload-url" && method === "POST") {
+      uploadRequest = body
+      return {
+        data: {
+          upload_url: "https://uploads.example/employment-certificate.pdf",
+          file_key: "credentials/employment-certificate.pdf",
+          signed_headers: {},
+        },
+      }
+    }
+    if (pathname === "/api/credentials/submit" && method === "POST") {
+      submitRequest = body
+      return { data: { app_ulid: "application-1", status: "PENDING" } }
+    }
     return undefined
   })
 
@@ -338,6 +362,19 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
     "https://downloads.example/work-experience-template.docx",
   )
   await expect(page.getByRole("link", { name: "下载模板" })).toHaveAttribute("download", "work-experience-template.docx")
+  await expect(page.getByText("雇佣证明", { exact: true })).toBeVisible()
+
+  await page.locator(`[id="qualification-file-${unitID}-Employment Certificate"]`).setInputFiles({
+    name: "employment-certificate.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from("pdf-content"),
+  })
+  await expect(page.getByText("employment-certificate.pdf 上传成功", { exact: true })).toBeVisible()
+  await page.getByRole("button", { name: "提交申请", exact: true }).click()
+
+  expect(uploadRequest.file_usage).toBe("Employment Certificate")
+  expect(submitRequest.files).toHaveLength(1)
+  expect(submitRequest.files[0].file_usage).toBe("Employment Certificate")
 })
 
 test("课程视频预览通过签名地址全屏播放", async ({ page }) => {
