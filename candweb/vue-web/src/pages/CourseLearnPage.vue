@@ -130,10 +130,8 @@ type Lesson = {
   external_courseware_ulid?: string
 }
 
-type LessonAccessToken = {
-  token?: string
-  base_url?: string
-  token_param_name?: string
+type LessonAccessURL = {
+  access_url?: string
   courseware_name?: string
   is_fallback?: boolean
 }
@@ -757,6 +755,14 @@ function normalizedExamStatus(status?: string | number | null) {
   return normalizeEnumValueUpper(status)
 }
 
+function normalizedResultStatus(status?: string | number | null) {
+  return normalizedExamStatus(status).replace(/^RESULT_STATUS_/, "")
+}
+
+function isPendingGradingExam(exam: any) {
+  return normalizedResultStatus(exam?.result_status) === "PENDING_GRADING"
+}
+
 function normalizedCourseUnitStatus(status?: string | number | null) {
   return normalizeEnumValueUpper(status)
 }
@@ -790,12 +796,14 @@ function shouldShowStoredExamDetails(exam: any) {
 
 function hasExamResult(exam: any) {
   if (isCurrentExamRestarted(exam)) return false
-  const normalized = normalizedExamStatus(exam?.result_status)
-  return typeof exam?.total_score === "number" || typeof exam?.is_passed === "boolean" || ["DONE", "PASSED", "FAILED", "NO_SHOW", "RESULT_STATUS_PASSED", "RESULT_STATUS_FAILED"].includes(normalized)
+  const normalized = normalizedResultStatus(exam?.result_status)
+  if (normalized === "PENDING_GRADING") return false
+  if (normalized) return ["AVAILABLE", "FETCHED", "DONE", "PASSED", "FAILED", "NO_SHOW", "BYPASSED"].includes(normalized)
+  return typeof exam?.is_passed === "boolean"
 }
 
 function hasExplicitPassStatus(exam: any) {
-  if (isCurrentExamRestarted(exam)) return false
+  if (isCurrentExamRestarted(exam) || isPendingGradingExam(exam)) return false
   return typeof exam?.is_passed === "boolean"
 }
 
@@ -805,7 +813,7 @@ function hasPassStatusBadge(exam: any) {
 }
 
 function shouldShowPrimaryExamStatusBadge(exam: any) {
-  return shouldShowStoredExamDetails(exam) && shouldShowExamStatus(exam?.exam_status) && !hasPassStatusBadge(exam)
+  return shouldShowStoredExamDetails(exam) && shouldShowExamStatus(exam?.exam_status) && !isPendingGradingExam(exam) && !hasPassStatusBadge(exam)
 }
 
 function hasText(value?: string | null) {
@@ -832,6 +840,9 @@ function isExamCompletedWithoutResult(exam: any) {
 }
 
 function examStatusLabel(exam: any) {
+  if (isPendingGradingExam(exam)) {
+    return t.value.examsPage.statusPendingGrading
+  }
   if (isExamCompletedWithoutResult(exam)) {
     return (t.value.examsPage as any).statusExamCompleted || t.value.examsPage.statusScheduled
   }
@@ -1450,20 +1461,10 @@ function openExternalLesson() {
   window.open(url, "_blank", "noopener,noreferrer")
 }
 
-function externalCoursewareUrl(access: LessonAccessToken) {
-  const token = String(access.token || "").trim()
-  const baseUrl = String(access.base_url || "").trim()
-  if (!token || !baseUrl) throw new Error("missing external courseware access data")
-
-  const rawUrl = baseUrl.includes("{token}")
-    ? baseUrl.replaceAll("{token}", encodeURIComponent(token))
-    : baseUrl
-  const url = new URL(rawUrl)
+function externalCoursewareURL(access: LessonAccessURL) {
+  const url = new URL(String(access.access_url || "").trim())
   if (url.protocol !== "https:" && url.protocol !== "http:") {
     throw new Error("unsupported external courseware protocol")
-  }
-  if (!baseUrl.includes("{token}")) {
-    url.searchParams.set(String(access.token_param_name || "token").trim() || "token", token)
   }
   return url.toString()
 }
@@ -1480,8 +1481,8 @@ async function openTokenLesson() {
   if (target) target.opener = null
   openingTokenLesson.value = true
   try {
-    const access = await apiClient(`/api/pipeline/lessons/${encodeURIComponent(lessonId)}/access-token`, { method: "POST" }) as LessonAccessToken
-    const url = externalCoursewareUrl(access)
+    const access = await apiClient(`/api/pipeline/lessons/${encodeURIComponent(lessonId)}/access-url`, { method: "POST" }) as LessonAccessURL
+    const url = externalCoursewareURL(access)
     if (target) target.location.replace(url)
     else window.open(url, "_blank", "noopener,noreferrer")
   } catch {
@@ -1967,6 +1968,7 @@ watch(selectedMaterial, () => {
                   <div class="flex flex-wrap items-center gap-2">
                     <span v-if="isExamFailedUnit(exam)" :class="['badge', statusBadgeClassForStatusValue('FAILED')]">{{ t.examsPage.examFailedTitle }}</span>
                     <template v-else>
+                      <span v-if="isPendingGradingExam(exam)" :class="['badge', statusBadgeClassForStatusValue('PENDING')]">{{ t.examsPage.statusPendingGrading }}</span>
                       <span v-if="shouldShowPrimaryExamStatusBadge(exam)" :class="['badge', examStatusBadgeClass(exam.exam_status)]">{{ examStatusLabel(exam) }}</span>
                       <span v-if="isWaitingScheduleSync(exam)" :class="['badge', statusBadgeClassForStatusValue('PENDING')]">{{ scheduleSyncPendingLabel() }}</span>
                     </template>
@@ -1996,7 +1998,13 @@ watch(selectedMaterial, () => {
                         <div class="text-xs">{{ t.examsPage.waitingExamConfirmationDesc }}</div>
                       </div>
                     </div>
-                    <div v-if="!isExamFailedUnit(exam) && !isWaitingExamConfirmation(exam) && !hasAppointmentDetails(exam) && !hasExamResult(exam)" class="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-blue-700 sm:col-span-2">
+                    <div v-else-if="isPendingGradingExam(exam)" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800 sm:col-span-2">
+                      <div class="flex items-start gap-2">
+                        <CalendarClock class="mt-0.5 h-4 w-4 shrink-0" />
+                        <div class="text-xs">{{ t.examsPage.pendingGradingDesc }}</div>
+                      </div>
+                    </div>
+                    <div v-if="!isPendingGradingExam(exam) && !isExamFailedUnit(exam) && !isWaitingExamConfirmation(exam) && !hasAppointmentDetails(exam) && !hasExamResult(exam)" class="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-blue-700 sm:col-span-2">
                       <div class="flex items-start gap-2">
                         <CalendarClock class="mt-0.5 h-4 w-4 shrink-0" />
                         <div>
@@ -2032,6 +2040,7 @@ watch(selectedMaterial, () => {
                     {{ t.learning.actionScheduleExam }}
                   </button>
                   <RouterLink v-if="hasExamResult(exam)" :to="`/exams/result?examId=${encodeURIComponent(exam.exam_id)}`" class="btn btn-primary rounded-lg">{{ t.examsPage.viewResult }}</RouterLink>
+                  <span v-else-if="isPendingGradingExam(exam)" class="inline-flex h-10 items-center justify-center rounded-lg border border-amber-200 bg-amber-50 px-4 text-sm font-semibold text-amber-800">{{ t.examsPage.statusPendingGrading }}</span>
                 </div>
               </div>
             </div>

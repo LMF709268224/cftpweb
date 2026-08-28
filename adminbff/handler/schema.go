@@ -517,6 +517,7 @@ type ListCertificatesRsp struct {
 type SystemRedDotsRsp struct {
 	Applications uint32 `json:"applications"`
 	Exams        uint32 `json:"exams"`
+	ExamGrading  uint32 `json:"exam_grading"`
 	Prog         uint32 `json:"prog"`
 	Orders       uint32 `json:"orders"`
 	Invoices     uint32 `json:"invoices"`

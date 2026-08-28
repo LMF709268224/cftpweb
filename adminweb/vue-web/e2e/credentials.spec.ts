@@ -137,7 +137,7 @@ test("credential definition attachment is uploaded directly and saved as a compl
   await dialog.getByLabel("附件显示名称").fill("Work Experience Template")
   await dialog.getByLabel("文件类型").selectOption("8")
   await dialog.getByLabel("附件说明 / 填写指引").fill("Complete and sign this template.")
-  await dialog.getByLabel("选择文件").setInputFiles({
+  await dialog.getByLabel("选择文件", { exact: true }).setInputFiles({
     name: "work-experience.docx",
     mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     buffer: Buffer.from("docx-content"),

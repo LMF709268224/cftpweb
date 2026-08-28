@@ -45,6 +45,7 @@ function getDotCount(path: string): number {
   switch (path) {
     case "/applications": return redDots.value.applications || 0
     case "/exams": return redDots.value.exams || 0
+    case "/exam-grading": return redDots.value.exam_grading || 0
     case "/prog": return redDots.value.prog || 0
     case "/orders": return redDots.value.orders || 0
     case "/invoices": return redDots.value.invoices || 0

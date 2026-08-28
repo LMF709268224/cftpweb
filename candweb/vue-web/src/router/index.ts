@@ -43,6 +43,32 @@ const CheckoutWizardPage = () => import("@/pages/CheckoutWizardPage.vue")
 const CheckoutSuccessPage = () => import("@/pages/CheckoutSuccessPage.vue")
 const NotFoundPage = () => import("@/pages/NotFoundPage.vue")
 
+const candidateRoutePreloaders: Record<string, () => Promise<unknown>> = {
+  "/dashboard": HomePage,
+  "/certifications": CoursesPage,
+  "/my-certifications": MyCertificationsPage,
+  "/exams": ExamsPage,
+  "/resource-packs": ResourcePacksPage,
+  "/credentials": CredentialsPage,
+  "/certificates": CertificatesPage,
+  "/membership": MembershipPage,
+  "/orders": OrdersPage,
+  "/messages": MessagesPage,
+  "/settings": SettingsPage,
+}
+
+export function preloadCandidateRoute(path: string) {
+  const normalizedPath = path.split(/[?#]/, 1)[0] || "/"
+  const loader = normalizedPath.startsWith("/checkout/")
+    ? CheckoutWizardPage
+    : candidateRoutePreloaders[normalizedPath]
+  return loader?.().catch(() => undefined)
+}
+
+export function preloadCheckoutWizard() {
+  return CheckoutWizardPage().catch(() => undefined)
+}
+
 function firstRouteValue(value: unknown) {
   if (Array.isArray(value)) return String(value[0] || "")
   return String(value || "")

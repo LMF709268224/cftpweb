@@ -363,7 +363,7 @@
         <div>
           <div class="eyebrow">ADMIN OPERATIONS GUIDE</div>
           <h1>管理后台功能目录</h1>
-          <p>按业务模块查找配置方法、字段含义、操作顺序和发布前检查事项。当前版本已提供主要配置模块、审核中心、认证管理、考试管理和站内信手册，其余章节将按同一结构逐步补充。</p>
+          <p>按业务模块查找配置方法、字段含义、操作顺序和发布前检查事项。当前版本已提供主要配置模块、审核中心、认证管理、考试管理、主观题阅卷、站内信和邮件中心手册，其余章节将按同一结构逐步补充。</p>
         </div>
         <div class="search-wrap">
           <label for="module-search">查找模块</label>
@@ -376,6 +376,10 @@
         <button class="module ready" type="button" data-name="课程配置 GLMS 章节 课时 测验 资料" onclick="openManual('course')">
           <span class="module-state">已完成</span><span class="module-icon">课</span>
           <h2>课程配置</h2><p>创建课程，维护章节、课时、资料和测验，并管理版本与发布状态。</p>
+        </button>
+        <button class="module ready" type="button" data-name="外部课件 Token 专属访问 URL 资产池 兜底 URL GLMS" onclick="openManual('external-courseware')">
+          <span class="module-state">已完成</span><span class="module-icon">链</span>
+          <h2>外部课件</h2><p>维护第三方课件入口、专属访问 URL 资产池，并绑定到课程课时。</p>
         </button>
         <button class="module ready" type="button" data-name="认证配置 管线 阶段 单元 资格 证书 免考 互斥" onclick="openManual('certification')">
           <span class="module-state">已完成</span><span class="module-icon">认</span>
@@ -417,12 +421,20 @@
           <span class="module-state">已完成</span><span class="module-icon">考</span>
           <h2>考试管理</h2><p>查询考试预约、考试状态、成绩和同步记录。</p>
         </button>
+        <button class="module ready" type="button" data-name="主观题阅卷 Prometric Essay 教授 Excel 导出 导入 评分" onclick="openManual('exam-grading')">
+          <span class="module-state">已完成</span><span class="module-icon">卷</span>
+          <h2>主观题阅卷</h2><p>导出待阅卷答卷，交由教授评分后导入并提交最终结果。</p>
+        </button>
         <button class="module ready" type="button" data-name="站内信 消息通知 收件人 模板 Payload JSON Schema 发送记录" onclick="openManual('site-message')">
           <span class="module-state">已完成</span><span class="module-icon">信</span>
           <h2>站内信</h2><p>创建消息模板，向指定考生发送站内通知并查看发送记录。</p>
         </button>
+        <button class="module ready" type="button" data-name="邮件中心 邮件通知 收件人 模板 HTML Payload JSON 投递记录 取消" onclick="openManual('mail')">
+          <span class="module-state">已完成</span><span class="module-icon">邮</span>
+          <h2>邮件中心</h2><p>直接发送或使用模板发送邮件，维护模板并查看投递状态。</p>
+        </button>
       </div>
-      <div class="catalog-foot">文档版本：2026-08-25 · 适用系统：CFTP 管理后台</div>
+      <div class="catalog-foot">文档版本：2026-08-27 · 适用系统：CFTP 管理后台</div>
     </section>
 
     <article class="manual" id="course-manual">
@@ -614,6 +626,184 @@
               <li>题目分值、正确答案和排序已复核</li>
               <li>JSON 创建的课程已补齐未导入内容</li>
               <li>确认发布的是目标课程版本</li>
+            </ul>
+            <a class="back-top" href="#top">返回顶部</a>
+          </section>
+        </div>
+      </div>
+    </article>
+
+    <article class="manual" id="external-courseware-manual">
+      <nav class="breadcrumb" aria-label="面包屑">
+        <button type="button" onclick="showCatalog()">管理后台目录</button><span>/</span><span>外部课件</span>
+      </nav>
+      <div class="manual-layout">
+        <nav class="side-nav" aria-label="外部课件章节">
+          <strong>外部课件</strong>
+          <a href="#external-courseware-overview">功能概览</a>
+          <a href="#external-courseware-concepts">关键概念</a>
+          <a href="#external-courseware-create">新建课件</a>
+          <a href="#external-courseware-import">导入专属 URL</a>
+          <a href="#external-courseware-inventory">查看资产池</a>
+          <a href="#external-courseware-bind">绑定课程课时</a>
+          <a href="#external-courseware-candidate">考生端行为</a>
+          <a href="#external-courseware-maintain">编辑与删除</a>
+          <a href="#external-courseware-faq">常见问题</a>
+          <a href="#external-courseware-checklist">检查清单</a>
+        </nav>
+
+        <div class="content">
+          <header class="manual-title">
+            <div class="eyebrow" style="color:#9eeef1">配置管理 / GLMS</div>
+            <h1>外部课件使用手册</h1>
+            <p>面向课程运营人员，说明第三方课件入口、专属访问 URL 资产池、课程课时绑定和日常库存维护。</p>
+            <div class="manual-meta"><span>角色：课程运营</span><span>难度：进阶</span><span>更新：2026-08-27</span></div>
+          </header>
+
+          <section class="doc-section" id="external-courseware-overview">
+            <h2>1. 功能概览</h2>
+            <p class="lead">“外部课件”用于接入需要为每位考生分配独立访问地址的第三方学习内容。管理员先建立课件并导入供应方提供的专属 URL，再把该课件绑定到课程中的“外部 Token 课件”课时。</p>
+            <div class="flow" aria-label="外部课件配置流程">
+              <span>新建外部课件</span><b>→</b><span>导入专属 URL</span><b>→</b><span>绑定课程课时</span><b>→</b><span>考生打开课件</span><b>→</b><span>分配并跳转</span>
+            </div>
+            <div class="note"><strong>当前导入的是完整 URL</strong>每一行应是供应方提供的完整 <code>http://</code> 或 <code>https://</code> 访问地址，不要只截取地址中的 token，也不需要管理员自行拼接参数。</div>
+          </section>
+
+          <section class="doc-section" id="external-courseware-concepts">
+            <h2>2. 先理解这些概念</h2>
+            <div class="term-grid">
+              <div class="term"><h3>外部课件</h3><p>一项第三方学习内容的配置对象，包含课件名称、说明和基础/兜底 URL。</p></div>
+              <div class="term critical"><h3>专属访问 URL</h3><p>供应方为单个考生准备的完整访问地址。系统首次分配后，会为同一考生复用该地址。</p></div>
+              <div class="term"><h3>基础/兜底 URL</h3><p>专属 URL 已用完时返回的公共入口。它必须是可以直接打开且允许考生使用的有效地址。</p></div>
+              <div class="term"><h3>资产池</h3><p>某个外部课件下全部专属 URL 的集合，分为可分配和已分配两种状态。</p></div>
+            </div>
+            <table>
+              <thead><tr><th>统计项</th><th>含义</th><th>运营动作</th></tr></thead>
+              <tbody>
+                <tr><td>总数</td><td>该课件已导入的专属 URL 总量。</td><td>用于核对供应方交付数量。</td></tr>
+                <tr><td>可分配</td><td>尚未绑定考生的专属 URL 数量。</td><td>接近 0 时及时补充。</td></tr>
+                <tr><td>已分配</td><td>已经绑定考生的专属 URL 数量。</td><td>可在列表中查看考生和分配时间。</td></tr>
+              </tbody>
+            </table>
+            <div class="warning"><strong>专属 URL 按访问凭证管理</strong>不要把完整 URL 发到群聊、工单截图或公开文档中。管理后台列表会对地址进行遮罩显示，日常核对使用统计和考生信息即可。</div>
+          </section>
+
+          <section class="doc-section" id="external-courseware-create">
+            <h2>3. 新建外部课件</h2>
+            <p class="lead">进入左侧“外部课件”，点击右上角“新建课件”。一个外部课件配置应对应一个明确的第三方学习内容。</p>
+            <figure class="shot">
+              <img src="assets/external-courseware/external-courseware-create.png" alt="新建外部课件弹窗" data-filename="external-courseware/external-courseware-create.png">
+              <div class="shot-missing"><div><strong>待补截图：新建外部课件</strong><code>assets/external-courseware/external-courseware-create.png</code></div></div>
+              <figcaption>图 1：填写课件名称、基础/兜底 URL 和说明后保存。课件创建完成后再导入专属 URL。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>字段</th><th>是否必填</th><th>填写说明</th></tr></thead>
+              <tbody>
+                <tr><td>课件名称</td><td class="required">必填</td><td>用于管理后台选择和识别，建议与供应方或课程中的正式名称一致，例如 <code>L1 Book</code>。</td></tr>
+                <tr><td>基础/兜底 URL</td><td class="required">必填</td><td>专属 URL 池耗尽时使用的公共入口，必须填写完整且可直接访问的 HTTP/HTTPS 地址。</td></tr>
+                <tr><td>说明</td><td>选填</td><td>记录适用课程、供应方、批次或运营注意事项，不要写入真实 token。</td></tr>
+              </tbody>
+            </table>
+            <ol class="steps">
+              <li><strong>填写可识别的课件名称</strong><span>同一层级或系列建议保持一致的命名规则。</span></li>
+              <li><strong>验证兜底 URL</strong><span>在无登录信息的新窗口中确认地址可以按业务预期打开。</span></li>
+              <li><strong>填写说明并保存</strong><span>保存后在左侧列表选择该课件，继续导入专属 URL。</span></li>
+            </ol>
+          </section>
+
+          <section class="doc-section" id="external-courseware-import">
+            <h2>4. 导入专属访问 URL</h2>
+            <p class="lead">选择目标课件，点击“导入专属 URL”。导入前先确认供应方文件中的每个地址都属于当前课件，避免把 L1、L2 或不同产品的地址混在一起。</p>
+            <figure class="shot">
+              <img src="assets/external-courseware/external-courseware-import.png" alt="批量导入专属访问 URL 弹窗" data-filename="external-courseware/external-courseware-import.png">
+              <div class="shot-missing"><div><strong>待补截图：导入专属访问 URL</strong><code>assets/external-courseware/external-courseware-import.png</code></div></div>
+              <figcaption>图 2：每行粘贴一个完整访问 URL，单次最多 1000 条；重复地址会被系统忽略。</figcaption>
+            </figure>
+            <ol class="steps">
+              <li><strong>整理供应方交付文件</strong><span>从 Excel 中复制需要导入的那一列，不要包含表头、空白说明或两个层级的地址。</span></li>
+              <li><strong>每行放一个完整 URL</strong><span>必须以 <code>http://</code> 或 <code>https://</code> 开头；不要只复制 token 片段。</span></li>
+              <li><strong>确认目标课件后导入</strong><span>单次最多 1000 条，数量更多时分批操作。</span></li>
+              <li><strong>核对导入结果和统计</strong><span>总数应按新增的有效且不重复地址增加。</span></li>
+            </ol>
+            <div class="danger"><strong>不要把地址导入到错误课件</strong>专属 URL 一旦被考生分配就形成访问绑定。导入前必须核对当前左侧选中的课件名称和 ID。</div>
+          </section>
+
+          <section class="doc-section" id="external-courseware-inventory">
+            <h2>5. 查看和维护 URL 资产池</h2>
+            <figure class="shot">
+              <img src="assets/external-courseware/external-courseware-list.png" alt="外部课件详情及 URL 资产池" data-filename="external-courseware/external-courseware-list.png">
+              <div class="shot-missing"><div><strong>待补截图：外部课件与 URL 资产池</strong><code>assets/external-courseware/external-courseware-list.png</code></div></div>
+              <figcaption>图 3：左侧选择课件，右侧查看基础信息、URL 数量、可分配数量、已分配数量及分配记录。</figcaption>
+            </figure>
+            <div class="action-grid">
+              <div class="action"><h3>查看可用量</h3><p>“可分配”代表还可供新考生认领的专属 URL。建议在课程开放前按预计人数留足余量。</p></div>
+              <div class="action"><h3>查看分配记录</h3><p>已分配记录会显示考生和分配时间；同一考生再次打开同一课件时复用原地址。</p></div>
+              <div class="action"><h3>刷新</h3><p>其他管理员刚导入地址或考生刚访问课件时，刷新可取得最新库存和分配状态。</p></div>
+            </div>
+            <div class="note"><strong>库存耗尽不会重新分配他人的地址</strong>系统不会把已分配 URL 转给另一位考生；没有可分配地址时会使用基础/兜底 URL。若兜底 URL 也不可用，考生将无法打开课件。</div>
+          </section>
+
+          <section class="doc-section" id="external-courseware-bind">
+            <h2>6. 绑定到课程课时</h2>
+            <p class="lead">外部课件及 URL 池准备好后，还要在课程配置中创建或编辑课时。仅建立外部课件不会自动出现在考生课程里。</p>
+            <ol class="steps">
+              <li><strong>进入“课程配置”并编辑目标草稿</strong><span>已发布课程需要先按版本流程克隆为新草稿。</span></li>
+              <li><strong>选择章节并新建或编辑课时</strong><span>填写课时标题和排序。</span></li>
+              <li><strong>课时类型选择“外部 Token 课件”</strong><span>页面会显示外部课件选择框。</span></li>
+              <li><strong>选择正确的外部课件</strong><span>核对名称和外部课件 ID，避免把 L1 课时绑定到 L2 资产池。</span></li>
+              <li><strong>保存课时并查看详情</strong><span>详情中应显示“外部课件 ID”，课程列表不再提示该课时“缺少内容”。</span></li>
+              <li><strong>完成课程其余内容并发布</strong><span>按课程发布流程确认考生端可见。</span></li>
+            </ol>
+            <div class="warning"><strong>该类型只绑定外部课件 ID</strong>“外部 Token 课件”不使用正文、媒体 Object Key 或普通外部链接 URL。管理后台会按课时类型显示对应字段，不要通过复制 JSON 同时保留这些互斥字段。</div>
+          </section>
+
+          <section class="doc-section" id="external-courseware-candidate">
+            <h2>7. 考生端会发生什么</h2>
+            <div class="flow"><span>点击打开外部课件</span><b>→</b><span>检查课程访问权限</span><b>→</b><span>读取已有分配</span><b>→</b><span>分配可用 URL</span><b>→</b><span>新标签页打开</span></div>
+            <table>
+              <thead><tr><th>情况</th><th>系统行为</th><th>管理员看到的变化</th></tr></thead>
+              <tbody>
+                <tr><td>考生首次打开且有可用 URL</td><td>原子分配一个专属 URL，并直接打开完整地址。</td><td>可分配减 1，已分配加 1，记录考生和时间。</td></tr>
+                <tr><td>同一考生再次打开</td><td>复用此前分配的专属 URL，不重复消耗库存。</td><td>统计不变。</td></tr>
+                <tr><td>专属 URL 池已空</td><td>打开基础/兜底 URL。</td><td>可分配保持 0，不新增专属分配记录。</td></tr>
+              </tbody>
+            </table>
+            <div class="note"><strong>学习完成仍由考生确认</strong>打开第三方课件不会自动把本平台课时标记为完成。考生返回课程页后，按页面流程手动完成该课时。</div>
+          </section>
+
+          <section class="doc-section" id="external-courseware-maintain">
+            <h2>8. 编辑与删除</h2>
+            <div class="action-grid">
+              <div class="action"><h3>编辑课件</h3><p>可调整名称、说明和基础/兜底 URL。修改前确认是否影响已经开放的课程。</p></div>
+              <div class="action"><h3>补充 URL</h3><p>直接再次导入新批次即可；系统会忽略重复地址，不会覆盖已分配记录。</p></div>
+              <div class="action"><h3>删除课件</h3><p>已被课程课时引用时不能删除。先在课程草稿中解除或替换绑定，再评估历史分配记录后操作。</p></div>
+            </div>
+            <div class="danger"><strong>不要把“换一批 URL”理解成删除课件</strong>日常补库存只需要再次导入。删除是结构性操作，可能影响课程课时及考生访问，应仅用于确认未被使用的错误配置。</div>
+          </section>
+
+          <section class="doc-section faq" id="external-courseware-faq">
+            <h2>9. 常见问题</h2>
+            <details><summary>供应方给的是 Excel，两列 L1 和 L2，应该怎样导入？</summary><p>分别建立 L1、L2 外部课件。选择 L1 课件时只复制 L1 列的数据，选择 L2 课件时只复制 L2 列；不要复制表头，每行保留一个完整 URL。</p></details>
+            <details><summary>为什么导入后的总数少于粘贴行数？</summary><p>空行不会提交，重复 URL 会被系统忽略；如果存在不是 HTTP/HTTPS 的内容，页面会拒绝整次导入并要求先修正。单次最多接受 1000 条有效地址。</p></details>
+            <details><summary>为什么课时仍显示“缺少内容”？</summary><p>确认课时类型是“外部 Token 课件”，并且已经选择外部课件后成功保存。重新进入课时详情，应能看到外部课件 ID；只有建立外部课件但没有绑定 ID，仍属于缺少内容。</p></details>
+            <details><summary>为什么考生打开的是公共页面，不是专属地址？</summary><p>通常表示该课件的可分配 URL 已经用完。检查右侧“可分配”统计并补充专属 URL，同时确认基础/兜底 URL 符合业务预期。</p></details>
+            <details><summary>为什么同一考生多次打开，可分配数量没有继续减少？</summary><p>这是正常行为。同一考生在同一外部课件下会复用首次分配的专属 URL。</p></details>
+            <details><summary>为什么不能删除外部课件？</summary><p>先检查它是否已经绑定某个课程课时。被引用的外部课件不能直接删除，应先在正确的课程草稿版本中解除或替换绑定。</p></details>
+          </section>
+
+          <section class="doc-section" id="external-courseware-checklist">
+            <h2>10. 开放给考生前检查清单</h2>
+            <ul class="checklist">
+              <li>课件名称能明确区分层级、课程或供应方内容</li>
+              <li>基础/兜底 URL 是完整且可访问的 HTTP/HTTPS 地址</li>
+              <li>专属 URL 已按正确课件分列导入，没有包含表头</li>
+              <li>导入后总数与供应方有效交付数量一致</li>
+              <li>可分配数量能覆盖预计新增考生并留有余量</li>
+              <li>课程课时类型选择为“外部 Token 课件”</li>
+              <li>课时绑定的外部课件名称和 ID 正确</li>
+              <li>课时详情不再显示“缺少内容”</li>
+              <li>使用测试考生验证可打开新标签页并返回手动完成课时</li>
+              <li>完整专属 URL 未出现在公开截图、文档或消息中</li>
             </ul>
             <a class="back-top" href="#top">返回顶部</a>
           </section>
@@ -1162,7 +1352,7 @@
             <div class="eyebrow" style="color:#9eeef1">配置管理 / GCREDS</div>
             <h1>资格定义使用手册</h1>
             <p>面向管理后台运营人员，说明资格分类、资源路径、申请材料，以及资格在认证准入、终审、发证、禁购和免考中的用法。</p>
-            <div class="manual-meta"><span>角色：认证运营</span><span>难度：基础至进阶</span><span>更新：2026-08-25</span></div>
+            <div class="manual-meta"><span>角色：认证运营</span><span>难度：基础至进阶</span><span>更新：2026-08-27</span></div>
           </header>
 
           <section class="doc-section" id="qualification-overview">
@@ -1251,10 +1441,13 @@
                 <tr><td>必须唯一</td><td>两个资格定义不能使用相同资源路径。</td><td>每个资格单独一条路径</td></tr>
                 <tr><td>使用绝对路径</td><td>建议始终以 <code>/</code> 开头；系统会清理末尾斜杠。</td><td><code>/gcc/credential/cfta</code></td></tr>
                 <tr><td>使用稳定英文标识</td><td>名称翻译或文案调整时不修改资源路径。</td><td><code>/gcc/credential/work-experience</code></td></tr>
+                <tr><td>系统管理资格使用 <code>/system/</code></td><td>路径中使用独立的 <code>system</code> 段后，考生端不会展示该资格的人工申请入口，也不会在购买流程中展示对应的资格申请项；资格由后台业务流程自动判断。</td><td><code>/gcc/credential/system/cfta-certification</code></td></tr>
                 <tr><td>不要复用其他模块 GPath</td><td>课程、认证、商品和资格是不同资源，即使业务相关也应使用各自路径。</td><td>资格统一放在 <code>/gcc/credential/...</code></td></tr>
                 <tr><td>不要写版本号</td><td>资源路径代表资格定义本身，不写日期、版本或人员姓名。</td><td>避免 <code>-v2</code>、<code>-2026</code></td></tr>
               </tbody>
             </table>
+            <div class="note"><strong>什么时候使用 <code>system</code></strong>仅用于不允许考生自行提交材料、必须由系统根据课程、考试、认证或其他后台结果自动判定的资格。普通人工申请资格不要加入该路径段，否则考生将看不到申请入口。</div>
+            <div class="warning"><strong><code>system</code> 必须是独立路径段</strong>请使用 <code>/system/</code>，例如 <code>/gcc/credential/system/cfta-certification</code>。不要写成 <code>/system-cfta</code>，也不要仅在资格名称或描述中填写 system，这些写法不会触发候选端隐藏规则。</div>
             <div class="danger"><strong>创建前务必确认路径</strong>当前管理后台只提供新建和只读详情，没有资格定义编辑入口。路径写错后不能在此页面直接修正，也不要通过创建同名资格来掩盖错误。</div>
           </section>
 
@@ -1302,6 +1495,7 @@
               <li>名称能区分认证、免考和材料用途</li>
               <li>分类符合资格本身的性质</li>
               <li>资源路径唯一、稳定且使用英文</li>
+              <li>仅系统自动判定的资格使用独立的 <code>/system/</code> 路径段</li>
               <li>描述写明适用范围和审核口径</li>
               <li>获取方式说明面向考生可理解</li>
               <li>仅为人工申请资格添加文件约束</li>
@@ -1949,6 +2143,183 @@
       </div>
     </article>
 
+    <article class="manual" id="exam-grading-manual">
+      <nav class="breadcrumb" aria-label="面包屑">
+        <button type="button" onclick="showCatalog()">管理后台目录</button><span>/</span><span>主观题阅卷</span>
+      </nav>
+      <div class="manual-layout">
+        <nav class="side-nav" aria-label="主观题阅卷章节">
+          <strong>主观题阅卷</strong>
+          <a href="#exam-grading-overview">功能概览</a>
+          <a href="#exam-grading-pending">待阅卷与历史</a>
+          <a href="#exam-grading-responses">查看答卷</a>
+          <a href="#exam-grading-export">导出阅卷表</a>
+          <a href="#exam-grading-professor">教授填写</a>
+          <a href="#exam-grading-import">导入与确认</a>
+          <a href="#exam-grading-status">提交后状态</a>
+          <a href="#exam-grading-faq">常见问题</a>
+          <a href="#exam-grading-checklist">操作检查</a>
+        </nav>
+
+        <div class="content">
+          <header class="manual-title">
+            <div class="eyebrow" style="color:#9eeef1">审核处理 / GEXAM</div>
+            <h1>主观题阅卷使用手册</h1>
+            <p>面向考试运营人员，说明如何导出 Prometric Essay 答卷、交由教授离线评分、导入评分文件并确认最终考试结果。</p>
+            <div class="manual-meta"><span>角色：考试运营 / 阅卷协调</span><span>难度：进阶</span><span>更新：2026-08-28</span></div>
+          </header>
+
+          <section class="doc-section" id="exam-grading-overview">
+            <h2>1. 功能概览</h2>
+            <p class="lead">主观题阅卷是 Prometric 考试完成后的人工评分流程。管理员负责导出和导入文件，教授负责判断是否通过并为每道 Essay 题评分；两种角色不能混淆。</p>
+            <div class="flow" aria-label="主观题阅卷流程"><span>考试进入待阅卷</span><b>→</b><span>管理员导出 Excel</span><b>→</b><span>教授填写黄色单元格</span><b>→</b><span>管理员导入预览</span><b>→</b><span>确认并提交结果</span></div>
+            <div class="warning"><strong>阅卷人不是当前管理员</strong><code>grader_name</code> 和可选的 <code>grader_id</code> 必须填写实际批改试卷的教授信息。管理员只是文件流转和最终提交的操作人，不能把自己的管理员姓名或 ULID 当作教授信息填写。</div>
+            <table>
+              <thead><tr><th>参与者</th><th>负责内容</th><th>不能做什么</th></tr></thead>
+              <tbody>
+                <tr><td>管理员</td><td>筛选待阅卷考试、核对答卷、导出文件、交付教授、导入预览并最终确认</td><td>不能代替教授决定通过与否或填写教授身份</td></tr>
+                <tr><td>教授</td><td>在导出的原始 Excel 中填写阅卷人、最终判定、每题分数和评语</td><td>不能修改考试 ID、考生信息、客观题得分、题号、答卷或满分</td></tr>
+                <tr><td>系统</td><td>校验文件、计算总分、封板结果并推进认证流程</td><td>不会在缺少教授评分时自动完成主观题阅卷</td></tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section class="doc-section" id="exam-grading-pending">
+            <h2>2. 待阅卷、历史记录与红点</h2>
+            <figure class="shot">
+              <img src="assets/exam-grading/exam-grading-list.png" alt="主观题阅卷待处理列表和菜单红点" data-filename="exam-grading/exam-grading-list.png">
+              <div class="shot-missing"><div><strong>待补截图：主观题阅卷列表</strong><code>assets/exam-grading/exam-grading-list.png</code></div></div>
+              <figcaption>图 1：菜单红点提示当前待阅卷数量；列表显示考生、考试代码、客观题得分和 Essay 题目数。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>区域</th><th>用途</th><th>说明</th></tr></thead>
+              <tbody>
+                <tr><td>菜单红点</td><td>提示当前有待处理的主观题考试</td><td>处理完成并刷新后，数量会随待阅卷队列变化</td></tr>
+                <tr><td>待阅卷页签</td><td>显示状态为 <code>PENDING_GRADING</code> 的工作队列</td><td>可查看答卷、导出阅卷表并导入教授评分</td></tr>
+                <tr><td>历史记录页签</td><td>查询已经完成教授批改的考试</td><td>只读查看批改教授、批改时间、最终分数、通过判定、总体评语及单题评分</td></tr>
+                <tr><td>Program</td><td>按考试科目筛选</td><td>输入考试对应的 Program Code</td></tr>
+                <tr><td>Exam Code</td><td>按考试代码筛选</td><td>适合定位同一科目下的具体考试</td></tr>
+                <tr><td>关键字</td><td>按考生姓名、邮箱或考试 ULID 查询</td><td>考试 ULID 适合精确定位一场考试</td></tr>
+                <tr><td>批改教授与最终判定</td><td>历史记录专用筛选</td><td>可按教授姓名以及通过/不通过缩小范围</td></tr>
+                <tr><td>客观题得分</td><td>显示 Prometric 已返回的客观题部分</td><td>只读，管理员和教授均不能在此修改</td></tr>
+                <tr><td>Essay 数量</td><td>显示本场需要评分的主观题数量</td><td>导入文件必须包含全部题目</td></tr>
+              </tbody>
+            </table>
+            <div class="note"><strong>两个页签职责不同</strong>最终评分提交成功后，考试会离开“待阅卷”并进入“历史记录”。历史详情是只读审计视图，不提供再次导出或导入；系统目前没有历史总数接口，所以历史列表显示本页数量并使用上一页、下一页翻页。</div>
+          </section>
+
+          <section class="doc-section" id="exam-grading-responses">
+            <h2>3. 查看和核对答卷</h2>
+            <figure class="shot">
+              <img src="assets/exam-grading/exam-grading-detail-top.png" alt="主观题考试详情和考生作答" data-filename="exam-grading/exam-grading-detail-top.png">
+              <div class="shot-missing"><div><strong>待补截图：主观题答卷详情</strong><code>assets/exam-grading/exam-grading-detail-top.png</code></div></div>
+              <figcaption>图 2：详情显示考试归属、客观题得分，以及按题号排列的考生作答与题目满分。</figcaption>
+            </figure>
+            <ol class="steps">
+              <li><strong>核对考生和考试 ULID</strong><span>确认打开的是需要交给教授批改的那一场考试。</span></li>
+              <li><strong>核对 Program、Exam Code 和客观题得分</strong><span>这些字段会写入 Excel，属于只读考试数据。</span></li>
+              <li><strong>检查所有 Essay 题目</strong><span>确认题号、题目名称、章节、考生作答和每题满分完整。</span></li>
+              <li><strong>发现缺题或答卷异常时暂停</strong><span>不要导出后自行补造题目或修改考生作答，应记录考试 ULID 并交技术人员核查数据源。</span></li>
+            </ol>
+          </section>
+
+          <section class="doc-section" id="exam-grading-export">
+            <h2>4. 导出并交付阅卷表</h2>
+            <p class="lead">点击“导出阅卷表”会下载当前考试专用的 <code>.xlsx</code> 文件。每个文件绑定一个考试 ULID，不能拿另一场考试的文件导入。</p>
+            <ol class="steps">
+              <li><strong>点击“导出阅卷表”</strong><span>文件名包含考试 ULID，下载后不要改动工作表结构。</span></li>
+              <li><strong>保留一份原始文件</strong><span>建议将未填写版本归档，以便发生格式问题时重新发给教授。</span></li>
+              <li><strong>通过合规渠道交给教授</strong><span>文件包含考生姓名、邮箱和完整作答，应按机构的数据保护要求传输和保存。</span></li>
+              <li><strong>明确填写规则</strong><span>提醒教授只填写黄色单元格，并将原 <code>.xlsx</code> 文件返回给管理员。</span></li>
+            </ol>
+            <div class="warning"><strong>只能处理仍在待阅卷状态的考试</strong>如果考试已提交评分、已被其他管理员处理或已离开 <code>PENDING_GRADING</code>，系统会拒绝再次导出或导入。</div>
+          </section>
+
+          <section class="doc-section" id="exam-grading-professor">
+            <h2>5. 教授如何填写 Excel</h2>
+            <figure class="shot">
+              <img src="assets/exam-grading/exam-grading-workbook.png" alt="教授填写 Prometric Essay 阅卷 Excel" data-filename="exam-grading/exam-grading-workbook.png">
+              <div class="shot-missing"><div><strong>待补截图：教授阅卷 Excel</strong><code>assets/exam-grading/exam-grading-workbook.png</code></div></div>
+              <figcaption>图 3：教授只填写黄色单元格；白色的考试、考生、答卷和满分字段不得修改。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>黄色字段</th><th>是否必填</th><th>填写规则</th></tr></thead>
+              <tbody>
+                <tr><td><code>grader_name</code></td><td>必填</td><td>实际批改教授姓名，最多 100 个字符</td></tr>
+                <tr><td><code>grader_id</code></td><td>选填</td><td>教授在约定身份系统中的 ULID；没有则留空，不能填写管理员 ULID 或任意文本</td></tr>
+                <tr><td><code>is_passed</code></td><td>必填</td><td>教授的最终判定，只能填写 <code>TRUE</code> 或 <code>FALSE</code></td></tr>
+                <tr><td><code>overall_comment</code></td><td>选填</td><td>总体评语，最多 1000 个字符</td></tr>
+                <tr><td><code>score</code></td><td>每题必填</td><td>数字，范围为 0 至该题 <code>max_score</code></td></tr>
+                <tr><td><code>comment</code></td><td>每题选填</td><td>单题评语，最多 500 个字符</td></tr>
+              </tbody>
+            </table>
+            <div class="danger"><strong>不要修改白色字段</strong>系统会重新读取当前考试详情，并校验文件格式版本、考试 ULID、全部题号和每题满分。修改 <code>exam_ulid</code>、删除题目、重复题号、改动 <code>max_score</code> 或改变工作表名称都会导致导入失败。</div>
+            <div class="note"><strong>最终通过不是只看总分</strong>系统会计算“客观题得分 + 各 Essay 得分”的总分，但是否通过以教授填写的 <code>is_passed</code> 为准，管理员不得根据计算结果擅自改写教授判定。</div>
+          </section>
+
+          <section class="doc-section" id="exam-grading-import">
+            <h2>6. 导入预览与最终确认</h2>
+            <figure class="shot">
+              <img src="assets/exam-grading/exam-grading-detail-import.png" alt="主观题评分文件导入区域" data-filename="exam-grading/exam-grading-detail-import.png">
+              <div class="shot-missing"><div><strong>待补截图：主观题评分导入</strong><code>assets/exam-grading/exam-grading-detail-import.png</code></div></div>
+              <figcaption>图 4：管理员选择教授返回的 `.xlsx` 后，系统先校验并生成预览，不会立即提交评分。</figcaption>
+            </figure>
+            <ol class="steps">
+              <li><strong>打开原考试详情</strong><span>从待阅卷列表重新进入，避免把文件导入到错误考试。</span></li>
+              <li><strong>点击“选择评分文件”</strong><span>只接受从本页面导出且小于 10 MB 的 <code>.xlsx</code> 文件。</span></li>
+              <li><strong>等待系统生成导入预览</strong><span>系统会校验考试归属、教授信息、最终判定、全部题目、分数范围和评语长度；此时尚未提交。</span></li>
+              <li><strong>逐项复核预览</strong><span>核对教授姓名、是否通过、Essay 小计、最终总分、总体评语和每题得分。</span></li>
+              <li><strong>勾选最终确认</strong><span>确认全部评分来自教授且已复核无误后，才能点击最终导入。</span></li>
+              <li><strong>只提交一次</strong><span>等待成功提示和列表刷新，不要重复点击或同时由多人处理同一考试。</span></li>
+            </ol>
+            <div class="danger"><strong>最终导入不可撤销</strong>预览不改变考试状态，但点击最终导入后会立即提交教授评分、封板考试结果并触发认证管线推进。当前流程不支持重复评分或后台改分。</div>
+          </section>
+
+          <section class="doc-section" id="exam-grading-status">
+            <h2>7. 提交后的状态和考生端表现</h2>
+            <table>
+              <thead><tr><th>阶段</th><th>考试状态</th><th>管理员与考生看到的内容</th></tr></thead>
+              <tbody>
+                <tr><td>教授尚未完成阅卷</td><td><code>PENDING_GRADING</code></td><td>考试出现在主观题阅卷列表；考生端应显示“等待教授批卷”，不能提前查看半成品结果</td></tr>
+                <tr><td>管理员仅完成导入预览</td><td><code>PENDING_GRADING</code></td><td>评分尚未提交，关闭页面后仍可重新选择文件</td></tr>
+                <tr><td>管理员最终确认成功</td><td><code>FETCHED</code></td><td>系统保存教授评分，考试离开待阅卷列表，并按通过或不通过推进认证流程</td></tr>
+              </tbody>
+            </table>
+            <div class="note"><strong>总分由系统计算</strong>最终总分 = Prometric 客观题得分 + 所有 Essay 题目得分。管理员不需要也不能手工输入总分。</div>
+          </section>
+
+          <section class="doc-section" id="exam-grading-faq">
+            <h2>8. 常见问题</h2>
+            <details><summary>菜单有红点，但列表没有数据怎么办？</summary><p>先清空 Program、Exam Code 和关键字筛选并刷新。红点与列表都来自待阅卷状态；如果仍不一致，记录刷新时间和筛选条件，交技术人员核对计数与列表接口。</p></details>
+            <details><summary>为什么已批改的考试不在“待阅卷”？</summary><p>最终提交后考试会离开 <code>PENDING_GRADING</code> 工作队列。切换到“历史记录”，可按 Program、Exam Code、考生、批改教授和最终判定查询，并查看教授评分详情。</p></details>
+            <details><summary>为什么历史记录只显示本页数量？</summary><p>历史接口使用游标分页，目前不返回全部历史记录总数。页面按微服务返回的上一页、下一页游标翻页，不会为了显示总数而重复扫描全部历史数据。</p></details>
+            <details><summary>教授可以直接登录管理后台评分吗？</summary><p>当前流程不支持。管理员导出 Excel 并交给教授，教授离线填写后返回，由管理员导入和确认。</p></details>
+            <details><summary>导入提示考试不匹配或文件格式无效怎么办？</summary><p>确认文件由当前考试详情导出，工作表仍为 <code>Essay Grading</code>，且没有修改格式版本、考试 ULID、题号或满分。不要手工复制另一场考试的表格内容；重新导出原文件后让教授只填写黄色单元格。</p></details>
+            <details><summary>分数为什么无法导入？</summary><p>每道题的 <code>score</code> 都必须填写数字，且在 0 到该题 <code>max_score</code> 之间；不能漏题、删除题目或重复题号。</p></details>
+            <details><summary><code>grader_id</code> 应该填管理员 ULID 吗？</summary><p>不应该。它表示实际批改教授的 ULID，并且是选填字段。没有明确的教授 ULID 时应留空，<code>grader_name</code> 仍必须填写真实教授姓名。</p></details>
+            <details><summary>提交后发现教授分数填错了怎么办？</summary><p>当前接口不支持重复评分。不要尝试再次导入或修改其他字段绕过校验，应立即记录考试 ULID、教授、导入文件和错误内容，按考试异常处理流程升级。</p></details>
+          </section>
+
+          <section class="doc-section" id="exam-grading-checklist">
+            <h2>9. 最终提交检查清单</h2>
+            <ul class="checklist">
+              <li>考生、考试 ULID、Program 和 Exam Code 均已核对</li>
+              <li>客观题得分、Essay 数量和所有考生作答均完整</li>
+              <li>评分文件由当前考试详情导出，没有混用其他考试文件</li>
+              <li>教授只填写黄色单元格，没有修改工作表结构和只读数据</li>
+              <li><code>grader_name</code> 是实际批改教授，不是当前管理员</li>
+              <li><code>grader_id</code> 为空或为实际教授的有效 ULID</li>
+              <li><code>is_passed</code> 与教授最终判定一致</li>
+              <li>每道题得分均已填写且没有超过题目满分</li>
+              <li>导入预览中的 Essay 小计、最终总分和评语均已复核</li>
+              <li>已确认最终提交不可撤销，并且没有其他管理员同时处理</li>
+            </ul>
+            <a class="back-top" href="#top">返回顶部</a>
+          </section>
+        </div>
+      </div>
+    </article>
+
     <article class="manual" id="certification-management-manual">
       <nav class="breadcrumb" aria-label="面包屑">
         <button type="button" onclick="showCatalog()">管理后台目录</button><span>/</span><span>认证管理</span>
@@ -2299,6 +2670,190 @@
         </div>
       </div>
     </article>
+
+    <article class="manual" id="mail-manual">
+      <nav class="breadcrumb" aria-label="面包屑">
+        <button type="button" onclick="showCatalog()">管理后台目录</button><span>/</span><span>邮件中心</span>
+      </nav>
+      <div class="manual-layout">
+        <nav class="side-nav" aria-label="邮件中心章节">
+          <strong>邮件中心</strong>
+          <a href="#mail-overview">功能概览</a>
+          <a href="#mail-send">发送邮件</a>
+          <a href="#mail-payload">模板与 Payload</a>
+          <a href="#mail-template">创建模板</a>
+          <a href="#mail-template-rules">模板安全规则</a>
+          <a href="#mail-history">发送记录</a>
+          <a href="#mail-troubleshooting">常见问题</a>
+          <a href="#mail-checklist">发送检查</a>
+        </nav>
+
+        <div class="content">
+          <header class="manual-title">
+            <div class="eyebrow" style="color:#9eeef1">消息通知 / GMAIL</div>
+            <h1>邮件中心使用手册</h1>
+            <p>面向运营和客服人员，说明如何向考生发送邮件、维护 HTML 邮件模板、填写模板参数，以及查看投递记录和取消尚未发送的邮件。</p>
+            <div class="manual-meta"><span>角色：运营 / 客服</span><span>难度：基础至进阶</span><span>更新：2026-08-27</span></div>
+          </header>
+
+          <section class="doc-section" id="mail-overview">
+            <h2>1. 功能概览</h2>
+            <p class="lead">邮件中心既展示系统自动发送的业务邮件，也允许管理员手工发送邮件。手工发送有两种方式：选择已有模板并填写 Payload，或不使用模板、直接填写主题和 HTML / 文本正文。</p>
+            <div class="flow" aria-label="邮件发送流程"><span>刷新数据</span><b>→</b><span>选择收件人</span><b>→</b><span>选择发送方式</span><b>→</b><span>预检内容</span><b>→</b><span>发送并查记录</span></div>
+            <figure class="shot">
+              <img src="assets/mail/mail-send.png" alt="邮件中心发送页面" data-filename="mail/mail-send.png">
+              <div class="shot-missing"><div><strong>待补截图：邮件发送页面</strong><code>assets/mail/mail-send.png</code></div></div>
+              <figcaption>图 1：邮件中心包含邮件统计、发送邮件、发送记录和模板管理；右上角可刷新用户与模板。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>区域</th><th>用途</th><th>注意事项</th></tr></thead>
+              <tbody>
+                <tr><td>邮件统计</td><td>按状态汇总邮件总数、已发送、已取消等数量</td><td>用于运营概览，不代表收件人已经阅读邮件</td></tr>
+                <tr><td>发送邮件</td><td>选择一个或多个收件人并立即创建邮件</td><td>发送属于外部操作，提交前必须复核</td></tr>
+                <tr><td>发送记录</td><td>查看自动邮件和手工邮件的投递状态、时间与详情</td><td>只有仍处于“调度中”的邮件可以取消</td></tr>
+                <tr><td>模板管理</td><td>创建、查看和编辑邮件模板</td><td>修改业务模板会影响后续自动邮件</td></tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section class="doc-section" id="mail-send">
+            <h2>2. 发送邮件</h2>
+            <ol class="steps">
+              <li><strong>刷新用户和模板</strong><span>先点击右上角“刷新用户”和“刷新模板”，确保使用最新邮箱地址和模板版本。</span></li>
+              <li><strong>选择收件用户</strong><span>同时核对用户姓名和邮箱地址。可以多选；“全选”会选择当前已经加载且具有邮箱地址的用户。</span></li>
+              <li><strong>选择发送方式</strong><span>固定业务通知优先使用已有模板；临时邮件选择“不使用模板，直接发送正文”。</span></li>
+              <li><strong>填写内容</strong><span>模板方式填写 Payload JSON；直接发送方式填写邮件主题和“邮件正文 HTML / Text”。</span></li>
+              <li><strong>先用测试账号验证</strong><span>检查标题、变量替换、链接、换行、中文和移动端显示，再发送给正式收件人。</span></li>
+              <li><strong>发送并检查记录</strong><span>成功数量应与收件人数一致，再到发送记录核对每封邮件的收件人和状态。</span></li>
+            </ol>
+            <div class="note"><strong>直接发送与模板发送的必填项不同</strong>不使用模板时，主题和正文都必须填写；使用模板时主题可以留空，正文输入框会切换为 Payload JSON。</div>
+            <div class="danger"><strong>不要直接对正式用户测试</strong>每个所选用户都会创建一封独立邮件。批量发送前先清空无关收件人，并用内部测试邮箱验证最终内容。</div>
+          </section>
+
+          <section class="doc-section" id="mail-payload">
+            <h2>3. 模板与 Payload JSON</h2>
+            <p class="lead">选择模板后，页面会读取模板主题和 HTML 正文中的 <code>{{Variable}}</code>，自动生成带空值的 JSON 对象。管理员要把空值替换为本次邮件的真实数据。</p>
+            <pre><code>{
+  "CandidateName": "Li Ming",
+  "PaymentUrl": "https://example.com/payment/ORDER_ID"
+}</code></pre>
+            <table>
+              <thead><tr><th>内容</th><th>规则</th><th>错误表现</th></tr></thead>
+              <tbody>
+                <tr><td>模板路径</td><td>标识具体业务场景，例如 <code>/mail/payment/stage-required</code></td><td>选错模板会发送错误文案或错误链接</td></tr>
+                <tr><td>变量名</td><td>区分大小写，必须与主题或正文中的变量完全一致</td><td>邮件中出现空白或未替换的占位符</td></tr>
+                <tr><td>Payload</td><td>最外层必须是 JSON 对象，不能是数组、字符串或 <code>null</code></td><td>页面提示 JSON 格式或参数校验失败</td></tr>
+                <tr><td>变量值</td><td>必须符合模板参数规则中的类型、格式和必填要求</td><td>发送失败，或链接、金额等内容显示错误</td></tr>
+              </tbody>
+            </table>
+            <div class="warning"><strong>自动生成只负责提取变量</strong>页面生成的空字符串不是有效业务数据，也不能替代模板的 JSON Schema 校验。必须逐项确认值的来源和含义。</div>
+          </section>
+
+          <section class="doc-section" id="mail-template">
+            <h2>4. 创建和查看模板</h2>
+            <figure class="shot">
+              <img src="assets/mail/mail-template-list.png" alt="邮件模板列表" data-filename="mail/mail-template-list.png">
+              <div class="shot-missing"><div><strong>待补截图：邮件模板列表</strong><code>assets/mail/mail-template-list.png</code></div></div>
+              <figcaption>图 2：模板列表显示名称、路径、描述、版本和更新时间，可查看详情、编辑模板或创建模板。</figcaption>
+            </figure>
+            <figure class="shot">
+              <img src="assets/mail/mail-template-create.png" alt="创建邮件模板" data-filename="mail/mail-template-create.png">
+              <div class="shot-missing"><div><strong>待补截图：创建邮件模板</strong><code>assets/mail/mail-template-create.png</code></div></div>
+              <figcaption>图 3：路径、名称、主题模板和 HTML 正文为必填；描述和参数规则用于维护说明与发送校验。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>字段</th><th>含义</th><th>配置规则</th></tr></thead>
+              <tbody>
+                <tr><td>路径</td><td>模板的唯一业务标识</td><td>建议使用 <code>/mail/业务/场景</code>；创建后编辑页不可修改</td></tr>
+                <tr><td>名称</td><td>后台模板列表中的识别名称</td><td>写清业务和触发场景，不要只写“通知模板”</td></tr>
+                <tr><td>主题模板</td><td>收件箱显示的邮件主题</td><td>必填；动态内容使用 <code>{{Variable}}</code></td></tr>
+                <tr><td>HTML 正文</td><td>收件人看到的邮件内容</td><td>必填；同时注意邮件客户端兼容性和纯文本可读性</td></tr>
+                <tr><td>描述</td><td>给维护人员看的用途说明</td><td>建议写明触发服务、收件人、变量来源和负责人</td></tr>
+                <tr><td>参数规则 JSON Schema</td><td>约束 Payload 字段、类型和必填项</td><td>必须是合法 JSON；模板变量变化时同步更新</td></tr>
+              </tbody>
+            </table>
+            <figure class="shot">
+              <img src="assets/mail/mail-template-detail.png" alt="邮件模板详情" data-filename="mail/mail-template-detail.png">
+              <div class="shot-missing"><div><strong>待补截图：邮件模板详情</strong><code>assets/mail/mail-template-detail.png</code></div></div>
+              <figcaption>图 4：模板详情用于核对业务单元、模板路径、版本、主题、正文和参数规则；原始 JSON 主要供技术排查。</figcaption>
+            </figure>
+          </section>
+
+          <section class="doc-section" id="mail-template-rules">
+            <h2>5. 模板安全规则</h2>
+            <pre><code>{
+  "type": "object",
+  "properties": {
+    "CandidateName": { "type": "string", "minLength": 1 },
+    "PaymentUrl": { "type": "string", "format": "uri" }
+  },
+  "required": ["CandidateName", "PaymentUrl"],
+  "additionalProperties": false
+}</code></pre>
+            <ul class="checklist">
+              <li>模板中的每个变量都在 <code>properties</code> 中声明，大小写完全一致</li>
+              <li>关键姓名、金额、日期和链接列入 <code>required</code>，必要时限制格式</li>
+              <li>链接只使用确认过的 HTTPS 域名，不把用户输入直接拼入 HTML</li>
+              <li>不要在正文、Payload 或截图中放密码、支付密钥、访问令牌等敏感数据</li>
+              <li>修改后先给内部邮箱发送测试邮件，并检查桌面端和移动端</li>
+            </ul>
+            <div class="warning"><strong>内置模板属于服务接口的一部分</strong>现有 <code>/mail/...</code> 模板可能由认证、商城、资格审核、会员等服务自动调用。不要擅自修改路径、删除变量或改变变量语义；需要调整时先确认调用方 Payload 与模板 Schema 同步。</div>
+          </section>
+
+          <section class="doc-section" id="mail-history">
+            <h2>6. 发送记录、详情与取消</h2>
+            <figure class="shot">
+              <img src="assets/mail/mail-history.png" alt="邮件发送记录" data-filename="mail/mail-history.png">
+              <div class="shot-missing"><div><strong>待补截图：邮件发送记录</strong><code>assets/mail/mail-history.png</code></div></div>
+              <figcaption>图 5：发送记录可按状态筛选，并显示主题、邮件 ID、收件邮箱、状态和时间。</figcaption>
+            </figure>
+            <figure class="shot">
+              <img src="assets/mail/mail-detail.png" alt="邮件详情和正文预览" data-filename="mail/mail-detail.png">
+              <div class="shot-missing"><div><strong>待补截图：邮件详情</strong><code>assets/mail/mail-detail.png</code></div></div>
+              <figcaption>图 6：邮件详情显示渲染后的最终正文；状态详情和原始 JSON 可展开用于技术排查。</figcaption>
+            </figure>
+            <table>
+              <thead><tr><th>状态</th><th>含义</th><th>处理方式</th></tr></thead>
+              <tbody>
+                <tr><td>调度中</td><td>邮件已创建，仍在等待发送</td><td>这是唯一可在详情中点击“取消邮件”的状态</td></tr>
+                <tr><td>已发送</td><td>邮件服务已完成发送</td><td>不能取消；不等于收件人一定已阅读</td></tr>
+                <tr><td>失败</td><td>邮件未成功发送</td><td>记录邮件 ID、收件人和状态详情，交技术人员排查</td></tr>
+                <tr><td>已取消</td><td>调度中的邮件已被取消</td><td>如仍需发送，应重新创建并再次核对内容</td></tr>
+              </tbody>
+            </table>
+            <div class="note"><strong>排查时先看最终正文</strong>如果邮件内容错误，核对模板路径和 Payload；如果内容正确但未收到，再根据邮件 ID、收件邮箱、状态详情和发送时间排查投递。</div>
+          </section>
+
+          <section class="doc-section" id="mail-troubleshooting">
+            <h2>7. 常见问题</h2>
+            <details><summary>为什么用户列表里找不到某位考生？</summary><p>发送页只列出具有邮箱地址的用户。先点击“刷新用户”，再确认该账号已经维护有效邮箱；不要自行猜测邮箱地址。</p></details>
+            <details><summary>选择模板后为什么输入框变成 Payload JSON？</summary><p>模板已经包含主题和正文，发送时只需要提供变量数据。页面会从模板中提取变量生成 JSON 初稿，管理员必须填写真实值。</p></details>
+            <details><summary>为什么 Payload 看起来正确仍发送失败？</summary><p>打开模板详情，核对参数规则 JSON Schema。常见原因包括字段名大小写不一致、必填字段为空、数字写成字符串，或多传了不允许的字段。</p></details>
+            <details><summary>邮件状态是“已发送”，为什么考生没收到？</summary><p>“已发送”表示邮件服务完成发送，不保证邮件一定进入收件箱。先核对收件邮箱，再请考生检查垃圾邮件；记录邮件 ID 和时间供技术人员查询投递日志。</p></details>
+            <details><summary>为什么详情里没有“取消邮件”按钮？</summary><p>只有“调度中”的邮件可以取消。已发送、失败或已取消的邮件不会显示取消按钮。</p></details>
+            <details><summary>可以删除模板或撤回已发送邮件吗？</summary><p>当前页面没有模板删除功能，已发送邮件也不能撤回。错误邮件应立即通知业务负责人，并按既定流程发送更正邮件。</p></details>
+          </section>
+
+          <section class="doc-section" id="mail-checklist">
+            <h2>8. 发送前后检查清单</h2>
+            <ul class="checklist">
+              <li>用户和模板列表已经刷新</li>
+              <li>收件人的姓名与邮箱地址已经逐项核对</li>
+              <li>没有误选“全选”或无关用户</li>
+              <li>已明确使用模板还是直接发送正文</li>
+              <li>模板路径与业务场景一致</li>
+              <li>Payload 是合法 JSON 对象，所有变量均有真实值</li>
+              <li>字段类型和必填项符合模板参数规则</li>
+              <li>邮件中的金额、日期、订单号和链接已经核对</li>
+              <li>批量发送前已经用内部测试邮箱验证最终正文</li>
+              <li>发送成功数量与收件人数一致</li>
+              <li>发送记录中的收件人、状态和时间已经复核</li>
+            </ul>
+            <a class="back-top" href="#top">返回顶部</a>
+          </section>
+        </div>
+      </div>
+    </article>
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -2361,15 +2916,18 @@
     document.querySelectorAll(".doc-section").forEach((section) => sectionObserver.observe(section));
 
     if (location.hash === "#course" || location.hash.startsWith("#course-")) openManual("course");
+    if (location.hash === "#external-courseware" || location.hash.startsWith("#external-courseware-")) openManual("external-courseware");
     if ((location.hash === "#certification" || location.hash.startsWith("#certification-")) && !location.hash.startsWith("#certification-management")) openManual("certification");
     if (location.hash === "#product" || location.hash.startsWith("#product-")) openManual("product");
     if (location.hash === "#qualification" || location.hash.startsWith("#qualification-")) openManual("qualification");
     if (location.hash === "#certificate-template" || location.hash.startsWith("#certificate-template-")) openManual("certificate-template");
     if (location.hash === "#resource-pack" || location.hash.startsWith("#resource-pack-") || location.hash.startsWith("#resource-file-")) openManual("resource-pack");
     if (location.hash === "#review-center" || location.hash.startsWith("#review-center-")) openManual("review-center");
-    if (location.hash === "#exam" || location.hash.startsWith("#exam-")) openManual("exam");
+    if ((location.hash === "#exam" || location.hash.startsWith("#exam-")) && !location.hash.startsWith("#exam-grading")) openManual("exam");
+    if (location.hash === "#exam-grading" || location.hash.startsWith("#exam-grading-")) openManual("exam-grading");
     if (location.hash === "#certification-management" || location.hash.startsWith("#certification-management-")) openManual("certification-management");
     if (location.hash === "#site-message" || location.hash.startsWith("#site-message-")) openManual("site-message");
+    if (location.hash === "#mail" || location.hash.startsWith("#mail-")) openManual("mail");
   </script>
 </body>
 </html>

@@ -372,14 +372,14 @@ func (h *Handler) CompletePipelineLesson(w http.ResponseWriter, r *http.Request)
 	WriteJSON(w, http.StatusOK, resp)
 }
 
-func (h *Handler) GetLessonAccessToken(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetLessonAccessURL(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
 	lessonID := strings.TrimSpace(chi.URLParam(r, "lessonId"))
 	if !requireRequestFields(w, candidateID, "candidate_id", lessonID, "lesson_id") {
 		return
 	}
 
-	resp, err := h.Lms.GetLessonAccessToken(r.Context(), &lmspb.GetLessonAccessTokenRequest{
+	resp, err := h.Lms.GetLessonAccessUrl(r.Context(), &lmspb.GetLessonAccessUrlRequest{
 		CandidateUlid: candidateID,
 		LessonUlid:    lessonID,
 	})

@@ -10,37 +10,35 @@ import (
 	"google.golang.org/grpc"
 )
 
-type lessonAccessTokenClientStub struct {
+type lessonAccessURLClientStub struct {
 	lmspb.LmsServiceClient
-	request *lmspb.GetLessonAccessTokenRequest
+	request *lmspb.GetLessonAccessUrlRequest
 }
 
-func (s *lessonAccessTokenClientStub) GetLessonAccessToken(
+func (s *lessonAccessURLClientStub) GetLessonAccessUrl(
 	_ context.Context,
-	request *lmspb.GetLessonAccessTokenRequest,
+	request *lmspb.GetLessonAccessUrlRequest,
 	_ ...grpc.CallOption,
-) (*lmspb.GetLessonAccessTokenResponse, error) {
+) (*lmspb.GetLessonAccessUrlResponse, error) {
 	s.request = request
-	return &lmspb.GetLessonAccessTokenResponse{
-		LessonUlid:     request.GetLessonUlid(),
-		Token:          "candidate-token",
-		BaseUrl:        "https://courseware.example/learn",
-		TokenParamName: "auth_token",
+	return &lmspb.GetLessonAccessUrlResponse{
+		LessonUlid: request.GetLessonUlid(),
+		AccessUrl:  "https://courseware.example/learn/candidate-token",
 	}, nil
 }
 
-func TestGetLessonAccessTokenUsesAuthenticatedCandidate(t *testing.T) {
-	client := &lessonAccessTokenClientStub{}
+func TestGetLessonAccessURLUsesAuthenticatedCandidate(t *testing.T) {
+	client := &lessonAccessURLClientStub{}
 	recorder := httptest.NewRecorder()
 	request := newCandidateHandlerRequest(
 		http.MethodPost,
-		"/api/pipeline/lessons/lesson-1/access-token",
+		"/api/pipeline/lessons/lesson-1/access-url",
 		"",
 		"candidate-from-session",
 		map[string]string{"lessonId": "lesson-1"},
 	)
 
-	(&Handler{Lms: client}).GetLessonAccessToken(recorder, request)
+	(&Handler{Lms: client}).GetLessonAccessURL(recorder, request)
 
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("status = %d, want %d; body=%q", recorder.Code, http.StatusOK, recorder.Body.String())

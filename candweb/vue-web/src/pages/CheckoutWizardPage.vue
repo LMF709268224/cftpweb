@@ -2,12 +2,14 @@
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
-import { ArrowLeft, ArrowRight, ClipboardList, Loader2, Send, Check, CheckCircle2, CircleAlert, Clock, UploadCloud } from "lucide-vue-next"
+import { ArrowLeft, ArrowRight, ClipboardList, Loader2, Send, Check, CheckCircle2, CircleAlert, Clock, UploadCloud, X } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
+import CredentialAttachmentList from "@/components/CredentialAttachmentList.vue"
 import LocalizedDatePicker from "@/components/LocalizedDatePicker.vue"
 import LoadingState from "@/components/LoadingState.vue"
 import CheckoutPaymentPanel from "@/components/CheckoutPaymentPanel.vue"
 import { ApiClientError, apiClient } from "@/lib/apiClient"
+import { isSystemCredentialDefinition } from "@/lib/credentialDefinitions"
 import { useTranslation } from "@/lib/language"
 import { useUser } from "@/lib/user"
 import {
@@ -215,6 +217,9 @@ const registrationTitle = computed(() => {
 })
 
 const loading = ref(false)
+const cancellingPaymentOrder = ref(false)
+const paymentEditDialogOpen = ref(false)
+const paymentReturnStep = ref(3)
 const initialLoading = ref(true)
 const pipelineId = computed(() =>
   String(bundleData.value?.pipeline_id || bundleData.value?.pipeline_cc_ulid || "").trim()
@@ -586,24 +591,37 @@ function qualificationIdsForStages(stages: any[]) {
 }
 
 function applyQualificationDefinitionsToStages(definitions: Record<string, any>) {
-  exemptionStages.value = exemptionStages.value.map((stage: any) => ({
-    ...stage,
-    units: (stage.units || []).map((unit: any) => ({
-      ...unit,
-      exemption_quals: (unit.exemption_quals || []).map((qualification: any) => {
-        const qualificationId = String(qualification?.qual_id || "").trim()
-        const definition = definitions[qualificationId]
-        if (!definition) return qualification
-        return {
-          ...qualification,
-          name: definition.name || qualification.name,
-          description: definition.description || qualification.description,
-          acquisition_method: definition.acquisition_method || qualification.acquisition_method,
-          file_constraints: definition.file_constraints || qualification.file_constraints,
-        }
-      }),
-    })),
-  }))
+  exemptionStages.value = exemptionStages.value
+    .map((stage: any) => ({
+      ...stage,
+      units: (stage.units || [])
+        .map((unit: any) => ({
+          ...unit,
+          exemption_quals: (unit.exemption_quals || [])
+            .filter((qualification: any) => {
+              const qualificationId = String(qualification?.qual_id || "").trim()
+              const definition = definitions[qualificationId]
+              return !definition || !isSystemCredentialDefinition(definition)
+            })
+            .map((qualification: any) => {
+              const qualificationId = String(qualification?.qual_id || "").trim()
+              const definition = definitions[qualificationId]
+              if (!definition) return qualification
+              return {
+                ...qualification,
+                name: definition.name || qualification.name,
+                description: definition.description || qualification.description,
+                acquisition_method: definition.acquisition_method || qualification.acquisition_method,
+                file_constraints: definition.file_constraints || qualification.file_constraints,
+              }
+            }),
+        }))
+        .filter((unit: any) => (unit.exemption_quals?.length || 0) > 0),
+    }))
+    .filter((stage: any) => (stage.units?.length || 0) > 0)
+
+  syncQualifiedExemptionSelections(exemptionStages.value)
+  if (exemptionStages.value.length === 0 && currentStep.value === 1) currentStep.value = 2
 }
 
 async function refreshCheckoutQualificationDefinitions() {
@@ -1556,6 +1574,66 @@ async function confirmAndPay() {
     loading.value = false
   }
 }
+
+async function cancelPaymentOrderAndReturn() {
+  const orderId = activeOrderId.value.trim()
+  if (!orderId || cancellingPaymentOrder.value) return
+
+  const action = activeOrderAction.value
+  cancellingPaymentOrder.value = true
+  try {
+    const response = await apiClient("/api/orders/cancel", {
+      method: "POST",
+      body: JSON.stringify({
+        biz_type: paymentBizType.value,
+        biz_ref_ulid: orderId,
+      }),
+    })
+    if (response?.success === false) throw new Error(response?.message || t.value.checkoutWizard.cancelPaymentOrderFailed)
+
+    activeOrderId.value = ""
+    if (action === "credential_application") {
+      activeCredentialQualIds.value = []
+      activeCredentialUnitId.value = ""
+      currentStep.value = 1
+    } else {
+      currentStep.value = paymentReturnStep.value === 1 && exemptionStages.value.length === 0
+        ? 2
+        : paymentReturnStep.value
+    }
+    activeOrderAction.value = "purchase"
+    paymentEditDialogOpen.value = false
+    toast.success(t.value.checkoutWizard.cancelPaymentOrderSuccess)
+  } catch (error) {
+    console.error(error)
+    toast.error(error instanceof Error && error.message
+      ? error.message
+      : t.value.checkoutWizard.cancelPaymentOrderFailed)
+  } finally {
+    cancellingPaymentOrder.value = false
+  }
+}
+
+function checkoutStepLabel(step: number) {
+  const labels = [
+    t.value.checkoutWizard.step1,
+    t.value.checkoutWizard.step2,
+    t.value.checkoutWizard.step3,
+    t.value.checkoutWizard.step4,
+  ]
+  return String(labels[step - 1] || "").replace(/^\d+\s*/, "")
+}
+
+function requestPaymentStepEdit(step: number) {
+  if (currentStep.value !== 4 || step < 1 || step > 3) return
+  paymentReturnStep.value = step
+  paymentEditDialogOpen.value = true
+}
+
+function closePaymentEditDialog() {
+  if (cancellingPaymentOrder.value) return
+  paymentEditDialogOpen.value = false
+}
 </script>
 
 <template>
@@ -1582,22 +1660,20 @@ async function confirmAndPay() {
             <span v-else>{{ registrationTitle }}</span>
           </h1>
           <div class="checkout-progress" aria-label="Checkout progress">
-            <div class="checkout-progress-step" :class="{ active: currentStep === 1 }" :aria-current="currentStep === 1 ? 'step' : undefined">
-              <span class="checkout-progress-node">1</span>
-              <span class="checkout-progress-label">{{ t.checkoutWizard.step1.replace(/^\d+\s*/, "") }}</span>
-            </div>
-            <div class="checkout-progress-step" :class="{ active: currentStep === 2 }" :aria-current="currentStep === 2 ? 'step' : undefined">
-              <span class="checkout-progress-node">2</span>
-              <span class="checkout-progress-label">{{ t.checkoutWizard.step2.replace(/^\d+\s*/, "") }}</span>
-            </div>
-            <div class="checkout-progress-step" :class="{ active: currentStep === 3 }" :aria-current="currentStep === 3 ? 'step' : undefined">
-              <span class="checkout-progress-node">3</span>
-              <span class="checkout-progress-label">{{ t.checkoutWizard.step3.replace(/^\d+\s*/, "") }}</span>
-            </div>
-            <div class="checkout-progress-step" :class="{ active: currentStep === 4 }" :aria-current="currentStep === 4 ? 'step' : undefined">
-              <span class="checkout-progress-node">4</span>
-              <span class="checkout-progress-label">{{ t.checkoutWizard.step4.replace(/^\d+\s*/, "") }}</span>
-            </div>
+            <button
+              v-for="step in 4"
+              :key="step"
+              :data-testid="`checkout-progress-step-${step}`"
+              class="checkout-progress-step"
+              :class="{ active: currentStep === step, actionable: currentStep === 4 && step < 4 }"
+              type="button"
+              :disabled="currentStep !== 4 || step === 4 || cancellingPaymentOrder"
+              :aria-current="currentStep === step ? 'step' : undefined"
+              @click="requestPaymentStepEdit(step)"
+            >
+              <span class="checkout-progress-node">{{ step }}</span>
+              <span class="checkout-progress-label">{{ checkoutStepLabel(step) }}</span>
+            </button>
           </div>
         </div>
         
@@ -1730,6 +1806,11 @@ async function confirmAndPay() {
                             </p>
                           </div>
                         </div>
+
+                        <CredentialAttachmentList
+                          :attachments="qualificationDefinitionForUnit(unit)?.attachments"
+                          class="mt-5 border-t border-blue-100 pt-5"
+                        />
 
                         <div
                           v-if="Array.isArray(qualificationDefinitionForUnit(unit)?.file_constraints)"
@@ -2022,6 +2103,46 @@ async function confirmAndPay() {
         </div>
         </template>
       </main>
+
+      <Teleport to="body">
+        <div v-if="paymentEditDialogOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
+          <section
+            v-modal-dialog="closePaymentEditDialog"
+            class="w-full max-w-[560px] overflow-hidden rounded-lg bg-white shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="checkout-payment-edit-title"
+          >
+            <header class="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+              <div class="flex min-w-0 items-start gap-3">
+                <CircleAlert class="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+                <div>
+                  <h2 id="checkout-payment-edit-title" class="text-lg font-black text-slate-950">{{ t.checkoutWizard.paymentEditDialogTitle }}</h2>
+                  <p class="mt-2 text-sm leading-6 text-slate-600">{{ t.checkoutWizard.paymentOrderLockedHint }}</p>
+                </div>
+              </div>
+              <button class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50" type="button" :aria-label="t.common.close" :disabled="cancellingPaymentOrder" @click="closePaymentEditDialog">
+                <X class="h-4 w-4" />
+              </button>
+            </header>
+            <footer class="flex flex-col-reverse gap-3 bg-slate-50 px-5 py-4 sm:flex-row sm:justify-end">
+              <button class="inline-flex min-h-10 items-center justify-center rounded-lg border border-slate-300 bg-white px-4 font-bold text-slate-700 hover:bg-slate-100" type="button" :disabled="cancellingPaymentOrder" @click="closePaymentEditDialog">
+                {{ t.checkoutWizard.continuePayment }}
+              </button>
+              <button
+                data-testid="checkout-cancel-and-edit"
+                class="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-red-600 px-4 font-bold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                type="button"
+                :disabled="cancellingPaymentOrder"
+                @click="cancelPaymentOrderAndReturn"
+              >
+                <Loader2 v-if="cancellingPaymentOrder" class="h-4 w-4 animate-spin" />
+                {{ t.checkoutWizard.cancelPaymentOrderAndEdit }}
+              </button>
+            </footer>
+          </section>
+        </div>
+      </Teleport>
     </div>
   </AppShell>
 </template>
@@ -2120,7 +2241,25 @@ async function confirmAndPay() {
   align-items: center;
   flex-direction: column;
   gap: 7px;
+  padding: 0;
+  border: 0;
   color: #52617a;
+  background: transparent;
+  font: inherit;
+}
+
+.checkout-progress-step.actionable {
+  cursor: pointer;
+}
+
+.checkout-progress-step.actionable:hover .checkout-progress-node {
+  background: #cbdcf8;
+}
+
+.checkout-progress-step.actionable:focus-visible {
+  border-radius: 6px;
+  outline: 2px solid #0957f9;
+  outline-offset: 4px;
 }
 
 .checkout-progress-step:not(:last-child)::after {

@@ -323,6 +323,38 @@ test("待报名考试从列表进入对应报名页面", async ({ page }) => {
   )
 })
 
+test("等待教授批卷的考试不显示为不合格或开放成绩入口", async ({ page }) => {
+  await installCandidateApiMocks(page, ({ pathname }: ApiMockContext) => {
+    if (pathname === "/api/exams") {
+      return {
+        data: {
+          exams: [{
+            exam_id: "exam-pending-grading",
+            exam_code: "CFTA-E6",
+            exam_status: "DONE",
+            result_status: "PENDING_GRADING",
+            total_score: 52,
+            is_passed: false,
+            confirmation_number: "CFTP-PENDING-386",
+            appointment_start_time: "2026-08-28T08:18:18Z",
+            appointment_end_time: "2026-08-28T10:18:18Z",
+          }],
+          total: 1,
+        },
+      }
+    }
+    return undefined
+  })
+
+  await page.goto("/exams", { waitUntil: "domcontentloaded" })
+
+  await expect(page.getByText("等待教授批卷", { exact: true }).first()).toBeVisible()
+  await expect(page.getByText("主观题正在等待教授批改", { exact: false })).toBeVisible()
+  await expect(page.getByText("不合格", { exact: true })).toHaveCount(0)
+  await expect(page.getByRole("link", { name: "查看结果" })).toHaveCount(0)
+  await expect(page.getByText("52.00", { exact: true })).toHaveCount(0)
+})
+
 test("考试列表只应用最后一次刷新返回的数据", async ({ page }) => {
   let examRequests = 0
   await installCandidateApiMocks(page, async ({ pathname }: ApiMockContext) => {

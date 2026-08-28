@@ -7,6 +7,7 @@ import { CANDIDATE_PIPELINE_STATUS_LABELS, statusLabel } from "@/lib/status-labe
 import { startGfiLogin } from "@/lib/gfiLogin"
 import { useTranslation } from "@/lib/language"
 import { apiClient } from "@/lib/apiClient"
+import { preloadCheckoutWizard } from "@/router"
 
 type CourseCardStat = { label: string; value: string | number }
 type EligibilityBlocker = { blocker_type?: string; description?: string }
@@ -157,6 +158,7 @@ async function handleCardClick() {
     return
   }
   if (effectivePurchased.value || statusRefreshing.value) return
+  void preloadCheckoutWizard()
   await refreshBundleState()
   if (effectivePurchased.value) return
   if (hasInProgressOrder.value) {
@@ -182,6 +184,8 @@ async function handleCardClick() {
     class="group flex h-full flex-col overflow-hidden rounded-lg border border-[#ccd7e8] bg-white transition-colors duration-200 hover:border-primary"
     :class="!effectivePurchased && 'cursor-pointer'"
     @click="handleCardClick"
+    @pointerenter="!effectivePurchased && preloadCheckoutWizard()"
+    @focusin="!effectivePurchased && preloadCheckoutWizard()"
   >
     <div class="course-card-media relative h-32 overflow-hidden bg-white sm:h-36 xl:h-40">
       <template v-if="image">

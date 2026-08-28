@@ -123,9 +123,12 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 		r.Route("/exams", func(r chi.Router) {
 			r.Get("/", h.ListAdminExams)
 			r.Get("/pending-grading", h.ListPendingGradingExams)
+			r.Get("/graded-essay", h.ListGradedEssayExams)
 			r.Get("/{exam_ulid}", h.GetAdminExamDetail)
 			r.Get("/{exam_ulid}/essay-details", h.GetExamEssayDetails)
-			r.Post("/{exam_ulid}/essay-grade", h.SubmitExamEssayGrade)
+			r.Get("/{exam_ulid}/essay-grade/export", h.ExportExamEssayGradeWorkbook)
+			r.Post("/{exam_ulid}/essay-grade/import/preview", h.PreviewExamEssayGradeWorkbook)
+			r.Post("/{exam_ulid}/essay-grade/import", h.ImportExamEssayGradeWorkbook)
 			r.Get("/{exam_ulid}/result", h.GetAdminExamResult)
 			r.Get("/{exam_ulid}/transitions", h.GetAdminExamTransitions)
 			r.Post("/{exam_ulid}/sync-result", h.SyncAdminExamResult)

@@ -9,6 +9,12 @@ Screenshots are grouped by manual module.
 - `course/course-content.png`: chapters, lessons, and course materials
 - `course/course-quizzes.png`: quiz bank section
 
+## External courseware
+
+- `external-courseware/external-courseware-list.png`: courseware detail, URL inventory statistics, and allocation list
+- `external-courseware/external-courseware-create.png`: new external courseware dialog
+- `external-courseware/external-courseware-import.png`: dedicated access URL batch import dialog
+
 ## Certification
 
 - `certification/certification-list.png`: certification list
@@ -75,6 +81,13 @@ Screenshots are grouped by manual module.
 - `exam/exam-list.png`: exam filters and list
 - `exam/exam-detail.png`: exam ownership, appointment, result, and transitions
 
+## Exam grading
+
+- `exam-grading/exam-grading-list.png`: pending Prometric Essay grading queue, filters, and navigation badge
+- `exam-grading/exam-grading-detail-top.png`: exam metadata, objective score, and read-only candidate responses
+- `exam-grading/exam-grading-detail-import.png`: grading workbook upload area below the candidate responses
+- `exam-grading/exam-grading-workbook.png`: exported workbook and professor-editable yellow cells
+
 ## Certification management
 
 - `certification-management/certification-instance-list.png`: certification instance filters and list
@@ -92,6 +105,15 @@ Screenshots are grouped by manual module.
 - `site-message/site-message-template-list.png`: template list and actions
 - `site-message/site-message-template-create.png`: template path, title, content, and description
 - `site-message/site-message-template-schema.png`: template parameter JSON Schema
+
+## Mail
+
+- `mail/mail-send.png`: email statistics, recipient selection, and send form
+- `mail/mail-history.png`: sent email history and status filter
+- `mail/mail-template-list.png`: email template list and actions
+- `mail/mail-template-create.png`: template creation form
+- `mail/mail-template-detail.png`: template metadata and raw detail
+- `mail/mail-detail.png`: rendered email detail and status/raw JSON sections
 
 The HTML displays a named placeholder when an image is missing, so adding these
 files does not require another HTML change.

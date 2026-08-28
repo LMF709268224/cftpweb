@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 
 	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
+	gexampb "github.com/afnandelfin620-star/cftptest/cftp/gexam"
 	gmailpb "github.com/afnandelfin620-star/cftptest/cftp/gmail"
 )
 
@@ -41,6 +42,29 @@ func (h *Handler) GetSystemRedDots(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		atomic.AddUint32(&rsp.Applications, countResult.Total)
+	}()
+
+	// Essay grading (gexam) - count exams waiting for professor grading.
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		countResult, err := countCursorAll(ctx, func(ctx context.Context, cursor string, limit uint32) (uint32, string, error) {
+			res, err := h.Gexam.GetPendingGradingExamCount(ctx, &gexampb.GetPendingGradingExamCountRequest{
+				Filters: &gexampb.PendingGradingExamFilters{},
+				Cursor:  cursor,
+				Limit:   int32(limit),
+			})
+			if err != nil {
+				return 0, "", err
+			}
+			return uint32(res.GetCount()), res.GetNextCursor(), nil
+		})
+		if err != nil {
+			slog.Warn("Failed to count pending essay grading exams for system red dots", "error", err)
+			failed.Store(true)
+			return
+		}
+		atomic.AddUint32(&rsp.ExamGrading, countResult.Total)
 	}()
 
 	// TODO: 等待微服务团队在 cftp/gexam 中补充 GetAdminInterventionTaskCount 等接口

@@ -172,28 +172,38 @@ test("支付成功页在移动端不会因长 ID 横向溢出", async ({ page })
   await expect.poll(() => card.evaluate((element) => getComputedStyle(element).paddingLeft)).toBe("20px");
 });
 
-test("资格申请详情提供官方模板与参考附件下载", async ({ page }) => {
+test("资格申请详情提供官方模板预览与下载", async ({ page }) => {
   await seedAuthenticatedCandidate(page)
   await installCandidateApiMocks(page, ({ pathname }) => {
     if (pathname === "/api/credentials/definitions") {
       return {
         data: {
-          definitions: [{
-            cred_def_ulid: "credential-with-template",
-            name: "Work Experience Qualification",
-            category: "Qualification",
-            description: "Upload signed work experience evidence.",
-            file_constraints: [],
-            attachments: [{
-              attachment_id: "attachment-template-1",
-              name: "工作经验证明模板",
-              description: "下载填写并签字后再上传。",
-              file_name: "work-experience-template.docx",
-              file_ext: "docx",
-              file_size: 4096,
-              download_url: "https://downloads.example/work-experience-template.docx",
-            }],
-          }],
+          definitions: [
+            {
+              cred_def_ulid: "credential-with-template",
+              name: "Work Experience Qualification",
+              category: "Qualification",
+              description: "Upload signed work experience evidence.",
+              respath: "/gcreds/core/work-experience",
+              file_constraints: [],
+              attachments: [{
+                attachment_id: "attachment-template-1",
+                name: "工作经验证明模板",
+                description: "下载填写并签字后再上传。",
+                file_name: "work-experience-template.docx",
+                file_ext: "docx",
+                file_size: 4096,
+                download_url: "https://downloads.example/work-experience-template.docx",
+              }],
+            },
+            {
+              cred_def_ulid: "credential-system-only",
+              name: "System Managed Qualification",
+              category: "Certification",
+              respath: "/gcreds/credentials/system/internal-certification",
+              file_constraints: [],
+            },
+          ],
         },
       }
     }
@@ -205,10 +215,16 @@ test("资格申请详情提供官方模板与参考附件下载", async ({ page 
   const dialog = page.locator(".credentials-apply-dialog")
   await expect(dialog.getByText("模板与参考文件", { exact: true })).toBeVisible()
   await expect(dialog.getByText("工作经验证明模板", { exact: true })).toBeVisible()
-  await expect(dialog.getByRole("link", { name: "下载文件" })).toHaveAttribute(
+  await expect(page.getByText("System Managed Qualification", { exact: true })).toHaveCount(0)
+  await expect(dialog.getByRole("link", { name: "预览模板" })).toHaveAttribute(
     "href",
     "https://downloads.example/work-experience-template.docx",
   )
+  await expect(dialog.getByRole("link", { name: "下载模板" })).toHaveAttribute(
+    "href",
+    "https://downloads.example/work-experience-template.docx",
+  )
+  await expect(dialog.getByRole("link", { name: "下载模板" })).toHaveAttribute("download", "work-experience-template.docx")
 })
 
 test("资格申请弹窗在移动端保持操作区可见", async ({ page }) => {

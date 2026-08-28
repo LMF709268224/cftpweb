@@ -24,6 +24,15 @@ async function installLmsCourseReadMocks(page: Page, requests: string[]) {
     if (method === "GET" && pathname === "/api/lms/courses/course-1/detail") {
       return { data: { course_detail: { course, chapter_count: 2, lesson_count: 3, quiz_count: 1, material_count: 1 } } }
     }
+    if (method === "GET" && pathname === "/api/lms/courses/course-1/chapters") {
+      return { data: { chapters: [{ chapter_ulid: "chapter-1", title: "Regression Chapter", sort_order: 1 }, { chapter_ulid: "chapter-2", title: "Review Chapter", sort_order: 2 }] } }
+    }
+    if (method === "GET" && pathname === "/api/lms/courses/course-1/materials") {
+      return { data: { materials: [] } }
+    }
+    if (method === "GET" && pathname === "/api/lms/courses/course-1/supplementary-material") {
+      return { data: {} }
+    }
     if (method === "GET" && pathname === "/api/lms/courses/course-1/complete") {
       return {
         data: {
@@ -63,7 +72,7 @@ async function installLmsCourseReadMocks(page: Page, requests: string[]) {
                   }],
                 }],
               },
-              { chapter: { chapter_ulid: "chapter-2", title: "Review Chapter", sort_order: 2 }, lessons: [{ lesson: { lesson_ulid: "lesson-2", title: "Review Lesson", sort_order: 1, lesson_type: 2, body: "Review body" } }, { lesson: { lesson_ulid: "lesson-3", title: "Final Lesson", sort_order: 2, lesson_type: 2, body: "Final body" } }] },
+              { chapter: { chapter_ulid: "chapter-2", title: "Review Chapter", sort_order: 2 }, lessons: [{ lesson: { lesson_ulid: "lesson-2", title: "Configured Token Lesson", sort_order: 1, lesson_type: 8, external_courseware_ulid: "courseware-1" } }, { lesson: { lesson_ulid: "lesson-3", title: "Unconfigured Token Lesson", sort_order: 2, lesson_type: 8 } }] },
             ],
             quizzes: [{ quiz: { quiz_ulid: "quiz-course", title: "Final Quiz", passing_score: 80, quiz_type: 1 }, questions: [] }],
             supplementary_material: {
@@ -111,6 +120,20 @@ test("LMS course detail reads counts and complete tree without editing", async (
   expect(requests).toContain("GET /api/lms/courses/course-1/complete")
   expect(requests.some((request) => request.includes("/publish") || request.includes("/import"))).toBe(false)
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
+})
+
+test("Token courseware lesson completeness uses the external courseware ID", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  const requests: string[] = []
+  await installLmsCourseReadMocks(page, requests)
+  await page.goto("/lms")
+
+  await page.getByRole("button", { name: "编辑" }).first().click()
+
+  const configuredLesson = page.getByText("Configured Token Lesson", { exact: true }).locator("..")
+  const unconfiguredLesson = page.getByText("Unconfigured Token Lesson", { exact: true }).locator("..")
+  await expect(configuredLesson.getByText("缺少内容", { exact: true })).toHaveCount(0)
+  await expect(unconfiguredLesson.getByText("缺少内容", { exact: true })).toBeVisible()
 })
 
 test("course detail exposes import-ready JSON with a GPath warning", async ({ page }) => {

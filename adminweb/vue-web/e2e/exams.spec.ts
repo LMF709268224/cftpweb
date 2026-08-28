@@ -93,7 +93,7 @@ test("exam detail reads metadata, result, and transitions without synchronizing"
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
 })
 
-test("pending grading exam detail does not request an unpublished result", async ({ page }) => {
+test("pending grading exam is labelled as awaiting professor grading and does not request an unpublished result", async ({ page }) => {
   await seedAuthenticatedAdmin(page)
   const requests: string[] = []
   const pendingExam = { ...examSummary, result_status: "PENDING_GRADING", total_score: 0, is_passed: false }
@@ -115,9 +115,14 @@ test("pending grading exam detail does not request an unpublished result", async
   })
 
   await page.goto("/exams")
+  const examRow = page.locator("tbody tr").filter({ hasText: "REG-101" })
+  await expect(examRow.getByText("待教授批卷", { exact: true })).toHaveCount(2)
+  await expect(examRow.getByText("已完成", { exact: true })).toHaveCount(0)
+  await expect(examRow.getByText("PENDING_GRADING", { exact: true })).toHaveCount(0)
   await page.getByRole("button", { name: "查看详情" }).last().click()
   const dialog = page.getByRole("dialog", { name: "考试详情" })
   await expect(dialog.getByText("Pending Essay Certification", { exact: true })).toBeVisible()
+  await expect(dialog.getByText("待教授批卷", { exact: true })).toHaveCount(2)
   expect(requests).toContain("GET /api/exams/exam-1")
   expect(requests).toContain("GET /api/exams/exam-1/transitions")
   expect(requests).not.toContain("GET /api/exams/exam-1/result")

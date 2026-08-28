@@ -245,6 +245,101 @@ test("已持有有效资格的课程自动免考且不可取消", async ({ page 
   })
 })
 
+test("结账资格申请提供官方模板预览与下载", async ({ page }) => {
+  const stageID = "stage-template-application"
+  const unitID = "unit-template-application"
+  const qualificationID = "qualification-template-application"
+  const systemUnitID = "unit-system-qualification"
+  const systemQualificationID = "qualification-system-only"
+  const checkoutBundle = {
+    ...bundle,
+    stages: [{
+      stage_id: stageID,
+      name: "Template Application Stage",
+      sort_order: 1,
+      units: [
+        { unit_id: unitID, name: "Template Application Course" },
+        { unit_id: systemUnitID, name: "System Only Course" },
+      ],
+    }],
+    purchase_state: {
+      ...bundle.purchase_state,
+      exemption_options: {
+        stages: [{
+          index: 0,
+          stage_id: stageID,
+          stage_name: "Template Application Stage",
+          units: [
+            {
+              unit_id: unitID,
+              unit_name: "Template Application Course",
+              allow_exemption: true,
+              qualified: false,
+              exemption_quals: [{ qual_id: qualificationID, name: "Work Experience Qualification" }],
+            },
+            {
+              unit_id: systemUnitID,
+              unit_name: "System Only Course",
+              allow_exemption: true,
+              qualified: false,
+              exemption_quals: [{ qual_id: systemQualificationID, name: "System Managed Qualification" }],
+            },
+          ],
+        }],
+      },
+    },
+  }
+
+  await installCandidateApiMocks(page, ({ pathname, method }) => {
+    if (pathname === `/api/mall/bundles/${bundleID}` && method === "GET") return { data: checkoutBundle }
+    if (pathname === `/api/mall/bundles/${bundleID}/pricing-detail`) return { data: { units: [], memberships: [] } }
+    if (pathname === "/api/credentials/definitions") {
+      return {
+        data: {
+          definitions: [
+            {
+              cred_def_ulid: qualificationID,
+              name: "Work Experience Qualification",
+              description: "Upload signed work experience evidence.",
+              respath: "/gcreds/core/work-experience",
+              file_constraints: [],
+              attachments: [{
+                attachment_id: "checkout-template-1",
+                name: "工作经验证明模板",
+                file_name: "work-experience-template.docx",
+                file_size: 4096,
+                download_url: "https://downloads.example/work-experience-template.docx",
+              }],
+            },
+            {
+              cred_def_ulid: systemQualificationID,
+              name: "System Managed Qualification",
+              respath: "/gcc/credential/system/internal-certification",
+              file_constraints: [],
+            },
+          ],
+        },
+      }
+    }
+    if (pathname === "/api/credentials/applications") return { data: { applications: [] } }
+    if (pathname === "/api/credentials/upload-permission") return { data: { granted: true } }
+    return undefined
+  })
+
+  await page.goto(`/checkout/${bundleID}`, { waitUntil: "domcontentloaded" })
+  await expect(page.getByText("System Only Course", { exact: true })).toHaveCount(0)
+  const exemptionToggle = page.locator(`[data-testid="checkout-exemption-toggle"][data-unit-id="${unitID}"]`)
+  await exemptionToggle.locator("xpath=ancestor::label").click()
+  await expect(exemptionToggle).toBeChecked()
+
+  await expect(page.getByText("模板与参考文件", { exact: true })).toBeVisible()
+  await expect(page.getByRole("link", { name: "预览模板" })).toHaveAttribute(
+    "href",
+    "https://downloads.example/work-experience-template.docx",
+  )
+  await expect(page.getByRole("link", { name: "下载模板" })).toHaveAttribute("download", "work-experience-template.docx")
+})
+
 test("课程视频预览通过签名地址全屏播放", async ({ page }) => {
   let requestedSignedURL = false
   const signedURL = "https://iframe.videodelivery.net/signed-lesson-token"
@@ -265,7 +360,7 @@ test("课程视频预览通过签名地址全屏播放", async ({ page }) => {
 
 test("Token 外部课件使用考生凭证打开并保留手动完成流程", async ({ page }) => {
   const tokenLessonID = "lesson-token-courseware"
-  let accessTokenRequested = false
+  let accessURLRequested = false
   let lessonCompleted = false
 
   await page.context().route("https://partner.example/**", async (route) => {
@@ -308,13 +403,11 @@ test("Token 外部课件使用考生凭证打开并保留手动完成流程", as
     if (pathname === `/api/progress/courses/${courseID}/sync` && method === "POST") {
       return { data: { progress_percentage: lessonCompleted ? 100 : 0 } }
     }
-    if (pathname === `/api/pipeline/lessons/${tokenLessonID}/access-token` && method === "POST") {
-      accessTokenRequested = true
+    if (pathname === `/api/pipeline/lessons/${tokenLessonID}/access-url` && method === "POST") {
+      accessURLRequested = true
       return {
         data: {
-          token: "candidate access/value",
-          base_url: "https://partner.example/learn/{token}",
-          token_param_name: "auth_token",
+          access_url: "https://partner.example/learn/candidate-access-value",
           courseware_name: "Partner Academy",
         },
       }
@@ -330,8 +423,8 @@ test("Token 外部课件使用考生凭证打开并保留手动完成流程", as
   const popupPromise = page.waitForEvent("popup")
   await page.getByRole("button", { name: /打开外部课件/ }).click()
   const popup = await popupPromise
-  await expect.poll(() => popup.url()).toBe("https://partner.example/learn/candidate%20access%2Fvalue")
-  expect(accessTokenRequested).toBe(true)
+  await expect.poll(() => popup.url()).toBe("https://partner.example/learn/candidate-access-value")
+  expect(accessURLRequested).toBe(true)
 
   await page.getByTestId("complete-lesson").click()
   await expect(page.locator(`[data-testid="course-lesson"][data-lesson-id="${tokenLessonID}"]`)).toHaveAttribute("data-completed", "true")
@@ -394,6 +487,59 @@ test("认证从商城下单、Stripe 支付到已购认证完整闭环", async (
   expect(purchaseBody).toEqual({
     payment_mode: "FULL_PIPELINE",
     selected_exemptions_json: JSON.stringify({}),
+  })
+})
+
+test("支付步骤说明锁定原因并允许取消订单后返回修改", async ({ page }) => {
+  let cancelBody: unknown
+
+  await installCandidateApiMocks(page, ({ pathname, method, body }) => {
+    if (pathname === `/api/mall/bundles/${bundleID}` && method === "GET") return { data: bundle }
+    if (pathname === `/api/mall/bundles/${bundleID}/pricing-detail`) return { data: {} }
+    if (pathname === "/api/user/me") return { data: candidateUser }
+    if (pathname === "/api/user/profile" && method === "PUT") return { data: { success: true } }
+    if (pathname === `/api/mall/bundles/${bundleID}/purchase` && method === "POST") {
+      return { data: { bundle_order_ulid: "order-cancel-regression", order_status: "WAIT_PAYMENT" } }
+    }
+    if (pathname === "/api/mall/payments/preview" && method === "POST") {
+      return { data: bundle.purchase_state.payment_preview }
+    }
+    if (pathname === "/api/orders/cancel" && method === "POST") {
+      cancelBody = body
+      return { data: { success: true, order_status: "CANCELLED" } }
+    }
+    return undefined
+  })
+
+  await page.goto(`/checkout/${bundleID}`, { waitUntil: "domcontentloaded" })
+  await expect(page.getByTestId("checkout-step-registration")).toBeVisible()
+  await waitForCheckoutProfile(page)
+  await page.getByTestId("checkout-agreement").check()
+  await page.getByTestId("checkout-next").click()
+  await page.getByTestId("checkout-confirm-pay").click()
+
+  await expect(page.getByTestId("checkout-step-payment")).toBeVisible()
+  await expect(page.getByTestId("checkout-cancel-and-edit")).toHaveCount(0)
+
+  await page.getByTestId("checkout-progress-step-1").click()
+  let editDialog = page.getByRole("dialog", { name: "返回修改报名信息？" })
+  await expect(editDialog.getByText("待支付订单已经创建，价格和报名选择已锁定，不能直接返回修改。如需调整，请先取消当前订单。", { exact: true })).toBeVisible()
+  await editDialog.getByRole("button", { name: "继续支付" }).click()
+  await expect(editDialog).toHaveCount(0)
+
+  await page.getByTestId("checkout-progress-step-3").click()
+  editDialog = page.getByRole("dialog", { name: "返回修改报名信息？" })
+  await expect(editDialog).toBeVisible()
+  await editDialog.getByRole("button", { name: "继续支付" }).click()
+
+  await page.getByTestId("checkout-progress-step-2").click()
+  editDialog = page.getByRole("dialog", { name: "返回修改报名信息？" })
+  await editDialog.getByTestId("checkout-cancel-and-edit").click()
+
+  await expect(page.getByTestId("checkout-step-registration")).toBeVisible()
+  expect(cancelBody).toEqual({
+    biz_type: "BUNDLE_PURCHASE",
+    biz_ref_ulid: "order-cancel-regression",
   })
 })
 
