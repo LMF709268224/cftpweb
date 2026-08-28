@@ -1325,6 +1325,11 @@ export const en: AdminTranslations = {
         bodyLabel: "Email Body HTML / Text",
         sending: "Sending...",
         sendMail: "Send Email",
+        previewMail: "Preview",
+        previewTitle: "Email Preview",
+        previewSubject: "Subject",
+        previewFrameTitle: "Email HTML Preview",
+        previewEmpty: "No email body to preview",
         sentTitle: "Sent Records",
         totalText: (total: number) => `${total} total`,
         columns: {

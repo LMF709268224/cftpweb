@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FileText, List, Loader2, Mail, Plus, RefreshCw, Send, X, XCircle } from "lucide-vue-next"
+import { Eye, FileText, List, Loader2, Mail, Plus, RefreshCw, Send, X, XCircle } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import JsonPreview from "@/components/JsonPreview.vue"
@@ -26,6 +26,9 @@ const templatePath = ref("")
 const subject = ref("")
 const payload = ref("{\n}")
 const sending = ref(false)
+const previewOpen = ref(false)
+const previewSubject = ref("")
+const previewHtml = ref("")
 
 const mails = ref<JsonRecord[]>([])
 const mailsLoading = ref(false)
@@ -214,6 +217,21 @@ function validateTemplatePayload() {
     toast.error(copy.value.toasts.payloadJsonInvalid(err instanceof Error ? err.message : String(err)))
     return false
   }
+}
+
+function closePreview() {
+  previewOpen.value = false
+}
+
+function openPreview() {
+  if (templatePath.value) return
+  if (!payload.value.trim()) {
+    toast.error(copy.value.toasts.bodyRequired)
+    return
+  }
+  previewSubject.value = subject.value.trim()
+  previewHtml.value = payload.value
+  previewOpen.value = true
 }
 
 let usersRequestId = 0
@@ -706,11 +724,17 @@ onMounted(async () => {
                 <span class="font-bold">{{ templatePath ? copy.payloadLabel : copy.bodyLabel }}</span>
                 <textarea v-model="payload" class="mt-2 min-h-52 w-full rounded-xl border border-slate-200 p-4 font-mono text-sm" />
               </label>
-              <button class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50 sm:w-auto" :disabled="sending" type="button" @click="sendMail">
-                <Loader2 v-if="sending" class="h-4 w-4 animate-spin" />
-                <Mail v-else class="h-4 w-4" />
-                {{ sending ? copy.sending : copy.sendMail }}
-              </button>
+              <div class="flex flex-col gap-3 sm:flex-row">
+                <button class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50 sm:w-auto" :disabled="sending" type="button" @click="sendMail">
+                  <Loader2 v-if="sending" class="h-4 w-4 animate-spin" />
+                  <Mail v-else class="h-4 w-4" />
+                  {{ sending ? copy.sending : copy.sendMail }}
+                </button>
+                <button v-if="!templatePath" class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 font-bold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50 sm:w-auto" :disabled="sending" type="button" @click="openPreview">
+                  <Eye class="h-4 w-4" />
+                  {{ copy.previewMail }}
+                </button>
+              </div>
             </div>
           </div>
         </section>
@@ -920,6 +944,40 @@ onMounted(async () => {
             <button class="inline-flex h-11 min-w-[120px] items-center justify-center rounded-xl bg-blue-700 px-5 font-bold text-white shadow-sm disabled:opacity-50" :disabled="templateSaving" type="submit" form="mail-template-form">
               {{ templateSaving ? copy.saving : copy.saveTemplate }}
             </button>
+          </div>
+        </section>
+      </div>
+    </Teleport>
+
+    <Teleport to="body">
+      <div v-if="previewOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-0 md:p-6">
+        <section v-modal-dialog="closePreview" class="flex h-full max-h-none w-full max-w-[1120px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
+          <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
+            <div class="min-w-0">
+              <h2 class="text-xl font-black text-slate-950 md:text-2xl">{{ copy.previewTitle }}</h2>
+              <p v-if="previewSubject" class="mt-1 break-words text-sm font-semibold text-slate-500">{{ copy.previewSubject }}: {{ previewSubject }}</p>
+            </div>
+            <button
+              class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
+              type="button"
+              :aria-label="copy.close"
+              @click="closePreview"
+            >
+              <X class="h-5 w-5" />
+            </button>
+          </div>
+          <div class="min-h-0 flex-1 bg-slate-100 p-3 md:p-5">
+            <iframe
+              v-if="previewHtml"
+              class="h-full min-h-[480px] w-full rounded-xl border border-slate-200 bg-white"
+              sandbox=""
+              referrerpolicy="no-referrer"
+              :srcdoc="previewHtml"
+              :title="copy.previewFrameTitle"
+            />
+            <div v-else class="flex min-h-[480px] items-center justify-center rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-500">
+              {{ copy.previewEmpty }}
+            </div>
           </div>
         </section>
       </div>

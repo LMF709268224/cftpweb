@@ -1323,6 +1323,11 @@ export const zh = {
         bodyLabel: "邮件正文 HTML / Text",
         sending: "发送中...",
         sendMail: "发送邮件",
+        previewMail: "预览",
+        previewTitle: "邮件预览",
+        previewSubject: "邮件主题",
+        previewFrameTitle: "邮件 HTML 预览",
+        previewEmpty: "暂无可预览的邮件正文",
         sentTitle: "发送记录",
         totalText: (total: number) => `共 ${total} 条`,
         columns: {
