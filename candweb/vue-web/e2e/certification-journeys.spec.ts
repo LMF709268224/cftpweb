@@ -163,6 +163,11 @@ test("商城和结账页展示并拦截层级互斥资格", async ({ page }) => 
 test("已持有有效资格的课程自动免考且不可取消", async ({ page }) => {
   const stageID = "stage-auto-exemption"
   const unitID = "unit-auto-exemption"
+  const includedUnits = [
+    { unit_id: "unit-foundation", name: "CFtP Foundation Course", amount: 220000 },
+    { unit_id: "unit-finance", name: "L1A Finance", amount: 75000 },
+    { unit_id: "unit-fintech", name: "L1B Fintech", amount: 75000 },
+  ]
   const qualificationID = "qualification-auto-exemption"
   const automaticExemptionBundle = {
     ...bundle,
@@ -170,7 +175,10 @@ test("已持有有效资格的课程自动免考且不可取消", async ({ page 
       stage_id: stageID,
       name: "Automatic Exemption Stage",
       sort_order: 1,
-      units: [{ unit_id: unitID, name: "CFtA Course" }],
+      units: [
+        { unit_id: unitID, name: "CFtA Course" },
+        ...includedUnits.map(({ unit_id, name }) => ({ unit_id, name })),
+      ],
     }],
     purchase_state: {
       ...bundle.purchase_state,
@@ -202,7 +210,13 @@ test("已持有有效资格的课程自动免考且不可取消", async ({ page 
     if (pathname === `/api/mall/bundles/${bundleID}/pricing-detail`) {
       return {
         data: {
-          units: [{ unit_id: unitID, access: { amount: 10000, currency: "USD" } }],
+          units: [
+            { unit_id: unitID, access: { amount: 10000, currency: "USD" } },
+            ...includedUnits.map(({ unit_id, amount }) => ({
+              unit_id,
+              access: { amount, currency: "USD" },
+            })),
+          ],
           memberships: [],
         },
       }
@@ -231,6 +245,14 @@ test("已持有有效资格的课程自动免考且不可取消", async ({ page 
   await expect(automaticToggle).toBeChecked()
   await expect(automaticToggle).toBeDisabled()
   await expect(page.getByText("系统自动免考", { exact: true })).toBeVisible()
+  await expect(page.getByTestId("checkout-included-items")).toBeVisible()
+  await expect(page.getByTestId("checkout-included-item")).toHaveCount(3)
+  for (const unit of includedUnits) {
+    const item = page.locator(`[data-testid="checkout-included-item"][data-item-id="${unit.unit_id}"]`)
+    await expect(item).toContainText(unit.name)
+    await expect(item).toContainText(`US$${(unit.amount / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}`)
+  }
+  await expect(page.locator(".checkout-total")).toContainText("基础总额 US$3,700.00")
 
   await page.getByTestId("checkout-selection-next").click()
   await waitForCheckoutProfile(page)

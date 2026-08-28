@@ -740,6 +740,7 @@ export const zh = {
     step2: "2 注册",
     step3: "3 审查",
     step4: "4 支付",
+    includedItems: "费用包含",
     baseTotal: "基础总额",
     back: "返回",
     next: "下一步",
