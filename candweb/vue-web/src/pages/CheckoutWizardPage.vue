@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
-import { ArrowLeft, ArrowRight, ClipboardList, Loader2, Send, Check, CheckCircle2, CircleAlert, Clock, UploadCloud, X } from "lucide-vue-next"
+import { ArrowLeft, ArrowRight, ClipboardList, Loader2, Send, CheckCircle2, CircleAlert, Clock, UploadCloud, X } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import CredentialAttachmentList from "@/components/CredentialAttachmentList.vue"
 import LocalizedDatePicker from "@/components/LocalizedDatePicker.vue"
@@ -55,14 +55,16 @@ const paymentMode = ref("FULL_PIPELINE")
 const paymentPreview = ref<any>(null)
 const exemptionStages = ref<any[]>([])
 const selectedExemptionUnitIds = ref<Record<string, boolean>>({})
+const waivedExemptionUnitIds = ref<Record<string, boolean>>({})
 const activeOrderId = ref("")
 const activeOrderAction = ref<"purchase" | "unlock" | "credential_application">("purchase")
 const activeCredentialQualIds = ref<string[]>([])
-const activeCredentialUnitId = ref("")
-const credentialApplicationLoadingUnitId = ref("")
+const activeCredentialUnitIds = ref<string[]>([])
+const credentialApplicationOrderLoading = ref(false)
 const qualificationApplications = ref<Record<string, any>>({})
 const qualificationDefinitions = ref<Record<string, any>>({})
 const expandedQualificationUnitIds = ref<Record<string, boolean>>({})
+const qualificationUploadPermissions = ref<Record<string, boolean>>({})
 const qualificationUploadedFiles = ref<Record<string, Record<string, { name: string; url: string; ext: string; hash: string; size: number }>>>({})
 const qualificationUploadingKey = ref("")
 const qualificationSubmittingUnitId = ref("")
@@ -316,7 +318,7 @@ const paymentReturnParams = computed(() => {
   if (activeOrderAction.value === "credential_application") {
     return {
       qual_ulids: activeCredentialQualIds.value.join(","),
-      qualification_unit_id: activeCredentialUnitId.value,
+      qualification_unit_ids: activeCredentialUnitIds.value.join(","),
     }
   }
   return {
@@ -730,17 +732,28 @@ async function applyBundleInfoWithQualificationDefinitions(response: any) {
 }
 
 function syncQualifiedExemptionSelections(stages: any[]) {
+  const validUnitIds = new Set<string>()
   const nextSelections: Record<string, boolean> = {}
+  const nextWaivers: Record<string, boolean> = {}
 
   for (const stage of stages) {
     for (const unit of stage.units || []) {
       const unitId = String(unit?.unit_id || "").trim()
-      if (!unitId || !unit?.qualified) continue
-      nextSelections[unitId] = true
+      if (!unitId) continue
+      validUnitIds.add(unitId)
+      if (unit?.qualified) {
+        nextSelections[unitId] = true
+        continue
+      }
+      if (selectedExemptionUnitIds.value[unitId]) nextSelections[unitId] = true
+      if (waivedExemptionUnitIds.value[unitId]) nextWaivers[unitId] = true
     }
   }
 
   selectedExemptionUnitIds.value = nextSelections
+  waivedExemptionUnitIds.value = Object.fromEntries(
+    Object.entries(nextWaivers).filter(([unitId]) => validUnitIds.has(unitId) && !nextSelections[unitId]),
+  )
 }
 
 async function fetchBundlePayload() {
@@ -805,7 +818,7 @@ async function loadPurchaseReadyBundleInfo() {
   await applyBundleInfoWithQualificationDefinitions(purchaseReadyBundle)
 
   try {
-    const pricingRes = await apiClient(`/api/mall/bundles/${encodeURIComponent(bundleId)}/pricing-detail`, { suppressErrorToast: true })
+    const pricingRes = await fetchPricingEvaluation()
     if (pricingRes && pricingRes.pricing_detail_json) {
       pricingDetail.value = pricingRes.pricing_detail_json
     }
@@ -837,7 +850,27 @@ async function fetchBundleInfo() {
 }
 
 function buildSelectedExemptionsJson() {
-  return JSON.stringify({})
+  return JSON.stringify({
+    stages: exemptionStages.value.map((stage: any) => ({
+      stage_cc_ulid: String(stage?.stage_id || stage?.stage_cc_ulid || "").trim(),
+      exempted_unit_cc_ulids: (stage?.units || [])
+        .map((unit: any) => String(unit?.unit_id || "").trim())
+        .filter((unitId: string) => unitId && selectedExemptionUnitIds.value[unitId]),
+      waived_unit_cc_ulids: (stage?.units || [])
+        .map((unit: any) => String(unit?.unit_id || "").trim())
+        .filter((unitId: string) => unitId && waivedExemptionUnitIds.value[unitId]),
+    })).filter((stage: any) => stage.stage_cc_ulid),
+  })
+}
+
+async function fetchPricingEvaluation() {
+  const params = new URLSearchParams()
+  params.set("selected_exemptions_json", buildSelectedExemptionsJson())
+  const response = await apiClient(
+    `/api/mall/bundles/${encodeURIComponent(bundleId)}/pricing-detail?${params.toString()}`,
+    { suppressErrorToast: true },
+  )
+  return response
 }
 
 
@@ -869,19 +902,6 @@ function qualificationIdsForUnit(unit: any) {
     .filter(Boolean)
 }
 
-function qualificationOrderQualIds(primaryQualId: string) {
-  const allQualIds = Array.from(new Set(
-    exemptionStages.value
-      .flatMap((stage: any) => stage.units || [])
-      .filter((unit: any) => !unit?.qualified)
-      .flatMap((unit: any) => qualificationIdsForUnit(unit)),
-  ))
-  return [
-    primaryQualId,
-    ...allQualIds.filter((qualId) => qualId !== primaryQualId),
-  ].filter(Boolean)
-}
-
 function qualificationApplicationForUnit(unit: any) {
   const applications = qualificationIdsForUnit(unit)
     .map((qualId: string) => qualificationApplications.value[qualId])
@@ -901,13 +921,6 @@ async function latestCredentialApplication(qualId: string) {
   return (response?.applications || [])[0] || null
 }
 
-async function hasQualificationUploadPermission(qualId: string) {
-  const response = await apiClient(`/api/credentials/upload-permission?cred_def_ulid=${encodeURIComponent(qualId)}`, {
-    suppressErrorToast: true,
-  })
-  return response?.granted === true
-}
-
 async function refreshQualificationApplications() {
   const qualIds = Array.from(new Set(
     exemptionStages.value
@@ -924,6 +937,19 @@ async function refreshQualificationApplications() {
     }
   }))
   qualificationApplications.value = next
+  const nextSelections = { ...selectedExemptionUnitIds.value }
+  const nextWaivers = { ...waivedExemptionUnitIds.value }
+  for (const stage of exemptionStages.value) {
+    for (const unit of stage.units || []) {
+      const unitId = String(unit?.unit_id || "").trim()
+      const state = exemptionCredentialState(unit)
+      if (!unitId || !["active", "pending", "resubmit"].includes(state)) continue
+      nextSelections[unitId] = true
+      delete nextWaivers[unitId]
+    }
+  }
+  selectedExemptionUnitIds.value = nextSelections
+  waivedExemptionUnitIds.value = nextWaivers
 }
 
 const QUALIFICATION_POLL_INTERVAL_MS = 30_000
@@ -1201,24 +1227,28 @@ async function resumeQualificationUploadAfterPayment() {
   const paymentAction = String(route.query.payment_action || "")
   const paymentStatus = String(route.query.payment_status || "")
   if (paymentAction !== "credential_application" || paymentStatus !== "success") return
-  const qualId = String(route.query.qual_ulids || "").split(",")[0]?.trim() || ""
-  const unitId = String(route.query.qualification_unit_id || "").trim()
-  const unit = exemptionUnitById(unitId) || exemptionUnitByQualId(qualId)
-  if (unit && qualId) {
-    currentStep.value = 1
+  const qualIds = String(route.query.qual_ulids || "").split(",").map((value) => value.trim()).filter(Boolean)
+  const unitIds = String(route.query.qualification_unit_ids || route.query.qualification_unit_id || "")
+    .split(",").map((value) => value.trim()).filter(Boolean)
+  currentStep.value = 1
+  await Promise.all(qualIds.map(async (qualId, index) => {
+    const unit = exemptionUnitById(unitIds[index] || "") || exemptionUnitByQualId(qualId)
+    if (!unit) return
     try {
+      qualificationUploadPermissions.value = { ...qualificationUploadPermissions.value, [qualId]: true }
       await openQualificationEditor(unit, qualId)
     } catch (error) {
       console.error(error)
       toast.error(t.value.checkoutWizard.qualificationApplicationFailed)
     }
-  }
+  }))
   const nextQuery = { ...route.query }
   delete nextQuery.payment_status
   delete nextQuery.payment_action
   delete nextQuery.order_id
   delete nextQuery.qual_ulids
   delete nextQuery.qualification_unit_id
+  delete nextQuery.qualification_unit_ids
   await router.replace({ path: route.path, query: nextQuery })
 }
 
@@ -1238,42 +1268,108 @@ function isCredentialApplicationResolvedStatus(status: unknown) {
   return String(status || "").trim().toUpperCase().includes("RESOLVED")
 }
 
-async function startQualificationApplication(unit: any) {
+function allExemptionUnits() {
+  return exemptionStages.value.flatMap((stage: any) => stage.units || [])
+}
+
+function exemptionDecision(unit: any): "exempt" | "waive" | "" {
+  const unitId = String(unit?.unit_id || "").trim()
+  if (!unitId) return ""
+  if (selectedExemptionUnitIds.value[unitId]) return "exempt"
+  if (waivedExemptionUnitIds.value[unitId]) return "waive"
+  return ""
+}
+
+function canUploadQualificationForUnit(unit: any) {
   const qualId = qualificationIdsForUnit(unit)[0] || ""
-  const orderQualIds = qualificationOrderQualIds(qualId)
-  if (!unit?.unit_id || !qualId || orderQualIds.length === 0 || !pipelineId.value || !bundleId) {
+  return Boolean(qualificationUploadPermissions.value[qualId])
+    || isApplicationResubmitStatus(qualificationApplicationForUnit(unit)?.status)
+}
+
+async function hasQualificationUploadPermission(qualId: string) {
+  const response = await apiClient(`/api/credentials/upload-permission?cred_def_ulid=${encodeURIComponent(qualId)}`, {
+    suppressErrorToast: true,
+  })
+  return response?.granted === true
+}
+
+async function setExemptionDecision(unit: any, decision: "exempt" | "waive") {
+  const unitId = String(unit?.unit_id || "").trim()
+  if (!unitId || ["active", "pending"].includes(exemptionCredentialState(unit))) return
+  const nextSelections = { ...selectedExemptionUnitIds.value }
+  const nextWaivers = { ...waivedExemptionUnitIds.value }
+  if (decision === "exempt") {
+    nextSelections[unitId] = true
+    delete nextWaivers[unitId]
+    try {
+      await openQualificationEditor(unit)
+    } catch (error) {
+      console.error(error)
+      toast.error(t.value.checkoutWizard.qualificationApplicationFailed)
+    }
+  } else {
+    nextWaivers[unitId] = true
+    delete nextSelections[unitId]
+    closeQualificationEditor(unitId)
+  }
+  selectedExemptionUnitIds.value = nextSelections
+  waivedExemptionUnitIds.value = nextWaivers
+}
+
+function selectedUnitsNeedingApplication() {
+  return allExemptionUnits().filter((unit: any) => {
+    const unitId = String(unit?.unit_id || "").trim()
+    if (!unitId || !selectedExemptionUnitIds.value[unitId]) return false
+    const state = exemptionCredentialState(unit)
+    return !["active", "pending"].includes(state) && !canUploadQualificationForUnit(unit)
+  })
+}
+
+const hasSelectedUnitsNeedingApplication = computed(() => selectedUnitsNeedingApplication().length > 0)
+const hasUndecidedExemptionUnits = computed(() => allExemptionUnits().some((unit: any) => !exemptionDecision(unit)))
+
+async function startSelectedQualificationApplications() {
+  const selectedUnits = selectedUnitsNeedingApplication()
+  if (selectedUnits.length === 0 || !pipelineId.value || !bundleId) {
     toast.error(t.value.checkoutWizard.qualificationApplicationFailed)
     return
   }
 
-  credentialApplicationLoadingUnitId.value = unit.unit_id
+  credentialApplicationOrderLoading.value = true
   try {
-    const existingApplication = qualificationApplications.value[qualId] || await latestCredentialApplication(qualId)
-    if (existingApplication) {
-      qualificationApplications.value = {
-        ...qualificationApplications.value,
-        [qualId]: existingApplication,
+    const unitsForNewOrder: any[] = []
+    for (const unit of selectedUnits) {
+      const qualId = qualificationIdsForUnit(unit)[0] || ""
+      if (!qualId) continue
+      const existingApplication = qualificationApplications.value[qualId] || await latestCredentialApplication(qualId)
+      if (existingApplication) {
+        qualificationApplications.value = { ...qualificationApplications.value, [qualId]: existingApplication }
+        if (isApplicationPendingStatus(existingApplication.status)) {
+          toast.info(t.value.checkoutWizard.qualificationUnderReview)
+          return
+        }
+        if (isApplicationApprovedStatus(existingApplication.status)) {
+          await loadPurchaseReadyBundleInfo()
+          continue
+        }
+        if (isApplicationResubmitStatus(existingApplication.status)) {
+          qualificationUploadPermissions.value = { ...qualificationUploadPermissions.value, [qualId]: true }
+          await openQualificationEditor(unit, qualId)
+          continue
+        }
       }
-      if (isApplicationPendingStatus(existingApplication.status)) {
-        toast.info(t.value.checkoutWizard.qualificationUnderReview)
-        return
-      }
-      if (isApplicationApprovedStatus(existingApplication.status)) {
-        toast.success(t.value.checkoutWizard.qualificationAlreadyApproved)
-        await loadPurchaseReadyBundleInfo()
-        return
-      }
-      if (isApplicationResubmitStatus(existingApplication.status)) {
+      if (await hasQualificationUploadPermission(qualId)) {
+        qualificationUploadPermissions.value = { ...qualificationUploadPermissions.value, [qualId]: true }
         await openQualificationEditor(unit, qualId)
-        return
+        continue
       }
+      unitsForNewOrder.push(unit)
     }
 
-    if (await hasQualificationUploadPermission(qualId)) {
-      toast.info(t.value.checkoutWizard.qualificationUploadReady)
-      await openQualificationEditor(unit, qualId)
-      return
-    }
+    if (unitsForNewOrder.length === 0) return
+    const orderQualIds = Array.from(new Set(unitsForNewOrder.flatMap((unit: any) => qualificationIdsForUnit(unit))))
+    const selectedUnitIds = unitsForNewOrder.map((unit: any) => String(unit?.unit_id || "").trim()).filter(Boolean)
+    if (orderQualIds.length === 0) throw new Error(t.value.checkoutWizard.qualificationApplicationFailed)
 
     let order
     try {
@@ -1302,7 +1398,12 @@ async function startQualificationApplication(unit: any) {
     const orderStatus = String(order?.order_status || "")
     if (isUploadReadyStatus(orderStatus)) {
       toast.info(t.value.checkoutWizard.qualificationUploadReady)
-      await openQualificationEditor(unit, qualId)
+      for (const unit of unitsForNewOrder) {
+        const qualId = qualificationIdsForUnit(unit)[0] || ""
+        if (!qualId) continue
+        qualificationUploadPermissions.value = { ...qualificationUploadPermissions.value, [qualId]: true }
+        await openQualificationEditor(unit, qualId)
+      }
       return
     }
     if (isCredentialApplicationUnderReviewStatus(orderStatus)) {
@@ -1319,7 +1420,7 @@ async function startQualificationApplication(unit: any) {
         throw new Error(t.value.checkoutWizard.qualificationApplicationFailed)
       }
       activeCredentialQualIds.value = orderQualIds
-      activeCredentialUnitId.value = unit.unit_id
+      activeCredentialUnitIds.value = selectedUnitIds
       activeOrderAction.value = "credential_application"
       activeOrderId.value = orderId
       currentStep.value = 4
@@ -1332,19 +1433,30 @@ async function startQualificationApplication(unit: any) {
       ? error.message
       : t.value.checkoutWizard.qualificationApplicationFailed)
   } finally {
-    credentialApplicationLoadingUnitId.value = ""
+    credentialApplicationOrderLoading.value = false
   }
 }
 
-async function onExemptionToggle(unit: any, event: Event) {
-  const input = event.target as HTMLInputElement | null
-  if (!unit?.unit_id) return
-  if (unit.qualified) return
-  if (input?.checked) await startQualificationApplication(unit)
-  else closeQualificationEditor(unit.unit_id)
-}
-
 async function nextFromStep1() {
+  if (hasUndecidedExemptionUnits.value) {
+    toast.info(t.value.checkoutWizard.exemptionDecisionRequired)
+    return
+  }
+  if (hasSelectedUnitsNeedingApplication.value) {
+    toast.info(t.value.checkoutWizard.applySelectedExemptionsFirst)
+    return
+  }
+  try {
+    const evaluation = await fetchPricingEvaluation()
+    if (evaluation?.can_checkout === false) {
+      toast.info(evaluation?.checkout_blocker_reason || t.value.checkoutWizard.checkoutBlockedByExemption)
+      return
+    }
+  } catch (error) {
+    console.error(error)
+    toast.error(t.value.checkoutWizard.pricingRefreshFailed)
+    return
+  }
   currentStep.value = 2
 }
 
@@ -1415,17 +1527,6 @@ function exemptionCredentialBadgeClass(unit: any) {
       return "bg-rose-100 text-rose-800"
     default:
       return "bg-slate-100 text-slate-700"
-  }
-}
-
-function qualificationActionLabel(unit: any) {
-  switch (exemptionCredentialState(unit)) {
-    case "pending":
-      return t.value.checkoutWizard.statusPending
-    case "resubmit":
-      return t.value.checkoutWizard.resubmitQualification
-    default:
-      return t.value.checkoutWizard.applyQualification
   }
 }
 
@@ -1679,7 +1780,7 @@ async function cancelPaymentOrderAndReturn() {
     activeOrderId.value = ""
     if (action === "credential_application") {
       activeCredentialQualIds.value = []
-      activeCredentialUnitId.value = ""
+      activeCredentialUnitIds.value = []
       currentStep.value = 1
     } else {
       currentStep.value = paymentReturnStep.value === 1 && exemptionStages.value.length === 0
@@ -1839,38 +1940,53 @@ function closePaymentEditDialog() {
                       </div>
                     </div>
                     
-                    <div class="checkout-unit-footer mt-auto pt-4 flex items-center justify-between border-t border-slate-100">
-                      <label :class="['checkout-unit-option', unit.qualified ? 'cursor-default' : 'cursor-pointer']">
-                        <div class="relative flex items-center justify-center">
-                          <input
-                            data-testid="checkout-exemption-toggle"
-                            :data-unit-id="unit.unit_id"
-                            type="checkbox"
-                            class="peer sr-only"
-                            :checked="unit.qualified ? Boolean(selectedExemptionUnitIds[unit.unit_id]) : isQualificationEditorExpanded(unit.unit_id)"
-                            :disabled="unit.qualified || credentialApplicationLoadingUnitId === unit.unit_id || exemptionCredentialState(unit) === 'pending'"
-                            @change="onExemptionToggle(unit, $event)"
-                          />
-                          <div class="checkout-unit-checkbox h-6 w-6 rounded-md border-2 border-slate-300 bg-white transition-all peer-checked:border-emerald-500 peer-checked:bg-emerald-500"></div>
-                          <Loader2 v-if="credentialApplicationLoadingUnitId === unit.unit_id" class="pointer-events-none absolute h-4 w-4 animate-spin text-blue-600" />
-                          <Check v-else class="pointer-events-none absolute h-4 w-4 text-white opacity-0 transition-opacity peer-checked:opacity-100" />
-                        </div>
+                    <div class="checkout-unit-footer mt-auto border-t border-slate-100 pt-4">
+                      <div v-if="['active', 'pending'].includes(exemptionCredentialState(unit))" class="flex items-center justify-between gap-3">
                         <span class="checkout-unit-action font-medium text-slate-700">
-                          {{ unit.qualified ? t.checkoutWizard.automaticExemptionApplied : qualificationActionLabel(unit) }}
+                          {{ exemptionCredentialState(unit) === 'active'
+                            ? t.checkoutWizard.automaticExemptionApplied
+                            : t.checkoutWizard.qualificationUnderReview }}
                         </span>
-                        <span
-                          v-if="selectedExemptionUnitIds[unit.unit_id]"
-                          class="checkout-unit-selected-price"
+                      </div>
+                      <div v-else class="grid gap-2 sm:grid-cols-2" role="group" :aria-label="t.checkoutWizard.exemptionDecisionLabel">
+                        <button
+                          type="button"
+                          data-testid="checkout-exemption-apply"
+                          :data-unit-id="unit.unit_id"
+                          :class="[
+                            'btn min-h-11 justify-center rounded-lg border px-3 text-sm',
+                            exemptionDecision(unit) === 'exempt'
+                              ? 'border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700'
+                              : 'border-slate-300 bg-white text-slate-700 hover:border-emerald-500 hover:text-emerald-700',
+                          ]"
+                          @click="setExemptionDecision(unit, 'exempt')"
                         >
+                          <CheckCircle2 class="h-4 w-4" />
+                          {{ t.checkoutWizard.applyExemptionDecision }}
+                        </button>
+                        <button
+                          type="button"
+                          data-testid="checkout-exemption-waive"
+                          :data-unit-id="unit.unit_id"
+                          :class="[
+                            'btn min-h-11 justify-center rounded-lg border px-3 text-sm',
+                            exemptionDecision(unit) === 'waive'
+                              ? 'border-blue-600 bg-blue-600 text-white hover:bg-blue-700'
+                              : 'border-slate-300 bg-white text-slate-700 hover:border-blue-500 hover:text-blue-700',
+                          ]"
+                          @click="setExemptionDecision(unit, 'waive')"
+                        >
+                          {{ t.checkoutWizard.waiveExemptionDecision }}
+                        </button>
+                      </div>
+                      <div class="mt-3 flex items-center justify-end">
+                        <span v-if="selectedExemptionUnitIds[unit.unit_id]" class="checkout-unit-selected-price">
                           {{ formatMoney(0, unitPriceDisplay[unit.unit_id]?.currency) }}
                         </span>
-                        <strong
-                          v-else-if="unitPriceDisplay[unit.unit_id]?.accessAmount !== undefined"
-                          class="checkout-unit-default-price"
-                        >
+                        <strong v-else-if="unitPriceDisplay[unit.unit_id]?.accessAmount !== undefined" class="checkout-unit-default-price">
                           {{ formatMoney(unitPriceDisplay[unit.unit_id]?.accessAmount, unitPriceDisplay[unit.unit_id]?.currency) }}
                         </strong>
-                      </label>
+                      </div>
                     </div>
 
                     <div
@@ -1897,10 +2013,7 @@ function closePaymentEditDialog() {
                           class="mt-5 border-t border-blue-100 pt-5"
                         />
 
-                        <div
-                          v-if="Array.isArray(qualificationDefinitionForUnit(unit)?.file_constraints)"
-                          class="mt-5 grid gap-4 sm:grid-cols-2"
-                        >
+                        <div v-if="Array.isArray(qualificationDefinitionForUnit(unit)?.file_constraints)" class="mt-5 grid gap-4 sm:grid-cols-2">
                           <div
                             v-for="constraint in qualificationDefinitionForUnit(unit)?.file_constraints || []"
                             :key="constraint.name"
@@ -1911,7 +2024,7 @@ function closePaymentEditDialog() {
                               <span>{{ qualificationConstraintDisplayName(constraint) }}</span>
                             </div>
                             <p class="mt-1 text-xs text-slate-500">{{ qualificationFormatHint(constraint) }}</p>
-                            <div class="mt-3 flex flex-wrap items-center gap-3">
+                            <div v-if="canUploadQualificationForUnit(unit)" class="mt-3 flex flex-wrap items-center gap-3">
                               <button
                                 type="button"
                                 class="btn btn-outline h-9 rounded-lg px-3 text-xs"
@@ -1949,7 +2062,7 @@ function closePaymentEditDialog() {
                           </div>
                         </div>
 
-                        <div class="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                        <div v-if="canUploadQualificationForUnit(unit)" class="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                           <button
                             type="button"
                             class="btn btn-outline"
@@ -1970,10 +2083,27 @@ function closePaymentEditDialog() {
                               : t.credentialsPage.submitApplication }}
                           </button>
                         </div>
+                        <div v-if="!canUploadQualificationForUnit(unit)" class="mt-5 rounded-xl border border-blue-200 bg-white px-4 py-3 text-sm leading-6 text-blue-900">
+                          {{ t.checkoutWizard.uploadAfterPaymentHint }}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
+              </div>
+              <div v-if="hasSelectedUnitsNeedingApplication" class="mt-5 flex justify-end">
+                <button
+                  type="button"
+                  data-testid="checkout-apply-selected-exemptions"
+                  class="btn min-h-11 rounded-lg bg-emerald-600 px-5 text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  :disabled="credentialApplicationOrderLoading"
+                  @click="startSelectedQualificationApplications"
+                >
+                  <Loader2 v-if="credentialApplicationOrderLoading" class="h-4 w-4 animate-spin" />
+                  {{ credentialApplicationOrderLoading
+                    ? t.checkoutWizard.applyingSelectedExemptions
+                    : t.checkoutWizard.applySelectedExemptions }}
+                </button>
               </div>
               <div v-if="bundleData" class="checkout-step-actions mt-6 flex flex-col items-stretch">
                 <section

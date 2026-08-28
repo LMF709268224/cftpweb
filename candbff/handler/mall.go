@@ -61,13 +61,18 @@ type bundleActiveOrderSummary struct {
 }
 
 type bundlePaymentPreviewSummary struct {
-	Subtotal      int64                  `json:"subtotal"`
-	DiscountTotal int64                  `json:"discount_total"`
-	TaxTotal      int64                  `json:"tax_total"`
-	Total         int64                  `json:"total"`
-	Currency      string                 `json:"currency,omitempty"`
-	Breakdown     []bundleCouponDiscount `json:"breakdown,omitempty"`
-	Invalid       []bundleInvalidCoupon  `json:"invalid,omitempty"`
+	Subtotal              int64                          `json:"subtotal"`
+	DiscountTotal         int64                          `json:"discount_total"`
+	TaxTotal              int64                          `json:"tax_total"`
+	Total                 int64                          `json:"total"`
+	Currency              string                         `json:"currency,omitempty"`
+	Breakdown             []bundleCouponDiscount         `json:"breakdown,omitempty"`
+	Invalid               []bundleInvalidCoupon          `json:"invalid,omitempty"`
+	CanCheckout           bool                           `json:"can_checkout"`
+	CheckoutBlockerReason string                         `json:"checkout_blocker_reason,omitempty"`
+	PreviewPayAmount      int64                          `json:"preview_pay_amount"`
+	TotalSavedAmount      int64                          `json:"total_saved_amount"`
+	UnitsPreview          []*mallpb.UnitExemptionPreview `json:"units_preview,omitempty"`
 }
 
 type bundleCouponDiscount struct {
@@ -523,19 +528,27 @@ func (h *Handler) GetBundleDetail(w http.ResponseWriter, r *http.Request) {
 // GetBundlePricingDetail GET /api/mall/bundles/{bundleId}/pricing-detail
 func (h *Handler) GetBundlePricingDetail(w http.ResponseWriter, r *http.Request) {
 	bundleId := strings.TrimSpace(chi.URLParam(r, "bundleId"))
+	candidateID := CandidateID(r)
 	if !requireRequestField(w, bundleId, "bundle_id") {
 		return
 	}
 	resp, err := h.Mall.GetBundlePricingDetail(r.Context(), &mallpb.GetBundlePricingDetailRequest{
-		Query: &mallpb.GetBundlePricingDetailRequest_BundleUlid{BundleUlid: bundleId},
+		Query:                  &mallpb.GetBundlePricingDetailRequest_BundleUlid{BundleUlid: bundleId},
+		CandidateUlid:          candidateID,
+		SelectedExemptionsJson: strings.TrimSpace(r.URL.Query().Get("selected_exemptions_json")),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
 	}
 	WriteJSON(w, http.StatusOK, map[string]interface{}{
-		"bundle":              h.enrichBundle(r.Context(), resp.GetBundle(), h.newBundleEnrichmentState(r.Context(), CandidateID(r), requestLocale(r))),
-		"pricing_detail_json": resp.GetPricingDetailJson(),
+		"bundle":                  h.enrichBundle(r.Context(), resp.GetBundle(), h.newBundleEnrichmentState(r.Context(), candidateID, requestLocale(r))),
+		"pricing_detail_json":     resp.GetPricingDetailJson(),
+		"can_checkout":            resp.GetCanCheckout(),
+		"checkout_blocker_reason": resp.GetCheckoutBlockerReason(),
+		"preview_pay_amount":      resp.GetPreviewPayAmount(),
+		"total_saved_amount":      resp.GetTotalSavedAmount(),
+		"units_preview":           resp.GetUnitsPreview(),
 	})
 }
 
@@ -958,11 +971,16 @@ func toBundlePaymentPreviewSummary(resp *mallpb.PreviewPaymentResponse) *bundleP
 		return nil
 	}
 	out := &bundlePaymentPreviewSummary{
-		Subtotal:      resp.GetSubtotal(),
-		DiscountTotal: resp.GetDiscountTotal(),
-		TaxTotal:      resp.GetTaxTotal(),
-		Total:         resp.GetTotal(),
-		Currency:      resp.GetCurrency(),
+		Subtotal:              resp.GetSubtotal(),
+		DiscountTotal:         resp.GetDiscountTotal(),
+		TaxTotal:              resp.GetTaxTotal(),
+		Total:                 resp.GetTotal(),
+		Currency:              resp.GetCurrency(),
+		CanCheckout:           resp.GetCanCheckout(),
+		CheckoutBlockerReason: resp.GetCheckoutBlockerReason(),
+		PreviewPayAmount:      resp.GetPreviewPayAmount(),
+		TotalSavedAmount:      resp.GetTotalSavedAmount(),
+		UnitsPreview:          resp.GetUnitsPreview(),
 	}
 	for _, item := range resp.GetBreakdown() {
 		if item == nil {
@@ -990,15 +1008,17 @@ func toBundlePaymentPreviewSummary(resp *mallpb.PreviewPaymentResponse) *bundleP
 	return out
 }
 
-func (h *Handler) previewPaymentSummary(ctx context.Context, bizType string, bizRefULID string) *bundlePaymentPreviewSummary {
+func (h *Handler) previewPaymentSummary(ctx context.Context, candidateID string, bizType string, bizRefULID string) *bundlePaymentPreviewSummary {
+	candidateID = strings.TrimSpace(candidateID)
 	bizType = strings.TrimSpace(bizType)
 	bizRefULID = strings.TrimSpace(bizRefULID)
-	if bizType == "" || bizRefULID == "" {
+	if candidateID == "" || bizType == "" || bizRefULID == "" {
 		return nil
 	}
 	resp, err := h.Mall.PreviewPayment(ctx, &mallpb.PreviewPaymentRequest{
-		BizType:    bizType,
-		BizRefUlid: bizRefULID,
+		CandidateUlid: candidateID,
+		BizType:       bizType,
+		BizRefUlid:    bizRefULID,
 	})
 	if err != nil {
 		slog.Warn("Failed to preview bundle payment during enrichment", "error", err, "biz_type", bizType, "biz_ref_ulid", bizRefULID)
@@ -1050,7 +1070,7 @@ func (h *Handler) activeBundleOrder(ctx context.Context, candidateID string, bun
 			CanCancel:  canCancelBusinessOrder(orderBizBundlePurchase, bundleOrderStatus(order)),
 			Message:    "in-progress purchase order exists",
 		}
-		return active, h.previewPaymentSummary(ctx, orderBizBundlePurchase, orderID)
+		return active, h.previewPaymentSummary(ctx, candidateID, orderBizBundlePurchase, orderID)
 	}
 
 	// If not found for exact bundle, but we are BLOCKED by an in-progress purchase
@@ -1104,7 +1124,7 @@ func (h *Handler) activeBundleOrder(ctx context.Context, candidateID string, bun
 				}
 
 				if strings.TrimSpace(orderBundleID) == bundleID {
-					return active, h.previewPaymentSummary(ctx, orderBizBundlePurchase, orderID)
+					return active, h.previewPaymentSummary(ctx, candidateID, orderBizBundlePurchase, orderID)
 				}
 
 				if strings.TrimSpace(orderBundleID) != "" && strings.TrimSpace(bundleGpath) != "" {
@@ -1113,7 +1133,7 @@ func (h *Handler) activeBundleOrder(ctx context.Context, candidateID string, bun
 					})
 					if err == nil && bResp.GetBundle() != nil {
 						if bResp.GetBundle().GetBundleGpath() == bundleGpath {
-							return active, h.previewPaymentSummary(ctx, orderBizBundlePurchase, orderID)
+							return active, h.previewPaymentSummary(ctx, candidateID, orderBizBundlePurchase, orderID)
 						}
 					}
 				}
@@ -1945,9 +1965,10 @@ func (h *Handler) PreviewPayment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := h.Mall.PreviewPayment(r.Context(), &mallpb.PreviewPaymentRequest{
-		BizType:    req.BizType,
-		BizRefUlid: req.BizRefUlid,
-		PromoCodes: compactPromoCodes(req.PromoCodes, req.CouponCodes),
+		CandidateUlid: candidateID,
+		BizType:       req.BizType,
+		BizRefUlid:    req.BizRefUlid,
+		PromoCodes:    compactPromoCodes(req.PromoCodes, req.CouponCodes),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)

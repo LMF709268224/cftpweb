@@ -15,13 +15,15 @@ import (
 )
 
 type createStageOrderReq struct {
-	PipelineUlid string `json:"pipeline_ulid"`
-	StageUlid    string `json:"stage_ulid"`
+	PipelineUlid           string `json:"pipeline_ulid"`
+	StageUlid              string `json:"stage_ulid"`
+	SelectedExemptionsJSON string `json:"selected_exemptions_json"`
 }
 
 type selectStageExemptionsReq struct {
 	StageCcUlid         string   `json:"stage_cc_ulid"`
 	ExemptedUnitCcUlids []string `json:"exempted_unit_cc_ulids"`
+	WaivedUnitCcUlids   []string `json:"waived_unit_cc_ulids"`
 }
 
 // CreateStageOrder POST /api/mall/pipelines/{pipelineId}/stages/{stageId}/purchase
@@ -66,12 +68,13 @@ func (h *Handler) CreateStageOrder(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := h.Mall.CreateStageOrder(ctx, &mallpb.CreateStageOrderRequest{
-		CandidateUlid:     candidateID,
-		PipelineCcUlid:    pipelineID,
-		PipelineOrderUlid: pipelineOrder.GetPipelineOrderUlid(),
-		StageUlid:         input.StageUlid,
-		StageCcUlid:       stageID,
-		BundleOrderUlid:   pipelineOrder.GetBundleOrderUlid(),
+		CandidateUlid:          candidateID,
+		PipelineCcUlid:         pipelineID,
+		PipelineOrderUlid:      pipelineOrder.GetPipelineOrderUlid(),
+		StageUlid:              input.StageUlid,
+		StageCcUlid:            stageID,
+		BundleOrderUlid:        pipelineOrder.GetBundleOrderUlid(),
+		SelectedExemptionsJson: strings.TrimSpace(input.SelectedExemptionsJSON),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -93,6 +96,7 @@ func (h *Handler) SelectStageExemptions(w http.ResponseWriter, r *http.Request) 
 	}
 	input.StageCcUlid = strings.TrimSpace(input.StageCcUlid)
 	input.ExemptedUnitCcUlids = compactStageExemptionUnitIDs(input.ExemptedUnitCcUlids)
+	input.WaivedUnitCcUlids = compactStageExemptionUnitIDs(input.WaivedUnitCcUlids)
 
 	if !requireRequestFields(
 		w,
@@ -120,6 +124,7 @@ func (h *Handler) SelectStageExemptions(w http.ResponseWriter, r *http.Request) 
 	exemptionsJSON, err := json.Marshal(map[string]any{
 		"stage_cc_ulid":          input.StageCcUlid,
 		"exempted_unit_cc_ulids": input.ExemptedUnitCcUlids,
+		"waived_unit_cc_ulids":   input.WaivedUnitCcUlids,
 	})
 	if err != nil {
 		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to encode stage exemptions")
