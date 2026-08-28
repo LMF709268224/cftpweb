@@ -159,6 +159,10 @@ function getFormatHint(constraint: any) {
   return t.value.credentialsPage.supportedFormats.replace("{{exts}}", extText).replace("{{limit}}", info.maxLabel)
 }
 
+function constraintDisplayName(constraint: any) {
+  return String(constraint?.display_name || constraint?.name || "")
+}
+
 function triggerFileInput(constraintName: string) {
   document.getElementById(`file-${constraintName}`)?.click()
 }
@@ -494,7 +498,7 @@ watch(lang, () => {
             <div v-for="constraint in selectedDef?.file_constraints || []" :key="constraint.name" class="space-y-2 rounded-lg bg-muted p-3">
               <div class="flex items-center gap-1">
                 <span v-if="constraint.is_required" class="text-sm font-bold text-destructive">*</span>
-                <span class="font-medium">{{ constraint.name }}</span>
+                <span class="font-medium">{{ constraintDisplayName(constraint) }}</span>
               </div>
               <div class="mt-2 flex items-center gap-2">
                 <button type="button" class="btn btn-outline cursor-pointer rounded-lg px-3 py-1.5 text-xs hover:border-primary/25 hover:bg-primary/10 hover:text-primary" :disabled="Boolean(uploadingConstraintName)" @click="triggerFileInput(constraint.name)">

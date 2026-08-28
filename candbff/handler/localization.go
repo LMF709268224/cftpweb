@@ -431,29 +431,54 @@ func normalizeTranslationKey(value string) string {
 }
 
 func (h *Handler) localizedCredentialDefinition(ctx context.Context, definition *gcredspb.CredentialDefinition, locale string) *gcredspb.CredentialDefinition {
+	localized, _ := h.localizedCredentialDefinitionWithTranslation(ctx, definition, locale)
+	return localized
+}
+
+func (h *Handler) localizedCredentialDefinitionWithTranslation(ctx context.Context, definition *gcredspb.CredentialDefinition, locale string) (*gcredspb.CredentialDefinition, *gcredspb.CredDefTranslation) {
 	locale = normalizedLocale(locale)
 	if definition == nil || locale == "" || h.Creds == nil {
-		return definition
+		return definition, nil
 	}
 	translation := h.credentialDefinitionTranslation(ctx, definition.GetCredDefUlid(), locale)
 	if translation == nil {
-		return definition
+		return definition, nil
 	}
 
 	localized := proto.Clone(definition).(*gcredspb.CredentialDefinition)
 	localized.Name = translatedText(localized.GetName(), translation.GetName())
 	localized.Description = translatedText(localized.GetDescription(), translation.GetDescription())
 	localized.AcquisitionMethod = translatedText(localized.GetAcquisitionMethod(), translation.GetAcquisitionMethod())
-	for _, constraint := range localized.GetFileConstraints() {
+	return localized, translation
+}
+
+type credentialFileConstraintPayload struct {
+	Name        string                      `json:"name"`
+	DisplayName string                      `json:"display_name"`
+	Type        gcredspb.CredentialFileType `json:"type"`
+	IsRequired  bool                        `json:"is_required"`
+}
+
+func credentialFileConstraintPayloads(definition *gcredspb.CredentialDefinition, translation *gcredspb.CredDefTranslation) []credentialFileConstraintPayload {
+	constraints := definition.GetFileConstraints()
+	payloads := make([]credentialFileConstraintPayload, 0, len(constraints))
+	for _, constraint := range constraints {
 		if constraint == nil {
 			continue
 		}
-		constraint.Name = translatedText(
-			constraint.GetName(),
-			translation.GetFileConstraintNames()[normalizeTranslationKey(constraint.GetName())],
-		)
+		name := constraint.GetName()
+		displayName := name
+		if translation != nil {
+			displayName = translatedText(name, translation.GetFileConstraintNames()[normalizeTranslationKey(name)])
+		}
+		payloads = append(payloads, credentialFileConstraintPayload{
+			Name:        name,
+			DisplayName: displayName,
+			Type:        constraint.GetType(),
+			IsRequired:  constraint.GetIsRequired(),
+		})
 	}
-	return localized
+	return payloads
 }
 
 func (h *Handler) credentialDefinitionTranslation(ctx context.Context, credentialDefinitionID string, locale string) *gcredspb.CredDefTranslation {

@@ -742,6 +742,7 @@ export const en: AppTranslations = {
         step2: "2 Register",
         step3: "3 Review",
         step4: "4 Pay",
+        includedItems: "Included items",
         baseTotal: "Base Total",
         back: "Back",
         next: "Next",

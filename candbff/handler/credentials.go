@@ -25,7 +25,8 @@ func (h *Handler) ListCredentialDefinitions(w http.ResponseWriter, r *http.Reque
 				HandleGrpcError(w, err)
 				return
 			}
-			def = h.localizedCredentialDefinition(r.Context(), def, locale)
+			var translation *gcredspb.CredDefTranslation
+			def, translation = h.localizedCredentialDefinitionWithTranslation(r.Context(), def, locale)
 			latestApplication, err := h.latestCredentialApplication(r.Context(), candidateID, qualID)
 			if err != nil {
 				HandleGrpcError(w, err)
@@ -36,7 +37,7 @@ func (h *Handler) ListCredentialDefinitions(w http.ResponseWriter, r *http.Reque
 				"cred_def_id":        def.GetCredDefUlid(),
 				"name":               def.GetName(),
 				"description":        def.GetDescription(),
-				"file_constraints":   def.GetFileConstraints(),
+				"file_constraints":   credentialFileConstraintPayloads(def, translation),
 				"category":           def.GetCategory(),
 				"respath":            def.GetRespath(),
 				"acquisition_method": def.GetAcquisitionMethod(),
@@ -72,13 +73,14 @@ func (h *Handler) ListCredentialDefinitions(w http.ResponseWriter, r *http.Reque
 		}
 		detailRes, err := h.Creds.GetCredentialDefinitionDetail(r.Context(), detailReq)
 		if err == nil && detailRes != nil {
-			detailRes = h.localizedCredentialDefinition(r.Context(), detailRes, locale)
+			var translation *gcredspb.CredDefTranslation
+			detailRes, translation = h.localizedCredentialDefinitionWithTranslation(r.Context(), detailRes, locale)
 			details = append(details, map[string]interface{}{
 				"cred_def_ulid":      detailRes.GetCredDefUlid(),
 				"cred_def_id":        detailRes.GetCredDefUlid(),
 				"name":               detailRes.GetName(),
 				"description":        detailRes.GetDescription(),
-				"file_constraints":   detailRes.GetFileConstraints(),
+				"file_constraints":   credentialFileConstraintPayloads(detailRes, translation),
 				"category":           detailRes.GetCategory(),
 				"respath":            detailRes.GetRespath(),
 				"acquisition_method": detailRes.GetAcquisitionMethod(),

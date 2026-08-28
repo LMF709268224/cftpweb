@@ -151,6 +151,84 @@ const dynamicPaymentPreview = computed(() => {
   }
 })
 
+type PurchaseLineItem = {
+  key: string
+  itemId: string
+  name: string
+  stageName: string
+  amount: number
+  currency: string
+  kind: "course" | "membership"
+}
+
+const purchaseLineItems = computed<PurchaseLineItem[]>(() => {
+  if (!pricingDetail.value) return []
+
+  try {
+    const detail = typeof pricingDetail.value === "string" ? JSON.parse(pricingDetail.value) : pricingDetail.value
+    const includedUnitIds = includedPurchaseUnitIds()
+    const exemptedUnitIds = selectedExemptedUnitIds()
+    const unitDetails = new Map<string, { name: string, stageName: string }>()
+
+    for (const stage of bundleData.value?.stages || []) {
+      const stageName = String(stage?.name || "").trim()
+      for (const unit of stage?.units || []) {
+        const unitId = String(unit?.unit_id || "").trim()
+        if (!unitId) continue
+        unitDetails.set(unitId, {
+          name: String(unit?.unit_name || unit?.name || unitId).trim() || unitId,
+          stageName,
+        })
+      }
+    }
+
+    const items: PurchaseLineItem[] = []
+    if (Array.isArray(detail?.units)) {
+      for (const unit of detail.units) {
+        const unitId = String(unit?.unit_id || "").trim()
+        const amount = unit?.access?.amount
+        if (!unitId || !includedUnitIds.has(unitId) || exemptedUnitIds.has(unitId) || typeof amount !== "number") continue
+        const unitDetail = unitDetails.get(unitId)
+        items.push({
+          key: `course:${unitId}`,
+          itemId: unitId,
+          name: unitDetail?.name || unitId,
+          stageName: unitDetail?.stageName || "",
+          amount,
+          currency: String(unit?.access?.currency || "USD"),
+          kind: "course",
+        })
+      }
+    }
+
+    if (Array.isArray(detail?.memberships)) {
+      for (const membership of detail.memberships) {
+        const membershipId = String(membership?.membership_id || "").trim()
+        const amount = membership?.price?.amount
+        if (!membershipId || typeof amount !== "number") continue
+        const configuredMembershipId = String(bundleData.value?.membership_id || "").trim()
+        const configuredMembershipName = membershipId === configuredMembershipId
+          ? String(bundleData.value?.membership_name || "").trim()
+          : ""
+        items.push({
+          key: `membership:${membershipId}`,
+          itemId: membershipId,
+          name: configuredMembershipName || membershipId,
+          stageName: "",
+          amount,
+          currency: String(membership?.price?.currency || "USD"),
+          kind: "membership",
+        })
+      }
+    }
+
+    return items
+  } catch (err) {
+    console.error("Failed to build purchase line items", err)
+    return []
+  }
+})
+
 const unitPriceDisplay = computed<Record<string, { accessAmount?: number, exemptionAmount?: number, currency: string }>>(() => {
   if (!pricingDetail.value) return {}
 
@@ -645,6 +723,12 @@ async function refreshCheckoutQualificationDefinitions() {
   applyQualificationDefinitionsToStages(definitionsById)
 }
 
+async function applyBundleInfoWithQualificationDefinitions(response: any) {
+  applyBundleInfo(response)
+  applyQualificationDefinitionsToStages(qualificationDefinitions.value)
+  await refreshCheckoutQualificationDefinitions()
+}
+
 function syncQualifiedExemptionSelections(stages: any[]) {
   const nextSelections: Record<string, boolean> = {}
 
@@ -700,8 +784,7 @@ async function completeTemporaryCftpUnlock(response: any) {
 
 async function loadBundleInfo() {
   const response = await fetchBundlePayload()
-  applyBundleInfo(response)
-  await refreshCheckoutQualificationDefinitions()
+  await applyBundleInfoWithQualificationDefinitions(response)
   await refreshQualificationApplications()
   return response
 }
@@ -710,8 +793,7 @@ async function refreshLocalizedCheckoutContent() {
   if (!bundleId) return
   try {
     const response = await fetchBundlePayload()
-    applyBundleInfo(response)
-    await refreshCheckoutQualificationDefinitions()
+    await applyBundleInfoWithQualificationDefinitions(response)
   } catch (error) {
     console.warn("Failed to refresh localized checkout content", error)
   }
@@ -720,8 +802,7 @@ async function refreshLocalizedCheckoutContent() {
 async function loadPurchaseReadyBundleInfo() {
   const response = await fetchBundlePayload()
   const purchaseReadyBundle = await completeTemporaryCftpUnlock(response)
-  applyBundleInfo(purchaseReadyBundle)
-  await refreshCheckoutQualificationDefinitions()
+  await applyBundleInfoWithQualificationDefinitions(purchaseReadyBundle)
 
   try {
     const pricingRes = await apiClient(`/api/mall/bundles/${encodeURIComponent(bundleId)}/pricing-detail`, { suppressErrorToast: true })
@@ -866,7 +947,7 @@ async function pollQualificationApplications() {
     if (hadPendingApplications && !hasPendingQualificationApplications()) {
       const response = await fetchBundlePayload()
       const purchaseReadyBundle = await completeTemporaryCftpUnlock(response)
-      applyBundleInfo(purchaseReadyBundle)
+      await applyBundleInfoWithQualificationDefinitions(purchaseReadyBundle)
     }
   } catch {
     // Ignore background polling errors. The next interval will retry.
@@ -981,6 +1062,10 @@ function qualificationFormatHint(constraint: any) {
   return t.value.credentialsPage.supportedFormats
     .replace("{{exts}}", extText)
     .replace("{{limit}}", info.maxLabel)
+}
+
+function qualificationConstraintDisplayName(constraint: any) {
+  return String(constraint?.display_name || constraint?.name || "")
 }
 
 function qualificationUploadSuccessText(fileName: string) {
@@ -1823,7 +1908,7 @@ function closePaymentEditDialog() {
                           >
                             <div class="flex items-center gap-1 text-sm font-semibold text-slate-800">
                               <span v-if="constraint.is_required" class="text-rose-500">*</span>
-                              <span>{{ constraint.name }}</span>
+                              <span>{{ qualificationConstraintDisplayName(constraint) }}</span>
                             </div>
                             <p class="mt-1 text-xs text-slate-500">{{ qualificationFormatHint(constraint) }}</p>
                             <div class="mt-3 flex flex-wrap items-center gap-3">
@@ -1890,7 +1975,29 @@ function closePaymentEditDialog() {
                   </div>
                 </div>
               </div>
-              <div v-if="bundleData" class="checkout-step-actions mt-6 flex items-center justify-end">
+              <div v-if="bundleData" class="checkout-step-actions mt-6 flex flex-col items-stretch">
+                <section
+                  v-if="purchaseLineItems.length > 0"
+                  class="checkout-included-items"
+                  data-testid="checkout-included-items"
+                >
+                  <h3 class="checkout-included-items-title">{{ t.checkoutWizard.includedItems }}</h3>
+                  <div class="checkout-included-items-list">
+                    <div
+                      v-for="item in purchaseLineItems"
+                      :key="item.key"
+                      class="checkout-included-item"
+                      data-testid="checkout-included-item"
+                      :data-item-id="item.itemId"
+                    >
+                      <div class="min-w-0">
+                        <div class="checkout-included-item-name">{{ item.name }}</div>
+                        <div v-if="item.stageName" class="checkout-included-item-stage">{{ item.stageName }}</div>
+                      </div>
+                      <div class="checkout-included-item-price">{{ formatMoney(item.amount, item.currency) }}</div>
+                    </div>
+                  </div>
+                </section>
                 <div class="checkout-total text-lg font-bold text-slate-900">
                   <template v-if="dynamicPaymentPreview">
                     {{ t.checkoutWizard.baseTotal }} {{ formatMoney(dynamicPaymentPreview.total, dynamicPaymentPreview.currency) }}
@@ -2458,14 +2565,68 @@ function closePaymentEditDialog() {
   box-shadow: none;
 }
 
+.checkout-included-items {
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(0, 42, 102, 0.12);
+}
+
+.checkout-included-items-title {
+  margin: 0 0 8px;
+  color: #002a66;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.checkout-included-items-list {
+  display: grid;
+  gap: 0;
+}
+
+.checkout-included-item {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 9px 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.checkout-included-item:first-child {
+  border-top: 0;
+}
+
+.checkout-included-item-name {
+  overflow-wrap: anywhere;
+  color: #0f294d;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.checkout-included-item-stage {
+  margin-top: 2px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.checkout-included-item-price {
+  flex: none;
+  color: #002a66;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .checkout-total:empty {
   display: none;
 }
 
 .checkout-total {
+  margin-top: 13px;
   color: #002a66;
   font-size: 18px;
   line-height: 1.4;
+  text-align: right;
 }
 
 .checkout-step-footer {
@@ -2559,7 +2720,16 @@ function closePaymentEditDialog() {
   }
 
   .checkout-step-actions {
-    justify-content: flex-start;
+    align-items: stretch;
+  }
+
+  .checkout-included-item {
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .checkout-total {
+    text-align: left;
   }
 
   .checkout-form-actions,
