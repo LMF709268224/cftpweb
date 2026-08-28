@@ -105,6 +105,11 @@ function fallbackCoverClass(type?: number | string) {
   return "from-slate-600 via-slate-800 to-slate-950"
 }
 
+function thumbnailBackdropStyle(file: ResourcePackFile) {
+  const url = thumbnailFor(file)
+  return url ? { backgroundImage: `url(${JSON.stringify(url)})` } : undefined
+}
+
 function formatSize(size?: number) {
   if (!size) return "-"
   if (size < 1024 * 1024) return `${Math.round(size / 1024)} KB`
@@ -321,11 +326,20 @@ onBeforeUnmount(() => {
           @click="openFile(file)"
         >
           <div class="relative aspect-[0.72/1] overflow-hidden border border-border bg-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.14)]">
+            <div
+              v-if="isInsightsPack && thumbnailFor(file)"
+              class="resource-thumbnail-backdrop absolute -inset-4 bg-cover bg-center"
+              :style="thumbnailBackdropStyle(file)"
+              aria-hidden="true"
+            />
             <img
               v-if="thumbnailFor(file)"
               :src="thumbnailFor(file)"
               :alt="file.title || file.file_name || file.file_id"
-              class="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+              :class="[
+                'relative h-full w-full transition duration-500',
+                isInsightsPack ? 'object-contain object-top group-hover:scale-[1.02]' : 'object-cover group-hover:scale-105',
+              ]"
               loading="lazy"
             />
             <div v-else :class="['flex h-full w-full flex-col justify-end bg-gradient-to-br p-5 text-white', fallbackCoverClass(file.file_type)]">
@@ -354,11 +368,20 @@ onBeforeUnmount(() => {
         <template v-else>
           <button class="block w-full text-left" :disabled="openingFileId === file.file_id" @click="openFile(file)">
             <div class="relative aspect-[2.2/1] overflow-hidden bg-slate-900">
+              <div
+                v-if="isInsightsPack && thumbnailFor(file)"
+                class="resource-thumbnail-backdrop absolute -inset-4 bg-cover bg-center"
+                :style="thumbnailBackdropStyle(file)"
+                aria-hidden="true"
+              />
               <img
                 v-if="thumbnailFor(file)"
                 :src="thumbnailFor(file)"
                 :alt="file.title || file.file_name || file.file_id"
-                class="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                :class="[
+                  'relative h-full w-full transition duration-500',
+                  isInsightsPack ? 'object-contain object-top group-hover:scale-[1.02]' : 'object-cover group-hover:scale-105',
+                ]"
                 loading="lazy"
               />
               <div v-else :class="['flex h-full w-full flex-col justify-between bg-gradient-to-br p-6 text-white', fallbackCoverClass(file.file_type)]">
@@ -444,6 +467,12 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+.resource-thumbnail-backdrop {
+  filter: blur(18px) saturate(0.95) brightness(0.76);
+  opacity: 0.84;
+  transform: scale(1.08);
+}
+
 .resource-detail-refresh-btn {
   border-color: #e2e8f0;
   background: #ffffff;
