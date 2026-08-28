@@ -46,6 +46,27 @@ async function installMailReadMocks(page: Page, requests: string[]) {
   })
 }
 
+test("HTML mail can be previewed without sending", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  const requests: string[] = []
+  await installMailReadMocks(page, requests)
+  await page.goto("/mails")
+
+  await page.getByLabel("邮件主题").fill("HTML preview")
+  await page.getByLabel("邮件正文 HTML / Text").fill("<h1>Rendered HTML preview</h1>")
+  await page.getByRole("button", { name: "预览", exact: true }).click()
+
+  const dialog = page.getByRole("dialog", { name: "邮件预览" })
+  await expect(dialog).toBeVisible()
+  await expect(dialog.getByText("邮件主题: HTML preview", { exact: true })).toBeVisible()
+  const iframe = dialog.locator("iframe")
+  await expect(iframe).toHaveAttribute("srcdoc", "<h1>Rendered HTML preview</h1>")
+  await expect(iframe).toHaveAttribute("sandbox", "")
+
+  expect(requests).not.toContain("POST /api/mails/send")
+  expect(requests).not.toContain("POST /api/mails/templates/render")
+})
+
 test("mail template detail is read without editing it", async ({ page }) => {
   await seedAuthenticatedAdmin(page)
   const requests: string[] = []

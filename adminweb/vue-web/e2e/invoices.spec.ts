@@ -59,7 +59,7 @@ test("invoice detail reuses read-only list data without a mutation", async ({ pa
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
 })
 
-test("invoice detail loads the Stripe PDF preview on demand", async ({ page }) => {
+test("invoice list opens the invoice PDF in a new window", async ({ page }) => {
   await seedAuthenticatedAdmin(page)
   const requests: string[] = []
   await installInvoiceReadMocks(page, requests)
@@ -69,13 +69,11 @@ test("invoice detail loads the Stripe PDF preview on demand", async ({ page }) =
   })
   await page.goto("/invoices")
 
-  await page.getByRole("button", { name: "查看详情" }).click()
-  await page.getByRole("button", { name: "预览 PDF" }).click()
+  const popupPromise = page.waitForEvent("popup")
+  await page.getByRole("button", { name: "查看发票" }).click()
+  const popup = await popupPromise
 
-  const preview = page.getByTitle("发票 PDF 预览")
-  await expect(preview).toHaveAttribute("src", /^blob:/)
-  const pdfURL = await preview.getAttribute("src")
-  await expect(page.getByRole("link", { name: "新窗口打开" })).toHaveAttribute("href", pdfURL || "")
+  await popup.waitForURL(/^blob:/)
   expect(requests).toContain("GET /api/mall/invoices/order-1/pdf")
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
 })
