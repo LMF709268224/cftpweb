@@ -45,7 +45,7 @@ test("dashboard renders populated user and summary data with read-only requests"
   await expect(page.locator("table").getByText("Regression Admin", { exact: true })).toBeVisible()
   await expect(page.locator("table").getByText("candidate-Regression Admin", { exact: true })).toBeVisible()
   await expect(page.getByText("75%", { exact: true })).toBeVisible()
-	await expect(page.getByText("USD 129.00", { exact: true })).toBeVisible()
+	await expect(page.getByText("USD 129", { exact: true })).toBeVisible()
   await expect(page.getByText("第 1 页 / 共 12 人", { exact: true })).toBeVisible()
   expect(requests).toContain("GET /api/dashboard/ops")
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)

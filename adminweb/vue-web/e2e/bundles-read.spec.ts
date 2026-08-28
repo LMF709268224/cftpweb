@@ -47,6 +47,7 @@ test("bundle list renders the returned read-only summary", async ({ page }) => {
 
   await expect(page.getByText("Regression Bundle", { exact: true })).toBeVisible()
   await expect(page.getByText("Read-only bundle summary", { exact: true })).toBeVisible()
+  await expect(page.getByText("展示价格：USD 129", { exact: true })).toBeVisible()
   await expect(page.getByText("bundle-1", { exact: false })).toBeVisible()
   expect(requests).toContain("GET /api/mall/bundles")
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)

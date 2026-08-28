@@ -4,6 +4,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from "vue"
 import { RouterLink } from "vue-router"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
+import { formatMinorAmount } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 import { badgeClass } from "@/lib/status"
 
@@ -86,7 +87,7 @@ const canNextUsers = computed(() => userPage.value * userPageSize < userTotal.va
 const revenueText = computed(() => {
   const items = data.value?.today_revenue || []
   if (!items.length) return copy.value.noRevenue
-  return items.map((item) => `${item.currency} ${(Number(item.amount_minor || 0) / 100).toFixed(2)}`).join(" / ")
+  return items.map((item) => `${item.currency} ${formatMinorAmount(item.amount_minor) ?? "-"}`).join(" / ")
 })
 const roleOptions = computed(() => [
   { value: "all", label: copy.value.filters.allRoles },

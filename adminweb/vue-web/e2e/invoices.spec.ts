@@ -38,7 +38,7 @@ test("invoice list renders the returned read-only payment summary", async ({ pag
 
   await expect(page.getByText("invoice-1", { exact: true }).first()).toBeVisible()
   await expect(page.getByText("订单：order-1", { exact: true })).toBeVisible()
-  await expect(page.getByText("129.00 USD", { exact: true }).first()).toBeVisible()
+  await expect(page.getByText("129 USD", { exact: true }).first()).toBeVisible()
   expect(requests).toContain("GET /api/mall/invoices")
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
 })

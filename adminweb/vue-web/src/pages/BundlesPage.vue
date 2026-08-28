@@ -8,7 +8,7 @@ import TranslationsEditor from "@/components/TranslationsEditor.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { fetchAllCursorRecords } from "@/lib/cursorPagination"
-import { formatDate, type JsonRecord } from "@/lib/display"
+import { formatDate, formatMinorAmount, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 import { badgeClass, pickFirst } from "@/lib/status"
 
@@ -388,11 +388,11 @@ function bundleTargetSummary(bundle: JsonRecord | null | undefined) {
 
 function displayPrice(bundle: JsonRecord | null | undefined) {
   const currency = String(bundle?.display_currency || "")
-  const min = Number(bundle?.display_amount_min || 0) / 100
-  const max = Number(bundle?.display_amount_max || 0) / 100
-  if (!currency || (!min && !max)) return "-"
-  if (min === max) return `${currency} ${min.toFixed(2)}`
-  return `${currency} ${min.toFixed(2)} - ${max.toFixed(2)}`
+  const min = formatMinorAmount(bundle?.display_amount_min ?? 0)
+  const max = formatMinorAmount(bundle?.display_amount_max ?? 0)
+  if (!currency || min === null || max === null || (min === "0" && max === "0")) return "-"
+  if (min === max) return `${currency} ${min}`
+  return `${currency} ${min} - ${max}`
 }
 
 function targetStatusText(target: JsonRecord | null | undefined) {

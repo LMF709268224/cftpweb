@@ -4,7 +4,7 @@ import { Ban, RotateCcw, Search, TriangleAlert, X } from "lucide-vue-next"
 import { toast } from "vue-sonner"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
-import { formatDate } from "@/lib/display"
+import { formatDate, formatMinorAmount } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 
 type JsonRecord = Record<string, unknown>
@@ -934,16 +934,13 @@ function formatProgDriverEventDetailValue(key: string, value: unknown) {
 }
 
 function formatStripeAmount(value: unknown, currency: unknown) {
-  const amount = typeof value === "number" ? value : Number(value)
-  if (!Number.isFinite(amount)) return formatDetailValue("", value)
   const currencyCode = String(currency || "").toUpperCase()
   const zeroDecimalCurrencies = new Set(["BIF", "CLP", "DJF", "GNF", "JPY", "KMF", "KRW", "MGA", "PYG", "RWF", "UGX", "VND", "VUV", "XAF", "XOF", "XPF"])
-  const fractionDigits = zeroDecimalCurrencies.has(currencyCode) ? 0 : 2
-  const divisor = fractionDigits === 0 ? 1 : 100
-  const formatted = (amount / divisor).toLocaleString("zh-CN", {
-    minimumFractionDigits: fractionDigits,
-    maximumFractionDigits: fractionDigits,
+  const formatted = formatMinorAmount(value, {
+    fractionDigits: zeroDecimalCurrencies.has(currencyCode) ? 0 : 2,
+    useGrouping: true,
   })
+  if (formatted === null) return "-"
   return currencyCode ? `${currencyCode} ${formatted}` : formatted
 }
 

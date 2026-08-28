@@ -4,7 +4,7 @@ import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
-import { formatDate, type JsonRecord } from "@/lib/display"
+import { formatDate, formatDecimalAmount, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 import { badgeClass, labelFor, normalizeStatus, orderStatusOptions, pickFirst } from "@/lib/status"
 
@@ -45,8 +45,8 @@ function orderId(invoice: JsonRecord | null | undefined) {
 }
 
 function amountText(invoice: JsonRecord | null | undefined) {
-  const amount = Number(invoice?.amount || 0)
-  return `${Number.isFinite(amount) ? amount.toFixed(2) : "0.00"} ${invoice?.currency || ""}`.trim()
+  const amount = formatDecimalAmount(invoice?.amount ?? 0)
+  return `${amount ?? "-"} ${invoice?.currency || ""}`.trim()
 }
 
 function normalizedInvoiceStatus(value: unknown) {

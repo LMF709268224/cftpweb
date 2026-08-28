@@ -4,7 +4,7 @@ import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
-import { formatDate, type JsonRecord } from "@/lib/display"
+import { formatDate, formatMinorAmount, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 import {
   badgeClass,
@@ -123,16 +123,16 @@ function amountText(order: JsonRecord | null | undefined) {
   const minor = pickFirst(order || {}, ["amount_minor"])
   const currency = String(pickFirst(order || {}, ["currency_code", "currencyCode", "currency"]) || "")
   if (minor === undefined || minor === null || minor === "") return "-"
-  const amount = Number(minor)
-  if (!Number.isFinite(amount)) return "-"
-  return `${currency ? `${currency} ` : ""}${(amount / 100).toFixed(2)}`
+  const amount = formatMinorAmount(minor)
+  if (amount === null) return "-"
+  return `${currency ? `${currency} ` : ""}${amount}`
 }
 
 function minorAmountText(value: unknown, currency: string) {
   if (value === undefined || value === null || value === "") return "-"
-  const amount = Number(value)
-  if (!Number.isFinite(amount)) return "-"
-  return `${currency ? `${currency.toUpperCase()} ` : ""}${(amount / 100).toFixed(2)}`
+  const amount = formatMinorAmount(value)
+  if (amount === null) return "-"
+  return `${currency ? `${currency.toUpperCase()} ` : ""}${amount}`
 }
 
 function orderItemTitle(item: JsonRecord) {

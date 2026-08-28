@@ -33,7 +33,7 @@ const firstSubscription = {
   candidate_name: "Regression Candidate",
   stripe_subscription_id: "sub_regression_1",
   status: "ACTIVE",
-  amount: 1299,
+  amount: 1200,
   currency: "usd",
   created_at: 1786406400,
 }
@@ -61,6 +61,7 @@ test("admin operations renders subscription data and reads its next cursor page"
   await expect(page.getByText("Regression Candidate", { exact: true }).first()).toBeVisible()
   await expect(page.getByText("sub_regression_1", { exact: true }).first()).toBeVisible()
   await expect(page.getByText("有效", { exact: true }).first()).toBeVisible()
+  await expect(page.getByText("USD 12", { exact: true }).first()).toBeVisible()
 
   await page.getByRole("button", { name: "下一页" }).click()
   await expect(page.getByText("sub_regression_2", { exact: true }).first()).toBeVisible()
