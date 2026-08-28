@@ -210,14 +210,16 @@ test("已持有有效资格的课程自动免考且不可取消", async ({ page 
     if (pathname === `/api/mall/bundles/${bundleID}/pricing-detail`) {
       return {
         data: {
-          units: [
-            { unit_id: unitID, access: { amount: 10000, currency: "USD" } },
-            ...includedUnits.map(({ unit_id, amount }) => ({
-              unit_id,
-              access: { amount, currency: "USD" },
-            })),
-          ],
-          memberships: [],
+          pricing_detail_json: JSON.stringify({
+            units: [
+              { unit_id: unitID, access: { amount: 10000, currency: "USD" } },
+              ...includedUnits.map(({ unit_id, amount }) => ({
+                unit_id,
+                access: { amount, currency: "USD" },
+              })),
+            ],
+            memberships: [],
+          }),
         },
       }
     }
