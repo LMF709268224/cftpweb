@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Loader2, RefreshCw, X } from "lucide-vue-next"
+import { ExternalLink, FileText, Loader2, RefreshCw, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
@@ -12,6 +12,9 @@ const invoices = ref<JsonRecord[]>([])
 const selected = ref<JsonRecord | null>(null)
 const loading = ref(false)
 const detailOpen = ref(false)
+const pdfLoading = ref(false)
+const pdfURL = ref("")
+const pdfError = ref("")
 const page = ref(1)
 const total = ref(0)
 const pageSize = 20
@@ -76,12 +79,44 @@ function detailFieldText(value: unknown) {
 }
 
 function openInvoice(invoice: JsonRecord | null, open = true) {
+  if (invoiceId(invoice) !== invoiceId(selected.value)) resetPDFPreview()
   selected.value = invoice
   detailOpen.value = open
 }
 
 function closeDetail() {
   detailOpen.value = false
+}
+
+let pdfRequestId = 0
+
+function resetPDFPreview() {
+  pdfRequestId += 1
+  pdfLoading.value = false
+  pdfURL.value = ""
+  pdfError.value = ""
+}
+
+async function loadPDFPreview() {
+  const currentOrderID = orderId(selected.value)
+  if (!currentOrderID || currentOrderID === "-" || pdfLoading.value) return
+
+  const requestId = ++pdfRequestId
+  pdfLoading.value = true
+  pdfError.value = ""
+  try {
+    const data = await apiClient<JsonRecord>(`/api/mall/invoices/${encodeURIComponent(currentOrderID)}/pdf`)
+    if (requestId !== pdfRequestId || currentOrderID !== orderId(selected.value)) return
+    const nextURL = String(data.pdf_url || "").trim()
+    if (!nextURL) throw new Error("pdf_url is empty")
+    pdfURL.value = nextURL
+  } catch (err) {
+    if (requestId !== pdfRequestId) return
+    console.error(err)
+    pdfError.value = apiErrorMessage(err, copy.value.toasts.pdfLoadFailed)
+  } finally {
+    if (requestId === pdfRequestId) pdfLoading.value = false
+  }
 }
 
 let listRequestId = 0
@@ -255,6 +290,49 @@ onMounted(() => load(1))
                 </div>
               </div>
             </div>
+            <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+              <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 md:px-5">
+                <div>
+                  <h3 class="font-black text-slate-950">{{ copy.pdfReview }}</h3>
+                  <p class="mt-1 text-sm text-slate-500">{{ copy.pdfReviewDescription }}</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    class="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                    type="button"
+                    :disabled="pdfLoading"
+                    @click="loadPDFPreview"
+                  >
+                    <Loader2 v-if="pdfLoading" class="h-4 w-4 animate-spin" />
+                    <FileText v-else class="h-4 w-4" />
+                    {{ pdfURL ? copy.reloadPdf : copy.previewPdf }}
+                  </button>
+                  <a
+                    v-if="pdfURL"
+                    class="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-700 hover:bg-slate-50"
+                    :href="pdfURL"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <ExternalLink class="h-4 w-4" />
+                    {{ copy.openPdf }}
+                  </a>
+                </div>
+              </div>
+              <div v-if="pdfError" class="border-b border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 md:px-5">
+                {{ pdfError }}
+              </div>
+              <iframe
+                v-if="pdfURL"
+                class="h-[60vh] min-h-[420px] w-full bg-slate-100"
+                :src="pdfURL"
+                :title="copy.pdfFrameTitle"
+                referrerpolicy="no-referrer"
+              />
+              <div v-else class="flex min-h-36 items-center justify-center px-5 py-8 text-center text-sm font-semibold text-slate-500">
+                {{ pdfLoading ? copy.pdfLoading : copy.pdfNotLoaded }}
+              </div>
+            </section>
             <div class="grid gap-4 md:grid-cols-2">
               <div v-for="field in selectedFields" :key="field.key" class="grid gap-2 text-sm font-bold" :class="isStructuredValue(field.value) ? 'md:col-span-2' : ''">
                 <span class="text-xs font-black uppercase text-slate-400">{{ field.label }}</span>

@@ -381,6 +381,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Post("/orders/sync-meta", h.AdminSyncOrderMeta)
 			r.Get("/orders/{order_ulid}", h.GetOrderDetail)
 			r.Get("/invoices", h.ListInvoices)
+			r.Get("/invoices/{order_ulid}/pdf", h.GetInvoicePDF)
 			r.Get("/bundle-orders", h.ListBundleOrders)
 			r.Route("/mail-tasks", func(r chi.Router) {
 				r.Get("/", h.ListMallMailTasks)

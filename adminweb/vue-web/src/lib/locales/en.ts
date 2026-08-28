@@ -388,6 +388,14 @@ export const en: AdminTranslations = {
         next: "Next",
         detailTitle: "Invoice Details",
         close: "Close",
+        pdfReview: "Invoice PDF Preview",
+        pdfReviewDescription: "Load the Stripe invoice PDF or open it in a new window.",
+        previewPdf: "Preview PDF",
+        reloadPdf: "Reload",
+        openPdf: "Open in New Window",
+        pdfLoading: "Loading invoice PDF...",
+        pdfNotLoaded: "Select Preview PDF to load the invoice file.",
+        pdfFrameTitle: "Invoice PDF Preview",
         labels: {
             order: "Order",
             amount: "Amount",
@@ -438,6 +446,7 @@ export const en: AdminTranslations = {
         },
         toasts: {
             loadFailed: "Failed to load invoices",
+            pdfLoadFailed: "Failed to load invoice PDF",
             jsonCopied: "JSON copied",
             jsonCopyFailed: "Copy failed",
         },

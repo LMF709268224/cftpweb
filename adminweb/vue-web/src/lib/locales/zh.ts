@@ -386,6 +386,14 @@ export const zh = {
         next: "下一页",
         detailTitle: "发票详情",
         close: "关闭",
+        pdfReview: "发票 PDF 预览",
+        pdfReviewDescription: "加载 Stripe 生成的发票 PDF，并可在新窗口中打开。",
+        previewPdf: "预览 PDF",
+        reloadPdf: "重新加载",
+        openPdf: "新窗口打开",
+        pdfLoading: "正在加载发票 PDF...",
+        pdfNotLoaded: "点击“预览 PDF”加载发票文件。",
+        pdfFrameTitle: "发票 PDF 预览",
         labels: {
             order: "订单",
             amount: "金额",
@@ -436,6 +444,7 @@ export const zh = {
         },
         toasts: {
             loadFailed: "发票加载失败",
+            pdfLoadFailed: "发票 PDF 加载失败",
             jsonCopied: "JSON 已复制",
             jsonCopyFailed: "复制失败",
         },
