@@ -723,6 +723,12 @@ async function refreshCheckoutQualificationDefinitions() {
   applyQualificationDefinitionsToStages(definitionsById)
 }
 
+async function applyBundleInfoWithQualificationDefinitions(response: any) {
+  applyBundleInfo(response)
+  applyQualificationDefinitionsToStages(qualificationDefinitions.value)
+  await refreshCheckoutQualificationDefinitions()
+}
+
 function syncQualifiedExemptionSelections(stages: any[]) {
   const nextSelections: Record<string, boolean> = {}
 
@@ -778,8 +784,7 @@ async function completeTemporaryCftpUnlock(response: any) {
 
 async function loadBundleInfo() {
   const response = await fetchBundlePayload()
-  applyBundleInfo(response)
-  await refreshCheckoutQualificationDefinitions()
+  await applyBundleInfoWithQualificationDefinitions(response)
   await refreshQualificationApplications()
   return response
 }
@@ -788,8 +793,7 @@ async function refreshLocalizedCheckoutContent() {
   if (!bundleId) return
   try {
     const response = await fetchBundlePayload()
-    applyBundleInfo(response)
-    await refreshCheckoutQualificationDefinitions()
+    await applyBundleInfoWithQualificationDefinitions(response)
   } catch (error) {
     console.warn("Failed to refresh localized checkout content", error)
   }
@@ -798,8 +802,7 @@ async function refreshLocalizedCheckoutContent() {
 async function loadPurchaseReadyBundleInfo() {
   const response = await fetchBundlePayload()
   const purchaseReadyBundle = await completeTemporaryCftpUnlock(response)
-  applyBundleInfo(purchaseReadyBundle)
-  await refreshCheckoutQualificationDefinitions()
+  await applyBundleInfoWithQualificationDefinitions(purchaseReadyBundle)
 
   try {
     const pricingRes = await apiClient(`/api/mall/bundles/${encodeURIComponent(bundleId)}/pricing-detail`, { suppressErrorToast: true })
@@ -944,7 +947,7 @@ async function pollQualificationApplications() {
     if (hadPendingApplications && !hasPendingQualificationApplications()) {
       const response = await fetchBundlePayload()
       const purchaseReadyBundle = await completeTemporaryCftpUnlock(response)
-      applyBundleInfo(purchaseReadyBundle)
+      await applyBundleInfoWithQualificationDefinitions(purchaseReadyBundle)
     }
   } catch {
     // Ignore background polling errors. The next interval will retry.

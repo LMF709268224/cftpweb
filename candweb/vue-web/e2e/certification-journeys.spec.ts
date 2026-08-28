@@ -267,6 +267,86 @@ test("已持有有效资格的课程自动免考且不可取消", async ({ page 
   })
 })
 
+test("资格审核轮询刷新后继续隐藏系统管理资格", async ({ page }) => {
+  const pollingBundleID = "bundle-system-filter-polling"
+  const visibleQualificationID = "qualification-review-polling"
+  const systemQualificationID = "qualification-system-polling"
+  let applicationStatus = "APPLICATION_STATUS_PENDING"
+  let bundleRequests = 0
+  const pollingBundle = {
+    ...bundle,
+    bundle_id: pollingBundleID,
+    stages: [{
+      stage_id: "stage-review-polling",
+      name: "Review Polling Stage",
+      sort_order: 1,
+      units: [
+        { unit_id: "unit-review-polling", name: "Reviewed Course" },
+        { unit_id: "unit-system-polling", name: "System Only Course" },
+      ],
+    }],
+    purchase_state: {
+      ...bundle.purchase_state,
+      exemption_options: {
+        stages: [{
+          stage_id: "stage-review-polling",
+          stage_name: "Review Polling Stage",
+          units: [
+            {
+              unit_id: "unit-review-polling",
+              unit_name: "Reviewed Course",
+              allow_exemption: true,
+              qualified: false,
+              exemption_quals: [{ qual_id: visibleQualificationID, name: "Reviewed Qualification" }],
+            },
+            {
+              unit_id: "unit-system-polling",
+              unit_name: "System Only Course",
+              allow_exemption: true,
+              qualified: false,
+              exemption_quals: [{ qual_id: systemQualificationID, name: "System Managed Qualification" }],
+            },
+          ],
+        }],
+      },
+    },
+  }
+
+  await page.clock.install()
+  await installCandidateApiMocks(page, ({ pathname, method }) => {
+    if (pathname === `/api/mall/bundles/${pollingBundleID}` && method === "GET") {
+      bundleRequests += 1
+      return { data: pollingBundle }
+    }
+    if (pathname === `/api/mall/bundles/${pollingBundleID}/pricing-detail`) {
+      return { data: { units: [], memberships: [] } }
+    }
+    if (pathname === "/api/credentials/definitions") {
+      return {
+        data: {
+          definitions: [
+            { cred_def_ulid: visibleQualificationID, name: "Reviewed Qualification", respath: "/gcreds/core/reviewed" },
+            { cred_def_ulid: systemQualificationID, name: "System Managed Qualification", respath: "/gcreds/core/system/internal" },
+          ],
+        },
+      }
+    }
+    if (pathname === "/api/credentials/applications") {
+      return { data: { applications: [{ app_ulid: "application-review-polling", status: applicationStatus }] } }
+    }
+    return undefined
+  })
+
+  await page.goto(`/checkout/${pollingBundleID}`, { waitUntil: "domcontentloaded" })
+  await expect(page.getByText("Reviewed Course", { exact: true })).toBeVisible()
+  await expect(page.getByText("System Only Course", { exact: true })).toHaveCount(0)
+
+  applicationStatus = "APPLICATION_STATUS_APPROVED"
+  await page.clock.fastForward(30_000)
+  await expect.poll(() => bundleRequests).toBeGreaterThan(1)
+  await expect(page.getByText("System Only Course", { exact: true })).toHaveCount(0)
+})
+
 test("结账资格申请提供官方模板预览与下载", async ({ page }) => {
   const stageID = "stage-template-application"
   const unitID = "unit-template-application"
