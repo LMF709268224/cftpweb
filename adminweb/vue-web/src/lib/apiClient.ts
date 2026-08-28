@@ -80,11 +80,16 @@ async function refreshAccessToken() {
   return refreshPromise
 }
 
-export async function apiClient<T = unknown>(input: string, init: RequestInit = {}): Promise<T> {
+async function sendAuthenticatedRequest(input: string, init: RequestInit) {
   let response = await sendRequest(input, init)
   if (response.status === 401 && !isAuthEndpoint(input) && await refreshAccessToken()) {
     response = await sendRequest(input, init)
   }
+  return response
+}
+
+export async function apiClient<T = unknown>(input: string, init: RequestInit = {}): Promise<T> {
+  const response = await sendAuthenticatedRequest(input, init)
 
   const text = await response.text()
   const payload = parsePayload(text)
@@ -112,4 +117,25 @@ export async function apiClient<T = unknown>(input: string, init: RequestInit = 
   }
 
   return payload as T
+}
+
+export async function apiBlobClient(input: string, init: RequestInit = {}): Promise<Blob> {
+  const response = await sendAuthenticatedRequest(input, init)
+
+  if (response.status === 401) {
+    const payload = parsePayload(await response.text())
+    const message = payloadMessage(payload, "Unauthorized")
+    clearAuthSession()
+    if (!isAuthEndpoint(input)) {
+      window.location.href = loginPathWithRedirect(currentAuthRedirect())
+    }
+    throw new ApiError(message, response.status, payload)
+  }
+
+  if (!response.ok) {
+    const payload = parsePayload(await response.text())
+    throw new ApiError(payloadMessage(payload, response.statusText || "Request failed"), response.status, payload)
+  }
+
+  return response.blob()
 }

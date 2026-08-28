@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ExternalLink, FileText, Loader2, RefreshCw, X } from "lucide-vue-next"
-import { computed, onMounted, ref } from "vue"
+import { computed, onBeforeUnmount, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
-import { apiClient } from "@/lib/apiClient"
+import { apiBlobClient, apiClient } from "@/lib/apiClient"
 import { formatDate, formatDecimalAmount, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 import { badgeClass, labelFor, normalizeStatus, orderStatusOptions, pickFirst } from "@/lib/status"
@@ -90,10 +90,16 @@ function closeDetail() {
 
 let pdfRequestId = 0
 
+function releasePDFURL() {
+  if (!pdfURL.value) return
+  URL.revokeObjectURL(pdfURL.value)
+  pdfURL.value = ""
+}
+
 function resetPDFPreview() {
   pdfRequestId += 1
   pdfLoading.value = false
-  pdfURL.value = ""
+  releasePDFURL()
   pdfError.value = ""
 }
 
@@ -105,10 +111,10 @@ async function loadPDFPreview() {
   pdfLoading.value = true
   pdfError.value = ""
   try {
-    const data = await apiClient<JsonRecord>(`/api/mall/invoices/${encodeURIComponent(currentOrderID)}/pdf`)
+    const pdf = await apiBlobClient(`/api/mall/invoices/${encodeURIComponent(currentOrderID)}/pdf`)
     if (requestId !== pdfRequestId || currentOrderID !== orderId(selected.value)) return
-    const nextURL = String(data.pdf_url || "").trim()
-    if (!nextURL) throw new Error("pdf_url is empty")
+    const nextURL = URL.createObjectURL(pdf)
+    releasePDFURL()
     pdfURL.value = nextURL
   } catch (err) {
     if (requestId !== pdfRequestId) return
@@ -178,6 +184,7 @@ nextCursor.value = String(data.next_cursor || "")
 }
 
 onMounted(() => load(1))
+onBeforeUnmount(resetPDFPreview)
 </script>
 
 <template>
