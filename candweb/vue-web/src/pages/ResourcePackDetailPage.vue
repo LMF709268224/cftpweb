@@ -341,7 +341,6 @@ onBeforeUnmount(() => {
             </div>
 
             <div class="absolute bottom-6 left-5 right-5 text-white">
-              <h2 class="line-clamp-2 text-lg font-black leading-tight text-white">{{ file.title || file.file_name || file.file_id }}</h2>
               <p v-if="file.description || file.file_name" class="mt-2 line-clamp-2 text-sm font-semibold leading-5 text-white">{{ file.description || file.file_name }}</p>
             </div>
           </div>
