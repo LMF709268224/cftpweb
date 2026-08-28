@@ -87,3 +87,76 @@ test("essay grading exports a workbook and imports professor grades after previe
     "/api/exams/exam-essay-1/essay-grade/import",
   ])
 })
+
+test("essay grading history filters and displays the submitted professor result read-only", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  let historyQuery = ""
+  await installAdminApiMocks(page, ({ method, pathname, url }) => {
+    if (method === "GET" && pathname === "/api/exams/pending-grading") {
+      return { data: { items: [], total: 0, has_more: false } }
+    }
+    if (method === "GET" && pathname === "/api/exams/graded-essay") {
+      historyQuery = url.search
+      return {
+        data: {
+          items: [{
+            exam_ulid: "exam-graded-1",
+            candidate_first_name: "Grace",
+            candidate_last_name: "Hopper",
+            candidate_email: "grace@example.test",
+            program_code: "CFTP",
+            exam_code: "ESSAY-2",
+            grader_id: "professor-1",
+            grader_name: "Professor Lee",
+            graded_at: "2026-08-28T02:00:00Z",
+            final_score: 88,
+            is_passed: true,
+            essay_count: 1,
+          }],
+          has_more: false,
+        },
+      }
+    }
+    if (method === "GET" && pathname === "/api/exams/exam-graded-1/essay-details") {
+      return {
+        data: {
+          exam_ulid: "exam-graded-1",
+          objective_score: 70,
+          total_score: 88,
+          is_passed: true,
+          overall_comment: "Meets the certification standard.",
+          essays: [{
+            question_seq: 1,
+            question_name: "Risk analysis",
+            section_name: "Essay",
+            candidate_response: "A complete historical response.",
+            max_score: 20,
+            score: 18,
+            grader_name: "Professor Lee",
+            grader_comment: "Clear analysis.",
+            graded_at: "2026-08-28T02:00:00Z",
+          }],
+        },
+      }
+    }
+    return undefined
+  })
+
+  await page.goto("/exam-grading")
+  await page.getByRole("tab", { name: "历史记录" }).click()
+  await expect(page.getByText("Grace Hopper", { exact: true })).toBeVisible()
+
+  await page.getByPlaceholder("批改教授姓名").fill("Professor Lee")
+  await page.getByLabel("最终判定").selectOption("true")
+  await expect.poll(() => historyQuery).toContain("grader_name=Professor+Lee")
+  expect(historyQuery).toContain("is_passed=true")
+
+  await page.getByText("Grace Hopper", { exact: true }).click()
+  const dialog = page.getByRole("dialog", { name: "主观题阅卷历史详情" })
+  await expect(dialog.getByText("Meets the certification standard.", { exact: true })).toBeVisible()
+  await expect(dialog.getByText("18 / 20", { exact: true })).toBeVisible()
+  await expect(dialog.getByText("Clear analysis.", { exact: true })).toBeVisible()
+  await expect(dialog.getByText("Professor Lee", { exact: true })).toBeVisible()
+  await expect(dialog.getByRole("link", { name: "导出阅卷表" })).toHaveCount(0)
+  await expect(dialog.getByLabel("选择评分文件")).toHaveCount(0)
+})

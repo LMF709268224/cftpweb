@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"net/http"
+	"strconv"
 	"strings"
 
 	gexampb "github.com/afnandelfin620-star/cftptest/cftp/gexam"
@@ -156,6 +157,41 @@ func (h *Handler) ListPendingGradingExams(w http.ResponseWriter, r *http.Request
 		"items":       resp.GetItems(),
 		"total":       total.Total,
 		"total_exact": total.Exact,
+		"next_cursor": resp.GetNextCursor(),
+		"prev_cursor": resp.GetPrevCursor(),
+		"has_more":    resp.GetHasMore(),
+	})
+}
+
+func (h *Handler) ListGradedEssayExams(w http.ResponseWriter, r *http.Request) {
+	page := parseCursorPage(r, 10)
+	filters := &gexampb.GradedEssayExamFilters{
+		ProgramCode: strings.TrimSpace(r.URL.Query().Get("program_code")),
+		ExamCode:    strings.TrimSpace(r.URL.Query().Get("exam_code")),
+		Keyword:     strings.TrimSpace(r.URL.Query().Get("keyword")),
+		GraderName:  strings.TrimSpace(r.URL.Query().Get("grader_name")),
+	}
+	if raw := strings.TrimSpace(r.URL.Query().Get("is_passed")); raw != "" {
+		isPassed, err := strconv.ParseBool(raw)
+		if err != nil {
+			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "is_passed must be true or false")
+			return
+		}
+		filters.IsPassed = &isPassed
+	}
+
+	resp, err := h.Gexam.ListGradedEssayExams(r.Context(), &gexampb.ListGradedEssayExamsRequest{
+		Filters:   filters,
+		PageSize:  int32(page.PageSize),
+		Cursor:    page.Cursor,
+		SortOrder: gexampb.SortOrder(page.Sort),
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, map[string]interface{}{
+		"items":       resp.GetItems(),
 		"next_cursor": resp.GetNextCursor(),
 		"prev_cursor": resp.GetPrevCursor(),
 		"has_more":    resp.GetHasMore(),

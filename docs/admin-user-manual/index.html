@@ -2151,7 +2151,7 @@
         <nav class="side-nav" aria-label="主观题阅卷章节">
           <strong>主观题阅卷</strong>
           <a href="#exam-grading-overview">功能概览</a>
-          <a href="#exam-grading-pending">待阅卷列表</a>
+          <a href="#exam-grading-pending">待阅卷与历史</a>
           <a href="#exam-grading-responses">查看答卷</a>
           <a href="#exam-grading-export">导出阅卷表</a>
           <a href="#exam-grading-professor">教授填写</a>
@@ -2166,7 +2166,7 @@
             <div class="eyebrow" style="color:#9eeef1">审核处理 / GEXAM</div>
             <h1>主观题阅卷使用手册</h1>
             <p>面向考试运营人员，说明如何导出 Prometric Essay 答卷、交由教授离线评分、导入评分文件并确认最终考试结果。</p>
-            <div class="manual-meta"><span>角色：考试运营 / 阅卷协调</span><span>难度：进阶</span><span>更新：2026-08-27</span></div>
+            <div class="manual-meta"><span>角色：考试运营 / 阅卷协调</span><span>难度：进阶</span><span>更新：2026-08-28</span></div>
           </header>
 
           <section class="doc-section" id="exam-grading-overview">
@@ -2185,7 +2185,7 @@
           </section>
 
           <section class="doc-section" id="exam-grading-pending">
-            <h2>2. 待阅卷列表与红点</h2>
+            <h2>2. 待阅卷、历史记录与红点</h2>
             <figure class="shot">
               <img src="assets/exam-grading/exam-grading-list.png" alt="主观题阅卷待处理列表和菜单红点" data-filename="exam-grading/exam-grading-list.png">
               <div class="shot-missing"><div><strong>待补截图：主观题阅卷列表</strong><code>assets/exam-grading/exam-grading-list.png</code></div></div>
@@ -2195,14 +2195,17 @@
               <thead><tr><th>区域</th><th>用途</th><th>说明</th></tr></thead>
               <tbody>
                 <tr><td>菜单红点</td><td>提示当前有待处理的主观题考试</td><td>处理完成并刷新后，数量会随待阅卷队列变化</td></tr>
+                <tr><td>待阅卷页签</td><td>显示状态为 <code>PENDING_GRADING</code> 的工作队列</td><td>可查看答卷、导出阅卷表并导入教授评分</td></tr>
+                <tr><td>历史记录页签</td><td>查询已经完成教授批改的考试</td><td>只读查看批改教授、批改时间、最终分数、通过判定、总体评语及单题评分</td></tr>
                 <tr><td>Program</td><td>按考试科目筛选</td><td>输入考试对应的 Program Code</td></tr>
                 <tr><td>Exam Code</td><td>按考试代码筛选</td><td>适合定位同一科目下的具体考试</td></tr>
                 <tr><td>关键字</td><td>按考生姓名、邮箱或考试 ULID 查询</td><td>考试 ULID 适合精确定位一场考试</td></tr>
+                <tr><td>批改教授与最终判定</td><td>历史记录专用筛选</td><td>可按教授姓名以及通过/不通过缩小范围</td></tr>
                 <tr><td>客观题得分</td><td>显示 Prometric 已返回的客观题部分</td><td>只读，管理员和教授均不能在此修改</td></tr>
                 <tr><td>Essay 数量</td><td>显示本场需要评分的主观题数量</td><td>导入文件必须包含全部题目</td></tr>
               </tbody>
             </table>
-            <div class="note"><strong>这里是工作队列，不是历史列表</strong>页面只列出结果状态为 <code>PENDING_GRADING</code> 的考试。最终评分提交成功后，该考试会离开列表；历史考试请到“考试管理”按考生、确认号或课程单元查询。</div>
+            <div class="note"><strong>两个页签职责不同</strong>最终评分提交成功后，考试会离开“待阅卷”并进入“历史记录”。历史详情是只读审计视图，不提供再次导出或导入；系统目前没有历史总数接口，所以历史列表显示本页数量并使用上一页、下一页翻页。</div>
           </section>
 
           <section class="doc-section" id="exam-grading-responses">
@@ -2288,7 +2291,8 @@
           <section class="doc-section" id="exam-grading-faq">
             <h2>8. 常见问题</h2>
             <details><summary>菜单有红点，但列表没有数据怎么办？</summary><p>先清空 Program、Exam Code 和关键字筛选并刷新。红点与列表都来自待阅卷状态；如果仍不一致，记录刷新时间和筛选条件，交技术人员核对计数与列表接口。</p></details>
-            <details><summary>为什么已批改的考试不在这里？</summary><p>该页面只显示 <code>PENDING_GRADING</code> 工作队列。最终提交后考试变为 <code>FETCHED</code>，应到“考试管理”查询历史结果和状态流转。</p></details>
+            <details><summary>为什么已批改的考试不在“待阅卷”？</summary><p>最终提交后考试会离开 <code>PENDING_GRADING</code> 工作队列。切换到“历史记录”，可按 Program、Exam Code、考生、批改教授和最终判定查询，并查看教授评分详情。</p></details>
+            <details><summary>为什么历史记录只显示本页数量？</summary><p>历史接口使用游标分页，目前不返回全部历史记录总数。页面按微服务返回的上一页、下一页游标翻页，不会为了显示总数而重复扫描全部历史数据。</p></details>
             <details><summary>教授可以直接登录管理后台评分吗？</summary><p>当前流程不支持。管理员导出 Excel 并交给教授，教授离线填写后返回，由管理员导入和确认。</p></details>
             <details><summary>导入提示考试不匹配或文件格式无效怎么办？</summary><p>确认文件由当前考试详情导出，工作表仍为 <code>Essay Grading</code>，且没有修改格式版本、考试 ULID、题号或满分。不要手工复制另一场考试的表格内容；重新导出原文件后让教授只填写黄色单元格。</p></details>
             <details><summary>分数为什么无法导入？</summary><p>每道题的 <code>score</code> 都必须填写数字，且在 0 到该题 <code>max_score</code> 之间；不能漏题、删除题目或重复题号。</p></details>

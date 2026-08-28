@@ -7,6 +7,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	gexampb "github.com/afnandelfin620-star/cftptest/cftp/gexam"
@@ -19,8 +20,28 @@ type examGradingClientStub struct {
 	gexampb.GExamServiceClient
 	countRequest  *gexampb.GetPendingGradingExamCountRequest
 	listRequest   *gexampb.ListPendingGradingExamsRequest
+	gradedRequest *gexampb.ListGradedEssayExamsRequest
 	detailRequest *gexampb.GetExamEssayDetailsRequest
 	submitRequest *gexampb.SubmitExamEssayGradeRequest
+}
+
+func (s *examGradingClientStub) ListGradedEssayExams(_ context.Context, request *gexampb.ListGradedEssayExamsRequest, _ ...grpc.CallOption) (*gexampb.ListGradedEssayExamsResponse, error) {
+	s.gradedRequest = request
+	return &gexampb.ListGradedEssayExamsResponse{
+		Items: []*gexampb.GradedEssayExamItem{{
+			ExamUlid:           "exam-graded-1",
+			CandidateFirstName: "Grace",
+			CandidateLastName:  "Hopper",
+			CandidateEmail:     "grace@example.test",
+			GraderName:         "Professor Lee",
+			GradedAt:           "2026-08-28T02:00:00Z",
+			FinalScore:         88,
+			IsPassed:           true,
+			EssayCount:         2,
+		}},
+		NextCursor: "graded-next",
+		HasMore:    true,
+	}, nil
 }
 
 func (s *examGradingClientStub) GetPendingGradingExamCount(_ context.Context, request *gexampb.GetPendingGradingExamCountRequest, _ ...grpc.CallOption) (*gexampb.GetPendingGradingExamCountResponse, error) {
@@ -54,8 +75,52 @@ func (s *examGradingClientStub) GetExamEssayDetails(_ context.Context, request *
 		ExamForm:           "A",
 		ObjectiveScore:     60,
 		ResultStatus:       "PENDING_GRADING",
+		OverallComment:     "Meets the standard.",
 		Essays:             []*gexampb.ExamEssayItemDetail{{QuestionSeq: 1, QuestionName: "Risk analysis", SectionName: "Essay", CandidateResponse: "Essay response", MaxScore: 20}},
 	}, nil
+}
+
+func TestListGradedEssayExamsForwardsFiltersAndPagination(t *testing.T) {
+	client := &examGradingClientStub{}
+	recorder := httptest.NewRecorder()
+	request := examGradingRequest(http.MethodGet, "/api/exams/graded-essay?program_code=CFTP&exam_code=L2A&keyword=grace&grader_name=Lee&is_passed=false&page_size=25&cursor=graded-cursor", "", "")
+
+	(&Handler{Gexam: client}).ListGradedEssayExams(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body=%s", recorder.Code, http.StatusOK, recorder.Body.String())
+	}
+	got := client.gradedRequest
+	if got == nil || got.GetFilters().GetProgramCode() != "CFTP" || got.GetFilters().GetExamCode() != "L2A" || got.GetFilters().GetKeyword() != "grace" || got.GetFilters().GetGraderName() != "Lee" || got.GetFilters().IsPassed == nil || got.GetFilters().GetIsPassed() || got.GetPageSize() != 25 || got.GetCursor() != "graded-cursor" {
+		t.Fatalf("graded list request = %+v", got)
+	}
+	var payload struct {
+		Data struct {
+			Items []struct {
+				ExamULID string `json:"exam_ulid"`
+			} `json:"items"`
+			NextCursor string `json:"next_cursor"`
+			HasMore    bool   `json:"has_more"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if len(payload.Data.Items) != 1 || payload.Data.Items[0].ExamULID != "exam-graded-1" || payload.Data.NextCursor != "graded-next" || !payload.Data.HasMore {
+		t.Fatalf("graded response = %+v", payload.Data)
+	}
+}
+
+func TestListGradedEssayExamsRejectsInvalidPassFilter(t *testing.T) {
+	client := &examGradingClientStub{}
+	recorder := httptest.NewRecorder()
+	request := examGradingRequest(http.MethodGet, "/api/exams/graded-essay?is_passed=passed", "", "")
+
+	(&Handler{Gexam: client}).ListGradedEssayExams(recorder, request)
+
+	if recorder.Code != http.StatusBadRequest || client.gradedRequest != nil {
+		t.Fatalf("status = %d, request = %+v; body=%s", recorder.Code, client.gradedRequest, recorder.Body.String())
+	}
 }
 
 func (s *examGradingClientStub) SubmitExamEssayGrade(_ context.Context, request *gexampb.SubmitExamEssayGradeRequest, _ ...grpc.CallOption) (*gexampb.SubmitExamEssayGradeResponse, error) {
@@ -171,7 +236,7 @@ func TestGetExamEssayDetailsUsesRouteExam(t *testing.T) {
 
 	(&Handler{Gexam: client}).GetExamEssayDetails(recorder, request)
 
-	if recorder.Code != http.StatusOK || client.detailRequest.GetExamUlid() != "exam-essay-1" {
+	if recorder.Code != http.StatusOK || client.detailRequest.GetExamUlid() != "exam-essay-1" || !strings.Contains(recorder.Body.String(), "Meets the standard.") {
 		t.Fatalf("status = %d, request = %+v; body=%s", recorder.Code, client.detailRequest, recorder.Body.String())
 	}
 }
