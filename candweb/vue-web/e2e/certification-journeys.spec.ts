@@ -1315,6 +1315,36 @@ test("认证从商城下单、Stripe 支付到已购认证完整闭环", async (
   })
 })
 
+test("购买流程手机号已被使用时提示错误并停留在注册步骤", async ({ page }) => {
+  let profileUpdates = 0
+
+  await installCandidateApiMocks(page, ({ pathname, method }) => {
+    if (pathname === `/api/mall/bundles/${bundleID}` && method === "GET") return { data: bundle }
+    if (pathname === `/api/mall/bundles/${bundleID}/pricing-detail`) return { data: {} }
+    if (pathname === "/api/user/me") return { data: candidateUser }
+    if (pathname === "/api/user/profile" && method === "PUT") {
+      profileUpdates += 1
+      return {
+        status: 409,
+        errorCode: "PHONE_ALREADY_IN_USE",
+        message: "phone number is already in use",
+      }
+    }
+    return undefined
+  })
+
+  await page.goto(`/checkout/${bundleID}`, { waitUntil: "domcontentloaded" })
+  await expect(page.getByTestId("checkout-step-registration")).toBeVisible()
+  await waitForCheckoutProfile(page)
+  await page.getByTestId("checkout-agreement").check()
+  await page.getByTestId("checkout-next").click()
+
+  await expect(page.getByText("该手机号已被其他账号使用，请更换手机号后重试。", { exact: true })).toBeVisible()
+  await expect(page.getByTestId("checkout-step-registration")).toBeVisible()
+  await expect(page.getByTestId("checkout-step-review")).toHaveCount(0)
+  expect(profileUpdates).toBe(1)
+})
+
 test("支付步骤说明锁定原因并允许取消订单后返回修改", async ({ page }) => {
   let cancelBody: unknown
 

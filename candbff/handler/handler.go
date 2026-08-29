@@ -49,6 +49,7 @@ type Handler struct {
 	CasdoorAppName      string
 	CasdoorOrgName      string
 	Rdb                 *redis.Client
+	profileUsers        profileUserStore
 }
 
 func New(

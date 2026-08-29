@@ -49,6 +49,7 @@ export const en: AppTranslations = {
         INVALID_TOKEN: "Invalid session. Please log in again.",
         PASSWORD_INCORRECT: "Incorrect old password or password does not meet requirements.",
         PROFILE_UPDATE_FAILED: "Failed to update profile. Please check your input.",
+        PHONE_ALREADY_IN_USE: "This phone number is already in use by another account. Please use a different number.",
         PIPELINE_NOT_FOUND: "Certification flow not found.",
         ALREADY_PURCHASED: "You have already purchased this item.",
         IN_PROGRESS_PURCHASE: "You have an in-progress order. Please complete or cancel the existing order first.",

@@ -650,18 +650,13 @@ watch(lang, () => {
 })
 
 async function syncSignupToProfile() {
-  try {
-    const current = await fetchUser(true)
-    if (!current) return
-    await apiClient("/api/user/profile", {
-      method: "PUT",
-      body: JSON.stringify(buildProfilePayload(current || {})),
-      suppressErrorToast: true,
-    })
-    await fetchUser(true)
-  } catch (err) {
-    console.warn("Failed to sync signup form to profile", err)
-  }
+  const current = await fetchUser(true)
+  if (!current) throw new Error("Unable to load the current profile")
+  await apiClient("/api/user/profile", {
+    method: "PUT",
+    body: JSON.stringify(buildProfilePayload(current)),
+  })
+  await fetchUser(true)
 }
 
 function applyBundleInfo(response: any) {

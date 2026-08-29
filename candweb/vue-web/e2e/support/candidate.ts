@@ -3,6 +3,7 @@ import type { Page, Route } from "@playwright/test"
 export type ApiMockResponse = {
     status?: number
     code?: number
+    errorCode?: string
     message?: string
     data?: unknown
 }
@@ -48,6 +49,7 @@ async function fulfillApi(route: Route, response: ApiMockResponse) {
         contentType: "application/json; charset=utf-8",
         body: JSON.stringify({
             code: responseCode(status, response.code),
+            error_code: response.errorCode,
             message: response.message ?? (status >= 200 && status < 300 ? "ok" : "request failed"),
             data: response.data ?? null,
         }),

@@ -26,6 +26,7 @@ const (
 	ErrInvalidToken        ErrorCode = "INVALID_TOKEN"
 	ErrPasswordIncorrect   ErrorCode = "PASSWORD_INCORRECT"
 	ErrProfileUpdateFailed ErrorCode = "PROFILE_UPDATE_FAILED"
+	ErrPhoneAlreadyInUse   ErrorCode = "PHONE_ALREADY_IN_USE"
 
 	// 课程/管线模块
 	ErrPipelineNotFound ErrorCode = "PIPELINE_NOT_FOUND"

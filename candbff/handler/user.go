@@ -15,6 +15,33 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+type profileUserStore interface {
+	GetUser(name string) (*casdoorsdk.User, error)
+	GetUserByPhone(phone string) (*casdoorsdk.User, error)
+	UpdateUser(user *casdoorsdk.User) (bool, error)
+}
+
+type casdoorProfileUserStore struct{}
+
+func (casdoorProfileUserStore) GetUser(name string) (*casdoorsdk.User, error) {
+	return casdoorsdk.GetUser(name)
+}
+
+func (casdoorProfileUserStore) GetUserByPhone(phone string) (*casdoorsdk.User, error) {
+	return casdoorsdk.GetUserByPhone(phone)
+}
+
+func (casdoorProfileUserStore) UpdateUser(user *casdoorsdk.User) (bool, error) {
+	return casdoorsdk.UpdateUser(user)
+}
+
+func (h *Handler) getProfileUserStore() profileUserStore {
+	if h.profileUsers != nil {
+		return h.profileUsers
+	}
+	return casdoorProfileUserStore{}
+}
+
 const (
 	emailVerificationTTL          = 5 * time.Minute
 	emailVerificationSendCooldown = time.Minute
@@ -94,6 +121,7 @@ func (h *Handler) GetUserMe(w http.ResponseWriter, r *http.Request) {
 // UpdateUserProfile PUT /api/user/profile
 func (h *Handler) UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
 	name := CandidateName(r)
+	users := h.getProfileUserStore()
 
 	var input UserProfileInput
 	if err := ReadJSON(r, &input); err != nil {
@@ -105,11 +133,28 @@ func (h *Handler) UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fullUser, err := casdoorsdk.GetUser(name)
+	fullUser, err := users.GetUser(name)
 	if err != nil {
 		slog.Error("Failed to get full user", "error", err)
 		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to get user info")
 		return
+	}
+	if fullUser == nil {
+		WriteError(w, http.StatusNotFound, ErrNotFound, "user not found")
+		return
+	}
+
+	if input.Phone != "" && input.Phone != normalizeProfilePhone(fullUser.Phone) {
+		phoneUser, lookupErr := users.GetUserByPhone(input.Phone)
+		if lookupErr != nil {
+			slog.Error("Failed to check phone availability", "error", lookupErr)
+			WriteError(w, http.StatusServiceUnavailable, ErrServiceUnavailable, "failed to check phone availability")
+			return
+		}
+		if phoneUser != nil && (phoneUser.Owner != fullUser.Owner || phoneUser.Name != fullUser.Name) {
+			WriteError(w, http.StatusConflict, ErrPhoneAlreadyInUse, "phone number is already in use")
+			return
+		}
 	}
 
 	// We no longer update email through this general profile endpoint.
@@ -136,7 +181,7 @@ func (h *Handler) UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
 	setUserProperty(fullUser, userPropRealName, input.RealName)
 	setUserProperty(fullUser, userPropRealNameV2, input.RealName)
 
-	if _, err := casdoorsdk.UpdateUser(fullUser); err != nil {
+	if _, err := users.UpdateUser(fullUser); err != nil {
 		slog.Error("Failed to update user", "error", err)
 		WriteError(w, http.StatusInternalServerError, ErrProfileUpdateFailed, "failed to update user profile")
 		return

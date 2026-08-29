@@ -47,6 +47,7 @@ export const zh = {
     INVALID_TOKEN: "登录状态无效，请重新登录",
     PASSWORD_INCORRECT: "原密码不正确或不符合要求",
     PROFILE_UPDATE_FAILED: "个人资料更新失败，请检查输入",
+    PHONE_ALREADY_IN_USE: "该手机号已被其他账号使用，请更换手机号后重试。",
     PIPELINE_NOT_FOUND: "未找到对应认证流程",
     ALREADY_PURCHASED: "您已购买该项目",
     IN_PROGRESS_PURCHASE: "您有正在进行中的相关订单，请先完成或取消现有订单",
