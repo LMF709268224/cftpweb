@@ -425,6 +425,7 @@ test("系统资格、自动免考和按原价购买以管线维度提交完整�
   const systemStageID = "stage-system-decision"
   const visibleStageID = "stage-visible-decisions"
   const systemUnitID = "unit-system-decision"
+  const unqualifiedSystemUnitID = "unit-system-unqualified-decision"
   const grantedUnitID = "unit-granted-decision"
   const waivedUnitID = "unit-waived-decision"
   const systemQualificationID = "qualification-system-decision"
@@ -438,7 +439,10 @@ test("系统资格、自动免考和按原价购买以管线维度提交完整�
       {
         stage_id: systemStageID,
         name: "System Stage",
-        units: [{ unit_id: systemUnitID, name: "System Course" }],
+        units: [
+          { unit_id: systemUnitID, name: "System Course" },
+          { unit_id: unqualifiedSystemUnitID, name: "Unqualified System Course" },
+        ],
       },
       {
         stage_id: visibleStageID,
@@ -457,13 +461,22 @@ test("系统资格、自动免考和按原价购买以管线维度提交完整�
           {
             stage_id: systemStageID,
             stage_name: "System Stage",
-            units: [{
-              unit_id: systemUnitID,
-              unit_name: "System Course",
-              allow_exemption: true,
-              qualified: false,
-              exemption_quals: [{ qual_id: systemQualificationID, name: "System Qualification" }],
-            }],
+            units: [
+              {
+                unit_id: systemUnitID,
+                unit_name: "System Course",
+                allow_exemption: true,
+                qualified: true,
+                exemption_quals: [{ qual_id: systemQualificationID, name: "System Qualification" }],
+              },
+              {
+                unit_id: unqualifiedSystemUnitID,
+                unit_name: "Unqualified System Course",
+                allow_exemption: true,
+                qualified: false,
+                exemption_quals: [{ qual_id: systemQualificationID, name: "System Qualification" }],
+              },
+            ],
           },
           {
             stage_id: visibleStageID,
@@ -501,7 +514,7 @@ test("系统资格、自动免考和按原价购买以管线维度提交完整�
         {
           stage_cc_ulid: systemStageID,
           exempted_unit_cc_ulids: [],
-          waived_unit_cc_ulids: [systemUnitID],
+          waived_unit_cc_ulids: [systemUnitID, unqualifiedSystemUnitID],
         },
         {
           stage_cc_ulid: visibleStageID,
@@ -520,6 +533,14 @@ test("系统资格、自动免考和按原价购买以管线维度提交完整�
         data: {
           can_checkout: JSON.stringify(pricingSelections) === JSON.stringify(expectedSelections),
           checkout_blocker_reason: "EXEMPTIONS_UNCONFIRMED_WAIVER",
+          pricing_detail_json: JSON.stringify({
+            units: [
+              { unit_id: systemUnitID, access: { amount: 70000, currency: "USD" } },
+              { unit_id: unqualifiedSystemUnitID, access: { amount: 65000, currency: "USD" } },
+              { unit_id: grantedUnitID, access: { amount: 75000, currency: "USD" } },
+              { unit_id: waivedUnitID, access: { amount: 80000, currency: "USD" } },
+            ],
+          }),
         },
       }
     }
@@ -562,9 +583,14 @@ test("系统资格、自动免考和按原价购买以管线维度提交完整�
   })
 
   await page.goto(`/checkout/${bundleID}`, { waitUntil: "domcontentloaded" })
-  await expect(page.getByText("System Course", { exact: true })).toHaveCount(0)
+  await expect(page.locator(".checkout-unit-card").getByText("System Course", { exact: true })).toHaveCount(0)
+  await expect(page.locator(".checkout-unit-card").getByText("Unqualified System Course", { exact: true })).toHaveCount(0)
   await expect(page.getByText("系统自动免考", { exact: true }).first()).toBeVisible()
   await page.locator(`[data-testid="checkout-exemption-waive"][data-unit-id="${waivedUnitID}"]`).click()
+  await expect(page.getByTestId("checkout-included-items").getByText("Full Price Course", { exact: true })).toBeVisible()
+  await expect(page.getByTestId("checkout-included-items").getByText("System Course", { exact: true })).toHaveCount(0)
+  await expect(page.getByTestId("checkout-included-items").getByText("Unqualified System Course", { exact: true })).toBeVisible()
+  await expect(page.locator(".checkout-total")).toContainText("1,450.00")
   await page.getByTestId("checkout-selection-next").click()
 
   await expect(page.getByTestId("checkout-step-registration")).toBeVisible()

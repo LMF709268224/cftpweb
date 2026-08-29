@@ -76,11 +76,23 @@ const qualificationSubmittingUnitId = ref("")
 const levelPlaceholder = "{" + "{level}}"
 
 function selectedExemptedUnitIds() {
-  return new Set(
+  const selectedUnitIds = new Set(
     Object.entries(selectedExemptionUnitIds.value)
       .filter(([, selected]) => selected)
       .map(([unitId]) => unitId),
   )
+
+  // System-managed qualifications are hidden from the candidate decision UI and
+  // submitted as waivers for the service to resolve. Keep the service's qualified
+  // result in the display calculation so an automatic exemption is not charged.
+  for (const stage of rawExemptionStages.value) {
+    for (const unit of stage?.units || []) {
+      const unitId = String(unit?.unit_id || "").trim()
+      if (unitId && unit?.qualified) selectedUnitIds.add(unitId)
+    }
+  }
+
+  return selectedUnitIds
 }
 
 function includedPurchaseUnitIds() {
