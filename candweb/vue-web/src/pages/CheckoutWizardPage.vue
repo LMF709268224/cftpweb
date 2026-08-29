@@ -316,6 +316,7 @@ const registrationTitle = computed(() => {
 const loading = ref(false)
 const cancellingPaymentOrder = ref(false)
 const paymentEditDialogOpen = ref(false)
+const qualificationOrderConfirmDialogOpen = ref(false)
 const paymentReturnStep = ref(3)
 const initialLoading = ref(true)
 const pipelineId = computed(() =>
@@ -1493,6 +1494,15 @@ function selectedUnitsNeedingApplication() {
 }
 
 const hasSelectedUnitsNeedingApplication = computed(() => selectedUnitsNeedingApplication().length > 0)
+const qualificationOrderConfirmItems = computed(() => selectedUnitsNeedingApplication().map((unit: any) => ({
+  unitId: String(unit?.unit_id || "").trim(),
+  unitName: String(unit?.unit_name || unit?.name || "").trim(),
+  qualificationName: String(
+    qualificationDefinitionForUnit(unit)?.name
+    || unit?.exemption_quals?.[0]?.name
+    || "",
+  ).trim(),
+})))
 const canContinueCredentialApplicationPayment = computed(() =>
   Boolean(activeCredentialApplicationOrder.value?.found)
   && isCredentialApplicationPaymentStatus(activeCredentialApplicationOrderStatus())
@@ -1624,6 +1634,32 @@ async function startSelectedQualificationApplications() {
   } finally {
     credentialApplicationOrderLoading.value = false
   }
+}
+
+function requestSelectedQualificationApplications() {
+  if (canContinueCredentialApplicationPayment.value) {
+    void startSelectedQualificationApplications()
+    return
+  }
+  if (activeCredentialApplicationOrder.value?.found) {
+    toast.info(t.value.checkoutWizard.qualificationNotInActiveOrder)
+    return
+  }
+  if (!hasSelectedUnitsNeedingApplication.value) {
+    toast.error(t.value.checkoutWizard.qualificationApplicationFailed)
+    return
+  }
+  qualificationOrderConfirmDialogOpen.value = true
+}
+
+function closeQualificationOrderConfirmDialog() {
+  if (credentialApplicationOrderLoading.value) return
+  qualificationOrderConfirmDialogOpen.value = false
+}
+
+async function confirmSelectedQualificationApplications() {
+  qualificationOrderConfirmDialogOpen.value = false
+  await startSelectedQualificationApplications()
 }
 
 async function nextFromStep1() {
@@ -2303,7 +2339,7 @@ function closePaymentEditDialog() {
                   data-testid="checkout-apply-selected-exemptions"
                   class="btn min-h-11 rounded-lg bg-emerald-600 px-5 text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
                   :disabled="credentialApplicationOrderLoading"
-                  @click="startSelectedQualificationApplications"
+                  @click="requestSelectedQualificationApplications"
                 >
                   <Loader2 v-if="credentialApplicationOrderLoading" class="h-4 w-4 animate-spin" />
                   {{ credentialApplicationOrderLoading
@@ -2548,6 +2584,86 @@ function closePaymentEditDialog() {
         </div>
         </template>
       </main>
+
+      <Teleport to="body">
+        <div v-if="qualificationOrderConfirmDialogOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
+          <section
+            v-modal-dialog="closeQualificationOrderConfirmDialog"
+            data-testid="checkout-qualification-order-confirm-dialog"
+            class="w-full max-w-[620px] overflow-hidden rounded-lg bg-white shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="checkout-qualification-order-confirm-title"
+          >
+            <header class="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+              <div class="flex min-w-0 items-start gap-3">
+                <CircleAlert class="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+                <div>
+                  <h2 id="checkout-qualification-order-confirm-title" class="text-lg font-black text-slate-950">
+                    {{ t.checkoutWizard.qualificationOrderConfirmTitle }}
+                  </h2>
+                  <p class="mt-2 text-sm leading-6 text-slate-600">
+                    {{ t.checkoutWizard.qualificationOrderConfirmDescription }}
+                  </p>
+                </div>
+              </div>
+              <button
+                class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50"
+                type="button"
+                :aria-label="t.common.close"
+                :disabled="credentialApplicationOrderLoading"
+                @click="closeQualificationOrderConfirmDialog"
+              >
+                <X class="h-4 w-4" />
+              </button>
+            </header>
+
+            <div class="space-y-4 px-5 py-5">
+              <div>
+                <h3 class="text-sm font-bold text-slate-900">{{ t.checkoutWizard.qualificationOrderConfirmItemsTitle }}</h3>
+                <ul class="mt-3 divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
+                  <li
+                    v-for="item in qualificationOrderConfirmItems"
+                    :key="item.unitId"
+                    data-testid="checkout-qualification-order-confirm-item"
+                    class="px-4 py-3"
+                  >
+                    <div class="font-bold text-slate-900">{{ item.unitName }}</div>
+                    <div v-if="item.qualificationName" class="mt-1 text-sm text-slate-600">{{ item.qualificationName }}</div>
+                  </li>
+                </ul>
+              </div>
+              <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
+                <p class="font-bold">{{ t.checkoutWizard.qualificationOrderConfirmWarningTitle }}</p>
+                <p class="mt-1">{{ t.checkoutWizard.qualificationOrderConfirmWarning }}</p>
+                <p class="mt-1">{{ t.checkoutWizard.qualificationOrderConfirmNextStep }}</p>
+              </div>
+            </div>
+
+            <footer class="flex flex-col-reverse gap-3 bg-slate-50 px-5 py-4 sm:flex-row sm:justify-end">
+              <button
+                data-testid="checkout-cancel-qualification-order"
+                class="inline-flex min-h-10 items-center justify-center rounded-lg border border-slate-300 bg-white px-4 font-bold text-slate-700 hover:bg-slate-100"
+                type="button"
+                :disabled="credentialApplicationOrderLoading"
+                @click="closeQualificationOrderConfirmDialog"
+              >
+                {{ t.common.cancel }}
+              </button>
+              <button
+                data-testid="checkout-confirm-qualification-order"
+                class="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 font-bold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                type="button"
+                :disabled="credentialApplicationOrderLoading"
+                @click="confirmSelectedQualificationApplications"
+              >
+                <Loader2 v-if="credentialApplicationOrderLoading" class="h-4 w-4 animate-spin" />
+                {{ t.checkoutWizard.qualificationOrderConfirmAction }}
+              </button>
+            </footer>
+          </section>
+        </div>
+      </Teleport>
 
       <Teleport to="body">
         <div v-if="paymentEditDialogOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">

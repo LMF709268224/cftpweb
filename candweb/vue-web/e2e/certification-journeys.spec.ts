@@ -1043,6 +1043,20 @@ test("免考选择完成后才合并创建所选资格订单", async ({ page }) 
 
   await page.getByTestId("checkout-apply-selected-exemptions").click()
 
+  const confirmDialog = page.getByTestId("checkout-qualification-order-confirm-dialog")
+  await expect(confirmDialog).toBeVisible()
+  await expect(confirmDialog.getByText("Apply Exemption Course", { exact: true })).toBeVisible()
+  await expect(confirmDialog.getByText("Apply Qualification", { exact: true })).toBeVisible()
+  await expect(confirmDialog.getByText("创建后不能修改", { exact: true })).toBeVisible()
+  expect(applicationOrderBody).toBeUndefined()
+
+  await page.getByTestId("checkout-cancel-qualification-order").click()
+  await expect(confirmDialog).toBeHidden()
+  expect(applicationOrderBody).toBeUndefined()
+
+  await page.getByTestId("checkout-apply-selected-exemptions").click()
+  await page.getByTestId("checkout-confirm-qualification-order").click()
+
   await expect.poll(() => applicationOrderBody).toEqual({
     pipeline_cc_ulid: pipelineID,
     bundle_ulid: selectionBundleID,
