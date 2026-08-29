@@ -569,9 +569,9 @@ watch(lang, () => {
                 <component :is="statusIcon(app.status)" class="h-3.5 w-3.5" />
                 {{ statusLabel(t, CANDIDATE_APPLICATION_STATUS_LABELS, app.status, 'credentialsPage.appStatusUnknown') }}
               </span>
-              <div class="col-span-2 min-w-0 rounded-lg bg-slate-50 px-3 py-2 text-sm leading-5 text-muted-foreground md:col-span-2 md:bg-transparent md:px-0 md:py-0 md:truncate lg:col-span-1" :title="app.audit_remark ? `${t.credentialsPage.auditRemark}: ${app.audit_remark}` : t.common.na">{{ app.audit_remark ? `${t.credentialsPage.auditRemark}: ${app.audit_remark}` : t.common.na }}</div>
-              <button v-if="canResubmit(app.status)" class="btn btn-primary col-span-2 h-9 w-full cursor-pointer whitespace-nowrap rounded-lg py-1 text-sm shadow-sm shadow-primary/20 md:col-span-1 md:w-auto md:justify-self-end" @click="handleApplyClick(definitionForApplication(app), applicationId(app))">{{ t.credentialsPage.appStatusResubmit }}</button>
-              <span v-else class="col-span-2 justify-self-start whitespace-nowrap text-sm text-muted-foreground md:col-span-1 md:justify-self-end">{{ formatBackendDateOnly(app.created_at) || t.common.na }}</span>
+              <div v-if="String(app.audit_remark || '').trim()" class="col-span-2 min-w-0 rounded-lg bg-slate-50 px-3 py-2 text-sm leading-5 text-muted-foreground md:col-span-2 md:bg-transparent md:px-0 md:py-0 md:truncate lg:col-span-1" data-testid="application-audit-remark" :title="`${t.credentialsPage.auditRemark}: ${app.audit_remark}`">{{ t.credentialsPage.auditRemark }}: {{ app.audit_remark }}</div>
+              <button v-if="canResubmit(app.status)" class="btn btn-primary col-span-2 h-9 w-full cursor-pointer whitespace-nowrap rounded-lg py-1 text-sm shadow-sm shadow-primary/20 md:col-span-1 md:w-auto md:justify-self-end lg:col-start-4" @click="handleApplyClick(definitionForApplication(app), applicationId(app))">{{ t.credentialsPage.appStatusResubmit }}</button>
+              <span v-else class="col-span-2 justify-self-start whitespace-nowrap text-sm text-muted-foreground md:col-span-1 md:justify-self-end lg:col-start-4">{{ formatBackendDateOnly(app.created_at) || t.common.na }}</span>
             </div>
           </div>
           <AppPagination
