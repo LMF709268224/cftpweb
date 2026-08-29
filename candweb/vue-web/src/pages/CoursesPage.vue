@@ -150,6 +150,7 @@ async function fetchData() {
         paymentPreview: b?.purchase_state?.payment_preview || b?.payment_preview || null,
         exemptionOptions: b?.purchase_state?.exemption_options || b?.exemption_options || null,
         activeMembership: b?.active_membership || null,
+        stages,
         stats: [
           { label: t.value.courses.stages, value: stages.length },
           { label: t.value.courses.units, value: unitCount },

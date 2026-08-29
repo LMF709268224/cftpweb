@@ -444,6 +444,8 @@ function blockerTitle(blocker: EligibilityBlocker) {
   if (blocker.blocker_type === "FORBIDDEN_QUALIFICATION") return copy.value.forbiddenQualification
   if (blocker.blocker_type === "CONFLICT_PIPELINE_IN_PROGRESS") return copy.value.conflictPipelineInProgress
   if (blocker.blocker_type === "CONFLICT_CHECK_UNAVAILABLE") return copy.value.conflictCheckUnavailable
+  if (blocker.blocker_type === "EXEMPTION_DOCUMENTS_PENDING_UPLOAD") return copy.value.exemptionDocumentsPendingUpload
+  if (blocker.blocker_type === "EXEMPTION_UNDER_REVIEW") return copy.value.exemptionUnderReview
   return blocker.description || blocker.blocker_type || copy.value.unknownBlocker || t.value.common.unknown
 }
 

@@ -45,6 +45,8 @@ const HARD_ELIGIBILITY_BLOCKER_TYPES = new Set([
   "FORBIDDEN_QUALIFICATION",
   "CONFLICT_PIPELINE_IN_PROGRESS",
   "CONFLICT_CHECK_UNAVAILABLE",
+  "EXEMPTION_DOCUMENTS_PENDING_UPLOAD",
+  "EXEMPTION_UNDER_REVIEW",
 ])
 const bundleId = String(route.params.bundleId || route.query.bundleId || "")
 const TEMPORARY_IMPLICIT_UNLOCK_BUNDLE_GPATH = "/gcc/pipeline/core/cftp"
@@ -1807,6 +1809,8 @@ function eligibilityBlockerMessage(blocker?: EligibilityBlocker) {
   if (blocker?.blocker_type === "FORBIDDEN_QUALIFICATION") return copy.forbiddenQualification
   if (blocker?.blocker_type === "CONFLICT_PIPELINE_IN_PROGRESS") return copy.conflictPipelineInProgress
   if (blocker?.blocker_type === "CONFLICT_CHECK_UNAVAILABLE") return copy.conflictCheckUnavailable
+  if (blocker?.blocker_type === "EXEMPTION_DOCUMENTS_PENDING_UPLOAD") return copy.exemptionDocumentsPendingUpload
+  if (blocker?.blocker_type === "EXEMPTION_UNDER_REVIEW") return copy.exemptionUnderReview
   return blocker?.description || copy.unknownBlocker || t.value.checkoutWizard.purchaseUnavailable
 }
 

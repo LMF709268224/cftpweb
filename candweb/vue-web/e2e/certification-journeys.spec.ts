@@ -160,6 +160,74 @@ test("商城和结账页展示并拦截层级互斥资格", async ({ page }) => 
   await expect(page.getByTestId("checkout-next")).toBeDisabled()
 })
 
+test("免考材料待上传时显示本地化原因并进入对应资格申请", async ({ page }) => {
+  const blockedBundleID = "bundle-exemption-documents-pending"
+  const blockedUnitID = "unit-exemption-documents-pending"
+  const blockedQualificationID = "qualification-exemption-documents-pending"
+  const backendDescription = "exemption review permission is active, but required documents have not been uploaded"
+  const pendingBundle = {
+    ...bundle,
+    bundle_id: blockedBundleID,
+    name: "Pending Exemption Documents",
+    stages: [{
+      stage_id: "stage-exemption-documents-pending",
+      name: "L1",
+      units: [{
+        unit_id: blockedUnitID,
+        name: "L1A Finance",
+        allow_exemption: true,
+        exemption_quals: [blockedQualificationID],
+      }],
+    }],
+    eligibility: {
+      can_purchase: false,
+      can_unlock: false,
+      blockers: [{
+        blocker_type: "EXEMPTION_DOCUMENTS_PENDING_UPLOAD",
+        description: backendDescription,
+        details: [blockedUnitID],
+      }],
+    },
+    purchase_state: {
+      ...bundle.purchase_state,
+      eligibility: {
+        can_purchase: false,
+        can_unlock: false,
+        blockers: [{
+          blocker_type: "EXEMPTION_DOCUMENTS_PENDING_UPLOAD",
+          description: backendDescription,
+          details: [blockedUnitID],
+        }],
+      },
+    },
+  }
+
+  await installCandidateApiMocks(page, ({ pathname, method }) => {
+    if (pathname === "/api/mall/bundles" && method === "GET") return { data: { bundles: [pendingBundle] } }
+    if (pathname === `/api/mall/bundles/${blockedBundleID}` && method === "GET") return { data: pendingBundle }
+    return undefined
+  })
+
+  await page.goto("/certifications", { waitUntil: "domcontentloaded" })
+  const card = page.locator(`[data-testid="certification-card"][data-bundle-id="${blockedBundleID}"]`)
+  await expect(card.getByText("请先上传免考材料", { exact: true })).toBeVisible()
+  await expect(card.getByText("免考材料尚未上传。请先前往资格申请上传材料，完成审核后再购买认证。", { exact: true })).toBeVisible()
+  await expect(card.getByText("去上传材料", { exact: true })).toBeVisible()
+  await expect(card).not.toContainText(backendDescription)
+
+  await page.evaluate(() => {
+    localStorage.setItem("app_lang", "en")
+    window.dispatchEvent(new Event("lang_change"))
+  })
+  const englishCard = page.locator(`[data-testid="certification-card"][data-bundle-id="${blockedBundleID}"]`)
+  await expect(englishCard.getByText("Exemption documents required", { exact: true })).toBeVisible()
+  await expect(englishCard.getByText("Upload Documents", { exact: true })).toBeVisible()
+  await expect(englishCard).not.toContainText(backendDescription)
+
+  await englishCard.click()
+  await expect(page).toHaveURL(new RegExp(`/credentials\\?qual_ids=${blockedQualificationID}$`))
+})
+
 test("已持有有效资格的课程自动免考且不可取消", async ({ page }) => {
   const stageID = "stage-auto-exemption"
   const unitID = "unit-auto-exemption"

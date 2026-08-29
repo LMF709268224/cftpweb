@@ -10,7 +10,7 @@ import { apiClient } from "@/lib/apiClient"
 import { preloadCheckoutWizard } from "@/router"
 
 type CourseCardStat = { label: string; value: string | number }
-type EligibilityBlocker = { blocker_type?: string; description?: string }
+type EligibilityBlocker = { blocker_type?: string; description?: string; details?: unknown[] }
 type EligibilityPreview = { eligible?: boolean; can_purchase?: boolean; can_unlock?: boolean; blockers?: EligibilityBlocker[] }
 type ActiveOrderPreview = { action?: "purchase" | "unlock"; order_id?: string; orderId?: string; status?: string; pay_order_id?: string; payOrderId?: string; message?: string }
 type PaymentPreview = { subtotal?: number; discount_total?: number; tax_total?: number; total?: number; currency?: string }
@@ -43,6 +43,7 @@ const props = defineProps<{
   paymentPreview?: PaymentPreview | null
   exemptionOptions?: ExemptionOptions | null
   activeMembership?: Record<string, unknown> | null
+  stages?: any[]
   loginRequired?: boolean
 }>()
 
@@ -54,6 +55,10 @@ const currentEligibility = computed<EligibilityPreview | null>(() => freshBundle
 const currentActiveOrder = computed<ActiveOrderPreview | null>(() => freshBundle.value?.purchase_state?.active_order || freshBundle.value?.active_order || props.activeOrder || null)
 const currentActiveMembership = computed<Record<string, unknown> | null>(() => freshBundle.value?.active_membership || props.activeMembership || null)
 const blockers = computed(() => currentEligibility.value?.blockers || [])
+const credentialCenterBlocker = computed(() => blockers.value.find((blocker) => [
+  "EXEMPTION_DOCUMENTS_PENDING_UPLOAD",
+  "EXEMPTION_UNDER_REVIEW",
+].includes(String(blocker.blocker_type || ""))))
 const hardBlockers = computed(() => blockers.value.filter((blocker) => [
   "FORBIDDEN_QUALIFICATION",
   "CONFLICT_PIPELINE_IN_PROGRESS",
@@ -90,6 +95,8 @@ const actionCopy = computed(() => {
   if (statusRefreshing.value) return cardCopy.value.checking
   if (hasInProgressOrder.value) return cardCopy.value.continuePayment
   if (currentEligibility.value?.can_purchase || currentEligibility.value?.can_unlock) return cardCopy.value.buyNow
+  if (credentialCenterBlocker.value?.blocker_type === "EXEMPTION_DOCUMENTS_PENDING_UPLOAD") return cardCopy.value.uploadExemptionDocuments
+  if (credentialCenterBlocker.value?.blocker_type === "EXEMPTION_UNDER_REVIEW") return cardCopy.value.viewExemptionReview
   if (currentEligibility.value) return cardCopy.value.unavailable
   return cardCopy.value.checkStatus
 })
@@ -97,6 +104,7 @@ const actionCopy = computed(() => {
 const actionClass = computed(() => {
   if (props.loginRequired) return "bg-primary text-white shadow-sm shadow-primary/20 group-hover:bg-primary/90"
   if (statusRefreshing.value) return "bg-slate-200 text-slate-500"
+  if (credentialCenterBlocker.value) return "bg-primary text-white shadow-sm shadow-primary/20 group-hover:bg-primary/90"
   if (currentEligibility.value && !effectivePurchased.value && !currentEligibility.value.can_purchase && !currentEligibility.value.can_unlock && !hasInProgressOrder.value) {
     return "bg-slate-200 text-slate-500"
   }
@@ -113,7 +121,30 @@ function blockerText(blocker?: EligibilityBlocker) {
   if (blocker.blocker_type === "FORBIDDEN_QUALIFICATION") return cardCopy.value.forbiddenQualification
   if (blocker.blocker_type === "CONFLICT_PIPELINE_IN_PROGRESS") return cardCopy.value.conflictPipelineInProgress
   if (blocker.blocker_type === "CONFLICT_CHECK_UNAVAILABLE") return cardCopy.value.conflictCheckUnavailable
+  if (blocker.blocker_type === "EXEMPTION_DOCUMENTS_PENDING_UPLOAD") return cardCopy.value.exemptionDocumentsPendingUpload
+  if (blocker.blocker_type === "EXEMPTION_UNDER_REVIEW") return cardCopy.value.exemptionUnderReview
   return blocker.description || blocker.blocker_type || ""
+}
+
+function blockerQualificationIDs(blocker: EligibilityBlocker) {
+  const detailIDs = new Set((blocker.details || []).map((detail) => String(detail || "").trim()).filter(Boolean))
+  const stages = Array.isArray(freshBundle.value?.stages) ? freshBundle.value.stages : (props.stages || [])
+  const IDs = stages.flatMap((stage: any) => Array.isArray(stage?.units) ? stage.units : [])
+    .filter((unit: any) => detailIDs.size === 0 || detailIDs.has(String(unit?.unit_id || unit?.unit_ulid || "")))
+    .flatMap((unit: any) => Array.isArray(unit?.exemption_quals) ? unit.exemption_quals : [])
+    .map((qualification: any) => typeof qualification === "string"
+      ? qualification
+      : String(qualification?.qual_ulid || qualification?.qual_id || qualification?.cred_def_ulid || ""))
+    .filter(Boolean)
+  return Array.from(new Set(IDs))
+}
+
+async function openCredentialCenter(blocker: EligibilityBlocker) {
+  const qualificationIDs = blockerQualificationIDs(blocker)
+  await router.push({
+    path: "/credentials",
+    query: qualificationIDs.length > 0 ? { qual_ids: qualificationIDs.join(",") } : undefined,
+  })
 }
 
 const accessState = computed(() => {
@@ -128,7 +159,16 @@ const accessState = computed(() => {
     return { label: isMembershipOnlyProduct.value ? cardCopy.value.readyMembership : cardCopy.value.ready, icon: ShoppingCart, className: "border-emerald-200 bg-emerald-50 text-emerald-700", hint: "" }
   }
   if (currentEligibility.value) {
-    return { label: cardCopy.value.blocked, icon: AlertCircle, className: "border-amber-200 bg-amber-50 text-amber-800", hint: blockerText(blockers.value[0]) }
+    return {
+      label: credentialCenterBlocker.value?.blocker_type === "EXEMPTION_DOCUMENTS_PENDING_UPLOAD"
+        ? cardCopy.value.exemptionDocumentsRequired
+        : credentialCenterBlocker.value?.blocker_type === "EXEMPTION_UNDER_REVIEW"
+          ? cardCopy.value.exemptionReviewPending
+          : cardCopy.value.blocked,
+      icon: AlertCircle,
+      className: "border-amber-200 bg-amber-50 text-amber-800",
+      hint: blockerText(credentialCenterBlocker.value || blockers.value[0]),
+    }
   }
   return { label: cardCopy.value.checking, icon: Clock, className: "border-slate-200 bg-slate-50 text-slate-700", hint: "" }
 })
@@ -164,6 +204,10 @@ async function handleCardClick() {
   if (hasInProgressOrder.value) {
     toast.info(t.value.purchaseDialog?.inProgressPurchaseDesc || cardCopy.value.inProgressPurchase)
     router.push({ path: "/orders" })
+    return
+  }
+  if (credentialCenterBlocker.value) {
+    await openCredentialCenter(credentialCenterBlocker.value)
     return
   }
   if (hardBlockers.value.length) {
