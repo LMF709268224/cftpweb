@@ -55,10 +55,11 @@ const currentEligibility = computed<EligibilityPreview | null>(() => freshBundle
 const currentActiveOrder = computed<ActiveOrderPreview | null>(() => freshBundle.value?.purchase_state?.active_order || freshBundle.value?.active_order || props.activeOrder || null)
 const currentActiveMembership = computed<Record<string, unknown> | null>(() => freshBundle.value?.active_membership || props.activeMembership || null)
 const blockers = computed(() => currentEligibility.value?.blockers || [])
-const credentialCenterBlocker = computed(() => blockers.value.find((blocker) => [
+const credentialCenterBlockers = computed(() => blockers.value.filter((blocker) => [
   "EXEMPTION_DOCUMENTS_PENDING_UPLOAD",
   "EXEMPTION_UNDER_REVIEW",
 ].includes(String(blocker.blocker_type || ""))))
+const credentialCenterBlocker = computed(() => credentialCenterBlockers.value[0])
 const hardBlockers = computed(() => blockers.value.filter((blocker) => [
   "FORBIDDEN_QUALIFICATION",
   "CONFLICT_PIPELINE_IN_PROGRESS",
@@ -139,8 +140,10 @@ function blockerQualificationIDs(blocker: EligibilityBlocker) {
   return Array.from(new Set(IDs))
 }
 
-async function openCredentialCenter(blocker: EligibilityBlocker) {
-  const qualificationIDs = blockerQualificationIDs(blocker)
+async function openCredentialCenter() {
+  const qualificationIDs = Array.from(new Set(
+    credentialCenterBlockers.value.flatMap(blockerQualificationIDs),
+  ))
   await router.push({
     path: "/credentials",
     query: qualificationIDs.length > 0 ? { qual_ids: qualificationIDs.join(",") } : undefined,
@@ -207,7 +210,7 @@ async function handleCardClick() {
     return
   }
   if (credentialCenterBlocker.value) {
-    await openCredentialCenter(credentialCenterBlocker.value)
+    await openCredentialCenter()
     return
   }
   if (hardBlockers.value.length) {

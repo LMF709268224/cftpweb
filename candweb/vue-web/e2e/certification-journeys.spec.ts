@@ -228,6 +228,82 @@ test("免考材料待上传时显示本地化原因并进入对应资格申请",
   await expect(page).toHaveURL(new RegExp(`/credentials\\?qual_ids=${blockedQualificationID}$`))
 })
 
+test("商城同时存在审核中和待上传免考时进入全部对应资格", async ({ page }) => {
+  const blockedBundleID = "bundle-mixed-exemption-review"
+  const underReviewUnitID = "unit-exemption-under-review"
+  const pendingUploadUnitID = "unit-exemption-pending-upload"
+  const underReviewQualificationID = "qualification-exemption-under-review"
+  const pendingUploadQualificationID = "qualification-exemption-pending-upload"
+  const mixedBundle = {
+    ...bundle,
+    bundle_id: blockedBundleID,
+    name: "Mixed Exemption Review",
+    stages: [{
+      stage_id: "stage-mixed-exemption-review",
+      name: "L1",
+      units: [
+        {
+          unit_id: underReviewUnitID,
+          name: "L1A Finance",
+          allow_exemption: true,
+          exemption_quals: [underReviewQualificationID],
+        },
+        {
+          unit_id: pendingUploadUnitID,
+          name: "L1B Fintech",
+          allow_exemption: true,
+          exemption_quals: [pendingUploadQualificationID],
+        },
+      ],
+    }],
+    eligibility: {
+      can_purchase: false,
+      can_unlock: false,
+      blockers: [
+        {
+          blocker_type: "EXEMPTION_UNDER_REVIEW",
+          details: [underReviewUnitID],
+        },
+        {
+          blocker_type: "EXEMPTION_DOCUMENTS_PENDING_UPLOAD",
+          details: [pendingUploadUnitID],
+        },
+      ],
+    },
+    purchase_state: {
+      ...bundle.purchase_state,
+      eligibility: {
+        can_purchase: false,
+        can_unlock: false,
+        blockers: [
+          {
+            blocker_type: "EXEMPTION_UNDER_REVIEW",
+            details: [underReviewUnitID],
+          },
+          {
+            blocker_type: "EXEMPTION_DOCUMENTS_PENDING_UPLOAD",
+            details: [pendingUploadUnitID],
+          },
+        ],
+      },
+    },
+  }
+
+  await installCandidateApiMocks(page, ({ pathname, method }) => {
+    if (pathname === "/api/mall/bundles" && method === "GET") return { data: { bundles: [mixedBundle] } }
+    if (pathname === `/api/mall/bundles/${blockedBundleID}` && method === "GET") return { data: mixedBundle }
+    return undefined
+  })
+
+  await page.goto("/certifications", { waitUntil: "domcontentloaded" })
+  const card = page.locator(`[data-testid="certification-card"][data-bundle-id="${blockedBundleID}"]`)
+  await expect(card.getByText("免考资格审核中", { exact: true })).toBeVisible()
+  await card.click()
+  await expect(page).toHaveURL(new RegExp(
+    `/credentials\\?qual_ids=${underReviewQualificationID},${pendingUploadQualificationID}$`,
+  ))
+})
+
 test("已持有有效资格的课程自动免考且不可取消", async ({ page }) => {
   const stageID = "stage-auto-exemption"
   const unitID = "unit-auto-exemption"
