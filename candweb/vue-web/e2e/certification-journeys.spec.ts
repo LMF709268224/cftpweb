@@ -431,6 +431,7 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
   const systemQualificationID = "qualification-system-only"
   let uploadRequest: any
   let submitRequest: any
+  let pricingSelections: any
   const checkoutBundle = {
     ...bundle,
     stages: [{
@@ -473,9 +474,12 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
   await page.route("https://uploads.example/**", async (route) => {
     await route.fulfill({ status: 200, body: "" })
   })
-  await installCandidateApiMocks(page, ({ pathname, method, body }) => {
+  await installCandidateApiMocks(page, ({ pathname, url, method, body }) => {
     if (pathname === `/api/mall/bundles/${bundleID}` && method === "GET") return { data: checkoutBundle }
-    if (pathname === `/api/mall/bundles/${bundleID}/pricing-detail`) return { data: { units: [], memberships: [] } }
+    if (pathname === `/api/mall/bundles/${bundleID}/pricing-detail`) {
+      pricingSelections = JSON.parse(url.searchParams.get("selected_exemptions_json") || "{}")
+      return { data: { units: [], memberships: [] } }
+    }
     if (pathname === "/api/credentials/definitions") {
       return {
         data: {
@@ -539,6 +543,13 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
 
   await page.goto(`/checkout/${bundleID}`, { waitUntil: "domcontentloaded" })
   await expect(page.getByText("System Only Course", { exact: true })).toHaveCount(0)
+  await expect.poll(() => pricingSelections).toEqual({
+    stages: [{
+      stage_cc_ulid: stageID,
+      exempted_unit_cc_ulids: [],
+      waived_unit_cc_ulids: [systemUnitID],
+    }],
+  })
   await expect(page.locator(`[data-testid="checkout-exemption-apply"][data-unit-id="${unitID}"]`)).toHaveCount(0)
 
   await expect(page.getByText("模板与参考文件", { exact: true })).toBeVisible()

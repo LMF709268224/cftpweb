@@ -55,7 +55,9 @@ const bundleData = ref<any>(null)
 const pricingDetail = ref<any>(null)
 const paymentMode = ref("FULL_PIPELINE")
 const paymentPreview = ref<any>(null)
+const rawExemptionStages = ref<any[]>([])
 const exemptionStages = ref<any[]>([])
+const systemManagedExemptionUnitIds = ref<Record<string, boolean>>({})
 const selectedExemptionUnitIds = ref<Record<string, boolean>>({})
 const waivedExemptionUnitIds = ref<Record<string, boolean>>({})
 const activeOrderId = ref("")
@@ -655,7 +657,8 @@ function applyBundleInfo(response: any) {
   paymentPreview.value = purchaseState?.payment_preview || null
 
   const stages = purchaseState?.exemption_options?.stages || []
-  exemptionStages.value = stages.filter((stage: any) => (stage.units?.length || 0) > 0)
+  rawExemptionStages.value = stages.filter((stage: any) => (stage.units?.length || 0) > 0)
+  exemptionStages.value = rawExemptionStages.value
   syncQualifiedExemptionSelections(exemptionStages.value)
 
   if (exemptionStages.value.length === 0 && currentStep.value === 1) {
@@ -674,7 +677,22 @@ function qualificationIdsForStages(stages: any[]) {
 }
 
 function applyQualificationDefinitionsToStages(definitions: Record<string, any>) {
-  exemptionStages.value = exemptionStages.value
+  const systemManagedUnits: Record<string, boolean> = {}
+  for (const stage of rawExemptionStages.value) {
+    for (const unit of stage.units || []) {
+      const qualifications = unit.exemption_quals || []
+      const isSystemManaged = qualifications.length > 0 && qualifications.every((qualification: any) => {
+        const qualificationId = String(qualification?.qual_id || "").trim()
+        const definition = definitions[qualificationId]
+        return Boolean(definition) && isSystemCredentialDefinition(definition)
+      })
+      const unitId = String(unit?.unit_id || "").trim()
+      if (isSystemManaged && unitId) systemManagedUnits[unitId] = true
+    }
+  }
+  systemManagedExemptionUnitIds.value = systemManagedUnits
+
+  exemptionStages.value = rawExemptionStages.value
     .map((stage: any) => ({
       ...stage,
       units: (stage.units || [])
@@ -708,7 +726,7 @@ function applyQualificationDefinitionsToStages(definitions: Record<string, any>)
 }
 
 async function refreshCheckoutQualificationDefinitions() {
-  const qualificationIds = qualificationIdsForStages(exemptionStages.value)
+  const qualificationIds = qualificationIdsForStages(rawExemptionStages.value)
   if (qualificationIds.length === 0) {
     qualificationDefinitions.value = {}
     return
@@ -856,14 +874,16 @@ async function fetchBundleInfo() {
 
 function buildSelectedExemptionsJson() {
   return JSON.stringify({
-    stages: exemptionStages.value.map((stage: any) => ({
+    stages: rawExemptionStages.value.map((stage: any) => ({
       stage_cc_ulid: String(stage?.stage_id || stage?.stage_cc_ulid || "").trim(),
       exempted_unit_cc_ulids: (stage?.units || [])
         .map((unit: any) => String(unit?.unit_id || "").trim())
         .filter((unitId: string) => unitId && selectedExemptionUnitIds.value[unitId]),
       waived_unit_cc_ulids: (stage?.units || [])
         .map((unit: any) => String(unit?.unit_id || "").trim())
-        .filter((unitId: string) => unitId && waivedExemptionUnitIds.value[unitId]),
+        .filter((unitId: string) => unitId
+          && !selectedExemptionUnitIds.value[unitId]
+          && (waivedExemptionUnitIds.value[unitId] || systemManagedExemptionUnitIds.value[unitId])),
     })).filter((stage: any) => stage.stage_cc_ulid),
   })
 }
@@ -1602,7 +1622,11 @@ async function nextFromStep1() {
   try {
     const evaluation = await fetchPricingEvaluation()
     if (evaluation?.can_checkout === false) {
-      toast.info(evaluation?.checkout_blocker_reason || t.value.checkoutWizard.checkoutBlockedByExemption)
+      toast.info(
+        evaluation?.checkout_blocker_reason === "EXEMPTIONS_UNCONFIRMED_WAIVER"
+          ? t.value.checkoutWizard.exemptionDecisionRequired
+          : evaluation?.checkout_blocker_reason || t.value.checkoutWizard.checkoutBlockedByExemption,
+      )
       return
     }
   } catch (error) {
