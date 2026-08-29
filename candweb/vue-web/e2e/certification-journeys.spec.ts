@@ -334,13 +334,165 @@ test("已持有有效资格的课程自动免考且不可取消", async ({ page 
   expect(purchaseBody).toEqual({
     payment_mode: "FULL_PIPELINE",
     selected_exemptions_json: JSON.stringify({
-      stages: [{
-        stage_cc_ulid: stageID,
-        exempted_unit_cc_ulids: [unitID],
-        waived_unit_cc_ulids: [],
-      }],
+      [pipelineID]: {
+        stages: [{
+          stage_cc_ulid: stageID,
+          exempted_unit_cc_ulids: [unitID],
+          waived_unit_cc_ulids: [],
+        }],
+      },
     }),
   })
+})
+
+test("系统资格、自动免考和按原价购买以管线维度提交完整决定", async ({ page }) => {
+  const systemStageID = "stage-system-decision"
+  const visibleStageID = "stage-visible-decisions"
+  const systemUnitID = "unit-system-decision"
+  const grantedUnitID = "unit-granted-decision"
+  const waivedUnitID = "unit-waived-decision"
+  const systemQualificationID = "qualification-system-decision"
+  const grantedQualificationID = "qualification-granted-decision"
+  const waivedQualificationID = "qualification-waived-decision"
+  let pricingSelections: unknown
+
+  const decisionBundle = {
+    ...bundle,
+    stages: [
+      {
+        stage_id: systemStageID,
+        name: "System Stage",
+        units: [{ unit_id: systemUnitID, name: "System Course" }],
+      },
+      {
+        stage_id: visibleStageID,
+        name: "Visible Stage",
+        sort_order: 1,
+        units: [
+          { unit_id: grantedUnitID, name: "Granted Course" },
+          { unit_id: waivedUnitID, name: "Full Price Course" },
+        ],
+      },
+    ],
+    purchase_state: {
+      ...bundle.purchase_state,
+      exemption_options: {
+        stages: [
+          {
+            stage_id: systemStageID,
+            stage_name: "System Stage",
+            units: [{
+              unit_id: systemUnitID,
+              unit_name: "System Course",
+              allow_exemption: true,
+              qualified: false,
+              exemption_quals: [{ qual_id: systemQualificationID, name: "System Qualification" }],
+            }],
+          },
+          {
+            stage_id: visibleStageID,
+            stage_name: "Visible Stage",
+            sort_order: 1,
+            units: [
+              {
+                unit_id: grantedUnitID,
+                unit_name: "Granted Course",
+                allow_exemption: true,
+                qualified: true,
+                exemption_quals: [{
+                  qual_id: grantedQualificationID,
+                  name: "Granted Qualification",
+                  eligible: true,
+                  credential_status: "CREDENTIAL_STATUS_ACTIVE",
+                }],
+              },
+              {
+                unit_id: waivedUnitID,
+                unit_name: "Full Price Course",
+                allow_exemption: true,
+                qualified: false,
+                exemption_quals: [{ qual_id: waivedQualificationID, name: "Waived Qualification" }],
+              },
+            ],
+          },
+        ],
+      },
+    },
+  }
+  const expectedSelections = {
+    [pipelineID]: {
+      stages: [
+        {
+          stage_cc_ulid: systemStageID,
+          exempted_unit_cc_ulids: [],
+          waived_unit_cc_ulids: [systemUnitID],
+        },
+        {
+          stage_cc_ulid: visibleStageID,
+          exempted_unit_cc_ulids: [grantedUnitID],
+          waived_unit_cc_ulids: [waivedUnitID],
+        },
+      ],
+    },
+  }
+
+  await installCandidateApiMocks(page, ({ pathname, url, method }) => {
+    if (pathname === `/api/mall/bundles/${bundleID}` && method === "GET") return { data: decisionBundle }
+    if (pathname === `/api/mall/bundles/${bundleID}/pricing-detail`) {
+      pricingSelections = JSON.parse(url.searchParams.get("selected_exemptions_json") || "{}")
+      return {
+        data: {
+          can_checkout: JSON.stringify(pricingSelections) === JSON.stringify(expectedSelections),
+          checkout_blocker_reason: "EXEMPTIONS_UNCONFIRMED_WAIVER",
+        },
+      }
+    }
+    if (pathname === "/api/credentials/definitions") {
+      return {
+        data: {
+          definitions: [
+            {
+              cred_def_ulid: systemQualificationID,
+              name: "System Qualification",
+              respath: "/gcreds/core/system/internal",
+            },
+            {
+              cred_def_ulid: grantedQualificationID,
+              name: "Granted Qualification",
+              respath: "/gcreds/core/granted",
+            },
+            {
+              cred_def_ulid: waivedQualificationID,
+              name: "Waived Qualification",
+              respath: "/gcreds/core/waived",
+            },
+          ],
+        },
+      }
+    }
+    if (pathname === "/api/credentials/applications") return { data: { applications: [] } }
+    if (pathname === "/api/credentials/application-orders/latest") {
+      return {
+        data: {
+          found: true,
+          application_order_ulid: "existing-decision-order",
+          order_status: "UPLOAD_READY",
+          items: [{ qual_id: grantedQualificationID, item_status: "APPROVED" }],
+        },
+      }
+    }
+    if (pathname === "/api/user/me") return { data: candidateUser }
+    return undefined
+  })
+
+  await page.goto(`/checkout/${bundleID}`, { waitUntil: "domcontentloaded" })
+  await expect(page.getByText("System Course", { exact: true })).toHaveCount(0)
+  await expect(page.getByText("系统自动免考", { exact: true }).first()).toBeVisible()
+  await page.locator(`[data-testid="checkout-exemption-waive"][data-unit-id="${waivedUnitID}"]`).click()
+  await page.getByTestId("checkout-selection-next").click()
+
+  await expect(page.getByTestId("checkout-step-registration")).toBeVisible()
+  expect(pricingSelections).toEqual(expectedSelections)
 })
 
 test("资格审核轮询刷新后继续隐藏系统管理资格", async ({ page }) => {
@@ -544,11 +696,13 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
   await page.goto(`/checkout/${bundleID}`, { waitUntil: "domcontentloaded" })
   await expect(page.getByText("System Only Course", { exact: true })).toHaveCount(0)
   await expect.poll(() => pricingSelections).toEqual({
-    stages: [{
-      stage_cc_ulid: stageID,
-      exempted_unit_cc_ulids: [],
-      waived_unit_cc_ulids: [systemUnitID],
-    }],
+    [pipelineID]: {
+      stages: [{
+        stage_cc_ulid: stageID,
+        exempted_unit_cc_ulids: [],
+        waived_unit_cc_ulids: [systemUnitID],
+      }],
+    },
   })
   await expect(page.locator(`[data-testid="checkout-exemption-apply"][data-unit-id="${unitID}"]`)).toHaveCount(0)
 
@@ -1002,7 +1156,7 @@ test("认证从商城下单、Stripe 支付到已购认证完整闭环", async (
   )).toBeVisible()
   expect(purchaseBody).toEqual({
     payment_mode: "FULL_PIPELINE",
-    selected_exemptions_json: JSON.stringify({ stages: [] }),
+    selected_exemptions_json: JSON.stringify({ [pipelineID]: { stages: [] } }),
   })
 })
 

@@ -873,7 +873,10 @@ async function fetchBundleInfo() {
 }
 
 function buildSelectedExemptionsJson() {
-  return JSON.stringify({
+  const pipelineId = bundlePipelineId(bundleData.value)
+  if (!pipelineId) return JSON.stringify({})
+
+  const pipelineSelections = {
     stages: rawExemptionStages.value.map((stage: any) => ({
       stage_cc_ulid: String(stage?.stage_id || stage?.stage_cc_ulid || "").trim(),
       exempted_unit_cc_ulids: (stage?.units || [])
@@ -885,7 +888,8 @@ function buildSelectedExemptionsJson() {
           && !selectedExemptionUnitIds.value[unitId]
           && (waivedExemptionUnitIds.value[unitId] || systemManagedExemptionUnitIds.value[unitId])),
     })).filter((stage: any) => stage.stage_cc_ulid),
-  })
+  }
+  return JSON.stringify({ [pipelineId]: pipelineSelections })
 }
 
 async function fetchPricingEvaluation() {
