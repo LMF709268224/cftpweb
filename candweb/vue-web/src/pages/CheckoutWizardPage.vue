@@ -60,6 +60,7 @@ const activeOrderId = ref("")
 const activeOrderAction = ref<"purchase" | "unlock" | "credential_application">("purchase")
 const activeCredentialQualIds = ref<string[]>([])
 const activeCredentialUnitIds = ref<string[]>([])
+const activeCredentialApplicationOrder = ref<any>(null)
 const credentialApplicationOrderLoading = ref(false)
 const qualificationApplications = ref<Record<string, any>>({})
 const qualificationDefinitions = ref<Record<string, any>>({})
@@ -799,6 +800,7 @@ async function loadBundleInfo() {
   const response = await fetchBundlePayload()
   await applyBundleInfoWithQualificationDefinitions(response)
   await refreshQualificationApplications()
+  await refreshActiveCredentialApplicationOrder()
   return response
 }
 
@@ -827,6 +829,7 @@ async function loadPurchaseReadyBundleInfo() {
   }
 
   await refreshQualificationApplications()
+  await refreshActiveCredentialApplicationOrder()
   return purchaseReadyBundle
 }
 
@@ -969,6 +972,7 @@ async function pollQualificationApplications() {
   const hadPendingApplications = hasPendingQualificationApplications()
   try {
     await refreshQualificationApplications()
+    await refreshActiveCredentialApplicationOrder()
 
     if (hadPendingApplications && !hasPendingQualificationApplications()) {
       const response = await fetchBundlePayload()
@@ -1268,6 +1272,126 @@ function isCredentialApplicationResolvedStatus(status: unknown) {
   return String(status || "").trim().toUpperCase().includes("RESOLVED")
 }
 
+function activeCredentialApplicationOrderStatus() {
+  return String(activeCredentialApplicationOrder.value?.order_status || "").trim().toUpperCase()
+}
+
+function activeCredentialApplicationOrderQualIds() {
+  return new Set<string>(
+    (activeCredentialApplicationOrder.value?.items || [])
+      .map((item: any) => String(item?.qual_id || "").trim())
+      .filter(Boolean),
+  )
+}
+
+function activeCredentialApplicationOrderItemForUnit(unit: any) {
+  const qualificationIds = new Set(qualificationIdsForUnit(unit))
+  return (activeCredentialApplicationOrder.value?.items || []).find((item: any) =>
+    qualificationIds.has(String(item?.qual_id || "").trim()),
+  ) || null
+}
+
+function activeCredentialApplicationOrderItemStatus(unit: any) {
+  return String(activeCredentialApplicationOrderItemForUnit(unit)?.item_status || "").trim().toUpperCase()
+}
+
+function activeOrderIncludesUnit(unit: any) {
+  return Boolean(activeCredentialApplicationOrderItemForUnit(unit))
+}
+
+function credentialApplicationOrderIsTerminal() {
+  return ["RESOLVED", "FAILED", "CANCELLED"].includes(activeCredentialApplicationOrderStatus())
+}
+
+function activeOrderLocksDecisionForUnit(unit: any) {
+  if (!activeOrderIncludesUnit(unit)) return false
+  const itemStatus = activeCredentialApplicationOrderItemStatus(unit)
+  if (itemStatus === "APPROVED" || itemStatus === "SUBMITTED") return true
+  return itemStatus === "PENDING" && !credentialApplicationOrderIsTerminal()
+}
+
+function activeOrderBlocksApplicationForUnit(unit: any) {
+  if (!activeCredentialApplicationOrder.value?.found) return false
+  return !activeOrderIncludesUnit(unit)
+    || activeCredentialApplicationOrderItemStatus(unit) === "REJECTED"
+    || credentialApplicationOrderIsTerminal()
+}
+
+function activeOrderUnitStatusLabel(unit: any) {
+  if (!activeCredentialApplicationOrder.value?.found) return ""
+  if (!activeOrderIncludesUnit(unit)) return t.value.checkoutWizard.qualificationNotInActiveOrder
+  const itemStatus = activeCredentialApplicationOrderItemStatus(unit)
+  if (itemStatus === "APPROVED") return t.value.checkoutWizard.automaticExemptionApplied
+  if (itemStatus === "REJECTED") return t.value.checkoutWizard.qualificationReviewRejected
+  if (itemStatus === "SUBMITTED") return t.value.checkoutWizard.qualificationUnderReview
+  if (credentialApplicationOrderIsTerminal()) return t.value.checkoutWizard.qualificationOrderClosed
+  if (isCredentialApplicationPaymentStatus(activeCredentialApplicationOrderStatus())) {
+    return t.value.checkoutWizard.qualificationPaymentPending
+  }
+  if (isUploadReadyStatus(activeCredentialApplicationOrderStatus())) {
+    return t.value.checkoutWizard.qualificationUploadReady
+  }
+  if (isCredentialApplicationUnderReviewStatus(activeCredentialApplicationOrderStatus())) {
+    return t.value.checkoutWizard.qualificationUnderReview
+  }
+  return ""
+}
+
+async function refreshActiveCredentialApplicationOrder() {
+  const response = await apiClient("/api/credentials/application-orders/latest", {
+    suppressErrorToast: true,
+  })
+  activeCredentialApplicationOrder.value = response?.found ? response : null
+  if (!response?.found) return
+
+  const activeQualIds = activeCredentialApplicationOrderQualIds()
+  const nextSelections = { ...selectedExemptionUnitIds.value }
+  const nextWaivers = { ...waivedExemptionUnitIds.value }
+  const includedUnits = allExemptionUnits().filter((unit: any) =>
+    qualificationIdsForUnit(unit).some((qualId: string) => activeQualIds.has(qualId)),
+  )
+
+  for (const unit of includedUnits) {
+    const unitId = String(unit?.unit_id || "").trim()
+    if (!unitId) continue
+    const itemStatus = activeCredentialApplicationOrderItemStatus(unit)
+    if (["PENDING", "SUBMITTED", "APPROVED"].includes(itemStatus) && !(itemStatus === "PENDING" && credentialApplicationOrderIsTerminal())) {
+      nextSelections[unitId] = true
+      delete nextWaivers[unitId]
+    } else {
+      delete nextSelections[unitId]
+    }
+  }
+  for (const unit of allExemptionUnits()) {
+    if (activeOrderIncludesUnit(unit)) continue
+    const unitId = String(unit?.unit_id || "").trim()
+    if (!unitId || ["active", "pending", "resubmit"].includes(exemptionCredentialState(unit))) continue
+    delete nextSelections[unitId]
+  }
+  selectedExemptionUnitIds.value = nextSelections
+  waivedExemptionUnitIds.value = nextWaivers
+
+  const status = activeCredentialApplicationOrderStatus()
+  if (isCredentialApplicationPaymentStatus(status)) {
+    activeCredentialQualIds.value = Array.from(activeQualIds)
+    activeCredentialUnitIds.value = includedUnits
+      .map((unit: any) => String(unit?.unit_id || "").trim())
+      .filter(Boolean)
+    activeOrderAction.value = "credential_application"
+    activeOrderId.value = String(response?.application_order_ulid || "").trim()
+    return
+  }
+  if (!isUploadReadyStatus(status) && !isCredentialApplicationUnderReviewStatus(status)) return
+
+  for (const unit of includedUnits) {
+    const unitId = String(unit?.unit_id || "").trim()
+    const qualId = qualificationIdsForUnit(unit)[0] || ""
+    if (!unitId || !qualId || activeCredentialApplicationOrderItemStatus(unit) !== "PENDING") continue
+    qualificationUploadPermissions.value = { ...qualificationUploadPermissions.value, [qualId]: true }
+    expandedQualificationUnitIds.value = { ...expandedQualificationUnitIds.value, [unitId]: true }
+  }
+}
+
 function allExemptionUnits() {
   return exemptionStages.value.flatMap((stage: any) => stage.units || [])
 }
@@ -1295,7 +1419,11 @@ async function hasQualificationUploadPermission(qualId: string) {
 
 async function setExemptionDecision(unit: any, decision: "exempt" | "waive") {
   const unitId = String(unit?.unit_id || "").trim()
-  if (!unitId || ["active", "pending"].includes(exemptionCredentialState(unit))) return
+  if (!unitId || ["active", "pending"].includes(exemptionCredentialState(unit)) || activeOrderLocksDecisionForUnit(unit)) return
+  if (decision === "exempt" && activeOrderBlocksApplicationForUnit(unit)) {
+    toast.info(t.value.checkoutWizard.qualificationNotInActiveOrder)
+    return
+  }
   const nextSelections = { ...selectedExemptionUnitIds.value }
   const nextWaivers = { ...waivedExemptionUnitIds.value }
   if (decision === "exempt") {
@@ -1320,15 +1448,30 @@ function selectedUnitsNeedingApplication() {
   return allExemptionUnits().filter((unit: any) => {
     const unitId = String(unit?.unit_id || "").trim()
     if (!unitId || !selectedExemptionUnitIds.value[unitId]) return false
+    if (activeOrderLocksDecisionForUnit(unit)) return false
     const state = exemptionCredentialState(unit)
     return !["active", "pending"].includes(state) && !canUploadQualificationForUnit(unit)
   })
 }
 
 const hasSelectedUnitsNeedingApplication = computed(() => selectedUnitsNeedingApplication().length > 0)
+const canContinueCredentialApplicationPayment = computed(() =>
+  Boolean(activeCredentialApplicationOrder.value?.found)
+  && isCredentialApplicationPaymentStatus(activeCredentialApplicationOrderStatus())
+  && Boolean(activeOrderId.value),
+)
 const hasUndecidedExemptionUnits = computed(() => allExemptionUnits().some((unit: any) => !exemptionDecision(unit)))
 
 async function startSelectedQualificationApplications() {
+  if (canContinueCredentialApplicationPayment.value) {
+    activeOrderAction.value = "credential_application"
+    currentStep.value = 4
+    return
+  }
+  if (activeCredentialApplicationOrder.value?.found) {
+    toast.info(t.value.checkoutWizard.qualificationNotInActiveOrder)
+    return
+  }
   const selectedUnits = selectedUnitsNeedingApplication()
   if (selectedUnits.length === 0 || !pipelineId.value || !bundleId) {
     toast.error(t.value.checkoutWizard.qualificationApplicationFailed)
@@ -1388,6 +1531,7 @@ async function startSelectedQualificationApplications() {
         : error instanceof Error ? error.message : ""
       if (message.includes("in-progress credential application") || message.includes("进行中") || message.includes("请先处理")) {
         await refreshQualificationApplications()
+        await refreshActiveCredentialApplicationOrder()
         toast.info(t.value.checkoutWizard.qualificationUnderReview)
         return
       }
@@ -1396,6 +1540,13 @@ async function startSelectedQualificationApplications() {
 
     const orderId = String(order?.application_order_ulid || "").trim()
     const orderStatus = String(order?.order_status || "")
+    activeCredentialApplicationOrder.value = {
+      found: true,
+      application_order_ulid: orderId,
+      order_status: orderStatus,
+      pay_order_ulid: String(order?.pay_order_ulid || "").trim(),
+      items: orderQualIds.map((qualId) => ({ qual_id: qualId })),
+    }
     if (isUploadReadyStatus(orderStatus)) {
       toast.info(t.value.checkoutWizard.qualificationUploadReady)
       for (const unit of unitsForNewOrder) {
@@ -1531,6 +1682,8 @@ function exemptionCredentialBadgeClass(unit: any) {
 }
 
 function qualificationStatusHint(unit: any) {
+  const activeOrderHint = activeOrderUnitStatusLabel(unit)
+  if (activeOrderHint) return activeOrderHint
   switch (exemptionCredentialState(unit)) {
     case "active":
       return ""
@@ -1544,6 +1697,8 @@ function qualificationStatusHint(unit: any) {
 }
 
 function qualificationStatusHintClass(unit: any) {
+  if (activeOrderBlocksApplicationForUnit(unit) && !activeOrderLocksDecisionForUnit(unit)) return "border-amber-200 bg-amber-50 text-amber-800"
+  if (activeOrderIncludesUnit(unit)) return "border-blue-200 bg-blue-50 text-blue-800"
   switch (exemptionCredentialState(unit)) {
     case "pending":
       return "border-blue-200 bg-blue-50 text-blue-800"
@@ -1941,7 +2096,12 @@ function closePaymentEditDialog() {
                     </div>
                     
                     <div class="checkout-unit-footer mt-auto border-t border-slate-100 pt-4">
-                      <div v-if="['active', 'pending'].includes(exemptionCredentialState(unit))" class="flex items-center justify-between gap-3">
+                      <div v-if="activeOrderLocksDecisionForUnit(unit)" class="flex items-center justify-between gap-3">
+                        <span class="checkout-unit-action font-medium text-slate-700">
+                          {{ activeOrderUnitStatusLabel(unit) }}
+                        </span>
+                      </div>
+                      <div v-else-if="['active', 'pending'].includes(exemptionCredentialState(unit))" class="flex items-center justify-between gap-3">
                         <span class="checkout-unit-action font-medium text-slate-700">
                           {{ exemptionCredentialState(unit) === 'active'
                             ? t.checkoutWizard.automaticExemptionApplied
@@ -1953,8 +2113,10 @@ function closePaymentEditDialog() {
                           type="button"
                           data-testid="checkout-exemption-apply"
                           :data-unit-id="unit.unit_id"
+                          :disabled="activeOrderBlocksApplicationForUnit(unit)"
                           :class="[
                             'btn min-h-11 justify-center rounded-lg border px-3 text-sm',
+                            activeOrderBlocksApplicationForUnit(unit) ? 'cursor-not-allowed opacity-50' : '',
                             exemptionDecision(unit) === 'exempt'
                               ? 'border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700'
                               : 'border-slate-300 bg-white text-slate-700 hover:border-emerald-500 hover:text-emerald-700',
@@ -2091,7 +2253,7 @@ function closePaymentEditDialog() {
                   </div>
                 </div>
               </div>
-              <div v-if="hasSelectedUnitsNeedingApplication" class="mt-5 flex justify-end">
+              <div v-if="hasSelectedUnitsNeedingApplication || canContinueCredentialApplicationPayment" class="mt-5 flex justify-end">
                 <button
                   type="button"
                   data-testid="checkout-apply-selected-exemptions"
@@ -2102,7 +2264,9 @@ function closePaymentEditDialog() {
                   <Loader2 v-if="credentialApplicationOrderLoading" class="h-4 w-4 animate-spin" />
                   {{ credentialApplicationOrderLoading
                     ? t.checkoutWizard.applyingSelectedExemptions
-                    : t.checkoutWizard.applySelectedExemptions }}
+                    : canContinueCredentialApplicationPayment
+                      ? t.checkoutWizard.continueQualificationPayment
+                      : t.checkoutWizard.applySelectedExemptions }}
                 </button>
               </div>
               <div v-if="bundleData" class="checkout-step-actions mt-6 flex flex-col items-stretch">

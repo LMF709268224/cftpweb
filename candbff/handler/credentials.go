@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -177,6 +178,75 @@ func (h *Handler) CreateCredentialApplicationOrder(w http.ResponseWriter, r *htt
 		return
 	}
 	WriteJSON(w, http.StatusCreated, credentialApplicationOrderPayload(res))
+}
+
+type credentialApplicationOrderItem struct {
+	QualID         string `json:"qual_id"`
+	ItemStatus     string `json:"item_status"`
+	CredentialULID string `json:"credential_ulid"`
+	QualNameHint   string `json:"qual_name_hint"`
+}
+
+// GetLatestCredentialApplicationOrder GET /api/credentials/application-orders/latest
+func (h *Handler) GetLatestCredentialApplicationOrder(w http.ResponseWriter, r *http.Request) {
+	candidateID := CandidateID(r)
+
+	list, err := h.Mall.ListCredentialApplicationOrders(r.Context(), &mallpb.ListCredentialApplicationOrdersRequest{
+		Filters: &mallpb.CredentialApplicationOrderFilters{
+			CandidateUlid: candidateID,
+		},
+		PageSize:  1,
+		SortOrder: mallpb.SortOrder_SORT_ORDER_DESC,
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	if len(list.GetItems()) == 0 || list.GetItems()[0] == nil {
+		WriteJSON(w, http.StatusOK, map[string]interface{}{
+			"found": false,
+			"items": []credentialApplicationOrderItem{},
+		})
+		return
+	}
+	latest := list.GetItems()[0]
+
+	res, err := h.Mall.GetCredentialApplicationOrderDetail(r.Context(), &mallpb.GetCredentialApplicationOrderDetailRequest{
+		ApplicationOrderUlid: latest.GetApplicationOrderUlid(),
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	detail := res.GetDetail()
+	if !res.GetFound() || detail == nil || detail.GetSummary() == nil || detail.GetSummary().GetCandidateUlid() != candidateID {
+		WriteJSON(w, http.StatusOK, map[string]interface{}{
+			"found": false,
+			"items": []credentialApplicationOrderItem{},
+		})
+		return
+	}
+
+	items := make([]credentialApplicationOrderItem, 0)
+	if raw := strings.TrimSpace(detail.GetApplicationItemsJson()); raw != "" {
+		if err := json.Unmarshal([]byte(raw), &items); err != nil {
+			WriteError(w, http.StatusBadGateway, ErrServiceUnavailable, "Invalid credential application order items returned by GMALL")
+			return
+		}
+	}
+
+	summary := detail.GetSummary()
+	WriteJSON(w, http.StatusOK, map[string]interface{}{
+		"found":                  true,
+		"application_order_ulid": summary.GetApplicationOrderUlid(),
+		"order_status":           summary.GetOrderStatus(),
+		"pay_order_ulid":         firstNonEmpty(detail.GetPayOrderUlid(), summary.GetPayOrderUlid()),
+		"created_at":             summary.GetCreatedAt(),
+		"status_at":              detail.GetStatusAt(),
+		"updated_at":             detail.GetUpdatedAt(),
+		"items":                  items,
+	})
 }
 
 // ListCandidateApplications GET /api/credentials/applications

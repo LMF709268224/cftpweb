@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
+	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
 	"google.golang.org/grpc"
 )
 
@@ -17,6 +18,33 @@ type credentialClientStub struct {
 	listCandidateApplicationsRequest  *gcredspb.ListApplicationsRequest
 	definitionDetailResponse          *gcredspb.CredentialDefinition
 	definitionTranslationResponse     *gcredspb.GetCredDefTranslationsResponse
+}
+
+type credentialApplicationOrderMallStub struct {
+	mallpb.MallServiceClient
+	listRequests   []*mallpb.ListCredentialApplicationOrdersRequest
+	latestSummary  *mallpb.CredentialApplicationOrderSummary
+	detailResponse *mallpb.GetCredentialApplicationOrderDetailResponse
+}
+
+func (s *credentialApplicationOrderMallStub) ListCredentialApplicationOrders(
+	_ context.Context,
+	req *mallpb.ListCredentialApplicationOrdersRequest,
+	_ ...grpc.CallOption,
+) (*mallpb.ListCredentialApplicationOrdersResponse, error) {
+	s.listRequests = append(s.listRequests, req)
+	if s.latestSummary != nil {
+		return &mallpb.ListCredentialApplicationOrdersResponse{Items: []*mallpb.CredentialApplicationOrderSummary{s.latestSummary}}, nil
+	}
+	return &mallpb.ListCredentialApplicationOrdersResponse{}, nil
+}
+
+func (s *credentialApplicationOrderMallStub) GetCredentialApplicationOrderDetail(
+	_ context.Context,
+	_ *mallpb.GetCredentialApplicationOrderDetailRequest,
+	_ ...grpc.CallOption,
+) (*mallpb.GetCredentialApplicationOrderDetailResponse, error) {
+	return s.detailResponse, nil
 }
 
 func (s *credentialClientStub) ListCandidateApplications(
@@ -195,6 +223,62 @@ func TestLatestCredentialApplicationReturnsNilWhenNoApplicationExists(t *testing
 	}
 	if got != nil {
 		t.Fatalf("latest application = %#v, want nil", got)
+	}
+}
+
+func TestGetLatestCredentialApplicationOrderReturnsSelectedQualifications(t *testing.T) {
+	const (
+		candidateID = "01J00000000000000000000000"
+		orderID     = "01J00000000000000000000001"
+		qualID      = "01J00000000000000000000002"
+	)
+	summary := &mallpb.CredentialApplicationOrderSummary{
+		ApplicationOrderUlid: orderID,
+		CandidateUlid:        candidateID,
+		OrderStatus:          "UPLOAD_READY",
+		CreatedAt:            "2026-08-29T10:00:00Z",
+		PayOrderUlid:         "pay-order-1",
+	}
+	client := &credentialApplicationOrderMallStub{
+		latestSummary: summary,
+		detailResponse: &mallpb.GetCredentialApplicationOrderDetailResponse{
+			Found: true,
+			Detail: &mallpb.CredentialApplicationOrderDetail{
+				Summary:              summary,
+				ApplicationItemsJson: `[{"qual_id":"` + qualID + `","item_status":"PENDING","qual_name_hint":"Finance exemption"}]`,
+			},
+		},
+	}
+	recorder := httptest.NewRecorder()
+	request := newCandidateHandlerRequest(http.MethodGet, "/api/credentials/application-orders/latest", "", candidateID, nil)
+
+	(&Handler{Mall: client}).GetLatestCredentialApplicationOrder(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body=%s", recorder.Code, http.StatusOK, recorder.Body.String())
+	}
+	var payload struct {
+		Data struct {
+			Found       bool   `json:"found"`
+			OrderStatus string `json:"order_status"`
+			Items       []struct {
+				QualID string `json:"qual_id"`
+			} `json:"items"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if !payload.Data.Found || payload.Data.OrderStatus != "UPLOAD_READY" || len(payload.Data.Items) != 1 || payload.Data.Items[0].QualID != qualID {
+		t.Fatalf("data = %#v", payload.Data)
+	}
+	if len(client.listRequests) != 1 {
+		t.Fatalf("list request count = %d, want 1", len(client.listRequests))
+	}
+	for _, req := range client.listRequests {
+		if req.GetFilters().GetCandidateUlid() != candidateID || req.GetFilters().GetOrderStatus() != "" || req.GetPageSize() != 1 || req.GetSortOrder() != mallpb.SortOrder_SORT_ORDER_DESC {
+			t.Fatalf("unexpected list request: %#v", req)
+		}
 	}
 }
 
