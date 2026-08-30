@@ -304,6 +304,46 @@ test("商城同时存在审核中和待上传免考时进入全部对应资格",
   ))
 })
 
+test("资格申请页路由参数变化时刷新对应资格", async ({ page }) => {
+  const initialQualificationID = "qualification-route-initial"
+  const redirectedQualificationID = "qualification-route-redirected"
+
+  await installCandidateApiMocks(page, ({ pathname, url }) => {
+    if (pathname === "/api/credentials/definitions") {
+      const qualificationIDs = String(url.searchParams.get("qual_ulids") || "")
+      const qualificationID = qualificationIDs === redirectedQualificationID
+        ? redirectedQualificationID
+        : initialQualificationID
+      return {
+        data: {
+          definitions: [{
+            cred_def_ulid: qualificationID,
+            name: qualificationID === redirectedQualificationID
+              ? "Redirected Qualification"
+              : "Initial Qualification",
+            category: "Exemption",
+            respath: `/gcreds/core/${qualificationID}`,
+          }],
+        },
+      }
+    }
+    if (pathname === "/api/credentials/applications") return { data: { applications: [] } }
+    if (pathname === "/api/credentials/application-orders/latest") return { data: { found: false } }
+    return undefined
+  })
+
+  await page.goto("/credentials", { waitUntil: "domcontentloaded" })
+  await expect(page.getByText("Initial Qualification", { exact: true })).toBeVisible()
+
+  await page.evaluate((qualificationID) => {
+    window.history.pushState({}, "", `/credentials?qual_ulids=${qualificationID}`)
+    window.dispatchEvent(new PopStateEvent("popstate"))
+  }, redirectedQualificationID)
+
+  await expect(page.getByText("Redirected Qualification", { exact: true })).toBeVisible()
+  await expect(page.getByText("Initial Qualification", { exact: true })).toHaveCount(0)
+})
+
 test("已持有有效资格的课程自动免考且不可取消", async ({ page }) => {
   const stageID = "stage-auto-exemption"
   const unitID = "unit-auto-exemption"
@@ -842,7 +882,6 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
 
 test("资格申请页仅允许 PendingUpload 申请上传并阻止追加其他资格", async ({ page }) => {
   const includedQualificationID = "qualification-active-order-included"
-  const excludedQualificationID = "qualification-active-order-excluded"
 
   await installCandidateApiMocks(page, ({ pathname }) => {
     if (pathname === "/api/credentials/definitions") {
@@ -966,6 +1005,7 @@ test("免考选择完成后才合并创建所选资格订单", async ({ page }) 
   const stageID = "stage-explicit-exemption-decisions"
   const applyUnitID = "unit-apply-exemption"
   const waiveUnitID = "unit-waive-exemption"
+  const alternateApplyQualificationID = "qualification-alternate-apply-exemption"
   const applyQualificationID = "qualification-apply-exemption"
   const waiveQualificationID = "qualification-waive-exemption"
   let applicationOrderBody: any
@@ -994,7 +1034,10 @@ test("免考选择完成后才合并创建所选资格订单", async ({ page }) 
               unit_name: "Apply Exemption Course",
               allow_exemption: true,
               qualified: false,
-              exemption_quals: [{ qual_id: applyQualificationID, name: "Apply Qualification" }],
+              exemption_quals: [
+                { qual_id: alternateApplyQualificationID, name: "Alternate Apply Qualification" },
+                { qual_id: applyQualificationID, name: "Apply Qualification" },
+              ],
             },
             {
               unit_id: waiveUnitID,
@@ -1016,6 +1059,7 @@ test("免考选择完成后才合并创建所选资格订单", async ({ page }) 
       return {
         data: {
           definitions: [
+            { cred_def_ulid: alternateApplyQualificationID, name: "Alternate Apply Qualification", respath: "/gcreds/core/alternate-apply" },
             { cred_def_ulid: applyQualificationID, name: "Apply Qualification", respath: "/gcreds/core/apply" },
             { cred_def_ulid: waiveQualificationID, name: "Waive Qualification", respath: "/gcreds/core/waive" },
           ],
@@ -1040,6 +1084,7 @@ test("免考选择完成后才合并创建所选资格订单", async ({ page }) 
 
   await page.goto(`/checkout/${selectionBundleID}`, { waitUntil: "domcontentloaded" })
   await page.locator(`[data-testid="checkout-exemption-apply"][data-unit-id="${applyUnitID}"]`).click()
+  await page.locator(`[data-testid="checkout-exemption-qualification-select"][data-unit-id="${applyUnitID}"]`).selectOption(applyQualificationID)
   await page.locator(`[data-testid="checkout-exemption-waive"][data-unit-id="${waiveUnitID}"]`).click()
 
   expect(applicationOrderBody).toBeUndefined()

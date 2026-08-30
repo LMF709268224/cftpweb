@@ -411,6 +411,14 @@ onMounted(fetchData)
 watch(lang, () => {
   void fetchData(false)
 })
+
+watch(
+  () => String(route.query.qual_ulids || route.query.qual_ids || "").trim(),
+  (qualIds, previousQualIds) => {
+    if (qualIds === previousQualIds) return
+    void fetchData()
+  },
+)
 </script>
 
 <template>

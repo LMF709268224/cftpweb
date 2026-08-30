@@ -60,6 +60,7 @@ const exemptionStages = ref<any[]>([])
 const systemManagedExemptionUnitIds = ref<Record<string, boolean>>({})
 const selectedExemptionUnitIds = ref<Record<string, boolean>>({})
 const waivedExemptionUnitIds = ref<Record<string, boolean>>({})
+const selectedQualificationIdsByUnit = ref<Record<string, string>>({})
 const activeOrderId = ref("")
 const activeOrderAction = ref<"purchase" | "unlock" | "credential_application">("purchase")
 const activeCredentialQualIds = ref<string[]>([])
@@ -942,17 +943,57 @@ function qualificationIdsForUnit(unit: any) {
     .filter(Boolean)
 }
 
-function qualificationApplicationForUnit(unit: any) {
-  const applications = qualificationIdsForUnit(unit)
-    .map((qualId: string) => qualificationApplications.value[qualId])
-    .filter(Boolean)
-  return applications.find((application: any) => isApplicationPendingUploadStatus(application?.status))
-    || applications.find((application: any) => isApplicationResubmitStatus(application?.status))
-    || applications.find((application: any) => isApplicationPendingStatus(application?.status))
-    || applications.find((application: any) => isApplicationRejectedStatus(application?.status))
-    || applications.find((application: any) => isApplicationApprovedStatus(application?.status))
-    || applications[0]
+function qualificationApplicationEntriesForUnit(unit: any) {
+  return qualificationIdsForUnit(unit)
+    .map((qualId: string) => ({
+      qualId,
+      option: (unit?.exemption_quals || []).find(
+        (qualification: any) => String(qualification?.qual_id || "").trim() === qualId,
+      ) || null,
+      definition: qualificationDefinitions.value[qualId] || null,
+      application: qualificationApplications.value[qualId] || null,
+    }))
+}
+
+function prioritizedQualificationApplicationEntry(unit: any) {
+  const entries = qualificationApplicationEntriesForUnit(unit)
+    .filter((entry: any) => Boolean(entry.application))
+  return entries.find((entry: any) => isApplicationPendingUploadStatus(entry.application?.status))
+    || entries.find((entry: any) => isApplicationResubmitStatus(entry.application?.status))
+    || entries.find((entry: any) => isApplicationPendingStatus(entry.application?.status))
+    || entries.find((entry: any) => isApplicationRejectedStatus(entry.application?.status))
+    || entries.find((entry: any) => isApplicationApprovedStatus(entry.application?.status))
+    || entries[0]
     || null
+}
+
+function selectedQualificationIdForUnit(unit: any) {
+  const unitId = String(unit?.unit_id || "").trim()
+  const qualificationIds = qualificationIdsForUnit(unit)
+  const explicitSelection = selectedQualificationIdsByUnit.value[unitId]
+  if (explicitSelection && qualificationIds.includes(explicitSelection)) return explicitSelection
+
+  const activeOrderSelection = String(activeCredentialApplicationOrderItemForUnit(unit)?.qual_id || "").trim()
+  if (activeOrderSelection && qualificationIds.includes(activeOrderSelection)) return activeOrderSelection
+
+  const applicationSelection = prioritizedQualificationApplicationEntry(unit)?.qualId || ""
+  if (applicationSelection) return applicationSelection
+
+  const activeQualification = (unit?.exemption_quals || []).find((qualification: any) =>
+    qualification?.eligible
+    || String(qualification?.credential_status || "").trim().toUpperCase() === "CREDENTIAL_STATUS_ACTIVE"
+  )
+  const activeQualificationId = String(activeQualification?.qual_id || "").trim()
+  if (activeQualificationId) return activeQualificationId
+  return qualificationIds.length === 1 ? qualificationIds[0] : ""
+}
+
+function qualificationApplicationForUnit(unit: any) {
+  const selectedQualificationId = selectedQualificationIdForUnit(unit)
+  if (selectedQualificationId && qualificationApplications.value[selectedQualificationId]) {
+    return qualificationApplications.value[selectedQualificationId]
+  }
+  return prioritizedQualificationApplicationEntry(unit)?.application || null
 }
 
 async function latestCredentialApplication(qualId: string) {
@@ -968,11 +1009,16 @@ async function refreshQualificationApplications() {
       .flatMap((stage: any) => stage.units || [])
       .flatMap((unit: any) => qualificationIdsForUnit(unit)),
   ))
-  const next: Record<string, any> = {}
+  const validQualificationIds = new Set(qualIds)
+  const next: Record<string, any> = Object.fromEntries(
+    Object.entries(qualificationApplications.value)
+      .filter(([qualId]) => validQualificationIds.has(qualId)),
+  )
   await Promise.all(qualIds.map(async (qualId) => {
     try {
       const application = await latestCredentialApplication(qualId)
       if (application) next[qualId] = application
+      else delete next[qualId]
     } catch (error) {
       console.warn(`Failed to load credential application ${qualId}`, error)
     }
@@ -1074,7 +1120,7 @@ function exemptionUnitByQualId(qualId: string) {
 }
 
 function qualificationDefinitionForUnit(unit: any) {
-  const qualId = qualificationIdsForUnit(unit)[0] || ""
+  const qualId = selectedQualificationIdForUnit(unit)
   return qualificationDefinitions.value[qualId] || null
 }
 
@@ -1097,12 +1143,37 @@ async function loadQualificationDefinition(qualId: string) {
   return definition
 }
 
-async function openQualificationEditor(unit: any, qualId = qualificationIdsForUnit(unit)[0] || "") {
-  if (!unit?.unit_id || !qualId) return
+async function openQualificationEditor(unit: any, qualId = selectedQualificationIdForUnit(unit)) {
+  const unitId = String(unit?.unit_id || "").trim()
+  if (!unitId || !qualId || !qualificationIdsForUnit(unit).includes(qualId)) return
+  selectedQualificationIdsByUnit.value = {
+    ...selectedQualificationIdsByUnit.value,
+    [unitId]: qualId,
+  }
   await loadQualificationDefinition(qualId)
   expandedQualificationUnitIds.value = {
     ...expandedQualificationUnitIds.value,
-    [unit.unit_id]: true,
+    [unitId]: true,
+  }
+}
+
+async function selectQualificationForUnit(unit: any, qualificationId: unknown) {
+  const unitId = String(unit?.unit_id || "").trim()
+  const qualId = String(qualificationId || "").trim()
+  if (!unitId || !qualificationIdsForUnit(unit).includes(qualId)) return
+  selectedQualificationIdsByUnit.value = {
+    ...selectedQualificationIdsByUnit.value,
+    [unitId]: qualId,
+  }
+  qualificationUploadedFiles.value = {
+    ...qualificationUploadedFiles.value,
+    [unitId]: {},
+  }
+  try {
+    await openQualificationEditor(unit, qualId)
+  } catch (error) {
+    console.error(error)
+    toast.error(t.value.checkoutWizard.qualificationApplicationFailed)
   }
 }
 
@@ -1149,7 +1220,7 @@ async function onQualificationFileChange(event: Event, unit: any, constraint: an
 
 async function uploadQualificationFile(unit: any, constraint: any, file: File) {
   const unitId = String(unit?.unit_id || "")
-  const qualId = qualificationIdsForUnit(unit)[0] || ""
+  const qualId = selectedQualificationIdForUnit(unit)
   const constraintName = String(constraint?.name || "").trim()
   const uploadingKey = `${unitId}:${constraintName}`
   if (!unitId || !qualId || !constraintName || qualificationUploadingKey.value) return
@@ -1211,7 +1282,7 @@ async function uploadQualificationFile(unit: any, constraint: any, file: File) {
 
 async function submitQualificationApplication(unit: any) {
   const unitId = String(unit?.unit_id || "")
-  const qualId = qualificationIdsForUnit(unit)[0] || ""
+  const qualId = selectedQualificationIdForUnit(unit)
   const definition = qualificationDefinitionForUnit(unit)
   const constraints = definition?.file_constraints
   const uploadedFiles = qualificationFilesForUnit(unitId)
@@ -1273,7 +1344,19 @@ async function resumeQualificationUploadAfterPayment() {
   const unitIds = String(route.query.qualification_unit_ids || route.query.qualification_unit_id || "")
     .split(",").map((value) => value.trim()).filter(Boolean)
   currentStep.value = 1
-  await refreshQualificationApplications()
+  const nextQualificationSelections = { ...selectedQualificationIdsByUnit.value }
+  qualIds.forEach((qualId, index) => {
+    const unitId = unitIds[index] || ""
+    if (unitId) nextQualificationSelections[unitId] = qualId
+  })
+  selectedQualificationIdsByUnit.value = nextQualificationSelections
+
+  const expectedQualificationIds = Array.from(new Set(qualIds))
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    await refreshQualificationApplications()
+    if (expectedQualificationIds.every((qualId) => Boolean(qualificationApplications.value[qualId]))) break
+    await new Promise((resolve) => setTimeout(resolve, 500))
+  }
   await Promise.all(qualIds.map(async (qualId, index) => {
     const unit = exemptionUnitById(unitIds[index] || "") || exemptionUnitByQualId(qualId)
     if (!unit) return
@@ -1294,6 +1377,17 @@ async function resumeQualificationUploadAfterPayment() {
   delete nextQuery.qualification_unit_id
   delete nextQuery.qualification_unit_ids
   await router.replace({ path: route.path, query: nextQuery })
+
+  const missingQualificationIds = expectedQualificationIds.filter(
+    (qualId) => !qualificationApplications.value[qualId],
+  )
+  if (missingQualificationIds.length > 0) {
+    toast.info(t.value.checkoutWizard.qualificationApplicationsPreparing)
+    await router.push({
+      path: "/credentials",
+      query: { qual_ulids: expectedQualificationIds.join(",") },
+    })
+  }
 }
 
 function isUploadReadyStatus(status: unknown) {
@@ -1314,14 +1408,6 @@ function isCredentialApplicationResolvedStatus(status: unknown) {
 
 function activeCredentialApplicationOrderStatus() {
   return String(activeCredentialApplicationOrder.value?.order_status || "").trim().toUpperCase()
-}
-
-function activeCredentialApplicationOrderQualIds() {
-  return new Set<string>(
-    (activeCredentialApplicationOrder.value?.items || [])
-      .map((item: any) => String(item?.qual_id || "").trim())
-      .filter(Boolean),
-  )
 }
 
 function activeCredentialApplicationOrderItemForUnit(unit: any) {
@@ -1384,16 +1470,21 @@ async function refreshActiveCredentialApplicationOrder() {
   activeCredentialApplicationOrder.value = response?.found ? response : null
   if (!response?.found) return
 
-  const activeQualIds = activeCredentialApplicationOrderQualIds()
   const nextSelections = { ...selectedExemptionUnitIds.value }
   const nextWaivers = { ...waivedExemptionUnitIds.value }
-  const includedUnits = allExemptionUnits().filter((unit: any) =>
-    qualificationIdsForUnit(unit).some((qualId: string) => activeQualIds.has(qualId)),
-  )
+  const includedEntries = allExemptionUnits()
+    .map((unit: any) => {
+      const item = activeCredentialApplicationOrderItemForUnit(unit)
+      const unitId = String(unit?.unit_id || "").trim()
+      const qualId = String(item?.qual_id || "").trim()
+      return item && unitId && qualId ? { unit, unitId, qualId } : null
+    })
+    .filter(Boolean) as Array<{ unit: any; unitId: string; qualId: string }>
+  const includedUnits = includedEntries.map((entry) => entry.unit)
+  const nextQualificationSelections = { ...selectedQualificationIdsByUnit.value }
 
-  for (const unit of includedUnits) {
-    const unitId = String(unit?.unit_id || "").trim()
-    if (!unitId) continue
+  for (const { unit, unitId, qualId } of includedEntries) {
+    nextQualificationSelections[unitId] = qualId
     const itemStatus = activeCredentialApplicationOrderItemStatus(unit)
     if (["PENDING", "SUBMITTED", "APPROVED"].includes(itemStatus) && !(itemStatus === "PENDING" && credentialApplicationOrderIsTerminal())) {
       nextSelections[unitId] = true
@@ -1410,13 +1501,12 @@ async function refreshActiveCredentialApplicationOrder() {
   }
   selectedExemptionUnitIds.value = nextSelections
   waivedExemptionUnitIds.value = nextWaivers
+  selectedQualificationIdsByUnit.value = nextQualificationSelections
 
   const status = activeCredentialApplicationOrderStatus()
   if (isCredentialApplicationPaymentStatus(status)) {
-    activeCredentialQualIds.value = Array.from(activeQualIds)
-    activeCredentialUnitIds.value = includedUnits
-      .map((unit: any) => String(unit?.unit_id || "").trim())
-      .filter(Boolean)
+    activeCredentialQualIds.value = includedEntries.map((entry) => entry.qualId)
+    activeCredentialUnitIds.value = includedEntries.map((entry) => entry.unitId)
     activeOrderAction.value = "credential_application"
     activeOrderId.value = String(response?.application_order_ulid || "").trim()
     return
@@ -1460,16 +1550,30 @@ async function setExemptionDecision(unit: any, decision: "exempt" | "waive") {
   if (decision === "exempt") {
     nextSelections[unitId] = true
     delete nextWaivers[unitId]
-    try {
-      await openQualificationEditor(unit)
-    } catch (error) {
-      console.error(error)
-      toast.error(t.value.checkoutWizard.qualificationApplicationFailed)
+    const qualificationIds = qualificationIdsForUnit(unit)
+    if (qualificationIds.length === 1) {
+      try {
+        await openQualificationEditor(unit, qualificationIds[0])
+      } catch (error) {
+        console.error(error)
+        toast.error(t.value.checkoutWizard.qualificationApplicationFailed)
+      }
+    } else {
+      expandedQualificationUnitIds.value = {
+        ...expandedQualificationUnitIds.value,
+        [unitId]: true,
+      }
     }
   } else {
     nextWaivers[unitId] = true
     delete nextSelections[unitId]
     closeQualificationEditor(unitId)
+    const nextQualificationSelections = { ...selectedQualificationIdsByUnit.value }
+    const nextUploadedFiles = { ...qualificationUploadedFiles.value }
+    delete nextQualificationSelections[unitId]
+    delete nextUploadedFiles[unitId]
+    selectedQualificationIdsByUnit.value = nextQualificationSelections
+    qualificationUploadedFiles.value = nextUploadedFiles
   }
   selectedExemptionUnitIds.value = nextSelections
   waivedExemptionUnitIds.value = nextWaivers
@@ -1491,7 +1595,9 @@ const qualificationOrderConfirmItems = computed(() => selectedUnitsNeedingApplic
   unitName: String(unit?.unit_name || unit?.name || "").trim(),
   qualificationName: String(
     qualificationDefinitionForUnit(unit)?.name
-    || unit?.exemption_quals?.[0]?.name
+    || (unit?.exemption_quals || []).find(
+      (qualification: any) => String(qualification?.qual_id || "").trim() === selectedQualificationIdForUnit(unit),
+    )?.name
     || "",
   ).trim(),
 })))
@@ -1520,10 +1626,14 @@ async function startSelectedQualificationApplications() {
 
   credentialApplicationOrderLoading.value = true
   try {
-    const unitsForNewOrder: any[] = []
+    const entriesForNewOrder: Array<{ unit: any; unitId: string; qualId: string }> = []
     for (const unit of selectedUnits) {
-      const qualId = qualificationIdsForUnit(unit)[0] || ""
-      if (!qualId) continue
+      const unitId = String(unit?.unit_id || "").trim()
+      const qualId = selectedQualificationIdForUnit(unit)
+      if (!unitId || !qualId) {
+        toast.error(t.value.checkoutWizard.exemptionQualificationRequired)
+        return
+      }
       const existingApplication = qualificationApplications.value[qualId] || await latestCredentialApplication(qualId)
       if (existingApplication) {
         qualificationApplications.value = { ...qualificationApplications.value, [qualId]: existingApplication }
@@ -1540,12 +1650,12 @@ async function startSelectedQualificationApplications() {
           continue
         }
       }
-      unitsForNewOrder.push(unit)
+      entriesForNewOrder.push({ unit, unitId, qualId })
     }
 
-    if (unitsForNewOrder.length === 0) return
-    const orderQualIds = Array.from(new Set(unitsForNewOrder.flatMap((unit: any) => qualificationIdsForUnit(unit))))
-    const selectedUnitIds = unitsForNewOrder.map((unit: any) => String(unit?.unit_id || "").trim()).filter(Boolean)
+    if (entriesForNewOrder.length === 0) return
+    const orderQualIds = Array.from(new Set(entriesForNewOrder.map((entry) => entry.qualId)))
+    const selectedUnitIds = entriesForNewOrder.map((entry) => entry.unitId)
     if (orderQualIds.length === 0) throw new Error(t.value.checkoutWizard.qualificationApplicationFailed)
 
     let order
@@ -1584,9 +1694,7 @@ async function startSelectedQualificationApplications() {
     if (isUploadReadyStatus(orderStatus)) {
       await refreshQualificationApplications()
       toast.info(t.value.checkoutWizard.qualificationUploadReady)
-      for (const unit of unitsForNewOrder) {
-        const qualId = qualificationIdsForUnit(unit)[0] || ""
-        if (!qualId) continue
+      for (const { unit, qualId } of entriesForNewOrder) {
         if (!canUploadQualificationForUnit(unit)) continue
         await openQualificationEditor(unit, qualId)
       }
@@ -1634,6 +1742,10 @@ function requestSelectedQualificationApplications() {
   }
   if (!hasSelectedUnitsNeedingApplication.value) {
     toast.error(t.value.checkoutWizard.qualificationApplicationFailed)
+    return
+  }
+  if (selectedUnitsNeedingApplication().some((unit: any) => !selectedQualificationIdForUnit(unit))) {
+    toast.error(t.value.checkoutWizard.exemptionQualificationRequired)
     return
   }
   qualificationOrderConfirmDialogOpen.value = true
@@ -2235,7 +2347,41 @@ function closePaymentEditDialog() {
                       v-if="isQualificationEditorExpanded(unit.unit_id) && !unit.qualified"
                       class="mt-5 border-t border-blue-100 pt-5"
                     >
+                      <div
+                        v-if="qualificationIdsForUnit(unit).length > 1"
+                        class="mb-4 rounded-xl border border-blue-100 bg-white p-4"
+                      >
+                        <label :for="`exemption-qualification-${unit.unit_id}`" class="text-sm font-semibold text-slate-800">
+                          {{ t.checkoutWizard.exemptionQualificationLabel }}
+                        </label>
+                        <select
+                          :id="`exemption-qualification-${unit.unit_id}`"
+                          data-testid="checkout-exemption-qualification-select"
+                          :data-unit-id="unit.unit_id"
+                          class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900"
+                          :value="selectedQualificationIdForUnit(unit)"
+                          @change="selectQualificationForUnit(unit, ($event.target as HTMLSelectElement).value)"
+                        >
+                          <option value="">{{ t.checkoutWizard.exemptionQualificationPlaceholder }}</option>
+                          <option
+                            v-for="qualification in qualificationApplicationEntriesForUnit(unit)"
+                            :key="qualification.qualId"
+                            :value="qualification.qualId"
+                          >
+                            {{ qualification.definition?.name || qualification.option?.name || qualification.qualId }}
+                          </option>
+                        </select>
+                        <p class="mt-2 text-xs leading-5 text-slate-500">
+                          {{ t.checkoutWizard.exemptionQualificationHelp }}
+                        </p>
+                      </div>
                       <div class="rounded-2xl border border-blue-100 bg-blue-50/70 p-4 sm:p-5">
+                        <div
+                          v-if="!selectedQualificationIdForUnit(unit)"
+                          class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+                        >
+                          {{ t.checkoutWizard.exemptionQualificationRequired }}
+                        </div>
                         <div class="flex items-start gap-3">
                           <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-blue-600 shadow-sm">
                             <UploadCloud class="h-5 w-5" />
