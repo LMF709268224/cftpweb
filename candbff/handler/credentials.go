@@ -52,63 +52,77 @@ func (h *Handler) ListCredentialDefinitions(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	req := &gcredspb.ListCandidateEligibleDefinitionsRequest{
-		CandidateUlid: candidateID,
-	}
-
-	res, err := h.Creds.ListCandidateEligibleDefinitions(r.Context(), req)
+	applications, err := h.listActionableCredentialApplications(r.Context(), candidateID)
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
 	}
 
-	details := make([]map[string]interface{}, 0, len(res.GetDefinitions()))
-	for _, def := range res.GetDefinitions() {
-		latestApplication, err := h.latestCredentialApplication(r.Context(), candidateID, def.GetCredDefUlid())
+	details := make([]map[string]interface{}, 0, len(applications))
+	seenDefinitions := make(map[string]struct{}, len(applications))
+	for _, application := range applications {
+		credDefID := application.GetCredDefUlid()
+		if credDefID == "" {
+			continue
+		}
+		if _, seen := seenDefinitions[credDefID]; seen {
+			continue
+		}
+		seenDefinitions[credDefID] = struct{}{}
+
+		detailReq := &gcredspb.GetCredentialDefinitionDetailRequest{
+			CredDefUlid: credDefID,
+		}
+		detailRes, err := h.Creds.GetCredentialDefinitionDetail(r.Context(), detailReq)
 		if err != nil {
 			HandleGrpcError(w, err)
 			return
 		}
-		detailReq := &gcredspb.GetCredentialDefinitionDetailRequest{
-			CredDefUlid: def.GetCredDefUlid(),
-		}
-		detailRes, err := h.Creds.GetCredentialDefinitionDetail(r.Context(), detailReq)
-		if err == nil && detailRes != nil {
-			var translation *gcredspb.CredDefTranslation
-			detailRes, translation = h.localizedCredentialDefinitionWithTranslation(r.Context(), detailRes, locale)
-			details = append(details, map[string]interface{}{
-				"cred_def_ulid":      detailRes.GetCredDefUlid(),
-				"cred_def_id":        detailRes.GetCredDefUlid(),
-				"name":               detailRes.GetName(),
-				"description":        detailRes.GetDescription(),
-				"file_constraints":   credentialFileConstraintPayloads(detailRes, translation),
-				"category":           detailRes.GetCategory(),
-				"respath":            detailRes.GetRespath(),
-				"acquisition_method": detailRes.GetAcquisitionMethod(),
-				"attachments":        detailRes.GetAttachments(),
-				"latest_application": latestApplication,
-			})
-			continue
-		}
-		name := def.GetName()
-		description := def.GetDescription()
-		if translation := h.credentialDefinitionTranslation(r.Context(), def.GetCredDefUlid(), locale); translation != nil {
-			name = translatedText(name, translation.GetName())
-			description = translatedText(description, translation.GetDescription())
-		}
+		var translation *gcredspb.CredDefTranslation
+		detailRes, translation = h.localizedCredentialDefinitionWithTranslation(r.Context(), detailRes, locale)
 		details = append(details, map[string]interface{}{
-			"cred_def_ulid":      def.GetCredDefUlid(),
-			"cred_def_id":        def.GetCredDefUlid(),
-			"name":               name,
-			"description":        description,
-			"category":           def.GetCategory(),
-			"latest_application": latestApplication,
+			"cred_def_ulid":      detailRes.GetCredDefUlid(),
+			"cred_def_id":        detailRes.GetCredDefUlid(),
+			"name":               detailRes.GetName(),
+			"description":        detailRes.GetDescription(),
+			"file_constraints":   credentialFileConstraintPayloads(detailRes, translation),
+			"category":           detailRes.GetCategory(),
+			"respath":            detailRes.GetRespath(),
+			"acquisition_method": detailRes.GetAcquisitionMethod(),
+			"attachments":        detailRes.GetAttachments(),
+			"latest_application": credentialApplicationPayload(application),
 		})
 	}
 
 	WriteJSON(w, http.StatusOK, map[string]interface{}{
 		"definitions": details,
 	})
+}
+
+var actionableCredentialApplicationStatuses = []string{"PendingUpload", "Reupload"}
+
+func (h *Handler) listActionableCredentialApplications(ctx context.Context, candidateID string) ([]*gcredspb.ApplicationSummary, error) {
+	applications := make([]*gcredspb.ApplicationSummary, 0)
+	cursor := ""
+	for {
+		res, err := h.Creds.ListCandidateApplications(ctx, &gcredspb.ListApplicationsRequest{
+			Filters: &gcredspb.ApplicationFilters{
+				CandidateUlid: candidateID,
+				Statuses:      actionableCredentialApplicationStatuses,
+			},
+			PageSize:  100,
+			Cursor:    cursor,
+			SortOrder: gcredspb.SortOrder_SORT_ORDER_DESC,
+		})
+		if err != nil {
+			return nil, err
+		}
+		applications = append(applications, res.GetApplications()...)
+		if !res.GetHasMore() || res.GetNextCursor() == "" {
+			return applications, nil
+		}
+		cursor = res.GetNextCursor()
+	}
 }
 
 // CheckCandidateQualifications GET /api/credentials/qualifications
@@ -390,26 +404,6 @@ func credentialApplicationPayload(app *gcredspb.ApplicationSummary) map[string]i
 	}
 }
 
-// CheckUploadPermission GET /api/credentials/upload-permission
-func (h *Handler) CheckUploadPermission(w http.ResponseWriter, r *http.Request) {
-	candidateID := CandidateID(r)
-	credDefID := strings.TrimSpace(firstNonEmpty(r.URL.Query().Get("cred_def_ulid"), r.URL.Query().Get("cred_def_id")))
-	if !requireRequestFields(w, candidateID, "candidate_ulid", credDefID, "cred_def_ulid") {
-		return
-	}
-
-	res, err := h.Creds.CheckUploadPermission(r.Context(), &gcredspb.CheckUploadPermissionRequest{
-		CandidateUlid: candidateID,
-		CredDefUlid:   credDefID,
-	})
-	if err != nil {
-		HandleGrpcError(w, err)
-		return
-	}
-
-	WriteJSON(w, http.StatusOK, res)
-}
-
 type RequestUploadUrlReq struct {
 	CredDefUlid     string `json:"cred_def_ulid"`
 	LegacyCredDefID string `json:"cred_def_id,omitempty"`
@@ -589,50 +583,17 @@ func (h *Handler) GetActionableCredentialCount(w http.ResponseWriter, r *http.Re
 	candidateID := CandidateID(r)
 	ctx := r.Context()
 
-	defsRes, err := h.Creds.ListCandidateEligibleDefinitions(ctx, &gcredspb.ListCandidateEligibleDefinitionsRequest{
-		CandidateUlid: candidateID,
+	countRes, err := h.Creds.GetApplicationCount(ctx, &gcredspb.GetApplicationCountRequest{
+		Filters: &gcredspb.ApplicationFilters{
+			CandidateUlid: candidateID,
+			Statuses:      actionableCredentialApplicationStatuses,
+		},
+		Limit: 1000,
 	})
 	if err != nil {
 		HandleGrpcErrorWithContext(w, ctx, err)
 		return
 	}
-	defs := defsRes.GetDefinitions()
-	if len(defs) == 0 {
-		WriteJSON(w, http.StatusOK, map[string]interface{}{"actionable_count": 0})
-		return
-	}
 
-	actionableCount := 0
-	for _, def := range defs {
-		credDefUlid := def.GetCredDefUlid()
-
-		// 1. Check if they have ANY application for this def
-		countRes, err := h.Creds.GetApplicationCount(ctx, &gcredspb.GetApplicationCountRequest{
-			Filters: &gcredspb.ApplicationFilters{
-				CandidateUlid: candidateID,
-				CredDefUlid:   credDefUlid,
-			},
-			Limit: 1,
-		})
-		if err == nil && countRes.GetCount() == 0 {
-			// No application at all -> actionable
-			actionableCount++
-			continue
-		}
-
-		// 2. If they have an application, check if there are any that need resubmit/reupload
-		reuploadCountRes, err := h.Creds.GetApplicationCount(ctx, &gcredspb.GetApplicationCountRequest{
-			Filters: &gcredspb.ApplicationFilters{
-				CandidateUlid: candidateID,
-				CredDefUlid:   credDefUlid,
-				Statuses:      []string{"REUPLOAD", "RESUBMIT", "NEEDS_RESUBMIT", "APPLICATION_STATUS_REUPLOAD", "APPLICATION_STATUS_RESUBMIT"},
-			},
-			Limit: 1,
-		})
-		if err == nil && reuploadCountRes.GetCount() > 0 {
-			actionableCount++
-		}
-	}
-
-	WriteJSON(w, http.StatusOK, map[string]interface{}{"actionable_count": actionableCount})
+	WriteJSON(w, http.StatusOK, map[string]interface{}{"actionable_count": countRes.GetCount()})
 }

@@ -392,7 +392,12 @@ function isCredentialApplicationResolvedStatus(status: unknown) {
 
 function isApplicationPendingStatus(status: unknown) {
   const value = normalizedStatus(status)
-  return value === "PENDING" || value.includes("APPLICATION_STATUS_PENDING")
+  return value === "PENDING" || value === "APPLICATION_STATUS_PENDING"
+}
+
+function isApplicationPendingUploadStatus(status: unknown) {
+  const value = normalizedStatus(status)
+  return value === "PENDING_UPLOAD" || value === "APPLICATION_STATUS_PENDING_UPLOAD"
 }
 
 function isApplicationApprovedStatus(status: unknown) {
@@ -526,7 +531,11 @@ async function refreshPendingCredentialApplications() {
   const next: Record<string, boolean> = {}
   await Promise.all(qualIds.map(async (qualId) => {
     const app = await latestCredentialApplication(qualId)
-    next[qualId] = Boolean(app?.status && isApplicationPendingStatus(app.status))
+    next[qualId] = Boolean(app?.status && (
+      isApplicationPendingUploadStatus(app.status)
+      || isApplicationPendingStatus(app.status)
+      || isApplicationResubmitStatus(app.status)
+    ))
   }))
   pendingCredentialApplications.value = next
 }
@@ -755,11 +764,14 @@ async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: Exemp
   credentialApplicationLoadingKey.value = loadingKey
   activePaymentSession.value = null
   try {
-      const existingApplication = await latestCredentialApplication(qualId)
+    const existingApplication = await latestCredentialApplication(qualId)
     if (existingApplication?.status) {
+      if (isApplicationPendingUploadStatus(existingApplication.status)) {
+        goToCredentialUpload()
+        return
+      }
       if (isApplicationPendingStatus(existingApplication.status)) {
         toast.info(copy.value.qualificationUnderReview)
-        window.setTimeout(() => goToCredentialUpload(), 300)
         return
       }
       if (isApplicationApprovedStatus(existingApplication.status)) {

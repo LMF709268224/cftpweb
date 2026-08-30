@@ -1089,6 +1089,7 @@ export const zh = {
     myApplications: "我的申请",
     noApplications: "暂无申请",
     appStatusPending: "待审核",
+    appStatusPendingUpload: "待上传资料",
     appStatusApproved: "已通过",
     appStatusRejected: "被拒绝",
     appStatusResubmit: "需重新提交",

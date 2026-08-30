@@ -257,13 +257,14 @@ const finalQualificationRequired = computed(() =>
   !pipelineCancelled.value &&
   (pipelineWaitsFinalEligibility.value || nextStepAction.value === "final_qualification"),
 )
-type FinalQualificationActionState = "loading" | "submit" | "pending" | "approved" | "resubmit" | "rejected"
+type FinalQualificationActionState = "loading" | "submit" | "pending_upload" | "pending" | "approved" | "resubmit" | "rejected"
 
 const finalQualificationActionState = computed<FinalQualificationActionState>(() => {
   if (credentialDefinitionsLoading.value) return "loading"
 
   const applications = finalQualifications.value.map((qual) => qual.application)
   if (applications.some((application) => isApplicationResubmitStatus(application?.status))) return "resubmit"
+  if (applications.some((application) => isApplicationPendingUploadStatus(application?.status))) return "pending_upload"
   if (applications.some((application) => !application)) return "submit"
   if (applications.some((application) => isApplicationPendingStatus(application?.status))) return "pending"
   if (applications.length > 0 && applications.every((application) => isApplicationApprovedStatus(application?.status))) {
@@ -277,6 +278,8 @@ const finalQualificationPanelDescription = computed(() => {
   switch (finalQualificationActionState.value) {
     case "pending":
       return t.value.learning.finalQualificationPendingDesc
+    case "pending_upload":
+      return t.value.learning.finalQualificationDesc
     case "approved":
       return t.value.learning.finalQualificationApprovedDesc
     case "resubmit":
@@ -294,6 +297,8 @@ const finalQualificationActionLabel = computed(() => {
       return t.value.common.loading
     case "pending":
       return t.value.credentialsPage.applicationPendingHint
+    case "pending_upload":
+      return t.value.credentialsPage.uploadMaterials
     case "approved":
       return t.value.credentialsPage.applicationApprovedHint
     case "resubmit":
@@ -612,6 +617,10 @@ function isApplicationPendingStatus(status: unknown) {
   return normalizedCredentialApplicationStatus(status) === "APPLICATION_STATUS_PENDING"
 }
 
+function isApplicationPendingUploadStatus(status: unknown) {
+  return normalizedCredentialApplicationStatus(status) === "APPLICATION_STATUS_PENDING_UPLOAD"
+}
+
 function isApplicationApprovedStatus(status: unknown) {
   return normalizedCredentialApplicationStatus(status) === "APPLICATION_STATUS_APPROVED"
 }
@@ -641,6 +650,7 @@ function finalQualificationApplicationStatusClass(status: unknown) {
   if (value === "APPLICATION_STATUS_RESUBMIT" || value === "APPLICATION_STATUS_REUPLOAD") {
     return "border-amber-200 bg-amber-50 text-amber-700"
   }
+  if (value === "APPLICATION_STATUS_PENDING_UPLOAD") return "border-sky-200 bg-sky-50 text-sky-700"
   if (value === "APPLICATION_STATUS_PENDING") return "border-blue-200 bg-blue-50 text-blue-700"
   return "border-slate-200 bg-slate-50 text-slate-600"
 }
@@ -659,7 +669,7 @@ function finalQualificationApplicationStatusIcon(status: unknown) {
 }
 
 function shouldShowFinalQualificationRequirements(qual: { application?: CredentialApplicationSummary | null }) {
-  return !qual.application || isApplicationResubmitStatus(qual.application.status)
+  return isApplicationPendingUploadStatus(qual.application?.status) || isApplicationResubmitStatus(qual.application?.status)
 }
 
 function finalQualificationUploadPath(qualIds = finalQualificationIds.value) {
@@ -677,13 +687,6 @@ async function latestCredentialApplication(qualId: string) {
     suppressErrorToast: true,
   })
   return (response?.applications || [])[0] || null
-}
-
-async function hasQualificationUploadPermission(qualId: string) {
-  const response = await apiClient(`/api/credentials/upload-permission?cred_def_ulid=${encodeURIComponent(qualId)}`, {
-    suppressErrorToast: true,
-  })
-  return response?.granted === true
 }
 
 function isInProgressCredentialApplicationError(error: unknown) {
@@ -743,6 +746,10 @@ async function handleFinalQualificationApplication() {
     )
     if (existingApplications.some(({ application }) => isApplicationPendingStatus(application?.status))) {
       toast.info(t.value.learning.finalQualificationUnderReview)
+      return
+    }
+    if (existingApplications.some(({ application }) => isApplicationPendingUploadStatus(application?.status))) {
+      toast.info(t.value.learning.finalQualificationUploadReady)
       openFinalQualificationUpload(missingQualIds)
       return
     }
@@ -761,13 +768,6 @@ async function handleFinalQualificationApplication() {
     if (missingQualIds.length === 0) {
       toast.success(t.value.learning.finalQualificationApproved)
       await loadDetail()
-      return
-    }
-
-    const uploadPermissions = await Promise.all(missingQualIds.map(hasQualificationUploadPermission))
-    if (uploadPermissions.some(Boolean)) {
-      toast.info(t.value.learning.finalQualificationUploadReady)
-      openFinalQualificationUpload(missingQualIds)
       return
     }
 

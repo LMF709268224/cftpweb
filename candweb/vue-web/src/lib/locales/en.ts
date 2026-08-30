@@ -1091,6 +1091,7 @@ export const en: AppTranslations = {
         myApplications: "My Applications",
         noApplications: "No applications yet.",
         appStatusPending: "Pending Audit",
+        appStatusPendingUpload: "Pending Upload",
         appStatusApproved: "Approved",
         appStatusRejected: "Rejected",
         appStatusResubmit: "Needs Resubmit",

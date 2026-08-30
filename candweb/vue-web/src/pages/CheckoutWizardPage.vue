@@ -69,7 +69,6 @@ const credentialApplicationOrderLoading = ref(false)
 const qualificationApplications = ref<Record<string, any>>({})
 const qualificationDefinitions = ref<Record<string, any>>({})
 const expandedQualificationUnitIds = ref<Record<string, boolean>>({})
-const qualificationUploadPermissions = ref<Record<string, boolean>>({})
 const qualificationUploadedFiles = ref<Record<string, Record<string, { name: string; url: string; ext: string; hash: string; size: number }>>>({})
 const qualificationUploadingKey = ref("")
 const qualificationSubmittingUnitId = ref("")
@@ -618,8 +617,7 @@ onMounted(() => {
     await fetchBundleInfo()
     await resumeQualificationUploadAfterPayment()
   })()
-  void loadProfile()
-  void loadLocationData()
+  void Promise.all([loadProfile(), loadLocationData()])
     .then(() => {
       refreshCountryOptions()
       syncLocationSelectionFromForm()
@@ -921,6 +919,10 @@ function isApplicationPendingStatus(status: unknown) {
   return normalizedCredentialApplicationStatus(status) === "APPLICATION_STATUS_PENDING"
 }
 
+function isApplicationPendingUploadStatus(status: unknown) {
+  return normalizedCredentialApplicationStatus(status) === "APPLICATION_STATUS_PENDING_UPLOAD"
+}
+
 function isApplicationApprovedStatus(status: unknown) {
   return normalizedCredentialApplicationStatus(status) === "APPLICATION_STATUS_APPROVED"
 }
@@ -930,7 +932,8 @@ function isApplicationRejectedStatus(status: unknown) {
 }
 
 function isApplicationResubmitStatus(status: unknown) {
-  return normalizedCredentialApplicationStatus(status) === "APPLICATION_STATUS_RESUBMIT"
+  const value = normalizedCredentialApplicationStatus(status)
+  return value === "APPLICATION_STATUS_RESUBMIT" || value === "APPLICATION_STATUS_REUPLOAD"
 }
 
 function qualificationIdsForUnit(unit: any) {
@@ -943,8 +946,9 @@ function qualificationApplicationForUnit(unit: any) {
   const applications = qualificationIdsForUnit(unit)
     .map((qualId: string) => qualificationApplications.value[qualId])
     .filter(Boolean)
-  return applications.find((application: any) => isApplicationPendingStatus(application?.status))
+  return applications.find((application: any) => isApplicationPendingUploadStatus(application?.status))
     || applications.find((application: any) => isApplicationResubmitStatus(application?.status))
+    || applications.find((application: any) => isApplicationPendingStatus(application?.status))
     || applications.find((application: any) => isApplicationRejectedStatus(application?.status))
     || applications.find((application: any) => isApplicationApprovedStatus(application?.status))
     || applications[0]
@@ -980,7 +984,7 @@ async function refreshQualificationApplications() {
     for (const unit of stage.units || []) {
       const unitId = String(unit?.unit_id || "").trim()
       const state = exemptionCredentialState(unit)
-      if (!unitId || !["active", "pending", "resubmit"].includes(state)) continue
+      if (!unitId || !["active", "pending", "pending_upload", "resubmit"].includes(state)) continue
       nextSelections[unitId] = true
       delete nextWaivers[unitId]
     }
@@ -1269,11 +1273,13 @@ async function resumeQualificationUploadAfterPayment() {
   const unitIds = String(route.query.qualification_unit_ids || route.query.qualification_unit_id || "")
     .split(",").map((value) => value.trim()).filter(Boolean)
   currentStep.value = 1
+  await refreshQualificationApplications()
   await Promise.all(qualIds.map(async (qualId, index) => {
     const unit = exemptionUnitById(unitIds[index] || "") || exemptionUnitByQualId(qualId)
     if (!unit) return
     try {
-      qualificationUploadPermissions.value = { ...qualificationUploadPermissions.value, [qualId]: true }
+      const application = qualificationApplications.value[qualId]
+      if (!isApplicationPendingUploadStatus(application?.status) && !isApplicationResubmitStatus(application?.status)) return
       await openQualificationEditor(unit, qualId)
     } catch (error) {
       console.error(error)
@@ -1399,7 +1405,7 @@ async function refreshActiveCredentialApplicationOrder() {
   for (const unit of allExemptionUnits()) {
     if (activeOrderIncludesUnit(unit)) continue
     const unitId = String(unit?.unit_id || "").trim()
-    if (!unitId || ["active", "pending", "resubmit"].includes(exemptionCredentialState(unit))) continue
+    if (!unitId || ["active", "pending", "pending_upload", "resubmit"].includes(exemptionCredentialState(unit))) continue
     delete nextSelections[unitId]
   }
   selectedExemptionUnitIds.value = nextSelections
@@ -1417,11 +1423,10 @@ async function refreshActiveCredentialApplicationOrder() {
   }
   if (!isUploadReadyStatus(status) && !isCredentialApplicationUnderReviewStatus(status)) return
 
+  await refreshQualificationApplications()
   for (const unit of includedUnits) {
     const unitId = String(unit?.unit_id || "").trim()
-    const qualId = qualificationIdsForUnit(unit)[0] || ""
-    if (!unitId || !qualId || activeCredentialApplicationOrderItemStatus(unit) !== "PENDING") continue
-    qualificationUploadPermissions.value = { ...qualificationUploadPermissions.value, [qualId]: true }
+    if (!unitId || !canUploadQualificationForUnit(unit)) continue
     expandedQualificationUnitIds.value = { ...expandedQualificationUnitIds.value, [unitId]: true }
   }
 }
@@ -1439,21 +1444,13 @@ function exemptionDecision(unit: any): "exempt" | "waive" | "" {
 }
 
 function canUploadQualificationForUnit(unit: any) {
-  const qualId = qualificationIdsForUnit(unit)[0] || ""
-  return Boolean(qualificationUploadPermissions.value[qualId])
-    || isApplicationResubmitStatus(qualificationApplicationForUnit(unit)?.status)
-}
-
-async function hasQualificationUploadPermission(qualId: string) {
-  const response = await apiClient(`/api/credentials/upload-permission?cred_def_ulid=${encodeURIComponent(qualId)}`, {
-    suppressErrorToast: true,
-  })
-  return response?.granted === true
+  const status = qualificationApplicationForUnit(unit)?.status
+  return isApplicationPendingUploadStatus(status) || isApplicationResubmitStatus(status)
 }
 
 async function setExemptionDecision(unit: any, decision: "exempt" | "waive") {
   const unitId = String(unit?.unit_id || "").trim()
-  if (!unitId || ["active", "pending"].includes(exemptionCredentialState(unit)) || activeOrderLocksDecisionForUnit(unit)) return
+  if (!unitId || ["active", "pending", "pending_upload", "resubmit"].includes(exemptionCredentialState(unit)) || activeOrderLocksDecisionForUnit(unit)) return
   if (decision === "exempt" && activeOrderBlocksApplicationForUnit(unit)) {
     toast.info(t.value.checkoutWizard.qualificationNotInActiveOrder)
     return
@@ -1484,7 +1481,7 @@ function selectedUnitsNeedingApplication() {
     if (!unitId || !selectedExemptionUnitIds.value[unitId]) return false
     if (activeOrderLocksDecisionForUnit(unit)) return false
     const state = exemptionCredentialState(unit)
-    return !["active", "pending"].includes(state) && !canUploadQualificationForUnit(unit)
+    return !["active", "pending", "pending_upload", "resubmit"].includes(state) && !canUploadQualificationForUnit(unit)
   })
 }
 
@@ -1538,16 +1535,10 @@ async function startSelectedQualificationApplications() {
           await loadPurchaseReadyBundleInfo()
           continue
         }
-        if (isApplicationResubmitStatus(existingApplication.status)) {
-          qualificationUploadPermissions.value = { ...qualificationUploadPermissions.value, [qualId]: true }
+        if (isApplicationPendingUploadStatus(existingApplication.status) || isApplicationResubmitStatus(existingApplication.status)) {
           await openQualificationEditor(unit, qualId)
           continue
         }
-      }
-      if (await hasQualificationUploadPermission(qualId)) {
-        qualificationUploadPermissions.value = { ...qualificationUploadPermissions.value, [qualId]: true }
-        await openQualificationEditor(unit, qualId)
-        continue
       }
       unitsForNewOrder.push(unit)
     }
@@ -1591,11 +1582,12 @@ async function startSelectedQualificationApplications() {
       items: orderQualIds.map((qualId) => ({ qual_id: qualId })),
     }
     if (isUploadReadyStatus(orderStatus)) {
+      await refreshQualificationApplications()
       toast.info(t.value.checkoutWizard.qualificationUploadReady)
       for (const unit of unitsForNewOrder) {
         const qualId = qualificationIdsForUnit(unit)[0] || ""
         if (!qualId) continue
-        qualificationUploadPermissions.value = { ...qualificationUploadPermissions.value, [qualId]: true }
+        if (!canUploadQualificationForUnit(unit)) continue
         await openQualificationEditor(unit, qualId)
       }
       return
@@ -1689,7 +1681,7 @@ function formatMoney(amount?: number, currency = "usd") {
   return new Intl.NumberFormat(undefined, { style: "currency", currency: currency || "usd" }).format(amount / 100)
 }
 
-type ExemptionCredentialState = "active" | "pending" | "resubmit" | "rejected" | "expired" | "revoked" | "missing" | "unavailable"
+type ExemptionCredentialState = "active" | "pending" | "pending_upload" | "resubmit" | "rejected" | "expired" | "revoked" | "missing" | "unavailable"
 
 function exemptionCredentialState(unit: any): ExemptionCredentialState {
   const qualifications = unit?.exemption_quals || []
@@ -1700,6 +1692,7 @@ function exemptionCredentialState(unit: any): ExemptionCredentialState {
   }
 
   const application = qualificationApplicationForUnit(unit)
+  if (isApplicationPendingUploadStatus(application?.status)) return "pending_upload"
   if (isApplicationPendingStatus(application?.status)) return "pending"
   if (isApplicationResubmitStatus(application?.status)) return "resubmit"
   if (isApplicationRejectedStatus(application?.status)) return "rejected"
@@ -1720,6 +1713,8 @@ function exemptionCredentialLabel(unit: any) {
       return t.value.checkoutWizard.statusApproved
     case "pending":
       return t.value.checkoutWizard.statusPending
+    case "pending_upload":
+      return t.value.credentialsPage.appStatusPendingUpload
     case "resubmit":
       return t.value.checkoutWizard.statusResubmit
     case "rejected":
@@ -1741,6 +1736,8 @@ function exemptionCredentialBadgeClass(unit: any) {
       return "bg-emerald-100 text-emerald-800"
     case "pending":
       return "bg-blue-100 text-blue-800"
+    case "pending_upload":
+      return "bg-sky-100 text-sky-800"
     case "resubmit":
       return "bg-amber-100 text-amber-800"
     case "rejected":
@@ -1762,6 +1759,8 @@ function qualificationStatusHint(unit: any) {
       return ""
     case "pending":
       return t.value.checkoutWizard.qualificationPendingHint
+    case "pending_upload":
+      return t.value.checkoutWizard.qualificationUploadReady
     case "resubmit":
       return t.value.checkoutWizard.qualificationResubmitHint
     default:
@@ -1775,6 +1774,8 @@ function qualificationStatusHintClass(unit: any) {
   switch (exemptionCredentialState(unit)) {
     case "pending":
       return "border-blue-200 bg-blue-50 text-blue-800"
+    case "pending_upload":
+      return "border-sky-200 bg-sky-50 text-sky-800"
     case "resubmit":
       return "border-amber-200 bg-amber-50 text-amber-800"
     default:
@@ -2158,7 +2159,7 @@ function closePaymentEditDialog() {
                         :class="['mt-3 flex items-start gap-2 rounded-xl border px-3 py-2.5 text-sm leading-5', qualificationStatusHintClass(unit)]"
                       >
                         <Clock
-                          v-if="exemptionCredentialState(unit) === 'pending'"
+                          v-if="['pending', 'pending_upload'].includes(exemptionCredentialState(unit))"
                           class="mt-0.5 h-4 w-4 shrink-0"
                         />
                         <CircleAlert
@@ -2176,11 +2177,15 @@ function closePaymentEditDialog() {
                           {{ activeOrderUnitStatusLabel(unit) }}
                         </span>
                       </div>
-                      <div v-else-if="['active', 'pending'].includes(exemptionCredentialState(unit))" class="flex items-center justify-between gap-3">
+                      <div v-else-if="['active', 'pending', 'pending_upload', 'resubmit'].includes(exemptionCredentialState(unit))" class="flex items-center justify-between gap-3">
                         <span class="checkout-unit-action font-medium text-slate-700">
                           {{ exemptionCredentialState(unit) === 'active'
                             ? t.checkoutWizard.automaticExemptionApplied
-                            : t.checkoutWizard.qualificationUnderReview }}
+                            : exemptionCredentialState(unit) === 'pending'
+                              ? t.checkoutWizard.qualificationUnderReview
+                              : exemptionCredentialState(unit) === 'pending_upload'
+                                ? t.credentialsPage.uploadMaterials
+                                : t.checkoutWizard.statusResubmit }}
                         </span>
                       </div>
                       <div v-else class="grid gap-2 sm:grid-cols-2" role="group" :aria-label="t.checkoutWizard.exemptionDecisionLabel">

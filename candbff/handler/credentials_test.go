@@ -161,6 +161,78 @@ func TestListCredentialDefinitionsIncludesReferenceAttachments(t *testing.T) {
 	}
 }
 
+func TestListCredentialDefinitionsUsesActionableApplications(t *testing.T) {
+	const (
+		candidateID   = "01J00000000000000000000000"
+		definitionID  = "01J00000000000000000000001"
+		applicationID = "01J00000000000000000000002"
+	)
+	client := &credentialClientStub{
+		listCandidateApplicationsResponse: &gcredspb.ListApplicationsResponse{
+			Applications: []*gcredspb.ApplicationSummary{{
+				AppUlid:       applicationID,
+				CandidateUlid: candidateID,
+				CredDefUlid:   definitionID,
+				Status:        "APPLICATION_STATUS_PENDING_UPLOAD",
+			}},
+		},
+		definitionDetailResponse: &gcredspb.CredentialDefinition{
+			CredDefUlid: definitionID,
+			Name:        "Pending upload qualification",
+		},
+	}
+	recorder := httptest.NewRecorder()
+	request := newCandidateHandlerRequest(
+		http.MethodGet,
+		"/api/credentials/definitions",
+		"",
+		candidateID,
+		nil,
+	)
+
+	(&Handler{Creds: client}).ListCredentialDefinitions(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body=%s", recorder.Code, http.StatusOK, recorder.Body.String())
+	}
+	var payload struct {
+		Data struct {
+			Definitions []struct {
+				CredDefULID       string                 `json:"cred_def_ulid"`
+				LatestApplication map[string]interface{} `json:"latest_application"`
+			} `json:"definitions"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if len(payload.Data.Definitions) != 1 {
+		t.Fatalf("definitions = %#v, want one actionable definition", payload.Data.Definitions)
+	}
+	definition := payload.Data.Definitions[0]
+	if definition.CredDefULID != definitionID || definition.LatestApplication["app_ulid"] != applicationID {
+		t.Fatalf("definition = %#v", definition)
+	}
+	if definition.LatestApplication["status"] != "APPLICATION_STATUS_PENDING_UPLOAD" {
+		t.Fatalf("latest application status = %v", definition.LatestApplication["status"])
+	}
+
+	req := client.listCandidateApplicationsRequest
+	if req == nil {
+		t.Fatal("ListCandidateApplications was not called")
+	}
+	if req.GetFilters().GetCandidateUlid() != candidateID {
+		t.Fatalf("candidate_ulid = %q, want %q", req.GetFilters().GetCandidateUlid(), candidateID)
+	}
+	wantStatuses := []string{"PendingUpload", "Reupload"}
+	if got := req.GetFilters().GetStatuses(); len(got) != len(wantStatuses) || got[0] != wantStatuses[0] || got[1] != wantStatuses[1] {
+		t.Fatalf("statuses = %#v, want %#v", got, wantStatuses)
+	}
+	if req.GetPageSize() != 100 || req.GetSortOrder() != gcredspb.SortOrder_SORT_ORDER_DESC {
+		t.Fatalf("unexpected pagination/sort request: %#v", req)
+	}
+}
+
 func TestLatestCredentialApplicationUsesCandidateScopedLatestQuery(t *testing.T) {
 	const (
 		candidateID = "01J00000000000000000000000"

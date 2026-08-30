@@ -136,25 +136,6 @@ function activeCredentialApplicationOrderStatus() {
   return String(activeCredentialApplicationOrder.value?.order_status || "").trim().toUpperCase()
 }
 
-function activeCredentialApplicationOrderItemForDefinition(def: any) {
-  const qualificationId = credentialDefinitionId(def)
-  return (activeCredentialApplicationOrder.value?.items || []).find((item: any) =>
-    String(item?.qual_id || "").trim() === qualificationId,
-  ) || null
-}
-
-function activeCredentialApplicationOrderItemStatus(def: any) {
-  return String(activeCredentialApplicationOrderItemForDefinition(def)?.item_status || "").trim().toUpperCase()
-}
-
-function activeOrderIncludesDefinition(def: any) {
-  return Boolean(activeCredentialApplicationOrderItemForDefinition(def))
-}
-
-function activeOrderBlocksDefinition(def: any) {
-  return Boolean(activeCredentialApplicationOrder.value?.found) && !activeOrderIncludesDefinition(def)
-}
-
 function activeOrderIsWaitingPayment() {
   return activeCredentialApplicationOrderStatus().includes("WAIT_REVIEW_FEE_PAYMENT")
 }
@@ -169,12 +150,6 @@ function activeOrderIsUnderReview() {
 
 function credentialApplicationOrderIsTerminal() {
   return ["RESOLVED", "FAILED", "CANCELLED"].includes(activeCredentialApplicationOrderStatus())
-}
-
-function activeOrderAllowsUploadForDefinition(def: any) {
-  return activeOrderIncludesDefinition(def)
-    && activeCredentialApplicationOrderItemStatus(def) === "PENDING"
-    && (activeOrderIsUploadReady() || activeOrderIsUnderReview())
 }
 
 function activeOrderSummary() {
@@ -201,13 +176,9 @@ async function handleApplicationPageChange() {
 
 function handleApplyClick(def: any, appId = "") {
   if (!def) return
-  if (!appId && !activeCredentialApplicationOrder.value?.found) return
-  if (!appId && activeCredentialApplicationOrder.value?.found) {
-    if (!activeOrderAllowsUploadForDefinition(def)) return
-  }
   const existing = latestApplicationForDef(credentialDefinitionId(def))
-  if (!appId && existing && !canStartNewApplication(existing.status)) return
-  resubmitAppId.value = appId
+  if (!existing || (!isPendingUploadStatus(existing.status) && !canResubmit(existing.status))) return
+  resubmitAppId.value = canResubmit(existing.status) ? (appId || applicationId(existing)) : ""
   selectedDef.value = def
   uploadedFiles.value = {}
   isApplyOpen.value = true
@@ -322,6 +293,8 @@ function statusIcon(status: string) {
   switch (s) {
     case "PENDING":
     case "APPLICATION_STATUS_PENDING":
+    case "PENDING_UPLOAD":
+    case "APPLICATION_STATUS_PENDING_UPLOAD":
       return Clock
     case "APPROVED":
     case "APPLICATION_STATUS_APPROVED":
@@ -345,6 +318,7 @@ function applicationStatusPillClass(status: string) {
   if (["APPROVED", "APPLICATION_STATUS_APPROVED"].includes(s)) return "border-emerald-200 bg-emerald-50 text-emerald-700"
   if (["REJECTED", "APPLICATION_STATUS_REJECTED"].includes(s)) return "border-red-200 bg-red-50 text-red-700"
   if (["NEEDS_RESUBMIT", "RESUBMIT", "REUPLOAD", "APPLICATION_STATUS_RESUBMIT", "APPLICATION_STATUS_REUPLOAD"].includes(s)) return "border-amber-200 bg-amber-50 text-amber-700"
+  if (["PENDING_UPLOAD", "APPLICATION_STATUS_PENDING_UPLOAD"].includes(s)) return "border-sky-200 bg-sky-50 text-sky-700"
   if (["PENDING", "APPLICATION_STATUS_PENDING"].includes(s)) return "border-blue-200 bg-blue-50 text-blue-700"
   return "border-slate-200 bg-slate-50 text-slate-600"
 }
@@ -352,6 +326,11 @@ function applicationStatusPillClass(status: string) {
 function canResubmit(status: string) {
   const s = statusEnumNameForStatus(CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, status).toUpperCase()
   return ["REUPLOAD", "RESUBMIT", "NEEDS_RESUBMIT", "APPLICATION_STATUS_REUPLOAD", "APPLICATION_STATUS_RESUBMIT"].includes(s)
+}
+
+function isPendingUploadStatus(status: string) {
+  const s = statusEnumNameForStatus(CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, status).toUpperCase()
+  return ["PENDING_UPLOAD", "APPLICATION_STATUS_PENDING_UPLOAD"].includes(s)
 }
 
 function isRejectedStatus(status: string) {
@@ -367,11 +346,6 @@ function isPendingReviewStatus(status: string) {
 function isApprovedStatus(status: string) {
   const s = statusEnumNameForStatus(CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, status).toUpperCase()
   return ["APPROVED", "APPLICATION_STATUS_APPROVED"].includes(s)
-}
-
-function canStartNewApplication(status: string) {
-  const s = statusEnumNameForStatus(CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, status).toUpperCase()
-  return !["PENDING", "APPLICATION_STATUS_PENDING", "APPROVED", "APPLICATION_STATUS_APPROVED", "REJECTED", "APPLICATION_STATUS_REJECTED"].includes(s)
 }
 
 function credentialDefinitionId(def: any) {
@@ -411,17 +385,8 @@ function latestApplicationForDef(credDefId: string) {
 
 function applicationActionLabel(def: any) {
   const existing = latestApplicationForDef(credentialDefinitionId(def))
-  if (!existing && activeCredentialApplicationOrder.value?.found) {
-    if (activeOrderBlocksDefinition(def)) return t.value.credentialsPage.activeOrderExcludesQualification
-    const itemStatus = activeCredentialApplicationOrderItemStatus(def)
-    if (itemStatus === "APPROVED") return t.value.credentialsPage.applicationApprovedHint
-    if (itemStatus === "REJECTED") return t.value.credentialsPage.appStatusRejected
-    if (itemStatus === "SUBMITTED") return t.value.credentialsPage.reviewOrderUnderReview
-    if (itemStatus === "PENDING" && activeOrderIsWaitingPayment()) return t.value.credentialsPage.goToReviewFeePayment
-    if (activeOrderAllowsUploadForDefinition(def)) return t.value.credentialsPage.uploadMaterials
-    if (credentialApplicationOrderIsTerminal()) return t.value.credentialsPage.reviewOrderClosed
-  }
   if (!existing) return t.value.credentialsPage.applyDuringCheckout
+  if (isPendingUploadStatus(existing.status)) return t.value.credentialsPage.uploadMaterials
   if (isPendingReviewStatus(existing.status)) return t.value.credentialsPage.applicationPendingHint
   if (isApprovedStatus(existing.status)) return t.value.credentialsPage.applicationApprovedHint
   if (canResubmit(existing.status)) return t.value.credentialsPage.appStatusResubmit
@@ -431,30 +396,14 @@ function applicationActionLabel(def: any) {
 
 function isApplicationActionDisabled(def: any) {
   const existing = latestApplicationForDef(credentialDefinitionId(def))
-  if (!existing && activeCredentialApplicationOrder.value?.found) {
-    if (activeOrderBlocksDefinition(def)) return true
-    return !activeOrderIsWaitingPayment() && !activeOrderAllowsUploadForDefinition(def)
-  }
   if (!existing) return true
-  return Boolean(existing && !canStartNewApplication(existing.status) && !canResubmit(existing.status))
+  return !isPendingUploadStatus(existing.status) && !canResubmit(existing.status)
 }
 
 function handleDefinitionAction(def: any) {
   const existing = latestApplicationForDef(credentialDefinitionId(def))
-  if (existing && canResubmit(existing.status)) {
-    handleApplyClick(def, applicationId(existing))
-    return
-  }
-  if (!existing && !activeCredentialApplicationOrder.value?.found) return
-  if (!existing && activeCredentialApplicationOrder.value?.found) {
-    if (activeOrderBlocksDefinition(def)) return
-    if (activeOrderIsWaitingPayment()) {
-      void router.push("/orders")
-      return
-    }
-    if (!activeOrderAllowsUploadForDefinition(def)) return
-  }
-  handleApplyClick(def)
+  if (!existing || (!isPendingUploadStatus(existing.status) && !canResubmit(existing.status))) return
+  handleApplyClick(def, canResubmit(existing.status) ? applicationId(existing) : "")
 }
 
 onMounted(fetchData)
@@ -570,7 +519,7 @@ watch(lang, () => {
                 {{ statusLabel(t, CANDIDATE_APPLICATION_STATUS_LABELS, app.status, 'credentialsPage.appStatusUnknown') }}
               </span>
               <div v-if="String(app.audit_remark || '').trim()" class="col-span-2 min-w-0 rounded-lg bg-slate-50 px-3 py-2 text-sm leading-5 text-muted-foreground md:col-span-2 md:bg-transparent md:px-0 md:py-0 md:truncate lg:col-span-1" data-testid="application-audit-remark" :title="`${t.credentialsPage.auditRemark}: ${app.audit_remark}`">{{ t.credentialsPage.auditRemark }}: {{ app.audit_remark }}</div>
-              <button v-if="canResubmit(app.status)" class="btn btn-primary col-span-2 h-9 w-full cursor-pointer whitespace-nowrap rounded-lg py-1 text-sm shadow-sm shadow-primary/20 md:col-span-1 md:w-auto md:justify-self-end lg:col-start-4" @click="handleApplyClick(definitionForApplication(app), applicationId(app))">{{ t.credentialsPage.appStatusResubmit }}</button>
+              <button v-if="isPendingUploadStatus(app.status) || canResubmit(app.status)" class="btn btn-primary col-span-2 h-9 w-full cursor-pointer whitespace-nowrap rounded-lg py-1 text-sm shadow-sm shadow-primary/20 md:col-span-1 md:w-auto md:justify-self-end lg:col-start-4" @click="handleApplyClick(definitionForApplication(app), canResubmit(app.status) ? applicationId(app) : '')">{{ isPendingUploadStatus(app.status) ? t.credentialsPage.uploadMaterials : t.credentialsPage.appStatusResubmit }}</button>
               <span v-else class="col-span-2 justify-self-start whitespace-nowrap text-sm text-muted-foreground md:col-span-1 md:justify-self-end lg:col-start-4">{{ formatBackendDateOnly(app.created_at) || t.common.na }}</span>
             </div>
           </div>

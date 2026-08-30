@@ -767,7 +767,17 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
         },
       }
     }
-    if (pathname === "/api/credentials/applications") return { data: { applications: [] } }
+    if (pathname === "/api/credentials/applications") {
+      return {
+        data: {
+          applications: [{
+            app_ulid: "application-template-pending-upload",
+            cred_def_ulid: qualificationID,
+            status: "APPLICATION_STATUS_PENDING_UPLOAD",
+          }],
+        },
+      }
+    }
     if (pathname === "/api/credentials/application-orders/latest") {
       return {
         data: {
@@ -830,7 +840,7 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
   expect(submitRequest.files[0].file_usage).toBe("Employment Certificate")
 })
 
-test("资格申请页恢复活跃审核订单并阻止追加其他资格", async ({ page }) => {
+test("资格申请页仅允许 PendingUpload 申请上传并阻止追加其他资格", async ({ page }) => {
   const includedQualificationID = "qualification-active-order-included"
   const excludedQualificationID = "qualification-active-order-excluded"
 
@@ -838,26 +848,32 @@ test("资格申请页恢复活跃审核订单并阻止追加其他资格", async
     if (pathname === "/api/credentials/definitions") {
       return {
         data: {
-          definitions: [
-            {
+          definitions: [{
+            cred_def_ulid: includedQualificationID,
+            name: "Included Qualification",
+            category: "Exemption",
+            respath: "/gcreds/core/included",
+            file_constraints: [],
+            latest_application: {
+              app_ulid: "application-active-order-pending-upload",
               cred_def_ulid: includedQualificationID,
-              name: "Included Qualification",
-              category: "Exemption",
-              respath: "/gcreds/core/included",
-              file_constraints: [],
+              status: "APPLICATION_STATUS_PENDING_UPLOAD",
             },
-            {
-              cred_def_ulid: excludedQualificationID,
-              name: "Excluded Qualification",
-              category: "Exemption",
-              respath: "/gcreds/core/excluded",
-              file_constraints: [],
-            },
-          ],
+          }],
         },
       }
     }
-    if (pathname === "/api/credentials/applications") return { data: { applications: [] } }
+    if (pathname === "/api/credentials/applications") {
+      return {
+        data: {
+          applications: [{
+            app_ulid: "application-active-order-pending-upload",
+            cred_def_ulid: includedQualificationID,
+            status: "APPLICATION_STATUS_PENDING_UPLOAD",
+          }],
+        },
+      }
+    }
     if (pathname === "/api/credentials/application-orders/latest") {
       return {
         data: {
@@ -873,10 +889,13 @@ test("资格申请页恢复活跃审核订单并阻止追加其他资格", async
 
   await page.goto("/credentials", { waitUntil: "domcontentloaded" })
 
+  const includedQualificationCard = page.locator(".credential-definition-card").filter({
+    has: page.getByText("Included Qualification", { exact: true }),
+  })
   await expect(page.getByText("资格审核订单", { exact: true })).toBeVisible()
-  await expect(page.getByRole("button", { name: "上传证明材料", exact: true })).toBeEnabled()
-  await expect(page.getByRole("button", { name: "本轮订单未包含，暂不可追加", exact: true })).toBeDisabled()
-  await page.getByRole("button", { name: "上传证明材料", exact: true }).click()
+  await expect(includedQualificationCard.getByRole("button", { name: "上传证明材料", exact: true })).toBeEnabled()
+  await expect(page.getByText("Excluded Qualification", { exact: true })).toHaveCount(0)
+  await includedQualificationCard.getByRole("button", { name: "上传证明材料", exact: true }).click()
   await expect(page.locator(".credentials-apply-dialog").getByText("Included Qualification", { exact: true })).toBeVisible()
 })
 
@@ -919,23 +938,9 @@ test("资格申请记录仅在存在审核备注时显示备注", async ({ page 
   await expect(page.getByText("N/A", { exact: true })).toHaveCount(0)
 })
 
-test("资格审核订单结束后不能再次创建资格申请", async ({ page }) => {
-  const qualificationID = "qualification-resolved-order"
-
+test("资格审核订单结束后不会沿用旧订单授予上传权限", async ({ page }) => {
   await installCandidateApiMocks(page, ({ pathname }) => {
-    if (pathname === "/api/credentials/definitions") {
-      return {
-        data: {
-          definitions: [{
-            cred_def_ulid: qualificationID,
-            name: "Rejected Qualification",
-            category: "Exemption",
-            respath: "/gcreds/core/rejected",
-            file_constraints: [],
-          }],
-        },
-      }
-    }
+    if (pathname === "/api/credentials/definitions") return { data: { definitions: [] } }
     if (pathname === "/api/credentials/applications") return { data: { applications: [] } }
     if (pathname === "/api/credentials/application-orders/latest") {
       return {
@@ -943,7 +948,7 @@ test("资格审核订单结束后不能再次创建资格申请", async ({ page 
           found: true,
           application_order_ulid: "resolved-qualification-order",
           order_status: "RESOLVED",
-          items: [{ qual_id: qualificationID, item_status: "REJECTED" }],
+          items: [{ qual_id: "qualification-resolved-order", item_status: "REJECTED" }],
         },
       }
     }
@@ -953,7 +958,7 @@ test("资格审核订单结束后不能再次创建资格申请", async ({ page 
   await page.goto("/credentials", { waitUntil: "domcontentloaded" })
 
   await expect(page.getByText("资格审核订单已结束，不能再新增资格申请。", { exact: true })).toBeVisible()
-  await expect(page.getByRole("button", { name: "被拒绝", exact: true })).toBeDisabled()
+  await expect(page.getByRole("button", { name: "上传证明材料", exact: true })).toHaveCount(0)
 })
 
 test("免考选择完成后才合并创建所选资格订单", async ({ page }) => {
@@ -1018,7 +1023,6 @@ test("免考选择完成后才合并创建所选资格订单", async ({ page }) 
       }
     }
     if (pathname === "/api/credentials/applications") return { data: { applications: [] } }
-    if (pathname === "/api/credentials/upload-permission") return { data: { granted: false } }
     if (pathname === "/api/credentials/application-orders" && method === "POST") {
       applicationOrderBody = body
       return {
