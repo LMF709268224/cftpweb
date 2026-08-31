@@ -71,9 +71,9 @@ test("Prog list renders the read-only pipeline summary", async ({ page }) => {
 
   await page.goto("/prog")
 
-  await expect(page.getByText("Regression Pipeline", { exact: true })).toBeVisible()
-  await expect(page.getByText("candidate-1", { exact: true }).first()).toBeVisible()
   const pipelineRow = page.getByRole("button", { name: "查看详情" }).locator("..")
+  await expect(pipelineRow.getByText("Regression Pipeline", { exact: true })).toBeVisible()
+  await expect(pipelineRow.getByText("candidate-1", { exact: true })).toBeVisible()
   await expect(pipelineRow.getByText("运行中", { exact: true })).toBeVisible()
   expect(requests).toContain("GET /api/prog/pipelines")
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
