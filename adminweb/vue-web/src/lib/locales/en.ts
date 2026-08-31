@@ -2592,6 +2592,8 @@ export const en: AdminTranslations = {
             candidatePlaceholder: "Enter candidate ULID",
             clearInput: "Clear input",
             invalidCandidateUlid: "Enter a valid 26-character candidate ULID.",
+            certificate: "Certificate Type",
+            allCertificates: "All Certificates",
             status: "Status Filter",
             search: "Search",
         },

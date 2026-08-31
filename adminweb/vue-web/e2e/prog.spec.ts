@@ -20,13 +20,23 @@ const transitionSummary = {
   created_at: "2026-08-11T01:00:00Z",
 }
 
-async function installProgReadMocks(page: Page, requests: string[]) {
-  return installAdminApiMocks(page, ({ method, pathname }) => {
+async function installProgReadMocks(page: Page, requests: string[], progQueries: string[] = []) {
+  return installAdminApiMocks(page, ({ method, pathname, url }) => {
     requests.push(`${method} ${pathname}`)
     if (method === "GET" && pathname === "/api/pipelines") {
-      return { data: { pipelines: [{ pipeline_ulid: "pipeline-config-1", name: "Regression Pipeline" }], has_more: false, next_cursor: "" } }
+      return {
+        data: {
+          pipelines: [
+            { pipeline_ulid: "pipeline-config-1", name: "Regression Pipeline", version: 1 },
+            { pipeline_ulid: "pipeline-config-2", name: "CFtA Certification", version: 2 },
+          ],
+          has_more: false,
+          next_cursor: "",
+        },
+      }
     }
     if (method === "GET" && pathname === "/api/prog/pipelines") {
+      progQueries.push(url.search)
       return { data: { pipelines: [pipelineSummary], total: 1, has_more: false, next_cursor: "" } }
     }
     if (method === "GET" && pathname === "/api/prog/pipelines/pipeline-1") {
@@ -61,12 +71,24 @@ test("Prog list renders the read-only pipeline summary", async ({ page }) => {
 
   await page.goto("/prog")
 
-  await expect(page.getByText("Regression Pipeline", { exact: true })).toBeVisible()
-  await expect(page.getByText("candidate-1", { exact: true }).first()).toBeVisible()
   const pipelineRow = page.getByRole("button", { name: "查看详情" }).locator("..")
+  await expect(pipelineRow.getByText("Regression Pipeline", { exact: true })).toBeVisible()
+  await expect(pipelineRow.getByText("candidate-1", { exact: true })).toBeVisible()
   await expect(pipelineRow.getByText("运行中", { exact: true })).toBeVisible()
   expect(requests).toContain("GET /api/prog/pipelines")
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
+})
+
+test("Prog list filters certification instances by certificate type", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  const requests: string[] = []
+  const progQueries: string[] = []
+  await installProgReadMocks(page, requests, progQueries)
+
+  await page.goto("/prog")
+  await page.getByLabel("证书类型").selectOption("pipeline-config-2")
+
+  await expect.poll(() => progQueries.some((query) => new URLSearchParams(query).get("pipeline_cc_ulid") === "pipeline-config-2")).toBe(true)
 })
 
 test("Prog detail reads stages and transition detail without an operator action", async ({ page }) => {

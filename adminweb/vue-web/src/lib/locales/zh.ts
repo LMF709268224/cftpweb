@@ -2590,6 +2590,8 @@ export const zh = {
             candidatePlaceholder: "请输入考生 ULID",
             clearInput: "清除输入",
             invalidCandidateUlid: "请输入有效的考生 ULID（共 26 位）",
+            certificate: "证书类型",
+            allCertificates: "全部证书",
             status: "状态筛选",
             search: "查询",
         },
