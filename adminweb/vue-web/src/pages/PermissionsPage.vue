@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FileWarning, Loader2, RefreshCw, Search, ShieldCheck, ShieldOff, TriangleAlert, UserX, X } from "lucide-vue-next"
+import { FileWarning, Loader2, RefreshCw, Search, TriangleAlert, UserX, X } from "lucide-vue-next"
 import { computed, onMounted, ref, type Component } from "vue"
 import { toast } from "vue-sonner"
 import JsonPreview from "@/components/JsonPreview.vue"
@@ -9,7 +9,7 @@ import { type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 import { badgeClass, pickFirst } from "@/lib/status"
 
-type PermissionAction = "grant" | "revoke-upload" | "mark-expired" | "revoke-credential"
+type PermissionAction = "mark-expired" | "revoke-credential"
 type PermissionActionItem = {
   key: PermissionAction
   title: string
@@ -52,24 +52,6 @@ const closeLabel = computed(() => copy.value.close || (isZh.value ? "关闭" : "
 const clearInputLabel = computed(() => copy.value.clearInput || (isZh.value ? "清除输入" : "Clear input"))
 
 const actions = computed<PermissionActionItem[]>(() => [
-  {
-    key: "grant" as const,
-    title: copy.value.actions.grant.title,
-    desc: copy.value.actions.grant.desc,
-    endpoint: "/api/permissions/grant",
-    icon: ShieldCheck,
-    tone: "bg-emerald-600 text-white",
-    requiresConfirmation: false,
-  },
-  {
-    key: "revoke-upload" as const,
-    title: copy.value.actions.revokeUpload.title,
-    desc: copy.value.actions.revokeUpload.desc,
-    endpoint: "/api/permissions/revoke",
-    icon: ShieldOff,
-    tone: "bg-amber-500 text-white",
-    requiresConfirmation: true,
-  },
   {
     key: "mark-expired" as const,
     title: copy.value.actions.markExpired.title,

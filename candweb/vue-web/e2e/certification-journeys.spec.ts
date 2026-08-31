@@ -444,7 +444,11 @@ test("已持有有效资格的课程自动免考且不可取消", async ({ page 
   await waitForCheckoutProfile(page)
   await page.getByTestId("checkout-agreement").check()
   await page.getByTestId("checkout-next").click()
-  await page.getByTestId("checkout-confirm-pay").click()
+  await expect(page.getByTestId("checkout-step-review")).toBeVisible()
+  const confirmPay = page.getByTestId("checkout-confirm-pay")
+  await expect(confirmPay).toBeVisible()
+  await expect(confirmPay).toBeEnabled()
+  await confirmPay.click()
 
   await expect(page).toHaveURL(/\/checkout\/success\/order-auto-exemption/)
   expect(purchaseBody).toEqual({

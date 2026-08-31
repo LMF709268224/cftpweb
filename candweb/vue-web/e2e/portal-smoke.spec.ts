@@ -207,7 +207,18 @@ test("资格申请详情提供官方模板预览与下载", async ({ page }) => 
         },
       }
     }
-    if (pathname === "/api/credentials/applications") return { data: { applications: [], total: 0 } }
+    if (pathname === "/api/credentials/applications") {
+      return {
+        data: {
+          applications: [{
+            app_ulid: "template-application",
+            cred_def_ulid: "credential-with-template",
+            status: "PENDING_UPLOAD",
+          }],
+          total: 1,
+        },
+      }
+    }
     if (pathname === "/api/credentials/application-orders/latest") {
       return {
         data: {
@@ -259,7 +270,16 @@ test("资格申请弹窗在移动端保持操作区可见", async ({ page }) => 
       };
     }
     if (pathname === "/api/credentials/applications") {
-      return { data: { applications: [], total: 0 } };
+      return {
+        data: {
+          applications: [{
+            app_ulid: "mobile-application",
+            cred_def_ulid: "credential-mobile",
+            status: "PENDING_UPLOAD",
+          }],
+          total: 1,
+        },
+      };
     }
     if (pathname === "/api/credentials/application-orders/latest") {
       return {

@@ -474,8 +474,6 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 		// ===== 权限管理 (Permissions) =====
 		r.Route("/permissions", func(r chi.Router) {
 			r.Get("/check", h.CheckCandidateQualification)
-			r.Post("/grant", h.GrantUploadPermission)
-			r.Post("/revoke", h.RevokeUploadPermission)
 			r.Post("/mark-expired", h.MarkExpired)
 			r.Post("/revoke-credential", h.RevokeCredential)
 		})

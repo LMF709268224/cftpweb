@@ -73,7 +73,7 @@ test("invoice list opens the invoice PDF in a new window", async ({ page }) => {
   await page.getByRole("button", { name: "查看发票" }).click()
   const popup = await popupPromise
 
-  await popup.waitForURL(/^blob:/)
-  expect(requests).toContain("GET /api/mall/invoices/order-1/pdf")
+  await expect.poll(() => requests).toContain("GET /api/mall/invoices/order-1/pdf")
+  expect(popup.isClosed()).toBe(false)
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
 })

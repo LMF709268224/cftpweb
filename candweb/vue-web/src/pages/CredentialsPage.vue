@@ -379,7 +379,10 @@ function applicationMeta(app: any) {
 
 function latestApplicationForDef(credDefId: string) {
   const normalizedCredDefId = String(credDefId || "").trim()
+  const application = applications.value.find((item) => applicationCredentialDefinitionId(item) === normalizedCredDefId)
+  if (application) return application
   const definition = definitions.value.find((def) => credentialDefinitionId(def) === normalizedCredDefId)
+  // Compatibility for responses produced before applications became the source of truth.
   return definition?.latest_application || null
 }
 
