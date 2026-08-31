@@ -1315,6 +1315,7 @@ export const zh = {
     enterCertification: "进入认证",
     continuePayment: "继续支付",
     buyNow: "去购买",
+    continueExemptionSelection: "继续选择免考",
     uploadExemptionDocuments: "去上传材料",
     viewExemptionReview: "查看审核状态",
     unavailable: "暂不可购买",

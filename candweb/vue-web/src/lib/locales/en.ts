@@ -1317,6 +1317,7 @@ export const en: AppTranslations = {
         enterCertification: "Enter Certification",
         continuePayment: "Continue Payment",
         buyNow: "Buy Now",
+        continueExemptionSelection: "Choose Another Exemption",
         uploadExemptionDocuments: "Upload Documents",
         viewExemptionReview: "View Review Status",
         unavailable: "Unavailable",

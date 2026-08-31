@@ -29,6 +29,7 @@ async function waitForCheckoutProfile(page: Page) {
     return missing
   }, {
     message: "candidate profile should finish loading before checkout submission",
+    timeout: 15_000,
   }).toEqual([])
 }
 
@@ -302,6 +303,138 @@ test("商城同时存在审核中和待上传免考时进入全部对应资格",
   await expect(page).toHaveURL(new RegExp(
     `/credentials\\?qual_ids=${underReviewQualificationID},${pendingUploadQualificationID}$`,
   ))
+})
+
+test("已有免考待上传时仍可从商城为另一科目独立建单", async ({ page }) => {
+  const parallelBundleID = "bundle-parallel-exemption-applications"
+  const stageID = "stage-parallel-exemption-applications"
+  const pendingUnitID = "unit-exemption-pending-upload"
+  const availableUnitID = "unit-exemption-available"
+  const pendingQualificationID = "qualification-exemption-pending-upload"
+  const availableQualificationID = "qualification-exemption-available"
+  let applicationOrderBody: unknown
+
+  const blocker = {
+    blocker_type: "EXEMPTION_DOCUMENTS_PENDING_UPLOAD",
+    description: "one exemption application still requires documents",
+    details: [pendingUnitID],
+  }
+  const parallelBundle = {
+    ...bundle,
+    bundle_id: parallelBundleID,
+    name: "Parallel Exemption Applications",
+    stages: [{
+      stage_id: stageID,
+      name: "L1",
+      units: [
+        {
+          unit_id: pendingUnitID,
+          name: "L1A Finance",
+          allow_exemption: true,
+          exemption_quals: [pendingQualificationID],
+        },
+        {
+          unit_id: availableUnitID,
+          name: "L1B Fintech",
+          allow_exemption: true,
+          exemption_quals: [availableQualificationID],
+        },
+      ],
+    }],
+    eligibility: { eligible: false, can_purchase: false, can_unlock: false, blockers: [blocker] },
+    purchase_state: {
+      ...bundle.purchase_state,
+      eligibility: { eligible: false, can_purchase: false, can_unlock: false, blockers: [blocker] },
+      exemption_options: {
+        stages: [{
+          stage_id: stageID,
+          stage_name: "L1",
+          units: [
+            {
+              unit_id: pendingUnitID,
+              unit_name: "L1A Finance",
+              allow_exemption: true,
+              qualified: false,
+              exemption_quals: [{ qual_id: pendingQualificationID, name: "Finance Exemption" }],
+            },
+            {
+              unit_id: availableUnitID,
+              unit_name: "L1B Fintech",
+              allow_exemption: true,
+              qualified: false,
+              exemption_quals: [{ qual_id: availableQualificationID, name: "Fintech Exemption" }],
+            },
+          ],
+        }],
+      },
+    },
+  }
+
+  await installCandidateApiMocks(page, ({ pathname, url, method, body }) => {
+    if (pathname === "/api/mall/bundles" && method === "GET") return { data: { bundles: [parallelBundle] } }
+    if (pathname === `/api/mall/bundles/${parallelBundleID}` && method === "GET") return { data: parallelBundle }
+    if (pathname === "/api/credentials/definitions") {
+      return {
+        data: {
+          definitions: [
+            { cred_def_ulid: pendingQualificationID, name: "Finance Exemption", respath: "/gcreds/core/finance" },
+            { cred_def_ulid: availableQualificationID, name: "Fintech Exemption", respath: "/gcreds/core/fintech" },
+          ],
+        },
+      }
+    }
+    if (pathname === "/api/credentials/applications") {
+      const qualificationID = String(url.searchParams.get("cred_def_ulid") || "")
+      return {
+        data: {
+          applications: qualificationID === pendingQualificationID
+            ? [{
+                app_ulid: "application-finance-pending-upload",
+                cred_def_ulid: pendingQualificationID,
+                status: "APPLICATION_STATUS_PENDING_UPLOAD",
+              }]
+            : [],
+        },
+      }
+    }
+    if (pathname === "/api/credentials/application-orders" && method === "GET") {
+      return {
+        data: {
+          orders: [{
+            application_order_ulid: "application-order-finance-pending-upload",
+            order_status: "UPLOAD_READY",
+            items: [{ qual_id: pendingQualificationID, item_status: "PENDING" }],
+          }],
+        },
+      }
+    }
+    if (pathname === "/api/credentials/application-orders" && method === "POST") {
+      applicationOrderBody = body
+      return {
+        data: {
+          application_order_ulid: "application-order-fintech-under-review",
+          order_status: "UNDER_REVIEW",
+        },
+      }
+    }
+    return undefined
+  })
+
+  await page.goto("/certifications", { waitUntil: "domcontentloaded" })
+  const card = page.locator(`[data-testid="certification-card"][data-bundle-id="${parallelBundleID}"]`)
+  await expect(card.getByText("继续选择免考", { exact: true })).toBeVisible()
+  await card.click()
+  await expect(page).toHaveURL(new RegExp(`/checkout/${parallelBundleID}$`))
+
+  await page.locator(`[data-testid="checkout-exemption-apply"][data-unit-id="${availableUnitID}"]`).click()
+  await page.locator(`[data-testid="checkout-create-qualification-order"][data-unit-id="${availableUnitID}"]`).click()
+  await page.getByTestId("checkout-confirm-qualification-order").click()
+
+  await expect.poll(() => applicationOrderBody).toEqual({
+    pipeline_cc_ulid: pipelineID,
+    bundle_ulid: parallelBundleID,
+    qual_ulids: [availableQualificationID],
+  })
 })
 
 test("终审资格已有待上传申请时仍可为另一资格独立建单", async ({ page }) => {
