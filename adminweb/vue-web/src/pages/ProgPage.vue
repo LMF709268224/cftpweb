@@ -34,6 +34,7 @@ const { t } = useAdminLanguage()
 const copy = computed(() => t.value.progAdmin)
 
 const pipelines = ref<JsonRecord[]>([])
+const pipelineCatalog = ref<JsonRecord[]>([])
 const pipelineNameByCc = ref<Record<string, string>>({})
 const selectedSummary = ref<JsonRecord | null>(null)
 const detail = ref<JsonRecord | null>(null)
@@ -56,6 +57,7 @@ const certificateLoading = ref(false)
 const retryingCertificateTask = ref("")
 
 const candidateFilter = ref("")
+const certificateFilter = ref("")
 const statusFilter = ref("all")
 const appliedCandidateFilter = ref("")
 const appliedStatusFilter = ref("all")
@@ -193,6 +195,25 @@ const statusOptions = computed(() => [
   { value: "4", label: copy.value.status.pipeline.issuingCertificate },
   { value: "5", label: copy.value.status.pipeline.cancelled },
 ])
+
+const certificateOptions = computed(() => {
+  const latestByName = new Map<string, { id: string; label: string; version: number; isCurrent: boolean }>()
+  for (const item of pipelineCatalog.value) {
+    const status = String(item.status || "").trim().toUpperCase()
+    if (status && status !== "ACTIVE" && status !== "PUBLISHED") continue
+    const id = String(item.pipeline_ulid || item.pipeline_id || "").trim()
+    const label = String(item.name || item.category_tips || id).trim()
+    if (!id || !label) continue
+    const key = label.toLocaleLowerCase()
+    const version = Number(item.version) || 0
+    const isCurrent = Boolean(item.is_current)
+    const current = latestByName.get(key)
+    if (!current || (isCurrent && !current.isCurrent) || (isCurrent === current.isCurrent && version > current.version)) {
+      latestByName.set(key, { id, label, version, isCurrent })
+    }
+  }
+  return Array.from(latestByName.values()).sort((left, right) => left.label.localeCompare(right.label))
+})
 
 function pipelineUlid(pipeline: JsonRecord | null | undefined) {
   return String(pickFirst(pipeline || {}, ["pipeline_ulid", "pipeline_id"]) || "")
@@ -455,8 +476,10 @@ async function loadPipelineCatalog() {
       const id = String(item.pipeline_ulid || item.pipeline_id || "")
       if (id) next[id] = String(item.name || item.category_tips || id)
     }
+    pipelineCatalog.value = list
     pipelineNameByCc.value = next
   } catch {
+    pipelineCatalog.value = []
     pipelineNameByCc.value = {}
   }
 }
@@ -489,6 +512,7 @@ async function loadPipelines() {
 
 
     if (candidateFilter.value.trim()) params.set("candidate_ulid", candidateFilter.value.trim())
+    if (certificateFilter.value) params.set("pipeline_cc_ulid", certificateFilter.value)
     if (statusFilter.value !== "all") params.set("status", statusFilter.value)
 
     const isValidUlid = (id: string) => /^[0-7][0-9A-HJKMNP-TV-Z]{25}$/i.test(id)
@@ -838,7 +862,7 @@ function clearCandidateFilter() {
   if (shouldSearch) searchPipelines()
 }
 
-watch(statusFilter, () => searchPipelines())
+watch([certificateFilter, statusFilter], () => searchPipelines())
 watch(offset, () => loadPipelines())
 
 watch(canShowCertificateTasks, (visible) => {
@@ -880,7 +904,7 @@ onMounted(async () => {
     <div class="grid gap-6">
       <aside class="space-y-4">
         <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
-          <div class="grid gap-4 lg:grid-cols-[1.5fr_1fr_auto]">
+          <div class="grid gap-4 lg:grid-cols-[1.5fr_1fr_1fr_auto]">
             <label class="grid gap-2 text-sm font-bold">
               {{ copy.filters.candidate }}
               <div class="relative">
@@ -896,6 +920,13 @@ onMounted(async () => {
                   <X class="h-4 w-4" />
                 </button>
               </div>
+            </label>
+            <label class="grid gap-2 text-sm font-bold">
+              {{ copy.filters.certificate }}
+              <select v-model="certificateFilter" class="h-11 rounded-xl border border-slate-200 bg-white px-3">
+                <option value="">{{ copy.filters.allCertificates }}</option>
+                <option v-for="option in certificateOptions" :key="option.id" :value="option.id">{{ option.label }}</option>
+              </select>
             </label>
             <label class="grid gap-2 text-sm font-bold">
               {{ copy.filters.status }}
