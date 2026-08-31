@@ -22,7 +22,24 @@ async function installMessageReadMocks(page: Page, requests: string[], sentStatu
   return installAdminApiMocks(page, ({ method, pathname, url }) => {
     requests.push(`${method} ${pathname}`)
     if (method === "GET" && pathname === "/api/user/list") {
-      return { data: { users: [{ id: "candidate-1", name: "Regression Candidate" }] } }
+      return { data: { users: [
+        { id: "candidate-1", name: "CFtP Candidate" },
+        { id: "candidate-2", name: "CFtA Candidate" },
+        { id: "candidate-3", name: "Candidate Without Certificate" },
+      ] } }
+    }
+    if (method === "GET" && pathname === "/api/credentials/definitions") {
+      return { data: { definitions: [
+        { cred_def_ulid: "cftp-level-1", name: "CFtP Level 1" },
+        { cred_def_ulid: "cfta", name: "CFtA" },
+      ] } }
+    }
+    if (method === "GET" && pathname === "/api/credentials") {
+      return { data: { credentials: [
+        { candidate_ulid: "candidate-1", cred_def_ulid: "cftp-level-1", source: "pdf_cert" },
+        { candidate_ulid: "candidate-2", cred_def_ulid: "cfta", source: "pdf_cert" },
+        { candidate_ulid: "candidate-3", cred_def_ulid: "cftp-level-1", source: "application" },
+      ], has_more: false, next_cursor: "" } }
     }
     if (method === "GET" && pathname === "/api/messages/templates") {
       return { data: { templates: [messageTemplate], total: 1, has_more: false, next_cursor: "" } }
@@ -37,6 +54,26 @@ async function installMessageReadMocks(page: Page, requests: string[], sentStatu
     return undefined
   })
 }
+
+test("message recipients can be filtered by earned certificate", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  const requests: string[] = []
+  await installMessageReadMocks(page, requests)
+  await page.goto("/messages")
+
+  const certificateFilter = page.getByRole("combobox", { name: "按已获证书筛选" })
+  await certificateFilter.selectOption({ label: "CFtP Level 1（1）" })
+  await expect(page.getByText("CFtP Candidate", { exact: true })).toBeVisible()
+  await expect(page.getByText("CFtA Candidate", { exact: true })).toBeHidden()
+  await page.getByRole("button", { name: "全选" }).click()
+  await expect(page.getByText("已选择 1 个用户。", { exact: true })).toBeVisible()
+
+  await certificateFilter.selectOption({ label: "未获得证书（1）" })
+  await expect(page.getByText("Candidate Without Certificate", { exact: true })).toBeVisible()
+  await expect(page.getByText("已选择 0 个用户。", { exact: true })).toBeVisible()
+  expect(requests).toContain("GET /api/credentials/definitions")
+  expect(requests).toContain("GET /api/credentials")
+})
 
 test("message template detail is read without editing it", async ({ page }) => {
   await seedAuthenticatedAdmin(page)

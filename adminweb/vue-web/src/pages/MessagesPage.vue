@@ -10,12 +10,14 @@ import { useAdminLanguage } from "@/lib/language"
 import { pickFirst } from "@/lib/status"
 
 type TabKey = "send" | "sent" | "templates"
+type CertificateCategory = { id: string; name: string }
 
 const pageSize = 20
 const templatePageSize = 10
 
 const activeTab = ref<TabKey>("send")
 const users = ref<JsonRecord[]>([])
+const certificateCategoryFilter = ref("all")
 const templates = ref<JsonRecord[]>([])
 const selectedTemplate = ref<JsonRecord | null>(null)
 const selectedUserIds = ref<string[]>([])
@@ -66,6 +68,25 @@ const tabs = computed(() => [
   { key: "sent" as const, label: copy.value.tabs.sent, icon: List, count: total.value },
   { key: "templates" as const, label: copy.value.tabs.templates, icon: FileText, count: totalTemplates.value || templates.value.length },
 ])
+const filteredUsers = computed(() => {
+  if (certificateCategoryFilter.value === "all") return users.value
+  if (certificateCategoryFilter.value === "none") {
+    return users.value.filter((user) => !userCertificateCategories(user).length)
+  }
+  return users.value.filter((user) => userCertificateCategories(user).some((category) => category.id === certificateCategoryFilter.value))
+})
+const certificateCategoryOptions = computed(() => {
+  const counts = new Map<string, CertificateCategory & { count: number }>()
+  for (const user of users.value) {
+    for (const category of userCertificateCategories(user)) {
+      const current = counts.get(category.id)
+      if (current) current.count += 1
+      else counts.set(category.id, { ...category, count: 1 })
+    }
+  }
+  return [...counts.values()].sort((left, right) => left.name.localeCompare(right.name))
+})
+const usersWithoutCertificateCount = computed(() => users.value.filter((user) => !userCertificateCategories(user).length).length)
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)))
 const templateTotalPages = computed(() => Math.max(1, Math.ceil((totalTemplates.value || templates.value.length) / templatePageSize)))
@@ -93,6 +114,24 @@ function userId(user: JsonRecord) {
 
 function userLabel(user: JsonRecord) {
   return String(pickFirst(user, ["name", "nickname", "email", "phone", "id"]) || userId(user) || copy.value.defaults.user)
+}
+
+function userCertificateCategories(user: JsonRecord): CertificateCategory[] {
+  if (!Array.isArray(user.certificate_categories)) return []
+  return user.certificate_categories.flatMap((category) => {
+    if (!category || typeof category !== "object" || Array.isArray(category)) return []
+    const id = String(pickFirst(category as JsonRecord, ["id", "cred_def_ulid", "credential_definition_id"]) || "").trim()
+    const name = String(pickFirst(category as JsonRecord, ["name", "credential_name", "label"]) || id).trim()
+    return id ? [{ id, name }] : []
+  })
+}
+
+function selectVisibleUsers() {
+  selectedUserIds.value = filteredUsers.value.map(userId).filter(Boolean)
+}
+
+function changeCertificateCategory() {
+  selectedUserIds.value = []
 }
 
 function pathOf(template: JsonRecord | null | undefined) {
@@ -149,14 +188,71 @@ let usersRequestId = 0
 let templatesListRequestId = 0
 let sentMessagesRequestId = 0
 
+function recordList(value: unknown): JsonRecord[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
+    : []
+}
+
+async function loadActiveCertificateCredentials() {
+  const credentials: JsonRecord[] = []
+  const seenCursors = new Set<string>()
+  let cursor = ""
+
+  while (true) {
+    const params = new URLSearchParams({ page_size: "100", status: "Active" })
+    if (cursor) params.set("cursor", cursor)
+    const data = await apiClient<JsonRecord>(`/api/credentials?${params}`)
+    credentials.push(...recordList(data.credentials))
+    if (!data.has_more) return credentials
+
+    const nextCursor = String(data.next_cursor || "").trim()
+    if (!nextCursor || nextCursor === cursor || seenCursors.has(nextCursor)) {
+      throw new Error("Credential pagination cursor did not advance")
+    }
+    seenCursors.add(nextCursor)
+    cursor = nextCursor
+  }
+}
+
 async function loadUsers() {
   const requestId = ++usersRequestId
   usersLoading.value = true
   try {
-    const data = await apiClient<JsonRecord>("/api/user/list")
+    const [data, definitionsData, credentials] = await Promise.all([
+      apiClient<JsonRecord>("/api/user/list"),
+      apiClient<JsonRecord>("/api/credentials/definitions"),
+      loadActiveCertificateCredentials(),
+    ])
     if (requestId !== usersRequestId) return
-    const list = Array.isArray(data.users) ? data.users : []
-    users.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
+
+    const definitionNames = new Map<string, string>()
+    for (const definition of recordList(definitionsData.definitions)) {
+      const id = String(pickFirst(definition, ["cred_def_ulid", "id", "credential_definition_id"]) || "").trim()
+      const name = String(pickFirst(definition, ["name", "credential_name", "title"]) || id).trim()
+      if (id) definitionNames.set(id, name)
+    }
+
+    const categoriesByUser = new Map<string, Map<string, CertificateCategory>>()
+    for (const credential of credentials) {
+      if (String(credential.source || "").trim().toLowerCase() === "application") continue
+      const candidateId = String(pickFirst(credential, ["candidate_ulid", "candidate_id", "user_id"]) || "").trim()
+      const definitionId = String(pickFirst(credential, ["cred_def_ulid", "catalog_id", "credential_definition_id"]) || "").trim()
+      if (!candidateId || !definitionId) continue
+      const categoryName = definitionNames.get(definitionId) || definitionId
+      const categoryId = `name:${categoryName.toLocaleLowerCase()}`
+      const categories = categoriesByUser.get(candidateId) || new Map<string, CertificateCategory>()
+      categories.set(categoryId, { id: categoryId, name: categoryName })
+      categoriesByUser.set(candidateId, categories)
+    }
+
+    users.value = recordList(data.users).map((user) => ({
+      ...user,
+      certificate_categories: [...(categoriesByUser.get(userId(user))?.values() || [])]
+        .sort((left, right) => left.name.localeCompare(right.name)),
+    }))
+    const availableUserIds = new Set(users.value.map(userId).filter(Boolean))
+    selectedUserIds.value = selectedUserIds.value.filter((id) => availableUserIds.has(id))
   } catch (err) {
     if (requestId !== usersRequestId) return
     console.error(err)
@@ -515,20 +611,36 @@ onMounted(async () => {
           <h2 class="text-xl font-black">{{ copy.send.title }}</h2>
           <div class="mt-6 grid gap-6 lg:grid-cols-[1fr_1fr]">
             <div>
+              <label class="mb-4 block">
+                <span class="font-bold">{{ copy.send.certificateCategory }}</span>
+                <select v-model="certificateCategoryFilter" class="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-4 disabled:cursor-not-allowed disabled:bg-slate-100" :disabled="usersLoading" @change="changeCertificateCategory">
+                  <option value="all">{{ copy.send.allCertificateCategories(users.length) }}</option>
+                  <option value="none">{{ copy.send.withoutCertificate(usersWithoutCertificateCount) }}</option>
+                  <option v-for="category in certificateCategoryOptions" :key="category.id" :value="category.id">
+                    {{ copy.send.certificateCategoryOption(category.name, category.count) }}
+                  </option>
+                </select>
+              </label>
               <div class="mb-2 flex items-center justify-between">
                 <label class="font-bold">{{ copy.send.recipients }}</label>
                 <div class="flex gap-3 text-sm">
-                  <button class="font-bold text-blue-700" type="button" @click="selectedUserIds = users.map(userId).filter(Boolean)">{{ copy.send.selectAll }}</button>
+                  <button class="font-bold text-blue-700 disabled:cursor-not-allowed disabled:text-slate-400" :disabled="usersLoading" type="button" @click="selectVisibleUsers">{{ copy.send.selectAll }}</button>
                   <button class="font-bold text-slate-500" type="button" @click="selectedUserIds = []">{{ copy.send.clear }}</button>
                 </div>
               </div>
               <div class="max-h-[360px] overflow-y-auto rounded-2xl border border-slate-200 p-3 md:max-h-[520px]">
-                <label v-for="user in users" :key="userId(user)" class="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 hover:bg-slate-50">
-                  <input v-model="selectedUserIds" class="h-4 w-4" type="checkbox" :value="userId(user)" />
-                  <span class="font-semibold">{{ userLabel(user) }}</span>
-                  <span class="break-all text-xs text-slate-400">{{ userId(user) }}</span>
-                </label>
-                <div v-if="!users.length" class="p-6 text-center text-slate-500">{{ copy.send.noUsers }}</div>
+                <div v-if="usersLoading" class="flex items-center justify-center gap-2 p-6 text-slate-500">
+                  <Loader2 class="h-4 w-4 animate-spin" />
+                  {{ copy.send.loadingUsers }}
+                </div>
+                <template v-else>
+                  <label v-for="user in filteredUsers" :key="userId(user)" class="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 hover:bg-slate-50">
+                    <input v-model="selectedUserIds" class="h-4 w-4" type="checkbox" :value="userId(user)" />
+                    <span class="font-semibold">{{ userLabel(user) }}</span>
+                    <span class="break-all text-xs text-slate-400">{{ userId(user) }}</span>
+                  </label>
+                  <div v-if="!filteredUsers.length" class="p-6 text-center text-slate-500">{{ copy.send.noUsersInCategory }}</div>
+                </template>
               </div>
               <p class="mt-2 text-sm text-slate-500">{{ copy.send.selectedUsers(selectedUserIds.length) }}</p>
             </div>
