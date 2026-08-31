@@ -219,16 +219,6 @@ test("资格申请详情提供官方模板预览与下载", async ({ page }) => 
         },
       }
     }
-    if (pathname === "/api/credentials/application-orders/latest") {
-      return {
-        data: {
-          found: true,
-          application_order_ulid: "template-review-order",
-          order_status: "UPLOAD_READY",
-          items: [{ qual_id: "credential-with-template", item_status: "PENDING" }],
-        },
-      }
-    }
     return undefined
   })
 
@@ -278,16 +268,6 @@ test("资格申请弹窗在移动端保持操作区可见", async ({ page }) => 
             status: "PENDING_UPLOAD",
           }],
           total: 1,
-        },
-      };
-    }
-    if (pathname === "/api/credentials/application-orders/latest") {
-      return {
-        data: {
-          found: true,
-          application_order_ulid: "mobile-review-order",
-          order_status: "UPLOAD_READY",
-          items: [{ qual_id: "credential-mobile", item_status: "PENDING" }],
         },
       };
     }

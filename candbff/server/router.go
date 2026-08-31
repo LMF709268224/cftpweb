@@ -177,7 +177,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 				r.Get("/applications", h.ListCandidateApplications)
 				r.Get("/actionable-count", h.GetActionableCredentialCount)
 				r.Get("/qualifications", h.CheckCandidateQualifications)
-				r.Get("/application-orders/latest", h.GetLatestCredentialApplicationOrder)
+				r.Get("/application-orders", h.ListCredentialApplicationOrdersForCandidate)
 				r.Post("/application-orders", h.CreateCredentialApplicationOrder)
 				r.Post("/upload-url", h.RequestUploadUrl)
 				r.Post("/submit", h.SubmitApplication)

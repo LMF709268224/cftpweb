@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from "vue"
-import { useRoute, useRouter } from "vue-router"
+import { useRoute } from "vue-router"
 import { AlertCircle, Award, CheckCircle, Clock, FileText, Loader2, X, XCircle } from "lucide-vue-next"
 import { getFileConstraintInfo } from "../lib/fileConstraints"
 import { CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, CANDIDATE_APPLICATION_STATUS_LABELS, statusEnumNameForStatus, statusLabel } from "@/lib/status-labels"
@@ -17,10 +17,8 @@ import { toast } from "vue-sonner"
 
 const { t, lang } = useTranslation()
 const route = useRoute()
-const router = useRouter()
 const definitions = ref<any[]>([])
 const applications = ref<any[]>([])
-const activeCredentialApplicationOrder = ref<any>(null)
 const applicationPage = ref(1)
 const applicationPageSize = ref(10)
 const applicationPageSizeOptions = [10, 30, 50, 100]
@@ -110,10 +108,7 @@ async function fetchData(openSingleDefinition = true) {
     const definitionsEndpoint = qualIds ? `/api/credentials/definitions?qual_ulids=${encodeURIComponent(qualIds)}` : "/api/credentials/definitions"
     const defsRes = await apiClient(definitionsEndpoint, { suppressErrorToast: true })
     definitions.value = candidateVisibleCredentialDefinitions(defsRes?.definitions)
-    await Promise.all([
-      fetchApplications({ suppressErrorToast: true }),
-      refreshActiveCredentialApplicationOrder(),
-    ])
+    await fetchApplications({ suppressErrorToast: true })
     if (openSingleDefinition && qualIds && definitions.value.length === 1 && !isApplyOpen.value) {
       handleDefinitionAction(definitions.value[0])
     }
@@ -123,42 +118,6 @@ async function fetchData(openSingleDefinition = true) {
   } finally {
     loading.value = false
   }
-}
-
-async function refreshActiveCredentialApplicationOrder() {
-  const response = await apiClient("/api/credentials/application-orders/latest", {
-    suppressErrorToast: true,
-  })
-  activeCredentialApplicationOrder.value = response?.found ? response : null
-}
-
-function activeCredentialApplicationOrderStatus() {
-  return String(activeCredentialApplicationOrder.value?.order_status || "").trim().toUpperCase()
-}
-
-function activeOrderIsWaitingPayment() {
-  return activeCredentialApplicationOrderStatus().includes("WAIT_REVIEW_FEE_PAYMENT")
-}
-
-function activeOrderIsUploadReady() {
-  return activeCredentialApplicationOrderStatus().includes("UPLOAD_READY")
-}
-
-function activeOrderIsUnderReview() {
-  return activeCredentialApplicationOrderStatus().includes("UNDER_REVIEW")
-}
-
-function credentialApplicationOrderIsTerminal() {
-  return ["RESOLVED", "FAILED", "CANCELLED"].includes(activeCredentialApplicationOrderStatus())
-}
-
-function activeOrderSummary() {
-  if (!activeCredentialApplicationOrder.value?.found) return ""
-  if (activeOrderIsWaitingPayment()) return t.value.credentialsPage.reviewFeePaymentPending
-  if (activeOrderIsUploadReady()) return t.value.credentialsPage.reviewOrderUploadReady
-  if (activeOrderIsUnderReview()) return t.value.credentialsPage.reviewOrderUnderReview
-  if (credentialApplicationOrderIsTerminal()) return t.value.credentialsPage.reviewOrderClosed
-  return ""
 }
 
 async function handleApplicationPageChange() {
@@ -490,23 +449,6 @@ watch(
             <FileText class="h-4 w-4" />
           </div>
           <h2 class="font-semibold text-card-foreground">{{ t.credentialsPage.myApplications }}</h2>
-        </div>
-        <div
-          v-if="activeCredentialApplicationOrder?.found"
-          class="mb-4 flex flex-col gap-3 rounded-[16px] border border-blue-200 bg-blue-50 px-4 py-4 text-blue-900 shadow-[0_10px_24px_rgba(15,74,82,0.04)] sm:flex-row sm:items-center sm:justify-between"
-        >
-          <div>
-            <div class="font-semibold">{{ t.credentialsPage.activeReviewOrder }}</div>
-            <p class="mt-1 text-sm leading-6 text-blue-800">{{ activeOrderSummary() }}</p>
-          </div>
-          <button
-            v-if="activeOrderIsWaitingPayment()"
-            type="button"
-            class="btn rounded-lg border border-blue-300 bg-white text-blue-800 hover:bg-blue-100"
-            @click="router.push('/orders')"
-          >
-            {{ t.credentialsPage.goToReviewFeePayment }}
-          </button>
         </div>
         <div v-if="applicationsLoading" class="credentials-applications-state flex items-center justify-center gap-2 rounded-[16px] bg-white py-14 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
           <Loader2 class="h-5 w-5 animate-spin text-primary" />

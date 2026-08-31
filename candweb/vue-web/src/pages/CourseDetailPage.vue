@@ -257,20 +257,19 @@ const finalQualificationRequired = computed(() =>
   !pipelineCancelled.value &&
   (pipelineWaitsFinalEligibility.value || nextStepAction.value === "final_qualification"),
 )
-type FinalQualificationActionState = "loading" | "submit" | "pending_upload" | "pending" | "approved" | "resubmit" | "rejected"
+type FinalQualificationActionState = "loading" | "submit" | "pending_upload" | "pending" | "approved" | "resubmit"
 
 const finalQualificationActionState = computed<FinalQualificationActionState>(() => {
   if (credentialDefinitionsLoading.value) return "loading"
 
   const applications = finalQualifications.value.map((qual) => qual.application)
+  if (applications.some((application) => !application || isApplicationRejectedStatus(application?.status))) return "submit"
   if (applications.some((application) => isApplicationResubmitStatus(application?.status))) return "resubmit"
   if (applications.some((application) => isApplicationPendingUploadStatus(application?.status))) return "pending_upload"
-  if (applications.some((application) => !application)) return "submit"
   if (applications.some((application) => isApplicationPendingStatus(application?.status))) return "pending"
   if (applications.length > 0 && applications.every((application) => isApplicationApprovedStatus(application?.status))) {
     return "approved"
   }
-  if (applications.some((application) => isApplicationRejectedStatus(application?.status))) return "rejected"
   return "submit"
 })
 
@@ -284,8 +283,6 @@ const finalQualificationPanelDescription = computed(() => {
       return t.value.learning.finalQualificationApprovedDesc
     case "resubmit":
       return t.value.learning.finalQualificationResubmitDesc
-    case "rejected":
-      return t.value.learning.finalQualificationRejectedDesc
     default:
       return t.value.learning.finalQualificationDesc
   }
@@ -303,8 +300,6 @@ const finalQualificationActionLabel = computed(() => {
       return t.value.credentialsPage.applicationApprovedHint
     case "resubmit":
       return t.value.credentialsPage.appStatusResubmit
-    case "rejected":
-      return t.value.credentialsPage.appStatusRejected
     default:
       return t.value.learning.finalQualificationSubmitButton
   }
@@ -312,7 +307,7 @@ const finalQualificationActionLabel = computed(() => {
 
 const finalQualificationActionDisabled = computed(() =>
   finalQualificationLoading.value ||
-  ["loading", "pending", "approved", "rejected"].includes(finalQualificationActionState.value),
+  ["loading", "pending", "approved"].includes(finalQualificationActionState.value),
 )
 const pipelineIssuingCertificate = computed(() => {
   const raw = String(pipelineStatus.value ?? "").trim().toUpperCase()
@@ -744,21 +739,6 @@ async function handleFinalQualificationApplication() {
         application: await latestCredentialApplication(qualId),
       })),
     )
-    if (existingApplications.some(({ application }) => isApplicationPendingStatus(application?.status))) {
-      toast.info(t.value.learning.finalQualificationUnderReview)
-      return
-    }
-    if (existingApplications.some(({ application }) => isApplicationPendingUploadStatus(application?.status))) {
-      toast.info(t.value.learning.finalQualificationUploadReady)
-      openFinalQualificationUpload(missingQualIds)
-      return
-    }
-    if (existingApplications.some(({ application }) => isApplicationResubmitStatus(application?.status))) {
-      toast.info(t.value.learning.finalQualificationResubmit)
-      openFinalQualificationUpload(missingQualIds)
-      return
-    }
-
     const approvedQualIds = new Set(
       existingApplications
         .filter(({ application }) => isApplicationApprovedStatus(application?.status))
@@ -770,6 +750,35 @@ async function handleFinalQualificationApplication() {
       await loadDetail()
       return
     }
+
+    const createTarget = existingApplications.find(({ qualId, application }) =>
+      missingQualIds.includes(qualId)
+      && !isApplicationPendingStatus(application?.status)
+      && !isApplicationPendingUploadStatus(application?.status)
+      && !isApplicationResubmitStatus(application?.status)
+      && !isApplicationApprovedStatus(application?.status),
+    )
+    if (!createTarget) {
+      const pendingUploadApplication = existingApplications.find(({ application }) =>
+        isApplicationPendingUploadStatus(application?.status),
+      )
+      if (pendingUploadApplication) {
+        toast.info(t.value.learning.finalQualificationUploadReady)
+        openFinalQualificationUpload([pendingUploadApplication.qualId])
+        return
+      }
+      const resubmitApplication = existingApplications.find(({ application }) =>
+        isApplicationResubmitStatus(application?.status),
+      )
+      if (resubmitApplication) {
+        toast.info(t.value.learning.finalQualificationResubmit)
+        openFinalQualificationUpload([resubmitApplication.qualId])
+        return
+      }
+      toast.info(t.value.learning.finalQualificationUnderReview)
+      return
+    }
+    const targetQualId = createTarget.qualId
 
     const bundleId = await resolveBundleIdForPipeline()
     if (!bundleId) {
@@ -784,13 +793,13 @@ async function handleFinalQualificationApplication() {
         body: JSON.stringify({
           pipeline_cc_ulid: pipelineId.value,
           bundle_ulid: bundleId,
-          qual_ulids: missingQualIds,
+          qual_ulids: [targetQualId],
         }),
       })
     } catch (error) {
       if (isInProgressCredentialApplicationError(error)) {
         toast.info(t.value.learning.finalQualificationUnderReview)
-        openFinalQualificationUpload(missingQualIds)
+        openFinalQualificationUpload([targetQualId])
         return
       }
       throw error
@@ -799,7 +808,7 @@ async function handleFinalQualificationApplication() {
     const orderStatus = firstString(order?.order_status, order?.status)
     if (isUploadReadyStatus(orderStatus)) {
       toast.info(t.value.learning.finalQualificationUploadReady)
-      openFinalQualificationUpload(missingQualIds)
+      openFinalQualificationUpload([targetQualId])
       return
     }
     if (isCredentialApplicationPaymentStatus(orderStatus) || order?.payment_key) {
@@ -810,7 +819,7 @@ async function handleFinalQualificationApplication() {
         bizRefUlid: orderId,
         source: "credential_application",
         returnPath: "/credentials",
-        extraReturnParams: { qual_ulids: missingQualIds.join(",") },
+        extraReturnParams: { qual_ulids: targetQualId },
       }
       finalQualificationPaymentOpen.value = true
       return
@@ -1243,6 +1252,7 @@ watch(lang, async () => {
             </div>
           </div>
           <button
+            data-testid="final-qualification-action"
             class="btn btn-primary shrink-0 rounded-lg"
             :disabled="finalQualificationActionDisabled"
             @click="handleFinalQualificationApplication"
@@ -1253,10 +1263,7 @@ watch(lang, async () => {
             />
             <Clock v-else-if="finalQualificationActionState === 'pending'" class="h-4 w-4" />
             <CheckCircle v-else-if="finalQualificationActionState === 'approved'" class="h-4 w-4" />
-            <AlertCircle
-              v-else-if="finalQualificationActionState === 'resubmit' || finalQualificationActionState === 'rejected'"
-              class="h-4 w-4"
-            />
+            <AlertCircle v-else-if="finalQualificationActionState === 'resubmit'" class="h-4 w-4" />
             <Award v-else class="h-4 w-4" />
             {{ finalQualificationActionLabel }}
           </button>

@@ -117,7 +117,7 @@ var candidateRouteContract = []routeExpectation{
 	{method: http.MethodGet, path: "/api/credentials/applications", access: routeProtected},
 	{method: http.MethodGet, path: "/api/credentials/actionable-count", access: routeProtected},
 	{method: http.MethodGet, path: "/api/credentials/qualifications", access: routeProtected},
-	{method: http.MethodGet, path: "/api/credentials/application-orders/latest", access: routeProtected},
+	{method: http.MethodGet, path: "/api/credentials/application-orders", access: routeProtected},
 	{method: http.MethodPost, path: "/api/credentials/application-orders", access: routeProtected},
 	{method: http.MethodPost, path: "/api/credentials/upload-url", access: routeProtected},
 	{method: http.MethodPost, path: "/api/credentials/submit", access: routeProtected},

@@ -304,6 +304,101 @@ test("商城同时存在审核中和待上传免考时进入全部对应资格",
   ))
 })
 
+test("终审资格已有待上传申请时仍可为另一资格独立建单", async ({ page }) => {
+  const pendingQualificationID = "qualification-final-pending-upload"
+  const newQualificationID = "qualification-final-new-order"
+  let applicationOrderBody: unknown
+
+  await installCandidateApiMocks(page, ({ pathname, url, method, body }) => {
+    if (pathname === `/api/mall/pipelines/${pipelineID}/runtime`) {
+      return {
+        data: {
+          instance: { pipeline_ulid: pipelineInstanceID },
+          config: {
+            pipeline_cc_ulid: pipelineID,
+            name: "Parallel Final Qualifications",
+            stages: [],
+            final_audit_quals: [
+              { qual_ulid: pendingQualificationID, name_hint: "Pending Upload Qualification" },
+              { qual_ulid: newQualificationID, name_hint: "New Qualification" },
+            ],
+          },
+          next_step: { action: "final_qualification" },
+          pipeline_status: "PIPELINE_STATUS_WAIT_FINAL_ELIG",
+        },
+      }
+    }
+    if (pathname === "/api/credentials/definitions") {
+      return {
+        data: {
+          definitions: [
+            {
+              cred_def_ulid: pendingQualificationID,
+              name: "Pending Upload Qualification",
+              latest_application: {
+                app_ulid: "application-final-pending-upload",
+                cred_def_ulid: pendingQualificationID,
+                status: "APPLICATION_STATUS_PENDING_UPLOAD",
+              },
+            },
+            { cred_def_ulid: newQualificationID, name: "New Qualification" },
+          ],
+        },
+      }
+    }
+    if (pathname === "/api/credentials/applications") {
+      const qualificationID = String(url.searchParams.get("cred_def_ulid") || "")
+      return {
+        data: {
+          applications: qualificationID === pendingQualificationID
+            ? [{
+                app_ulid: "application-final-pending-upload",
+                cred_def_ulid: pendingQualificationID,
+                status: "APPLICATION_STATUS_PENDING_UPLOAD",
+              }]
+            : [],
+        },
+      }
+    }
+    if (pathname === "/api/credentials/qualifications") {
+      return {
+        data: {
+          qualifications: [
+            { qual_id: pendingQualificationID, eligible: false },
+            { qual_id: newQualificationID, eligible: false },
+          ],
+        },
+      }
+    }
+    if (pathname === "/api/mall/bundles") {
+      return { data: { bundles: [{ bundle_id: bundleID, pipeline_id: pipelineID }] } }
+    }
+    if (pathname === "/api/credentials/application-orders" && method === "POST") {
+      applicationOrderBody = body
+      return {
+        data: {
+          application_order_ulid: "application-order-final-new",
+          order_status: "UNDER_REVIEW",
+        },
+      }
+    }
+    return undefined
+  })
+
+  await page.goto(`/certifications/${pipelineID}`, { waitUntil: "domcontentloaded" })
+  const action = page.getByTestId("final-qualification-action")
+  await expect(action).toBeVisible()
+  await expect(action).toContainText("提交资格申请")
+  await action.click()
+
+  await expect.poll(() => applicationOrderBody).toEqual({
+    pipeline_cc_ulid: pipelineID,
+    bundle_ulid: bundleID,
+    qual_ulids: [newQualificationID],
+  })
+  await expect(page).toHaveURL(new RegExp(`/certifications/${pipelineID}$`))
+})
+
 test("资格申请页路由参数变化时刷新对应资格", async ({ page }) => {
   const initialQualificationID = "qualification-route-initial"
   const redirectedQualificationID = "qualification-route-redirected"
@@ -328,7 +423,6 @@ test("资格申请页路由参数变化时刷新对应资格", async ({ page }) 
       }
     }
     if (pathname === "/api/credentials/applications") return { data: { applications: [] } }
-    if (pathname === "/api/credentials/application-orders/latest") return { data: { found: false } }
     return undefined
   })
 
@@ -612,13 +706,14 @@ test("系统资格、自动免考和按原价购买以管线维度提交完整�
       }
     }
     if (pathname === "/api/credentials/applications") return { data: { applications: [] } }
-    if (pathname === "/api/credentials/application-orders/latest") {
+    if (pathname === "/api/credentials/application-orders") {
       return {
         data: {
-          found: true,
-          application_order_ulid: "existing-decision-order",
-          order_status: "UPLOAD_READY",
-          items: [{ qual_id: grantedQualificationID, item_status: "APPROVED" }],
+          orders: [{
+            application_order_ulid: "existing-decision-order",
+            order_status: "UPLOAD_READY",
+            items: [{ qual_id: grantedQualificationID, item_status: "APPROVED" }],
+          }],
         },
       }
     }
@@ -822,13 +917,14 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
         },
       }
     }
-    if (pathname === "/api/credentials/application-orders/latest") {
+    if (pathname === "/api/credentials/application-orders") {
       return {
         data: {
-          found: true,
-          application_order_ulid: "active-template-order",
-          order_status: "UPLOAD_READY",
-          items: [{ qual_id: qualificationID, item_status: "PENDING" }],
+          orders: [{
+            application_order_ulid: "active-template-order",
+            order_status: "UPLOAD_READY",
+            items: [{ qual_id: qualificationID, item_status: "PENDING" }],
+          }],
         },
       }
     }
@@ -884,7 +980,7 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
   expect(submitRequest.files[0].file_usage).toBe("Employment Certificate")
 })
 
-test("资格申请页仅允许 PendingUpload 申请上传并阻止追加其他资格", async ({ page }) => {
+test("资格申请页允许 PendingUpload 申请上传", async ({ page }) => {
   const includedQualificationID = "qualification-active-order-included"
 
   await installCandidateApiMocks(page, ({ pathname }) => {
@@ -917,16 +1013,6 @@ test("资格申请页仅允许 PendingUpload 申请上传并阻止追加其他�
         },
       }
     }
-    if (pathname === "/api/credentials/application-orders/latest") {
-      return {
-        data: {
-          found: true,
-          application_order_ulid: "active-qualification-order",
-          order_status: "UPLOAD_READY",
-          items: [{ qual_id: includedQualificationID, item_status: "PENDING" }],
-        },
-      }
-    }
     return undefined
   })
 
@@ -935,7 +1021,6 @@ test("资格申请页仅允许 PendingUpload 申请上传并阻止追加其他�
   const includedQualificationCard = page.locator(".credential-definition-card").filter({
     has: page.getByText("Included Qualification", { exact: true }),
   })
-  await expect(page.getByText("资格审核订单", { exact: true })).toBeVisible()
   await expect(includedQualificationCard.getByRole("button", { name: "上传证明材料", exact: true })).toBeEnabled()
   await expect(page.getByText("Excluded Qualification", { exact: true })).toHaveCount(0)
   await includedQualificationCard.getByRole("button", { name: "上传证明材料", exact: true }).click()
@@ -970,7 +1055,6 @@ test("资格申请记录仅在存在审核备注时显示备注", async ({ page 
         },
       }
     }
-    if (pathname === "/api/credentials/application-orders/latest") return { data: { found: false } }
     return undefined
   })
 
@@ -981,30 +1065,7 @@ test("资格申请记录仅在存在审核备注时显示备注", async ({ page 
   await expect(page.getByText("N/A", { exact: true })).toHaveCount(0)
 })
 
-test("资格审核订单结束后不会沿用旧订单授予上传权限", async ({ page }) => {
-  await installCandidateApiMocks(page, ({ pathname }) => {
-    if (pathname === "/api/credentials/definitions") return { data: { definitions: [] } }
-    if (pathname === "/api/credentials/applications") return { data: { applications: [] } }
-    if (pathname === "/api/credentials/application-orders/latest") {
-      return {
-        data: {
-          found: true,
-          application_order_ulid: "resolved-qualification-order",
-          order_status: "RESOLVED",
-          items: [{ qual_id: "qualification-resolved-order", item_status: "REJECTED" }],
-        },
-      }
-    }
-    return undefined
-  })
-
-  await page.goto("/credentials", { waitUntil: "domcontentloaded" })
-
-  await expect(page.getByText("资格审核订单已结束，不能再新增资格申请。", { exact: true })).toBeVisible()
-  await expect(page.getByRole("button", { name: "上传证明材料", exact: true })).toHaveCount(0)
-})
-
-test("免考选择完成后才合并创建所选资格订单", async ({ page }) => {
+test("免考选择完成后按资格创建独立订单", async ({ page }) => {
   const selectionBundleID = "bundle-explicit-exemption-decisions"
   const stageID = "stage-explicit-exemption-decisions"
   const applyUnitID = "unit-apply-exemption"
@@ -1094,20 +1155,24 @@ test("免考选择完成后才合并创建所选资格订单", async ({ page }) 
   expect(applicationOrderBody).toBeUndefined()
   await expect(page.getByText("这里仅展示申请要求和官方模板。请先完成所有免考选择并支付资格审核费，付款成功后才能上传证明材料。", { exact: true })).toBeVisible()
 
-  await page.getByTestId("checkout-apply-selected-exemptions").click()
+  const createApplicationButton = page.locator(
+    `[data-testid="checkout-create-qualification-order"][data-unit-id="${applyUnitID}"]`,
+  )
+  await createApplicationButton.click()
 
   const confirmDialog = page.getByTestId("checkout-qualification-order-confirm-dialog")
   await expect(confirmDialog).toBeVisible()
   await expect(confirmDialog.getByText("Apply Exemption Course", { exact: true })).toBeVisible()
   await expect(confirmDialog.getByText("Apply Qualification", { exact: true })).toBeVisible()
-  await expect(confirmDialog.getByText("创建后不能修改", { exact: true })).toBeVisible()
+  await expect(confirmDialog.getByText("Waive Exemption Course", { exact: true })).toHaveCount(0)
+  await expect(confirmDialog.getByText("当前资格创建后不能修改", { exact: true })).toBeVisible()
   expect(applicationOrderBody).toBeUndefined()
 
   await page.getByTestId("checkout-cancel-qualification-order").click()
   await expect(confirmDialog).toBeHidden()
   expect(applicationOrderBody).toBeUndefined()
 
-  await page.getByTestId("checkout-apply-selected-exemptions").click()
+  await createApplicationButton.click()
   await page.getByTestId("checkout-confirm-qualification-order").click()
 
   await expect.poll(() => applicationOrderBody).toEqual({
