@@ -19,6 +19,12 @@ type EssayResponse = {
   graded_at: string
 }
 
+type GradingFilterOption = {
+  program_code: string
+  exam_code: string
+  exam_form: string
+}
+
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.examGrading)
 const items = ref<JsonRecord[]>([])
@@ -37,6 +43,8 @@ const examCode = ref("")
 const keyword = ref("")
 const graderName = ref("")
 const passFilter = ref("")
+const filterOptions = ref<GradingFilterOption[]>([])
+const filterOptionsLoading = ref(false)
 const selected = ref<JsonRecord | null>(null)
 const essays = ref<EssayResponse[]>([])
 const detailOpen = ref(false)
@@ -55,6 +63,23 @@ const previewItems = computed(() => Array.isArray(gradingPreview.value?.items)
 const exportURL = computed(() => selected.value
   ? `/api/exams/${encodeURIComponent(examID(selected.value))}/essay-grade/export`
   : "")
+const programOptions = computed(() => [...new Set(filterOptions.value.map((option) => option.program_code))].sort())
+const examOptions = computed(() => {
+  if (!programCode.value) return []
+  const formsByExam = new Map<string, Set<string>>()
+  for (const option of filterOptions.value) {
+    if (option.program_code !== programCode.value) continue
+    const forms = formsByExam.get(option.exam_code) ?? new Set<string>()
+    if (option.exam_form) forms.add(option.exam_form)
+    formsByExam.set(option.exam_code, forms)
+  }
+  return [...formsByExam.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([value, forms]) => ({
+      value,
+      label: forms.size ? `${value} (${[...forms].sort().join(" / ")})` : value,
+    }))
+})
 
 function candidateName(item: JsonRecord | null) {
   if (!item) return "-"
@@ -97,6 +122,61 @@ async function load(cursor = currentCursor.value) {
     toast.error(apiErrorMessage(err, copy.value.toasts.listFailed))
   } finally {
     if (requestId === listRequestId) loading.value = false
+  }
+}
+
+async function loadFilterOptions() {
+  filterOptionsLoading.value = true
+  try {
+    const data = await apiClient<JsonRecord>("/api/exams/grading-filter-options")
+    if (!Array.isArray(data.options)) {
+      throw new Error(copy.value.toasts.filterOptionsInvalid)
+    }
+    const options: GradingFilterOption[] = []
+    for (const option of data.options) {
+      if (!option || typeof option !== "object"
+        || typeof option.program_code !== "string"
+        || typeof option.exam_code !== "string"
+        || typeof option.exam_form !== "string") {
+        throw new Error(copy.value.toasts.filterOptionsInvalid)
+      }
+      const parsed = {
+        program_code: option.program_code.trim(),
+        exam_code: option.exam_code.trim(),
+        exam_form: option.exam_form.trim(),
+      }
+      if (!parsed.program_code || !parsed.exam_code) {
+        throw new Error(copy.value.toasts.filterOptionsInvalid)
+      }
+      options.push(parsed)
+    }
+    filterOptions.value = options
+
+    if (programCode.value && !programOptions.value.includes(programCode.value)) {
+      programCode.value = ""
+      examCode.value = ""
+    } else if (examCode.value && !examOptions.value.some((option) => option.value === examCode.value)) {
+      examCode.value = ""
+    }
+  } catch (err) {
+    console.error(err)
+    toast.error(err instanceof Error && err.message === copy.value.toasts.filterOptionsInvalid
+      ? err.message
+      : apiErrorMessage(err, copy.value.toasts.filterOptionsFailed))
+  } finally {
+    filterOptionsLoading.value = false
+  }
+}
+
+async function refresh() {
+  resetPagination()
+  await loadFilterOptions()
+  await load("")
+}
+
+function handleProgramChange() {
+  if (!examOptions.value.some((option) => option.value === examCode.value)) {
+    examCode.value = ""
   }
 }
 
@@ -222,14 +302,14 @@ async function importWorkbook() {
   }
 }
 
-onMounted(() => load())
+onMounted(() => refresh())
 </script>
 
 <template>
   <section class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-5 px-4 py-5 md:gap-6 md:px-8 md:py-8">
     <header class="flex flex-wrap items-start justify-between gap-4">
       <div><h1 class="text-3xl font-black tracking-tight md:text-4xl">{{ copy.title }}</h1><p class="mt-2 text-slate-600">{{ copy.subtitle }}</p></div>
-      <button class="inline-flex h-11 items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm font-bold shadow-sm" type="button" :disabled="loading" @click="load()"><RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" /> {{ copy.refresh }}</button>
+      <button class="inline-flex h-11 items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm font-bold shadow-sm" type="button" :disabled="loading || filterOptionsLoading" @click="refresh"><RefreshCw class="h-4 w-4" :class="loading || filterOptionsLoading ? 'animate-spin' : ''" /> {{ copy.refresh }}</button>
     </header>
 
     <div class="inline-flex w-fit rounded-lg border border-slate-200 bg-white p-1" role="tablist" :aria-label="copy.tabs.label">
@@ -239,8 +319,14 @@ onMounted(() => load())
 
     <section class="border-y border-slate-200 bg-white py-4">
       <div class="grid gap-3" :class="isHistory ? 'md:grid-cols-3 xl:grid-cols-[1fr_1fr_1.4fr_1fr_180px_auto]' : 'md:grid-cols-[1fr_1fr_1.4fr_auto]'">
-        <input v-model="programCode" class="h-11 rounded-lg border border-slate-200 px-3" :placeholder="copy.filters.program" @keyup.enter="search" />
-        <input v-model="examCode" class="h-11 rounded-lg border border-slate-200 px-3" :placeholder="copy.filters.exam" @keyup.enter="search" />
+        <select v-model="programCode" class="h-11 min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold disabled:bg-slate-50 disabled:text-slate-400" :aria-label="copy.filters.program" :disabled="filterOptionsLoading" @change="handleProgramChange">
+          <option value="">{{ filterOptionsLoading ? copy.filters.loadingOptions : copy.filters.allPrograms }}</option>
+          <option v-for="program in programOptions" :key="program" :value="program">{{ program }}</option>
+        </select>
+        <select v-model="examCode" class="h-11 min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold disabled:bg-slate-50 disabled:text-slate-400" :aria-label="copy.filters.exam" :disabled="filterOptionsLoading || !programCode">
+          <option value="">{{ programCode ? copy.filters.allExams : copy.filters.selectProgramFirst }}</option>
+          <option v-for="exam in examOptions" :key="exam.value" :value="exam.value">{{ exam.label }}</option>
+        </select>
         <input v-model="keyword" class="h-11 rounded-lg border border-slate-200 px-3" :placeholder="copy.filters.keyword" @keyup.enter="search" />
         <input v-if="isHistory" v-model="graderName" class="h-11 rounded-lg border border-slate-200 px-3" :placeholder="copy.filters.grader" @keyup.enter="search" />
         <select v-if="isHistory" v-model="passFilter" class="h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold" :aria-label="copy.filters.result" @change="search">
