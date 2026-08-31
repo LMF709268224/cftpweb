@@ -1082,10 +1082,6 @@ export const zh = {
         filters: {
             program: "考试科目（Program）",
             exam: "考试代码（Exam Code）",
-            allPrograms: "全部考试科目",
-            allExams: "全部考试代码",
-            selectProgramFirst: "请先选择考试科目",
-            loadingOptions: "正在加载考试配置...",
             keyword: "考生姓名、邮箱或考试 ULID",
             grader: "批改教授姓名",
             result: "最终判定",
@@ -1142,8 +1138,6 @@ export const zh = {
         importing: "正在提交...",
         toasts: {
             listFailed: "待阅卷考试加载失败",
-            filterOptionsFailed: "考试筛选选项加载失败",
-            filterOptionsInvalid: "考试筛选数据格式错误",
             detailFailed: "Essay 作答详情加载失败",
             previewSuccess: "评分文件校验通过，请核对后确认提交",
             previewFailed: "评分文件校验失败",

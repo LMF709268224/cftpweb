@@ -3,20 +3,12 @@ package handler
 import (
 	"context"
 	"net/http"
-	"sort"
 	"strconv"
 	"strings"
 
-	gccpb "github.com/afnandelfin620-star/cftptest/cftp/gcc"
 	gexampb "github.com/afnandelfin620-star/cftptest/cftp/gexam"
 	"github.com/go-chi/chi/v5"
 )
-
-type examGradingFilterOption struct {
-	ProgramCode string `json:"program_code"`
-	ExamCode    string `json:"exam_code"`
-	ExamForm    string `json:"exam_form"`
-}
 
 func (h *Handler) ListAdminExams(w http.ResponseWriter, r *http.Request) {
 	page := parseCursorPage(r, 10)
@@ -124,85 +116,6 @@ func (h *Handler) SyncAdminExamResult(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	WriteJSON(w, http.StatusOK, resp)
-}
-
-func (h *Handler) ListExamGradingFilterOptions(w http.ResponseWriter, r *http.Request) {
-	status := "Active"
-	cursor := ""
-	seenPipelines := make(map[string]struct{})
-	optionSet := make(map[examGradingFilterOption]struct{})
-
-	for {
-		resp, err := h.Gcc.ListPipelinesAdmin(r.Context(), &gccpb.ListPipelinesAdminRequest{
-			Filters: &gccpb.PipelineAdminFilters{
-				OnlyCurrent: true,
-				Status:      &status,
-			},
-			Cursor:   cursor,
-			PageSize: 100,
-		})
-		if err != nil {
-			HandleGrpcError(w, err)
-			return
-		}
-
-		for _, summary := range resp.GetPipelines() {
-			pipelineID := strings.TrimSpace(summary.GetPipelineUlid())
-			if pipelineID == "" {
-				continue
-			}
-			if _, exists := seenPipelines[pipelineID]; exists {
-				continue
-			}
-			seenPipelines[pipelineID] = struct{}{}
-
-			pipeline, err := h.Gcc.GetPipeline(r.Context(), &gccpb.GetPipelineRequest{
-				Query: &gccpb.GetPipelineRequest_PipelineUlid{PipelineUlid: pipelineID},
-			})
-			if err != nil {
-				HandleGrpcError(w, err)
-				return
-			}
-			for _, stage := range pipeline.GetStages() {
-				for _, unit := range stage.GetUnits() {
-					option := examGradingFilterOption{
-						ProgramCode: strings.TrimSpace(unit.GetProgramCode()),
-						ExamCode:    strings.TrimSpace(unit.GetExamCode()),
-						ExamForm:    strings.TrimSpace(unit.GetExamForm()),
-					}
-					if option.ProgramCode != "" && option.ExamCode != "" {
-						optionSet[option] = struct{}{}
-					}
-				}
-			}
-		}
-
-		if !resp.GetHasMore() {
-			break
-		}
-		nextCursor := strings.TrimSpace(resp.GetNextCursor())
-		if nextCursor == "" || nextCursor == cursor {
-			WriteError(w, http.StatusBadGateway, ErrInternal, "pipeline pagination did not advance")
-			return
-		}
-		cursor = nextCursor
-	}
-
-	options := make([]examGradingFilterOption, 0, len(optionSet))
-	for option := range optionSet {
-		options = append(options, option)
-	}
-	sort.Slice(options, func(i, j int) bool {
-		if options[i].ProgramCode != options[j].ProgramCode {
-			return options[i].ProgramCode < options[j].ProgramCode
-		}
-		if options[i].ExamCode != options[j].ExamCode {
-			return options[i].ExamCode < options[j].ExamCode
-		}
-		return options[i].ExamForm < options[j].ExamForm
-	})
-
-	WriteJSON(w, http.StatusOK, map[string]interface{}{"options": options})
 }
 
 func (h *Handler) ListPendingGradingExams(w http.ResponseWriter, r *http.Request) {

@@ -1084,10 +1084,6 @@ export const en: AdminTranslations = {
         filters: {
             program: "Program code",
             exam: "Exam code",
-            allPrograms: "All programs",
-            allExams: "All exam codes",
-            selectProgramFirst: "Select a program first",
-            loadingOptions: "Loading exam configuration...",
             keyword: "Candidate name, email, or exam ULID",
             grader: "Grading professor",
             result: "Final decision",
@@ -1144,8 +1140,6 @@ export const en: AdminTranslations = {
         importing: "Submitting...",
         toasts: {
             listFailed: "Failed to load exams pending grading",
-            filterOptionsFailed: "Failed to load exam filter options",
-            filterOptionsInvalid: "The exam filter response has an invalid format",
             detailFailed: "Failed to load essay responses",
             previewSuccess: "The grading file is valid. Review it before confirming submission.",
             previewFailed: "Failed to validate the grading file",

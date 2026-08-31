@@ -1,16 +1,6 @@
 import { expect, test } from "@playwright/test"
 import { installAdminApiMocks, seedAuthenticatedAdmin } from "./support/admin"
 
-const gradingFilterOptions = {
-  data: {
-    options: [
-      { program_code: "CFTP", exam_code: "ESSAY-1", exam_form: "Form A" },
-      { program_code: "CFTP", exam_code: "ESSAY-2", exam_form: "Form B" },
-      { program_code: "CFTE", exam_code: "ESSAY-1", exam_form: "Online" },
-    ],
-  },
-}
-
 test("essay grading exports a workbook and imports professor grades after preview", async ({ page }) => {
   await seedAuthenticatedAdmin(page)
   const mutations: string[] = []
@@ -20,9 +10,6 @@ test("essay grading exports a workbook and imports professor grades after previe
     if (request.method() === "POST") mutations.push(new URL(request.url()).pathname)
   })
   await installAdminApiMocks(page, ({ method, pathname }) => {
-    if (method === "GET" && pathname === "/api/exams/grading-filter-options") {
-      return gradingFilterOptions
-    }
     if (method === "GET" && pathname === "/api/exams/pending-grading") {
       return {
         data: {
@@ -105,9 +92,6 @@ test("essay grading history filters and displays the submitted professor result 
   await seedAuthenticatedAdmin(page)
   let historyQuery = ""
   await installAdminApiMocks(page, ({ method, pathname, url }) => {
-    if (method === "GET" && pathname === "/api/exams/grading-filter-options") {
-      return gradingFilterOptions
-    }
     if (method === "GET" && pathname === "/api/exams/pending-grading") {
       return { data: { items: [], total: 0, has_more: false } }
     }
@@ -159,13 +143,8 @@ test("essay grading history filters and displays the submitted professor result 
   })
 
   await page.goto("/exam-grading")
-  await page.getByLabel("考试科目（Program）").selectOption("CFTP")
-  await expect(page.getByLabel("考试代码（Exam Code）").getByRole("option", { name: "ESSAY-2 (Form B)" })).toHaveCount(1)
-  await page.getByLabel("考试代码（Exam Code）").selectOption("ESSAY-2")
   await page.getByRole("tab", { name: "历史记录" }).click()
   await expect(page.getByText("Grace Hopper", { exact: true })).toBeVisible()
-  expect(historyQuery).toContain("program_code=CFTP")
-  expect(historyQuery).toContain("exam_code=ESSAY-2")
 
   await page.getByPlaceholder("批改教授姓名").fill("Professor Lee")
   await page.getByLabel("最终判定").selectOption("true")

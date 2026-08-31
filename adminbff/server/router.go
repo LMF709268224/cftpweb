@@ -122,7 +122,6 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 
 		r.Route("/exams", func(r chi.Router) {
 			r.Get("/", h.ListAdminExams)
-			r.Get("/grading-filter-options", h.ListExamGradingFilterOptions)
 			r.Get("/pending-grading", h.ListPendingGradingExams)
 			r.Get("/graded-essay", h.ListGradedEssayExams)
 			r.Get("/{exam_ulid}", h.GetAdminExamDetail)
