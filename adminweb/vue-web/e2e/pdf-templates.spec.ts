@@ -56,6 +56,22 @@ test("PDF template detail displays HTML and schema without editing", async ({ pa
   await expect(dialog).toBeVisible()
   await expect(dialog.getByText("<main>Regression Certificate</main>", { exact: true })).toBeVisible()
   await expect(dialog.getByText('{"type":"object"}', { exact: true })).toBeVisible()
+  const preview = dialog.locator('iframe[title="HTML 预览"]')
+  await expect(preview).toHaveAttribute("srcdoc", "<main>Regression Certificate</main>")
+  await expect(preview).toHaveCSS("width", "1123px")
+  await expect(preview).toHaveCSS("height", "794px")
+  const previewLayout = await preview.evaluate((frame) => {
+    const viewport = frame.parentElement
+    if (!viewport) throw new Error("Missing preview viewport")
+    const frameRect = frame.getBoundingClientRect()
+    return {
+      frameWidth: frameRect.width,
+      scale: new DOMMatrix(getComputedStyle(frame).transform).a,
+      viewportWidth: viewport.clientWidth,
+    }
+  })
+  expect(previewLayout.scale).toBeLessThan(1)
+  expect(Math.abs(previewLayout.frameWidth - previewLayout.viewportWidth)).toBeLessThan(1)
 
   expect(requests).toContain("GET /api/pdf-templates/detail")
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)

@@ -1,6 +1,6 @@
 ﻿<script setup lang="ts">
 import { Loader2, Plus, RefreshCw, Save, X } from "lucide-vue-next"
-import { computed, onMounted, ref } from "vue"
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import ReadonlyField from "@/components/ReadonlyField.vue"
 import TranslationsEditor from "@/components/TranslationsEditor.vue"
@@ -12,6 +12,9 @@ import { pickFirst } from "@/lib/status"
 
 type Mode = "detail" | "edit" | "create"
 
+const PREVIEW_CANVAS_WIDTH = 1123
+const PREVIEW_CANVAS_HEIGHT = 794
+
 const templates = ref<JsonRecord[]>([])
 const selected = ref<JsonRecord | null>(null)
 const loading = ref(false)
@@ -19,6 +22,8 @@ const saving = ref(false)
 const detailLoading = ref(false)
 const dialogOpen = ref(false)
 const mode = ref<Mode>("detail")
+const previewViewport = ref<HTMLElement | null>(null)
+const previewScale = ref(1)
 const form = ref({
   template_id: "",
   name: "",
@@ -39,10 +44,31 @@ const selectedFields = computed(() => {
 })
 const previewHtml = computed(() => form.value.html_template || `<p style="color:#64748b">${copy.value.previewEmpty}</p>`)
 const readonlyMode = computed(() => mode.value === "detail")
+const previewFrameStyle = computed(() => ({
+  width: `${PREVIEW_CANVAS_WIDTH}px`,
+  height: `${PREVIEW_CANVAS_HEIGHT}px`,
+  transform: `scale(${previewScale.value})`,
+}))
 
 let detailRequestController: AbortController | null = null
 let detailRequestSeq = 0
 let listRequestSeq = 0
+let previewResizeObserver: ResizeObserver | null = null
+
+function updatePreviewScale() {
+  const viewportWidth = previewViewport.value?.clientWidth || PREVIEW_CANVAS_WIDTH
+  previewScale.value = Math.min(1, viewportWidth / PREVIEW_CANVAS_WIDTH)
+}
+
+watch(previewViewport, (viewport) => {
+  previewResizeObserver?.disconnect()
+  previewResizeObserver = null
+  if (!viewport) return
+
+  updatePreviewScale()
+  previewResizeObserver = new ResizeObserver(updatePreviewScale)
+  previewResizeObserver.observe(viewport)
+})
 
 function fieldLabel(key: string) {
   return copy.value.fieldLabels?.[key as keyof typeof copy.value.fieldLabels] || key.replaceAll("_", " ")
@@ -211,6 +237,7 @@ async function save() {
 }
 
 onMounted(load)
+onBeforeUnmount(() => previewResizeObserver?.disconnect())
 </script>
 
 <template>
@@ -353,7 +380,9 @@ onMounted(load)
                   </div>
                   <div class="rounded-2xl border border-slate-200 bg-white p-4">
                     <h3 class="font-black">{{ copy.preview }}</h3>
-                    <iframe class="mt-4 h-80 w-full rounded-xl border border-slate-200 bg-white md:h-[520px]" sandbox="allow-same-origin" :srcdoc="previewHtml" />
+                    <div ref="previewViewport" class="relative mt-4 aspect-[297/210] w-full overflow-hidden rounded-xl border border-slate-200 bg-white">
+                      <iframe class="absolute left-0 top-0 origin-top-left border-0 bg-white" sandbox="allow-same-origin" :srcdoc="previewHtml" :style="previewFrameStyle" :title="copy.preview" />
+                    </div>
                   </div>
                 </div>
               </div>
