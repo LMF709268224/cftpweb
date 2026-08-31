@@ -14,6 +14,15 @@ const membershipSummary = {
   updated_at: "2026-08-11T01:00:00Z",
 }
 
+const membershipBundle = {
+  bundle_ulid: "membership-bundle-1",
+  items_json: JSON.stringify([{ item_type: "membership", ref_ulid: "membership-1" }]),
+  display_amount_min: "12900",
+  display_amount_max: "12900",
+  display_currency: "USD",
+  status: "Active",
+}
+
 async function installMembershipReadMocks(page: Page, requests: string[]) {
   return installAdminApiMocks(page, ({ method, pathname }) => {
     requests.push(`${method} ${pathname}`)
@@ -31,6 +40,9 @@ async function installMembershipReadMocks(page: Page, requests: string[]) {
         },
       }
     }
+    if (method === "GET" && pathname === "/api/mall/bundles") {
+      return { data: { bundles: [membershipBundle], has_more: false, next_cursor: "", prev_cursor: "" } }
+    }
     return undefined
   })
 }
@@ -45,7 +57,9 @@ test("membership list renders the returned read-only summary", async ({ page }) 
   await expect(page.getByText("Regression Membership", { exact: true })).toBeVisible()
   await expect(page.getByText("Read-only membership summary", { exact: true })).toBeVisible()
   await expect(page.getByText("membership-1", { exact: true })).toBeVisible()
+  await expect(page.getByText("USD 129", { exact: true })).toBeVisible()
   expect(requests).toContain("GET /api/memberships/configs")
+  expect(requests).toContain("GET /api/mall/bundles")
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
 })
 
@@ -60,6 +74,7 @@ test("membership detail reads configuration fields without editing", async ({ pa
   await expect(page.getByText("Read-only membership detail", { exact: true })).toBeVisible()
   await expect(page.getByText("member-pro", { exact: true })).toBeVisible()
   await expect(page.getByText("Regression users", { exact: true })).toBeVisible()
+  await expect(page.getByText("USD 129", { exact: true }).last()).toBeVisible()
 
   expect(requests).toContain("GET /api/memberships/membership-1")
   expect(requests.some((request) => request.includes("/deprecate") || request.startsWith("POST ") || request.startsWith("PUT ") || request.startsWith("PATCH ") || request.startsWith("DELETE "))).toBe(false)

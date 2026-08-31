@@ -7,7 +7,7 @@ import TranslationsEditor from "@/components/TranslationsEditor.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { fetchAllCursorRecords } from "@/lib/cursorPagination"
-import type { JsonRecord } from "@/lib/display"
+import { formatMinorAmount, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 import { pickFirst } from "@/lib/status"
 
@@ -36,6 +36,8 @@ const ULID_PATTERN = /^[0-7][0-9A-HJKMNP-TV-Z]{25}$/
 const GPATH_PATTERN = /^\/[a-z0-9_-]+(?:\/[a-z0-9_-]+)*$/
 
 const memberships = ref<JsonRecord[]>([])
+const membershipBundles = ref<JsonRecord[]>([])
+const pricingLoadFailed = ref(false)
 const selected = ref<JsonRecord | null>(null)
 const loading = ref(false)
 let listRequestId = 0
@@ -114,6 +116,63 @@ function membershipTier(membership: JsonRecord | null | undefined) {
 
 function isDeprecated(membership: JsonRecord | null | undefined) {
   return String(membership?.status || "").trim().toLowerCase() === "deprecated"
+}
+
+function asRecord(value: unknown): JsonRecord | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as JsonRecord : null
+}
+
+function bundleMembershipIds(bundle: JsonRecord) {
+  const directPipelineId = String(pickFirst(bundle, ["pipeline_id", "pipeline_cc_ulid"]) || "").trim()
+  const directMembershipId = String(pickFirst(bundle, ["membership_id", "membership_ulid"]) || "").trim()
+  let parsed: unknown = null
+  try {
+    parsed = JSON.parse(String(bundle.items_json || ""))
+  } catch {
+    parsed = null
+  }
+
+  const items = Array.isArray(parsed) ? parsed : parsed && typeof parsed === "object" ? [parsed] : []
+  if (!items.length) return directPipelineId || !directMembershipId ? [] : [directMembershipId]
+
+  const membershipIds = new Set<string>()
+  for (const item of items) {
+    const record = asRecord(item)
+    if (!record) continue
+    const itemType = String(pickFirst(record, ["item_type", "type", "itemType", "kind"]) || "").trim().toLowerCase()
+    if (itemType.includes("pipeline") || pickFirst(record, ["pipeline_id", "pipeline_cc_ulid"])) return []
+    if (!itemType.includes("membership") && !pickFirst(record, ["membership_id", "membership_ulid"])) continue
+    const id = String(pickFirst(record, ["ref_ulid", "ref_id", "ulid", "id", "item_id", "membership_id", "membership_ulid"]) || "").trim()
+    if (id) membershipIds.add(id)
+  }
+  return Array.from(membershipIds)
+}
+
+function bundleDisplayPrice(bundle: JsonRecord) {
+  const currency = String(bundle.display_currency || "").trim()
+  const minimum = formatMinorAmount(bundle.display_amount_min ?? 0)
+  const maximum = formatMinorAmount(bundle.display_amount_max ?? 0)
+  if (!currency || minimum === null || maximum === null || (minimum === "0" && maximum === "0")) return ""
+  return minimum === maximum ? `${currency} ${minimum}` : `${currency} ${minimum} - ${maximum}`
+}
+
+const membershipPrices = computed(() => {
+  const prices = new Map<string, Set<string>>()
+  for (const bundle of membershipBundles.value) {
+    const price = bundleDisplayPrice(bundle)
+    if (!price) continue
+    for (const id of bundleMembershipIds(bundle)) {
+      if (!prices.has(id)) prices.set(id, new Set())
+      prices.get(id)?.add(price)
+    }
+  }
+  return prices
+})
+
+function membershipPrice(membership: JsonRecord | null | undefined) {
+  if (pricingLoadFailed.value) return copy.value.pricing.loadFailed
+  const prices = Array.from(membershipPrices.value.get(membershipId(membership)) || [])
+  return prices.length ? prices.join(" / ") : copy.value.pricing.notConfigured
 }
 
 function encodeUlidTime(timestamp: number) {
@@ -224,13 +283,25 @@ async function load() {
   const requestId = ++listRequestId
   loading.value = true
   try {
-    const nextMemberships = await fetchAllCursorRecords("/api/memberships/configs", "memberships")
+    const [nextMemberships, pricingResult] = await Promise.all([
+      fetchAllCursorRecords("/api/memberships/configs", "memberships"),
+      fetchAllCursorRecords("/api/mall/bundles?is_current_only=true", "bundles")
+        .then((bundles) => ({ bundles, failed: false }))
+        .catch((err) => {
+          console.error(err)
+          return { bundles: [] as JsonRecord[], failed: true }
+        }),
+    ])
     if (requestId !== listRequestId) return
     memberships.value = nextMemberships
+    membershipBundles.value = pricingResult.bundles
+    pricingLoadFailed.value = pricingResult.failed
   } catch (err) {
     if (requestId !== listRequestId) return
     console.error(err)
     memberships.value = []
+    membershipBundles.value = []
+    pricingLoadFailed.value = false
     toast.error(copy.value.toasts.loadFailed)
   } finally {
     if (requestId === listRequestId) loading.value = false
@@ -478,15 +549,27 @@ onMounted(load)
       </div>
       <div v-else-if="!memberships.length" class="p-12 text-center text-slate-500">{{ copy.empty }}</div>
       <div v-else class="divide-y divide-slate-100">
-        <article v-for="membership in memberships" :key="membershipId(membership)" class="grid gap-4 p-4 transition hover:bg-slate-50 md:grid-cols-[minmax(0,1fr)_140px_110px_160px] md:items-center md:px-5">
+        <article v-for="membership in memberships" :key="membershipId(membership)" class="grid gap-4 p-4 transition hover:bg-slate-50 md:px-5 xl:grid-cols-[minmax(0,1fr)_150px_120px_90px_160px] xl:items-center">
           <div class="min-w-0">
             <div class="truncate text-lg font-black text-slate-950">{{ membershipName(membership) }}</div>
             <p class="mt-1 line-clamp-2 text-sm text-slate-500">{{ membership.description || copy.noDescription }}</p>
             <div class="mt-2 break-all font-mono text-xs font-bold text-blue-700">{{ membershipId(membership) }}</div>
           </div>
-          <div class="text-sm font-bold text-slate-600">{{ membership.status || "-" }}</div>
-          <div class="text-sm font-bold text-slate-600">v{{ membership.version || 0 }}</div>
-          <button class="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 text-sm font-bold text-blue-700" type="button" @click="openMembership(membership)">
+          <div class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-start gap-4 xl:contents">
+            <div class="min-w-0">
+              <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.price }}</div>
+              <div class="mt-1 break-words text-sm font-black text-slate-800">{{ membershipPrice(membership) }}</div>
+            </div>
+            <div class="min-w-0 text-sm font-bold text-slate-600">
+              <div class="text-xs font-black uppercase text-slate-400 xl:hidden">{{ copy.fields.status }}</div>
+              <div class="mt-1 xl:mt-0">{{ membership.status || "-" }}</div>
+            </div>
+            <div class="min-w-0 text-sm font-bold text-slate-600">
+              <div class="text-xs font-black uppercase text-slate-400 xl:hidden">{{ copy.fields.version }}</div>
+              <div class="mt-1 xl:mt-0">v{{ membership.version || 0 }}</div>
+            </div>
+          </div>
+          <button class="inline-flex h-10 items-center justify-center gap-2 justify-self-start rounded-xl border border-blue-200 bg-blue-50 px-4 text-sm font-bold text-blue-700 xl:justify-self-stretch" type="button" @click="openMembership(membership)">
             <Settings class="h-4 w-4" />
             {{ copy.viewDetails }}
           </button>
@@ -551,6 +634,10 @@ onMounted(load)
                 <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.tierLevel }}</div>
                   <div class="mt-2 text-sm font-bold">{{ selected.tier_level ?? "-" }}</div>
+                </div>
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.price }}</div>
+                  <div class="mt-2 text-sm font-black">{{ membershipPrice(selected) }}</div>
                 </div>
                 <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.casdoorRoleName }}</div>

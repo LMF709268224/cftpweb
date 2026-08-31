@@ -2434,12 +2434,17 @@ export const zh = {
             duration: "有效期",
             durationValue: (months: number) => `${months} 个月`,
             tierLevel: "会员等级",
+            price: "价格",
             casdoorRoleName: "Casdoor 角色名称",
             courseDiscountCoupon: "课程折扣优惠码",
             updatedAt: "更新时间",
             featuresJson: "权益 JSON",
             featureCategories: "权益分类",
             featureLabels: "权益名称",
+        },
+        pricing: {
+            notConfigured: "未配置价格",
+            loadFailed: "价格暂时无法加载",
         },
         form: {
             contractTitle: "配置规则",
