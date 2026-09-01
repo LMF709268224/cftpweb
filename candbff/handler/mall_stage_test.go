@@ -104,7 +104,7 @@ func TestCreateStageOrderUsesCompletedByStageOrderContext(t *testing.T) {
 		pipelineOrderID = "01KYN000000000000000000006"
 		bundleOrderID   = "01KYN000000000000000000007"
 		createdStageID  = "01KYN000000000000000000008"
-		selectionJSON   = `{"stages":[{"stage_cc_ulid":"01KYN000000000000000000004","exempted_unit_cc_ulids":[],"waived_unit_cc_ulids":[]}]}`
+		selectionJSON   = `{"stage_cc_ulid":"01KYN000000000000000000004","exempted_unit_cc_ulids":[],"waived_unit_cc_ulids":[]}`
 	)
 
 	mall := &stageOrderMallClientStub{
