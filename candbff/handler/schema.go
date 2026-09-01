@@ -584,10 +584,6 @@ type CreateBundleOrderReq struct {
 	BundleOrderUlid        string `json:"bundle_order_ulid,omitempty"`
 }
 
-type UnlockPipelineInBundleReq struct {
-	PipelineCcUlid string `json:"pipeline_cc_ulid"`
-}
-
 type PipelineExemptionOptionsRsp struct {
 	Stages []PipelineExemptionStage `json:"stages"`
 }

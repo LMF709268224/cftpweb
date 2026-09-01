@@ -7,7 +7,6 @@ export const bizTypeOptions: LabelOption[] = [
   { value: "PIPELINE_PAYMENT", label: "PIPELINE_PAYMENT" },
   { value: "STAGE_PAYMENT", label: "STAGE_PAYMENT" },
   { value: "COURSE_RETAKE_PAYMENT", label: "COURSE_RETAKE_PAYMENT" },
-  { value: "PIPELINE_UNLOCK", label: "PIPELINE_UNLOCK" },
   { value: "CREDENTIAL_APPLICATION", label: "CREDENTIAL_APPLICATION" },
   { value: "BUNDLE_PURCHASE", label: "BUNDLE_PURCHASE" },
 ]

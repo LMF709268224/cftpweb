@@ -218,7 +218,6 @@ const actionableOrderStatuses = new Set([
   "WAIT_PIPELINE_PAYMENT",
   "WAIT_STAGE_PAYMENT",
   "WAIT_RETAKE_PAYMENT",
-  "WAIT_UNLOCK_PAYMENT",
   "WAIT_BUNDLE_PAYMENT",
   "WAIT_REVIEW_FEE_PAYMENT",
 ])
@@ -386,7 +385,6 @@ async function findCertificationJourney(
     details: 0,
     pipeline: 0,
     purchasable: 0,
-    unlockable: 0,
     paid: 0,
     withCourse: 0,
     resumablePendingOrders: 0,
@@ -409,7 +407,6 @@ async function findCertificationJourney(
     const hasPipeline = Boolean(pipelineID)
     const eligibility = purchaseEligibility(detail)
     const canPurchase = eligibility?.can_purchase === true
-    const canUnlock = eligibility?.can_unlock === true
     const isPaid = bundlePaidAmount(detail) > 0
     const hasCourse = bundleHasCourse(detail)
     const activeOrder = activeBundleOrder(detail)
@@ -423,7 +420,6 @@ async function findCertificationJourney(
 
     if (hasPipeline) counts.pipeline += 1
     if (canPurchase) counts.purchasable += 1
-    if (canUnlock) counts.unlockable += 1
     if (isPaid) counts.paid += 1
     if (hasCourse) counts.withCourse += 1
     if (ownedPipelineIDs.has(pipelineID)) counts.owned += 1
@@ -477,7 +473,6 @@ async function findCertificationJourney(
       `details=${counts.details}`,
       `pipeline=${counts.pipeline}`,
       `purchasable=${counts.purchasable}`,
-      `unlockable=${counts.unlockable}`,
       `paid=${counts.paid}`,
       `with-course=${counts.withCourse}`,
       `resumable-pending-orders=${counts.resumablePendingOrders}`,

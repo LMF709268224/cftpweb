@@ -30,6 +30,26 @@ async function installBundleReadMocks(page: Page, requests: string[]) {
             ...bundleSummary,
             description: "Read-only bundle detail",
             items_json: JSON.stringify([{ item_type: "pipeline", ref_ulid: "pipeline-1" }]),
+            pricing_json: JSON.stringify({
+              pipelines: [{
+                pipeline_id: "pipeline-1",
+                enrollment_fee: {
+                  stripe_product_id: "prod_enrollment",
+                  stripe_price_id: "price_enrollment",
+                },
+              }],
+              units: [{
+                unit_id: "unit-1",
+                access: {
+                  stripe_product_id: "prod_access",
+                  stripe_price_id: "price_access",
+                },
+                exemption: {
+                  stripe_product_id: "prod_exemption",
+                  stripe_price_id: "price_exemption",
+                },
+              }],
+            }),
           },
         },
       }
@@ -63,6 +83,11 @@ test("bundle detail reads summary and linked items without editing", async ({ pa
   await expect(page.getByRole("heading", { name: "Regression Bundle" })).toBeVisible()
   await expect(page.getByText("Read-only bundle detail", { exact: true }).first()).toBeVisible()
   await expect(page.getByText("pipeline-1", { exact: false })).toBeVisible()
+  await page.getByRole("button", { name: /结构与价格/ }).click()
+  await expect(page.getByText("Pipeline 报名费", { exact: true }).first()).toBeVisible()
+  await expect(page.getByText("price_enrollment", { exact: true })).toBeVisible()
+  await expect(page.getByText("免考认定费", { exact: true }).first()).toBeVisible()
+  await expect(page.getByText("price_exemption", { exact: true })).toBeVisible()
 
   expect(requests).toContain("GET /api/mall/bundles/bundle-1")
   expect(requests.some((request) => request.includes("/publish") || request.includes("/deprecate") || request.includes("/sync-display-pricing") || request.startsWith("DELETE "))).toBe(false)

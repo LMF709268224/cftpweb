@@ -23,9 +23,10 @@ type UnitPricing = {
   exemption: StripeRef
 }
 
-type UnlockPricing = StripeRef & {
+type PipelinePricing = {
   key: number
-  target_id: string
+  pipeline_id: string
+  enrollment_fee: StripeRef
 }
 
 type MembershipPricing = StripeRef & {
@@ -43,7 +44,7 @@ type QualReviewPricing = StripeRef & {
 type PricingState = {
   package_coupon: string
   units: UnitPricing[]
-  unlocks: UnlockPricing[]
+  pipelines: PipelinePricing[]
   memberships: MembershipPricing[]
   qual_reviews: QualReviewPricing[]
 }
@@ -86,7 +87,7 @@ function emptyState(): PricingState {
   return {
     package_coupon: "",
     units: [],
-    unlocks: [],
+    pipelines: [],
     memberships: [],
     qual_reviews: [],
   }
@@ -97,8 +98,8 @@ const availableUnitOptions = computed(() => {
   const selected = new Set(state.value.units.map((unit) => unit.unit_id).filter(Boolean))
   return props.unitOptions.filter((option) => !selected.has(option.id))
 })
-const availableUnlockOptions = computed(() => {
-  const selected = new Set(state.value.unlocks.map((unlock) => unlock.target_id).filter(Boolean))
+const availablePipelineOptions = computed(() => {
+  const selected = new Set(state.value.pipelines.map((pipeline) => pipeline.pipeline_id).filter(Boolean))
   return props.pipelineOptions.filter((option) => !selected.has(option.id))
 })
 
@@ -122,7 +123,6 @@ function parsePricing(value: string): PricingState {
     return emptyState()
   }
   const record = asRecord(parsed) || {}
-  const unlocks = asRecord(record.unlocks) || {}
 
   return {
     package_coupon: String(record.package_coupon || ""),
@@ -138,11 +138,16 @@ function parsePricing(value: string): PricingState {
           }
         })
       : [],
-    unlocks: Object.entries(unlocks).map(([targetId, value]) => ({
-      key: rowKey(),
-      target_id: targetId,
-      ...stripeRef(value),
-    })),
+    pipelines: Array.isArray(record.pipelines)
+      ? record.pipelines.map((value) => {
+          const pipeline = asRecord(value) || {}
+          return {
+            key: rowKey(),
+            pipeline_id: String(pipeline.pipeline_id || ""),
+            enrollment_fee: stripeRef(pipeline.enrollment_fee),
+          }
+        })
+      : [],
     memberships: Array.isArray(record.memberships)
       ? record.memberships.map((value) => {
           const membership = asRecord(value) || {}
@@ -199,19 +204,16 @@ function serializePricing(value: PricingState) {
   }
 
   
-  const unlocks: Record<string, unknown> = {}
-  for (const unlock of value.unlocks) {
-    const targetId = unlock.target_id.trim()
-    const price = serializedStripeRef(unlock)
-    if (targetId || price) {
-      unlocks[targetId] = price || {
-        stripe_product_id: "",
-        stripe_price_id: "",
+  if (value.pipelines.length) {
+    out.pipelines = value.pipelines.map((pipeline) => {
+      const serialized: Record<string, unknown> = {
+        pipeline_id: pipeline.pipeline_id.trim(),
       }
-    }
+      const enrollmentFee = serializedStripeRef(pipeline.enrollment_fee)
+      if (enrollmentFee) serialized.enrollment_fee = enrollmentFee
+      return serialized
+    })
   }
-  if (Object.keys(unlocks).length) out.unlocks = unlocks
-  
 
   if (value.memberships.length) {
     out.memberships = value.memberships.map((membership) => ({
@@ -266,13 +268,13 @@ function addUnit() {
   })
 }
 
-function addUnlock() {
-  const option = availableUnlockOptions.value[0]
+function addPipeline() {
+  const option = availablePipelineOptions.value[0]
   if (!option) return
-  state.value.unlocks.push({
+  state.value.pipelines.push({
     key: rowKey(),
-    target_id: option.id,
-    ...emptyStripeRef(),
+    pipeline_id: option.id,
+    enrollment_fee: emptyStripeRef(),
   })
 }
 
@@ -306,8 +308,8 @@ function unitOptionDisabled(optionId: string, currentKey: number) {
   return state.value.units.some((unit) => unit.key !== currentKey && unit.unit_id === optionId)
 }
 
-function unlockOptionDisabled(optionId: string, currentKey: number) {
-  return state.value.unlocks.some((unlock) => unlock.key !== currentKey && unlock.target_id === optionId)
+function pipelineOptionDisabled(optionId: string, currentKey: number) {
+  return state.value.pipelines.some((pipeline) => pipeline.key !== currentKey && pipeline.pipeline_id === optionId)
 }
 </script>
 
@@ -462,40 +464,40 @@ function unlockOptionDisabled(optionId: string, currentKey: number) {
       </div>
     </section>
 
-    <section class="rounded-2xl border border-amber-200 bg-amber-50 p-4">
-      <div class="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-amber-200 pb-3">
+    <section class="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+      <div class="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-blue-200 pb-3">
         <div>
-          <h4 class="font-black text-amber-950">{{ copy.unlocksTitle }}</h4>
-          <p class="mt-1 text-xs font-semibold leading-5 text-amber-800">{{ copy.unlocksHint }}</p>
+          <h4 class="font-black text-blue-950">{{ copy.pipelinesTitle }}</h4>
+          <p class="mt-1 text-xs font-semibold leading-5 text-blue-800">{{ copy.pipelinesHint }}</p>
         </div>
-        <button type="button" class="inline-flex items-center gap-1 rounded-lg bg-white px-3 py-2 text-xs font-bold text-amber-800 shadow-sm hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!availableUnlockOptions.length" @click="addUnlock">
+        <button type="button" class="inline-flex items-center gap-1 rounded-lg bg-white px-3 py-2 text-xs font-bold text-blue-800 shadow-sm hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!availablePipelineOptions.length" @click="addPipeline">
           <Plus class="h-3 w-3" />
-          {{ copy.addUnlock }}
+          {{ copy.addPipeline }}
         </button>
       </div>
 
-      <div v-if="!state.unlocks.length" class="rounded-xl border border-dashed border-amber-200 bg-white/70 p-4 text-center text-sm text-amber-800">
-        {{ pipelineOptions.length ? copy.emptyUnlocks : copy.noLinkedPipeline }}
+      <div v-if="!state.pipelines.length" class="rounded-xl border border-dashed border-blue-200 bg-white/70 p-4 text-center text-sm text-blue-800">
+        {{ pipelineOptions.length ? copy.emptyPipelines : copy.noLinkedPipeline }}
       </div>
 
       <div v-else class="grid gap-3">
-        <div v-for="(unlock, index) in state.unlocks" :key="unlock.key" class="grid gap-3 rounded-xl border border-amber-200 bg-white p-4 lg:grid-cols-[1fr_1fr_1fr_auto]">
+        <div v-for="(pipeline, index) in state.pipelines" :key="pipeline.key" class="grid gap-3 rounded-xl border border-blue-200 bg-white p-4 lg:grid-cols-[1fr_1fr_1fr_auto]">
           <label class="grid gap-2 text-sm font-bold">
-            {{ copy.targetId }}
-            <select v-model="unlock.target_id" class="rounded-lg border border-slate-200 bg-white px-3 py-2 font-normal">
+            {{ copy.pipelineId }}
+            <select v-model="pipeline.pipeline_id" class="rounded-lg border border-slate-200 bg-white px-3 py-2 font-normal">
               <option value="">{{ copy.selectPipeline }}</option>
-              <option v-for="option in pipelineOptions" :key="option.id" :value="option.id" :disabled="unlockOptionDisabled(option.id, unlock.key)">{{ option.label }}</option>
+              <option v-for="option in pipelineOptions" :key="option.id" :value="option.id" :disabled="pipelineOptionDisabled(option.id, pipeline.key)">{{ option.label }}</option>
             </select>
           </label>
           <label class="grid gap-2 text-sm font-bold">
             {{ copy.productId }}
-            <input v-model="unlock.stripe_product_id" class="rounded-lg border border-slate-200 px-3 py-2 font-mono text-xs font-normal" placeholder="prod_..." />
+            <input v-model="pipeline.enrollment_fee.stripe_product_id" class="rounded-lg border border-slate-200 px-3 py-2 font-mono text-xs font-normal" placeholder="prod_..." />
           </label>
           <label class="grid gap-2 text-sm font-bold">
             {{ copy.priceId }}
-            <input v-model="unlock.stripe_price_id" class="rounded-lg border border-slate-200 px-3 py-2 font-mono text-xs font-normal" placeholder="price_..." />
+            <input v-model="pipeline.enrollment_fee.stripe_price_id" class="rounded-lg border border-slate-200 px-3 py-2 font-mono text-xs font-normal" placeholder="price_..." />
           </label>
-          <button type="button" class="mt-7 rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600" :aria-label="copy.delete" @click="state.unlocks.splice(index, 1)">
+          <button type="button" class="mt-7 rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600" :aria-label="copy.delete" @click="state.pipelines.splice(index, 1)">
             <Trash2 class="h-4 w-4" />
           </button>
         </div>

@@ -71,7 +71,6 @@ var candidateRouteContract = []routeExpectation{
 	{method: http.MethodPost, path: "/api/membership/cancel", access: routeProtected},
 	{method: http.MethodGet, path: "/api/mall/bundles/{bundleId}/pricing-detail", access: routeProtected},
 	{method: http.MethodPost, path: "/api/mall/bundles/{bundleId}/purchase", access: routeProtected},
-	{method: http.MethodPost, path: "/api/mall/bundles/{bundleId}/unlock", access: routeProtected},
 	{method: http.MethodPost, path: "/api/mall/pipelines/{pipelineId}/stages/{stageId}/purchase", access: routeProtected},
 	{method: http.MethodPost, path: "/api/mall/stage-orders/{stageOrderId}/exemptions", access: routeProtected},
 	{method: http.MethodPost, path: "/api/mall/payments/preview", access: routeProtected},

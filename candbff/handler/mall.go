@@ -1143,29 +1143,6 @@ func (h *Handler) activeBundleOrder(ctx context.Context, candidateID string, bun
 			}
 		}
 
-		// Check PipelineUnlockOrders as well
-		unlockResp, err := h.Mall.ListPipelineUnlockOrders(ctx, &mallpb.ListPipelineUnlockOrdersRequest{
-			Filters: &mallpb.PipelineUnlockOrderFilters{
-				CandidateUlid: candidateID,
-			},
-			PageSize: 50,
-		})
-		if err == nil {
-			for _, item := range unlockResp.GetItems() {
-				if item == nil || !isOpenMallOrderStatus(item.GetOrderStatus()) {
-					continue
-				}
-				active := &bundleActiveOrderSummary{
-					Action:     "unlock",
-					OrderID:    item.GetPipelineUnlockOrderUlid(),
-					Status:     item.GetOrderStatus(),
-					PayOrderID: item.GetPayOrderUlid(),
-					CanCancel:  canCancelBusinessOrder(orderBizPipelineUnlock, item.GetOrderStatus()),
-					Message:    "in-progress unlock order exists",
-				}
-				return active, nil
-			}
-		}
 	}
 
 	return nil, nil
@@ -1929,38 +1906,6 @@ func compactPromoCodes(primary []string, legacy []string) []string {
 		return codes
 	}
 	return compactStrings(legacy)
-}
-
-// UnlockPipelineInBundle POST /api/mall/bundles/{bundleId}/unlock
-func (h *Handler) UnlockPipelineInBundle(w http.ResponseWriter, r *http.Request) {
-	candidateID := CandidateID(r)
-	bundleId := strings.TrimSpace(chi.URLParam(r, "bundleId"))
-	if !requireRequestField(w, bundleId, "bundle_id") {
-		return
-	}
-
-	var req UnlockPipelineInBundleReq
-	if err := ReadJSON(r, &req); err != nil {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body: "+err.Error())
-		return
-	}
-	req.PipelineCcUlid = strings.TrimSpace(req.PipelineCcUlid)
-	if req.PipelineCcUlid == "" {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "field 'pipeline_cc_ulid' is required")
-		return
-	}
-
-	resp, err := h.Mall.CreatePipelineUnlockOrder(r.Context(), &mallpb.CreatePipelineUnlockOrderRequest{
-		CandidateUlid:  candidateID,
-		PipelineCcUlid: req.PipelineCcUlid,
-		BundleUlid:     bundleId,
-	})
-	if err != nil {
-		HandleGrpcError(w, err)
-		return
-	}
-	resp.PaymentKey = formatPaymentKey(resp.GetPaymentKey())
-	WriteJSON(w, http.StatusOK, resp)
 }
 
 // PreviewPayment POST /api/mall/payments/preview

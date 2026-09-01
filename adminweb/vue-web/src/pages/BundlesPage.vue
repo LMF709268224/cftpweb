@@ -53,14 +53,14 @@ type UnitPricingView = {
   unitId: string
   prices: PriceRefView[]
 }
-type UnlockPricingView = {
-  targetId: string
+type PipelinePricingView = {
+  pipelineId: string
   priceId: string
   productId: string
 }
 type PricingPreviewView = {
   units: UnitPricingView[]
-  unlocks: UnlockPricingView[]
+  pipelines: PipelinePricingView[]
   packageCoupon: string
   memberships: number
   qualReviews: number
@@ -226,17 +226,20 @@ const pricingPreview = computed<PricingPreviewView | null>(() => {
       }
     })
     : []
-  const unlocks = Object.entries(asRecord(parsed.unlocks) || {}).map(([targetId, value]) => {
-    const ref = asRecord(value)
-    return {
-      targetId,
-      priceId: String(ref?.stripe_price_id || "-"),
-      productId: String(ref?.stripe_product_id || "-"),
-    }
-  })
+  const pipelines = Array.isArray(parsed.pipelines)
+    ? parsed.pipelines.map((value) => {
+      const pipeline = asRecord(value)
+      const enrollmentFee = asRecord(pipeline?.enrollment_fee)
+      return {
+        pipelineId: String(pipeline?.pipeline_id || "-"),
+        priceId: String(enrollmentFee?.stripe_price_id || "-"),
+        productId: String(enrollmentFee?.stripe_product_id || "-"),
+      }
+    })
+    : []
   return {
     units,
-    unlocks,
+    pipelines,
     packageCoupon: String(parsed.package_coupon || "-"),
     memberships: Array.isArray(parsed.memberships) ? parsed.memberships.length : 0,
     qualReviews: Array.isArray(parsed.qual_reviews) ? parsed.qual_reviews.length : 0,
@@ -600,18 +603,19 @@ function validatePricingJson() {
     }
   }
 
-  const unlocks = asRecord(pricing.unlocks)
-  if (unlocks) {
-    for (const [targetId, value] of Object.entries(unlocks)) {
-      if (isBlank(targetId)) {
-        toast.error(copy.value.toasts.unlockTargetRequired)
+  if (Array.isArray(pricing.pipelines)) {
+    for (const [index, value] of pricing.pipelines.entries()) {
+      const pipeline = asRecord(value)
+      const pipelineId = String(pipeline?.pipeline_id || "").trim()
+      if (!pipeline || !pipelineId) {
+        toast.error(copy.value.toasts.pipelinePricingRequired(index + 1))
         return false
       }
-      if (!currentPipelineRefs.value.includes(targetId)) {
-        toast.error(copy.value.toasts.unlockTargetNotLinked(targetId))
+      if (!currentPipelineRefs.value.includes(pipelineId)) {
+        toast.error(copy.value.toasts.pipelinePricingNotLinked(pipelineId))
         return false
       }
-      if (!validatePriceObject(value, copy.value.toasts.unlockPriceLabel(targetId))) return false
+      if (!validatePriceObject(pipeline.enrollment_fee, copy.value.toasts.enrollmentFeeLabel(pipelineId))) return false
     }
   }
 
@@ -1077,14 +1081,14 @@ async function replacePipelineBindingInForm() {
       }
     }
 
-    const unlocks = asRecord(pricingRecord.unlocks)
-    if (unlocks && Object.prototype.hasOwnProperty.call(unlocks, fromId)) {
-      if (!Object.prototype.hasOwnProperty.call(unlocks, toId)) {
-        unlocks[toId] = unlocks[fromId]
+    if (Array.isArray(pricingRecord.pipelines)) {
+      for (const value of pricingRecord.pipelines) {
+        const pipeline = asRecord(value)
+        if (pipeline && String(pipeline.pipeline_id || "").trim() === fromId) {
+          pipeline.pipeline_id = toId
+          changed = true
+        }
       }
-      delete unlocks[fromId]
-      pricingRecord.unlocks = unlocks
-      changed = true
     }
 
     if (Array.isArray(pricingRecord.units) && pricingRecord.units.length > 0) {
@@ -1836,20 +1840,20 @@ onMounted(load)
                     </div>
 
                     <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-                      <div class="border-b border-slate-200 px-4 py-3 font-black">{{ copy.pricingPreview.unlocksTitle }}</div>
-                      <div v-if="pricingPreview.unlocks.length" class="divide-y divide-slate-100">
-                        <div v-for="unlock in pricingPreview.unlocks" :key="unlock.targetId" class="grid gap-3 p-4 md:grid-cols-3">
+                      <div class="border-b border-slate-200 px-4 py-3 font-black">{{ copy.pricingPreview.pipelinesTitle }}</div>
+                      <div v-if="pricingPreview.pipelines.length" class="divide-y divide-slate-100">
+                        <div v-for="pipeline in pricingPreview.pipelines" :key="pipeline.pipelineId" class="grid gap-3 p-4 md:grid-cols-3">
                           <div>
-                            <div class="text-xs font-black uppercase text-slate-400">{{ copy.pricingPreview.unlockTarget }}</div>
-                            <div class="mt-1 break-all font-mono text-xs font-bold text-blue-700">{{ unlock.targetId }}</div>
+                            <div class="text-xs font-black uppercase text-slate-400">{{ copy.pricingPreview.pipelineTarget }}</div>
+                            <div class="mt-1 break-all font-mono text-xs font-bold text-blue-700">{{ pipeline.pipelineId }}</div>
                           </div>
                           <div>
                             <div class="text-xs font-black uppercase text-slate-400">{{ copy.pricingPreview.priceId }}</div>
-                            <div class="mt-1 break-all font-mono text-xs text-blue-700">{{ unlock.priceId }}</div>
+                            <div class="mt-1 break-all font-mono text-xs text-blue-700">{{ pipeline.priceId }}</div>
                           </div>
                           <div>
                             <div class="text-xs font-black uppercase text-slate-400">{{ copy.pricingPreview.productId }}</div>
-                            <div class="mt-1 break-all font-mono text-xs text-slate-600">{{ unlock.productId }}</div>
+                            <div class="mt-1 break-all font-mono text-xs text-slate-600">{{ pipeline.productId }}</div>
                           </div>
                         </div>
                       </div>

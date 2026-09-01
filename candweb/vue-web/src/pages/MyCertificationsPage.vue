@@ -73,12 +73,10 @@ function handlePaymentReturn() {
   const paymentStatus = url.searchParams.get("payment_status")
   if (!paymentStatus) return
 
-  const paymentAction = url.searchParams.get("payment_action")
-  const isUnlock = paymentAction === "unlock"
   const copy = t.value.paymentReturnHandler || {}
 
   if (paymentStatus === "success") {
-    toast.success(isUnlock ? copy.unlockSuccess : copy.purchaseSuccess)
+    toast.success(copy.purchaseSuccess)
   } else if (paymentStatus === "cancelled") {
     toast.warning(copy.cancelled)
   } else if (paymentStatus === "failed") {

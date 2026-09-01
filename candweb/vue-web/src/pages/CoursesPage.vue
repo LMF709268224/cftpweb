@@ -173,16 +173,14 @@ function handlePaymentReturn() {
   const paymentStatus = url.searchParams.get("payment_status")
   if (!paymentStatus) return
 
-  const paymentAction = url.searchParams.get("payment_action")
   const purchasedPipelineId = url.searchParams.get("pipeline_id")
   const purchasedBundleId = url.searchParams.get("bundle_id")
   const targetId = purchasedBundleId || purchasedPipelineId
-  const isUnlock = paymentAction === "unlock"
   const copy = t.value.paymentReturnHandler || {}
 
   if (paymentStatus === "success") {
-    toast.success(isUnlock ? copy.unlockSuccess : copy.purchaseSuccess)
-    if (!isUnlock && purchasedPipelineId && targetId) {
+    toast.success(copy.purchaseSuccess)
+    if (purchasedPipelineId && targetId) {
       allCourses.value = allCourses.value.map((course) =>
         course.id === targetId || course.pipelineId === purchasedPipelineId ? { ...course, eligibilityRefreshKey: Date.now() } : course,
       )

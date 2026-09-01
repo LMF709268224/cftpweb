@@ -12,7 +12,7 @@ import { preloadCheckoutWizard } from "@/router"
 type CourseCardStat = { label: string; value: string | number }
 type EligibilityBlocker = { blocker_type?: string; description?: string; details?: unknown[] }
 type EligibilityPreview = { eligible?: boolean; can_purchase?: boolean; can_unlock?: boolean; blockers?: EligibilityBlocker[] }
-type ActiveOrderPreview = { action?: "purchase" | "unlock"; order_id?: string; orderId?: string; status?: string; pay_order_id?: string; payOrderId?: string; message?: string }
+type ActiveOrderPreview = { action?: string; order_id?: string; orderId?: string; status?: string; pay_order_id?: string; payOrderId?: string; message?: string }
 type PaymentPreview = { subtotal?: number; discount_total?: number; tax_total?: number; total?: number; currency?: string }
 type ExemptionOptions = { stages?: any[] }
 
@@ -126,7 +126,7 @@ const actionCopy = computed(() => {
   if (effectivePurchased.value) return isPipelineProduct.value ? cardCopy.value.enterCertification : cardCopy.value.membershipCenter
   if (statusRefreshing.value) return cardCopy.value.checking
   if (hasInProgressOrder.value) return cardCopy.value.continuePayment
-  if (currentEligibility.value?.can_purchase || currentEligibility.value?.can_unlock) return cardCopy.value.buyNow
+  if (currentEligibility.value?.can_purchase) return cardCopy.value.buyNow
   if (hasAdditionalExemptionOption.value) return cardCopy.value.continueExemptionSelection
   if (credentialCenterBlocker.value?.blocker_type === "EXEMPTION_DOCUMENTS_PENDING_UPLOAD") return cardCopy.value.uploadExemptionDocuments
   if (credentialCenterBlocker.value?.blocker_type === "EXEMPTION_UNDER_REVIEW") return cardCopy.value.viewExemptionReview
@@ -138,7 +138,7 @@ const actionClass = computed(() => {
   if (props.loginRequired) return "bg-primary text-white shadow-sm shadow-primary/20 group-hover:bg-primary/90"
   if (statusRefreshing.value) return "bg-slate-200 text-slate-500"
   if (credentialCenterBlocker.value) return "bg-primary text-white shadow-sm shadow-primary/20 group-hover:bg-primary/90"
-  if (currentEligibility.value && !effectivePurchased.value && !currentEligibility.value.can_purchase && !currentEligibility.value.can_unlock && !hasInProgressOrder.value) {
+  if (currentEligibility.value && !effectivePurchased.value && !currentEligibility.value.can_purchase && !hasInProgressOrder.value) {
     return "bg-slate-200 text-slate-500"
   }
   return "bg-primary text-white shadow-sm shadow-primary/20 group-hover:bg-primary/90"
@@ -147,7 +147,7 @@ const actionClass = computed(() => {
 function blockerText(blocker?: EligibilityBlocker) {
   if (!blocker) return ""
   if (isCombinationProduct.value && (hasPurchasedPipeline.value !== hasPurchasedMembership.value)) return cardCopy.value.partiallyOwnedBundle
-  if (blocker.blocker_type === "MISSING_UNLOCK_QUALIFICATION") return cardCopy.value.missingQualification
+  if (blocker.blocker_type === "MISSING_PREREQUISITE_QUALIFICATION") return cardCopy.value.missingQualification
   if (blocker.blocker_type === "ALREADY_PURCHASED") return cardCopy.value.alreadyPurchased
   if (blocker.blocker_type === "IN_PROGRESS_PURCHASE") return cardCopy.value.inProgressPurchase
   if (blocker.blocker_type === "PIPELINE_NOT_FOUND") return cardCopy.value.pipelineNotFound
@@ -190,7 +190,7 @@ const accessState = computed(() => {
   if (statusRefreshing.value) {
     return { label: cardCopy.value.checking, icon: Clock, className: "border-slate-200 bg-slate-50 text-slate-700", hint: "" }
   }
-  if (currentEligibility.value?.can_purchase || currentEligibility.value?.can_unlock || hasInProgressOrder.value) {
+  if (currentEligibility.value?.can_purchase || hasInProgressOrder.value) {
     return { label: isMembershipOnlyProduct.value ? cardCopy.value.readyMembership : cardCopy.value.ready, icon: ShoppingCart, className: "border-emerald-200 bg-emerald-50 text-emerald-700", hint: "" }
   }
   if (currentEligibility.value) {

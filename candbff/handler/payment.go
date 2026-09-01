@@ -16,7 +16,6 @@ const (
 	orderBizPipelinePayment      = "PIPELINE_PAYMENT"
 	orderBizStagePayment         = "STAGE_PAYMENT"
 	orderBizCourseRetakePayment  = "COURSE_RETAKE_PAYMENT"
-	orderBizPipelineUnlock       = "PIPELINE_UNLOCK"
 	orderBizCredentialApply      = "CREDENTIAL_APPLICATION"
 	orderBizBundlePurchase       = "BUNDLE_PURCHASE"
 	defaultCandidateOrderPageMax = 50
@@ -26,7 +25,6 @@ var candidateOrderBizTypes = []string{
 	orderBizPipelinePayment,
 	orderBizStagePayment,
 	orderBizCourseRetakePayment,
-	orderBizPipelineUnlock,
 	orderBizCredentialApply,
 	orderBizBundlePurchase,
 }
@@ -345,8 +343,6 @@ func (h *Handler) candidateBusinessOrderForBiz(ctx context.Context, bizType stri
 	switch normalizePaymentBizType(bizType) {
 	case orderBizBundlePurchase:
 		return h.bundleCancelableOrder(ctx, bizRefULID)
-	case orderBizPipelineUnlock:
-		return h.pipelineUnlockCancelableOrder(ctx, bizRefULID)
 	case orderBizCredentialApply:
 		return h.credentialApplicationCancelableOrder(ctx, bizRefULID)
 	case orderBizCourseRetakePayment:
@@ -409,27 +405,6 @@ func (h *Handler) bundleCancelableOrder(ctx context.Context, orderID string) (*c
 		OrderID:    strings.TrimSpace(summary.GetBundleOrderUlid()),
 		BizType:    orderBizBundlePurchase,
 		BizRefUlid: strings.TrimSpace(summary.GetBundleOrderUlid()),
-		Status:     summary.GetOrderStatus(),
-		Candidate:  strings.TrimSpace(summary.GetCandidateUlid()),
-	}, nil
-}
-
-func (h *Handler) pipelineUnlockCancelableOrder(ctx context.Context, orderID string) (*candidateCancelableOrder, error) {
-	resp, err := h.Mall.GetPipelineUnlockOrderSummary(ctx, &mallpb.GetPipelineUnlockOrderSummaryRequest{PipelineUnlockOrderUlid: orderID})
-	if err != nil {
-		if status.Code(err) == codes.NotFound {
-			return nil, nil
-		}
-		return nil, err
-	}
-	summary := resp.GetSummary()
-	if !resp.GetFound() || summary == nil {
-		return nil, nil
-	}
-	return &candidateCancelableOrder{
-		OrderID:    strings.TrimSpace(summary.GetPipelineUnlockOrderUlid()),
-		BizType:    orderBizPipelineUnlock,
-		BizRefUlid: strings.TrimSpace(summary.GetPipelineUnlockOrderUlid()),
 		Status:     summary.GetOrderStatus(),
 		Candidate:  strings.TrimSpace(summary.GetCandidateUlid()),
 	}, nil
@@ -538,8 +513,6 @@ func canCancelBusinessOrder(bizType, rawStatus string) bool {
 		return status == "WAIT_EXEMPTION_SELECTION" || status == "WAIT_STAGE_PAYMENT"
 	case orderBizCourseRetakePayment:
 		return status == "WAIT_PAYMENT"
-	case orderBizPipelineUnlock:
-		return status == "WAIT_PAYMENT"
 	case orderBizCredentialApply:
 		return status == "WAIT_REVIEW_FEE_PAYMENT"
 	default:
@@ -559,8 +532,6 @@ func orderBizTypeLabel(bizType string) string {
 		return "Stage Order"
 	case orderBizCourseRetakePayment:
 		return "Retake Order"
-	case orderBizPipelineUnlock:
-		return "Pipeline Unlock Order"
 	case orderBizCredentialApply:
 		return "Credential Application Order"
 	case orderBizBundlePurchase:

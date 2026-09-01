@@ -142,7 +142,6 @@ const actionableOrderStatuses = new Set([
   "WAIT_PIPELINE_PAYMENT",
   "WAIT_STAGE_PAYMENT",
   "WAIT_RETAKE_PAYMENT",
-  "WAIT_UNLOCK_PAYMENT",
   "WAIT_BUNDLE_PAYMENT",
   "WAIT_REVIEW_FEE_PAYMENT",
 ])
@@ -405,8 +404,6 @@ function orderTypeLabel(bizType?: string) {
       return t.value.orders.typeStage
     case "COURSE_RETAKE_PAYMENT":
       return t.value.orders.typeRetake
-    case "PIPELINE_UNLOCK":
-      return t.value.orders.typeCertificationUnlock
     case "CREDENTIAL_APPLICATION":
       return t.value.orders.typeCredentialApplication
     case "BUNDLE_PURCHASE":
@@ -425,8 +422,6 @@ function orderStatusFilterLabel(status?: string) {
       return t.value.orders.filterStagePaymentPending
     case "WAIT_RETAKE_PAYMENT":
       return t.value.orders.filterRetakePaymentPending
-    case "WAIT_UNLOCK_PAYMENT":
-      return t.value.orders.filterUnlockPaymentPending
     case "WAIT_BUNDLE_PAYMENT":
       return t.value.orders.filterBundlePaymentPending
     case "WAIT_REVIEW_FEE_PAYMENT":

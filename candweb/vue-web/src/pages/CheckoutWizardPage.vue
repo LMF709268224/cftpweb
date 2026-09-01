@@ -49,7 +49,6 @@ const HARD_ELIGIBILITY_BLOCKER_TYPES = new Set([
   "EXEMPTION_UNDER_REVIEW",
 ])
 const bundleId = String(route.params.bundleId || route.query.bundleId || "")
-const TEMPORARY_IMPLICIT_UNLOCK_BUNDLE_GPATH = "/gcc/pipeline/core/cftp"
 const currentStep = ref(1)
 const bundleData = ref<any>(null)
 const pricingDetail = ref<any>(null)
@@ -62,7 +61,7 @@ const selectedExemptionUnitIds = ref<Record<string, boolean>>({})
 const waivedExemptionUnitIds = ref<Record<string, boolean>>({})
 const selectedQualificationIdsByUnit = ref<Record<string, string>>({})
 const activeOrderId = ref("")
-const activeOrderAction = ref<"purchase" | "unlock" | "credential_application">("purchase")
+const activeOrderAction = ref<"purchase" | "credential_application">("purchase")
 const activeCredentialQualIds = ref<string[]>([])
 const activeCredentialUnitIds = ref<string[]>([])
 const activeCredentialApplicationOrder = ref<any>(null)
@@ -101,10 +100,11 @@ function includedPurchaseUnitIds() {
   const stages = [...(bundleData.value?.stages || [])]
     .sort((left: any, right: any) => Number(left?.sort_order || 0) - Number(right?.sort_order || 0))
   const exemptedUnitIds = selectedExemptedUnitIds()
-  const includedStages = paymentMode.value === "BY_STAGE"
-    ? stages.slice(0, stages.findIndex((stage: any) =>
-      (stage?.units || []).some((unit: any) => !exemptedUnitIds.has(String(unit?.unit_id || ""))),
-    ) + 1)
+  const firstActiveStageIndex = stages.findIndex((stage: any) =>
+    (stage?.units || []).some((unit: any) => !exemptedUnitIds.has(String(unit?.unit_id || ""))),
+  )
+  const includedStages = paymentMode.value === "BY_STAGE" && firstActiveStageIndex >= 0
+    ? stages.slice(0, firstActiveStageIndex + 1)
     : stages
 
   return new Set(
@@ -128,25 +128,36 @@ const dynamicPaymentPreview = computed(() => {
     let currency = "USD"
     let subtotal = 0
 
-    // Match gmall bundle line-item selection: unlock and qualification review
-    // orders are separate, while bundle purchases charge non-exempted units.
+    // Qualification review orders are separate from the bundle purchase.
     const includedUnitIds = includedPurchaseUnitIds()
     const exemptedUnitIds = selectedExemptedUnitIds()
 
-    // 1. Units
-    if (Array.isArray(detail.units)) {
-      for (const u of detail.units) {
-        const unitId = String(u?.unit_id || "").trim()
-        if (!includedUnitIds.has(unitId) || exemptedUnitIds.has(unitId)) continue
-        if (u.access) {
-          total += u.access.amount
-          subtotal += u.access.amount
-          if (u.access.currency) currency = u.access.currency
-        }
+    // 1. Pipeline enrollment fee (charged once on the initial bundle purchase).
+    if (Array.isArray(detail.pipelines)) {
+      for (const pipeline of detail.pipelines) {
+        const amount = pipeline?.enrollment_fee?.amount
+        if (typeof amount !== "number") continue
+        total += amount
+        subtotal += amount
+        if (pipeline.enrollment_fee.currency) currency = pipeline.enrollment_fee.currency
       }
     }
 
-    // 2. Memberships
+    // 2. Course access or exemption recognition fee.
+    if (Array.isArray(detail.units)) {
+      for (const u of detail.units) {
+        const unitId = String(u?.unit_id || "").trim()
+        if (!includedUnitIds.has(unitId)) continue
+        const price = exemptedUnitIds.has(unitId) ? u.exemption : u.access
+        const amount = price?.amount
+        if (typeof amount !== "number") continue
+        total += amount
+        subtotal += amount
+        if (price.currency) currency = price.currency
+      }
+    }
+
+    // 3. Memberships
     if (Array.isArray(detail.memberships)) {
        for (const m of detail.memberships) {
           if (m.price) {
@@ -179,7 +190,7 @@ type PurchaseLineItem = {
   stageName: string
   amount: number
   currency: string
-  kind: "course" | "membership"
+  kind: "pipeline" | "course" | "membership"
 }
 
 const purchaseLineItems = computed<PurchaseLineItem[]>(() => {
@@ -204,19 +215,41 @@ const purchaseLineItems = computed<PurchaseLineItem[]>(() => {
     }
 
     const items: PurchaseLineItem[] = []
+    if (Array.isArray(detail?.pipelines)) {
+      for (const pipeline of detail.pipelines) {
+        const configuredPipelineId = String(pipeline?.pipeline_id || "").trim()
+        const amount = pipeline?.enrollment_fee?.amount
+        if (!configuredPipelineId || typeof amount !== "number") continue
+        items.push({
+          key: `pipeline:${configuredPipelineId}`,
+          itemId: configuredPipelineId,
+          name: t.value.checkoutWizard.pipelineEnrollmentFee,
+          stageName: String(bundleData.value?.name || "").trim(),
+          amount,
+          currency: String(pipeline?.enrollment_fee?.currency || "USD"),
+          kind: "pipeline",
+        })
+      }
+    }
+
     if (Array.isArray(detail?.units)) {
       for (const unit of detail.units) {
         const unitId = String(unit?.unit_id || "").trim()
-        const amount = unit?.access?.amount
-        if (!unitId || !includedUnitIds.has(unitId) || exemptedUnitIds.has(unitId) || typeof amount !== "number") continue
+        if (!unitId || !includedUnitIds.has(unitId)) continue
+        const exempted = exemptedUnitIds.has(unitId)
+        const price = exempted ? unit?.exemption : unit?.access
+        const amount = price?.amount
+        if (typeof amount !== "number") continue
         const unitDetail = unitDetails.get(unitId)
         items.push({
           key: `course:${unitId}`,
           itemId: unitId,
-          name: unitDetail?.name || unitId,
+          name: exempted
+            ? `${unitDetail?.name || unitId} · ${t.value.checkoutWizard.exemptionRecognitionFee}`
+            : unitDetail?.name || unitId,
           stageName: unitDetail?.stageName || "",
           amount,
-          currency: String(unit?.access?.currency || "USD"),
+          currency: String(price?.currency || unit?.access?.currency || "USD"),
           kind: "course",
         })
       }
@@ -262,25 +295,14 @@ const unitPriceDisplay = computed<Record<string, { accessAmount?: number, exempt
         const pricingUnit = Array.isArray(detail.units)
           ? detail.units.find((item: any) => item.unit_id === unit.unit_id)
           : null
-        let exemptionAmount = 0
-        let hasExemptionAmount = false
-        let currency = pricingUnit?.access?.currency || "USD"
-
-        for (const qualification of unit.exemption_quals || []) {
-          const qualificationId = String(qualification.qual_id || "").trim()
-          const review = Array.isArray(detail.qual_reviews)
-            ? detail.qual_reviews.find((item: any) => item.qual_id === qualificationId)
-            : null
-          if (typeof review?.price?.amount === "number") {
-            exemptionAmount += review.price.amount
-            hasExemptionAmount = true
-            currency = review.price.currency || currency
-          }
-        }
+        const exemptionAmount = typeof pricingUnit?.exemption?.amount === "number"
+          ? pricingUnit.exemption.amount
+          : 0
+        const currency = pricingUnit?.exemption?.currency || pricingUnit?.access?.currency || "USD"
 
         display[unit.unit_id] = {
           accessAmount: typeof pricingUnit?.access?.amount === "number" ? pricingUnit.access.amount : undefined,
-          exemptionAmount: hasExemptionAmount ? exemptionAmount : undefined,
+          exemptionAmount,
           currency,
         }
       }
@@ -325,12 +347,10 @@ const pipelineId = computed(() =>
   String(bundleData.value?.pipeline_id || bundleData.value?.pipeline_cc_ulid || "").trim()
 )
 const paymentBizType = computed(() => {
-  if (activeOrderAction.value === "unlock") return "PIPELINE_UNLOCK"
   if (activeOrderAction.value === "credential_application") return "CREDENTIAL_APPLICATION"
   return "BUNDLE_PURCHASE"
 })
 const paymentReturnPath = computed(() => {
-  if (activeOrderAction.value === "unlock") return "/my-certifications"
   if (activeOrderAction.value === "credential_application") return route.path
   return `/checkout/success/${activeOrderId.value}`
 })
@@ -796,43 +816,6 @@ function bundlePipelineId(response: any) {
   return String(response?.pipeline_id || response?.pipeline_cc_ulid || "").trim()
 }
 
-function shouldImplicitlyUnlockCftp(response: any) {
-  return String(response?.bundle_gpath || "").trim() === TEMPORARY_IMPLICIT_UNLOCK_BUNDLE_GPATH
-    && Boolean(getEligibility(response)?.can_unlock)
-    && Boolean(bundlePipelineId(response))
-}
-
-async function completeTemporaryCftpUnlock(response: any) {
-  if (!shouldImplicitlyUnlockCftp(response)) return response
-
-  // TEMP: Remove after gmall makes qualification-only CFtP bundles directly purchasable.
-  const unlockResponse = await apiClient(`/api/mall/bundles/${encodeURIComponent(bundleId)}/unlock`, {
-    method: "POST",
-    suppressErrorToast: true,
-    body: JSON.stringify({
-      pipeline_cc_ulid: bundlePipelineId(response),
-    }),
-  })
-  const orderStatus = unlockResponse?.order_status || unlockResponse?.status
-  if (!isCompletedStatus(orderStatus)) {
-    throw new Error(t.value.checkoutWizard.implicitUnlockFailed)
-  }
-
-  const refreshedBundle = await fetchBundlePayload()
-  if (!getEligibility(refreshedBundle)?.can_purchase) {
-    throw new Error(t.value.checkoutWizard.implicitUnlockFailed)
-  }
-  return refreshedBundle
-}
-
-async function loadBundleInfo() {
-  const response = await fetchBundlePayload()
-  await applyBundleInfoWithQualificationDefinitions(response)
-  await refreshQualificationApplications()
-  await refreshActiveCredentialApplicationOrder()
-  return response
-}
-
 async function refreshLocalizedCheckoutContent() {
   if (!bundleId) return
   try {
@@ -845,8 +828,7 @@ async function refreshLocalizedCheckoutContent() {
 
 async function loadPurchaseReadyBundleInfo() {
   const response = await fetchBundlePayload()
-  const purchaseReadyBundle = await completeTemporaryCftpUnlock(response)
-  await applyBundleInfoWithQualificationDefinitions(purchaseReadyBundle)
+  await applyBundleInfoWithQualificationDefinitions(response)
 
   try {
     const pricingRes = await fetchPricingEvaluation()
@@ -859,7 +841,7 @@ async function loadPurchaseReadyBundleInfo() {
 
   await refreshQualificationApplications()
   await refreshActiveCredentialApplicationOrder()
-  return purchaseReadyBundle
+  return response
 }
 
 async function fetchBundleInfo() {
@@ -1062,8 +1044,7 @@ async function pollQualificationApplications() {
 
     if (hadPendingApplications && !hasPendingQualificationApplications()) {
       const response = await fetchBundlePayload()
-      const purchaseReadyBundle = await completeTemporaryCftpUnlock(response)
-      await applyBundleInfoWithQualificationDefinitions(purchaseReadyBundle)
+      await applyBundleInfoWithQualificationDefinitions(response)
     }
   } catch {
     // Ignore background polling errors. The next interval will retry.
@@ -1991,6 +1972,7 @@ const checkoutHardBlocked = computed(() => hardEligibilityBlockers.value.length 
 function eligibilityBlockerMessage(blocker?: EligibilityBlocker) {
   const copy = t.value.purchaseDialog
   if (!blocker) return t.value.checkoutWizard.purchaseUnavailable
+  if (blocker?.blocker_type === "MISSING_PREREQUISITE_QUALIFICATION") return copy.missingQualification
   if (blocker?.blocker_type === "FORBIDDEN_QUALIFICATION") return copy.forbiddenQualification
   if (blocker?.blocker_type === "CONFLICT_PIPELINE_IN_PROGRESS") return copy.conflictPipelineInProgress
   if (blocker?.blocker_type === "CONFLICT_CHECK_UNAVAILABLE") return copy.conflictCheckUnavailable
@@ -2029,61 +2011,12 @@ async function createPurchaseOrder() {
   currentStep.value = 4
 }
 
-async function createUnlockOrder() {
-  if (!pipelineId.value) {
-    throw new Error(t.value.checkoutWizard.missingPipeline)
-  }
-
-  const hadExemptionOptions = exemptionStages.value.length > 0
-  const response = await apiClient(`/api/mall/bundles/${encodeURIComponent(bundleId)}/unlock`, {
-    method: "POST",
-    suppressErrorToast: true,
-    body: JSON.stringify({
-      pipeline_cc_ulid: pipelineId.value,
-    }),
-  })
-  const orderId = String(response?.pipeline_unlock_order_ulid || response?.order_id || "").trim()
-  const orderStatus = response?.order_status || response?.status
-
-  if (isFailedStatus(orderStatus)) {
-    throw new Error(response?.message || t.value.checkoutWizard.orderCreationFailed)
-  }
-
-  if (isCompletedStatus(orderStatus)) {
-    toast.success(t.value.checkoutWizard.unlockCompleted)
-    const refreshedBundle = await loadBundleInfo()
-    if (!getEligibility(refreshedBundle)?.can_purchase) {
-      return
-    }
-
-    if (!hadExemptionOptions && exemptionStages.value.length > 0) {
-      currentStep.value = 1
-      return
-    }
-
-    await createPurchaseOrder()
-    return
-  }
-
-  if (!orderId) {
-    throw new Error(t.value.checkoutWizard.orderCreationFailed)
-  }
-
-  activeOrderAction.value = "unlock"
-  activeOrderId.value = orderId
-  currentStep.value = 4
-}
-
 async function confirmAndPay() {
   loading.value = true
   try {
     const latestBundle = await loadPurchaseReadyBundleInfo()
     const eligibility = getEligibility(latestBundle)
 
-    if (eligibility?.can_unlock) {
-      await createUnlockOrder()
-      return
-    }
     if (eligibility?.can_purchase) {
       await createPurchaseOrder()
       return
@@ -2334,7 +2267,7 @@ function closePaymentEditDialog() {
                       </div>
                       <div class="mt-3 flex items-center justify-end">
                         <span v-if="selectedExemptionUnitIds[unit.unit_id]" class="checkout-unit-selected-price">
-                          {{ formatMoney(0, unitPriceDisplay[unit.unit_id]?.currency) }}
+                          {{ formatMoney(unitPriceDisplay[unit.unit_id]?.exemptionAmount || 0, unitPriceDisplay[unit.unit_id]?.currency) }}
                         </span>
                         <strong v-else-if="unitPriceDisplay[unit.unit_id]?.accessAmount !== undefined" class="checkout-unit-default-price">
                           {{ formatMoney(unitPriceDisplay[unit.unit_id]?.accessAmount, unitPriceDisplay[unit.unit_id]?.currency) }}

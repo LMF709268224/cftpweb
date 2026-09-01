@@ -163,6 +163,11 @@ test("商城和结账页展示并拦截层级互斥资格", async ({ page }) => 
             type: "CONFLICT_CHECK_UNAVAILABLE",
             message: "暂时无法核验互斥认证状态",
         },
+        {
+            id: "bundle-missing-prerequisite",
+            type: "MISSING_PREREQUISITE_QUALIFICATION",
+            message: "缺少报名资格",
+        },
     ]
     const blockedBundles = blockerCases.map((blocker) => ({
         ...bundle,
@@ -659,8 +664,16 @@ test("已持有有效资格的课程自动免考且不可取消", async ({ page 
             return {
                 data: {
                     pricing_detail_json: JSON.stringify({
+                        pipelines: [{
+                            pipeline_id: pipelineID,
+                            enrollment_fee: { amount: 20000, currency: "USD" },
+                        }],
                         units: [
-                            { unit_id: unitID, access: { amount: 10000, currency: "USD" } },
+                            {
+                                unit_id: unitID,
+                                access: { amount: 10000, currency: "USD" },
+                                exemption: { amount: 5000, currency: "USD" },
+                            },
                             ...includedUnits.map(({ unit_id, amount }) => ({
                                 unit_id,
                                 access: { amount, currency: "USD" },
@@ -695,14 +708,19 @@ test("已持有有效资格的课程自动免考且不可取消", async ({ page 
     await expect(page.locator(`[data-testid="checkout-exemption-waive"][data-unit-id="${unitID}"]`)).toHaveCount(0)
     await expect(page.getByText("系统自动免考", { exact: true })).toBeVisible()
     await expect(page.getByTestId("checkout-included-items")).toBeVisible()
-    await expect(page.getByTestId("checkout-included-item")).toHaveCount(3)
+    await expect(page.getByTestId("checkout-included-item")).toHaveCount(5)
+    await expect(page.locator(`[data-testid="checkout-included-item"][data-item-id="${pipelineID}"]`))
+        .toContainText("Pipeline 报名费")
+    const exemptionItem = page.locator(`[data-testid="checkout-included-item"][data-item-id="${unitID}"]`)
+    await expect(exemptionItem).toContainText("免考认定费")
+    await expect(exemptionItem).toContainText("50.00")
     for (const unit of includedUnits) {
         const item = page.locator(`[data-testid="checkout-included-item"][data-item-id="${unit.unit_id}"]`)
         await expect(item).toContainText(unit.name)
         await expect(item).toContainText((unit.amount / 100).toLocaleString("en-US", { minimumFractionDigits: 2 }))
     }
     await expect(page.locator(".checkout-total")).toContainText("基础总额")
-    await expect(page.locator(".checkout-total")).toContainText("3,700.00")
+    await expect(page.locator(".checkout-total")).toContainText("3,950.00")
 
     await page.getByTestId("checkout-selection-next").click()
     await waitForCheckoutProfile(page)
