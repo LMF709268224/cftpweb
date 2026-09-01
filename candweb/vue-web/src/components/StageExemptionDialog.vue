@@ -56,9 +56,12 @@ type QualificationApplicationTarget = {
   qualificationName: string
 }
 
+type QualificationApplicationState = "none" | "pending_upload" | "resubmit" | "pending" | "approved" | "rejected"
+
 const exemptionDecisions = ref<Record<string, ExemptionDecision>>({})
 const selectedQualificationIds = ref<Record<string, string>>({})
 const eligibleQualificationIds = ref<Set<string>>(new Set())
+const qualificationApplications = ref<Record<string, any | null>>({})
 const eligibilityLoading = ref(false)
 const eligibilityLoadFailed = ref(false)
 const applicationConfirmTarget = ref<QualificationApplicationTarget | null>(null)
@@ -196,6 +199,15 @@ function handleExemptionAction(unit: StageExemptionUnit) {
   if (!unitId || !qualification) return
   const selectedId = qualificationId(qualification)
   if (!selectedId) return
+  const state = qualificationApplicationState(unit)
+  if (state === "pending_upload" || state === "resubmit" || state === "pending") {
+    openQualificationUpload(selectedId)
+    return
+  }
+  if (state === "approved") {
+    void loadEligibility()
+    return
+  }
   applicationConfirmTarget.value = {
     unitId,
     unitName: unitLabel(unit),
@@ -224,6 +236,7 @@ async function loadEligibility() {
   exemptionDecisions.value = {}
   selectedQualificationIds.value = {}
   eligibleQualificationIds.value = new Set()
+  qualificationApplications.value = {}
   eligibilityLoadFailed.value = false
 
   const qualificationIds = Array.from(new Set(
@@ -236,10 +249,14 @@ async function loadEligibility() {
 
   eligibilityLoading.value = true
   try {
-    const response = await apiClient(
-      `/api/credentials/qualifications?qual_ulids=${encodeURIComponent(qualificationIds.join(","))}`,
-      { suppressErrorToast: true },
-    )
+    const [response, applications] = await Promise.all([
+      apiClient(
+        `/api/credentials/qualifications?qual_ulids=${encodeURIComponent(qualificationIds.join(","))}`,
+        { suppressErrorToast: true },
+      ),
+      Promise.all(qualificationIds.map(async (id) => [id, await latestCredentialApplication(id)] as const)),
+    ])
+    qualificationApplications.value = Object.fromEntries(applications)
     eligibleQualificationIds.value = new Set(
       (Array.isArray(response?.qualifications) ? response.qualifications : [])
         .filter((qualification: any) =>
@@ -293,6 +310,64 @@ function applicationIsPending(status: unknown) {
 
 function applicationIsApproved(status: unknown) {
   return applicationStatus(status) === "APPLICATION_STATUS_APPROVED"
+}
+
+function applicationIsRejected(status: unknown) {
+  return applicationStatus(status) === "APPLICATION_STATUS_REJECTED"
+}
+
+function selectedApplicationForUnit(unit: StageExemptionUnit) {
+  return qualificationApplications.value[selectedQualificationIdForUnit(unit)] || null
+}
+
+function qualificationApplicationState(unit: StageExemptionUnit): QualificationApplicationState {
+  const status = selectedApplicationForUnit(unit)?.status
+  if (applicationIsPendingUpload(status)) return "pending_upload"
+  if (applicationIsResubmit(status)) return "resubmit"
+  if (applicationIsPending(status)) return "pending"
+  if (applicationIsApproved(status)) return "approved"
+  if (applicationIsRejected(status)) return "rejected"
+  return "none"
+}
+
+function qualificationStatusLabel(unit: StageExemptionUnit) {
+  if (selectedQualificationIsEligible(unit)) return t.value.learning.stageExemptionEligible
+  switch (qualificationApplicationState(unit)) {
+    case "pending_upload": return t.value.learning.stageExemptionPendingUpload
+    case "resubmit": return t.value.learning.stageExemptionNeedsResubmit
+    case "pending": return t.value.learning.stageExemptionUnderReview
+    case "approved": return t.value.learning.stageExemptionApproved
+    case "rejected": return t.value.learning.stageExemptionRejected
+    default: return t.value.learning.stageExemptionUnavailable
+  }
+}
+
+function qualificationStatusHint(unit: StageExemptionUnit) {
+  switch (qualificationApplicationState(unit)) {
+    case "pending_upload": return t.value.learning.stageExemptionPendingUploadHint
+    case "resubmit": return t.value.learning.stageExemptionNeedsResubmitHint
+    case "pending": return t.value.learning.stageExemptionUnderReviewHint
+    case "approved": return t.value.learning.stageExemptionApprovedHint
+    case "rejected": return t.value.learning.stageExemptionRejectedHint
+    default: return ""
+  }
+}
+
+function qualificationActionLabel(unit: StageExemptionUnit) {
+  if (selectedQualificationIsEligible(unit)) return t.value.learning.stageExemptionApply
+  switch (qualificationApplicationState(unit)) {
+    case "pending_upload":
+    case "resubmit":
+      return t.value.learning.stageExemptionSubmitMaterials
+    case "pending": return t.value.learning.stageExemptionViewReview
+    case "approved": return t.value.learning.stageExemptionRecheck
+    case "rejected": return t.value.learning.stageExemptionReapply
+    default: return t.value.checkoutWizard.applyThisExemption
+  }
+}
+
+function unitPaymentBlockedByApplication(unit: StageExemptionUnit) {
+  return ["pending_upload", "resubmit", "pending"].includes(qualificationApplicationState(unit))
 }
 
 function orderIsUploadReady(status: unknown) {
@@ -503,6 +578,8 @@ watch(
           <div
             v-for="unit in exemptionUnits"
             :key="unit.unit_id || unitLabel(unit)"
+            data-testid="stage-exemption-unit"
+            :data-unit-id="unit.unit_id"
             :class="[
               'rounded-xl border border-slate-200 p-4 transition-colors',
               unit.unit_id && exemptionDecisions[unit.unit_id] === 'exempt'
@@ -529,12 +606,18 @@ watch(
                   <span
                     :class="[
                       'badge text-xs',
-                      unitIsEligible(unit)
+                      selectedQualificationIsEligible(unit) || qualificationApplicationState(unit) === 'approved'
                         ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                        : 'border-amber-200 bg-amber-50 text-amber-700',
+                        : qualificationApplicationState(unit) === 'pending'
+                          ? 'border-blue-200 bg-blue-50 text-blue-700'
+                          : qualificationApplicationState(unit) === 'rejected'
+                            ? 'border-rose-200 bg-rose-50 text-rose-700'
+                            : 'border-amber-200 bg-amber-50 text-amber-700',
                     ]"
+                    data-testid="stage-exemption-status"
+                    :data-status="qualificationApplicationState(unit)"
                   >
-                    {{ unitIsEligible(unit) ? t.learning.stageExemptionEligible : t.learning.stageExemptionUnavailable }}
+                    {{ qualificationStatusLabel(unit) }}
                   </span>
                 </span>
                 <span v-if="qualificationsForUnit(unit).length === 1" class="mt-2 flex flex-wrap gap-1.5">
@@ -565,6 +648,12 @@ watch(
                     </option>
                   </select>
                 </label>
+                <span
+                  v-if="qualificationStatusHint(unit)"
+                  class="mt-3 block text-xs leading-5 text-slate-600"
+                >
+                  {{ qualificationStatusHint(unit) }}
+                </span>
               </span>
             </div>
             <div class="mt-4 grid gap-2 sm:grid-cols-2" role="group" :aria-label="t.learning.stageExemptionDecisionLabel">
@@ -578,16 +667,16 @@ watch(
                 @click="handleExemptionAction(unit)"
               >
                 <Loader2 v-if="applicationLoadingUnitId === String(unit.unit_id)" class="mr-2 h-4 w-4 animate-spin" />
-                {{ selectedQualificationIsEligible(unit)
-                  ? t.learning.stageExemptionApply
-                  : t.checkoutWizard.applyThisExemption
-                }}
+                {{ qualificationActionLabel(unit) }}
               </button>
               <button
                 type="button"
                 class="btn min-h-10 rounded-lg border px-3 text-sm"
                 :class="exemptionDecisions[String(unit.unit_id)] === 'waive' ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300 bg-white text-slate-700'"
-                :disabled="Boolean(applicationLoadingUnitId)"
+                :data-unit-id="unit.unit_id"
+                data-testid="stage-exemption-waive"
+                :disabled="Boolean(applicationLoadingUnitId) || unitPaymentBlockedByApplication(unit)"
+                :title="unitPaymentBlockedByApplication(unit) ? qualificationStatusHint(unit) : undefined"
                 @click="setUnitDecision(unit, 'waive')"
               >
                 {{ t.learning.stageExemptionWaive }}
