@@ -140,7 +140,9 @@ test("证书成功提示在名称前说明认证类型", async ({ page }) => {
         localStorage.setItem("app_lang", "en")
         window.dispatchEvent(new Event("lang_change"))
     })
-    await expect(page.getByText("You have successfully earned the following certification: CFtA Accreditation Track", { exact: true })).toBeVisible()
+    await expect(page.getByText("You have successfully earned the following certification:", { exact: true })).toBeVisible()
+    const certificateDetails = page.getByRole("heading", { name: "Certificate Details", exact: true }).locator("..")
+    await expect(certificateDetails.getByText("CFtA Accreditation Track", { exact: true })).toBeVisible()
 })
 
 test("商城和结账页展示并拦截层级互斥资格", async ({ page }) => {
