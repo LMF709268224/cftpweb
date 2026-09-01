@@ -3685,7 +3685,7 @@ onMounted(() => {
       </div>
       <div v-else-if="!courses.length" class="px-4 py-10 text-center text-slate-500 md:p-12">{{ copy.emptyCourses }}</div>
       <div v-else>
-        <div class="hidden grid-cols-[minmax(0,1fr)_120px_260px_120px_180px] gap-6 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400 lg:grid">
+        <div class="hidden grid-cols-[minmax(240px,1fr)_64px_170px_96px_180px] gap-4 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400 xl:grid">
           <span>{{ copy.columns.course }}</span>
           <span>{{ copy.columns.version }}</span>
           <span>{{ copy.columns.updatedAt }}</span>
@@ -3698,37 +3698,37 @@ onMounted(() => {
           class="block w-full border-b border-slate-100 px-4 py-4 text-left transition last:border-b-0 hover:bg-slate-50 md:px-5 md:py-3"
           :class="courseId(course) === selectedCourseId ? 'bg-sky-50/70' : ''"
         >
-          <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_120px_260px_120px_180px] lg:items-center lg:gap-6">
+          <div class="grid gap-3 xl:grid-cols-[minmax(240px,1fr)_64px_170px_96px_180px] xl:items-center xl:gap-4">
             <div class="min-w-0">
-              <div class="break-words text-base font-black text-slate-950 lg:truncate">{{ courseTitle(course) }}</div>
+              <div class="break-words text-base font-black text-slate-950 xl:truncate">{{ courseTitle(course) }}</div>
               <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
                 <span class="max-w-full break-words">{{ course.category_tips || copy.uncategorized }}</span>
                 <span class="max-w-full break-all font-mono">ID: {{ courseId(course) || "-" }}</span>
               </div>
             </div>
-            <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 text-sm font-bold text-slate-700 lg:block lg:rounded-none lg:bg-transparent lg:p-0">
-              <span class="text-xs font-bold text-slate-400 lg:hidden">{{ copy.columns.version }}</span>
+            <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 text-sm font-bold text-slate-700 xl:block xl:rounded-none xl:bg-transparent xl:p-0">
+              <span class="text-xs font-bold text-slate-400 xl:hidden">{{ copy.columns.version }}</span>
               <span>{{ course.version || 0 }}</span>
             </div>
-            <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 text-sm text-slate-500 lg:block lg:rounded-none lg:bg-transparent lg:p-0">
-              <span class="text-xs font-bold text-slate-400 lg:hidden">{{ copy.updatedShort }}</span>
+            <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 text-sm text-slate-500 xl:block xl:rounded-none xl:bg-transparent xl:p-0">
+              <span class="text-xs font-bold text-slate-400 xl:hidden">{{ copy.updatedShort }}</span>
               <span>{{ formatDate(String(course.updated_at || course.created_at || "")) }}</span>
             </div>
-            <span class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 lg:block lg:justify-self-end lg:rounded-none lg:bg-transparent lg:p-0">
-              <span class="text-xs font-bold text-slate-400 lg:hidden">{{ copy.columns.status }}</span>
+            <span class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 xl:block xl:justify-self-end xl:rounded-none xl:bg-transparent xl:p-0">
+              <span class="text-xs font-bold text-slate-400 xl:hidden">{{ copy.columns.status }}</span>
               <span class="inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(courseStatusBadgeValue(course))">
                 {{ courseStatusLabel(course) }}
               </span>
             </span>
-            <div class="flex flex-col gap-3 sm:flex-row lg:items-center lg:justify-end">
-              <button class="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 transition hover:underline lg:border-0 lg:bg-transparent lg:px-0 lg:py-0" type="button" @click.stop="openCourseDetailDialog(course)">
+            <div class="flex flex-col gap-3 sm:flex-row xl:items-center xl:justify-end">
+              <button class="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 transition hover:underline xl:border-0 xl:bg-transparent xl:px-0 xl:py-0" type="button" @click.stop="openCourseDetailDialog(course)">
                 {{ copy.viewDetails }}
               </button>
-              <button class="inline-flex items-center justify-center rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-600 transition hover:underline lg:border-0 lg:bg-transparent lg:px-0 lg:py-0" type="button" @click.stop="selectCourse(course)">
+              <button class="inline-flex items-center justify-center rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-600 transition hover:underline xl:border-0 xl:bg-transparent xl:px-0 xl:py-0" type="button" @click.stop="selectCourse(course)">
                 {{ copy.edit }}
               </button>
-              <button class="inline-flex items-center justify-center rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-600 transition hover:underline lg:border-0 lg:bg-transparent lg:px-0 lg:py-0 disabled:opacity-50" type="button" :disabled="cloningCourseId === courseId(course)" @click.stop="cloneCourse(course)">
-                <Loader2 v-if="cloningCourseId === courseId(course)" class="mr-1 h-3 w-3 animate-spin lg:hidden" />
+              <button class="inline-flex items-center justify-center rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-600 transition hover:underline xl:border-0 xl:bg-transparent xl:px-0 xl:py-0 disabled:opacity-50" type="button" :disabled="cloningCourseId === courseId(course)" @click.stop="cloneCourse(course)">
+                <Loader2 v-if="cloningCourseId === courseId(course)" class="mr-1 h-3 w-3 animate-spin xl:hidden" />
                 {{ copy.cloneCourse }}
               </button>
             </div>
