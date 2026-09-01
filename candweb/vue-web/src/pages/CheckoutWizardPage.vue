@@ -52,6 +52,7 @@ const bundleId = String(route.params.bundleId || route.query.bundleId || "")
 const currentStep = ref(1)
 const bundleData = ref<any>(null)
 const pricingDetail = ref<any>(null)
+const pricingEvaluation = ref<any>(null)
 const paymentMode = ref("FULL_PIPELINE")
 const paymentPreview = ref<any>(null)
 const rawExemptionStages = ref<any[]>([])
@@ -116,70 +117,33 @@ function includedPurchaseUnitIds() {
   )
 }
 
-const dynamicPaymentPreview = computed(() => {
-  if (!pricingDetail.value) {
-    return paymentPreview.value
-  }
+const pricingDetailCurrency = computed(() => {
+  if (!pricingDetail.value) return "USD"
 
   try {
     const detail = typeof pricingDetail.value === "string" ? JSON.parse(pricingDetail.value) : pricingDetail.value
+    const prices = [
+      ...(detail?.pipelines || []).map((item: any) => item?.enrollment_fee),
+      ...(detail?.units || []).flatMap((item: any) => [item?.access, item?.exemption]),
+      ...(detail?.memberships || []).map((item: any) => item?.price),
+    ]
+    return String(prices.find((price: any) => price?.currency)?.currency || "USD")
+  } catch {
+    return "USD"
+  }
+})
 
-    let total = 0
-    let currency = "USD"
-    let subtotal = 0
+const dynamicPaymentPreview = computed(() => {
+  const amount = pricingEvaluation.value?.preview_pay_amount
+  if (typeof amount !== "number") return paymentPreview.value
 
-    // Qualification review orders are separate from the bundle purchase.
-    const includedUnitIds = includedPurchaseUnitIds()
-    const exemptedUnitIds = selectedExemptedUnitIds()
-
-    // 1. Pipeline enrollment fee (charged once on the initial bundle purchase).
-    if (Array.isArray(detail.pipelines)) {
-      for (const pipeline of detail.pipelines) {
-        const amount = pipeline?.enrollment_fee?.amount
-        if (typeof amount !== "number") continue
-        total += amount
-        subtotal += amount
-        if (pipeline.enrollment_fee.currency) currency = pipeline.enrollment_fee.currency
-      }
-    }
-
-    // 2. Course access or exemption recognition fee.
-    if (Array.isArray(detail.units)) {
-      for (const u of detail.units) {
-        const unitId = String(u?.unit_id || "").trim()
-        if (!includedUnitIds.has(unitId)) continue
-        const price = exemptedUnitIds.has(unitId) ? u.exemption : u.access
-        const amount = price?.amount
-        if (typeof amount !== "number") continue
-        total += amount
-        subtotal += amount
-        if (price.currency) currency = price.currency
-      }
-    }
-
-    // 3. Memberships
-    if (Array.isArray(detail.memberships)) {
-       for (const m of detail.memberships) {
-          if (m.price) {
-             total += m.price.amount
-             subtotal += m.price.amount
-             if (m.price.currency) currency = m.price.currency
-          }
-       }
-    }
-
-    return {
-      total,
-      subtotal,
-      currency,
-      pay_amount_label: "",
-      amount_label: "",
-      discount_total: 0 // Assume no complex discounts for dynamic preview on this page if not provided
-    }
-
-  } catch (err) {
-    console.error("Failed to calculate dynamic pricing", err)
-    return paymentPreview.value
+  return {
+    total: amount,
+    subtotal: amount,
+    currency: pricingDetailCurrency.value,
+    pay_amount_label: "",
+    amount_label: "",
+    discount_total: 0,
   }
 })
 
@@ -670,6 +634,14 @@ watch(lang, () => {
   void refreshLocalizedCheckoutContent()
 })
 
+watch(paymentMode, () => {
+  if (!bundleData.value) return
+  void refreshPricingEvaluation().catch((error) => {
+    console.error("Failed to refresh pricing after payment mode change", error)
+    toast.error(t.value.checkoutWizard.pricingRefreshFailed)
+  })
+})
+
 async function syncSignupToProfile() {
   const current = await fetchUser(true)
   if (!current) throw new Error("Unable to load the current profile")
@@ -831,10 +803,7 @@ async function loadPurchaseReadyBundleInfo() {
   await applyBundleInfoWithQualificationDefinitions(response)
 
   try {
-    const pricingRes = await fetchPricingEvaluation()
-    if (pricingRes && pricingRes.pricing_detail_json) {
-      pricingDetail.value = pricingRes.pricing_detail_json
-    }
+    await refreshPricingEvaluation()
   } catch (e) {
     console.error("Failed to load pricing detail", e)
   }
@@ -886,10 +855,23 @@ function buildSelectedExemptionsJson() {
 async function fetchPricingEvaluation() {
   const params = new URLSearchParams()
   params.set("selected_exemptions_json", buildSelectedExemptionsJson())
+  params.set("payment_mode", paymentMode.value)
   const response = await apiClient(
     `/api/mall/bundles/${encodeURIComponent(bundleId)}/pricing-detail?${params.toString()}`,
     { suppressErrorToast: true },
   )
+  return response
+}
+
+let pricingEvaluationRequestId = 0
+
+async function refreshPricingEvaluation() {
+  const requestId = ++pricingEvaluationRequestId
+  const response = await fetchPricingEvaluation()
+  if (requestId !== pricingEvaluationRequestId) return response
+
+  pricingEvaluation.value = response
+  if (response?.pricing_detail_json) pricingDetail.value = response.pricing_detail_json
   return response
 }
 
@@ -1754,7 +1736,7 @@ async function nextFromStep1() {
     return
   }
   try {
-    const evaluation = await fetchPricingEvaluation()
+    const evaluation = await refreshPricingEvaluation()
     if (evaluation?.can_checkout === false) {
       toast.info(
         evaluation?.checkout_blocker_reason === "EXEMPTIONS_UNCONFIRMED_WAIVER"

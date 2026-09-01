@@ -532,11 +532,7 @@ func (h *Handler) GetBundlePricingDetail(w http.ResponseWriter, r *http.Request)
 	if !requireRequestField(w, bundleId, "bundle_id") {
 		return
 	}
-	resp, err := h.Mall.GetBundlePricingDetail(r.Context(), &mallpb.GetBundlePricingDetailRequest{
-		Query:                  &mallpb.GetBundlePricingDetailRequest_BundleUlid{BundleUlid: bundleId},
-		CandidateUlid:          candidateID,
-		SelectedExemptionsJson: strings.TrimSpace(r.URL.Query().Get("selected_exemptions_json")),
-	})
+	resp, err := h.Mall.GetBundlePricingDetail(r.Context(), bundlePricingDetailRequest(r, bundleId, candidateID))
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
@@ -550,6 +546,15 @@ func (h *Handler) GetBundlePricingDetail(w http.ResponseWriter, r *http.Request)
 		"total_saved_amount":      resp.GetTotalSavedAmount(),
 		"units_preview":           resp.GetUnitsPreview(),
 	})
+}
+
+func bundlePricingDetailRequest(r *http.Request, bundleID, candidateID string) *mallpb.GetBundlePricingDetailRequest {
+	return &mallpb.GetBundlePricingDetailRequest{
+		Query:                  &mallpb.GetBundlePricingDetailRequest_BundleUlid{BundleUlid: bundleID},
+		CandidateUlid:          candidateID,
+		SelectedExemptionsJson: strings.TrimSpace(r.URL.Query().Get("selected_exemptions_json")),
+		PaymentMode:            strings.TrimSpace(r.URL.Query().Get("payment_mode")),
+	}
 }
 
 func (h *Handler) extractPipelineID(bundle *mallpb.BundleInfo) string {

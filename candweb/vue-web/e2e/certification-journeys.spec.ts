@@ -657,12 +657,16 @@ test("已持有有效资格的课程自动免考且不可取消", async ({ page 
         },
     }
     let purchaseBody: unknown
+    const pricingModes: string[] = []
 
-    await installCandidateApiMocks(page, ({ pathname, method, body }) => {
+    await installCandidateApiMocks(page, ({ pathname, url, method, body }) => {
         if (pathname === `/api/mall/bundles/${bundleID}` && method === "GET") return { data: automaticExemptionBundle }
         if (pathname === `/api/mall/bundles/${bundleID}/pricing-detail`) {
+            pricingModes.push(String(url.searchParams.get("payment_mode") || ""))
             return {
                 data: {
+                    preview_pay_amount: 395000,
+                    total_saved_amount: 5000,
                     pricing_detail_json: JSON.stringify({
                         pipelines: [{
                             pipeline_id: pipelineID,
@@ -721,6 +725,7 @@ test("已持有有效资格的课程自动免考且不可取消", async ({ page 
     }
     await expect(page.locator(".checkout-total")).toContainText("基础总额")
     await expect(page.locator(".checkout-total")).toContainText("3,950.00")
+    expect(pricingModes).toContain("FULL_PIPELINE")
 
     await page.getByTestId("checkout-selection-next").click()
     await waitForCheckoutProfile(page)
@@ -758,6 +763,7 @@ test("系统资格、自动免考和按原价购买以管线维度提交完整�
     const grantedQualificationID = "qualification-granted-decision"
     const waivedQualificationID = "qualification-waived-decision"
     let pricingSelections: unknown
+    const pricingModes: string[] = []
 
     const decisionBundle = {
         ...bundle,
@@ -855,10 +861,13 @@ test("系统资格、自动免考和按原价购买以管线维度提交完整�
         if (pathname === `/api/mall/bundles/${bundleID}` && method === "GET") return { data: decisionBundle }
         if (pathname === `/api/mall/bundles/${bundleID}/pricing-detail`) {
             pricingSelections = JSON.parse(url.searchParams.get("selected_exemptions_json") || "{}")
+            const requestedPaymentMode = String(url.searchParams.get("payment_mode") || "")
+            pricingModes.push(requestedPaymentMode)
             return {
                 data: {
                     can_checkout: JSON.stringify(pricingSelections) === JSON.stringify(expectedSelections),
                     checkout_blocker_reason: "EXEMPTIONS_UNCONFIRMED_WAIVER",
+                    preview_pay_amount: requestedPaymentMode === "BY_STAGE" ? 65000 : 145000,
                     pricing_detail_json: JSON.stringify({
                         units: [
                             { unit_id: systemUnitID, access: { amount: 70000, currency: "USD" } },
@@ -922,6 +931,13 @@ test("系统资格、自动免考和按原价购买以管线维度提交完整�
 
     await expect(page.getByTestId("checkout-step-registration")).toBeVisible()
     expect(pricingSelections).toEqual(expectedSelections)
+    await waitForCheckoutProfile(page)
+    await page.getByTestId("checkout-agreement").check()
+    await page.getByTestId("checkout-next").click()
+    await expect(page.getByTestId("checkout-step-review")).toBeVisible()
+    await page.locator('input[name="payment-mode"][value="BY_STAGE"], input[type="radio"][value="BY_STAGE"]').check()
+    await expect(page.getByTestId("checkout-step-review").getByText(/\$650\.00/, { exact: true }).last()).toBeVisible()
+    expect(pricingModes).toContain("BY_STAGE")
 })
 
 test("资格审核轮询刷新后继续隐藏系统管理资格", async ({ page }) => {
