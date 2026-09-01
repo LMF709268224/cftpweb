@@ -394,7 +394,7 @@ async function load(targetPage = page.value) {
 
 async function audit(action: "approve" | "reject" | "resubmit") {
   if (!selected.value || !canAuditSelected.value) return
-  if ((action === "reject" || action === "resubmit") && !auditRemark.value.trim()) {
+  if (!auditRemark.value.trim()) {
     toast.error(copy.value.toasts.remarkRequired)
     return
   }
@@ -696,6 +696,7 @@ onMounted(() => load(1))
                   v-model="auditRemark"
                   class="min-h-32 w-full rounded-2xl border border-slate-200 p-4 text-sm"
                   :placeholder="copy.auditRemarkPlaceholder"
+                  required
                 />
                 <div class="grid gap-3 md:grid-cols-3">
                   <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="auditing" @click="audit('approve')">

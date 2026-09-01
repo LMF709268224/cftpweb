@@ -94,3 +94,34 @@ test("application detail displays metadata and evidence without a mutation", asy
   expect(requests).toContain("GET /api/applications/app-1")
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
 })
+
+test("application approval requires a user remark", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  const requests: string[] = []
+  let auditRequest: Record<string, unknown> | null = null
+  await installApplicationReadMocks(page, requests)
+  await page.route("**/api/applications/audit", async (route) => {
+    auditRequest = route.request().postDataJSON()
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ code: 200, error_code: "OK", message: "OK", data: { app_ulid: "app-1" } }),
+    })
+  })
+
+  await page.goto("/applications")
+  await page.getByRole("button", { name: "查看详情" }).click()
+  const detailDialog = page.getByRole("dialog", { name: "Regression Credential" })
+  await detailDialog.getByRole("button", { name: /审核操作/ }).click()
+  await detailDialog.getByRole("button", { name: "通过" }).click()
+
+  await expect(page.getByText("请填写审核备注")).toBeVisible()
+  expect(auditRequest).toBeNull()
+
+  await detailDialog.locator("textarea").fill("Approved after review")
+  await detailDialog.getByRole("button", { name: "通过" }).click()
+
+  await expect.poll(() => auditRequest).not.toBeNull()
+  expect(auditRequest).toMatchObject({ approved: true, reject_reason: "Approved after review", require_resubmit: false })
+  await expect(page.getByText("审核已提交")).toBeVisible()
+})
