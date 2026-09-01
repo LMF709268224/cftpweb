@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue"
-import { Check, GraduationCap, Loader2, X } from "lucide-vue-next"
-import { apiClient } from "@/lib/apiClient"
+import { useRouter } from "vue-router"
+import { toast } from "vue-sonner"
+import { Check, CircleAlert, GraduationCap, Loader2, X } from "lucide-vue-next"
+import PaymentSessionDialog from "@/components/PaymentSessionDialog.vue"
+import { ApiClientError, apiClient } from "@/lib/apiClient"
 import { useBodyScrollLock } from "@/lib/bodyScrollLock"
 import { useTranslation } from "@/lib/language"
+import { CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, statusEnumNameForStatus } from "@/lib/status-labels"
 
 type ExemptionQualification = string | {
   qual_id?: string
@@ -33,6 +37,7 @@ type StageExemptionStage = {
 const props = defineProps<{
   open: boolean
   stage: StageExemptionStage | null
+  pipelineId: string
   submitting?: boolean
 }>()
 
@@ -42,12 +47,28 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useTranslation()
+const router = useRouter()
 type ExemptionDecision = "exempt" | "waive"
+type QualificationApplicationTarget = {
+  unitId: string
+  unitName: string
+  qualificationId: string
+  qualificationName: string
+}
 
 const exemptionDecisions = ref<Record<string, ExemptionDecision>>({})
+const selectedQualificationIds = ref<Record<string, string>>({})
 const eligibleQualificationIds = ref<Set<string>>(new Set())
 const eligibilityLoading = ref(false)
 const eligibilityLoadFailed = ref(false)
+const applicationConfirmTarget = ref<QualificationApplicationTarget | null>(null)
+const applicationLoadingUnitId = ref("")
+const resolvedBundleId = ref("")
+const credentialPaymentOpen = ref(false)
+const credentialPaymentSession = ref<{
+  orderId: string
+  qualificationId: string
+} | null>(null)
 
 useBodyScrollLock(() => props.open)
 
@@ -74,6 +95,31 @@ function qualificationIsEligible(qualification: ExemptionQualification) {
     || status === "CREDENTIAL_STATUS_ACTIVE"
     || eligibleQualificationIds.value.has(qualificationId(qualification)),
   )
+}
+
+function qualificationsForUnit(unit: StageExemptionUnit) {
+  return (unit.exemption_quals || []).filter((qualification) => qualificationId(qualification))
+}
+
+function selectedQualificationIdForUnit(unit: StageExemptionUnit) {
+  const unitId = firstString(unit.unit_id)
+  const qualifications = qualificationsForUnit(unit)
+  const selectedId = selectedQualificationIds.value[unitId]
+  if (selectedId && qualifications.some((qualification) => qualificationId(qualification) === selectedId)) {
+    return selectedId
+  }
+  const eligible = qualifications.find(qualificationIsEligible)
+  return qualificationId(eligible || qualifications[0] || "")
+}
+
+function selectedQualificationForUnit(unit: StageExemptionUnit) {
+  const selectedId = selectedQualificationIdForUnit(unit)
+  return qualificationsForUnit(unit).find((qualification) => qualificationId(qualification) === selectedId)
+}
+
+function selectedQualificationIsEligible(unit: StageExemptionUnit) {
+  const qualification = selectedQualificationForUnit(unit)
+  return Boolean(qualification && qualificationIsEligible(qualification))
 }
 
 const exemptionUnits = computed(() =>
@@ -112,16 +158,55 @@ function qualificationLabel(qualification: ExemptionQualification) {
 }
 
 function close() {
-  if (props.submitting) return
+  if (props.submitting || applicationLoadingUnitId.value) return
+  applicationConfirmTarget.value = null
   emit("update:open", false)
 }
 
 function setUnitDecision(unit: StageExemptionUnit, decision: ExemptionDecision) {
-  if (!unit.unit_id || (decision === "exempt" && !unitIsEligible(unit))) return
+  if (!unit.unit_id || (decision === "exempt" && !selectedQualificationIsEligible(unit))) return
   exemptionDecisions.value = {
     ...exemptionDecisions.value,
     [unit.unit_id]: decision,
   }
+}
+
+function selectQualification(unit: StageExemptionUnit, event: Event) {
+  const unitId = firstString(unit.unit_id)
+  const selectedId = String((event.target as HTMLSelectElement).value || "").trim()
+  if (!unitId || !selectedId) return
+  selectedQualificationIds.value = {
+    ...selectedQualificationIds.value,
+    [unitId]: selectedId,
+  }
+  if (exemptionDecisions.value[unitId] === "exempt" && !selectedQualificationIsEligible(unit)) {
+    const nextDecisions = { ...exemptionDecisions.value }
+    delete nextDecisions[unitId]
+    exemptionDecisions.value = nextDecisions
+  }
+}
+
+function handleExemptionAction(unit: StageExemptionUnit) {
+  if (selectedQualificationIsEligible(unit)) {
+    setUnitDecision(unit, "exempt")
+    return
+  }
+  const qualification = selectedQualificationForUnit(unit)
+  const unitId = firstString(unit.unit_id)
+  if (!unitId || !qualification) return
+  const selectedId = qualificationId(qualification)
+  if (!selectedId) return
+  applicationConfirmTarget.value = {
+    unitId,
+    unitName: unitLabel(unit),
+    qualificationId: selectedId,
+    qualificationName: qualificationLabel(qualification),
+  }
+}
+
+function closeApplicationConfirm() {
+  if (applicationLoadingUnitId.value) return
+  applicationConfirmTarget.value = null
 }
 
 function submit() {
@@ -137,6 +222,7 @@ function submit() {
 
 async function loadEligibility() {
   exemptionDecisions.value = {}
+  selectedQualificationIds.value = {}
   eligibleQualificationIds.value = new Set()
   eligibilityLoadFailed.value = false
 
@@ -170,6 +256,11 @@ async function loadEligibility() {
         .filter((unit) => unit.unit_id && unitIsEligible(unit))
         .map((unit) => [String(unit.unit_id), "exempt" as const]),
     )
+    selectedQualificationIds.value = Object.fromEntries(
+      exemptionUnits.value
+        .filter((unit) => unit.unit_id && qualificationsForUnit(unit).length > 0)
+        .map((unit) => [String(unit.unit_id), selectedQualificationIdForUnit(unit)]),
+    )
   } catch (error) {
     console.error("Failed to load stage exemption eligibility", error)
     eligibilityLoadFailed.value = true
@@ -178,12 +269,189 @@ async function loadEligibility() {
   }
 }
 
+function normalizedStatus(status: unknown) {
+  return String(status || "").trim().toUpperCase()
+}
+
+function applicationStatus(status: unknown) {
+  const enumName = statusEnumNameForStatus(CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, status as string)
+  return firstString(enumName, status).toUpperCase()
+}
+
+function applicationIsPendingUpload(status: unknown) {
+  return applicationStatus(status) === "APPLICATION_STATUS_PENDING_UPLOAD"
+}
+
+function applicationIsResubmit(status: unknown) {
+  const value = applicationStatus(status)
+  return value === "APPLICATION_STATUS_RESUBMIT" || value === "APPLICATION_STATUS_REUPLOAD"
+}
+
+function applicationIsPending(status: unknown) {
+  return applicationStatus(status) === "APPLICATION_STATUS_PENDING"
+}
+
+function applicationIsApproved(status: unknown) {
+  return applicationStatus(status) === "APPLICATION_STATUS_APPROVED"
+}
+
+function orderIsUploadReady(status: unknown) {
+  return normalizedStatus(status).includes("UPLOAD_READY")
+}
+
+function orderNeedsReviewFeePayment(status: unknown) {
+  return normalizedStatus(status).includes("WAIT_REVIEW_FEE_PAYMENT")
+}
+
+function orderIsUnderReview(status: unknown) {
+  return normalizedStatus(status).includes("UNDER_REVIEW")
+}
+
+function orderIsResolved(status: unknown) {
+  const value = normalizedStatus(status)
+  return value.includes("RESOLVED") || value.includes("APPROVED") || value.includes("COMPLETED")
+}
+
+function qualificationUploadPath(qualificationId: string) {
+  return `/credentials?qual_ulids=${encodeURIComponent(qualificationId)}`
+}
+
+function openQualificationUpload(qualificationId: string) {
+  emit("update:open", false)
+  void router.push(qualificationUploadPath(qualificationId))
+}
+
+async function latestCredentialApplication(qualificationId: string) {
+  const response = await apiClient(
+    `/api/credentials/applications?cred_def_ulid=${encodeURIComponent(qualificationId)}`,
+    { suppressErrorToast: true },
+  )
+  return (Array.isArray(response?.applications) ? response.applications : [])[0] || null
+}
+
+async function resolveBundleIdForPipeline() {
+  if (resolvedBundleId.value) return resolvedBundleId.value
+  const pipelineId = firstString(props.pipelineId)
+  if (!pipelineId) return ""
+  const response = await apiClient("/api/mall/bundles?page_size=100")
+  const bundle = (Array.isArray(response?.bundles) ? response.bundles : []).find(
+    (item: any) => firstString(item?.pipeline_id, item?.pipeline_cc_ulid) === pipelineId,
+  )
+  resolvedBundleId.value = firstString(bundle?.bundle_id, bundle?.bundle_ulid)
+  return resolvedBundleId.value
+}
+
+function isInProgressApplicationError(error: unknown) {
+  if (!(error instanceof ApiClientError)) return false
+  const message = firstString(error.rawMessage, error.errorCode, error.message).toLowerCase()
+  return error.status === 409 && (
+    message.includes("in-progress credential application")
+    || message.includes("进行中")
+    || message.includes("请先处理")
+  )
+}
+
+async function confirmQualificationApplication() {
+  const target = applicationConfirmTarget.value
+  const pipelineId = firstString(props.pipelineId)
+  if (!target || !pipelineId || applicationLoadingUnitId.value) return
+
+  applicationLoadingUnitId.value = target.unitId
+  try {
+    const existingApplication = await latestCredentialApplication(target.qualificationId)
+    if (applicationIsPendingUpload(existingApplication?.status) || applicationIsResubmit(existingApplication?.status)) {
+      toast.info(t.value.checkoutWizard.qualificationUploadReady)
+      applicationConfirmTarget.value = null
+      openQualificationUpload(target.qualificationId)
+      return
+    }
+    if (applicationIsPending(existingApplication?.status)) {
+      toast.info(t.value.checkoutWizard.qualificationUnderReview)
+      applicationConfirmTarget.value = null
+      return
+    }
+    if (applicationIsApproved(existingApplication?.status)) {
+      toast.success(t.value.checkoutWizard.qualificationAlreadyApproved)
+      applicationConfirmTarget.value = null
+      await loadEligibility()
+      return
+    }
+
+    const bundleId = await resolveBundleIdForPipeline()
+    if (!bundleId) {
+      toast.error(t.value.learning.finalQualificationBundleMissing)
+      return
+    }
+
+    let order
+    try {
+      order = await apiClient("/api/credentials/application-orders", {
+        method: "POST",
+        suppressErrorToast: true,
+        body: JSON.stringify({
+          pipeline_cc_ulid: pipelineId,
+          bundle_ulid: bundleId,
+          qual_ulids: [target.qualificationId],
+        }),
+      })
+    } catch (error) {
+      if (isInProgressApplicationError(error)) {
+        toast.info(t.value.checkoutWizard.qualificationUnderReview)
+        applicationConfirmTarget.value = null
+        return
+      }
+      throw error
+    }
+
+    const orderId = firstString(order?.application_order_ulid, order?.application_order_id)
+    const orderStatus = firstString(order?.order_status, order?.status)
+    applicationConfirmTarget.value = null
+    if (orderIsUploadReady(orderStatus)) {
+      toast.info(t.value.checkoutWizard.qualificationUploadReady)
+      openQualificationUpload(target.qualificationId)
+      return
+    }
+    if (orderNeedsReviewFeePayment(orderStatus) || order?.payment_key) {
+      if (!orderId) throw new Error(t.value.checkoutWizard.qualificationApplicationFailed)
+      credentialPaymentSession.value = {
+        orderId,
+        qualificationId: target.qualificationId,
+      }
+      emit("update:open", false)
+      credentialPaymentOpen.value = true
+      return
+    }
+    if (orderIsUnderReview(orderStatus)) {
+      toast.info(t.value.checkoutWizard.qualificationUnderReview)
+      return
+    }
+    if (orderIsResolved(orderStatus)) {
+      toast.success(t.value.checkoutWizard.qualificationAlreadyApproved)
+      await loadEligibility()
+      return
+    }
+    toast.info(t.value.checkoutWizard.qualificationApplicationCreated)
+  } catch (error: any) {
+    console.error(error)
+    toast.error(error?.message || t.value.checkoutWizard.qualificationApplicationFailed)
+  } finally {
+    applicationLoadingUnitId.value = ""
+  }
+}
+
 watch(
-  () => [props.open, props.stage?.stage_id, props.stage?.stage_cc_ulid],
+  () => [props.open, props.stage?.stage_id, props.stage?.stage_cc_ulid, props.pipelineId],
   ([open]) => {
     if (open) void loadEligibility()
   },
   { immediate: true },
+)
+
+watch(
+  () => props.pipelineId,
+  () => {
+    resolvedBundleId.value = ""
+  },
 )
 </script>
 
@@ -206,7 +474,7 @@ watch(
           type="button"
           class="rounded-xl p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
           :aria-label="t.paymentSession.close"
-          :disabled="submitting"
+          :disabled="submitting || Boolean(applicationLoadingUnitId)"
           @click="close"
         >
           <X class="h-5 w-5" />
@@ -269,15 +537,34 @@ watch(
                     {{ unitIsEligible(unit) ? t.learning.stageExemptionEligible : t.learning.stageExemptionUnavailable }}
                   </span>
                 </span>
-                <span class="mt-2 flex flex-wrap gap-1.5">
+                <span v-if="qualificationsForUnit(unit).length === 1" class="mt-2 flex flex-wrap gap-1.5">
                   <span
-                    v-for="qualification in unit.exemption_quals || []"
+                    v-for="qualification in qualificationsForUnit(unit)"
                     :key="qualificationId(qualification)"
                     class="rounded-full border border-slate-200 bg-white px-2 py-1 text-xs text-slate-500"
                   >
                     {{ qualificationLabel(qualification) }}
                   </span>
                 </span>
+                <label v-else-if="qualificationsForUnit(unit).length > 1" class="mt-3 block text-xs font-semibold text-slate-600">
+                  {{ t.checkoutWizard.exemptionQualificationLabel }}
+                  <select
+                    :value="selectedQualificationIdForUnit(unit)"
+                    :data-unit-id="unit.unit_id"
+                    data-testid="stage-exemption-qualification-select"
+                    class="mt-1 min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-normal text-slate-800"
+                    :disabled="Boolean(applicationLoadingUnitId)"
+                    @change="selectQualification(unit, $event)"
+                  >
+                    <option
+                      v-for="qualification in qualificationsForUnit(unit)"
+                      :key="qualificationId(qualification)"
+                      :value="qualificationId(qualification)"
+                    >
+                      {{ qualificationLabel(qualification) }}
+                    </option>
+                  </select>
+                </label>
               </span>
             </div>
             <div class="mt-4 grid gap-2 sm:grid-cols-2" role="group" :aria-label="t.learning.stageExemptionDecisionLabel">
@@ -285,15 +572,22 @@ watch(
                 type="button"
                 class="btn min-h-10 rounded-lg border px-3 text-sm"
                 :class="exemptionDecisions[String(unit.unit_id)] === 'exempt' ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-300 bg-white text-slate-700'"
-                :disabled="!unitIsEligible(unit)"
-                @click="setUnitDecision(unit, 'exempt')"
+                :data-unit-id="unit.unit_id"
+                data-testid="stage-exemption-apply"
+                :disabled="!selectedQualificationIdForUnit(unit) || Boolean(applicationLoadingUnitId)"
+                @click="handleExemptionAction(unit)"
               >
-                {{ t.learning.stageExemptionApply }}
+                <Loader2 v-if="applicationLoadingUnitId === String(unit.unit_id)" class="mr-2 h-4 w-4 animate-spin" />
+                {{ selectedQualificationIsEligible(unit)
+                  ? t.learning.stageExemptionApply
+                  : t.checkoutWizard.applyThisExemption
+                }}
               </button>
               <button
                 type="button"
                 class="btn min-h-10 rounded-lg border px-3 text-sm"
                 :class="exemptionDecisions[String(unit.unit_id)] === 'waive' ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300 bg-white text-slate-700'"
+                :disabled="Boolean(applicationLoadingUnitId)"
                 @click="setUnitDecision(unit, 'waive')"
               >
                 {{ t.learning.stageExemptionWaive }}
@@ -308,13 +602,13 @@ watch(
           {{ selectedCountText }}
         </span>
         <div class="flex flex-wrap justify-end gap-2">
-          <button type="button" class="btn btn-outline rounded-lg" :disabled="submitting" @click="close">
+          <button type="button" class="btn btn-outline rounded-lg" :disabled="submitting || Boolean(applicationLoadingUnitId)" @click="close">
             {{ t.common.cancel }}
           </button>
           <button
             type="button"
             class="btn btn-primary rounded-lg"
-            :disabled="eligibilityLoading || submitting || undecidedCount > 0"
+            :disabled="eligibilityLoading || submitting || Boolean(applicationLoadingUnitId) || undecidedCount > 0"
             @click="submit"
           >
             <Loader2 v-if="submitting" class="mr-2 h-4 w-4 animate-spin" />
@@ -327,4 +621,88 @@ watch(
       </div>
     </div>
   </div>
+
+  <div
+    v-if="applicationConfirmTarget"
+    class="app-safe-area-overlay fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
+  >
+    <section
+      data-testid="stage-exemption-application-confirm"
+      class="app-dialog-viewport flex max-h-[92vh] w-full max-w-xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="stage-exemption-application-confirm-title"
+    >
+      <header class="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-5">
+        <div class="flex min-w-0 items-start gap-3">
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700">
+            <CircleAlert class="h-5 w-5" />
+          </div>
+          <div>
+            <h2 id="stage-exemption-application-confirm-title" class="text-lg font-bold text-slate-950">
+              {{ t.checkoutWizard.qualificationOrderConfirmTitle }}
+            </h2>
+            <p class="mt-2 text-sm leading-6 text-slate-600">
+              {{ t.checkoutWizard.qualificationOrderConfirmDescription }}
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="rounded-xl p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+          :aria-label="t.paymentSession.close"
+          :disabled="Boolean(applicationLoadingUnitId)"
+          @click="closeApplicationConfirm"
+        >
+          <X class="h-5 w-5" />
+        </button>
+      </header>
+
+      <div class="space-y-4 overflow-y-auto px-6 py-5">
+        <div class="rounded-xl border border-slate-200 px-4 py-3">
+          <div class="font-semibold text-slate-950">{{ applicationConfirmTarget.unitName }}</div>
+          <div class="mt-1 text-sm text-slate-600">{{ applicationConfirmTarget.qualificationName }}</div>
+        </div>
+        <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
+          <p class="font-semibold">{{ t.checkoutWizard.qualificationOrderConfirmWarningTitle }}</p>
+          <p class="mt-1">{{ t.checkoutWizard.qualificationOrderConfirmWarning }}</p>
+          <p class="mt-1">{{ t.checkoutWizard.qualificationOrderConfirmNextStep }}</p>
+        </div>
+      </div>
+
+      <footer class="flex flex-wrap justify-end gap-2 border-t border-slate-100 px-6 py-4">
+        <button
+          type="button"
+          class="btn btn-outline rounded-lg"
+          :disabled="Boolean(applicationLoadingUnitId)"
+          @click="closeApplicationConfirm"
+        >
+          {{ t.common.cancel }}
+        </button>
+        <button
+          data-testid="stage-exemption-confirm-application"
+          type="button"
+          class="btn btn-primary rounded-lg"
+          :disabled="Boolean(applicationLoadingUnitId)"
+          @click="confirmQualificationApplication"
+        >
+          <Loader2 v-if="applicationLoadingUnitId" class="mr-2 h-4 w-4 animate-spin" />
+          {{ t.checkoutWizard.qualificationOrderConfirmAction }}
+        </button>
+      </footer>
+    </section>
+  </div>
+
+  <PaymentSessionDialog
+    v-if="credentialPaymentSession"
+    v-model:open="credentialPaymentOpen"
+    :title="t.checkoutWizard.qualificationPaymentTitle"
+    :subtitle="credentialPaymentSession.orderId"
+    biz-type="CREDENTIAL_APPLICATION"
+    :biz-ref-ulid="credentialPaymentSession.orderId"
+    :order-id="credentialPaymentSession.orderId"
+    source="credential_application"
+    return-path="/credentials"
+    :extra-return-params="{ qual_ulids: credentialPaymentSession.qualificationId }"
+  />
 </template>

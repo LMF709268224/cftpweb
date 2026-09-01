@@ -2539,6 +2539,7 @@ watch(selectedMaterial, () => {
       <StageExemptionDialog
         v-model:open="stageExemptionDialogOpen"
         :stage="stageExemptionStage"
+        :pipeline-id="pipelineId"
         :submitting="stageExemptionSubmitting"
         @submit="handleStageExemptionSubmit"
       />
