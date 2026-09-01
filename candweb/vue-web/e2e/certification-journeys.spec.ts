@@ -140,7 +140,9 @@ test("证书成功提示在名称前说明认证类型", async ({ page }) => {
         localStorage.setItem("app_lang", "en")
         window.dispatchEvent(new Event("lang_change"))
     })
-    await expect(page.getByText("You have successfully earned the following certification: CFtA Accreditation Track", { exact: true })).toBeVisible()
+    await expect(page.getByText("You have successfully earned the following certification:", { exact: true })).toBeVisible()
+    const certificateDetails = page.getByRole("heading", { name: "Certificate Details", exact: true }).locator("..")
+    await expect(certificateDetails.getByText("CFtA Accreditation Track", { exact: true })).toBeVisible()
 })
 
 test("商城和结账页展示并拦截层级互斥资格", async ({ page }) => {
@@ -1441,13 +1443,110 @@ test("分阶段购买先完成免考声明再创建阶段订单", async ({ page 
         pipeline_ulid: pipelineInstanceID,
         stage_ulid: stageInstanceID,
         selected_exemptions_json: JSON.stringify({
-            stages: [{
-                stage_cc_ulid: stageID,
-                exempted_unit_cc_ulids: [exemptedUnitID],
-                waived_unit_cc_ulids: [waivedUnitID],
-            }],
+            stage_cc_ulid: stageID,
+            exempted_unit_cc_ulids: [exemptedUnitID],
+            waived_unit_cc_ulids: [waivedUnitID],
         }),
     })
+})
+
+test("分阶段购买全部放弃免考后进入阶段付款", async ({ page }) => {
+    const stageID = "stage-by-stage-all-waived"
+    const stageInstanceID = "stage-instance-by-stage-all-waived"
+    const firstUnitID = "unit-stage-waived-first"
+    const secondUnitID = "unit-stage-waived-second"
+    const stageOrderID = "stage-order-all-waived"
+    let stageOrderBody: any
+    let paymentInitiateBody: any
+
+    const runtime = {
+        instance: { pipeline_ulid: pipelineInstanceID },
+        config: {
+            pipeline_cc_ulid: pipelineID,
+            name: "By-stage Full Price Certification",
+            stages: [{
+                stage_id: stageID,
+                name: "By-stage Full Price Stage",
+                sort_order: 1,
+                runtime_status: "STAGE_STATUS_WAIT_CANDIDATE",
+                units: [
+                    {
+                        unit_id: firstUnitID,
+                        name: "First Full Price Course",
+                        allow_exemption: true,
+                        exemption_quals: [{
+                            qual_id: "qualification-stage-waived-first",
+                            name: "Unavailable First Qualification",
+                        }],
+                    },
+                    {
+                        unit_id: secondUnitID,
+                        name: "Second Full Price Course",
+                        allow_exemption: true,
+                        exemption_quals: [{
+                            qual_id: "qualification-stage-waived-second",
+                            name: "Unavailable Second Qualification",
+                        }],
+                    },
+                ],
+            }],
+        },
+        next_step: {
+            action: "wait_candidate",
+            stage_id: stageInstanceID,
+            stage_cc_ulid: stageID,
+            status: "STAGE_STATUS_WAIT_CANDIDATE",
+        },
+        pipeline_status: "PIPELINE_STATUS_LEARNING",
+        current_stage_name: "By-stage Full Price Stage",
+        current_stage_status: "STAGE_STATUS_WAIT_CANDIDATE",
+    }
+
+    await installStripeCheckoutMock(page)
+    await installCandidateApiMocks(page, ({ pathname, method, body }) => {
+        if (pathname === `/api/mall/pipelines/${pipelineID}/runtime`) return { data: runtime }
+        if (pathname === "/api/credentials/qualifications") return { data: { qualifications: [] } }
+        if (pathname === `/api/mall/pipelines/${pipelineID}/stages/${stageID}/purchase` && method === "POST") {
+            stageOrderBody = body
+            return {
+                data: {
+                    stage_order_ulid: stageOrderID,
+                    order_status: "WAIT_STAGE_PAYMENT",
+                },
+            }
+        }
+        if (pathname === "/api/mall/payments/initiate" && method === "POST") {
+            paymentInitiateBody = body
+            return { data: { payment_key: "cs_test_stage_all_waived" } }
+        }
+        return undefined
+    })
+
+    await page.goto(`/certifications/${pipelineID}`, { waitUntil: "domcontentloaded" })
+    await page.getByRole("button", { name: "解锁当前阶段", exact: true }).click()
+
+    const waiveButtons = page.getByRole("button", { name: "放弃免考，原价购买", exact: true })
+    await expect(waiveButtons).toHaveCount(2)
+    await waiveButtons.first().click()
+    await waiveButtons.last().click()
+    await page.getByRole("button", { name: "确认并继续", exact: true }).click()
+
+    await expect.poll(() => stageOrderBody).toEqual({
+        pipeline_ulid: pipelineInstanceID,
+        stage_ulid: stageInstanceID,
+        selected_exemptions_json: JSON.stringify({
+            stage_cc_ulid: stageID,
+            exempted_unit_cc_ulids: [],
+            waived_unit_cc_ulids: [firstUnitID, secondUnitID],
+        }),
+    })
+    await expect.poll(() => paymentInitiateBody).toMatchObject({
+        biz_type: "STAGE_PAYMENT",
+        biz_ref_ulid: stageOrderID,
+    })
+    expect(paymentInitiateBody.success_url).toContain("payment_status=success")
+    expect(paymentInitiateBody.cancel_url).toContain("payment_status=cancelled")
+    await expect(page.getByTestId("fake-stripe-complete")).toBeVisible()
 })
 
 test("课程视频预览通过签名地址全屏播放", async ({ page }) => {

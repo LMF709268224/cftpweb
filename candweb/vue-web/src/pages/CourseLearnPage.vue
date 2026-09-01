@@ -1269,15 +1269,10 @@ function stageExemptionSelectionJSON(
   exemptedUnitIds: string[] = [],
   waivedUnitIds: string[] = [],
 ) {
-  if (exemptedUnitIds.length === 0 && waivedUnitIds.length === 0) {
-    return JSON.stringify({ stages: [] })
-  }
   return JSON.stringify({
-    stages: [{
-      stage_cc_ulid: stageCcUlid,
-      exempted_unit_cc_ulids: exemptedUnitIds,
-      waived_unit_cc_ulids: waivedUnitIds,
-    }],
+    stage_cc_ulid: stageCcUlid,
+    exempted_unit_cc_ulids: exemptedUnitIds,
+    waived_unit_cc_ulids: waivedUnitIds,
   })
 }
 
