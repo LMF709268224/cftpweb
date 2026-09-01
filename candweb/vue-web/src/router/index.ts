@@ -5,14 +5,6 @@ import { isAuthenticated } from "@/lib/authStorage"
 import { startGfiLogin } from "@/lib/gfiLogin"
 import { useUser } from "@/lib/user"
 
-const GfiLandingPage = () => import("@/pages/GfiLandingPage.vue")
-const GfiAboutPages = () => import("@/pages/GfiAboutPages.vue")
-const GfiOfficialAboutPage = () => import("@/pages/GfiOfficialAboutPage.vue")
-const GfiCertificationPage = () => import("@/pages/GfiCertificationPage.vue")
-const GfiEcosystemPage = () => import("@/pages/GfiEcosystemPage.vue")
-const GfiPublicationsPage = () => import("@/pages/GfiPublicationsPage.vue")
-const GfiEventsPage = () => import("@/pages/GfiEventsPage.vue")
-const GfiContentPage = () => import("@/pages/GfiContentPage.vue")
 const PublicMarketplacePage = () => import("@/pages/PublicMarketplacePage.vue")
 const CallbackPage = () => import("@/pages/CallbackPage.vue")
 const HomePage = () => import("@/pages/HomePage.vue")
@@ -119,33 +111,8 @@ export const router = createRouter({
   },
   routes: [
     { path: "/", component: PublicMarketplacePage, meta: { titleKey: "marketplace" } },
-    { path: "/gfi", component: GfiLandingPage, meta: { titleKey: "gfiLanding" } },
-    { path: "/gfi/about", component: GfiAboutPages, meta: { titleKey: "gfiLanding" } },
-    { path: "/gfi/about/board-of-directors", component: GfiOfficialAboutPage, meta: { titleKey: "gfiLanding" } },
-    { path: "/gfi/about/team", component: GfiOfficialAboutPage, meta: { titleKey: "gfiLanding" } },
-    { path: "/gfi/subcommittees", component: GfiOfficialAboutPage, meta: { titleKey: "gfiLanding" } },
-    { path: "/gfi/industry-fellow", component: GfiOfficialAboutPage, meta: { titleKey: "gfiLanding" } },
-    { path: "/gfi/youth-wing", component: GfiOfficialAboutPage, meta: { titleKey: "gfiLanding" } },
-    { path: "/gfi/career", component: GfiOfficialAboutPage, meta: { titleKey: "gfiLanding" } },
-    { path: "/gfi/contact", component: GfiOfficialAboutPage, meta: { titleKey: "gfiLanding" } },
-    { path: "/gfi/certifications", component: GfiCertificationPage, meta: { titleKey: "gfiLanding" } },
-    { path: "/gfi/certifications/pathway", component: GfiCertificationPage, meta: { titleKey: "gfiLanding" } },
-    { path: "/gfi/programmes/cfta", component: GfiCertificationPage, meta: { titleKey: "gfiLanding" } },
-    { path: "/gfi/programmes/cftp", component: GfiCertificationPage, meta: { titleKey: "gfiLanding" } },
-    { path: "/gfi/programmes", component: GfiEcosystemPage, meta: { titleKey: "gfiLanding" } },
-    { path: "/gfi/partnerships", component: GfiEcosystemPage, meta: { titleKey: "gfiLanding" } },
-    { path: "/gfi/membership/benefits", component: GfiEcosystemPage, meta: { titleKey: "gfiLanding" } },
-    { path: "/gfi/membership/corporate", component: GfiEcosystemPage, meta: { titleKey: "gfiLanding" } },
-    { path: "/gfi/publications/reports", component: GfiPublicationsPage, meta: { titleKey: "gfiLanding" } },
-    { path: "/gfi/publications/insights", component: GfiPublicationsPage, meta: { titleKey: "gfiLanding" } },
-    { path: "/gfi/publications/news", component: GfiPublicationsPage, meta: { titleKey: "gfiLanding" } },
-    { path: "/gfi/publications/journals", component: GfiPublicationsPage, meta: { titleKey: "gfiLanding" } },
-    { path: "/gfi/events/all-events", component: GfiEventsPage, meta: { titleKey: "gfiLanding" } },
-    { path: "/gfi/events/webinar-recordings", component: GfiEventsPage, meta: { titleKey: "gfiLanding" } },
-    { path: "/gfi/events/conferences", component: GfiEventsPage, meta: { titleKey: "gfiLanding" } },
-    { path: "/gfi/:pathMatch(.*)+", component: GfiContentPage, meta: { titleKey: "gfiLanding" } },
     { path: "/marketplace", component: PublicMarketplacePage, meta: { titleKey: "marketplace" } },
-    { path: "/login", component: GfiLandingPage, meta: { titleKey: "login" } },
+    { path: "/login", component: PublicMarketplacePage, meta: { titleKey: "login" } },
     { path: "/callback", component: CallbackPage, meta: { titleKey: "callback" } },
     { path: "/dashboard", component: HomePage, meta: { titleKey: "home", requiresAuth: true } },
     { path: "/certifications", component: CoursesPage, meta: { titleKey: "marketplace" } },
