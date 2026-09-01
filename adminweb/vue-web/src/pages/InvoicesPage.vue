@@ -228,9 +228,9 @@ onMounted(() => load(1))
             <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.createdAt }}</span>
             <span class="text-right text-sm font-semibold text-slate-500">{{ formatDate(String(invoice.created_at || "")) }}</span>
           </div>
-          <div class="flex flex-wrap items-center justify-end gap-3 text-right">
+          <div class="grid grid-cols-2 gap-3 text-right md:flex md:flex-wrap md:items-center md:justify-end">
             <button
-              class="inline-flex items-center justify-center gap-1.5 text-sm font-bold text-blue-700 transition hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+              class="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 transition hover:underline disabled:cursor-not-allowed disabled:opacity-50 md:w-auto md:border-0 md:bg-transparent md:px-0 md:py-0"
               type="button"
               :disabled="!!openingInvoiceOrderID"
               @click.stop="viewInvoice(invoice)"
@@ -239,7 +239,7 @@ onMounted(() => load(1))
               {{ copy.viewInvoice }}
             </button>
             <button
-              class="inline-flex items-center justify-center text-sm font-bold text-blue-700 transition hover:underline"
+              class="inline-flex w-full items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 transition hover:underline md:w-auto md:border-0 md:bg-transparent md:px-0 md:py-0"
               type="button"
               @click.stop="openInvoice(invoice)"
             >
