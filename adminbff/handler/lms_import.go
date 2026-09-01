@@ -316,15 +316,6 @@ func requireValidJSONString(w http.ResponseWriter, value string, name string) bo
 	return true
 }
 
-func validateImportCourseJSON(w http.ResponseWriter, value string) bool {
-	var course importCourseJSON
-	if err := json.Unmarshal([]byte(value), &course); err != nil {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "course_json is invalid")
-		return false
-	}
-	return validateImportCoursePackage(w, course)
-}
-
 func validateImportCoursePackage(w http.ResponseWriter, course importCourseJSON) bool {
 	if strings.TrimSpace(course.Title) == "" {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "course_json.title is required")

@@ -9,7 +9,6 @@ import (
 	"time"
 
 	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
-	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
 	gmidpb "github.com/afnandelfin620-star/cftptest/cftp/gmid"
 	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
 	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
@@ -76,23 +75,6 @@ func (s *adminReadProgClient) ListPipelines(_ context.Context, request *gprogpb.
 		CandidateUlid:    "candidate-regression",
 		CurrentStageUlid: "stage-regression",
 		Status:           gprogpb.PipelineStatus_PIPELINE_STATUS_RUNNING,
-	}}}, nil
-}
-
-type adminReadMallClient struct {
-	mallpb.MallServiceClient
-	request *mallpb.ListOrdersRequest
-}
-
-func (s *adminReadMallClient) ListOrders(_ context.Context, request *mallpb.ListOrdersRequest, _ ...grpc.CallOption) (*mallpb.ListOrdersResponse, error) {
-	s.request = request
-	return &mallpb.ListOrdersResponse{Items: []*mallpb.OrderSummary{{
-		OrderUlid:     "order-regression",
-		CandidateUlid: "candidate-regression",
-		CurrencyCode:  "USD",
-		AmountMinor:   12900,
-		PaymentStatus: "PAID",
-		CreatedAt:     time.Now().Format(time.RFC3339),
 	}}}, nil
 }
 

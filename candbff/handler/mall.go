@@ -1299,10 +1299,27 @@ func (h *Handler) bundlePurchaseState(ctx context.Context, state *bundleEnrichme
 		out.ActiveOrder = activeOrder
 		out.PaymentPreview = preview
 	}
-	if pipelineID != "" && (eligibility.CanPurchase || out.ActiveOrder != nil) {
+	if pipelineID != "" && (eligibilityAllowsExemptionManagement(eligibility) || out.ActiveOrder != nil) {
 		out.ExemptionOptions = h.pipelineExemptionOptions(ctx, state.candidateID, pipelineID, state.locale)
 	}
 	return out
+}
+
+func eligibilityAllowsExemptionManagement(eligibility bundleEligibilitySummary) bool {
+	if eligibility.CanPurchase {
+		return true
+	}
+	if len(eligibility.Blockers) == 0 {
+		return false
+	}
+	for _, blocker := range eligibility.Blockers {
+		switch strings.ToUpper(strings.TrimSpace(blocker.BlockerType)) {
+		case "EXEMPTION_DOCUMENTS_PENDING_UPLOAD", "EXEMPTION_UNDER_REVIEW":
+		default:
+			return false
+		}
+	}
+	return true
 }
 
 func (h *Handler) enrichBundle(ctx context.Context, b *mallpb.BundleInfo, state *bundleEnrichmentState) map[string]interface{} {

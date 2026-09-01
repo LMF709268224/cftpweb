@@ -38,7 +38,10 @@ func TestCandidateProfileRefreshBuildsReusableUserSnapshot(t *testing.T) {
 	if !ok || len(users) != 1 || users[0].Id != "casdoor-user-1" {
 		t.Fatalf("cached users = %+v, ready=%v", users, ok)
 	}
-	users = append(users, &casdoorsdk.User{Id: "caller-only"})
+	mutatedUsers := append(users, &casdoorsdk.User{Id: "caller-only"})
+	if len(mutatedUsers) != 2 {
+		t.Fatalf("caller mutation length = %d, want 2", len(mutatedUsers))
+	}
 	secondSnapshot, _ := cache.Users()
 	if len(secondSnapshot) != 1 {
 		t.Fatalf("caller mutated cached user slice: %+v", secondSnapshot)

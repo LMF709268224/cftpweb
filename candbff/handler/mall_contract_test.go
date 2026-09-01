@@ -37,6 +37,32 @@ func TestEligibilityFromBundlePreservesConflictBlockers(t *testing.T) {
 	}
 }
 
+func TestEligibilityAllowsExemptionManagementWhileAnotherQualificationIsPending(t *testing.T) {
+	for _, blockerType := range []string{
+		"EXEMPTION_DOCUMENTS_PENDING_UPLOAD",
+		"EXEMPTION_UNDER_REVIEW",
+	} {
+		eligibility := bundleEligibilitySummary{
+			Blockers: []bundleEligibilityBlocker{{BlockerType: blockerType}},
+		}
+		if !eligibilityAllowsExemptionManagement(eligibility) {
+			t.Fatalf("exemption management was blocked by %s", blockerType)
+		}
+	}
+}
+
+func TestEligibilityDoesNotBypassPurchaseBlockersForExemptionManagement(t *testing.T) {
+	eligibility := bundleEligibilitySummary{
+		Blockers: []bundleEligibilityBlocker{
+			{BlockerType: "EXEMPTION_DOCUMENTS_PENDING_UPLOAD"},
+			{BlockerType: "CONFLICT_PIPELINE_IN_PROGRESS"},
+		},
+	}
+	if eligibilityAllowsExemptionManagement(eligibility) {
+		t.Fatal("conflicting pipeline blocker was bypassed")
+	}
+}
+
 func TestToPipelineConfigSeparatesFinalAuditRequirementsAndAwards(t *testing.T) {
 	pipeline := &gccpb.PipelineConfig{
 		PipelineUlid: "pipeline-1",

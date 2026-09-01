@@ -22,9 +22,10 @@ type credentialClientStub struct {
 
 type credentialApplicationOrderMallStub struct {
 	mallpb.MallServiceClient
-	listRequests   []*mallpb.ListCredentialApplicationOrdersRequest
-	latestSummary  *mallpb.CredentialApplicationOrderSummary
-	detailResponse *mallpb.GetCredentialApplicationOrderDetailResponse
+	listRequests    []*mallpb.ListCredentialApplicationOrdersRequest
+	detailRequests  []*mallpb.GetCredentialApplicationOrderDetailRequest
+	listResponses   map[string]*mallpb.ListCredentialApplicationOrdersResponse
+	detailResponses map[string]*mallpb.GetCredentialApplicationOrderDetailResponse
 }
 
 func (s *credentialApplicationOrderMallStub) ListCredentialApplicationOrders(
@@ -33,18 +34,19 @@ func (s *credentialApplicationOrderMallStub) ListCredentialApplicationOrders(
 	_ ...grpc.CallOption,
 ) (*mallpb.ListCredentialApplicationOrdersResponse, error) {
 	s.listRequests = append(s.listRequests, req)
-	if s.latestSummary != nil {
-		return &mallpb.ListCredentialApplicationOrdersResponse{Items: []*mallpb.CredentialApplicationOrderSummary{s.latestSummary}}, nil
+	if response := s.listResponses[req.GetCursor()]; response != nil {
+		return response, nil
 	}
 	return &mallpb.ListCredentialApplicationOrdersResponse{}, nil
 }
 
 func (s *credentialApplicationOrderMallStub) GetCredentialApplicationOrderDetail(
 	_ context.Context,
-	_ *mallpb.GetCredentialApplicationOrderDetailRequest,
+	req *mallpb.GetCredentialApplicationOrderDetailRequest,
 	_ ...grpc.CallOption,
 ) (*mallpb.GetCredentialApplicationOrderDetailResponse, error) {
-	return s.detailResponse, nil
+	s.detailRequests = append(s.detailRequests, req)
+	return s.detailResponses[req.GetApplicationOrderUlid()], nil
 }
 
 func (s *credentialClientStub) ListCandidateApplications(
@@ -298,59 +300,94 @@ func TestLatestCredentialApplicationReturnsNilWhenNoApplicationExists(t *testing
 	}
 }
 
-func TestGetLatestCredentialApplicationOrderReturnsSelectedQualifications(t *testing.T) {
+func TestListCredentialApplicationOrdersReturnsSelectedQualifications(t *testing.T) {
 	const (
 		candidateID = "01J00000000000000000000000"
-		orderID     = "01J00000000000000000000001"
-		qualID      = "01J00000000000000000000002"
+		firstOrder  = "01J00000000000000000000001"
+		firstQual   = "01J00000000000000000000002"
+		secondOrder = "01J00000000000000000000003"
+		secondQual  = "01J00000000000000000000004"
 	)
-	summary := &mallpb.CredentialApplicationOrderSummary{
-		ApplicationOrderUlid: orderID,
+	firstSummary := &mallpb.CredentialApplicationOrderSummary{
+		ApplicationOrderUlid: firstOrder,
 		CandidateUlid:        candidateID,
 		OrderStatus:          "UPLOAD_READY",
 		CreatedAt:            "2026-08-29T10:00:00Z",
 		PayOrderUlid:         "pay-order-1",
 	}
+	secondSummary := &mallpb.CredentialApplicationOrderSummary{
+		ApplicationOrderUlid: secondOrder,
+		CandidateUlid:        candidateID,
+		OrderStatus:          "UNDER_REVIEW",
+		CreatedAt:            "2026-08-28T10:00:00Z",
+		PayOrderUlid:         "pay-order-2",
+	}
 	client := &credentialApplicationOrderMallStub{
-		latestSummary: summary,
-		detailResponse: &mallpb.GetCredentialApplicationOrderDetailResponse{
-			Found: true,
-			Detail: &mallpb.CredentialApplicationOrderDetail{
-				Summary:              summary,
-				ApplicationItemsJson: `[{"qual_id":"` + qualID + `","item_status":"PENDING","qual_name_hint":"Finance exemption"}]`,
+		listResponses: map[string]*mallpb.ListCredentialApplicationOrdersResponse{
+			"": {
+				Items:      []*mallpb.CredentialApplicationOrderSummary{firstSummary},
+				NextCursor: "next-page",
+				HasMore:    true,
+			},
+			"next-page": {Items: []*mallpb.CredentialApplicationOrderSummary{secondSummary}},
+		},
+		detailResponses: map[string]*mallpb.GetCredentialApplicationOrderDetailResponse{
+			firstOrder: {
+				Found: true,
+				Detail: &mallpb.CredentialApplicationOrderDetail{
+					Summary:              firstSummary,
+					ApplicationItemsJson: `[{"qual_id":"` + firstQual + `","item_status":"PENDING","qual_name_hint":"Finance exemption"}]`,
+				},
+			},
+			secondOrder: {
+				Found: true,
+				Detail: &mallpb.CredentialApplicationOrderDetail{
+					Summary:              secondSummary,
+					ApplicationItemsJson: `[{"qual_id":"` + secondQual + `","item_status":"SUBMITTED","qual_name_hint":"Fintech exemption"}]`,
+				},
 			},
 		},
 	}
 	recorder := httptest.NewRecorder()
-	request := newCandidateHandlerRequest(http.MethodGet, "/api/credentials/application-orders/latest", "", candidateID, nil)
+	request := newCandidateHandlerRequest(http.MethodGet, "/api/credentials/application-orders", "", candidateID, nil)
 
-	(&Handler{Mall: client}).GetLatestCredentialApplicationOrder(recorder, request)
+	(&Handler{Mall: client}).ListCredentialApplicationOrdersForCandidate(recorder, request)
 
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("status = %d, want %d; body=%s", recorder.Code, http.StatusOK, recorder.Body.String())
 	}
 	var payload struct {
 		Data struct {
-			Found       bool   `json:"found"`
-			OrderStatus string `json:"order_status"`
-			Items       []struct {
-				QualID string `json:"qual_id"`
-			} `json:"items"`
+			Orders []struct {
+				OrderStatus string `json:"order_status"`
+				Items       []struct {
+					QualID string `json:"qual_id"`
+				} `json:"items"`
+			} `json:"orders"`
 		} `json:"data"`
 	}
 	if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
 		t.Fatalf("decode response: %v", err)
 	}
-	if !payload.Data.Found || payload.Data.OrderStatus != "UPLOAD_READY" || len(payload.Data.Items) != 1 || payload.Data.Items[0].QualID != qualID {
+	if len(payload.Data.Orders) != 2 ||
+		payload.Data.Orders[0].OrderStatus != "UPLOAD_READY" || payload.Data.Orders[0].Items[0].QualID != firstQual ||
+		payload.Data.Orders[1].OrderStatus != "UNDER_REVIEW" || payload.Data.Orders[1].Items[0].QualID != secondQual {
 		t.Fatalf("data = %#v", payload.Data)
 	}
-	if len(client.listRequests) != 1 {
-		t.Fatalf("list request count = %d, want 1", len(client.listRequests))
+	if len(client.listRequests) != 2 {
+		t.Fatalf("list request count = %d, want 2", len(client.listRequests))
 	}
-	for _, req := range client.listRequests {
-		if req.GetFilters().GetCandidateUlid() != candidateID || req.GetFilters().GetOrderStatus() != "" || req.GetPageSize() != 1 || req.GetSortOrder() != mallpb.SortOrder_SORT_ORDER_DESC {
+	for index, req := range client.listRequests {
+		if req.GetFilters().GetCandidateUlid() != candidateID || req.GetFilters().GetOrderStatus() != "" || req.GetPageSize() != 100 || req.GetSortOrder() != mallpb.SortOrder_SORT_ORDER_DESC {
 			t.Fatalf("unexpected list request: %#v", req)
 		}
+		wantCursor := []string{"", "next-page"}[index]
+		if req.GetCursor() != wantCursor {
+			t.Fatalf("list request cursor = %q, want %q", req.GetCursor(), wantCursor)
+		}
+	}
+	if len(client.detailRequests) != 2 {
+		t.Fatalf("detail request count = %d, want 2", len(client.detailRequests))
 	}
 }
 
@@ -375,6 +412,15 @@ func TestCredentialHandlersRejectInvalidRequestsBeforeCallingServices(t *testing
 			method: http.MethodPost,
 			target: "/api/credentials/application-orders",
 			body:   `{}`,
+			handle: func(h *Handler, w http.ResponseWriter, r *http.Request) {
+				h.CreateCredentialApplicationOrder(w, r)
+			},
+		},
+		{
+			name:   "application order accepts exactly one qualification",
+			method: http.MethodPost,
+			target: "/api/credentials/application-orders",
+			body:   `{"pipeline_cc_ulid":"pipeline-1","bundle_ulid":"bundle-1","qual_ulids":["qualification-1","qualification-2"]}`,
 			handle: func(h *Handler, w http.ResponseWriter, r *http.Request) {
 				h.CreateCredentialApplicationOrder(w, r)
 			},

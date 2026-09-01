@@ -9,6 +9,8 @@ import (
 
 	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
+	"google.golang.org/grpc/codes"
+	gstatus "google.golang.org/grpc/status"
 )
 
 // ListCredentialDefinitions GET /api/credentials/definitions
@@ -180,6 +182,10 @@ func (h *Handler) CreateCredentialApplicationOrder(w http.ResponseWriter, r *htt
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "field \"qual_ulids\" is required but was empty")
 		return
 	}
+	if len(body.QualUlids) != 1 {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "field \"qual_ulids\" must contain exactly one qualification")
+		return
+	}
 
 	res, err := h.Mall.CreateCredentialApplicationOrder(r.Context(), &mallpb.CreateCredentialApplicationOrderRequest{
 		CandidateUlid:  candidateID,
@@ -201,66 +207,78 @@ type credentialApplicationOrderItem struct {
 	QualNameHint   string `json:"qual_name_hint"`
 }
 
-// GetLatestCredentialApplicationOrder GET /api/credentials/application-orders/latest
-func (h *Handler) GetLatestCredentialApplicationOrder(w http.ResponseWriter, r *http.Request) {
+// ListCredentialApplicationOrdersForCandidate GET /api/credentials/application-orders
+func (h *Handler) ListCredentialApplicationOrdersForCandidate(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
 
-	list, err := h.Mall.ListCredentialApplicationOrders(r.Context(), &mallpb.ListCredentialApplicationOrdersRequest{
-		Filters: &mallpb.CredentialApplicationOrderFilters{
-			CandidateUlid: candidateID,
-		},
-		PageSize:  1,
-		SortOrder: mallpb.SortOrder_SORT_ORDER_DESC,
-	})
-	if err != nil {
-		HandleGrpcError(w, err)
-		return
-	}
-
-	if len(list.GetItems()) == 0 || list.GetItems()[0] == nil {
-		WriteJSON(w, http.StatusOK, map[string]interface{}{
-			"found": false,
-			"items": []credentialApplicationOrderItem{},
+	summaries := make([]*mallpb.CredentialApplicationOrderSummary, 0)
+	cursor := ""
+	guard := newCursorScanGuard()
+	for {
+		list, err := h.Mall.ListCredentialApplicationOrders(r.Context(), &mallpb.ListCredentialApplicationOrdersRequest{
+			Filters: &mallpb.CredentialApplicationOrderFilters{
+				CandidateUlid: candidateID,
+			},
+			Cursor:    cursor,
+			PageSize:  100,
+			SortOrder: mallpb.SortOrder_SORT_ORDER_DESC,
 		})
-		return
-	}
-	latest := list.GetItems()[0]
-
-	res, err := h.Mall.GetCredentialApplicationOrderDetail(r.Context(), &mallpb.GetCredentialApplicationOrderDetailRequest{
-		ApplicationOrderUlid: latest.GetApplicationOrderUlid(),
-	})
-	if err != nil {
-		HandleGrpcError(w, err)
-		return
-	}
-	detail := res.GetDetail()
-	if !res.GetFound() || detail == nil || detail.GetSummary() == nil || detail.GetSummary().GetCandidateUlid() != candidateID {
-		WriteJSON(w, http.StatusOK, map[string]interface{}{
-			"found": false,
-			"items": []credentialApplicationOrderItem{},
-		})
-		return
-	}
-
-	items := make([]credentialApplicationOrderItem, 0)
-	if raw := strings.TrimSpace(detail.GetApplicationItemsJson()); raw != "" {
-		if err := json.Unmarshal([]byte(raw), &items); err != nil {
-			WriteError(w, http.StatusBadGateway, ErrServiceUnavailable, "Invalid credential application order items returned by GMALL")
+		if err != nil {
+			HandleGrpcError(w, err)
 			return
 		}
+		summaries = append(summaries, list.GetItems()...)
+
+		nextCursor, done, guardErr := guard.next(cursor, list.GetHasMore(), list.GetNextCursor())
+		if guardErr != nil {
+			HandleGrpcError(w, gstatus.Error(codes.Internal, guardErr.Error()))
+			return
+		}
+		if done {
+			break
+		}
+		cursor = nextCursor
 	}
 
-	summary := detail.GetSummary()
-	WriteJSON(w, http.StatusOK, map[string]interface{}{
-		"found":                  true,
-		"application_order_ulid": summary.GetApplicationOrderUlid(),
-		"order_status":           summary.GetOrderStatus(),
-		"pay_order_ulid":         firstNonEmpty(detail.GetPayOrderUlid(), summary.GetPayOrderUlid()),
-		"created_at":             summary.GetCreatedAt(),
-		"status_at":              detail.GetStatusAt(),
-		"updated_at":             detail.GetUpdatedAt(),
-		"items":                  items,
-	})
+	orders := make([]map[string]interface{}, 0, len(summaries))
+	for _, orderSummary := range summaries {
+		if orderSummary == nil || strings.TrimSpace(orderSummary.GetApplicationOrderUlid()) == "" {
+			continue
+		}
+
+		res, err := h.Mall.GetCredentialApplicationOrderDetail(r.Context(), &mallpb.GetCredentialApplicationOrderDetailRequest{
+			ApplicationOrderUlid: orderSummary.GetApplicationOrderUlid(),
+		})
+		if err != nil {
+			HandleGrpcError(w, err)
+			return
+		}
+		detail := res.GetDetail()
+		if !res.GetFound() || detail == nil || detail.GetSummary() == nil || detail.GetSummary().GetCandidateUlid() != candidateID {
+			continue
+		}
+
+		items := make([]credentialApplicationOrderItem, 0)
+		if raw := strings.TrimSpace(detail.GetApplicationItemsJson()); raw != "" {
+			if err := json.Unmarshal([]byte(raw), &items); err != nil {
+				WriteError(w, http.StatusBadGateway, ErrServiceUnavailable, "Invalid credential application order items returned by GMALL")
+				return
+			}
+		}
+
+		summary := detail.GetSummary()
+		orders = append(orders, map[string]interface{}{
+			"application_order_ulid": summary.GetApplicationOrderUlid(),
+			"order_status":           summary.GetOrderStatus(),
+			"pay_order_ulid":         firstNonEmpty(detail.GetPayOrderUlid(), summary.GetPayOrderUlid()),
+			"created_at":             summary.GetCreatedAt(),
+			"status_at":              detail.GetStatusAt(),
+			"updated_at":             detail.GetUpdatedAt(),
+			"items":                  items,
+		})
+	}
+
+	WriteJSON(w, http.StatusOK, map[string]interface{}{"orders": orders})
 }
 
 // ListCandidateApplications GET /api/credentials/applications

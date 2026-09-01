@@ -88,6 +88,37 @@ const resolvedStatusLabel = computed(() =>
 )
 const purchasedTarget = computed(() => isPipelineProduct.value ? `/certifications/${encodeURIComponent(props.pipelineId || props.id)}` : "/membership")
 
+function exemptionQualifications(unit: any) {
+  return (Array.isArray(unit?.exemption_quals) ? unit.exemption_quals : [])
+    .map((qualification: any) => typeof qualification === "string"
+      ? qualification.trim()
+      : String(qualification?.qual_id || qualification?.qual_ulid || qualification?.cred_def_ulid || "").trim())
+    .filter(Boolean)
+}
+
+const hasAdditionalExemptionOption = computed(() => {
+  if (!credentialCenterBlocker.value || hardBlockers.value.length > 0) return false
+  const blockedUnitIds = new Set(
+    credentialCenterBlockers.value
+      .flatMap((blocker) => blocker.details || [])
+      .map((detail) => String(detail || "").trim())
+      .filter(Boolean),
+  )
+  if (blockedUnitIds.size === 0) return false
+
+  const optionStages = freshBundle.value?.purchase_state?.exemption_options?.stages
+    || freshBundle.value?.exemption_options?.stages
+    || props.exemptionOptions?.stages
+  const stages = Array.isArray(optionStages) ? optionStages : []
+
+  return stages
+    .flatMap((stage: any) => Array.isArray(stage?.units) ? stage.units : [])
+    .some((unit: any) => {
+      const unitId = String(unit?.unit_id || unit?.unit_ulid || "").trim()
+      return Boolean(unitId && !blockedUnitIds.has(unitId) && exemptionQualifications(unit).length > 0)
+    })
+})
+
 const cardCopy = computed(() => t.value.courseCard)
 
 const actionCopy = computed(() => {
@@ -96,6 +127,7 @@ const actionCopy = computed(() => {
   if (statusRefreshing.value) return cardCopy.value.checking
   if (hasInProgressOrder.value) return cardCopy.value.continuePayment
   if (currentEligibility.value?.can_purchase || currentEligibility.value?.can_unlock) return cardCopy.value.buyNow
+  if (hasAdditionalExemptionOption.value) return cardCopy.value.continueExemptionSelection
   if (credentialCenterBlocker.value?.blocker_type === "EXEMPTION_DOCUMENTS_PENDING_UPLOAD") return cardCopy.value.uploadExemptionDocuments
   if (credentialCenterBlocker.value?.blocker_type === "EXEMPTION_UNDER_REVIEW") return cardCopy.value.viewExemptionReview
   if (currentEligibility.value) return cardCopy.value.unavailable
@@ -210,6 +242,10 @@ async function handleCardClick() {
     return
   }
   if (credentialCenterBlocker.value) {
+    if (hasAdditionalExemptionOption.value) {
+      await router.push(`/checkout/${encodeURIComponent(props.id)}`)
+      return
+    }
     await openCredentialCenter()
     return
   }
