@@ -325,10 +325,7 @@ const certificateAvailable = computed(() =>
   pipelineHasCertificate.value,
 )
 const certificateDescription = computed(() => {
-  if (certificateAvailable.value) {
-    const name = pipeline.value?.name || t.value.common.unknownCourse
-    return t.value.learning.certificateCongratulationsDesc.replace(/\{\{name\}\}/g, name)
-  }
+  if (certificateAvailable.value) return t.value.learning.certificateCongratulationsDesc
   if (pipelineCancelled.value) return t.value.learning.statusCancelled
   if (pipelineIssuingCertificate.value) return t.value.learning.certificateIssuingDesc
   if (finalQualificationRequired.value) return t.value.learning.finalQualificationDesc

@@ -678,7 +678,7 @@ export const en: AppTranslations = {
         certificateUnavailableDesc: "Your certificate will appear here after you pass the final exam.",
         certificateIssuingDesc: "Your certificate is being issued. Please check again later.",
         certificateCongratulationsTitle: "Congratulations!",
-        certificateCongratulationsDesc: "You have successfully earned your {{name}} certification.",
+        certificateCongratulationsDesc: "You have successfully earned the following certification:",
         certificateDetailsTitle: "Certificate Details",
         certificateViewCenterButton: "View Certificate",
         finalQualificationTitle: "Submit final qualification materials",
