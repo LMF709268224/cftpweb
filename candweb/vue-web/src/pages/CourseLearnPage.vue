@@ -1360,16 +1360,31 @@ function showExistingStageOrderAction() {
   toast.error(t.value.learning.stageExistingOrderNeedsAction, {
     action: {
       label: t.value.learning.stageExistingOrderViewOrders,
-      onClick: () => void router.push("/orders?status=WAIT_STAGE_PAYMENT"),
+      onClick: () => void router.push("/orders"),
     },
   })
 }
 
-async function recoverInProgressStageOrder(
-  error: unknown,
-  stage: StagePaymentConfig,
-  selection?: { exemptedUnitIds: string[]; waivedUnitIds: string[] },
-) {
+async function redirectToExistingStageOrder() {
+  try {
+    const existingOrder = await findInProgressStageOrder()
+    if (!existingOrder) return false
+    toast.info(t.value.learning.stageExistingOrderRedirecting)
+    await router.push("/orders")
+    return true
+  } catch (error) {
+    console.error("Failed to check in-progress stage order", error)
+    toast.error(t.value.learning.stageExistingOrderCheckFailed, {
+      action: {
+        label: t.value.learning.stageExistingOrderViewOrders,
+        onClick: () => void router.push("/orders"),
+      },
+    })
+    return true
+  }
+}
+
+async function recoverInProgressStageOrder(error: unknown) {
   if (!isInProgressStagePurchaseConflict(error)) return false
   const serviceReportedExistingOrder = reportsInProgressStagePurchase(error)
 
@@ -1381,29 +1396,10 @@ async function recoverInProgressStageOrder(
       return true
     }
 
-    if (existingOrder.orderStatus === "WAIT_EXEMPTION_SELECTION" && selection) {
-      const stageCcUlid = firstString(stage.stage_id, stage.stage_cc_ulid)
-      const orderResponse = await apiClient(
-        `/api/mall/stage-orders/${encodeURIComponent(existingOrder.stageOrderId)}/exemptions`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            stage_cc_ulid: stageCcUlid,
-            exempted_unit_cc_ulids: selection.exemptedUnitIds,
-            waived_unit_cc_ulids: selection.waivedUnitIds,
-          }),
-        },
-      )
-      await continueStageOrder(orderResponse, stage)
-      return true
-    }
-
-    if (existingOrder.orderStatus === "WAIT_STAGE_PAYMENT") {
-      toast.info(t.value.learning.stageExistingOrderResuming)
-      resetStageExemptionSelection()
-      await openStagePayment(existingOrder.stageOrderId, stage)
-      return true
-    }
+    toast.info(t.value.learning.stageExistingOrderRedirecting)
+    resetStageExemptionSelection()
+    await router.push("/orders")
+    return true
   } catch (recoveryError: any) {
     console.error("Failed to recover in-progress stage order", recoveryError)
   }
@@ -1416,19 +1412,19 @@ async function recoverInProgressStageOrder(
 async function handleStagePaymentClick() {
   if (stagePaymentLoading.value) return
   const stage = stageConfigForNextStep()
-  if (stageHasExemptionChoices(stage)) {
-    stageExemptionOrderId.value = ""
-    stageExemptionStage.value = stage
-    stageExemptionDialogOpen.value = true
-    return
-  }
-
   stagePaymentLoading.value = true
   try {
+    if (await redirectToExistingStageOrder()) return
+    if (stageHasExemptionChoices(stage)) {
+      stageExemptionOrderId.value = ""
+      stageExemptionStage.value = stage
+      stageExemptionDialogOpen.value = true
+      return
+    }
     const orderResponse = await createStageOrder(stage)
     if (orderResponse) await continueStageOrder(orderResponse, stage)
   } catch (err: any) {
-    if (await recoverInProgressStageOrder(err, stage)) return
+    if (await recoverInProgressStageOrder(err)) return
     toast.error(err.message || t.value.common.error)
   } finally {
     stagePaymentLoading.value = false
@@ -1459,7 +1455,7 @@ async function handleStageExemptionSubmit(selection: { exemptedUnitIds: string[]
         )
     if (orderResponse) await continueStageOrder(orderResponse, stage)
   } catch (err: any) {
-    if (await recoverInProgressStageOrder(err, stage, selection)) return
+    if (await recoverInProgressStageOrder(err)) return
     toast.error(err.message || t.value.common.error)
   } finally {
     stageExemptionSubmitting.value = false

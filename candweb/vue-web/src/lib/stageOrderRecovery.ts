@@ -2,12 +2,16 @@ import { ApiClientError, apiClient } from "@/lib/apiClient"
 
 export type InProgressStageOrder = {
   stageOrderId: string
-  orderStatus: "WAIT_EXEMPTION_SELECTION" | "WAIT_STAGE_PAYMENT"
+  orderStatus: string
+  paymentStatus: string
 }
 
-const recoverableStageOrderStatuses = new Set<InProgressStageOrder["orderStatus"]>([
+const inProgressStageOrderStatuses = new Set([
   "WAIT_EXEMPTION_SELECTION",
   "WAIT_STAGE_PAYMENT",
+  "WAIT_PAYMENT",
+  "PENDING",
+  "PENDING_PAYMENT",
 ])
 
 export function isInProgressStagePurchaseConflict(error: unknown) {
@@ -35,13 +39,15 @@ export async function findInProgressStageOrder(): Promise<InProgressStageOrder |
   for (const order of orders) {
     const bizType = String(order?.biz_type || "").trim().toUpperCase()
     const orderStatus = String(order?.order_status || "").trim().toUpperCase()
+    const paymentStatus = String(order?.payment_status || "").trim().toUpperCase()
     const stageOrderId = String(order?.biz_ref_ulid || "").trim()
-    if (bizType !== "STAGE_PAYMENT" || !stageOrderId || !recoverableStageOrderStatuses.has(orderStatus as InProgressStageOrder["orderStatus"])) {
+    if (bizType !== "STAGE_PAYMENT" || !stageOrderId || paymentStatus === "PAID" || !inProgressStageOrderStatuses.has(orderStatus)) {
       continue
     }
     return {
       stageOrderId,
-      orderStatus: orderStatus as InProgressStageOrder["orderStatus"],
+      orderStatus,
+      paymentStatus,
     }
   }
 
