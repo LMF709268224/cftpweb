@@ -32,6 +32,11 @@ import PageFeedback from "@/components/PageFeedback.vue"
 import PaymentSessionDialog from "@/components/PaymentSessionDialog.vue"
 import StageExemptionDialog from "@/components/StageExemptionDialog.vue"
 import { ApiClientError, apiClient } from "@/lib/apiClient"
+import {
+  findInProgressStageOrder,
+  isInProgressStagePurchaseConflict,
+  reportsInProgressStagePurchase,
+} from "@/lib/stageOrderRecovery"
 import { useTranslation } from "@/lib/language"
 import { usePolling } from "@/lib/polling"
 import { formatBackendDateOnly } from "@/lib/utils"
@@ -878,6 +883,7 @@ async function createStageOrder(
 
   return apiClient(`/api/mall/pipelines/${encodeURIComponent(pipelineId.value)}/stages/${encodeURIComponent(stageCcUlid)}/purchase`, {
     method: "POST",
+    suppressErrorToast: true,
     body: JSON.stringify({
       pipeline_ulid: instancePipelineId.value,
       stage_ulid: stageUlid,
@@ -948,6 +954,63 @@ async function continueStageOrder(orderResponse: any, stage: StageConfig) {
   throw new Error(t.value.learning.stageOrderUnexpectedStatus)
 }
 
+function showExistingStageOrderAction() {
+  toast.error(t.value.learning.stageExistingOrderNeedsAction, {
+    action: {
+      label: t.value.learning.stageExistingOrderViewOrders,
+      onClick: () => void router.push("/orders?status=WAIT_STAGE_PAYMENT"),
+    },
+  })
+}
+
+async function recoverInProgressStageOrder(
+  error: unknown,
+  stage: StageConfig,
+  selection?: { exemptedUnitIds: string[]; waivedUnitIds: string[] },
+) {
+  if (!isInProgressStagePurchaseConflict(error)) return false
+  const serviceReportedExistingOrder = reportsInProgressStagePurchase(error)
+
+  try {
+    const existingOrder = await findInProgressStageOrder()
+    if (!existingOrder) {
+      if (!serviceReportedExistingOrder) return false
+      showExistingStageOrderAction()
+      return true
+    }
+
+    if (existingOrder.orderStatus === "WAIT_EXEMPTION_SELECTION" && selection) {
+      const stageCcUlid = firstString(stage.stage_id)
+      const orderResponse = await apiClient(
+        `/api/mall/stage-orders/${encodeURIComponent(existingOrder.stageOrderId)}/exemptions`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            stage_cc_ulid: stageCcUlid,
+            exempted_unit_cc_ulids: selection.exemptedUnitIds,
+            waived_unit_cc_ulids: selection.waivedUnitIds,
+          }),
+        },
+      )
+      await continueStageOrder(orderResponse, stage)
+      return true
+    }
+
+    if (existingOrder.orderStatus === "WAIT_STAGE_PAYMENT") {
+      toast.info(t.value.learning.stageExistingOrderResuming)
+      resetStageExemptionSelection()
+      await openStagePayment(existingOrder.stageOrderId, stage)
+      return true
+    }
+  } catch (recoveryError: any) {
+    console.error("Failed to recover in-progress stage order", recoveryError)
+  }
+
+  if (!serviceReportedExistingOrder) return false
+  showExistingStageOrderAction()
+  return true
+}
+
 async function handleStagePaymentClick(stage: StageConfig) {
   if (stagePaymentLoading.value) return
   if (!stage.stage_id || !pipelineId.value || !instancePipelineId.value || !nextStep.value?.stage_id) return
@@ -965,6 +1028,7 @@ async function handleStagePaymentClick(stage: StageConfig) {
     const orderResponse = await createStageOrder(stage)
     if (orderResponse) await continueStageOrder(orderResponse, stage)
   } catch (err: any) {
+    if (await recoverInProgressStageOrder(err, stage)) return
     toast.error(err.message || t.value.common.error)
   } finally {
     stagePaymentLoading.value = false
@@ -996,6 +1060,7 @@ async function handleStageExemptionSubmit(selection: { exemptedUnitIds: string[]
         )
     if (orderResponse) await continueStageOrder(orderResponse, stage)
   } catch (err: any) {
+    if (await recoverInProgressStageOrder(err, stage, selection)) return
     toast.error(err.message || t.value.common.error)
   } finally {
     stageExemptionSubmitting.value = false

@@ -1661,6 +1661,94 @@ test("分阶段购买全部放弃免考后进入阶段付款", async ({ page }) 
     await expect(page.getByTestId("fake-stripe-complete")).toBeVisible()
 })
 
+test("分阶段购买遇到已有未支付订单时恢复旧订单付款", async ({ page }) => {
+    const stageID = "stage-existing-payment"
+    const stageInstanceID = "stage-instance-existing-payment"
+    const unitID = "unit-existing-payment"
+    const existingStageOrderID = "stage-order-existing-payment"
+    let stageOrderRequests = 0
+    let stageOrderListRequested = false
+    let paymentInitiateBody: any
+
+    const runtime = {
+        instance: { pipeline_ulid: pipelineInstanceID },
+        config: {
+            pipeline_cc_ulid: pipelineID,
+            name: "Existing Stage Payment Certification",
+            stages: [{
+                stage_id: stageID,
+                name: "Existing Payment Stage",
+                sort_order: 1,
+                runtime_status: "STAGE_STATUS_WAIT_CANDIDATE",
+                units: [{
+                    unit_id: unitID,
+                    name: "Existing Payment Course",
+                    allow_exemption: true,
+                    exemption_quals: [{
+                        qual_id: "qualification-existing-payment",
+                        name: "Unavailable Existing Payment Qualification",
+                    }],
+                }],
+            }],
+        },
+        next_step: {
+            action: "wait_candidate",
+            stage_id: stageInstanceID,
+            stage_cc_ulid: stageID,
+            status: "STAGE_STATUS_WAIT_CANDIDATE",
+        },
+        pipeline_status: "PIPELINE_STATUS_LEARNING",
+        current_stage_name: "Existing Payment Stage",
+        current_stage_status: "STAGE_STATUS_WAIT_CANDIDATE",
+    }
+
+    await installStripeCheckoutMock(page)
+    await installCandidateApiMocks(page, ({ pathname, url, method, body }) => {
+        if (pathname === `/api/mall/pipelines/${pipelineID}/runtime`) return { data: runtime }
+        if (pathname === "/api/credentials/qualifications") return { data: { qualifications: [] } }
+        if (pathname === `/api/mall/pipelines/${pipelineID}/stages/${stageID}/purchase` && method === "POST") {
+            stageOrderRequests += 1
+            return {
+                status: 409,
+                errorCode: "PRECONDITION_FAILED",
+                message: `candidate has an in-progress stage purchase; please complete or cancel order "${existingStageOrderID}" first`,
+            }
+        }
+        if (pathname === "/api/orders" && method === "GET") {
+            stageOrderListRequested = url.searchParams.get("biz_type") === "STAGE_PAYMENT"
+            return {
+                data: {
+                    orders: [{
+                        order_id: "payment-order-existing-stage",
+                        biz_type: "STAGE_PAYMENT",
+                        biz_ref_ulid: existingStageOrderID,
+                        order_status: "WAIT_STAGE_PAYMENT",
+                    }],
+                },
+            }
+        }
+        if (pathname === "/api/mall/payments/initiate" && method === "POST") {
+            paymentInitiateBody = body
+            return { data: { payment_key: "cs_test_existing_stage_payment" } }
+        }
+        return undefined
+    })
+
+    await page.goto(`/certifications/${pipelineID}`, { waitUntil: "domcontentloaded" })
+    await page.getByRole("button", { name: "解锁当前阶段", exact: true }).click()
+    await page.getByRole("button", { name: "放弃免考，原价购买", exact: true }).click()
+    await page.getByRole("button", { name: "确认并继续", exact: true }).click()
+
+    await expect.poll(() => stageOrderRequests).toBe(1)
+    await expect.poll(() => stageOrderListRequested).toBe(true)
+    await expect.poll(() => paymentInitiateBody).toMatchObject({
+        biz_type: "STAGE_PAYMENT",
+        biz_ref_ulid: existingStageOrderID,
+    })
+    await expect(page.getByText("检测到已有未支付阶段订单，正在继续该订单。免考选择和价格以原订单为准；如需修改，请先到订单页取消。", { exact: true })).toBeVisible()
+    await expect(page.getByTestId("fake-stripe-complete")).toBeVisible()
+})
+
 test("课程视频预览通过签名地址全屏播放", async ({ page }) => {
     let requestedSignedURL = false
     const signedURL = "https://iframe.videodelivery.net/signed-lesson-token"
