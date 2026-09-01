@@ -89,6 +89,11 @@ export function localizeApiErrorMessage(
     return formatMessage(validation.exemptionApplicationPending, { name: match[1] })
   }
 
+  match = message.match(/^you have an in-progress exemption application for course unit "([^"]+)";.*wait(?: patiently)? for the review result before purchasing/i)
+  if (match) {
+    return formatMessage(validation.exemptionReviewPending, { name: match[1] })
+  }
+
   const isGenericMessage = /^(Bad Request|Unauthorized|Forbidden|Not Found|Method Not Allowed|Internal Server Error|Bad Gateway|Service Unavailable|Error)$/i.test(message || "")
 
   if (errorCode && ErrorMessages[errorCode] && (!message || isGenericMessage)) {

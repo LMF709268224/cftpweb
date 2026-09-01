@@ -5,6 +5,7 @@ import {
     installStripeCheckoutMock,
     seedAuthenticatedCandidate,
 } from "./support/candidate"
+import { localizeApiErrorMessage } from "../src/lib/errorCodes"
 
 const bundleID = "bundle-regression"
 const pipelineID = "pipeline-regression"
@@ -1666,7 +1667,7 @@ test("阶段付款因免考资料未完成被阻止时显示明确原因", async
     const stageInstanceID = "stage-instance-exemption-application-pending"
     const unitID = "unit-exemption-application-pending"
     const courseName = "L1A Finance"
-    const expectedMessage = `“${courseName}”已创建免考申请，目前不能继续付款。若尚未提交资料，请前往资格申请上传并提交；若已提交，请等待管理员完成审核。审核通过后再继续付款。`
+    const expectedMessage = `“${courseName}”已创建免考申请，但资料尚未提交，目前不能继续付款。请前往资格申请上传并提交资料。`
 
     const runtime = {
         instance: { pipeline_ulid: pipelineInstanceID },
@@ -1720,6 +1721,100 @@ test("阶段付款因免考资料未完成被阻止时显示明确原因", async
 
     await expect(page.getByText(expectedMessage, { exact: true })).toBeVisible()
     await expect(page.getByText("当前操作条件不满足，请先补齐必要信息。", { exact: true })).toHaveCount(0)
+})
+
+test("阶段免考弹窗直接显示待提交资料和等待审核状态", async ({ page }) => {
+    const stageID = "stage-visible-application-status"
+    const pendingUploadUnitID = "unit-visible-pending-upload"
+    const underReviewUnitID = "unit-visible-under-review"
+    const pendingUploadQualificationID = "qualification-visible-pending-upload"
+    const underReviewQualificationID = "qualification-visible-under-review"
+    const runtime = {
+        instance: { pipeline_ulid: pipelineInstanceID },
+        config: {
+            pipeline_cc_ulid: pipelineID,
+            name: "Visible Exemption Status Certification",
+            stages: [{
+                stage_id: stageID,
+                name: "Visible Exemption Status Stage",
+                runtime_status: "STAGE_STATUS_WAIT_CANDIDATE",
+                units: [
+                    {
+                        unit_id: pendingUploadUnitID,
+                        name: "Pending Upload Course",
+                        allow_exemption: true,
+                        exemption_quals: [{ qual_id: pendingUploadQualificationID, name: "Pending Upload Qualification" }],
+                    },
+                    {
+                        unit_id: underReviewUnitID,
+                        name: "Under Review Course",
+                        allow_exemption: true,
+                        exemption_quals: [{ qual_id: underReviewQualificationID, name: "Under Review Qualification" }],
+                    },
+                ],
+            }],
+        },
+        next_step: {
+            action: "wait_candidate",
+            stage_id: "stage-instance-visible-application-status",
+            stage_cc_ulid: stageID,
+            status: "STAGE_STATUS_WAIT_CANDIDATE",
+        },
+        pipeline_status: "PIPELINE_STATUS_LEARNING",
+        current_stage_status: "STAGE_STATUS_WAIT_CANDIDATE",
+    }
+
+    await installCandidateApiMocks(page, ({ pathname, url }) => {
+        if (pathname === `/api/mall/pipelines/${pipelineID}/runtime`) return { data: runtime }
+        if (pathname === "/api/credentials/qualifications") {
+            return {
+                data: {
+                    qualifications: [pendingUploadQualificationID, underReviewQualificationID].map((qualID) => ({
+                        qual_id: qualID,
+                        eligible: false,
+                        credential_status: "CREDENTIAL_STATUS_UNSPECIFIED",
+                    })),
+                },
+            }
+        }
+        if (pathname === "/api/credentials/applications") {
+            const qualificationID = url.searchParams.get("cred_def_ulid")
+            return {
+                data: {
+                    applications: qualificationID === pendingUploadQualificationID
+                        ? [{ cred_def_ulid: qualificationID, status: "APPLICATION_STATUS_PENDING_UPLOAD" }]
+                        : [{ cred_def_ulid: qualificationID, status: "APPLICATION_STATUS_PENDING" }],
+                },
+            }
+        }
+        return undefined
+    })
+
+    await page.goto(`/certifications/${pipelineID}`, { waitUntil: "domcontentloaded" })
+    await page.getByRole("button", { name: "解锁当前阶段", exact: true }).click()
+
+    const pendingUploadUnit = page.locator(`[data-testid="stage-exemption-unit"][data-unit-id="${pendingUploadUnitID}"]`)
+    await expect(pendingUploadUnit.getByText("已创建申请，待提交资料", { exact: true })).toBeVisible()
+    await expect(pendingUploadUnit.getByText("免考申请订单已创建，但资料尚未提交。请先完成资料提交。", { exact: true })).toBeVisible()
+    await expect(pendingUploadUnit.getByRole("button", { name: "去提交资料", exact: true })).toBeVisible()
+    await expect(pendingUploadUnit.getByRole("button", { name: "放弃免考，原价购买", exact: true })).toBeDisabled()
+
+    const underReviewUnit = page.locator(`[data-testid="stage-exemption-unit"][data-unit-id="${underReviewUnitID}"]`)
+    await expect(underReviewUnit.getByText("资料已提交，等待管理员审核", { exact: true })).toBeVisible()
+    await expect(underReviewUnit.getByText("管理员尚未完成审核。审核期间不能继续支付当前阶段。", { exact: true })).toBeVisible()
+    await expect(underReviewUnit.getByRole("button", { name: "查看审核状态", exact: true })).toBeVisible()
+    await expect(underReviewUnit.getByRole("button", { name: "放弃免考，原价购买", exact: true })).toBeDisabled()
+    await expect(page.getByRole("button", { name: "确认并继续", exact: true })).toBeDisabled()
+
+    await pendingUploadUnit.getByRole("button", { name: "去提交资料", exact: true }).click()
+    await expect(page).toHaveURL(new RegExp(`/credentials\\?qual_ulids=${pendingUploadQualificationID}$`))
+})
+
+test("免考资料审核中的微服务错误显示明确原因", () => {
+    const backendMessage = 'you have an in-progress exemption application for course unit "L1A Finance"; to protect you from unnecessary charges, please wait patiently for the review result before purchasing'
+    expect(localizeApiErrorMessage("PRECONDITION_FAILED", backendMessage, "zh")).toBe(
+        '“L1A Finance”的免考资料已提交，正在等待管理员审核，目前不能继续付款。请前往资格申请查看审核状态。',
+    )
 })
 
 test("分阶段购买已有未支付订单时跳过免考选择并进入订单页", async ({ page }) => {
