@@ -1661,6 +1661,67 @@ test("分阶段购买全部放弃免考后进入阶段付款", async ({ page }) 
     await expect(page.getByTestId("fake-stripe-complete")).toBeVisible()
 })
 
+test("阶段付款因免考资料未完成被阻止时显示明确原因", async ({ page }) => {
+    const stageID = "stage-exemption-application-pending"
+    const stageInstanceID = "stage-instance-exemption-application-pending"
+    const unitID = "unit-exemption-application-pending"
+    const courseName = "L1A Finance"
+    const expectedMessage = `“${courseName}”已创建免考申请，目前不能继续付款。若尚未提交资料，请前往资格申请上传并提交；若已提交，请等待管理员完成审核。审核通过后再继续付款。`
+
+    const runtime = {
+        instance: { pipeline_ulid: pipelineInstanceID },
+        config: {
+            pipeline_cc_ulid: pipelineID,
+            name: "Pending Exemption Application Certification",
+            stages: [{
+                stage_id: stageID,
+                name: "Pending Exemption Application Stage",
+                sort_order: 1,
+                runtime_status: "STAGE_STATUS_WAIT_CANDIDATE",
+                units: [{
+                    unit_id: unitID,
+                    name: courseName,
+                    allow_exemption: true,
+                    exemption_quals: [{
+                        qual_id: "qualification-exemption-application-pending",
+                        name: "Pending Exemption Qualification",
+                    }],
+                }],
+            }],
+        },
+        next_step: {
+            action: "wait_candidate",
+            stage_id: stageInstanceID,
+            stage_cc_ulid: stageID,
+            status: "STAGE_STATUS_WAIT_CANDIDATE",
+        },
+        pipeline_status: "PIPELINE_STATUS_LEARNING",
+        current_stage_name: "Pending Exemption Application Stage",
+        current_stage_status: "STAGE_STATUS_WAIT_CANDIDATE",
+    }
+
+    await installCandidateApiMocks(page, ({ pathname, method }) => {
+        if (pathname === `/api/mall/pipelines/${pipelineID}/runtime`) return { data: runtime }
+        if (pathname === "/api/credentials/qualifications") return { data: { qualifications: [] } }
+        if (pathname === `/api/mall/pipelines/${pipelineID}/stages/${stageID}/purchase` && method === "POST") {
+            return {
+                status: 409,
+                errorCode: "PRECONDITION_FAILED",
+                message: `exemption review permission is active for course unit "${courseName}", but required documents have not been uploaded yet; please upload your documents in Credential Center and wait for the review result before purchase`,
+            }
+        }
+        return undefined
+    })
+
+    await page.goto(`/certifications/${pipelineID}`, { waitUntil: "domcontentloaded" })
+    await page.getByRole("button", { name: "解锁当前阶段", exact: true }).click()
+    await page.getByRole("button", { name: "放弃免考，原价购买", exact: true }).click()
+    await page.getByRole("button", { name: "确认并继续", exact: true }).click()
+
+    await expect(page.getByText(expectedMessage, { exact: true })).toBeVisible()
+    await expect(page.getByText("当前操作条件不满足，请先补齐必要信息。", { exact: true })).toHaveCount(0)
+})
+
 test("分阶段购买已有未支付订单时跳过免考选择并进入订单页", async ({ page }) => {
     const stageID = "stage-existing-payment"
     const stageInstanceID = "stage-instance-existing-payment"

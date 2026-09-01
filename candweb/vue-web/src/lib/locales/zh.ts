@@ -119,6 +119,7 @@ export const zh = {
         courseNeedsChapter: "课程 {{name}} 发布前至少需要创建 1 个章节",
         chapterNeedsContent: "章节 {{name}} 发布前至少需要包含 1 个课时或测验",
         publishedCourseImmutable: "已发布课程 {{name}} 不能直接修改，请创建新版本或编辑草稿版本",
+        exemptionApplicationPending: "“{{name}}”已创建免考申请，目前不能继续付款。若尚未提交资料，请前往资格申请上传并提交；若已提交，请等待管理员完成审核。审核通过后再继续付款。",
     },
     app: {
         htmlLang: "zh-CN",

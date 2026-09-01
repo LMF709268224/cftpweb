@@ -121,6 +121,7 @@ export const en: AppTranslations = {
         courseNeedsChapter: "Course {{name}} must contain at least one chapter before publishing.",
         chapterNeedsContent: "Chapter {{name}} must contain at least one lesson or quiz before publishing.",
         publishedCourseImmutable: "Published course {{name}} cannot be modified. Please create a new version or edit a draft version.",
+        exemptionApplicationPending: "An exemption application exists for \"{{name}}\", so payment cannot continue yet. If you have not submitted the required documents, upload and submit them in Qualification Applications. If you have submitted them, wait for the administrator's review before continuing payment.",
     },
     app: {
         htmlLang: "en",

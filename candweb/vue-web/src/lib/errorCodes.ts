@@ -84,6 +84,11 @@ export function localizeApiErrorMessage(
     return formatMessage(validation.publishedCourseImmutable, { name: match[1] })
   }
 
+  match = message.match(/^exemption review permission is active for course unit "([^"]+)", but required documents have not been uploaded yet(?:;|$)/i)
+  if (match) {
+    return formatMessage(validation.exemptionApplicationPending, { name: match[1] })
+  }
+
   const isGenericMessage = /^(Bad Request|Unauthorized|Forbidden|Not Found|Method Not Allowed|Internal Server Error|Bad Gateway|Service Unavailable|Error)$/i.test(message || "")
 
   if (errorCode && ErrorMessages[errorCode] && (!message || isGenericMessage)) {
