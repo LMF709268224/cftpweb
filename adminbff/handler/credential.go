@@ -452,6 +452,7 @@ func (h *Handler) applicationStatusSubtotals(ctx context.Context) ([]application
 	}{
 		{status: ""},
 		{status: "Pending", statuses: []string{"Pending"}},
+		{status: "PendingUpload", statuses: []string{"PendingUpload"}},
 		{status: "Approved", statuses: []string{"Approved"}},
 		{status: "Rejected", statuses: []string{"Rejected"}},
 		{status: "Reupload", statuses: []string{"Reupload"}},

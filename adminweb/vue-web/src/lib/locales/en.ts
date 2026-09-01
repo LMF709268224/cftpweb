@@ -818,6 +818,7 @@ export const en: AdminTranslations = {
         statusOptions: {
             all: "All",
             pending: "Pending Review",
+            pendingUpload: "Awaiting Upload",
             approved: "Approved",
             rejected: "Rejected",
             resubmit: "Resubmission Required",

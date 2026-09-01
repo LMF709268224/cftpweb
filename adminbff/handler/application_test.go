@@ -52,12 +52,14 @@ func (s *applicationReadClientStub) GetApplicationCount(
 	if len(statuses) == 0 {
 		return &gcredspb.GetApplicationCountResponse{Count: 10}, nil
 	}
-	switch strings.ToUpper(statuses[0]) {
-	case "PENDING":
+	switch strings.Join(statuses, ",") {
+	case "PENDING", "Pending":
 		return &gcredspb.GetApplicationCountResponse{Count: 5}, nil
-	case "APPROVED":
+	case "PendingUpload":
+		return &gcredspb.GetApplicationCountResponse{Count: 2}, nil
+	case "Approved":
 		return &gcredspb.GetApplicationCountResponse{Count: 3}, nil
-	case "REJECTED", "REUPLOAD":
+	case "Rejected", "Reupload":
 		return &gcredspb.GetApplicationCountResponse{Count: 1}, nil
 	default:
 		return &gcredspb.GetApplicationCountResponse{}, nil
@@ -125,11 +127,11 @@ func TestListApplicationsReturnsReadOnlyApplicationPage(t *testing.T) {
 		statuses := countRequest.GetFilters().GetStatuses()
 		key := "ALL"
 		if len(statuses) > 0 {
-			key = strings.ToUpper(statuses[0])
+			key = strings.ToUpper(strings.Join(statuses, ","))
 		}
 		countRequestsByStatus[key]++
 	}
-	for _, status := range []string{"ALL", "PENDING", "APPROVED", "REJECTED", "REUPLOAD"} {
+	for _, status := range []string{"ALL", "PENDING", "PENDINGUPLOAD", "APPROVED", "REJECTED", "REUPLOAD"} {
 		if countRequestsByStatus[status] == 0 {
 			t.Fatalf("application status subtotal did not count %s: %+v", status, countRequestsByStatus)
 		}
@@ -154,7 +156,7 @@ func TestListApplicationsReturnsReadOnlyApplicationPage(t *testing.T) {
 	for _, subtotal := range payload.Data.StatusSubtotals {
 		subtotals[subtotal.Status] = subtotal.Count
 	}
-	if payload.Data.Applications[0]["cred_def_name"] != "Regression Credential" || len(subtotals) != 5 || subtotals[""] != 10 || subtotals["Pending"] != 5 || subtotals["Approved"] != 3 || subtotals["Rejected"] != 1 || subtotals["Reupload"] != 1 {
+	if payload.Data.Applications[0]["cred_def_name"] != "Regression Credential" || len(subtotals) != 6 || subtotals[""] != 10 || subtotals["Pending"] != 5 || subtotals["PendingUpload"] != 2 || subtotals["Approved"] != 3 || subtotals["Rejected"] != 1 || subtotals["Reupload"] != 1 {
 		t.Fatalf("application status subtotals = %+v / %+v", payload.Data.Applications[0], payload.Data.StatusSubtotals)
 	}
 }

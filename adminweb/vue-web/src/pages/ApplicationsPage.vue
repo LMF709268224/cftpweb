@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CheckCircle2, Clock3, Download, Eye, FileText, ListFilter, Loader2, RefreshCw, RotateCcw, X, XCircle } from "lucide-vue-next"
+import { CheckCircle2, Clock3, Download, Eye, FileText, ListFilter, Loader2, RefreshCw, RotateCcw, Upload, X, XCircle } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
@@ -43,7 +43,7 @@ const copy = computed(() => t.value.applications)
 const canPrev = computed(() => page.value > 1)
 const canNext = computed(() => hasMore.value)
 const applicationFieldLabels = computed<Record<string, string>>(() => copy.value.fieldLabels || {})
-const applicationStatuses = ["", "Pending", "Approved", "Rejected", "Reupload"]
+const applicationStatuses = ["", "Pending", "PendingUpload", "Approved", "Rejected", "Reupload"]
 const displayedStatusSubtotals = computed(() => {
   const subtotalsByStatus = new Map(
     statusSubtotals.value.map((subtotal) => [subtotal.status.trim().toUpperCase(), subtotal]),
@@ -119,6 +119,7 @@ const detailTabs = computed(() => {
 const statusOptions = computed(() => [
   { value: "", label: copy.value.statusOptions.all },
   { value: "Pending", label: copy.value.statusOptions.pending },
+  { value: "PendingUpload", label: copy.value.statusOptions.pendingUpload },
   { value: "Approved", label: copy.value.statusOptions.approved },
   { value: "Rejected", label: copy.value.statusOptions.rejected },
   { value: "Reupload", label: copy.value.statusOptions.resubmit },
@@ -156,6 +157,7 @@ function statusSubtotalLabel(status: string) {
 function statusSubtotalIcon(status: string) {
   const normalized = String(status || "").trim().toUpperCase()
   if (normalized === "PENDING") return Clock3
+  if (normalized === "PENDINGUPLOAD") return Upload
   if (normalized === "APPROVED") return CheckCircle2
   if (normalized === "REJECTED") return XCircle
   if (normalized === "REUPLOAD") return RotateCcw
@@ -165,6 +167,7 @@ function statusSubtotalIcon(status: string) {
 function statusSubtotalTone(status: string) {
   const normalized = String(status || "").trim().toUpperCase()
   if (normalized === "PENDING") return "text-amber-600"
+  if (normalized === "PENDINGUPLOAD") return "text-orange-600"
   if (normalized === "APPROVED") return "text-emerald-600"
   if (normalized === "REJECTED") return "text-red-600"
   if (normalized === "REUPLOAD") return "text-cyan-600"
@@ -208,6 +211,7 @@ function applicationLabel(value: unknown) {
   if (normalized.includes("APPROVED") || normalized === "2") return copy.value.statusOptions.approved
   if (normalized.includes("REJECTED") || normalized === "3") return copy.value.statusOptions.rejected
   if (normalized.includes("RESUBMIT") || normalized.includes("REUPLOAD") || normalized === "4") return copy.value.statusOptions.resubmit
+  if (normalized === "PENDINGUPLOAD") return copy.value.statusOptions.pendingUpload
   if (normalized.includes("PENDING") || normalized === "1") return copy.value.statusOptions.pending
   return normalized || "-"
 }
@@ -225,8 +229,12 @@ function isResubmitApplication(app: JsonRecord | null | undefined) {
   return normalized.includes("RESUBMIT") || normalized.includes("REUPLOAD") || normalized === "4"
 }
 
+function isPendingUploadApplication(app: JsonRecord | null | undefined) {
+  return String(status(app) || "").trim().toUpperCase() === "PENDINGUPLOAD"
+}
+
 function canAuditApplication(app: JsonRecord | null | undefined) {
-  return !isApprovedApplication(app) && !isRejectedApplication(app) && !isResubmitApplication(app)
+  return !isApprovedApplication(app) && !isRejectedApplication(app) && !isResubmitApplication(app) && !isPendingUploadApplication(app)
 }
 
 function fileHash(file: JsonRecord) {
@@ -493,7 +501,7 @@ onMounted(() => load(1))
       </button>
     </header>
 
-    <section class="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-5" :aria-label="copy.statusSubtotalsLabel">
+    <section class="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 xl:grid-cols-6" :aria-label="copy.statusSubtotalsLabel">
       <article
         v-for="subtotal in displayedStatusSubtotals"
         :key="subtotal.status || 'all'"

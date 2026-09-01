@@ -816,6 +816,7 @@ export const zh = {
         statusOptions: {
             all: "全部",
             pending: "待审核",
+            pendingUpload: "等待上传",
             approved: "已通过",
             rejected: "已拒绝",
             resubmit: "需补交",
