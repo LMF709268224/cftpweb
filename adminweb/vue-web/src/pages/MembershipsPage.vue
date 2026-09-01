@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Archive, Loader2, Pencil, Plus, RefreshCw, Save, Settings, TriangleAlert, X } from "lucide-vue-next"
+import { Archive, Loader2, Pencil, Plus, RefreshCw, Save, TriangleAlert, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 
@@ -569,8 +569,7 @@ onMounted(load)
               <div class="mt-1 xl:mt-0">v{{ membership.version || 0 }}</div>
             </div>
           </div>
-          <button class="inline-flex h-10 items-center justify-center gap-2 justify-self-start rounded-xl border border-blue-200 bg-blue-50 px-4 text-sm font-bold text-blue-700 xl:justify-self-stretch" type="button" @click="openMembership(membership)">
-            <Settings class="h-4 w-4" />
+          <button class="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 transition hover:underline xl:justify-self-end xl:border-0 xl:bg-transparent xl:px-0 xl:py-0" type="button" @click="openMembership(membership)">
             {{ copy.viewDetails }}
           </button>
         </article>
