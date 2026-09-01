@@ -1450,6 +1450,118 @@ test("分阶段购买先完成免考声明再创建阶段订单", async ({ page 
     })
 })
 
+test("分阶段购买可先申请免考资格并支付审核费", async ({ page }) => {
+    const stageID = "stage-by-stage-qualification-application"
+    const stageInstanceID = "stage-instance-by-stage-qualification-application"
+    const unitID = "unit-stage-qualification-application"
+    const qualificationID = "qualification-stage-application"
+    const applicationOrderID = "application-order-stage-exemption"
+    let applicationOrderBody: any
+    let paymentInitiateBody: any
+    let stageOrderCreated = false
+
+    const runtime = {
+        instance: { pipeline_ulid: pipelineInstanceID },
+        config: {
+            pipeline_cc_ulid: pipelineID,
+            name: "By-stage Qualification Application Certification",
+            stages: [{
+                stage_id: stageID,
+                name: "By-stage Qualification Application Stage",
+                sort_order: 1,
+                runtime_status: "STAGE_STATUS_WAIT_CANDIDATE",
+                units: [{
+                    unit_id: unitID,
+                    name: "Qualification Application Course",
+                    allow_exemption: true,
+                    exemption_quals: [{
+                        qual_id: qualificationID,
+                        name: "Stage Application Qualification",
+                    }],
+                }],
+            }],
+        },
+        next_step: {
+            action: "wait_candidate",
+            stage_id: stageInstanceID,
+            stage_cc_ulid: stageID,
+            status: "STAGE_STATUS_WAIT_CANDIDATE",
+        },
+        pipeline_status: "PIPELINE_STATUS_LEARNING",
+        current_stage_name: "By-stage Qualification Application Stage",
+        current_stage_status: "STAGE_STATUS_WAIT_CANDIDATE",
+    }
+
+    await installStripeCheckoutMock(page)
+    await installCandidateApiMocks(page, ({ pathname, method, body }) => {
+        if (pathname === `/api/mall/pipelines/${pipelineID}/runtime`) return { data: runtime }
+        if (pathname === "/api/credentials/qualifications") {
+            return {
+                data: {
+                    qualifications: [{
+                        qual_id: qualificationID,
+                        eligible: false,
+                        credential_status: "CREDENTIAL_STATUS_UNSPECIFIED",
+                    }],
+                },
+            }
+        }
+        if (pathname === "/api/credentials/applications") return { data: { applications: [] } }
+        if (pathname === "/api/mall/bundles" && method === "GET") {
+            return { data: { bundles: [{ bundle_id: bundleID, pipeline_id: pipelineID }] } }
+        }
+        if (pathname === "/api/credentials/application-orders" && method === "POST") {
+            applicationOrderBody = body
+            return {
+                data: {
+                    application_order_ulid: applicationOrderID,
+                    order_status: "WAIT_REVIEW_FEE_PAYMENT",
+                },
+            }
+        }
+        if (pathname === "/api/mall/payments/preview" && method === "POST") {
+            return { data: bundle.purchase_state.payment_preview }
+        }
+        if (pathname === "/api/mall/payments/initiate" && method === "POST") {
+            paymentInitiateBody = body
+            return { data: { payment_key: "cs_test_stage_exemption_review" } }
+        }
+        if (pathname === `/api/mall/pipelines/${pipelineID}/stages/${stageID}/purchase` && method === "POST") {
+            stageOrderCreated = true
+        }
+        return undefined
+    })
+
+    await page.goto(`/certifications/${pipelineID}`, { waitUntil: "domcontentloaded" })
+    await page.getByRole("button", { name: "解锁当前阶段", exact: true }).click()
+
+    const applyButton = page.locator(`[data-testid="stage-exemption-apply"][data-unit-id="${unitID}"]`)
+    await expect(applyButton).toBeEnabled()
+    await expect(applyButton).toHaveText("申请该项免考")
+    await applyButton.click()
+
+    const confirmDialog = page.getByTestId("stage-exemption-application-confirm")
+    await expect(confirmDialog).toBeVisible()
+    await expect(confirmDialog.getByText("Qualification Application Course", { exact: true })).toBeVisible()
+    await expect(confirmDialog.getByText("Stage Application Qualification", { exact: true })).toBeVisible()
+    await page.getByTestId("stage-exemption-confirm-application").click()
+
+    await expect.poll(() => applicationOrderBody).toEqual({
+        pipeline_cc_ulid: pipelineID,
+        bundle_ulid: bundleID,
+        qual_ulids: [qualificationID],
+    })
+    await expect.poll(() => paymentInitiateBody).toMatchObject({
+        biz_type: "CREDENTIAL_APPLICATION",
+        biz_ref_ulid: applicationOrderID,
+    })
+    expect(stageOrderCreated).toBe(false)
+    await expect(page.getByTestId("fake-stripe-complete")).toBeVisible()
+
+    await page.getByTestId("fake-stripe-complete").click()
+    await expect(page).toHaveURL(new RegExp(`/credentials\\?.*qual_ulids=${qualificationID}`))
+})
+
 test("分阶段购买全部放弃免考后进入阶段付款", async ({ page }) => {
     const stageID = "stage-by-stage-all-waived"
     const stageInstanceID = "stage-instance-by-stage-all-waived"
