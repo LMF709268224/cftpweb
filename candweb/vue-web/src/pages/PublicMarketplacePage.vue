@@ -788,6 +788,18 @@ onBeforeUnmount(() => {
     width: 100%;
   }
 
+  :global(html[lang="en"] .public-marketplace .category-filter) {
+    display: grid;
+    grid-template-columns: .55fr 1.45fr .9fr 1.1fr;
+    overflow-x: hidden;
+  }
+
+  :global(html[lang="en"] .public-marketplace .category-filter button) {
+    min-width: 0;
+    padding-inline: 6px;
+    font-size: 13px;
+  }
+
   .catalog-search {
     width: 100%;
     flex-basis: 44px;
@@ -811,6 +823,13 @@ onBeforeUnmount(() => {
 
   .catalog-state > button {
     grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 340px) {
+  :global(html[lang="en"] .public-marketplace .category-filter button) {
+    padding-inline: 4px;
+    font-size: 12px;
   }
 }
 
