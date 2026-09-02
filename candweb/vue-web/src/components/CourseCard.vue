@@ -2,7 +2,7 @@
 import { computed, ref } from "vue"
 import { RouterLink, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
-import { AlertCircle, BookOpen, CheckCircle2, Clock, ShoppingCart, Users } from "lucide-vue-next"
+import { AlertCircle, BookOpen, CheckCircle2, Clock, LoaderCircle, ShoppingCart, Users } from "lucide-vue-next"
 import { CANDIDATE_PIPELINE_STATUS_LABELS, statusLabel } from "@/lib/status-labels"
 import { startGfiLogin } from "@/lib/gfiLogin"
 import { useTranslation } from "@/lib/language"
@@ -51,6 +51,7 @@ const { t } = useTranslation()
 const router = useRouter()
 const freshBundle = ref<any | null>(null)
 const statusRefreshing = ref(false)
+const eligibilityRefreshFailed = ref(false)
 const currentEligibility = computed<EligibilityPreview | null>(() => freshBundle.value?.purchase_state?.eligibility || freshBundle.value?.eligibility || props.eligibility || null)
 const currentActiveOrder = computed<ActiveOrderPreview | null>(() => freshBundle.value?.purchase_state?.active_order || freshBundle.value?.active_order || props.activeOrder || null)
 const currentActiveMembership = computed<Record<string, unknown> | null>(() => freshBundle.value?.active_membership || props.activeMembership || null)
@@ -121,23 +122,44 @@ const hasAdditionalExemptionOption = computed(() => {
 })
 
 const cardCopy = computed(() => t.value.courseCard)
+const eligibilityCopy = computed(() => isMembershipOnlyProduct.value
+  ? {
+      checking: cardCopy.value.checkingMembershipEligibility,
+      pending: cardCopy.value.membershipEligibilityPending,
+      check: cardCopy.value.checkMembershipEligibility,
+      failed: cardCopy.value.membershipEligibilityFailed,
+      retry: cardCopy.value.retryMembershipEligibility,
+      blocked: cardCopy.value.membershipBlocked,
+      unavailable: cardCopy.value.membershipUnavailable,
+    }
+  : {
+      checking: cardCopy.value.checkingEnrollmentEligibility,
+      pending: cardCopy.value.enrollmentEligibilityPending,
+      check: cardCopy.value.checkEnrollmentEligibility,
+      failed: cardCopy.value.enrollmentEligibilityFailed,
+      retry: cardCopy.value.retryEnrollmentEligibility,
+      blocked: cardCopy.value.enrollmentBlocked,
+      unavailable: cardCopy.value.enrollmentUnavailable,
+    })
 
 const actionCopy = computed(() => {
   if (props.loginRequired) return cardCopy.value.loginToPurchase
   if (effectivePurchased.value) return isPipelineProduct.value ? cardCopy.value.enterCertification : cardCopy.value.membershipCenter
-  if (statusRefreshing.value) return cardCopy.value.checking
+  if (statusRefreshing.value) return cardCopy.value.eligibilityCheckInProgress
+  if (eligibilityRefreshFailed.value) return eligibilityCopy.value.retry
   if (hasInProgressOrder.value) return cardCopy.value.continuePayment
   if (currentEligibility.value?.can_purchase) return isMembershipOnlyProduct.value ? cardCopy.value.becomeMember : cardCopy.value.enrollNow
   if (hasAdditionalExemptionOption.value) return cardCopy.value.continueExemptionSelection
   if (credentialCenterBlocker.value?.blocker_type === "EXEMPTION_DOCUMENTS_PENDING_UPLOAD") return cardCopy.value.uploadExemptionDocuments
   if (credentialCenterBlocker.value?.blocker_type === "EXEMPTION_UNDER_REVIEW") return cardCopy.value.viewExemptionReview
-  if (currentEligibility.value) return cardCopy.value.unavailable
-  return cardCopy.value.checkStatus
+  if (currentEligibility.value) return eligibilityCopy.value.unavailable
+  return eligibilityCopy.value.check
 })
 
 const actionClass = computed(() => {
   if (props.loginRequired) return "bg-primary text-white shadow-sm shadow-primary/20 group-hover:bg-primary/90"
   if (statusRefreshing.value) return "bg-slate-200 text-slate-500"
+  if (eligibilityRefreshFailed.value) return "bg-primary text-white shadow-sm shadow-primary/20 group-hover:bg-primary/90"
   if (credentialCenterBlocker.value) return "bg-primary text-white shadow-sm shadow-primary/20 group-hover:bg-primary/90"
   if (currentEligibility.value && !effectivePurchased.value && !currentEligibility.value.can_purchase && !hasInProgressOrder.value) {
     return "bg-slate-200 text-slate-500"
@@ -190,7 +212,10 @@ const accessState = computed(() => {
   }
   if (effectivePurchased.value) return null
   if (statusRefreshing.value) {
-    return { label: cardCopy.value.checking, icon: Clock, className: "border-slate-200 bg-slate-50 text-slate-700", hint: "" }
+    return { label: eligibilityCopy.value.checking, icon: Clock, className: "border-slate-200 bg-slate-50 text-slate-700", hint: "" }
+  }
+  if (eligibilityRefreshFailed.value) {
+    return { label: eligibilityCopy.value.failed, icon: AlertCircle, className: "border-red-200 bg-red-50 text-red-700", hint: "" }
   }
   if (currentEligibility.value?.can_purchase || hasInProgressOrder.value) {
     return { label: isMembershipOnlyProduct.value ? cardCopy.value.readyMembership : cardCopy.value.ready, icon: ShoppingCart, className: "border-emerald-200 bg-emerald-50 text-emerald-700", hint: "" }
@@ -201,22 +226,24 @@ const accessState = computed(() => {
         ? cardCopy.value.exemptionDocumentsRequired
         : credentialCenterBlocker.value?.blocker_type === "EXEMPTION_UNDER_REVIEW"
           ? cardCopy.value.exemptionReviewPending
-          : cardCopy.value.blocked,
+          : eligibilityCopy.value.blocked,
       icon: AlertCircle,
       className: "border-amber-200 bg-amber-50 text-amber-800",
       hint: blockerText(credentialCenterBlocker.value || blockers.value[0]),
     }
   }
-  return { label: cardCopy.value.checking, icon: Clock, className: "border-slate-200 bg-slate-50 text-slate-700", hint: "" }
+  return { label: eligibilityCopy.value.pending, icon: Clock, className: "border-slate-200 bg-slate-50 text-slate-700", hint: "" }
 })
 
 async function refreshBundleState() {
   if (!props.id || statusRefreshing.value) return false
+  eligibilityRefreshFailed.value = false
   statusRefreshing.value = true
   try {
     freshBundle.value = await apiClient(`/api/mall/bundles/${encodeURIComponent(props.id)}`, { suppressErrorToast: true })
     return true
   } catch (error) {
+    eligibilityRefreshFailed.value = true
     console.error("Failed to refresh bundle state", error)
     return false
   } finally {
@@ -236,7 +263,8 @@ async function handleCardClick() {
   }
   if (effectivePurchased.value || statusRefreshing.value) return
   void preloadCheckoutWizard()
-  await refreshBundleState()
+  const refreshed = await refreshBundleState()
+  if (!refreshed) return
   if (effectivePurchased.value) return
   if (hasInProgressOrder.value) {
     toast.info(t.value.purchaseDialog?.inProgressPurchaseDesc || cardCopy.value.inProgressPurchase)
@@ -266,6 +294,7 @@ async function handleCardClick() {
     data-testid="certification-card"
     :data-bundle-id="id"
     :data-pipeline-id="pipelineId || ''"
+    :aria-busy="statusRefreshing"
     class="group flex h-full flex-col overflow-hidden rounded-lg border border-[#ccd7e8] bg-white transition-colors duration-200 hover:border-primary"
     :class="!effectivePurchased && 'cursor-pointer'"
     @click="handleCardClick"
@@ -367,6 +396,7 @@ async function handleCardClick() {
             actionClass,
           ]"
         >
+          <LoaderCircle v-if="statusRefreshing" class="h-4 w-4 animate-spin" aria-hidden="true" />
           <span>{{ actionCopy }}</span>
         </div>
       </div>

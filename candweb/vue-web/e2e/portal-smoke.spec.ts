@@ -170,7 +170,29 @@ test("公开商城按商品类型区分报名与成为会员文案", async ({ pa
 
 test("登录后商城区分认证报名与会员加入文案", async ({ page }) => {
   await seedAuthenticatedCandidate(page);
-  await installCandidateApiMocks(page, ({ pathname }) => {
+  let releaseEligibilityCheck: (() => void) | undefined;
+  const eligibilityCheckPending = new Promise<void>((resolve) => {
+    releaseEligibilityCheck = resolve;
+  });
+  await installCandidateApiMocks(page, async ({ pathname }) => {
+    if (pathname === "/api/mall/bundles/candidate-certification-loading") {
+      await eligibilityCheckPending;
+      return {
+        data: {
+          bundle_id: "candidate-certification-loading",
+          pipeline_id: "candidate-pipeline-loading",
+          is_pipeline_bundle: true,
+          name: "资格确认中认证项目",
+          eligibility: {
+            can_purchase: false,
+            blockers: [{ blocker_type: "FORBIDDEN_QUALIFICATION" }],
+          },
+        },
+      };
+    }
+    if (pathname === "/api/mall/bundles/candidate-certification-failed") {
+      return { status: 500, errorCode: "ELIGIBILITY_CHECK_FAILED" };
+    }
     if (pathname !== "/api/mall/bundles") return undefined;
     return {
       data: {
@@ -189,6 +211,30 @@ test("登录后商城区分认证报名与会员加入文案", async ({ page }) 
             name: "登录后会员服务",
             eligibility: { can_purchase: true, blockers: [] },
           },
+          {
+            bundle_id: "candidate-certification-pending",
+            pipeline_id: "candidate-pipeline-pending",
+            is_pipeline_bundle: true,
+            name: "待确认认证项目",
+          },
+          {
+            bundle_id: "candidate-membership-pending",
+            membership_id: "candidate-membership-pending",
+            is_membership_bundle: true,
+            name: "待确认会员服务",
+          },
+          {
+            bundle_id: "candidate-certification-loading",
+            pipeline_id: "candidate-pipeline-loading",
+            is_pipeline_bundle: true,
+            name: "资格确认中认证项目",
+          },
+          {
+            bundle_id: "candidate-certification-failed",
+            pipeline_id: "candidate-pipeline-failed",
+            is_pipeline_bundle: true,
+            name: "资格确认失败认证项目",
+          },
         ],
       },
     };
@@ -198,15 +244,46 @@ test("登录后商城区分认证报名与会员加入文案", async ({ page }) 
 
   const certificationCard = page.locator('[data-bundle-id="candidate-certification"]');
   const membershipCard = page.locator('[data-bundle-id="candidate-membership"]');
+  const pendingCertificationCard = page.locator('[data-bundle-id="candidate-certification-pending"]');
+  const pendingMembershipCard = page.locator('[data-bundle-id="candidate-membership-pending"]');
+  const loadingCertificationCard = page.locator('[data-bundle-id="candidate-certification-loading"]');
+  const failedCertificationCard = page.locator('[data-bundle-id="candidate-certification-failed"]');
+  await expect(certificationCard).toContainText("可报名认证");
   await expect(certificationCard).toContainText("去报名");
+  await expect(membershipCard).toContainText("可成为会员");
   await expect(membershipCard).toContainText("成为会员");
+  await expect(pendingCertificationCard).toContainText("待确认报名资格");
+  await expect(pendingCertificationCard).toContainText("查看报名资格");
+  await expect(pendingMembershipCard).toContainText("待确认会员资格");
+  await expect(pendingMembershipCard).toContainText("查看会员资格");
+
+  await loadingCertificationCard.click();
+  await expect(loadingCertificationCard).toHaveAttribute("aria-busy", "true");
+  await expect(loadingCertificationCard).toContainText("正在确认报名资格...");
+  await expect(loadingCertificationCard).toContainText("请稍候...");
+  releaseEligibilityCheck?.();
+  await expect(loadingCertificationCard).toContainText("暂不可报名");
+
+  await failedCertificationCard.click();
+  await expect(failedCertificationCard).toContainText("报名资格获取失败");
+  await expect(failedCertificationCard).toContainText("重新检查报名资格");
+  await expect(page).toHaveURL(/\/certifications$/);
 
   await page.evaluate(() => {
     localStorage.setItem("app_lang", "en");
     window.dispatchEvent(new Event("lang_change"));
   });
+  await expect(certificationCard).toContainText("Ready to enroll");
   await expect(certificationCard).toContainText("Enroll Now");
+  await expect(membershipCard).toContainText("Eligible for membership");
   await expect(membershipCard).toContainText("Become a Member");
+  await expect(pendingCertificationCard).toContainText("Enrollment eligibility pending");
+  await expect(pendingCertificationCard).toContainText("Check Enrollment Eligibility");
+  await expect(pendingMembershipCard).toContainText("Membership eligibility pending");
+  await expect(pendingMembershipCard).toContainText("Check Membership Eligibility");
+  await expect(loadingCertificationCard).toContainText("Enrollment unavailable");
+  await expect(failedCertificationCard).toContainText("Failed to load enrollment eligibility");
+  await expect(failedCertificationCard).toContainText("Retry Enrollment Check");
 });
 
 test("首页统计卡片可以跳转到对应页面", async ({ page }) => {
