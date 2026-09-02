@@ -66,6 +66,14 @@ func normalizeParameterSchema(value string) (string, error) {
 	return trimmed, nil
 }
 
+func normalizeOptionalParameterSchema(value string) (string, error) {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return "", nil
+	}
+	return normalizeParameterSchema(trimmed)
+}
+
 func (h *Handler) SendMail(w http.ResponseWriter, r *http.Request) {
 	var input SendMailInput
 	if err := ReadJSON(r, &input); err != nil {

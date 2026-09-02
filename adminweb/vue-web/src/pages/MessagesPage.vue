@@ -164,7 +164,7 @@ function extractPayloadTemplate(...texts: unknown[]) {
 
 function normalizeParameterSchema(value: string) {
   const trimmed = value.trim()
-  if (!trimmed) return "{}"
+  if (!trimmed) return ""
   JSON.parse(trimmed)
   return trimmed
 }
@@ -452,7 +452,7 @@ async function editTemplate(template: JsonRecord | null = selectedTemplate.value
   formPath.value = path
   formTitle.value = titleOf(template)
   formDescription.value = String(template.description || "")
-  formParameterSchema.value = String(template.parameter_schema || "{}")
+  formParameterSchema.value = String(template.parameter_schema ?? "")
   formVersion.value = Number(template.version || 0)
   formContent.value = ""
 
@@ -464,7 +464,7 @@ async function editTemplate(template: JsonRecord | null = selectedTemplate.value
       formTitle.value = String(detail.title_tpl || formTitle.value)
       formContent.value = String(detail.content_tpl || "")
       formDescription.value = String(detail.description || formDescription.value)
-      formParameterSchema.value = String(detail.parameter_schema || "{}")
+      formParameterSchema.value = String(detail.parameter_schema ?? "")
       formVersion.value = Number(detail.version || formVersion.value)
     }
     return true
