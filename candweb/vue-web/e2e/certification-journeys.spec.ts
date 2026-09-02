@@ -1176,6 +1176,12 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
     await expect(page.getByText("雇佣证明", { exact: true })).toBeVisible()
     await expect(page.locator(`[id="qualification-file-${unitID}-Employment Certificate"]`)).toHaveCount(1)
 
+    const qualificationCard = page.locator(".checkout-unit-card").filter({
+        has: page.getByText("Template Application Course", { exact: true }),
+    })
+    await expect(qualificationCard.getByRole("button", { name: "取消", exact: true })).toHaveCount(0)
+    await expect(qualificationCard.getByRole("button", { name: "提交申请", exact: true })).toBeVisible()
+
     await page.locator(`[id="qualification-file-${unitID}-Employment Certificate"]`).setInputFiles({
         name: "employment-certificate.pdf",
         mimeType: "application/pdf",
