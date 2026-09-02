@@ -168,6 +168,47 @@ test("公开商城按商品类型区分报名与成为会员文案", async ({ pa
   await expect(membershipCard.getByRole("button")).toContainText("Become a Member");
 });
 
+test("登录后商城区分认证报名与会员加入文案", async ({ page }) => {
+  await seedAuthenticatedCandidate(page);
+  await installCandidateApiMocks(page, ({ pathname }) => {
+    if (pathname !== "/api/mall/bundles") return undefined;
+    return {
+      data: {
+        bundles: [
+          {
+            bundle_id: "candidate-certification",
+            pipeline_id: "candidate-pipeline",
+            is_pipeline_bundle: true,
+            name: "登录后认证项目",
+            eligibility: { can_purchase: true, blockers: [] },
+          },
+          {
+            bundle_id: "candidate-membership",
+            membership_id: "candidate-membership",
+            is_membership_bundle: true,
+            name: "登录后会员服务",
+            eligibility: { can_purchase: true, blockers: [] },
+          },
+        ],
+      },
+    };
+  });
+
+  await page.goto("/certifications", { waitUntil: "domcontentloaded" });
+
+  const certificationCard = page.locator('[data-bundle-id="candidate-certification"]');
+  const membershipCard = page.locator('[data-bundle-id="candidate-membership"]');
+  await expect(certificationCard).toContainText("去报名");
+  await expect(membershipCard).toContainText("成为会员");
+
+  await page.evaluate(() => {
+    localStorage.setItem("app_lang", "en");
+    window.dispatchEvent(new Event("lang_change"));
+  });
+  await expect(certificationCard).toContainText("Enroll Now");
+  await expect(membershipCard).toContainText("Become a Member");
+});
+
 test("首页统计卡片可以跳转到对应页面", async ({ page }) => {
   await seedAuthenticatedCandidate(page);
   await installCandidateApiMocks(page, emptyPortalResponse);

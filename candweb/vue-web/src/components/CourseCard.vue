@@ -127,7 +127,7 @@ const actionCopy = computed(() => {
   if (effectivePurchased.value) return isPipelineProduct.value ? cardCopy.value.enterCertification : cardCopy.value.membershipCenter
   if (statusRefreshing.value) return cardCopy.value.checking
   if (hasInProgressOrder.value) return cardCopy.value.continuePayment
-  if (currentEligibility.value?.can_purchase) return cardCopy.value.buyNow
+  if (currentEligibility.value?.can_purchase) return isMembershipOnlyProduct.value ? cardCopy.value.becomeMember : cardCopy.value.enrollNow
   if (hasAdditionalExemptionOption.value) return cardCopy.value.continueExemptionSelection
   if (credentialCenterBlocker.value?.blocker_type === "EXEMPTION_DOCUMENTS_PENDING_UPLOAD") return cardCopy.value.uploadExemptionDocuments
   if (credentialCenterBlocker.value?.blocker_type === "EXEMPTION_UNDER_REVIEW") return cardCopy.value.viewExemptionReview
