@@ -1242,7 +1242,8 @@ test("资格申请页允许 PendingUpload 申请上传", async ({ page }) => {
     await expect(page.locator(".credentials-apply-dialog").getByText("Included Qualification", { exact: true })).toBeVisible()
 })
 
-test("资格申请记录仅在存在审核备注时显示备注", async ({ page }) => {
+test("资格申请记录通过弹窗显示完整审核备注", async ({ page }) => {
+    const auditRemark = "材料清晰，审核已通过。\n请在后续认证流程中继续使用该资格；如资格信息发生变化，请及时联系管理员更新。"
     await installCandidateApiMocks(page, ({ pathname }) => {
         if (pathname === "/api/credentials/definitions") return { data: { definitions: [] } }
         if (pathname === "/api/credentials/applications") {
@@ -1262,7 +1263,7 @@ test("资格申请记录仅在存在审核备注时显示备注", async ({ page 
                             credential_name: "Approved Qualification",
                             credential_category: "Exemption",
                             status: "APPLICATION_STATUS_APPROVED",
-                            audit_remark: "材料清晰",
+                            audit_remark: auditRemark,
                             created_at: "2026-08-29T00:00:00Z",
                         },
                     ],
@@ -1275,9 +1276,18 @@ test("资格申请记录仅在存在审核备注时显示备注", async ({ page 
 
     await page.goto("/credentials", { waitUntil: "domcontentloaded" })
 
-    await expect(page.getByTestId("application-audit-remark")).toHaveCount(1)
-    await expect(page.getByTestId("application-audit-remark")).toHaveText("审核备注: 材料清晰")
-    await expect(page.getByText("N/A", { exact: true })).toHaveCount(0)
+    await expect(page.getByText(auditRemark, { exact: true })).toHaveCount(0)
+    const viewRemarkButton = page.getByRole("button", { name: "查看备注", exact: true })
+    await expect(viewRemarkButton).toHaveCount(1)
+    await viewRemarkButton.click()
+
+    const auditRemarkDialog = page.getByTestId("application-audit-remark-dialog")
+    await expect(auditRemarkDialog).toBeVisible()
+    await expect(auditRemarkDialog.getByText("Approved Qualification", { exact: true })).toBeVisible()
+    await expect(auditRemarkDialog.getByTestId("application-audit-remark-content")).toHaveText(auditRemark)
+    await auditRemarkDialog.getByTestId("application-audit-remark-close").click()
+    await expect(auditRemarkDialog).toBeHidden()
+    await expect(viewRemarkButton).toBeFocused()
 })
 
 test("免考选择完成后按资格创建独立订单", async ({ page }) => {
