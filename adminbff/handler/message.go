@@ -189,12 +189,22 @@ func (h *Handler) UpdateTemplate(w http.ResponseWriter, r *http.Request) {
 	if !requireRequestFields(w, req.Path, "path", req.TitleTpl, "title_tpl", req.ContentTpl, "content_tpl") {
 		return
 	}
-	parameterSchema, err := normalizeOptionalParameterSchema(req.ParameterSchema)
+	builtInPaths, err := h.Gmsg.GetAllBuiltInPaths(r.Context(), &gmsgpb.GetAllBuiltInPathsRequest{})
 	if err != nil {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "parameter_schema must be valid JSON")
+		slog.Error("GetAllBuiltInPaths before UpdateTemplate failed", "error", err)
+		HandleGrpcError(w, err)
 		return
 	}
-	req.ParameterSchema = parameterSchema
+	if isBuiltInMessageTemplate(req.Path, builtInPaths.GetPaths()) {
+		req.ParameterSchema = ""
+	} else {
+		parameterSchema, err := normalizeParameterSchema(req.ParameterSchema)
+		if err != nil {
+			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "parameter_schema must be valid JSON")
+			return
+		}
+		req.ParameterSchema = parameterSchema
+	}
 
 	resp, err := h.Gmsg.UpdateTemplate(r.Context(), &req)
 	if err != nil {
@@ -203,6 +213,15 @@ func (h *Handler) UpdateTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	WriteJSON(w, http.StatusOK, resp)
+}
+
+func isBuiltInMessageTemplate(path string, paths []*gmsgpb.BuiltInPathInfo) bool {
+	for _, info := range paths {
+		if info.GetPath() == path {
+			return true
+		}
+	}
+	return false
 }
 
 func (h *Handler) DeleteMessageTemplate(w http.ResponseWriter, r *http.Request) {
