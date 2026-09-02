@@ -343,7 +343,7 @@ export const en: AppTranslations = {
     courses: {
         title: "Marketplace",
         subtitle: "Browse certifications, memberships, and related products available for purchase.",
-        searchPlaceholder: "Search products...",
+        searchPlaceholder: "Search...",
         categoryAll: "All",
         categoryCertification: "Certifications",
         categoryBundle: "Bundles",

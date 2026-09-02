@@ -42,6 +42,7 @@ const pageCopy = computed(() => lang.value === "zh"
       oneTimeFee: "认证及相关服务费用",
       loginAction: "登录后报名",
       memberAction: "去报名",
+      searchPlaceholder: "搜索...",
       loadErrorTitle: "商品暂时无法加载",
       loadErrorDesc: "请稍后重试，或登录后进入商城查看。",
       retry: "重新加载",
@@ -53,6 +54,7 @@ const pageCopy = computed(() => lang.value === "zh"
       oneTimeFee: "Certification and related service fee",
       loginAction: "Log In to Enroll",
       memberAction: "Enroll Now",
+      searchPlaceholder: "Search...",
       loadErrorTitle: "Products are temporarily unavailable",
       loadErrorDesc: "Please try again shortly or log in to view the member marketplace.",
       retry: "Reload",
@@ -244,7 +246,7 @@ onBeforeUnmount(() => {
 
           <label class="catalog-search">
             <Search aria-hidden="true" />
-            <input v-model="searchQuery" :placeholder="t.courses.searchPlaceholder" />
+            <input v-model="searchQuery" :placeholder="pageCopy.searchPlaceholder" />
           </label>
         </div>
 

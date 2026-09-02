@@ -341,7 +341,7 @@ export const zh = {
     courses: {
         title: "商城",
         subtitle: "浏览可购买的认证、会员和相关商品。",
-        searchPlaceholder: "搜索商品...",
+        searchPlaceholder: "搜索...",
         categoryAll: "全部",
         categoryCertification: "认证项目",
         categoryBundle: "认证套餐",
