@@ -515,6 +515,8 @@ export const en: AppTranslations = {
         stageExemptionDecisionLabel: "Exemption decision",
         stageExemptionApply: "Use qualification exemption",
         stageExemptionWaive: "Waive exemption and pay full price",
+        stageExemptionAutomatic: "Qualified: exemption price applies",
+        stageExemptionAutomaticHint: "You hold an active qualification, so the exemption is applied automatically at the exemption price.",
         stageExemptionFee: "Exemption fee {{price}}",
         stageExemptionAccessFee: "Course price {{price}}",
         stageExemptionPriceLoading: "Loading price...",

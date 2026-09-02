@@ -1495,6 +1495,9 @@ test("分阶段购买先完成免考声明再创建阶段订单", async ({ page 
     const exemptedUnit = page.locator(`[data-testid="stage-exemption-unit"][data-unit-id="${exemptedUnitID}"]`)
     await expect(exemptedUnit.getByTestId("stage-exemption-fee")).toHaveText("免考认定费 US$200.00")
     await expect(exemptedUnit.getByTestId("stage-access-fee")).toHaveText("课程原价 US$600.00")
+    await expect(exemptedUnit.getByText("已持有有效资格，系统将自动应用免考并按免考认定费结算。", { exact: true })).toBeVisible()
+    const qualifiedWaiveButton = exemptedUnit.getByRole("button", { name: "已有资格，自动按免考价结算", exact: true })
+    await expect(qualifiedWaiveButton).toBeDisabled()
 
     const waivedUnit = page.locator(`[data-testid="stage-exemption-unit"][data-unit-id="${waivedUnitID}"]`)
     await expect(waivedUnit.getByTestId("stage-exemption-fee")).toHaveText("免考认定费 US$0.00")

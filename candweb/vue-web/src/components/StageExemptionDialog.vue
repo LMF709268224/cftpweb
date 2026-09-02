@@ -201,7 +201,11 @@ function close() {
 }
 
 function setUnitDecision(unit: StageExemptionUnit, decision: ExemptionDecision) {
-  if (!unit.unit_id || (decision === "exempt" && !selectedQualificationIsEligible(unit))) return
+  if (
+    !unit.unit_id
+    || (decision === "exempt" && !selectedQualificationIsEligible(unit))
+    || (decision === "waive" && selectedQualificationIsEligible(unit))
+  ) return
   exemptionDecisions.value = {
     ...exemptionDecisions.value,
     [unit.unit_id]: decision,
@@ -377,6 +381,7 @@ function qualificationStatusLabel(unit: StageExemptionUnit) {
 }
 
 function qualificationStatusHint(unit: StageExemptionUnit) {
+  if (selectedQualificationIsEligible(unit)) return t.value.learning.stageExemptionAutomaticHint
   switch (qualificationApplicationState(unit)) {
     case "pending_upload": return t.value.learning.stageExemptionPendingUploadHint
     case "resubmit": return t.value.learning.stageExemptionNeedsResubmitHint
@@ -755,11 +760,13 @@ watch(
                   :class="exemptionDecisions[String(unit.unit_id)] === 'waive' ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300 bg-white text-slate-700'"
                   :data-unit-id="unit.unit_id"
                   data-testid="stage-exemption-waive"
-                  :disabled="Boolean(applicationLoadingUnitId) || unitPaymentBlockedByApplication(unit)"
-                  :title="unitPaymentBlockedByApplication(unit) ? qualificationStatusHint(unit) : undefined"
+                  :disabled="selectedQualificationIsEligible(unit) || Boolean(applicationLoadingUnitId) || unitPaymentBlockedByApplication(unit)"
+                  :title="selectedQualificationIsEligible(unit) || unitPaymentBlockedByApplication(unit) ? qualificationStatusHint(unit) : undefined"
                   @click="setUnitDecision(unit, 'waive')"
                 >
-                  {{ t.learning.stageExemptionWaive }}
+                  {{ selectedQualificationIsEligible(unit)
+                    ? t.learning.stageExemptionAutomatic
+                    : t.learning.stageExemptionWaive }}
                 </button>
               </div>
             </div>
