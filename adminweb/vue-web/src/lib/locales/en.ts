@@ -2434,17 +2434,12 @@ export const en: AdminTranslations = {
             duration: "Duration",
             durationValue: (months: number) => `${months} months`,
             tierLevel: "Tier Level",
-            price: "Price",
             casdoorRoleName: "Casdoor Role Name",
             courseDiscountCoupon: "Course Discount Coupon",
             updatedAt: "Updated At",
             featuresJson: "Benefits JSON",
             featureCategories: "Benefit Categories",
             featureLabels: "Benefit Labels",
-        },
-        pricing: {
-            notConfigured: "Price not configured",
-            loadFailed: "Price is temporarily unavailable",
         },
         form: {
             contractTitle: "Configuration Rules",
