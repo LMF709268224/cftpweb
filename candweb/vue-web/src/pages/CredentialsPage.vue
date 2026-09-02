@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from "vue"
 import { useRoute } from "vue-router"
-import { AlertCircle, Award, CheckCircle, Clock, FileText, Loader2, X, XCircle } from "lucide-vue-next"
+import { AlertCircle, Award, CheckCircle, Clock, FileText, Loader2, MessageSquareText, X, XCircle } from "lucide-vue-next"
 import { getFileConstraintInfo } from "../lib/fileConstraints"
 import { CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, CANDIDATE_APPLICATION_STATUS_LABELS, statusEnumNameForStatus, statusLabel } from "@/lib/status-labels"
 import AppPagination from "@/components/AppPagination.vue"
@@ -497,10 +497,11 @@ watch(
               <button
                 v-if="String(app.audit_remark || '').trim()"
                 type="button"
-                class="btn btn-outline col-span-2 h-9 w-fit whitespace-nowrap rounded-lg px-3 text-sm md:col-span-1 lg:col-start-3"
+                class="application-audit-remark-btn col-span-2 inline-flex w-fit cursor-pointer items-center justify-center gap-1.5 justify-self-start whitespace-nowrap rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-semibold text-primary transition-colors hover:border-primary/35 hover:bg-primary/10 active:bg-primary/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2 md:col-span-1 lg:col-start-3 lg:min-w-[88px]"
                 data-testid="application-view-audit-remark"
                 @click="openAuditRemark(app)"
               >
+                <MessageSquareText class="h-3.5 w-3.5" aria-hidden="true" />
                 {{ t.credentialsPage.viewAuditRemark }}
               </button>
               <button v-if="isPendingUploadStatus(app.status) || canResubmit(app.status)" class="btn btn-primary col-span-2 h-9 w-full cursor-pointer whitespace-nowrap rounded-lg py-1 text-sm shadow-sm shadow-primary/20 md:col-span-1 md:w-auto md:justify-self-end lg:col-start-4" @click="handleApplyClick(definitionForApplication(app), canResubmit(app.status) ? applicationId(app) : '')">{{ isPendingUploadStatus(app.status) ? t.credentialsPage.uploadMaterials : t.credentialsPage.appStatusResubmit }}</button>
