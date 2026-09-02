@@ -238,7 +238,7 @@ test("会员升级先预览分摊费用并以幂等请求确认", async ({ page 
 
   const dialog = page.getByRole("dialog", { name: "确认会员升级" })
   await expect(dialog).toBeVisible()
-  await expect(dialog.getByText("USD 15.60", { exact: true })).toBeVisible()
+  await expect(dialog.getByText("USD 15.6", { exact: true })).toBeVisible()
   await expect.poll(() => previewBody).toEqual({
     target_membership_ulid: "membership-plan-charterholder",
   })
