@@ -129,6 +129,45 @@ for (const portalPage of portalPages) {
   });
 }
 
+test("公开商城按商品类型区分报名与成为会员文案", async ({ page }) => {
+  await seedAuthenticatedCandidate(page);
+  await installCandidateApiMocks(page, ({ pathname }) => {
+    if (pathname !== "/api/mall/bundles") return undefined;
+    return {
+      data: {
+        bundles: [
+          {
+            bundle_id: "public-certification",
+            pipeline_id: "public-pipeline",
+            is_pipeline_bundle: true,
+            name: "公开认证项目",
+          },
+          {
+            bundle_id: "public-membership",
+            membership_id: "public-membership",
+            is_membership_bundle: true,
+            name: "公开会员服务",
+          },
+        ],
+      },
+    };
+  });
+
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  const certificationCard = page.locator("article.product-card").filter({ hasText: "公开认证项目" });
+  const membershipCard = page.locator("article.product-card").filter({ hasText: "公开会员服务" });
+  await expect(certificationCard.getByRole("button")).toContainText("去报名");
+  await expect(membershipCard.getByRole("button")).toContainText("成为会员");
+
+  await page.evaluate(() => {
+    localStorage.setItem("app_lang", "en");
+    window.dispatchEvent(new Event("lang_change"));
+  });
+  await expect(certificationCard.getByRole("button")).toContainText("Enroll Now");
+  await expect(membershipCard.getByRole("button")).toContainText("Become a Member");
+});
+
 test("首页统计卡片可以跳转到对应页面", async ({ page }) => {
   await seedAuthenticatedCandidate(page);
   await installCandidateApiMocks(page, emptyPortalResponse);

@@ -42,6 +42,7 @@ const pageCopy = computed(() => lang.value === "zh"
       oneTimeFee: "认证及相关服务费用",
       loginAction: "登录后报名",
       memberAction: "去报名",
+      membershipAction: "成为会员",
       searchPlaceholder: "搜索...",
       loadErrorTitle: "商品暂时无法加载",
       loadErrorDesc: "请稍后重试，或登录后进入商城查看。",
@@ -54,6 +55,7 @@ const pageCopy = computed(() => lang.value === "zh"
       oneTimeFee: "Certification and related service fee",
       loginAction: "Log In to Enroll",
       memberAction: "Enroll Now",
+      membershipAction: "Become a Member",
       searchPlaceholder: "Search...",
       loadErrorTitle: "Products are temporarily unavailable",
       loadErrorDesc: "Please try again shortly or log in to view the member marketplace.",
@@ -94,6 +96,12 @@ function certificationDisplayName(value?: string) {
 
 function formatDisplayAmount(amount: number, currency = "USD") {
   return formatCurrencyMinorAmount(amount, currency) || ""
+}
+
+function authenticatedActionLabel(course: PublicCourse) {
+  return course.isMembershipBundle && !course.isPipelineBundle
+    ? pageCopy.value.membershipAction
+    : pageCopy.value.memberAction
 }
 
 function bundlePriceLabel(bundle: any) {
@@ -307,7 +315,7 @@ onBeforeUnmount(() => {
                     loginProductId === course.id
                       ? t.loginPage.loading
                       : authenticated
-                        ? pageCopy.memberAction
+                        ? authenticatedActionLabel(course)
                         : pageCopy.loginAction
                   }}
                 </span>
