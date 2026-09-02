@@ -1442,6 +1442,27 @@ test("分阶段购买先完成免考声明再创建阶段订单", async ({ page 
 
     await installCandidateApiMocks(page, ({ pathname, method, body }) => {
         if (pathname === `/api/mall/pipelines/${pipelineID}/runtime`) return { data: runtime }
+        if (pathname === "/api/mall/bundles") return { data: { bundles: [bundle] } }
+        if (pathname === `/api/mall/bundles/${bundleID}/pricing-detail`) {
+            return {
+                data: {
+                    pricing_detail_json: JSON.stringify({
+                        units: [
+                            {
+                                unit_id: exemptedUnitID,
+                                access: { amount: 60000, currency: "USD" },
+                                exemption: { amount: 20000, currency: "USD" },
+                            },
+                            {
+                                unit_id: waivedUnitID,
+                                access: { amount: 75000, currency: "USD" },
+                                exemption: { amount: 0, currency: "USD" },
+                            },
+                        ],
+                    }),
+                },
+            }
+        }
         if (pathname === "/api/credentials/qualifications") {
             return {
                 data: {
@@ -1470,6 +1491,14 @@ test("分阶段购买先完成免考声明再创建阶段订单", async ({ page 
 
     await expect(page.getByText("选择当前阶段免考", { exact: true })).toBeVisible()
     expect(stageOrderBody).toBeUndefined()
+
+    const exemptedUnit = page.locator(`[data-testid="stage-exemption-unit"][data-unit-id="${exemptedUnitID}"]`)
+    await expect(exemptedUnit.getByTestId("stage-exemption-fee")).toHaveText("免考认定费 US$200.00")
+    await expect(exemptedUnit.getByTestId("stage-access-fee")).toHaveText("课程原价 US$600.00")
+
+    const waivedUnit = page.locator(`[data-testid="stage-exemption-unit"][data-unit-id="${waivedUnitID}"]`)
+    await expect(waivedUnit.getByTestId("stage-exemption-fee")).toHaveText("免考认定费 US$0.00")
+    await expect(waivedUnit.getByTestId("stage-access-fee")).toHaveText("课程原价 US$750.00")
 
     await page.getByRole("button", { name: "放弃免考，原价购买", exact: true }).last().click()
     await page.getByRole("button", { name: "确认并继续", exact: true }).click()

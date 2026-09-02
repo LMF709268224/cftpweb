@@ -34,6 +34,12 @@ type StageExemptionStage = {
   units?: StageExemptionUnit[]
 }
 
+type StageUnitPricing = {
+  accessAmount?: number
+  exemptionAmount: number
+  currency: string
+}
+
 const props = defineProps<{
   open: boolean
   stage: StageExemptionStage | null
@@ -46,7 +52,7 @@ const emit = defineEmits<{
   submit: [selection: { exemptedUnitIds: string[]; waivedUnitIds: string[] }]
 }>()
 
-const { t } = useTranslation()
+const { t, lang } = useTranslation()
 const router = useRouter()
 type ExemptionDecision = "exempt" | "waive"
 type QualificationApplicationTarget = {
@@ -64,6 +70,9 @@ const eligibleQualificationIds = ref<Set<string>>(new Set())
 const qualificationApplications = ref<Record<string, any | null>>({})
 const eligibilityLoading = ref(false)
 const eligibilityLoadFailed = ref(false)
+const pricingByUnit = ref<Record<string, StageUnitPricing>>({})
+const pricingLoading = ref(false)
+const pricingLoaded = ref(false)
 const applicationConfirmTarget = ref<QualificationApplicationTarget | null>(null)
 const applicationLoadingUnitId = ref("")
 const resolvedBundleId = ref("")
@@ -147,6 +156,31 @@ function unitIsEligible(unit: StageExemptionUnit) {
 
 function unitLabel(unit: StageExemptionUnit) {
   return firstString(unit.unit_name, unit.name, unit.unit_id, t.value.common.unknown)
+}
+
+function formatMoney(amount: number, currency: string) {
+  const normalizedCurrency = firstString(currency, "USD").toUpperCase()
+  try {
+    return new Intl.NumberFormat(lang.value === "zh" ? "zh-CN" : "en-US", {
+      style: "currency",
+      currency: normalizedCurrency,
+    }).format(amount / 100)
+  } catch {
+    return `${normalizedCurrency} ${(amount / 100).toFixed(2)}`
+  }
+}
+
+function unitPriceText(unit: StageExemptionUnit, kind: "access" | "exemption") {
+  if (pricingLoading.value) return t.value.learning.stageExemptionPriceLoading
+  const pricing = pricingByUnit.value[firstString(unit.unit_id)]
+  if (!pricingLoaded.value || !pricing) return t.value.learning.stageExemptionPriceUnavailable
+
+  const amount = kind === "access" ? pricing.accessAmount : pricing.exemptionAmount
+  if (typeof amount !== "number") return t.value.learning.stageExemptionPriceUnavailable
+  const template = kind === "access"
+    ? t.value.learning.stageExemptionAccessFee
+    : t.value.learning.stageExemptionFee
+  return template.replace("{{price}}", formatMoney(amount, pricing.currency))
 }
 
 function qualificationLabel(qualification: ExemptionQualification) {
@@ -416,6 +450,40 @@ async function resolveBundleIdForPipeline() {
   return resolvedBundleId.value
 }
 
+async function loadPricing() {
+  pricingByUnit.value = {}
+  pricingLoading.value = true
+  pricingLoaded.value = false
+  try {
+    const bundleId = await resolveBundleIdForPipeline()
+    if (!bundleId) return
+
+    const params = new URLSearchParams({ payment_mode: "BY_STAGE" })
+    const response = await apiClient(
+      `/api/mall/bundles/${encodeURIComponent(bundleId)}/pricing-detail?${params.toString()}`,
+      { suppressErrorToast: true },
+    )
+    const rawDetail = response?.pricing_detail_json
+    const detail = typeof rawDetail === "string" ? JSON.parse(rawDetail) : rawDetail
+    const prices: Record<string, StageUnitPricing> = {}
+    for (const unit of Array.isArray(detail?.units) ? detail.units : []) {
+      const unitId = firstString(unit?.unit_id)
+      if (!unitId) continue
+      prices[unitId] = {
+        accessAmount: typeof unit?.access?.amount === "number" ? unit.access.amount : undefined,
+        exemptionAmount: typeof unit?.exemption?.amount === "number" ? unit.exemption.amount : 0,
+        currency: firstString(unit?.exemption?.currency, unit?.access?.currency, "USD"),
+      }
+    }
+    pricingByUnit.value = prices
+    pricingLoaded.value = true
+  } catch (error) {
+    console.error("Failed to load stage exemption pricing", error)
+  } finally {
+    pricingLoading.value = false
+  }
+}
+
 function isInProgressApplicationError(error: unknown) {
   if (!(error instanceof ApiClientError)) return false
   const message = firstString(error.rawMessage, error.errorCode, error.message).toLowerCase()
@@ -517,7 +585,10 @@ async function confirmQualificationApplication() {
 watch(
   () => [props.open, props.stage?.stage_id, props.stage?.stage_cc_ulid, props.pipelineId],
   ([open]) => {
-    if (open) void loadEligibility()
+    if (open) {
+      void loadEligibility()
+      void loadPricing()
+    }
   },
   { immediate: true },
 )
@@ -657,30 +728,40 @@ watch(
               </span>
             </div>
             <div class="mt-4 grid gap-2 sm:grid-cols-2" role="group" :aria-label="t.learning.stageExemptionDecisionLabel">
-              <button
-                type="button"
-                class="btn min-h-10 rounded-lg border px-3 text-sm"
-                :class="exemptionDecisions[String(unit.unit_id)] === 'exempt' ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-300 bg-white text-slate-700'"
-                :data-unit-id="unit.unit_id"
-                data-testid="stage-exemption-apply"
-                :disabled="!selectedQualificationIdForUnit(unit) || Boolean(applicationLoadingUnitId)"
-                @click="handleExemptionAction(unit)"
-              >
-                <Loader2 v-if="applicationLoadingUnitId === String(unit.unit_id)" class="mr-2 h-4 w-4 animate-spin" />
-                {{ qualificationActionLabel(unit) }}
-              </button>
-              <button
-                type="button"
-                class="btn min-h-10 rounded-lg border px-3 text-sm"
-                :class="exemptionDecisions[String(unit.unit_id)] === 'waive' ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300 bg-white text-slate-700'"
-                :data-unit-id="unit.unit_id"
-                data-testid="stage-exemption-waive"
-                :disabled="Boolean(applicationLoadingUnitId) || unitPaymentBlockedByApplication(unit)"
-                :title="unitPaymentBlockedByApplication(unit) ? qualificationStatusHint(unit) : undefined"
-                @click="setUnitDecision(unit, 'waive')"
-              >
-                {{ t.learning.stageExemptionWaive }}
-              </button>
+              <div class="flex min-w-0 flex-col gap-1.5">
+                <span data-testid="stage-exemption-fee" class="min-h-5 text-center text-xs font-semibold text-emerald-700">
+                  {{ unitPriceText(unit, 'exemption') }}
+                </span>
+                <button
+                  type="button"
+                  class="btn min-h-10 rounded-lg border px-3 text-sm"
+                  :class="exemptionDecisions[String(unit.unit_id)] === 'exempt' ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-300 bg-white text-slate-700'"
+                  :data-unit-id="unit.unit_id"
+                  data-testid="stage-exemption-apply"
+                  :disabled="!selectedQualificationIdForUnit(unit) || Boolean(applicationLoadingUnitId)"
+                  @click="handleExemptionAction(unit)"
+                >
+                  <Loader2 v-if="applicationLoadingUnitId === String(unit.unit_id)" class="mr-2 h-4 w-4 animate-spin" />
+                  {{ qualificationActionLabel(unit) }}
+                </button>
+              </div>
+              <div class="flex min-w-0 flex-col gap-1.5">
+                <span data-testid="stage-access-fee" class="min-h-5 text-center text-xs font-semibold text-slate-600">
+                  {{ unitPriceText(unit, 'access') }}
+                </span>
+                <button
+                  type="button"
+                  class="btn min-h-10 rounded-lg border px-3 text-sm"
+                  :class="exemptionDecisions[String(unit.unit_id)] === 'waive' ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300 bg-white text-slate-700'"
+                  :data-unit-id="unit.unit_id"
+                  data-testid="stage-exemption-waive"
+                  :disabled="Boolean(applicationLoadingUnitId) || unitPaymentBlockedByApplication(unit)"
+                  :title="unitPaymentBlockedByApplication(unit) ? qualificationStatusHint(unit) : undefined"
+                  @click="setUnitDecision(unit, 'waive')"
+                >
+                  {{ t.learning.stageExemptionWaive }}
+                </button>
+              </div>
             </div>
           </div>
         </div>
