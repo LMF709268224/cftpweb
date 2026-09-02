@@ -11,6 +11,7 @@ import PageFeedback from "@/components/PageFeedback.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useBodyScrollLock } from "@/lib/bodyScrollLock"
 import { candidateVisibleCredentialDefinitions } from "@/lib/credentialDefinitions"
+import { useDialogAccessibility } from "@/lib/dialogAccessibility"
 import { formatBackendDateOnly } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
 import { toast } from "vue-sonner"
@@ -36,7 +37,11 @@ const applicationsLoading = ref(false)
 const selectedDef = ref<any>(null)
 const resubmitAppId = ref("")
 const isApplyOpen = ref(false)
-useBodyScrollLock(() => isApplyOpen.value)
+const auditRemarkDialogOpen = ref(false)
+const auditRemarkDialogRef = ref<HTMLElement | null>(null)
+const selectedAuditRemark = ref("")
+const selectedAuditRemarkTitle = ref("")
+useBodyScrollLock(() => isApplyOpen.value || auditRemarkDialogOpen.value)
 const uploadedFiles = ref<Record<string, { name: string; url: string; ext: string; hash: string; size: number }>>({})
 const isSubmitting = ref(false)
 const uploadingConstraintName = ref("")
@@ -336,6 +341,24 @@ function applicationMeta(app: any) {
   return parts.join(" · ") || t.value.credentialsPage.application
 }
 
+function openAuditRemark(app: any) {
+  const remark = String(app?.audit_remark || "").trim()
+  if (!remark) return
+  selectedAuditRemark.value = remark
+  selectedAuditRemarkTitle.value = applicationTitle(app)
+  auditRemarkDialogOpen.value = true
+}
+
+function closeAuditRemark() {
+  auditRemarkDialogOpen.value = false
+}
+
+useDialogAccessibility(
+  () => auditRemarkDialogOpen.value,
+  auditRemarkDialogRef,
+  closeAuditRemark,
+)
+
 function latestApplicationForDef(credDefId: string) {
   const normalizedCredDefId = String(credDefId || "").trim()
   const application = applications.value.find((item) => applicationCredentialDefinitionId(item) === normalizedCredDefId)
@@ -471,7 +494,15 @@ watch(
                 <component :is="statusIcon(app.status)" class="h-3.5 w-3.5" />
                 {{ statusLabel(t, CANDIDATE_APPLICATION_STATUS_LABELS, app.status, 'credentialsPage.appStatusUnknown') }}
               </span>
-              <div v-if="String(app.audit_remark || '').trim()" class="col-span-2 min-w-0 rounded-lg bg-slate-50 px-3 py-2 text-sm leading-5 text-muted-foreground md:col-span-2 md:bg-transparent md:px-0 md:py-0 md:truncate lg:col-span-1" data-testid="application-audit-remark" :title="`${t.credentialsPage.auditRemark}: ${app.audit_remark}`">{{ t.credentialsPage.auditRemark }}: {{ app.audit_remark }}</div>
+              <button
+                v-if="String(app.audit_remark || '').trim()"
+                type="button"
+                class="btn btn-outline col-span-2 h-9 w-fit whitespace-nowrap rounded-lg px-3 text-sm md:col-span-1 lg:col-start-3"
+                data-testid="application-view-audit-remark"
+                @click="openAuditRemark(app)"
+              >
+                {{ t.credentialsPage.viewAuditRemark }}
+              </button>
               <button v-if="isPendingUploadStatus(app.status) || canResubmit(app.status)" class="btn btn-primary col-span-2 h-9 w-full cursor-pointer whitespace-nowrap rounded-lg py-1 text-sm shadow-sm shadow-primary/20 md:col-span-1 md:w-auto md:justify-self-end lg:col-start-4" @click="handleApplyClick(definitionForApplication(app), canResubmit(app.status) ? applicationId(app) : '')">{{ isPendingUploadStatus(app.status) ? t.credentialsPage.uploadMaterials : t.credentialsPage.appStatusResubmit }}</button>
               <span v-else class="col-span-2 justify-self-start whitespace-nowrap text-sm text-muted-foreground md:col-span-1 md:justify-self-end lg:col-start-4">{{ formatBackendDateOnly(app.created_at) || t.common.na }}</span>
             </div>
@@ -493,6 +524,53 @@ watch(
     </div>
 
       </main>
+    </div>
+
+    <div
+      v-if="auditRemarkDialogOpen"
+      class="app-safe-area-overlay fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-[2px]"
+      @click.self="closeAuditRemark"
+    >
+      <div
+        ref="auditRemarkDialogRef"
+        class="app-dialog-viewport-compact flex max-h-[86vh] w-full max-w-xl flex-col overflow-hidden rounded-[16px] bg-white shadow-[0_24px_70px_rgba(15,23,42,0.28)]"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="audit-remark-dialog-title"
+        aria-describedby="audit-remark-dialog-content"
+        tabindex="-1"
+        data-testid="application-audit-remark-dialog"
+      >
+        <div class="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-5 sm:px-6">
+          <div class="min-w-0">
+            <h2 id="audit-remark-dialog-title" class="text-xl font-bold leading-snug text-slate-950">
+              {{ t.credentialsPage.auditRemark }}
+            </h2>
+            <p class="mt-1 break-words text-sm text-slate-500">{{ selectedAuditRemarkTitle }}</p>
+          </div>
+          <button
+            type="button"
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:border-primary/25 hover:text-primary"
+            :aria-label="t.common.close"
+            :title="t.common.close"
+            @click="closeAuditRemark"
+          >
+            <X class="h-5 w-5" />
+          </button>
+        </div>
+        <div class="min-h-0 overflow-y-auto px-5 py-5 sm:px-6">
+          <p
+            id="audit-remark-dialog-content"
+            class="whitespace-pre-wrap break-words text-sm leading-7 text-slate-800"
+            data-testid="application-audit-remark-content"
+          >{{ selectedAuditRemark }}</p>
+        </div>
+        <div class="flex justify-end border-t border-slate-100 px-5 py-4 sm:px-6">
+          <button type="button" class="btn btn-primary min-w-24 justify-center" data-testid="application-audit-remark-close" @click="closeAuditRemark">
+            {{ t.common.close }}
+          </button>
+        </div>
+      </div>
     </div>
 
     <div v-if="isApplyOpen" class="credentials-apply-backdrop app-safe-area-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">

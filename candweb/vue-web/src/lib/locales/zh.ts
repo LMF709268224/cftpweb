@@ -1142,6 +1142,7 @@ export const zh = {
         applicationPendingHint: "等待审核结果",
         applicationApprovedHint: "资格申请已通过",
         auditRemark: "审核备注",
+        viewAuditRemark: "查看备注",
         applyNow: "立即申请",
         applyDuringCheckout: "请在认证购买时统一申请",
         uploadMaterials: "上传证明材料",

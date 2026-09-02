@@ -1144,6 +1144,7 @@ export const en: AppTranslations = {
         applicationPendingHint: "Waiting for review",
         applicationApprovedHint: "Qualification granted",
         auditRemark: "Audit Remark",
+        viewAuditRemark: "View Remark",
         applyNow: "Apply Now",
         applyDuringCheckout: "Apply during certification checkout",
         uploadMaterials: "Upload Materials",
