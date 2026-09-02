@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { RouterLink } from "vue-router"
-import { AlertCircle, Check, ChevronDown, Crown, Loader2, Percent, RefreshCw, ShoppingBag, Star, X, XCircle } from "lucide-vue-next"
+import { AlertCircle, ArrowUpCircle, Check, ChevronDown, Crown, Loader2, Percent, RefreshCw, ShoppingBag, Star, X, XCircle } from "lucide-vue-next"
 import { toast } from "vue-sonner"
 import AppShell from "@/components/AppShell.vue"
 import AppPagination from "@/components/AppPagination.vue"
@@ -21,7 +21,15 @@ const loadError = ref(false)
 const cancelling = ref(false)
 const cancelRenewConfirmOpen = ref(false)
 const cancelRenewConfirmDialogRef = ref<HTMLElement | null>(null)
-useBodyScrollLock(() => cancelRenewConfirmOpen.value)
+const upgradeDialogOpen = ref(false)
+const upgradeDialogRef = ref<HTMLElement | null>(null)
+const upgradePreviewLoading = ref(false)
+const upgradePreviewError = ref(false)
+const upgrading = ref(false)
+const upgradeTargetPlan = ref<RecordData | null>(null)
+const upgradePreview = ref<RecordData | null>(null)
+const upgradeIdempotencyKey = ref("")
+useBodyScrollLock(() => cancelRenewConfirmOpen.value || upgradeDialogOpen.value)
 const activeMembership = ref<RecordData | null>(null)
 const plans = ref<RecordData[]>([])
 const history = ref<RecordData[]>([])
@@ -67,16 +75,14 @@ const currentPlan = computed(() => {
   const data = activeMembership.value || {}
   const direct = data.plan || data.membership_config || data.membership_detail || null
   if (direct) return direct
-  const membershipUlid = currentRecord.value?.membership_ulid
-  const membershipGpath = currentRecord.value?.membership_gpath
-  return plans.value.find((plan) => plan.membership_ulid === membershipUlid || plan.membership_gpath === membershipGpath) || null
+  return findMembershipPlan(currentRecord.value?.membership_ulid, currentRecord.value?.membership_gpath)
 })
 
 const hasActiveMembership = computed(() => {
   const record = currentRecord.value
   if (!record || Object.keys(record).length === 0) return false
   const status = String(record.status || "").toUpperCase()
-  return status === "ACTIVE" || status === "CURRENT" || status === "GRACE" || Boolean(record.membership_record_ulid)
+  return status === "ACTIVE" || status === "CURRENT" || status === "GRACE"
 })
 
 const currentMembershipName = computed(() => {
@@ -104,11 +110,48 @@ const cancelMembershipButtonLabel = computed(() => {
   return t.value.membership.cancelAutoRenew
 })
 
+const currentTierLevel = computed(() => Number(currentPlan.value?.tier_level || currentRecord.value?.tier_level || 0))
+
+const currentMembershipGpath = computed(() => String(
+  currentPlan.value?.membership_gpath || currentRecord.value?.membership_gpath || "",
+).trim())
+
+function isCurrentPlan(plan: RecordData) {
+  const planID = String(plan?.membership_ulid || "").trim()
+  const currentID = String(currentRecord.value?.membership_ulid || "").trim()
+  return Boolean(hasActiveMembership.value && planID && currentID && planID === currentID)
+}
+
+function canUpgradeToPlan(plan: RecordData) {
+  if (!hasActiveMembership.value || isCurrentPlan(plan)) return false
+  const targetID = String(plan?.membership_ulid || "").trim()
+  const targetGpath = String(plan?.membership_gpath || "").trim()
+  const targetTier = Number(plan?.tier_level || 0)
+  return Boolean(
+    targetID
+    && currentMembershipGpath.value
+    && targetGpath === currentMembershipGpath.value
+    && targetTier > currentTierLevel.value,
+  )
+}
+
 function listFrom(data: any, keys: string[]) {
   for (const key of keys) {
     if (Array.isArray(data?.[key])) return data[key]
   }
   return []
+}
+
+function findMembershipPlan(membershipUlid: unknown, membershipGpath: unknown) {
+  const normalizedULID = String(membershipUlid || "").trim()
+  if (normalizedULID) {
+    const exactPlan = plans.value.find((plan) => String(plan?.membership_ulid || "").trim() === normalizedULID)
+    if (exactPlan) return exactPlan
+  }
+  const normalizedGpath = String(membershipGpath || "").trim()
+  return normalizedGpath
+    ? plans.value.find((plan) => String(plan?.membership_gpath || "").trim() === normalizedGpath) || null
+    : null
 }
 
 function isActiveStatus(status: unknown) {
@@ -144,9 +187,7 @@ function formatSource(source: unknown) {
 }
 
 function membershipPlanForRecord(record: RecordData) {
-  const membershipUlid = String(record?.membership_ulid || "").trim()
-  const membershipGpath = String(record?.membership_gpath || "").trim()
-  return plans.value.find((plan) => plan.membership_ulid === membershipUlid || plan.membership_gpath === membershipGpath) || null
+  return findMembershipPlan(record?.membership_ulid, record?.membership_gpath)
 }
 
 function membershipDisplayName(record: RecordData, fallback = "-") {
@@ -302,9 +343,7 @@ async function loadMembershipPlans(suppressErrorToast = false) {
 
   if (activeMembership.value) {
     const record = currentRecord.value
-    const matchedPlan = nextPlans.find((plan) => {
-      return plan.membership_ulid === record?.membership_ulid || plan.membership_gpath === record?.membership_gpath
-    })
+    const matchedPlan = findMembershipPlan(record?.membership_ulid, record?.membership_gpath)
     if (matchedPlan) {
       activeMembership.value = {
         ...activeMembership.value,
@@ -341,24 +380,20 @@ async function loadMembership() {
 
 async function loadActiveMembershipFromHistory(membershipHistory: RecordData[]) {
   const activeRecord = membershipHistory.find((item) => isActiveStatus(item.status))
-  const fallbackPlan = plans.value.find((plan) => plan.membership_ulid === activeRecord?.membership_ulid)
-  const membershipGpath = String(activeRecord?.membership_gpath || fallbackPlan?.membership_gpath || "").trim()
-  if (!membershipGpath) return null
 
   try {
-    const activeData = await apiClient(`/api/membership/active?membership_gpath=${encodeURIComponent(membershipGpath)}`, {
+    const activeData = await apiClient("/api/membership/active", {
       suppressErrorToast: true,
     })
     const confirmedRecord = activeRecordFromPayload(activeData)
-    const matchedPlan = plans.value.find((plan) => {
-      return plan.membership_ulid === confirmedRecord?.membership_ulid || plan.membership_gpath === membershipGpath
-    })
+    const membershipGpath = String(confirmedRecord?.membership_gpath || "").trim()
+    const matchedPlan = findMembershipPlan(confirmedRecord?.membership_ulid, membershipGpath)
     return {
       ...(activeData || {}),
       membership_config: matchedPlan || null,
     }
   } catch {
-    return { user_memberships: [activeRecord] }
+    return activeRecord ? { user_memberships: [activeRecord] } : null
   }
 }
 
@@ -377,6 +412,76 @@ function confirmCancelMembership() {
 }
 
 useDialogAccessibility(() => cancelRenewConfirmOpen.value, cancelRenewConfirmDialogRef, closeCancelRenewConfirm)
+
+function closeUpgradeDialog() {
+  if (upgrading.value) return
+  upgradeDialogOpen.value = false
+  upgradePreviewLoading.value = false
+  upgradePreviewError.value = false
+  upgradeTargetPlan.value = null
+  upgradePreview.value = null
+  upgradeIdempotencyKey.value = ""
+}
+
+useDialogAccessibility(() => upgradeDialogOpen.value, upgradeDialogRef, closeUpgradeDialog)
+
+async function openUpgradePreview(plan: RecordData) {
+  const targetMembershipULID = String(plan?.membership_ulid || "").trim()
+  if (!targetMembershipULID || !canUpgradeToPlan(plan) || upgradePreviewLoading.value) return
+
+  upgradeTargetPlan.value = plan
+  upgradePreview.value = null
+  upgradePreviewError.value = false
+  upgradeIdempotencyKey.value = crypto.randomUUID()
+  upgradeDialogOpen.value = true
+  upgradePreviewLoading.value = true
+
+  try {
+    upgradePreview.value = await apiClient("/api/membership/upgrade/preview", {
+      method: "POST",
+      suppressErrorToast: true,
+      body: JSON.stringify({ target_membership_ulid: targetMembershipULID }),
+    })
+  } catch (error) {
+    console.error("Failed to preview membership upgrade", error)
+    upgradePreviewError.value = true
+  } finally {
+    upgradePreviewLoading.value = false
+  }
+}
+
+async function confirmMembershipUpgrade() {
+  const targetMembershipULID = String(upgradeTargetPlan.value?.membership_ulid || "").trim()
+  if (!targetMembershipULID || !upgradePreview.value?.eligible || upgrading.value) return
+
+  upgrading.value = true
+  try {
+    const body: RecordData = {
+      target_membership_ulid: targetMembershipULID,
+      idempotency_key: upgradeIdempotencyKey.value,
+    }
+    const currency = String(upgradePreview.value?.currency || "").trim()
+    if (currency) body.currency = currency
+
+    const response = await apiClient("/api/membership/upgrade", {
+      method: "POST",
+      suppressErrorToast: true,
+      body: JSON.stringify(body),
+    })
+    if (response?.success === false) throw new Error(response?.message || t.value.membership.upgradeFailed)
+
+    toast.success(t.value.membership.upgradeSucceeded)
+    upgrading.value = false
+    closeUpgradeDialog()
+    activeTab.value = "overview"
+    await loadMembership()
+  } catch (error) {
+    console.error("Failed to upgrade membership", error)
+    toast.error(error instanceof Error && error.message ? error.message : t.value.membership.upgradeFailed)
+  } finally {
+    upgrading.value = false
+  }
+}
 
 async function cancelMembership() {
   const recordUlid = currentRecord.value?.membership_record_ulid
@@ -616,9 +721,25 @@ watch(lang, () => {
                   <span class="text-card-foreground">{{ feature }}</span>
                 </li>
               </ul>
-              <RouterLink to="/certifications" class="btn btn-primary mt-5 w-full rounded-xl">
+              <button
+                v-if="canUpgradeToPlan(plan)"
+                type="button"
+                class="btn btn-primary mt-5 w-full rounded-xl"
+                :disabled="upgradePreviewLoading || upgrading"
+                @click="openUpgradePreview(plan)"
+              >
+                <Loader2 v-if="upgradePreviewLoading && upgradeTargetPlan?.membership_ulid === plan.membership_ulid" class="h-4 w-4 animate-spin" />
+                <ArrowUpCircle v-else class="h-4 w-4" />
+                {{ t.membership.upgrade }}
+              </button>
+              <button v-else-if="hasActiveMembership" type="button" class="btn mt-5 w-full cursor-not-allowed rounded-xl border-slate-200 bg-slate-100 text-slate-500" disabled>
+                <Check v-if="isCurrentPlan(plan)" class="h-4 w-4" />
+                <XCircle v-else class="h-4 w-4" />
+                {{ isCurrentPlan(plan) ? t.membership.currentPlan : t.membership.upgradeUnavailable }}
+              </button>
+              <RouterLink v-else to="/marketplace" class="btn btn-primary mt-5 w-full rounded-xl">
                 <ShoppingBag class="h-4 w-4" />
-                {{ t.membership.purchaseOrUpgrade }}
+                {{ t.membership.purchase }}
               </RouterLink>
             </div>
             <div v-if="!plans.length" class="rounded-[16px] bg-white p-8 text-center text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)] md:col-span-2 xl:col-span-3">
@@ -674,6 +795,112 @@ watch(lang, () => {
           </section>
         </template>
       </main>
+    </div>
+
+    <div v-if="upgradeDialogOpen" class="app-safe-area-overlay fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
+      <div
+        ref="upgradeDialogRef"
+        class="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-[16px] bg-white shadow-[0_24px_60px_rgba(15,23,42,0.24)]"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="membership-upgrade-title"
+        aria-describedby="membership-upgrade-description"
+        tabindex="-1"
+      >
+        <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+          <div class="flex min-w-0 items-center gap-3">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+              <ArrowUpCircle class="h-5 w-5" />
+            </div>
+            <div class="min-w-0">
+              <h2 id="membership-upgrade-title" class="text-lg font-semibold text-slate-950">{{ t.membership.upgradePreviewTitle }}</h2>
+              <p id="membership-upgrade-description" class="mt-1 truncate text-sm text-slate-500">
+                {{ upgradeTargetPlan?.name || t.membership.membershipRecord }}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 disabled:cursor-not-allowed disabled:opacity-50"
+            :aria-label="t.common.close"
+            :title="t.common.close"
+            :disabled="upgrading"
+            @click="closeUpgradeDialog"
+          >
+            <X class="h-5 w-5" />
+          </button>
+        </div>
+
+        <div class="px-5 py-5">
+          <div v-if="upgradePreviewLoading" class="flex min-h-48 items-center justify-center gap-3 text-sm font-medium text-slate-600">
+            <Loader2 class="h-5 w-5 animate-spin text-blue-600" />
+            {{ t.membership.upgradePreviewLoading }}
+          </div>
+          <div v-else-if="upgradePreviewError" class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert">
+            <div class="flex gap-3">
+              <AlertCircle class="mt-0.5 h-5 w-5 shrink-0" />
+              <span>{{ t.membership.upgradePreviewFailed }}</span>
+            </div>
+          </div>
+          <template v-else-if="upgradePreview">
+            <div
+              v-if="!upgradePreview.eligible"
+              class="flex gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
+              role="alert"
+            >
+              <AlertCircle class="mt-0.5 h-5 w-5 shrink-0" />
+              <div>
+                <div class="font-semibold">{{ t.membership.upgradeIneligible }}</div>
+                <div class="mt-1 leading-6">{{ upgradePreview.ineligibility_reason || t.membership.upgradeIneligibleDefault }}</div>
+              </div>
+            </div>
+            <div v-else class="flex gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+              <Check class="mt-0.5 h-5 w-5 shrink-0" />
+              <span class="font-semibold">{{ t.membership.upgradeEligible }}</span>
+            </div>
+
+            <dl class="mt-5 divide-y divide-slate-100 rounded-lg border border-slate-200">
+              <div class="flex items-center justify-between gap-4 px-4 py-3">
+                <dt class="text-sm text-slate-600">{{ t.membership.upgradeFrom }}</dt>
+                <dd class="text-right text-sm font-semibold text-slate-900">{{ upgradePreview.current_membership_name || currentMembershipName }}</dd>
+              </div>
+              <div class="flex items-center justify-between gap-4 px-4 py-3">
+                <dt class="text-sm text-slate-600">{{ t.membership.upgradeTo }}</dt>
+                <dd class="text-right text-sm font-semibold text-slate-900">{{ upgradePreview.target_membership_name || upgradeTargetPlan?.name || "-" }}</dd>
+              </div>
+              <div class="flex items-center justify-between gap-4 px-4 py-3">
+                <dt class="text-sm text-slate-600">{{ t.membership.immediateCharge }}</dt>
+                <dd class="text-right text-base font-black text-slate-950">{{ formatMoney(upgradePreview.immediate_charge_amount_minor, upgradePreview.currency) }}</dd>
+              </div>
+              <div class="flex items-center justify-between gap-4 px-4 py-3">
+                <dt class="text-sm text-slate-600">{{ t.membership.nextCycleRenewal }}</dt>
+                <dd class="text-right text-sm font-semibold text-slate-900">{{ formatMoney(upgradePreview.next_cycle_renewal_amount_minor, upgradePreview.currency) }}</dd>
+              </div>
+              <div class="flex items-center justify-between gap-4 px-4 py-3">
+                <dt class="text-sm text-slate-600">{{ t.membership.currentPeriodEnds }}</dt>
+                <dd class="text-right text-sm font-semibold text-slate-900">{{ formatDate(upgradePreview.current_period_ends_at) }}</dd>
+              </div>
+            </dl>
+            <p class="mt-4 text-xs leading-5 text-slate-500">{{ t.membership.upgradeBillingNotice }}</p>
+          </template>
+        </div>
+
+        <div class="flex justify-end gap-3 border-t border-slate-200 bg-slate-50 px-5 py-4">
+          <button type="button" class="btn btn-outline min-w-24 rounded-lg" :disabled="upgrading" @click="closeUpgradeDialog">
+            {{ t.common.cancel }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary min-w-32 rounded-lg"
+            :disabled="upgradePreviewLoading || upgradePreviewError || !upgradePreview?.eligible || upgrading"
+            @click="confirmMembershipUpgrade"
+          >
+            <Loader2 v-if="upgrading" class="h-4 w-4 animate-spin" />
+            <ArrowUpCircle v-else class="h-4 w-4" />
+            {{ upgrading ? t.membership.upgrading : t.membership.confirmUpgrade }}
+          </button>
+        </div>
+      </div>
     </div>
 
     <div v-if="cancelRenewConfirmOpen" class="app-safe-area-overlay fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">

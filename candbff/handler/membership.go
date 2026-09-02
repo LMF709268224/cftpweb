@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
 	gmbrpb "github.com/afnandelfin620-star/cftptest/cftp/gmbr"
 )
 
@@ -58,14 +59,90 @@ func (h *Handler) GetActiveMembership(w http.ResponseWriter, r *http.Request) {
 	if membershipGpath == "" {
 		membershipGpath = strings.TrimSpace(r.URL.Query().Get("membership_path"))
 	}
-	if membershipGpath == "" {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "field 'membership_gpath' is required")
-		return
-	}
-
 	resp, err := h.Gmbr.GetActiveMembership(r.Context(), &gmbrpb.GetActiveMembershipRequest{
 		CandidateUlid:   candidateID,
 		MembershipGpath: membershipGpath,
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+type PreviewMembershipUpgradeReq struct {
+	TargetMembershipULID string `json:"target_membership_ulid"`
+	Currency             string `json:"currency"`
+}
+
+// PreviewMembershipUpgrade POST /api/membership/upgrade/preview
+func (h *Handler) PreviewMembershipUpgrade(w http.ResponseWriter, r *http.Request) {
+	candidateID := CandidateID(r)
+	if candidateID == "" {
+		WriteError(w, http.StatusUnauthorized, ErrUnauthorized, "candidate not authenticated")
+		return
+	}
+
+	var req PreviewMembershipUpgradeReq
+	if err := ReadJSON(r, &req); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body: "+err.Error())
+		return
+	}
+
+	req.TargetMembershipULID = strings.TrimSpace(req.TargetMembershipULID)
+	req.Currency = strings.TrimSpace(req.Currency)
+	if req.TargetMembershipULID == "" {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "field 'target_membership_ulid' is required")
+		return
+	}
+
+	resp, err := h.Mall.PreviewMembershipUpgrade(r.Context(), &mallpb.PreviewMembershipUpgradeRequest{
+		CandidateUlid:        candidateID,
+		TargetMembershipUlid: req.TargetMembershipULID,
+		Currency:             req.Currency,
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+type UpgradeMembershipReq struct {
+	TargetMembershipULID string `json:"target_membership_ulid"`
+	Currency             string `json:"currency"`
+	IdempotencyKey       string `json:"idempotency_key"`
+}
+
+// UpgradeMembership POST /api/membership/upgrade
+func (h *Handler) UpgradeMembership(w http.ResponseWriter, r *http.Request) {
+	candidateID := CandidateID(r)
+	if candidateID == "" {
+		WriteError(w, http.StatusUnauthorized, ErrUnauthorized, "candidate not authenticated")
+		return
+	}
+
+	var req UpgradeMembershipReq
+	if err := ReadJSON(r, &req); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body: "+err.Error())
+		return
+	}
+
+	req.TargetMembershipULID = strings.TrimSpace(req.TargetMembershipULID)
+	req.Currency = strings.TrimSpace(req.Currency)
+	req.IdempotencyKey = strings.TrimSpace(req.IdempotencyKey)
+	if req.TargetMembershipULID == "" {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "field 'target_membership_ulid' is required")
+		return
+	}
+
+	resp, err := h.Mall.UpgradeMembership(r.Context(), &mallpb.UpgradeMembershipRequest{
+		CandidateUlid:        candidateID,
+		TargetMembershipUlid: req.TargetMembershipULID,
+		Currency:             req.Currency,
+		IdempotencyKey:       req.IdempotencyKey,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
