@@ -2371,15 +2371,7 @@ function closePaymentEditDialog() {
                           </div>
                         </div>
 
-                        <div v-if="canUploadQualificationForUnit(unit)" class="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                          <button
-                            type="button"
-                            class="btn btn-outline"
-                            :disabled="qualificationSubmittingUnitId === unit.unit_id"
-                            @click="closeQualificationEditor(unit.unit_id)"
-                          >
-                            {{ t.common.cancel }}
-                          </button>
+                        <div v-if="canUploadQualificationForUnit(unit)" class="mt-5 flex justify-end">
                           <button
                             type="button"
                             class="btn bg-emerald-600 text-white hover:bg-emerald-700"
