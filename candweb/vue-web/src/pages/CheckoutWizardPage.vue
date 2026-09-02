@@ -43,6 +43,9 @@ const { t, lang } = useTranslation()
 const { currentUser, fetchUser } = useUser()
 type EligibilityBlocker = { blocker_type?: string; description?: string }
 const HARD_ELIGIBILITY_BLOCKER_TYPES = new Set([
+  "ALREADY_PURCHASED",
+  "MISSING_PREREQUISITE_QUALIFICATION",
+  "MISSING_UNLOCK_QUALIFICATION",
   "FORBIDDEN_QUALIFICATION",
   "CONFLICT_PIPELINE_IN_PROGRESS",
   "CONFLICT_CHECK_UNAVAILABLE",
@@ -1955,6 +1958,10 @@ function eligibilityBlockerMessage(blocker?: EligibilityBlocker) {
   const copy = t.value.purchaseDialog
   if (!blocker) return t.value.checkoutWizard.purchaseUnavailable
   if (blocker?.blocker_type === "MISSING_PREREQUISITE_QUALIFICATION") return copy.missingQualification
+  if (blocker?.blocker_type === "MISSING_UNLOCK_QUALIFICATION") return copy.missingMembershipQualification
+  if (blocker?.blocker_type === "ALREADY_PURCHASED") {
+    return isMembershipBundle.value ? copy.alreadyPurchasedMembership : copy.alreadyPurchased
+  }
   if (blocker?.blocker_type === "FORBIDDEN_QUALIFICATION") return copy.forbiddenQualification
   if (blocker?.blocker_type === "CONFLICT_PIPELINE_IN_PROGRESS") return copy.conflictPipelineInProgress
   if (blocker?.blocker_type === "CONFLICT_CHECK_UNAVAILABLE") return copy.conflictCheckUnavailable

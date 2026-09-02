@@ -69,6 +69,8 @@ var candidateRouteContract = []routeExpectation{
 	{method: http.MethodGet, path: "/api/membership/history", access: routeProtected},
 	{method: http.MethodGet, path: "/api/membership/billings", access: routeProtected},
 	{method: http.MethodPost, path: "/api/membership/cancel", access: routeProtected},
+	{method: http.MethodPost, path: "/api/membership/upgrade/preview", access: routeProtected},
+	{method: http.MethodPost, path: "/api/membership/upgrade", access: routeProtected},
 	{method: http.MethodGet, path: "/api/mall/bundles/{bundleId}/pricing-detail", access: routeProtected},
 	{method: http.MethodPost, path: "/api/mall/bundles/{bundleId}/purchase", access: routeProtected},
 	{method: http.MethodPost, path: "/api/mall/pipelines/{pipelineId}/stages/{stageId}/purchase", access: routeProtected},

@@ -168,6 +168,11 @@ test("商城和结账页展示并拦截层级互斥资格", async ({ page }) => 
             type: "MISSING_PREREQUISITE_QUALIFICATION",
             message: "缺少报名资格",
         },
+        {
+            id: "bundle-missing-membership-qualification",
+            type: "MISSING_UNLOCK_QUALIFICATION",
+            message: "缺少会员前置资格",
+        },
     ]
     const blockedBundles = blockerCases.map((blocker) => ({
         ...bundle,

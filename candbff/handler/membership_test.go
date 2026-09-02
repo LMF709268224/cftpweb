@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
 	gmbrpb "github.com/afnandelfin620-star/cftptest/cftp/gmbr"
 	"google.golang.org/grpc"
 )
@@ -19,6 +20,40 @@ type membershipRegressionClient struct {
 	historyRequest  *gmbrpb.ListUserMembershipsRequest
 	billingsRequest *gmbrpb.ListMembershipBillingsRequest
 	cancelRequest   *gmbrpb.CancelMembershipRequest
+}
+
+type membershipUpgradeRegressionClient struct {
+	mallpb.MallServiceClient
+
+	previewRequest *mallpb.PreviewMembershipUpgradeRequest
+	upgradeRequest *mallpb.UpgradeMembershipRequest
+}
+
+func (c *membershipUpgradeRegressionClient) PreviewMembershipUpgrade(
+	_ context.Context,
+	request *mallpb.PreviewMembershipUpgradeRequest,
+	_ ...grpc.CallOption,
+) (*mallpb.PreviewMembershipUpgradeResponse, error) {
+	c.previewRequest = request
+	return &mallpb.PreviewMembershipUpgradeResponse{
+		Eligible:                   true,
+		ImmediateChargeAmountMinor: 1560,
+		Currency:                   "usd",
+	}, nil
+}
+
+func (c *membershipUpgradeRegressionClient) UpgradeMembership(
+	_ context.Context,
+	request *mallpb.UpgradeMembershipRequest,
+	_ ...grpc.CallOption,
+) (*mallpb.UpgradeMembershipResponse, error) {
+	c.upgradeRequest = request
+	return &mallpb.UpgradeMembershipResponse{
+		Success:              true,
+		MembershipRecordUlid: "record-2",
+		PaidAmountMinor:      1560,
+		Currency:             "usd",
+	}, nil
 }
 
 func (c *membershipRegressionClient) ListMemberships(
@@ -206,15 +241,67 @@ func TestMembershipHandlersKeepCandidateScope(t *testing.T) {
 	}
 }
 
+func TestMembershipUpgradeHandlersKeepCandidateScope(t *testing.T) {
+	client := &membershipUpgradeRegressionClient{}
+	handler := &Handler{Mall: client}
+
+	previewRecorder := httptest.NewRecorder()
+	handler.PreviewMembershipUpgrade(
+		previewRecorder,
+		newCandidateHandlerRequest(
+			http.MethodPost,
+			"/api/membership/upgrade/preview",
+			`{"candidate_ulid":"forged-candidate","target_membership_ulid":" target-2 ","currency":" usd "}`,
+			"candidate-1",
+			nil,
+		),
+	)
+	if previewRecorder.Code != http.StatusOK {
+		t.Fatalf("preview status = %d; body=%q", previewRecorder.Code, previewRecorder.Body.String())
+	}
+	if client.previewRequest.GetCandidateUlid() != "candidate-1" ||
+		client.previewRequest.GetTargetMembershipUlid() != "target-2" ||
+		client.previewRequest.GetCurrency() != "usd" {
+		t.Fatalf("preview request = %#v", client.previewRequest)
+	}
+
+	upgradeRecorder := httptest.NewRecorder()
+	handler.UpgradeMembership(
+		upgradeRecorder,
+		newCandidateHandlerRequest(
+			http.MethodPost,
+			"/api/membership/upgrade",
+			`{"candidate_ulid":"forged-candidate","target_membership_ulid":" target-2 ","currency":" usd ","idempotency_key":" request-1 "}`,
+			"candidate-1",
+			nil,
+		),
+	)
+	if upgradeRecorder.Code != http.StatusOK {
+		t.Fatalf("upgrade status = %d; body=%q", upgradeRecorder.Code, upgradeRecorder.Body.String())
+	}
+	if client.upgradeRequest.GetCandidateUlid() != "candidate-1" ||
+		client.upgradeRequest.GetTargetMembershipUlid() != "target-2" ||
+		client.upgradeRequest.GetCurrency() != "usd" ||
+		client.upgradeRequest.GetIdempotencyKey() != "request-1" {
+		t.Fatalf("upgrade request = %#v", client.upgradeRequest)
+	}
+}
+
 func TestMembershipHandlersRejectMissingRequiredFields(t *testing.T) {
-	handler := &Handler{}
+	gmbrClient := &membershipRegressionClient{}
+	handler := &Handler{Gmbr: gmbrClient}
 
 	activeRecorder := httptest.NewRecorder()
 	handler.GetActiveMembership(
 		activeRecorder,
 		newCandidateHandlerRequest(http.MethodGet, "/api/membership/active", "", "candidate-1", nil),
 	)
-	assertHandlerAPIError(t, activeRecorder, http.StatusBadRequest, ErrInvalidRequest)
+	if activeRecorder.Code != http.StatusOK {
+		t.Fatalf("active status = %d; body=%q", activeRecorder.Code, activeRecorder.Body.String())
+	}
+	if gmbrClient.activeRequest.GetMembershipGpath() != "" {
+		t.Fatalf("active membership gpath = %q, want empty", gmbrClient.activeRequest.GetMembershipGpath())
+	}
 
 	cancelRecorder := httptest.NewRecorder()
 	handler.CancelMembership(
@@ -222,4 +309,19 @@ func TestMembershipHandlersRejectMissingRequiredFields(t *testing.T) {
 		newCandidateHandlerRequest(http.MethodPost, "/api/membership/cancel", `{}`, "candidate-1", nil),
 	)
 	assertHandlerAPIError(t, cancelRecorder, http.StatusBadRequest, ErrInvalidRequest)
+
+	upgradeHandler := &Handler{}
+	previewRecorder := httptest.NewRecorder()
+	upgradeHandler.PreviewMembershipUpgrade(
+		previewRecorder,
+		newCandidateHandlerRequest(http.MethodPost, "/api/membership/upgrade/preview", `{}`, "candidate-1", nil),
+	)
+	assertHandlerAPIError(t, previewRecorder, http.StatusBadRequest, ErrInvalidRequest)
+
+	upgradeRecorder := httptest.NewRecorder()
+	upgradeHandler.UpgradeMembership(
+		upgradeRecorder,
+		newCandidateHandlerRequest(http.MethodPost, "/api/membership/upgrade", `{}`, "candidate-1", nil),
+	)
+	assertHandlerAPIError(t, upgradeRecorder, http.StatusBadRequest, ErrInvalidRequest)
 }

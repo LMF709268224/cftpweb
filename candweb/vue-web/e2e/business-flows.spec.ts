@@ -162,6 +162,96 @@ test("会员取消续费后刷新为已取消状态", async ({ page }) => {
   await expect(page.getByRole("button", { name: "已取消续费" })).toBeDisabled()
 })
 
+test("会员升级先预览分摊费用并以幂等请求确认", async ({ page }) => {
+  let upgraded = false
+  let previewBody: unknown
+  let upgradeBody: unknown
+
+  const plans = [
+    {
+      membership_ulid: "membership-plan-affiliate",
+      membership_gpath: "/memberships/gfi",
+      name: "GFI Affiliate Member",
+      tier_level: 1,
+      duration_in_months: 12,
+    },
+    {
+      membership_ulid: "membership-plan-charterholder",
+      membership_gpath: "/memberships/gfi",
+      name: "GFI Charterholder Member",
+      tier_level: 2,
+      duration_in_months: 12,
+    },
+  ]
+  const activeRecord = () => ({
+    membership_record_ulid: upgraded ? "membership-record-2" : "membership-record-1",
+    membership_ulid: upgraded ? "membership-plan-charterholder" : "membership-plan-affiliate",
+    membership_gpath: "/memberships/gfi",
+    membership_name: upgraded ? "GFI Charterholder Member" : "GFI Affiliate Member",
+    tier_level: upgraded ? 2 : 1,
+    status: "ACTIVE",
+    started_at: "2026-08-28T00:00:00Z",
+    expires_at: "2027-08-28T00:00:00Z",
+  })
+
+  await installCandidateApiMocks(page, ({ pathname, method, body }) => {
+    if (pathname === "/api/membership/plans") return { data: { memberships: plans } }
+    if (pathname === "/api/membership/history") {
+      return { data: { user_memberships: [activeRecord()], total: 1 } }
+    }
+    if (pathname === "/api/membership/billings") return { data: { billings: [], total: 0 } }
+    if (pathname === "/api/membership/active") return { data: { membership: activeRecord() } }
+    if (pathname === "/api/membership/upgrade/preview" && method === "POST") {
+      previewBody = body
+      return {
+        data: {
+          eligible: true,
+          immediate_charge_amount_minor: 1560,
+          currency: "usd",
+          current_period_ends_at: "2027-08-28T00:00:00Z",
+          next_cycle_renewal_amount_minor: 30000,
+          target_membership_name: "GFI Charterholder Member",
+          current_membership_name: "GFI Affiliate Member",
+        },
+      }
+    }
+    if (pathname === "/api/membership/upgrade" && method === "POST") {
+      upgradeBody = body
+      upgraded = true
+      return {
+        data: {
+          success: true,
+          membership_record_ulid: "membership-record-2",
+          paid_amount_minor: 1560,
+          currency: "usd",
+        },
+      }
+    }
+    return undefined
+  })
+
+  await page.goto("/membership", { waitUntil: "domcontentloaded" })
+  await page.getByRole("button", { name: "会员等级", exact: true }).click()
+
+  await expect(page.getByRole("button", { name: "当前方案" })).toBeDisabled()
+  await page.getByRole("button", { name: "升级会员" }).click()
+
+  const dialog = page.getByRole("dialog", { name: "确认会员升级" })
+  await expect(dialog).toBeVisible()
+  await expect(dialog.getByText("USD 15.60", { exact: true })).toBeVisible()
+  await expect.poll(() => previewBody).toEqual({
+    target_membership_ulid: "membership-plan-charterholder",
+  })
+
+  await dialog.getByRole("button", { name: "确认并支付" }).click()
+  await expect.poll(() => upgradeBody).toMatchObject({
+    target_membership_ulid: "membership-plan-charterholder",
+    currency: "usd",
+  })
+  expect((upgradeBody as { idempotency_key?: string }).idempotency_key).toMatch(/^[0-9a-f-]{36}$/)
+  await expect(page.locator(".membership-current-name")).toContainText("GFI Charterholder Member")
+})
+
 test("会员刷新只应用最后一次请求返回的记录", async ({ page }) => {
   const membershipRecord = (id: string, name: string) => ({
     membership_record_ulid: id,

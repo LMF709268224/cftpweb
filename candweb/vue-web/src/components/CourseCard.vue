@@ -61,6 +61,7 @@ const credentialCenterBlockers = computed(() => blockers.value.filter((blocker) 
 ].includes(String(blocker.blocker_type || ""))))
 const credentialCenterBlocker = computed(() => credentialCenterBlockers.value[0])
 const hardBlockers = computed(() => blockers.value.filter((blocker) => [
+  "MISSING_UNLOCK_QUALIFICATION",
   "FORBIDDEN_QUALIFICATION",
   "CONFLICT_PIPELINE_IN_PROGRESS",
   "CONFLICT_CHECK_UNAVAILABLE",
@@ -148,6 +149,7 @@ function blockerText(blocker?: EligibilityBlocker) {
   if (!blocker) return ""
   if (isCombinationProduct.value && (hasPurchasedPipeline.value !== hasPurchasedMembership.value)) return cardCopy.value.partiallyOwnedBundle
   if (blocker.blocker_type === "MISSING_PREREQUISITE_QUALIFICATION") return cardCopy.value.missingQualification
+  if (blocker.blocker_type === "MISSING_UNLOCK_QUALIFICATION") return cardCopy.value.missingMembershipQualification
   if (blocker.blocker_type === "ALREADY_PURCHASED") return cardCopy.value.alreadyPurchased
   if (blocker.blocker_type === "IN_PROGRESS_PURCHASE") return cardCopy.value.inProgressPurchase
   if (blocker.blocker_type === "PIPELINE_NOT_FOUND") return cardCopy.value.pipelineNotFound

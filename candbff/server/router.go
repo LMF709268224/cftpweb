@@ -99,6 +99,8 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Get("/membership/history", h.ListUserMemberships)
 			r.Get("/membership/billings", h.ListMembershipBillings)
 			r.Post("/membership/cancel", h.CancelMembership)
+			r.Post("/membership/upgrade/preview", h.PreviewMembershipUpgrade)
+			r.Post("/membership/upgrade", h.UpgradeMembership)
 
 			r.Get("/mall/bundles/{bundleId}/pricing-detail", h.GetBundlePricingDetail)
 			r.Post("/mall/bundles/{bundleId}/purchase", h.CreateBundleOrder)
