@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { RouterLink } from "vue-router"
-import { AlertCircle, ArrowUpCircle, Check, ChevronDown, Crown, Loader2, Percent, RefreshCw, ShoppingBag, Star, X, XCircle } from "lucide-vue-next"
+import { AlertCircle, ArrowUpCircle, Check, ChevronDown, Crown, Loader2, PanelLeft, Percent, RefreshCw, ShoppingBag, Star, X, XCircle } from "lucide-vue-next"
 import { toast } from "vue-sonner"
 import AppShell from "@/components/AppShell.vue"
 import AppPagination from "@/components/AppPagination.vue"
@@ -556,12 +556,10 @@ watch(lang, () => {
 <template>
   <AppShell content-class="p-0">
     <div class="page-panel">
-      <header class="flex h-16 items-center justify-between border-b border-border bg-white px-5">
-        <div class="flex items-center gap-3">
-          <Crown class="h-4 w-4 text-slate-700" />
-          <span class="text-sm font-medium text-foreground">{{ t.membership.title }}</span>
-        </div>
-        <button class="membership-refresh-btn inline-flex h-9 items-center gap-2 rounded-xl border px-4 text-sm font-semibold" type="button" @click="loadMembership">
+      <header class="flex h-16 items-center border-b border-border bg-white px-5">
+        <PanelLeft class="mr-4 h-4 w-4 text-slate-700" />
+        <span class="text-sm font-medium text-foreground">{{ t.membership.title }}</span>
+        <button class="membership-refresh-btn ml-auto inline-flex h-9 items-center gap-2 rounded-xl border px-4 text-sm font-semibold" type="button" @click="loadMembership">
           <RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
           {{ t.membership.refresh }}
         </button>
