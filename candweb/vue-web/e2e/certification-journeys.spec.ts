@@ -717,14 +717,14 @@ test("已持有有效资格的课程自动免考且不可取消", async ({ page 
         .toContainText("Pipeline 报名费")
     const exemptionItem = page.locator(`[data-testid="checkout-included-item"][data-item-id="${unitID}"]`)
     await expect(exemptionItem).toContainText("免考认定费")
-    await expect(exemptionItem).toContainText("50.00")
+    await expect(exemptionItem).toContainText("50")
     for (const unit of includedUnits) {
         const item = page.locator(`[data-testid="checkout-included-item"][data-item-id="${unit.unit_id}"]`)
         await expect(item).toContainText(unit.name)
-        await expect(item).toContainText((unit.amount / 100).toLocaleString("en-US", { minimumFractionDigits: 2 }))
+        await expect(item).toContainText((unit.amount / 100).toLocaleString("en-US", { maximumFractionDigits: 2 }))
     }
     await expect(page.locator(".checkout-total")).toContainText("基础总额")
-    await expect(page.locator(".checkout-total")).toContainText("3,950.00")
+    await expect(page.locator(".checkout-total")).toContainText("3,950")
     expect(pricingModes).toContain("FULL_PIPELINE")
 
     await page.getByTestId("checkout-selection-next").click()
@@ -926,7 +926,7 @@ test("系统资格、自动免考和按原价购买以管线维度提交完整�
     await expect(page.getByTestId("checkout-included-items").getByText("Full Price Course", { exact: true })).toBeVisible()
     await expect(page.getByTestId("checkout-included-items").getByText("System Course", { exact: true })).toHaveCount(0)
     await expect(page.getByTestId("checkout-included-items").getByText("Unqualified System Course", { exact: true })).toBeVisible()
-    await expect(page.locator(".checkout-total")).toContainText("1,450.00")
+    await expect(page.locator(".checkout-total")).toContainText("1,450")
     await page.getByTestId("checkout-selection-next").click()
 
     await expect(page.getByTestId("checkout-step-registration")).toBeVisible()
@@ -936,7 +936,7 @@ test("系统资格、自动免考和按原价购买以管线维度提交完整�
     await page.getByTestId("checkout-next").click()
     await expect(page.getByTestId("checkout-step-review")).toBeVisible()
     await page.locator('input[name="payment-mode"][value="BY_STAGE"], input[type="radio"][value="BY_STAGE"]').check()
-    await expect(page.getByTestId("checkout-step-review").getByText(/\$650\.00/, { exact: true }).last()).toBeVisible()
+    await expect(page.getByTestId("checkout-step-review").getByText(/\$650/, { exact: true }).last()).toBeVisible()
     expect(pricingModes).toContain("BY_STAGE")
 })
 

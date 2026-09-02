@@ -10,6 +10,7 @@ import LoadingState from "@/components/LoadingState.vue"
 import CheckoutPaymentPanel from "@/components/CheckoutPaymentPanel.vue"
 import { ApiClientError, apiClient } from "@/lib/apiClient"
 import { isSystemCredentialDefinition } from "@/lib/credentialDefinitions"
+import { formatCurrencyMinorAmount } from "@/lib/display"
 import { useTranslation } from "@/lib/language"
 import { useUser } from "@/lib/user"
 import {
@@ -1754,8 +1755,7 @@ async function nextFromStep1() {
 }
 
 function formatMoney(amount?: number, currency = "usd") {
-  if (typeof amount !== "number") return "-"
-  return new Intl.NumberFormat(undefined, { style: "currency", currency: currency || "usd" }).format(amount / 100)
+  return formatCurrencyMinorAmount(amount, currency) || "-"
 }
 
 type ExemptionCredentialState = "active" | "pending" | "pending_upload" | "resubmit" | "rejected" | "expired" | "revoked" | "missing" | "unavailable"

@@ -7,6 +7,7 @@ import GfiFooter from "@/components/GfiFooter.vue"
 import GfiHeader from "@/components/GfiHeader.vue"
 import { apiClient } from "@/lib/apiClient"
 import { isAuthenticated } from "@/lib/authStorage"
+import { formatCurrencyMinorAmount } from "@/lib/display"
 import { startGfiLogin } from "@/lib/gfiLogin"
 import { useTranslation } from "@/lib/language"
 
@@ -90,12 +91,7 @@ function certificationDisplayName(value?: string) {
 }
 
 function formatDisplayAmount(amount: number, currency = "USD") {
-  const normalizedCurrency = String(currency || "USD").trim().toUpperCase()
-  try {
-    return new Intl.NumberFormat(undefined, { style: "currency", currency: normalizedCurrency }).format(amount / 100)
-  } catch {
-    return `${normalizedCurrency} ${(amount / 100).toLocaleString()}`
-  }
+  return formatCurrencyMinorAmount(amount, currency) || ""
 }
 
 function bundlePriceLabel(bundle: any) {

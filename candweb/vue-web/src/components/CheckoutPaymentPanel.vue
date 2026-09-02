@@ -61,6 +61,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { apiClient } from "@/lib/apiClient"
+import { formatCurrencyMinorAmount } from "@/lib/display"
 import { useTranslation } from "@/lib/language"
 import CouponInputBlock from "@/components/CouponInputBlock.vue"
 import PaymentSessionPanel from "@/components/PaymentSessionPanel.vue"
@@ -103,8 +104,7 @@ const hasInvalidCouponCodes = computed(() => Boolean(paymentPreview.value?.inval
 const cannotPayReason = computed(() => hasInvalidCouponCodes.value ? t.value.purchaseDialog.couponInvalidPaymentBlocked : "")
 
 function formatMoney(amount?: number, currency = "usd") {
-  if (typeof amount !== "number") return "-"
-  return new Intl.NumberFormat(undefined, { style: "currency", currency: currency || "usd" }).format(amount / 100)
+  return formatCurrencyMinorAmount(amount, currency) || "-"
 }
 
 function getDiscountLabel(item: any) {

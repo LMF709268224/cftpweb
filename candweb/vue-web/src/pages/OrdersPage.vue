@@ -10,6 +10,7 @@ import PaymentSessionDialog from "@/components/PaymentSessionDialog.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useBodyScrollLock } from "@/lib/bodyScrollLock"
 import { useDialogAccessibility } from "@/lib/dialogAccessibility"
+import { formatCurrencyAmount, formatMinorAmount } from "@/lib/display"
 import { formatBackendDateMinute } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
 
@@ -165,10 +166,8 @@ const orderItems = computed(() => selectedOrderDetail.value?.items || [])
 const itemCurrency = computed(() => String(selectedOrderDetail.value?.summary?.currency || selectedOrderItem.value?.currency || ""))
 
 function minorAmountText(value: unknown, currency: string) {
-  if (value === undefined || value === null || value === "") return "-"
-  const amount = Number(value)
-  if (!Number.isFinite(amount)) return "-"
-  return `${currency ? `${currency.toUpperCase()} ` : ""}${(amount / 100).toFixed(2)}`
+  const amount = formatMinorAmount(value)
+  return amount === null ? "-" : `${currency ? `${currency.toUpperCase()} ` : ""}${amount}`
 }
 
 function orderItemTitle(item: NonNullable<OrderDetail["items"]>[number]) {
@@ -375,15 +374,7 @@ async function viewInvoice(orderId: string) {
 }
 
 function formatMoney(amount: number, currency = "USD") {
-  const normalizedCurrency = (currency || "USD").toUpperCase()
-  try {
-    return new Intl.NumberFormat(undefined, {
-      style: "currency",
-      currency: normalizedCurrency,
-    }).format(amount)
-  } catch {
-    return `${normalizedCurrency} ${amount.toLocaleString()}`
-  }
+  return formatCurrencyAmount(amount, currency) || "-"
 }
 
 function orderAmountDisplay(amount: number, currency: string, orderStatus: string, freeText: string) {

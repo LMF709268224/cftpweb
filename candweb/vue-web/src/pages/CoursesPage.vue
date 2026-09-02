@@ -6,6 +6,7 @@ import AppShell from "@/components/AppShell.vue"
 import CourseCard from "@/components/CourseCard.vue"
 import PageFeedback from "@/components/PageFeedback.vue"
 import { apiClient } from "@/lib/apiClient"
+import { formatCurrencyMinorAmount } from "@/lib/display"
 import { useTranslation } from "@/lib/language"
 import { preloadCheckoutWizard } from "@/router"
 
@@ -58,12 +59,7 @@ function certificationDisplayName(value?: string) {
 }
 
 function formatDisplayAmount(amount: number, currency = "USD") {
-  const normalizedCurrency = String(currency || "USD").trim().toUpperCase()
-  try {
-    return new Intl.NumberFormat(undefined, { style: "currency", currency: normalizedCurrency }).format(amount / 100)
-  } catch {
-    return `${normalizedCurrency} ${(amount / 100).toLocaleString()}`
-  }
+  return formatCurrencyMinorAmount(amount, currency) || ""
 }
 
 function bundlePriceLabel(bundle: any) {

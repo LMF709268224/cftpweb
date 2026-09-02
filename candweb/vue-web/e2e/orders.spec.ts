@@ -66,7 +66,19 @@ function completedOrderDetail(order: OrderFixture) {
       item_type: "course",
       item_id: "course-1",
       title: "CFtP Certification Course",
-      base_price: 150000,
+      base_price: 12900,
+      quantity: 1,
+    }, {
+      item_type: "course",
+      item_id: "course-2",
+      title: "Fractional Price Course",
+      base_price: 1299,
+      quantity: 1,
+    }, {
+      item_type: "course",
+      item_id: "course-3",
+      title: "Trailing Zero Price Course",
+      base_price: 1250,
       quantity: 1,
     }],
     exemptions: [{
@@ -141,8 +153,10 @@ test("订单详情展示商品明细", async ({ page }) => {
   await expect(dialog).toBeVisible()
   await expect(dialog.getByText("商品明细", { exact: true })).toBeVisible()
   await expect(dialog.getByText("CFtP Certification Course", { exact: true })).toBeVisible()
-  await expect(dialog.getByText("USD 1500.00", { exact: true })).toBeVisible()
-  await expect(dialog.getByText("数量", { exact: true })).toBeVisible()
+  await expect(dialog.getByText("USD 129", { exact: true })).toBeVisible()
+  await expect(dialog.getByText("USD 12.99", { exact: true })).toBeVisible()
+  await expect(dialog.getByText("USD 12.5", { exact: true })).toBeVisible()
+  await expect(dialog.getByText("数量", { exact: true })).toHaveCount(3)
   await expect(dialog.getByText("价格", { exact: true })).toHaveCount(0)
   await expect(dialog.getByText("业务订单详情", { exact: true })).toHaveCount(0)
 })

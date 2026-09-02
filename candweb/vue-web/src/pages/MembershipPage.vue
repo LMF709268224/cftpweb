@@ -9,6 +9,7 @@ import PageFeedback from "@/components/PageFeedback.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useBodyScrollLock } from "@/lib/bodyScrollLock"
 import { useDialogAccessibility } from "@/lib/dialogAccessibility"
+import { formatMinorAmount } from "@/lib/display"
 import { useTranslation } from "@/lib/language"
 
 type RecordData = Record<string, any>
@@ -129,9 +130,8 @@ function formatDate(value: unknown) {
 }
 
 function formatMoney(amount: unknown, currency = "USD") {
-  const value = Number(amount || 0)
-  if (Number.isNaN(value)) return "-"
-  return `${currency} ${(value / 100).toFixed(2)}`
+  const value = formatMinorAmount(amount || 0)
+  return value === null ? "-" : `${String(currency || "USD").toUpperCase()} ${value}`
 }
 
 function formatSource(source: unknown) {
