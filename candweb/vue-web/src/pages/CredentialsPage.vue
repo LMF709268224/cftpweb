@@ -374,7 +374,7 @@ function applicationActionLabel(def: any) {
   if (isPendingUploadStatus(existing.status)) return t.value.credentialsPage.uploadMaterials
   if (isPendingReviewStatus(existing.status)) return t.value.credentialsPage.applicationPendingHint
   if (isApprovedStatus(existing.status)) return t.value.credentialsPage.applicationApprovedHint
-  if (canResubmit(existing.status)) return t.value.credentialsPage.appStatusResubmit
+  if (canResubmit(existing.status)) return t.value.credentialsPage.resubmitAction
   if (isRejectedStatus(existing.status)) return t.value.credentialsPage.appStatusRejected
   return t.value.credentialsPage.applyNow
 }
@@ -431,15 +431,6 @@ watch(
     />
     <div v-else class="credentials-page-content space-y-4">
       <section>
-        <div class="credentials-available-header mb-4 flex flex-col justify-center gap-1 rounded-[16px] bg-white px-4 py-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-          <div class="flex items-center gap-3">
-            <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Award class="h-4 w-4" />
-            </div>
-            <h2 class="font-semibold text-card-foreground">{{ t.credentialsPage.availableQualifications }}</h2>
-          </div>
-          <p class="credentials-available-description ml-12 text-sm text-muted-foreground">{{ t.credentialsPage.availableQualificationsDesc }}</p>
-        </div>
         <div class="credential-definitions-grid grid gap-4 md:grid-cols-3">
           <div v-for="def in definitions" :key="credentialDefinitionId(def)" class="credential-definition-card group relative flex flex-col overflow-hidden rounded-[16px] bg-white text-card-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:bg-[#f4fbfc] hover:shadow-md hover:shadow-primary/10">
             <div class="absolute left-0 top-0 h-full w-1 bg-primary/45" />
@@ -504,7 +495,7 @@ watch(
                 <MessageSquareText class="h-3.5 w-3.5" aria-hidden="true" />
                 {{ t.credentialsPage.viewAuditRemark }}
               </button>
-              <button v-if="isPendingUploadStatus(app.status) || canResubmit(app.status)" class="btn btn-primary col-span-2 h-9 w-full cursor-pointer whitespace-nowrap rounded-lg py-1 text-sm shadow-sm shadow-primary/20 md:col-span-1 md:w-auto md:justify-self-end lg:col-start-4" @click="handleApplyClick(definitionForApplication(app), canResubmit(app.status) ? applicationId(app) : '')">{{ isPendingUploadStatus(app.status) ? t.credentialsPage.uploadMaterials : t.credentialsPage.appStatusResubmit }}</button>
+              <button v-if="isPendingUploadStatus(app.status) || canResubmit(app.status)" class="btn btn-primary col-span-2 h-9 w-full cursor-pointer whitespace-nowrap rounded-lg py-1 text-sm shadow-sm shadow-primary/20 md:col-span-1 md:w-auto md:justify-self-end lg:col-start-4" @click="handleApplyClick(definitionForApplication(app), canResubmit(app.status) ? applicationId(app) : '')">{{ isPendingUploadStatus(app.status) ? t.credentialsPage.uploadMaterials : t.credentialsPage.resubmitAction }}</button>
               <span v-else class="col-span-2 justify-self-start whitespace-nowrap text-sm text-muted-foreground md:col-span-1 md:justify-self-end lg:col-start-4">{{ formatBackendDateOnly(app.created_at) || t.common.na }}</span>
             </div>
           </div>
@@ -631,16 +622,9 @@ watch(
     margin-block-end: 12px;
   }
 
-  .credentials-available-header,
   .credentials-applications-header {
     margin-bottom: 12px;
     padding: 12px;
-  }
-
-  .credentials-available-description {
-    margin-top: 8px;
-    margin-left: 0;
-    line-height: 20px;
   }
 
   .credential-definitions-grid {
