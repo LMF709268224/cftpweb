@@ -1137,7 +1137,7 @@ export const zh = {
     },
     credentialsPage: {
         title: "资格申请",
-        subtitle: "查看可申请项目并提交资格申请。",
+        subtitle: "查看申请进度",
         myApplications: "我的申请",
         noApplications: "暂无申请",
         appStatusPending: "审核中",
