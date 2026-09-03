@@ -300,7 +300,7 @@ const registrationTitle = computed(() => {
   if (!bundleData.value) return t.value.checkoutWizard.checkoutTitle
 
   const bundleName = String(bundleData.value.name || "").trim()
-  const subject = /CFtP/i.test(bundleName) ? "CFtP®Level 1" : bundleName
+  const subject = /CFtP/i.test(bundleName) ? "CFtP®" : bundleName
   if (!subject) return t.value.checkoutWizard.examRegistrationTitle
 
   return t.value.checkoutWizard.namedExamRegistrationTitle.replace("{{name}}", subject)
@@ -2162,6 +2162,35 @@ function closePaymentEditDialog() {
           </div>
           <!-- Step 1: Selection -->
           <div v-if="currentStep === 1" data-testid="checkout-step-selection" class="checkout-step-one space-y-8">
+            <div v-if="exemptionStages.length > 0 && bundleData" class="checkout-step-actions flex flex-col items-stretch">
+              <section
+                v-if="purchaseLineItems.length > 0"
+                class="checkout-included-items"
+                data-testid="checkout-included-items"
+              >
+                <h3 class="checkout-included-items-title">{{ t.checkoutWizard.includedItems }}</h3>
+                <div class="checkout-included-items-list">
+                  <div
+                    v-for="item in purchaseLineItems"
+                    :key="item.key"
+                    class="checkout-included-item"
+                    data-testid="checkout-included-item"
+                    :data-item-id="item.itemId"
+                  >
+                    <div class="min-w-0">
+                      <div class="checkout-included-item-name">{{ item.name }}</div>
+                      <div v-if="item.stageName" class="checkout-included-item-stage">{{ item.stageName }}</div>
+                    </div>
+                    <div class="checkout-included-item-price">{{ formatMoney(item.amount, item.currency) }}</div>
+                  </div>
+                </div>
+              </section>
+              <div class="checkout-total text-lg font-bold text-slate-900">
+                <template v-if="dynamicPaymentPreview">
+                  {{ t.checkoutWizard.baseTotal }} {{ formatMoney(dynamicPaymentPreview.total, dynamicPaymentPreview.currency) }}
+                </template>
+              </div>
+            </div>
             <div class="checkout-step-one-title mb-4">
               <h2 class="text-2xl font-bold">{{ t.checkoutWizard.yourLevel1Paper.replace(levelPlaceholder, "1") }}</h2>
             </div>
@@ -2408,35 +2437,6 @@ function closePaymentEditDialog() {
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
-              <div v-if="bundleData" class="checkout-step-actions mt-6 flex flex-col items-stretch">
-                <section
-                  v-if="purchaseLineItems.length > 0"
-                  class="checkout-included-items"
-                  data-testid="checkout-included-items"
-                >
-                  <h3 class="checkout-included-items-title">{{ t.checkoutWizard.includedItems }}</h3>
-                  <div class="checkout-included-items-list">
-                    <div
-                      v-for="item in purchaseLineItems"
-                      :key="item.key"
-                      class="checkout-included-item"
-                      data-testid="checkout-included-item"
-                      :data-item-id="item.itemId"
-                    >
-                      <div class="min-w-0">
-                        <div class="checkout-included-item-name">{{ item.name }}</div>
-                        <div v-if="item.stageName" class="checkout-included-item-stage">{{ item.stageName }}</div>
-                      </div>
-                      <div class="checkout-included-item-price">{{ formatMoney(item.amount, item.currency) }}</div>
-                    </div>
-                  </div>
-                </section>
-                <div class="checkout-total text-lg font-bold text-slate-900">
-                  <template v-if="dynamicPaymentPreview">
-                    {{ t.checkoutWizard.baseTotal }} {{ formatMoney(dynamicPaymentPreview.total, dynamicPaymentPreview.currency) }}
-                  </template>
                 </div>
               </div>
             </div>
@@ -3072,9 +3072,9 @@ function closePaymentEditDialog() {
 
 .checkout-step-actions {
   margin-top: 20px;
-  padding: 13px 0 0;
+  padding: 0 0 13px;
   border: 0;
-  border-top: 1px solid rgba(0, 42, 102, 0.18);
+  border-bottom: 1px solid rgba(0, 42, 102, 0.18);
   border-radius: 0;
   background: transparent;
   box-shadow: none;
