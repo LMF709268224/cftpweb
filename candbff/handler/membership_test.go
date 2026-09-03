@@ -58,6 +58,8 @@ func (c *membershipUpgradeRegressionClient) UpgradeMembership(
 	}
 	return &mallpb.UpgradeMembershipResponse{
 		Success:              true,
+		Status:               "COMPLETED",
+		OrderUlid:            "upgrade-order-1",
 		MembershipRecordUlid: "record-2",
 		PaidAmountMinor:      1560,
 		Currency:             "usd",
@@ -292,6 +294,59 @@ func TestMembershipUpgradeHandlersKeepCandidateScope(t *testing.T) {
 		client.upgradeRequest.GetCurrency() != "usd" ||
 		client.upgradeRequest.GetIdempotencyKey() != "request-1" {
 		t.Fatalf("upgrade request = %#v", client.upgradeRequest)
+	}
+	var upgradePayload struct {
+		Data struct {
+			Status    string `json:"status"`
+			OrderULID string `json:"order_ulid"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(upgradeRecorder.Body.Bytes(), &upgradePayload); err != nil {
+		t.Fatalf("decode upgrade response: %v", err)
+	}
+	if upgradePayload.Data.Status != "COMPLETED" || upgradePayload.Data.OrderULID != "upgrade-order-1" {
+		t.Fatalf("upgrade payment state = %#v", upgradePayload.Data)
+	}
+}
+
+func TestMembershipUpgradeResponseForwardsPaymentAction(t *testing.T) {
+	client := &membershipUpgradeRegressionClient{
+		upgradeResponse: &mallpb.UpgradeMembershipResponse{
+			Success:      true,
+			Status:       "REQUIRES_ACTION",
+			OrderUlid:    "upgrade-order-3ds",
+			ClientSecret: "pi_3ds_secret",
+		},
+	}
+	handler := &Handler{Mall: client}
+	recorder := httptest.NewRecorder()
+	handler.UpgradeMembership(
+		recorder,
+		newCandidateHandlerRequest(
+			http.MethodPost,
+			"/api/membership/upgrade",
+			`{"target_membership_ulid":"target-2","idempotency_key":"request-3ds"}`,
+			"candidate-1",
+			nil,
+		),
+	)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("upgrade status = %d; body=%q", recorder.Code, recorder.Body.String())
+	}
+	var payload struct {
+		Data struct {
+			Status       string `json:"status"`
+			OrderULID    string `json:"order_ulid"`
+			ClientSecret string `json:"client_secret"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode upgrade response: %v", err)
+	}
+	if payload.Data.Status != "REQUIRES_ACTION" ||
+		payload.Data.OrderULID != "upgrade-order-3ds" ||
+		payload.Data.ClientSecret != "pi_3ds_secret" {
+		t.Fatalf("upgrade payment action = %#v", payload.Data)
 	}
 }
 

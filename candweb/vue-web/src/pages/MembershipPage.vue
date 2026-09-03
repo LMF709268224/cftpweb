@@ -11,6 +11,7 @@ import { useBodyScrollLock } from "@/lib/bodyScrollLock"
 import { useDialogAccessibility } from "@/lib/dialogAccessibility"
 import { formatMinorAmount } from "@/lib/display"
 import { useTranslation } from "@/lib/language"
+import { loadStripeFactory } from "@/lib/stripe"
 
 type RecordData = Record<string, any>
 
@@ -57,6 +58,7 @@ let membershipRequestId = 0
 let membershipPlansRequestId = 0
 let membershipHistoryRequestId = 0
 let membershipBillingsRequestId = 0
+let upgradeRefreshTimeoutID: number | undefined
 
 const tabs = computed(() => [
   { id: "overview", label: t.value.membership.tabsOverview },
@@ -467,18 +469,79 @@ async function confirmMembershipUpgrade() {
       body: JSON.stringify(body),
     })
     if (response?.success === false) throw new Error(response?.message || t.value.membership.upgradeFailed)
+    const status = String(response?.status || "").trim().toUpperCase()
 
-    toast.success(t.value.membership.upgradeSucceeded)
-    upgrading.value = false
-    closeUpgradeDialog()
-    activeTab.value = "overview"
-    await loadMembership()
+    if (status === "COMPLETED") {
+      toast.success(t.value.membership.upgradeSucceeded)
+      upgrading.value = false
+      closeUpgradeDialog()
+      activeTab.value = "overview"
+      await loadMembership()
+      return
+    }
+
+    if (status === "REQUIRES_ACTION") {
+      await confirmMembershipUpgradePayment(String(response?.client_secret || "").trim())
+      upgrading.value = false
+      closeUpgradeDialog()
+      activeTab.value = "overview"
+      scheduleUpgradeMembershipRefresh()
+      return
+    }
+
+    if (status === "PENDING_PAYMENT") {
+      toast.info(t.value.membership.upgradePaymentPending)
+      upgrading.value = false
+      closeUpgradeDialog()
+      activeTab.value = "overview"
+      scheduleUpgradeMembershipRefresh()
+      return
+    }
+
+    throw new Error(t.value.membership.upgradeStatusInvalid)
   } catch (error) {
     console.error("Failed to upgrade membership", error)
     toast.error(error instanceof Error && error.message ? error.message : t.value.membership.upgradeFailed)
   } finally {
     upgrading.value = false
   }
+}
+
+async function confirmMembershipUpgradePayment(clientSecret: string) {
+  if (!clientSecret) throw new Error(t.value.membership.upgradePaymentActionMissing)
+  try {
+    const [config, stripeFactory] = await Promise.all([
+      apiClient("/api/public/config", { suppressErrorToast: true }),
+      loadStripeFactory(),
+    ])
+    const publishableKey = String(config?.stripe_publishable_key || "").trim()
+    if (!publishableKey) throw new Error(t.value.membership.upgradePaymentActionMissing)
+
+    const stripe = stripeFactory(publishableKey, { locale: lang.value === "zh" ? "zh" : "en" })
+    const result = await stripe.confirmCardPayment(clientSecret)
+    if (result?.error) {
+      const detail = String(result.error.message || "").trim()
+      throw new Error(detail ? `${t.value.membership.upgradePaymentVerificationFailed}: ${detail}` : t.value.membership.upgradePaymentVerificationFailed)
+    }
+    if (String(result?.paymentIntent?.status || "").toLowerCase() !== "succeeded") {
+      toast.info(t.value.membership.upgradePaymentPending)
+      return
+    }
+    toast.success(t.value.membership.upgradePaymentConfirmed)
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith(t.value.membership.upgradePaymentVerificationFailed)) throw error
+    throw new Error(error instanceof Error && error.message === t.value.membership.upgradePaymentActionMissing
+      ? error.message
+      : t.value.membership.upgradePaymentVerificationFailed)
+  }
+}
+
+function scheduleUpgradeMembershipRefresh() {
+  if (upgradeRefreshTimeoutID !== undefined) window.clearTimeout(upgradeRefreshTimeoutID)
+  upgradeRefreshTimeoutID = window.setTimeout(() => {
+    upgradeRefreshTimeoutID = undefined
+    void loadMembership()
+  }, 1500)
 }
 
 async function cancelMembership() {
@@ -542,6 +605,7 @@ onBeforeUnmount(() => {
   membershipPlansRequestId += 1
   membershipHistoryRequestId += 1
   membershipBillingsRequestId += 1
+  if (upgradeRefreshTimeoutID !== undefined) window.clearTimeout(upgradeRefreshTimeoutID)
 })
 
 watch(lang, () => {

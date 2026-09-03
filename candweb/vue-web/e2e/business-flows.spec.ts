@@ -221,6 +221,8 @@ test("会员升级先预览分摊费用并以幂等请求确认", async ({ page 
       return {
         data: {
           success: true,
+          status: "COMPLETED",
+          order_ulid: "membership-upgrade-order-1",
           membership_record_ulid: "membership-record-2",
           paid_amount_minor: 1560,
           currency: "usd",
@@ -250,6 +252,98 @@ test("会员升级先预览分摊费用并以幂等请求确认", async ({ page 
   expect((upgradeBody as { currency?: unknown }).currency).toBeUndefined()
   expect((upgradeBody as { idempotency_key?: string }).idempotency_key).toMatch(/^[0-9a-f-]{36}$/)
   await expect(page.locator(".membership-current-name")).toContainText("GFI Charterholder Member")
+})
+
+test("会员升级等待支付或3DS验证时不会提前提示成功", async ({ page }) => {
+  let upgradeStatus = "PENDING_PAYMENT"
+
+  await page.addInitScript(() => {
+    ;(window as any).Stripe = () => ({
+      confirmCardPayment: async (clientSecret: string) => {
+        ;(window as any).__membershipUpgradeClientSecret = clientSecret
+        return { paymentIntent: { status: "succeeded" } }
+      },
+    })
+  })
+
+  const plans = [
+    {
+      membership_ulid: "membership-plan-affiliate",
+      membership_gpath: "/memberships/gfi",
+      name: "GFI Affiliate Member",
+      tier_level: 1,
+      duration_in_months: 12,
+    },
+    {
+      membership_ulid: "membership-plan-charterholder",
+      membership_gpath: "/memberships/gfi",
+      name: "GFI Charterholder Member",
+      tier_level: 2,
+      duration_in_months: 12,
+    },
+  ]
+  const activeRecord = {
+    membership_record_ulid: "membership-record-1",
+    membership_ulid: "membership-plan-affiliate",
+    membership_gpath: "/memberships/gfi",
+    membership_name: "GFI Affiliate Member",
+    tier_level: 1,
+    status: "ACTIVE",
+    started_at: "2026-08-28T00:00:00Z",
+    expires_at: "2027-08-28T00:00:00Z",
+  }
+
+  await installCandidateApiMocks(page, ({ pathname, method }) => {
+    if (pathname === "/api/membership/plans") return { data: { memberships: plans } }
+    if (pathname === "/api/membership/history") return { data: { user_memberships: [activeRecord], total: 1 } }
+    if (pathname === "/api/membership/billings") return { data: { billings: [], total: 0 } }
+    if (pathname === "/api/membership/active") return { data: { membership: activeRecord } }
+    if (pathname === "/api/membership/upgrade/preview" && method === "POST") {
+      return {
+        data: {
+          eligible: true,
+          immediate_charge_amount_minor: 1560,
+          currency: "usd",
+          current_period_ends_at: "2027-08-28T00:00:00Z",
+          next_cycle_renewal_amount_minor: 30000,
+          target_membership_name: "GFI Charterholder Member",
+          current_membership_name: "GFI Affiliate Member",
+        },
+      }
+    }
+    if (pathname === "/api/membership/upgrade" && method === "POST") {
+      return {
+        data: {
+          success: true,
+          status: upgradeStatus,
+          order_ulid: `membership-upgrade-${upgradeStatus.toLowerCase()}`,
+          client_secret: upgradeStatus === "REQUIRES_ACTION" ? "pi_membership_3ds_secret" : "",
+        },
+      }
+    }
+    return undefined
+  })
+
+  await page.goto("/membership", { waitUntil: "domcontentloaded" })
+  await page.getByRole("button", { name: "会员等级", exact: true }).click()
+
+  await page.getByRole("button", { name: "升级会员" }).click()
+  let dialog = page.getByRole("dialog", { name: "确认会员升级" })
+  await dialog.getByRole("button", { name: "确认并支付" }).click()
+  await expect(page.getByText("升级订单处理中，请稍候。", { exact: true })).toBeVisible()
+  await expect(dialog).toBeHidden()
+  await expect(page.getByText("会员升级成功", { exact: true })).toHaveCount(0)
+
+  upgradeStatus = "REQUIRES_ACTION"
+  await page.getByRole("button", { name: "会员等级", exact: true }).click()
+  await page.getByRole("button", { name: "升级会员" }).click()
+  dialog = page.getByRole("dialog", { name: "确认会员升级" })
+  await dialog.getByRole("button", { name: "确认并支付" }).click()
+
+  await expect.poll(() => page.evaluate(() => (window as any).__membershipUpgradeClientSecret)).toBe("pi_membership_3ds_secret")
+  await expect(page.getByText("支付成功，会员权益正在生效。", { exact: true })).toBeVisible()
+  await expect(dialog).toBeHidden()
+  await expect(page.getByText("会员升级成功", { exact: true })).toHaveCount(0)
 })
 
 test("会员刷新只应用最后一次请求返回的记录", async ({ page }) => {

@@ -139,6 +139,9 @@ type UpgradeMembershipReq struct {
 type UpgradeMembershipRsp struct {
 	Success              bool   `json:"success"`
 	Message              string `json:"message"`
+	Status               string `json:"status"`
+	OrderULID            string `json:"order_ulid,omitempty"`
+	ClientSecret         string `json:"client_secret,omitempty"`
 	MembershipRecordULID string `json:"membership_record_ulid,omitempty"`
 	StripeSubscriptionID string `json:"stripe_subscription_id,omitempty"`
 	StripeInvoiceID      string `json:"stripe_invoice_id,omitempty"`
@@ -182,6 +185,9 @@ func (h *Handler) UpgradeMembership(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, UpgradeMembershipRsp{
 		Success:              resp.GetSuccess(),
 		Message:              resp.GetMessage(),
+		Status:               resp.GetStatus(),
+		OrderULID:            resp.GetOrderUlid(),
+		ClientSecret:         resp.GetClientSecret(),
 		MembershipRecordULID: resp.GetMembershipRecordUlid(),
 		StripeSubscriptionID: resp.GetStripeSubscriptionId(),
 		StripeInvoiceID:      resp.GetStripeInvoiceId(),
