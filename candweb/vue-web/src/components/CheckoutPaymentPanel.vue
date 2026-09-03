@@ -125,11 +125,18 @@ function sameCouponCodes(left: string[], right: string[]) {
   return left.length === right.length && left.every((code, index) => code === right[index])
 }
 
+function localizeInvalidCouponReason(reason: string) {
+  if (reason.toLowerCase() === "promotion code not found") {
+    return t.value.purchaseDialog.couponUnknown
+  }
+  return reason
+}
+
 function invalidCouponMessage(invalid: any[]) {
   const details = invalid
     .map((item) => {
       const code = String(item?.code || "").trim()
-      const reason = String(item?.reason || "").trim()
+      const reason = localizeInvalidCouponReason(String(item?.reason || "").trim())
       if (code && reason) return `${code}: ${reason}`
       return code || reason
     })
