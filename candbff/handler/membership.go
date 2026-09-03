@@ -76,6 +76,17 @@ type PreviewMembershipUpgradeReq struct {
 	Currency             string `json:"currency"`
 }
 
+type PreviewMembershipUpgradeRsp struct {
+	Eligible                    bool   `json:"eligible"`
+	IneligibilityReason         string `json:"ineligibility_reason,omitempty"`
+	ImmediateChargeAmountMinor  int64  `json:"immediate_charge_amount_minor"`
+	Currency                    string `json:"currency"`
+	CurrentPeriodEndsAt         string `json:"current_period_ends_at"`
+	NextCycleRenewalAmountMinor int64  `json:"next_cycle_renewal_amount_minor"`
+	TargetMembershipName        string `json:"target_membership_name"`
+	CurrentMembershipName       string `json:"current_membership_name"`
+}
+
 // PreviewMembershipUpgrade POST /api/membership/upgrade/preview
 func (h *Handler) PreviewMembershipUpgrade(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
@@ -107,13 +118,32 @@ func (h *Handler) PreviewMembershipUpgrade(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	WriteJSON(w, http.StatusOK, resp)
+	WriteJSON(w, http.StatusOK, PreviewMembershipUpgradeRsp{
+		Eligible:                    resp.GetEligible(),
+		IneligibilityReason:         resp.GetIneligibilityReason(),
+		ImmediateChargeAmountMinor:  resp.GetImmediateChargeAmountMinor(),
+		Currency:                    resp.GetCurrency(),
+		CurrentPeriodEndsAt:         resp.GetCurrentPeriodEndsAt(),
+		NextCycleRenewalAmountMinor: resp.GetNextCycleRenewalAmountMinor(),
+		TargetMembershipName:        resp.GetTargetMembershipName(),
+		CurrentMembershipName:       resp.GetCurrentMembershipName(),
+	})
 }
 
 type UpgradeMembershipReq struct {
 	TargetMembershipULID string `json:"target_membership_ulid"`
 	Currency             string `json:"currency"`
 	IdempotencyKey       string `json:"idempotency_key"`
+}
+
+type UpgradeMembershipRsp struct {
+	Success              bool   `json:"success"`
+	Message              string `json:"message"`
+	MembershipRecordULID string `json:"membership_record_ulid,omitempty"`
+	StripeSubscriptionID string `json:"stripe_subscription_id,omitempty"`
+	StripeInvoiceID      string `json:"stripe_invoice_id,omitempty"`
+	PaidAmountMinor      int64  `json:"paid_amount_minor"`
+	Currency             string `json:"currency,omitempty"`
 }
 
 // UpgradeMembership POST /api/membership/upgrade
@@ -149,7 +179,15 @@ func (h *Handler) UpgradeMembership(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	WriteJSON(w, http.StatusOK, resp)
+	WriteJSON(w, http.StatusOK, UpgradeMembershipRsp{
+		Success:              resp.GetSuccess(),
+		Message:              resp.GetMessage(),
+		MembershipRecordULID: resp.GetMembershipRecordUlid(),
+		StripeSubscriptionID: resp.GetStripeSubscriptionId(),
+		StripeInvoiceID:      resp.GetStripeInvoiceId(),
+		PaidAmountMinor:      resp.GetPaidAmountMinor(),
+		Currency:             resp.GetCurrency(),
+	})
 }
 
 // ListUserMemberships GET /api/membership/history
