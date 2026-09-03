@@ -25,8 +25,10 @@ type membershipRegressionClient struct {
 type membershipUpgradeRegressionClient struct {
 	mallpb.MallServiceClient
 
-	previewRequest *mallpb.PreviewMembershipUpgradeRequest
-	upgradeRequest *mallpb.UpgradeMembershipRequest
+	previewRequest  *mallpb.PreviewMembershipUpgradeRequest
+	upgradeRequest  *mallpb.UpgradeMembershipRequest
+	previewResponse *mallpb.PreviewMembershipUpgradeResponse
+	upgradeResponse *mallpb.UpgradeMembershipResponse
 }
 
 func (c *membershipUpgradeRegressionClient) PreviewMembershipUpgrade(
@@ -35,6 +37,9 @@ func (c *membershipUpgradeRegressionClient) PreviewMembershipUpgrade(
 	_ ...grpc.CallOption,
 ) (*mallpb.PreviewMembershipUpgradeResponse, error) {
 	c.previewRequest = request
+	if c.previewResponse != nil {
+		return c.previewResponse, nil
+	}
 	return &mallpb.PreviewMembershipUpgradeResponse{
 		Eligible:                   true,
 		ImmediateChargeAmountMinor: 1560,
@@ -48,6 +53,9 @@ func (c *membershipUpgradeRegressionClient) UpgradeMembership(
 	_ ...grpc.CallOption,
 ) (*mallpb.UpgradeMembershipResponse, error) {
 	c.upgradeRequest = request
+	if c.upgradeResponse != nil {
+		return c.upgradeResponse, nil
+	}
 	return &mallpb.UpgradeMembershipResponse{
 		Success:              true,
 		MembershipRecordUlid: "record-2",
@@ -284,6 +292,88 @@ func TestMembershipUpgradeHandlersKeepCandidateScope(t *testing.T) {
 		client.upgradeRequest.GetCurrency() != "usd" ||
 		client.upgradeRequest.GetIdempotencyKey() != "request-1" {
 		t.Fatalf("upgrade request = %#v", client.upgradeRequest)
+	}
+}
+
+func TestMembershipUpgradeResponsesPreserveRequiredZeroValues(t *testing.T) {
+	client := &membershipUpgradeRegressionClient{
+		previewResponse: &mallpb.PreviewMembershipUpgradeResponse{
+			Eligible:            false,
+			IneligibilityReason: "upgrade unavailable",
+		},
+		upgradeResponse: &mallpb.UpgradeMembershipResponse{
+			Success: false,
+			Message: "upgrade failed",
+		},
+	}
+	handler := &Handler{Mall: client}
+
+	previewRecorder := httptest.NewRecorder()
+	handler.PreviewMembershipUpgrade(
+		previewRecorder,
+		newCandidateHandlerRequest(
+			http.MethodPost,
+			"/api/membership/upgrade/preview",
+			`{"target_membership_ulid":"target-2"}`,
+			"candidate-1",
+			nil,
+		),
+	)
+	if previewRecorder.Code != http.StatusOK {
+		t.Fatalf("preview status = %d; body=%q", previewRecorder.Code, previewRecorder.Body.String())
+	}
+	var previewPayload struct {
+		Data struct {
+			Eligible                    *bool  `json:"eligible"`
+			ImmediateChargeAmountMinor  *int64 `json:"immediate_charge_amount_minor"`
+			NextCycleRenewalAmountMinor *int64 `json:"next_cycle_renewal_amount_minor"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(previewRecorder.Body.Bytes(), &previewPayload); err != nil {
+		t.Fatalf("decode preview response: %v", err)
+	}
+	if previewPayload.Data.Eligible == nil || *previewPayload.Data.Eligible {
+		t.Fatalf("preview eligible = %v, want explicit false", previewPayload.Data.Eligible)
+	}
+	if previewPayload.Data.ImmediateChargeAmountMinor == nil || *previewPayload.Data.ImmediateChargeAmountMinor != 0 {
+		t.Fatalf("preview immediate charge = %v, want explicit zero", previewPayload.Data.ImmediateChargeAmountMinor)
+	}
+	if previewPayload.Data.NextCycleRenewalAmountMinor == nil || *previewPayload.Data.NextCycleRenewalAmountMinor != 0 {
+		t.Fatalf("preview renewal amount = %v, want explicit zero", previewPayload.Data.NextCycleRenewalAmountMinor)
+	}
+
+	upgradeRecorder := httptest.NewRecorder()
+	handler.UpgradeMembership(
+		upgradeRecorder,
+		newCandidateHandlerRequest(
+			http.MethodPost,
+			"/api/membership/upgrade",
+			`{"target_membership_ulid":"target-2","idempotency_key":"request-1"}`,
+			"candidate-1",
+			nil,
+		),
+	)
+	if upgradeRecorder.Code != http.StatusOK {
+		t.Fatalf("upgrade status = %d; body=%q", upgradeRecorder.Code, upgradeRecorder.Body.String())
+	}
+	var upgradePayload struct {
+		Data struct {
+			Success         *bool  `json:"success"`
+			Message         string `json:"message"`
+			PaidAmountMinor *int64 `json:"paid_amount_minor"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(upgradeRecorder.Body.Bytes(), &upgradePayload); err != nil {
+		t.Fatalf("decode upgrade response: %v", err)
+	}
+	if upgradePayload.Data.Success == nil || *upgradePayload.Data.Success {
+		t.Fatalf("upgrade success = %v, want explicit false", upgradePayload.Data.Success)
+	}
+	if upgradePayload.Data.Message != "upgrade failed" {
+		t.Fatalf("upgrade message = %q, want %q", upgradePayload.Data.Message, "upgrade failed")
+	}
+	if upgradePayload.Data.PaidAmountMinor == nil || *upgradePayload.Data.PaidAmountMinor != 0 {
+		t.Fatalf("upgrade paid amount = %v, want explicit zero", upgradePayload.Data.PaidAmountMinor)
 	}
 }
 
