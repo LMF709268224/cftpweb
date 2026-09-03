@@ -5,7 +5,7 @@ import { toast } from "vue-sonner"
 import { AlertCircle, CheckCircle2, ChevronLeft, Clock, FileText, X } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import PageFeedback from "@/components/PageFeedback.vue"
-import { apiClient } from "@/lib/apiClient"
+import { ApiClientError, apiClient } from "@/lib/apiClient"
 import { useBodyScrollLock } from "@/lib/bodyScrollLock"
 import { useDialogAccessibility } from "@/lib/dialogAccessibility"
 import { useTranslation } from "@/lib/language"
@@ -34,6 +34,7 @@ const submitConfirmOpen = ref(false)
 const submitConfirmDialogRef = ref<HTMLElement | null>(null)
 const QUIZ_DRAFT_STORAGE_PREFIX = "cftp:quiz-draft:"
 const QUIZ_DRAFT_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 7
+const pendingDraftSyncs = new Set<Promise<void>>()
 
 useBodyScrollLock(() => submitConfirmOpen.value)
 
@@ -145,6 +146,32 @@ function clearQuizDraft() {
   }
 }
 
+function isCompletedAttemptDraftError(error: unknown) {
+  if (!(error instanceof ApiClientError) || error.status !== 409) return false
+  const errorCode = String(error.errorCode || "").trim().toUpperCase()
+  const rawMessage = String(error.rawMessage || "").trim()
+  return ["PRECONDITION_FAILED", "FAILED_PRECONDITION"].includes(errorCode)
+    && /status:\s*["']?completed["']?/i.test(rawMessage)
+}
+
+function handleQuizDraftSyncError(error: unknown) {
+  if (isCompletedAttemptDraftError(error) && (submitting.value || result.value)) {
+    clearQuizDraft()
+    console.info("Quiz draft sync finished after the attempt was completed")
+    return
+  }
+
+  console.warn("Failed to sync quiz draft to server", error)
+  const message = error instanceof Error ? error.message : t.value.common.error
+  toast.error(message, { id: `quiz-draft-sync:${message}` })
+}
+
+async function waitForPendingQuizDrafts() {
+  while (pendingDraftSyncs.size > 0) {
+    await Promise.allSettled(Array.from(pendingDraftSyncs))
+  }
+}
+
 function persistQuizDraft(nextAnswers = answers.value) {
   const key = quizDraftStorageKey()
   if (!key) return
@@ -159,11 +186,16 @@ function persistQuizDraft(nextAnswers = answers.value) {
     console.warn("Failed to save quiz draft", err)
   }
 
-  // Silent remote sync
   const submissions = Object.entries(sanitized).map(([questionId, selectedOptionIds]) => ({ question_id: questionId, selected_option_ids: selectedOptionIds }))
-  apiClient(`/api/quizzes/attempts/${attemptId.value}/draft`, { method: "POST", body: JSON.stringify({ submissions }) }).catch(err => {
-    console.warn("Failed to sync quiz draft to server", err)
+  const syncRequest = apiClient(`/api/quizzes/attempts/${attemptId.value}/draft`, {
+    method: "POST",
+    body: JSON.stringify({ submissions }),
+    suppressErrorToast: true,
   })
+    .then(() => undefined)
+    .catch(handleQuizDraftSyncError)
+    .finally(() => pendingDraftSyncs.delete(syncRequest))
+  pendingDraftSyncs.add(syncRequest)
 }
 
 function restoreQuizDraft() {
@@ -274,6 +306,7 @@ async function loadPaper() {
 }
 
 function handleSelectOption(questionId: string, optionId: string, isMultipleChoice: boolean) {
+  if (submitting.value || result.value) return
   const current = answers.value[questionId] || []
   if (!isMultipleChoice) {
     answers.value = { ...answers.value, [questionId]: [optionId] }
@@ -294,6 +327,7 @@ async function submitQuiz() {
   const submissions = Object.entries(sanitizedAnswers).map(([questionId, selectedOptionIds]) => ({ question_id: questionId, selected_option_ids: selectedOptionIds }))
   submitting.value = true
   try {
+    await waitForPendingQuizDrafts()
     result.value = await apiClient(`/api/quizzes/attempts/${attemptId.value}/submit`, { method: "POST", body: JSON.stringify({ submissions }) })
     clearQuizDraft()
     toast.success(t.value.learning?.quizSubmittedDesc || t.value.common.success)
