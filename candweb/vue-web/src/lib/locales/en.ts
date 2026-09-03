@@ -1032,9 +1032,16 @@ export const en: AppTranslations = {
     checkoutSuccess: {
         title: "Purchase Successful",
         orderPlaced: "Your order has been placed.",
+        membershipTitle: "Membership Purchase Successful",
+        membershipOrderPlaced: "Your membership order has been placed.",
+        certificationTitle: "Certification Purchase Successful",
+        certificationOrderPlaced: "Your certification order has been placed.",
         orderId: "Order ID",
         candidateId: "Candidate ID",
         viewCertifications: "View My Certifications",
+        viewMembership: "View My Membership",
+        viewOrders: "View Order",
+        resolvingOrder: "Confirming order details...",
         goToMall: "Go to Mall",
     },
     settings: {

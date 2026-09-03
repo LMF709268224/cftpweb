@@ -1030,9 +1030,16 @@ export const zh = {
     checkoutSuccess: {
         title: "购买成功",
         orderPlaced: "您的订单已成功提交。",
+        membershipTitle: "会员购买成功",
+        membershipOrderPlaced: "您的会员订单已成功提交。",
+        certificationTitle: "认证购买成功",
+        certificationOrderPlaced: "您的认证订单已成功提交。",
         orderId: "订单 ID",
         candidateId: "考生 ID",
         viewCertifications: "查看我的认证",
+        viewMembership: "查看我的会员",
+        viewOrders: "查看订单",
+        resolvingOrder: "正在确认订单内容...",
         goToMall: "返回商城",
     },
     settings: {
