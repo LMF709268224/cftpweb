@@ -294,6 +294,7 @@ const isMembershipBundle = computed(() => {
   const itemTypes = bundleData.value.bundle_item_types || bundleData.value.item_types || []
   return itemTypes.some((type: string) => String(type).includes("membership"))
 })
+const purchaseType = computed(() => isMembershipBundle.value ? "membership" : "certification")
 
 const registrationTitle = computed(() => {
   if (!bundleData.value) return t.value.checkoutWizard.checkoutTitle
@@ -332,6 +333,7 @@ const paymentReturnParams = computed(() => {
   return {
     bundle_id: bundleId,
     pipeline_id: pipelineId.value,
+    purchase_type: purchaseType.value,
   }
 })
 const selectedCountryCode = ref("")
@@ -1991,7 +1993,10 @@ async function createPurchaseOrder() {
 
   if (isCompletedStatus(orderStatus)) {
     toast.success(t.value.checkoutWizard.purchaseCompleted)
-    await router.push(`/checkout/success/${encodeURIComponent(orderId)}`)
+    await router.push({
+      path: `/checkout/success/${encodeURIComponent(orderId)}`,
+      query: { purchase_type: purchaseType.value },
+    })
     return
   }
 

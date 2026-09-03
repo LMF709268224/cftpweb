@@ -311,7 +311,12 @@ test("支付成功页在移动端不会因长 ID 横向溢出", async ({ page })
 
   await page.setViewportSize({ width: 382, height: 739 });
   await seedAuthenticatedCandidate(page);
-  await installCandidateApiMocks(page, emptyPortalResponse);
+  await installCandidateApiMocks(page, (context) => {
+    if (context.pathname === `/api/orders/${longOrderId}`) {
+      return { data: { items: [{ item_type: "pipeline", item_id: "pipeline-mobile" }] } };
+    }
+    return emptyPortalResponse(context);
+  });
   await page.goto(`/checkout/success/${longOrderId}`, { waitUntil: "domcontentloaded" });
 
   const card = page.locator(".checkout-success-card");
@@ -327,6 +332,27 @@ test("支付成功页在移动端不会因长 ID 横向溢出", async ({ page })
   expect(cardBox).not.toBeNull();
   expect(cardBox!.width).toBeLessThanOrEqual(350);
   await expect.poll(() => card.evaluate((element) => getComputedStyle(element).paddingLeft)).toBe("20px");
+});
+
+test("会员购买成功页进入会员中心而不是我的认证", async ({ page }) => {
+  await seedAuthenticatedCandidate(page);
+  await installCandidateApiMocks(page, ({ pathname }) => {
+    if (pathname === "/api/orders/membership-order") {
+      return {
+        data: {
+          items: [{ item_type: "membership", item_id: "membership-plan-1" }],
+        },
+      };
+    }
+    return undefined;
+  });
+
+  await page.goto("/checkout/success/membership-order", { waitUntil: "domcontentloaded" });
+
+  await expect(page.getByRole("heading", { name: "会员购买成功" })).toBeVisible();
+  await expect(page.getByText("您的会员订单已成功提交。", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "查看我的会员" })).toHaveAttribute("href", "/membership");
+  await expect(page.getByRole("link", { name: "查看我的认证" })).toHaveCount(0);
 });
 
 test("资格申请详情提供官方模板预览与下载", async ({ page }) => {
