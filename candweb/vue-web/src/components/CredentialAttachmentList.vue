@@ -42,9 +42,9 @@ function formatAttachmentSize(value: unknown) {
       <div
         v-for="(attachment, index) in validAttachments"
         :key="attachment.attachment_id || attachment.file_key || `${attachment.file_name}-${index}`"
-        class="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between"
+        class="credential-attachment-item flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between"
       >
-        <div class="flex min-w-0 items-start gap-3">
+        <div class="credential-attachment-details flex min-w-0 items-start gap-3">
           <FileText class="mt-0.5 h-5 w-5 shrink-0 text-primary" />
           <div class="min-w-0">
             <div class="break-words text-sm font-semibold text-foreground">{{ attachment.name || attachment.file_name }}</div>
@@ -55,7 +55,7 @@ function formatAttachmentSize(value: unknown) {
             </div>
           </div>
         </div>
-        <div class="flex shrink-0 flex-wrap gap-2">
+        <div class="credential-attachment-actions flex shrink-0 flex-wrap gap-2">
           <a
             class="btn btn-outline inline-flex h-9 cursor-pointer items-center justify-center gap-2 rounded-lg px-3 text-xs hover:border-primary/25 hover:bg-primary/10 hover:text-primary"
             :href="attachmentURL(attachment.download_url)"
@@ -78,3 +78,21 @@ function formatAttachmentSize(value: unknown) {
     </div>
   </section>
 </template>
+
+<style scoped>
+:global(html[lang="en"] .credentials-apply-dialog .credential-attachment-item) {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+:global(html[lang="en"] .credentials-apply-dialog .credential-attachment-details),
+:global(html[lang="en"] .credentials-apply-dialog .credential-attachment-actions) {
+  width: 100%;
+}
+
+:global(html[lang="en"] .credentials-apply-dialog .credential-attachment-actions > a) {
+  min-width: 0;
+  flex: 1 1 10rem;
+  white-space: nowrap;
+}
+</style>
