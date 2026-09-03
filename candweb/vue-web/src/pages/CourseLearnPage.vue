@@ -2308,7 +2308,7 @@ watch(selectedMaterial, () => {
           </div>
 
           <div id="lesson-detail" class="lesson-detail-scroll min-h-0 overflow-y-auto rounded-md bg-white p-5 lg:p-6">
-            <div v-if="lesson" class="flex items-start justify-between gap-4">
+            <div v-if="lesson" class="lesson-detail-header flex items-start justify-between gap-4">
               <div class="min-w-0 flex-1">
                 <div class="flex min-w-0 flex-wrap items-center gap-2">
                   <span class="badge shrink-0 border-primary/15 bg-primary/10 text-primary">{{ lessonTypeLabel(lesson?.lesson_type) }}</span>
@@ -2324,7 +2324,7 @@ watch(selectedMaterial, () => {
                   {{ lesson?.title || t.common.unknownCourse }}
                 </h2>
               </div>
-              <div class="flex shrink-0 justify-end gap-2">
+              <div class="lesson-completion-actions flex shrink-0 justify-end gap-2">
                 <button
                   data-testid="complete-lesson"
                   :class="[
@@ -2393,7 +2393,7 @@ watch(selectedMaterial, () => {
                     <div v-if="sanitizedLessonBody" class="prose max-w-none text-sm text-foreground" v-html="sanitizedLessonBody" />
                     <p v-else>{{ t.learning.externalCoursewareHint }}</p>
                   </div>
-                  <button class="btn btn-primary max-w-full flex-wrap rounded-lg text-left leading-snug" :disabled="openingTokenLesson" @click="openTokenLesson">
+                  <button class="external-courseware-action btn btn-primary max-w-full flex-wrap rounded-lg text-left leading-snug" :disabled="openingTokenLesson" @click="openTokenLesson">
                     <Loader2 v-if="openingTokenLesson" class="mr-2 h-4 w-4 animate-spin" />
                     <ExternalLink v-else class="mr-2 h-4 w-4" />
                     {{ t.learning.openExternalCourseware }} <span v-if="lesson?.title" class="ml-1 font-normal opacity-90">- {{ lesson.title }}</span>
@@ -2663,6 +2663,40 @@ watch(selectedMaterial, () => {
 @media (max-width: 767px) {
   .course-learn-heading {
     font-size: 18px;
+  }
+}
+
+@media (max-width: 1399px) {
+  :global(html[lang="en"] #lesson-detail .lesson-detail-header) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  :global(html[lang="en"] #lesson-detail .lesson-completion-actions),
+  :global(html[lang="en"] #lesson-detail .lesson-completion-actions > button) {
+    width: 100%;
+  }
+
+  :global(html[lang="en"] #lesson-detail .external-courseware-action) {
+    width: 100%;
+    flex-wrap: nowrap;
+    gap: 0.25rem;
+    padding-inline: 0.5rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
+
+  :global(html[lang="en"] #lesson-detail .external-courseware-action > svg) {
+    width: 0.875rem;
+    height: 0.875rem;
+    margin-right: 0;
+    flex-shrink: 0;
+  }
+
+  :global(html[lang="en"] #lesson-detail .external-courseware-action > span) {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 
