@@ -719,16 +719,22 @@ test("已持有有效资格的课程自动免考且不可取消", async ({ page 
     await expect(page.getByTestId("checkout-included-items")).toBeVisible()
     await expect(page.getByTestId("checkout-included-item")).toHaveCount(5)
     await expect(page.locator(`[data-testid="checkout-included-item"][data-item-id="${pipelineID}"]`))
-        .toContainText("Pipeline 报名费")
+        .toContainText("注册费用（仅收取一次）")
     const exemptionItem = page.locator(`[data-testid="checkout-included-item"][data-item-id="${unitID}"]`)
     await expect(exemptionItem).toContainText("免考认定费")
     await expect(exemptionItem).toContainText("50")
+    const localizedUnitNames: Record<string, string> = {
+        "unit-foundation": "基础模块（L0）",
+        "unit-finance": "金融模块（L1A）",
+        "unit-fintech": "金融科技模块（L1B）",
+    }
     for (const unit of includedUnits) {
         const item = page.locator(`[data-testid="checkout-included-item"][data-item-id="${unit.unit_id}"]`)
-        await expect(item).toContainText(unit.name)
+        await expect(item).toContainText(localizedUnitNames[unit.unit_id])
         await expect(item).toContainText((unit.amount / 100).toLocaleString("en-US", { maximumFractionDigits: 2 }))
     }
-    await expect(page.locator(".checkout-total")).toContainText("基础总额")
+    await expect(page.locator(".checkout-step-one-title")).toContainText("可免考科目与申请")
+    await expect(page.locator(".checkout-total")).toContainText("总费用")
     await expect(page.locator(".checkout-total")).toContainText("3,950")
     const totalPrecedesPaperSelection = await page.locator(".checkout-total").evaluate((total) => {
         const paperSelection = document.querySelector(".checkout-step-one-title")
@@ -736,6 +742,15 @@ test("已持有有效资格的课程自动免考且不可取消", async ({ page 
     })
     expect(totalPrecedesPaperSelection).toBe(true)
     expect(pricingModes).toContain("FULL_PIPELINE")
+
+    await page.getByRole("button", { name: "中文 / EN" }).click()
+    await expect(page.locator(".checkout-step-one-title")).toContainText("Exemption-Eligible Subjects & Applications")
+    await expect(page.locator(`[data-testid="checkout-included-item"][data-item-id="${pipelineID}"]`))
+        .toContainText("Registration Fee (One-Time Charge)")
+    await expect(page.locator(`[data-testid="checkout-included-item"][data-item-id="unit-foundation"]`)).toContainText("L0 Foundation")
+    await expect(page.locator(`[data-testid="checkout-included-item"][data-item-id="unit-finance"]`)).toContainText("L1A Finance")
+    await expect(page.locator(`[data-testid="checkout-included-item"][data-item-id="unit-fintech"]`)).toContainText("L1B Fintech")
+    await expect(page.locator(".checkout-total")).toContainText("Total Fee")
 
     await page.getByTestId("checkout-selection-next").click()
     await waitForCheckoutProfile(page)

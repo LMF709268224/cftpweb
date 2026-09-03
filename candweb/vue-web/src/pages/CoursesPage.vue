@@ -8,6 +8,7 @@ import PageFeedback from "@/components/PageFeedback.vue"
 import { apiClient } from "@/lib/apiClient"
 import { formatCurrencyMinorAmount } from "@/lib/display"
 import { useTranslation } from "@/lib/language"
+import { learningUnitDisplayName } from "@/lib/learningUnitNames"
 import { preloadCheckoutWizard } from "@/router"
 
 const { t, lang } = useTranslation()
@@ -133,7 +134,10 @@ async function fetchData() {
         itemTypes,
         isPipelineBundle: pipelineBundle,
         isMembershipBundle: membershipBundle,
-        title: certificationDisplayName(b.name) || t.value.common.unknownCourse,
+        title: learningUnitDisplayName(
+          certificationDisplayName(b.name) || t.value.common.unknownCourse,
+          t.value.checkoutWizard,
+        ),
         description: String(b.description || "").trim() || firstStageNames || `${stages.length} ${t.value.courses.stages} / ${unitCount} ${t.value.courses.units}`,
         provider: b.category_tips || t.value.courses.certificationPath,
         isPurchased: false,

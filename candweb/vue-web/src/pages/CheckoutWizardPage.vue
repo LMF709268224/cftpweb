@@ -12,6 +12,7 @@ import { ApiClientError, apiClient } from "@/lib/apiClient"
 import { isSystemCredentialDefinition } from "@/lib/credentialDefinitions"
 import { formatCurrencyMinorAmount } from "@/lib/display"
 import { useTranslation } from "@/lib/language"
+import { learningUnitDisplayName } from "@/lib/learningUnitNames"
 import { useUser } from "@/lib/user"
 import {
   CN_CITY_LABELS,
@@ -176,7 +177,7 @@ const purchaseLineItems = computed<PurchaseLineItem[]>(() => {
         const unitId = String(unit?.unit_id || "").trim()
         if (!unitId) continue
         unitDetails.set(unitId, {
-          name: String(unit?.unit_name || unit?.name || unitId).trim() || unitId,
+          name: learningUnitDisplayName(unit?.unit_name || unit?.name || unitId, t.value.checkoutWizard) || unitId,
           stageName,
         })
       }
@@ -2213,7 +2214,7 @@ function closePaymentEditDialog() {
                   >
                     <div class="checkout-unit-main mb-4">
                       <div class="checkout-unit-id mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{{ unit.unit_id }}</div>
-                      <h3 class="checkout-unit-title text-xl font-bold text-slate-800">{{ unit.unit_name || unit.unit_id }}</h3>
+                      <h3 class="checkout-unit-title text-xl font-bold text-slate-800">{{ learningUnitDisplayName(unit.unit_name || unit.unit_id, t.checkoutWizard) }}</h3>
                       <p v-if="unit.exemption_quals?.[0]?.description" class="checkout-unit-description mt-2 text-sm text-slate-500">{{ unit.exemption_quals[0].description }}</p>
                       
                       <div :class="['checkout-unit-badge mt-3 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium', exemptionCredentialBadgeClass(unit)]">
