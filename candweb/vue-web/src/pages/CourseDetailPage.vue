@@ -38,6 +38,7 @@ import {
   reportsInProgressStagePurchase,
 } from "@/lib/stageOrderRecovery"
 import { useTranslation } from "@/lib/language"
+import { learningUnitDisplayName } from "@/lib/learningUnitNames"
 import { usePolling } from "@/lib/polling"
 import { formatBackendDateOnly } from "@/lib/utils"
 
@@ -1470,7 +1471,13 @@ watch(lang, async () => {
                 </div>
                 <div class="min-w-0">
                   <div class="font-medium text-foreground">
-                    {{ (unit.glms_course_id && courseSummaries[unit.glms_course_id]?.title) || unit.name || unit.glms_course_id || t.common.unknownCourse }}
+                    {{ learningUnitDisplayName(
+                      (unit.glms_course_id && courseSummaries[unit.glms_course_id]?.title)
+                        || unit.name
+                        || unit.glms_course_id
+                        || t.common.unknownCourse,
+                      t.checkoutWizard,
+                    ) }}
                   </div>
                   <div v-if="unit.glms_course_id && (courseSummaries[unit.glms_course_id]?.category_tips || courseSummaries[unit.glms_course_id]?.duration_min)" class="text-xs text-muted-foreground">
                     {{
