@@ -18,11 +18,11 @@ type AsyncPageCase = {
 
 const asyncPageCases: AsyncPageCase[] = [
   {
-    name: "商城",
+    name: "学习与认证服务",
     path: "/certifications",
     endpoint: "/api/mall/bundles",
-    errorTitle: "商城信息加载失败",
-    successTitle: "暂无可购买商品",
+    errorTitle: "学习与认证服务加载失败",
+    successTitle: "暂无相关内容",
     successData: { bundles: [] },
   },
   {

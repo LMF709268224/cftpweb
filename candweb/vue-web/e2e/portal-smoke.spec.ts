@@ -7,7 +7,7 @@ import {
 
 const portalPages = [
   { path: "/dashboard", heading: "欢迎来到门户" },
-  { path: "/certifications", heading: "商城" },
+  { path: "/certifications", heading: "学习与认证服务" },
   { path: "/my-certifications", heading: "我的认证" },
   { path: "/exams", heading: "考试" },
   { path: "/records", heading: "档案" },
@@ -248,7 +248,7 @@ test("登录后商城区分认证报名与会员加入文案", async ({ page }) 
   const pendingMembershipCard = page.locator('[data-bundle-id="candidate-membership-pending"]');
   const loadingCertificationCard = page.locator('[data-bundle-id="candidate-certification-loading"]');
   const failedCertificationCard = page.locator('[data-bundle-id="candidate-certification-failed"]');
-  await expect(certificationCard).toContainText("可报名认证");
+  await expect(certificationCard).toContainText("可报名认证考试");
   await expect(certificationCard).toContainText("去报名");
   await expect(membershipCard).toContainText("可成为会员");
   await expect(membershipCard).toContainText("成为会员");
@@ -273,7 +273,7 @@ test("登录后商城区分认证报名与会员加入文案", async ({ page }) 
     localStorage.setItem("app_lang", "en");
     window.dispatchEvent(new Event("lang_change"));
   });
-  await expect(certificationCard).toContainText("Ready to enroll");
+  await expect(certificationCard).toContainText("Ready to enroll in a certification exam");
   await expect(certificationCard).toContainText("Enroll Now");
   await expect(membershipCard).toContainText("Eligible for membership");
   await expect(membershipCard).toContainText("Become a Member");

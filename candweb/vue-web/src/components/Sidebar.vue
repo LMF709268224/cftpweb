@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue"
 import { RouterLink, useRoute } from "vue-router"
-import { Award, BookOpen, ChevronUp, ClipboardList, Crown, FileCheck2, Home, Languages, LayoutDashboard, Loader2, LogOut, Menu, MessageSquare, Package, Settings, ShoppingBag, Store, X } from "lucide-vue-next"
+import { Award, BookOpen, ChevronUp, ClipboardList, Crown, FileCheck2, GraduationCap, Home, Languages, LayoutDashboard, Loader2, LogOut, Menu, MessageSquare, Package, Settings, ShoppingBag, X } from "lucide-vue-next"
 import { apiClient } from "@/lib/apiClient"
 import { clearAuthSession } from "@/lib/authStorage"
 import { fetchUnreadCount, getCachedUnreadCount, onUnreadCountChanged } from "@/lib/unreadCountCache"
@@ -86,7 +86,7 @@ const navItems = computed(() => [
 
 const navIconByHref = {
   "/dashboard": LayoutDashboard,
-  "/certifications": Store,
+  "/certifications": GraduationCap,
   "/my-certifications": BookOpen,
   "/exams": ClipboardList,
   "/resource-packs": Package,

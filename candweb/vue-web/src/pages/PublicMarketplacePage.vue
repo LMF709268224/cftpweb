@@ -44,8 +44,8 @@ const pageCopy = computed(() => lang.value === "zh"
       memberAction: "去报名",
       membershipAction: "成为会员",
       searchPlaceholder: "搜索...",
-      loadErrorTitle: "商品暂时无法加载",
-      loadErrorDesc: "请稍后重试，或登录后进入商城查看。",
+      loadErrorTitle: "相关内容暂时无法加载",
+      loadErrorDesc: "请稍后重试，或登录后进入学习与认证服务查看。",
       retry: "重新加载",
     }
   : {
@@ -57,8 +57,8 @@ const pageCopy = computed(() => lang.value === "zh"
       memberAction: "Enroll Now",
       membershipAction: "Become a Member",
       searchPlaceholder: "Search...",
-      loadErrorTitle: "Products are temporarily unavailable",
-      loadErrorDesc: "Please try again shortly or log in to view the member marketplace.",
+      loadErrorTitle: "Content is temporarily unavailable",
+      loadErrorDesc: "Please try again shortly or log in to view Learning & Certification Services.",
       retry: "Reload",
     })
 

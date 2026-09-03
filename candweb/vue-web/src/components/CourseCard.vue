@@ -2,7 +2,7 @@
 import { computed, ref } from "vue"
 import { RouterLink, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
-import { AlertCircle, BookOpen, CheckCircle2, Clock, LoaderCircle, ShoppingCart, Users } from "lucide-vue-next"
+import { AlertCircle, BookOpen, CheckCircle2, ClipboardCheck, Clock, Crown, LoaderCircle, LogIn, Users } from "lucide-vue-next"
 import { CANDIDATE_PIPELINE_STATUS_LABELS, statusLabel } from "@/lib/status-labels"
 import { startGfiLogin } from "@/lib/gfiLogin"
 import { useTranslation } from "@/lib/language"
@@ -208,7 +208,7 @@ async function openCredentialCenter() {
 
 const accessState = computed(() => {
   if (props.loginRequired) {
-    return { label: cardCopy.value.loginRequired, icon: ShoppingCart, className: "border-primary/20 bg-primary/10 text-primary", hint: "" }
+    return { label: cardCopy.value.loginRequired, icon: LogIn, className: "border-primary/20 bg-primary/10 text-primary", hint: "" }
   }
   if (effectivePurchased.value) return null
   if (statusRefreshing.value) {
@@ -218,7 +218,7 @@ const accessState = computed(() => {
     return { label: eligibilityCopy.value.failed, icon: AlertCircle, className: "border-red-200 bg-red-50 text-red-700", hint: "" }
   }
   if (currentEligibility.value?.can_purchase || hasInProgressOrder.value) {
-    return { label: isMembershipOnlyProduct.value ? cardCopy.value.readyMembership : cardCopy.value.ready, icon: ShoppingCart, className: "border-emerald-200 bg-emerald-50 text-emerald-700", hint: "" }
+    return { label: isMembershipOnlyProduct.value ? cardCopy.value.readyMembership : cardCopy.value.ready, icon: isMembershipOnlyProduct.value ? Crown : ClipboardCheck, className: "border-emerald-200 bg-emerald-50 text-emerald-700", hint: "" }
   }
   if (currentEligibility.value) {
     return {
