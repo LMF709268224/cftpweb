@@ -460,8 +460,6 @@ async function confirmMembershipUpgrade() {
       target_membership_ulid: targetMembershipULID,
       idempotency_key: upgradeIdempotencyKey.value,
     }
-    const currency = String(upgradePreview.value?.currency || "").trim()
-    if (currency) body.currency = currency
 
     const response = await apiClient("/api/membership/upgrade", {
       method: "POST",

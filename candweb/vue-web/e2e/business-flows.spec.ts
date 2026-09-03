@@ -246,8 +246,8 @@ test("会员升级先预览分摊费用并以幂等请求确认", async ({ page 
   await dialog.getByRole("button", { name: "确认并支付" }).click()
   await expect.poll(() => upgradeBody).toMatchObject({
     target_membership_ulid: "membership-plan-charterholder",
-    currency: "usd",
   })
+  expect((upgradeBody as { currency?: unknown }).currency).toBeUndefined()
   expect((upgradeBody as { idempotency_key?: string }).idempotency_key).toMatch(/^[0-9a-f-]{36}$/)
   await expect(page.locator(".membership-current-name")).toContainText("GFI Charterholder Member")
 })
