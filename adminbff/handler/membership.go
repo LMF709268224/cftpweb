@@ -189,6 +189,10 @@ func (h *Handler) AdminUpdateMembershipConfig(w http.ResponseWriter, r *http.Req
 	if !requireRequestField(w, req.MembershipGpath, "membership_gpath") {
 		return
 	}
+	if req.TierLevel <= 0 {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "field 'tier_level' must be greater than 0")
+		return
+	}
 	resp, err := h.Gmbr.AdminUpdateMembershipConfig(r.Context(), &req)
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -203,20 +207,11 @@ func (h *Handler) AdminPublishMembershipConfig(w http.ResponseWriter, r *http.Re
 
 func (h *Handler) AdminDeprecateMembershipConfig(w http.ResponseWriter, r *http.Request) {
 	membershipULID := strings.TrimSpace(chi.URLParam(r, "membership_ulid"))
-	membershipGpath := strings.TrimSpace(r.URL.Query().Get("membership_gpath"))
-	if membershipGpath == "" && membershipULID != "" {
-		resp, err := h.Gmbr.GetMembership(r.Context(), &gmbrpb.GetMembershipRequest{MembershipUlid: membershipULID})
-		if err != nil {
-			HandleGrpcError(w, err)
-			return
-		}
-		membershipGpath = resp.GetMembershipGpath()
-	}
-	if !requireRequestField(w, membershipGpath, "membership_gpath") {
+	if !requireRequestField(w, membershipULID, "membership_ulid") {
 		return
 	}
 	resp, err := h.Gmbr.AdminDeprecateMembershipConfig(r.Context(), &gmbrpb.AdminDeprecateMembershipConfigRequest{
-		MembershipGpath: membershipGpath,
+		MembershipUlid: optionalString(membershipULID),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
