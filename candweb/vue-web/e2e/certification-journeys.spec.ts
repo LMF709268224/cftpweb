@@ -1310,9 +1310,9 @@ test("资格申请记录详情显示完整审核备注和已上传文件", async
                     applications: [
                         {
                             app_ulid: "application-without-audit-remark",
-                            credential_name: "Pending Qualification",
+                            credential_name: "Pending Upload Qualification",
                             credential_category: "Exemption",
-                            status: "APPLICATION_STATUS_PENDING",
+                            status: "APPLICATION_STATUS_PENDING_UPLOAD",
                             audit_remark: "",
                             created_at: "2026-08-29T00:00:00Z",
                         },
@@ -1334,7 +1334,7 @@ test("资格申请记录详情显示完整审核备注和已上传文件", async
                 data: {
                     app_ulid: "application-with-audit-remark",
                     status: "APPLICATION_STATUS_APPROVED",
-                    audit_remark: auditRemark,
+                    audit_remark: "",
                     created_at: "2026-08-29T00:00:00Z",
                     files: [{
                         file_hash: "evidence-file-hash",
@@ -1354,8 +1354,10 @@ test("资格申请记录详情显示完整审核备注和已上传文件", async
 
     await expect(page.getByText(auditRemark, { exact: true })).toHaveCount(0)
     const viewDetailsButtons = page.getByRole("button", { name: "查看详情", exact: true })
-    await expect(viewDetailsButtons).toHaveCount(2)
-    const viewDetailsButton = page.locator("[data-testid='application-view-details']").last()
+    await expect(viewDetailsButtons).toHaveCount(1)
+    const pendingUploadRow = page.locator(".application-row").filter({ has: page.getByText("Pending Upload Qualification", { exact: true }) })
+    await expect(pendingUploadRow.getByRole("button", { name: "查看详情", exact: true })).toHaveCount(0)
+    const viewDetailsButton = page.locator("[data-testid='application-view-details']")
     await viewDetailsButton.click()
 
     const applicationDetailDialog = page.getByTestId("application-detail-dialog")

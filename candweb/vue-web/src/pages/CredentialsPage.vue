@@ -378,7 +378,11 @@ async function loadApplicationDetail(app: any) {
       suppressErrorToast: true,
     })
     if (requestID !== applicationDetailRequestID || !applicationDetailDialogOpen.value) return
-    selectedApplicationDetail.value = { ...app, ...detail }
+    selectedApplicationDetail.value = {
+      ...app,
+      ...detail,
+      audit_remark: String(detail?.audit_remark || "").trim() || app?.audit_remark || "",
+    }
   } catch {
     if (requestID === applicationDetailRequestID && applicationDetailDialogOpen.value) {
       applicationDetailError.value = true
@@ -527,7 +531,7 @@ watch(
         </div>
         <div v-else class="overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
           <div class="space-y-3 p-3 md:space-y-2 md:p-0">
-            <div v-for="app in applications" :key="applicationId(app) || applicationCredentialDefinitionId(app)" class="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-3 rounded-xl border border-slate-100 bg-white px-3 py-4 shadow-sm shadow-slate-100/80 transition-colors hover:bg-primary/10 md:items-center md:rounded-none md:border-0 md:px-4 md:shadow-none md:gap-x-6 lg:grid-cols-[minmax(280px,2.4fr)_minmax(120px,1fr)_104px_auto] lg:gap-x-6">
+            <div v-for="app in applications" :key="applicationId(app) || applicationCredentialDefinitionId(app)" class="application-row grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-3 rounded-xl border border-slate-100 bg-white px-3 py-4 shadow-sm shadow-slate-100/80 transition-colors hover:bg-primary/10 md:items-center md:rounded-none md:border-0 md:px-4 md:shadow-none md:gap-x-6 lg:grid-cols-[minmax(280px,2.4fr)_minmax(120px,1fr)_104px_auto] lg:gap-x-6">
               <div class="min-w-0 lg:col-span-1">
                 <div class="break-words text-base font-semibold leading-6 text-foreground md:truncate md:font-medium" :title="applicationTitle(app)">{{ applicationTitle(app) }}</div>
                 <div class="mt-1 break-words text-sm leading-5 text-muted-foreground md:truncate" :title="applicationMeta(app)">{{ applicationMeta(app) }}</div>
@@ -540,6 +544,7 @@ watch(
               <div class="col-span-2 flex w-full flex-wrap items-center justify-end gap-2 md:col-span-1 md:w-auto md:justify-self-end lg:col-start-4">
                 <button v-if="isPendingUploadStatus(app.status) || canResubmit(app.status)" class="btn btn-primary h-9 cursor-pointer whitespace-nowrap rounded-lg py-1 text-sm shadow-sm shadow-primary/20" @click="handleApplyClick(definitionForApplication(app), canResubmit(app.status) ? applicationId(app) : '')">{{ isPendingUploadStatus(app.status) ? t.credentialsPage.uploadMaterials : t.credentialsPage.resubmitAction }}</button>
                 <button
+                  v-if="!isPendingUploadStatus(app.status)"
                   type="button"
                   class="application-details-btn btn btn-outline h-9 cursor-pointer whitespace-nowrap rounded-lg px-3 py-1 text-sm text-primary hover:border-primary/30 hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
                   data-testid="application-view-details"
