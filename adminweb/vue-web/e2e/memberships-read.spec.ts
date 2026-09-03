@@ -49,6 +49,32 @@ async function installMembershipReadMocks(page: Page, requests: string[]) {
   })
 }
 
+async function installMembershipStatusMocks(page: Page) {
+  const activeMembership = { ...membershipSummary }
+  const deprecatedMembership = { ...deprecatedMembershipSummary }
+
+  await installAdminApiMocks(page, ({ method, pathname }) => {
+    if (method === "GET" && pathname === "/api/memberships/configs") {
+      return { data: { memberships: [activeMembership, deprecatedMembership], has_more: false, next_cursor: "", prev_cursor: "" } }
+    }
+    if (method === "GET" && pathname === "/api/memberships/membership-1") {
+      return { data: { ...activeMembership, features_json: "[]" } }
+    }
+    if (method === "GET" && pathname === "/api/memberships/membership-deprecated") {
+      return { data: { ...deprecatedMembership, features_json: "[]" } }
+    }
+    if (method === "POST" && pathname === "/api/memberships/membership-1/deprecate") {
+      activeMembership.status = "Deprecated"
+      return { data: { success: true } }
+    }
+    if (method === "PUT" && pathname === "/api/memberships") {
+      deprecatedMembership.status = "Active"
+      return { data: { success: true, status: "Active" } }
+    }
+    return undefined
+  })
+}
+
 test("membership list renders the returned read-only summary", async ({ page }) => {
   await seedAuthenticatedAdmin(page)
   const requests: string[] = []
@@ -126,6 +152,51 @@ test("membership detail reads configuration fields without editing", async ({ pa
   expect(requests).toContain("GET /api/memberships/membership-1")
   expect(requests.some((request) => request.includes("/deprecate") || request.startsWith("POST ") || request.startsWith("PUT ") || request.startsWith("PATCH ") || request.startsWith("DELETE "))).toBe(false)
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
+})
+
+test("membership deprecation targets only the selected physical plan", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  await installMembershipStatusMocks(page)
+  await page.goto("/memberships")
+
+  await page.getByRole("button", { name: "查看详情" }).first().click()
+  await page.getByRole("button", { name: "下架方案" }).click()
+  await expect(page.getByRole("heading", { name: "确认下架会员方案" })).toBeVisible()
+  await expect(page.getByText("不会影响同一路径下的其他会员等级", { exact: false })).toBeVisible()
+
+  const deprecateRequest = page.waitForRequest((request) => (
+    request.method() === "POST"
+    && new URL(request.url()).pathname === "/api/memberships/membership-1/deprecate"
+  ))
+  await page.getByRole("button", { name: "确认下架" }).click()
+
+  const request = await deprecateRequest
+  expect(new URL(request.url()).search).toBe("")
+  await expect(page.getByText("会员方案已下架", { exact: true })).toBeVisible()
+})
+
+test("deprecated membership can be reactivated with path tier and Active status", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  await installMembershipStatusMocks(page)
+  await page.goto("/memberships")
+
+  await page.getByRole("button", { name: "查看详情" }).nth(1).click()
+  await page.getByRole("button", { name: "重新上架" }).click()
+  await expect(page.getByRole("heading", { name: "确认重新上架会员方案" })).toBeVisible()
+
+  const reactivateRequest = page.waitForRequest((request) => (
+    request.method() === "PUT"
+    && new URL(request.url()).pathname === "/api/memberships"
+  ))
+  await page.getByRole("button", { name: "确认上架" }).click()
+
+  const request = await reactivateRequest
+  expect(request.postDataJSON()).toEqual({
+    membership_gpath: "/memberships/deprecated",
+    tier_level: 2,
+    status: "Active",
+  })
+  await expect(page.getByText("会员方案已重新上架", { exact: true })).toBeVisible()
 })
 
 test("membership list ignores a stale response after creation refreshes it", async ({ page }) => {

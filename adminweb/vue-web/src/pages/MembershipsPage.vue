@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Archive, Copy, Loader2, Pencil, Plus, RefreshCw, Save, TriangleAlert, X } from "lucide-vue-next"
+import { Archive, ArchiveRestore, Copy, Loader2, Pencil, Plus, RefreshCw, Save, TriangleAlert, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 
@@ -46,6 +46,8 @@ const formMode = ref<MembershipFormMode>("create")
 const saving = ref(false)
 const deprecateConfirmOpen = ref(false)
 const deprecating = ref(false)
+const reactivateConfirmOpen = ref(false)
+const reactivating = ref(false)
 const form = ref<MembershipForm>(emptyMembershipForm())
 const clonedRequiredCredRespaths = ref<string[]>([])
 const { t } = useAdminLanguage()
@@ -309,7 +311,7 @@ async function openMembership(membership: JsonRecord) {
 }
 
 function closeDialog() {
-  if (detailLoading.value || editorOpen.value || deprecateConfirmOpen.value) return
+  if (detailLoading.value || editorOpen.value || deprecateConfirmOpen.value || reactivateConfirmOpen.value) return
   dialogOpen.value = false
   selected.value = null
 }
@@ -491,14 +493,10 @@ function closeDeprecateConfirm() {
 async function deprecateMembership() {
   if (!selected.value) return
   const id = membershipId(selected.value)
-  const gpath = membershipGpath(selected.value)
-  if (!id || !gpath) return
+  if (!id) return
   deprecating.value = true
   try {
-    await apiClient(
-      `/api/memberships/${encodeURIComponent(id)}/deprecate?membership_gpath=${encodeURIComponent(gpath)}`,
-      { method: "POST" },
-    )
+    await apiClient(`/api/memberships/${encodeURIComponent(id)}/deprecate`, { method: "POST" })
     toast.success(copy.value.toasts.deprecated)
     deprecateConfirmOpen.value = false
     dialogOpen.value = false
@@ -509,6 +507,45 @@ async function deprecateMembership() {
     toast.error(apiErrorMessage(err, copy.value.toasts.deprecateFailed))
   } finally {
     deprecating.value = false
+  }
+}
+
+function openReactivateConfirm() {
+  if (!selected.value || !isSelectedDeprecated.value) return
+  reactivateConfirmOpen.value = true
+}
+
+function closeReactivateConfirm() {
+  if (reactivating.value) return
+  reactivateConfirmOpen.value = false
+}
+
+async function reactivateMembership() {
+  if (!selected.value) return
+  const id = membershipId(selected.value)
+  const gpath = membershipGpath(selected.value)
+  const tier = membershipTier(selected.value)
+  if (!id || !gpath || tier <= 0) return
+
+  reactivating.value = true
+  try {
+    await apiClient("/api/memberships", {
+      method: "PUT",
+      body: JSON.stringify({
+        membership_gpath: gpath,
+        tier_level: tier,
+        status: "Active",
+      }),
+    })
+    toast.success(copy.value.toasts.reactivated)
+    reactivateConfirmOpen.value = false
+    await load()
+    await refreshSelected(id)
+  } catch (err) {
+    console.error(err)
+    toast.error(apiErrorMessage(err, copy.value.toasts.reactivateFailed))
+  } finally {
+    reactivating.value = false
   }
 }
 
@@ -601,6 +638,10 @@ onMounted(load)
               <button v-if="!isSelectedDeprecated" class="inline-flex h-10 items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-3 text-sm font-bold text-amber-800 disabled:opacity-50" type="button" :disabled="detailLoading" @click="openDeprecateConfirm">
                 <Archive class="h-4 w-4" />
                 {{ copy.deprecateMembership }}
+              </button>
+              <button v-else class="inline-flex h-10 items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-3 text-sm font-bold text-emerald-800 disabled:opacity-50" type="button" :disabled="detailLoading" @click="openReactivateConfirm">
+                <ArchiveRestore class="h-4 w-4" />
+                {{ copy.reactivateMembership }}
               </button>
               <button class="rounded-full border border-slate-200 p-2 text-slate-500" type="button" :aria-label="copy.close" :disabled="detailLoading" @click="closeDialog">
                 <X class="h-5 w-5" />
@@ -762,7 +803,7 @@ onMounted(load)
             <TriangleAlert class="h-6 w-6" />
           </div>
           <h2 class="mt-5 text-xl font-black md:text-2xl">{{ copy.deprecateConfirmTitle }}</h2>
-          <p class="mt-3 text-sm leading-6 text-slate-600">{{ copy.deprecateConfirmDescription(membershipGpath(selected)) }}</p>
+          <p class="mt-3 text-sm leading-6 text-slate-600">{{ copy.deprecateConfirmDescription(membershipName(selected), membershipTier(selected)) }}</p>
           <div class="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-900">
             {{ copy.deprecateScopeWarning }}
           </div>
@@ -774,6 +815,28 @@ onMounted(load)
               <Loader2 v-if="deprecating" class="h-4 w-4 animate-spin" />
               <Archive v-else class="h-4 w-4" />
               {{ deprecating ? copy.deprecating : copy.confirmDeprecate }}
+            </button>
+          </div>
+        </div>
+      </section>
+    </Teleport>
+
+    <Teleport to="body">
+      <section v-if="reactivateConfirmOpen && selected" class="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/65 p-4 md:p-6">
+        <div v-modal-dialog="closeReactivateConfirm" class="w-full max-w-lg rounded-3xl bg-white p-5 shadow-2xl md:p-6">
+          <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+            <ArchiveRestore class="h-6 w-6" />
+          </div>
+          <h2 class="mt-5 text-xl font-black md:text-2xl">{{ copy.reactivateConfirmTitle }}</h2>
+          <p class="mt-3 text-sm leading-6 text-slate-600">{{ copy.reactivateConfirmDescription(membershipName(selected), membershipTier(selected)) }}</p>
+          <div class="mt-6 flex flex-wrap justify-end gap-3">
+            <button class="h-11 rounded-xl border border-slate-300 bg-white px-5 text-sm font-bold text-slate-700 disabled:opacity-50" type="button" :disabled="reactivating" @click="closeReactivateConfirm">
+              {{ copy.cancel }}
+            </button>
+            <button class="inline-flex h-11 min-w-[140px] items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="reactivating" @click="reactivateMembership">
+              <Loader2 v-if="reactivating" class="h-4 w-4 animate-spin" />
+              <ArchiveRestore v-else class="h-4 w-4" />
+              {{ reactivating ? copy.reactivating : copy.confirmReactivate }}
             </button>
           </div>
         </div>
