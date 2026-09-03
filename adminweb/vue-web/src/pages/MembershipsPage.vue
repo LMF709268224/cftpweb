@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Archive, Loader2, Pencil, Plus, RefreshCw, Save, TriangleAlert, X } from "lucide-vue-next"
+import { Archive, Copy, Loader2, Pencil, Plus, RefreshCw, Save, TriangleAlert, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 
@@ -16,7 +16,7 @@ type MapEntry = {
   label: string
 }
 
-type MembershipFormMode = "create" | "edit"
+type MembershipFormMode = "create" | "clone" | "edit"
 
 type MembershipForm = {
   membership_ulid: string
@@ -47,6 +47,7 @@ const saving = ref(false)
 const deprecateConfirmOpen = ref(false)
 const deprecating = ref(false)
 const form = ref<MembershipForm>(emptyMembershipForm())
+const clonedRequiredCredRespaths = ref<string[]>([])
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.membershipsAdmin)
 
@@ -74,12 +75,25 @@ const translationDefaultValues = computed(() => ({
   ),
 }))
 const isSelectedDeprecated = computed(() => isDeprecated(selected.value))
+const isCreateMode = computed(() => formMode.value !== "edit")
 const editorTitle = computed(() => (
-  formMode.value === "create" ? copy.value.createTitle : copy.value.editTitle
+  formMode.value === "clone"
+    ? copy.value.cloneTitle
+    : formMode.value === "create"
+      ? copy.value.createTitle
+      : copy.value.editTitle
 ))
 const editorDescription = computed(() => (
-  formMode.value === "create" ? copy.value.createDescription : copy.value.editDescription
+  formMode.value === "clone"
+    ? copy.value.cloneDescription
+    : formMode.value === "create"
+      ? copy.value.createDescription
+      : copy.value.editDescription
 ))
+const saveButtonLabel = computed(() => {
+  if (formMode.value === "clone") return copy.value.saveClone
+  return formMode.value === "create" ? copy.value.saveCreate : copy.value.saveChanges
+})
 
 function emptyMembershipForm(): MembershipForm {
   return {
@@ -112,8 +126,36 @@ function membershipTier(membership: JsonRecord | null | undefined) {
   return Number(membership?.tier_level || 0)
 }
 
+function membershipStatusKey(membership: JsonRecord | null | undefined) {
+  return String(membership?.status || "").trim().toUpperCase()
+}
+
+function membershipStatusLabel(membership: JsonRecord | null | undefined) {
+  const status = membershipStatusKey(membership)
+  if (status.includes("DEPRECATED")) return copy.value.statusLabels.deprecated
+  if (status.includes("ACTIVE")) return copy.value.statusLabels.active
+  return String(membership?.status || copy.value.statusLabels.unknown)
+}
+
+function membershipStatusClass(membership: JsonRecord | null | undefined) {
+  const status = membershipStatusKey(membership)
+  if (status.includes("DEPRECATED")) return "border-slate-200 bg-slate-100 text-slate-600"
+  if (status.includes("ACTIVE")) return "border-emerald-200 bg-emerald-50 text-emerald-700"
+  return "border-slate-200 bg-white text-slate-600"
+}
+
 function isDeprecated(membership: JsonRecord | null | undefined) {
-  return String(membership?.status || "").trim().toLowerCase() === "deprecated"
+  return membershipStatusKey(membership).includes("DEPRECATED")
+}
+
+function stringList(value: unknown) {
+  if (Array.isArray(value)) return value.map((item) => String(item).trim()).filter(Boolean)
+  if (typeof value !== "string" || !value.trim()) return []
+  try {
+    return stringList(JSON.parse(value))
+  } catch {
+    return []
+  }
 }
 
 function encodeUlidTime(timestamp: number) {
@@ -159,7 +201,7 @@ function expectedTierForGpath(gpath: string) {
 }
 
 function syncCreateTier() {
-  if (formMode.value !== "create") return
+  if (!isCreateMode.value) return
   form.value.tier_level = expectedTierForGpath(form.value.membership_gpath)
 }
 
@@ -274,6 +316,7 @@ function closeDialog() {
 
 function openCreateEditor() {
   formMode.value = "create"
+  clonedRequiredCredRespaths.value = []
   form.value = {
     ...emptyMembershipForm(),
     membership_ulid: generateUlid(),
@@ -281,9 +324,30 @@ function openCreateEditor() {
   editorOpen.value = true
 }
 
+function openCloneEditor() {
+  if (!selected.value) return
+  const gpath = membershipGpath(selected.value)
+  formMode.value = "clone"
+  clonedRequiredCredRespaths.value = stringList(selected.value.required_cred_respaths)
+  form.value = {
+    membership_ulid: generateUlid(),
+    membership_gpath: gpath,
+    name: membershipName(selected.value) === "-" ? "" : membershipName(selected.value),
+    description: String(selected.value.description || ""),
+    features_json: formatFeaturesJson(selected.value.features_json),
+    ideal_for: String(selected.value.ideal_for || ""),
+    duration_in_months: Number(selected.value.duration_in_months || 0),
+    casdoor_role_name: String(selected.value.casdoor_role_name || ""),
+    tier_level: expectedTierForGpath(gpath),
+    course_discount_coupon: String(selected.value.course_discount_coupon || ""),
+  }
+  editorOpen.value = true
+}
+
 function openEditEditor() {
   if (!selected.value) return
   formMode.value = "edit"
+  clonedRequiredCredRespaths.value = []
   form.value = {
     membership_ulid: membershipId(selected.value),
     membership_gpath: membershipGpath(selected.value),
@@ -303,6 +367,7 @@ function closeEditor() {
   if (saving.value) return
   editorOpen.value = false
   form.value = emptyMembershipForm()
+  clonedRequiredCredRespaths.value = []
 }
 
 function validateForm() {
@@ -343,7 +408,7 @@ function validateForm() {
     toast.error(copy.value.validation.couponTooLong)
     return false
   }
-  if (formMode.value === "create") {
+  if (isCreateMode.value) {
     const expectedTier = expectedTierForGpath(value.membership_gpath)
     if (value.tier_level !== expectedTier) {
       toast.error(copy.value.validation.tierSequenceInvalid(expectedTier))
@@ -379,15 +444,19 @@ async function saveMembership() {
   saving.value = true
   const currentId = form.value.membership_ulid.trim()
   try {
-    const body = formMode.value === "create"
-      ? { membership_ulid: currentId, ...membershipPayload() }
+    const body = isCreateMode.value
+      ? {
+          membership_ulid: currentId,
+          ...membershipPayload(),
+          ...(formMode.value === "clone" ? { required_cred_respaths: clonedRequiredCredRespaths.value } : {}),
+        }
       : membershipPayload()
     await apiClient("/api/memberships", {
-      method: formMode.value === "create" ? "POST" : "PUT",
+      method: isCreateMode.value ? "POST" : "PUT",
       body: JSON.stringify(body),
     })
     toast.success(
-      formMode.value === "create"
+      isCreateMode.value
         ? copy.value.toasts.created
         : copy.value.toasts.updated,
     )
@@ -395,11 +464,12 @@ async function saveMembership() {
     await load()
     if (formMode.value === "edit") await refreshSelected(currentId)
     form.value = emptyMembershipForm()
+    clonedRequiredCredRespaths.value = []
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(
       err,
-      formMode.value === "create"
+      isCreateMode.value
         ? copy.value.toasts.createFailed
         : copy.value.toasts.updateFailed,
     ))
@@ -487,7 +557,9 @@ onMounted(load)
           <div class="grid grid-cols-2 items-start gap-4 xl:contents">
             <div class="min-w-0 text-sm font-bold text-slate-600">
               <div class="text-xs font-black uppercase text-slate-400 xl:hidden">{{ copy.fields.status }}</div>
-              <div class="mt-1 xl:mt-0">{{ membership.status || "-" }}</div>
+              <span class="mt-1 inline-flex whitespace-nowrap rounded-full border px-3 py-1 text-xs font-black xl:mt-0" :class="membershipStatusClass(membership)">
+                {{ membershipStatusLabel(membership) }}
+              </span>
             </div>
             <div class="min-w-0 text-sm font-bold text-slate-600">
               <div class="text-xs font-black uppercase text-slate-400 xl:hidden">{{ copy.fields.version }}</div>
@@ -518,6 +590,10 @@ onMounted(load)
               <p class="mt-1 break-all font-mono text-xs font-bold text-blue-700">{{ membershipId(selected) }}</p>
             </div>
             <div class="flex shrink-0 flex-wrap items-center justify-end gap-2">
+              <button class="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 disabled:opacity-50" type="button" :disabled="detailLoading" @click="openCloneEditor">
+                <Copy class="h-4 w-4" />
+                {{ copy.cloneMembership }}
+              </button>
               <button v-if="!isSelectedDeprecated" class="inline-flex h-10 items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 text-sm font-bold text-blue-700 disabled:opacity-50" type="button" :disabled="detailLoading" @click="openEditEditor">
                 <Pencil class="h-4 w-4" />
                 {{ copy.editMembership }}
@@ -560,6 +636,12 @@ onMounted(load)
                   <div class="mt-2 text-sm font-bold">{{ selected.tier_level ?? "-" }}</div>
                 </div>
                 <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.status }}</div>
+                  <span class="mt-2 inline-flex whitespace-nowrap rounded-full border px-3 py-1 text-xs font-black" :class="membershipStatusClass(selected)">
+                    {{ membershipStatusLabel(selected) }}
+                  </span>
+                </div>
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.casdoorRoleName }}</div>
                   <div class="mt-2 break-all text-sm font-bold">{{ selected.casdoor_role_name || "-" }}</div>
                 </div>
@@ -599,7 +681,7 @@ onMounted(load)
           <main class="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 md:p-6">
             <div class="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
               <div class="font-black">{{ copy.form.contractTitle }}</div>
-              <p class="mt-1 leading-6">{{ formMode === "create" ? copy.form.createContractHint : copy.form.editContractHint }}</p>
+              <p class="mt-1 leading-6">{{ isCreateMode ? copy.form.createContractHint : copy.form.editContractHint }}</p>
             </div>
 
             <div class="grid gap-5 md:grid-cols-2">
@@ -612,7 +694,7 @@ onMounted(load)
               <label class="space-y-2">
                 <span class="text-sm font-black text-slate-800"><span class="text-red-500">*</span> {{ copy.fields.membershipGpath }}</span>
                 <input v-model="form.membership_gpath" class="h-11 w-full rounded-xl border border-slate-300 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-slate-100 disabled:text-slate-500" type="text" :placeholder="copy.form.gpathPlaceholder" :disabled="formMode === 'edit'" @input="syncCreateTier">
-                <span class="block text-xs text-slate-500">{{ formMode === "create" ? copy.form.gpathHint : copy.form.immutableHint }}</span>
+                <span class="block text-xs text-slate-500">{{ isCreateMode ? copy.form.gpathHint : copy.form.immutableHint }}</span>
               </label>
 
               <label class="space-y-2 md:col-span-2">
@@ -633,7 +715,7 @@ onMounted(load)
               <label class="space-y-2">
                 <span class="text-sm font-black text-slate-800"><span class="text-red-500">*</span> {{ copy.fields.tierLevel }}</span>
                 <input v-model.number="form.tier_level" class="h-11 w-full rounded-xl border border-slate-300 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-slate-100 disabled:text-slate-500" type="number" min="1" step="1" disabled>
-                <span class="block text-xs text-slate-500">{{ formMode === "create" ? copy.form.tierHint(form.tier_level) : copy.form.immutableHint }}</span>
+                <span class="block text-xs text-slate-500">{{ isCreateMode ? copy.form.tierHint(form.tier_level) : copy.form.immutableHint }}</span>
               </label>
 
               <label class="space-y-2">
@@ -666,7 +748,7 @@ onMounted(load)
             <button class="inline-flex h-11 min-w-[140px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60" type="submit" :disabled="saving">
               <Loader2 v-if="saving" class="h-4 w-4 animate-spin" />
               <Save v-else class="h-4 w-4" />
-              {{ saving ? copy.saving : (formMode === "create" ? copy.saveCreate : copy.saveChanges) }}
+              {{ saving ? copy.saving : saveButtonLabel }}
             </button>
           </footer>
         </form>
