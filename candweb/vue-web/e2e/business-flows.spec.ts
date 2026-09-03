@@ -337,8 +337,12 @@ test("会员刷新只应用最后一次请求返回的记录", async ({ page }) 
 
 test("测验选择答案后同步草稿并提交结果", async ({ page }) => {
   const requests: Array<{ pathname: string; body: unknown }> = []
+  let releaseDraftSync: (() => void) | undefined
+  const draftSyncGate = new Promise<void>((resolve) => {
+    releaseDraftSync = resolve
+  })
 
-  await installCandidateApiMocks(page, ({ pathname, method, body }) => {
+  await installCandidateApiMocks(page, async ({ pathname, method, body }) => {
     if (pathname === "/api/quizzes/attempts/attempt-1/paper") {
       return {
         data: {
@@ -360,6 +364,7 @@ test("测验选择答案后同步草稿并提交结果", async ({ page }) => {
     }
     if (pathname === "/api/quizzes/attempts/attempt-1/draft" && method === "POST") {
       requests.push({ pathname, body })
+      await draftSyncGate
       return { data: { success: true } }
     }
     if (pathname === "/api/quizzes/attempts/attempt-1/submit" && method === "POST") {
@@ -379,6 +384,10 @@ test("测验选择答案后同步草稿并提交结果", async ({ page }) => {
 
   await page.getByRole("button", { name: "提交答卷" }).click()
   await page.getByRole("dialog").getByRole("button", { name: "提交答卷" }).click()
+
+  await page.waitForTimeout(100)
+  expect(requests.some((request) => request.pathname.endsWith("/submit"))).toBe(false)
+  releaseDraftSync?.()
 
   await expect.poll(() => requests.find((request) => request.pathname.endsWith("/submit"))?.body).toEqual(expectedBody)
   await expect(page.getByRole("heading", { name: "测验已完成" })).toBeVisible()
