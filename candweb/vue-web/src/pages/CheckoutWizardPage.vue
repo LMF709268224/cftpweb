@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
-import { ArrowLeft, ArrowRight, ClipboardList, Loader2, Send, CheckCircle2, CircleAlert, Clock, UploadCloud, X } from "lucide-vue-next"
+import { ArrowLeft, ArrowRight, ClipboardList, ExternalLink, Eye, FileText, Loader2, Send, CheckCircle2, CircleAlert, Clock, UploadCloud, X } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import CredentialAttachmentList from "@/components/CredentialAttachmentList.vue"
 import LocalizedDatePicker from "@/components/LocalizedDatePicker.vue"
@@ -79,6 +79,11 @@ const expandedQualificationUnitIds = ref<Record<string, boolean>>({})
 const qualificationUploadedFiles = ref<Record<string, Record<string, { name: string; url: string; ext: string; hash: string; size: number }>>>({})
 const qualificationUploadingKey = ref("")
 const qualificationSubmittingUnitId = ref("")
+const qualificationFilesDialogOpen = ref(false)
+const qualificationFilesLoading = ref(false)
+const qualificationFilesLoadFailed = ref(false)
+const qualificationFilesDialogTitle = ref("")
+const qualificationApplicationFiles = ref<any[]>([])
 const levelPlaceholder = "{" + "{level}}"
 
 function selectedExemptedUnitIds() {
@@ -1078,6 +1083,42 @@ function qualificationApplicationId(application: any) {
   return String(application?.app_id || application?.app_ulid || "").trim()
 }
 
+function canViewQualificationFiles(unit: any) {
+  const application = qualificationApplicationForUnit(unit)
+  return Boolean(qualificationApplicationId(application))
+    && !isApplicationPendingUploadStatus(application?.status)
+}
+
+function closeQualificationFilesDialog() {
+  qualificationFilesDialogOpen.value = false
+  qualificationFilesLoading.value = false
+  qualificationFilesLoadFailed.value = false
+  qualificationFilesDialogTitle.value = ""
+  qualificationApplicationFiles.value = []
+}
+
+async function openQualificationFiles(unit: any) {
+  const applicationID = qualificationApplicationId(qualificationApplicationForUnit(unit))
+  if (!applicationID) return
+
+  qualificationFilesDialogTitle.value = String(unit?.unit_name || unit?.unit_id || "")
+  qualificationApplicationFiles.value = []
+  qualificationFilesLoadFailed.value = false
+  qualificationFilesDialogOpen.value = true
+  qualificationFilesLoading.value = true
+  try {
+    const application = await apiClient(`/api/credentials/applications/${encodeURIComponent(applicationID)}`, {
+      suppressErrorToast: true,
+    })
+    qualificationApplicationFiles.value = Array.isArray(application?.files) ? application.files : []
+  } catch (error) {
+    console.error("Failed to load qualification application files", error)
+    qualificationFilesLoadFailed.value = true
+  } finally {
+    qualificationFilesLoading.value = false
+  }
+}
+
 function exemptionUnitById(unitId: string) {
   return exemptionStages.value
     .flatMap((stage: any) => stage.units || [])
@@ -1125,6 +1166,15 @@ async function openQualificationEditor(unit: any, qualId = selectedQualification
   expandedQualificationUnitIds.value = {
     ...expandedQualificationUnitIds.value,
     [unitId]: true,
+  }
+}
+
+async function openQualificationUpload(unit: any) {
+  try {
+    await openQualificationEditor(unit)
+  } catch (error) {
+    console.error("Failed to open qualification upload", error)
+    toast.error(t.value.credentialsPage.materialRequirementsUnavailable)
   }
 }
 
@@ -2213,7 +2263,19 @@ function closePaymentEditDialog() {
                   >
                     <div class="checkout-unit-main mb-4">
                       <div class="checkout-unit-id mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{{ unit.unit_id }}</div>
-                      <h3 class="checkout-unit-title text-xl font-bold text-slate-800">{{ unit.unit_name || unit.unit_id }}</h3>
+                      <div class="flex items-start justify-between gap-3">
+                        <h3 class="checkout-unit-title min-w-0 text-xl font-bold text-slate-800">{{ unit.unit_name || unit.unit_id }}</h3>
+                        <button
+                          v-if="canViewQualificationFiles(unit)"
+                          type="button"
+                          class="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-blue-200 bg-white px-2.5 text-xs font-bold text-blue-700 hover:border-blue-400 hover:bg-blue-50"
+                          :aria-label="t.checkoutWizard.viewUploadedFiles"
+                          @click.stop="openQualificationFiles(unit)"
+                        >
+                          <Eye class="h-3.5 w-3.5" />
+                          {{ t.checkoutWizard.viewUploadedFiles }}
+                        </button>
+                      </div>
                       <p v-if="unit.exemption_quals?.[0]?.description" class="checkout-unit-description mt-2 text-sm text-slate-500">{{ unit.exemption_quals[0].description }}</p>
                       
                       <div :class="['checkout-unit-badge mt-3 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium', exemptionCredentialBadgeClass(unit)]">
@@ -2245,6 +2307,15 @@ function closePaymentEditDialog() {
                         <span class="checkout-unit-action font-medium text-slate-700">
                           {{ activeOrderUnitStatusLabel(unit) }}
                         </span>
+                        <button
+                          v-if="canUploadQualificationForUnit(unit)"
+                          type="button"
+                          class="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-blue-700 px-3 text-sm font-bold text-white hover:bg-blue-800"
+                          @click.stop="openQualificationUpload(unit)"
+                        >
+                          <UploadCloud class="h-4 w-4" />
+                          {{ t.credentialsPage.uploadMaterials }}
+                        </button>
                       </div>
                       <div v-else-if="['active', 'pending', 'pending_upload', 'resubmit'].includes(exemptionCredentialState(unit))" class="flex items-center justify-between gap-3">
                         <span class="checkout-unit-action font-medium text-slate-700">
@@ -2256,6 +2327,15 @@ function closePaymentEditDialog() {
                                 ? t.credentialsPage.uploadMaterials
                                 : t.checkoutWizard.statusResubmit }}
                         </span>
+                        <button
+                          v-if="canUploadQualificationForUnit(unit)"
+                          type="button"
+                          class="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-blue-700 px-3 text-sm font-bold text-white hover:bg-blue-800"
+                          @click.stop="openQualificationUpload(unit)"
+                        >
+                          <UploadCloud class="h-4 w-4" />
+                          {{ t.credentialsPage.uploadMaterials }}
+                        </button>
                       </div>
                       <div v-else class="grid gap-2 sm:grid-cols-2" role="group" :aria-label="t.checkoutWizard.exemptionDecisionLabel">
                         <button
@@ -2647,6 +2727,57 @@ function closePaymentEditDialog() {
       </main>
 
       <Teleport to="body">
+        <div v-if="qualificationFilesDialogOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
+          <section
+            v-modal-dialog="closeQualificationFilesDialog"
+            class="w-full max-w-lg overflow-hidden rounded-lg bg-white shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="checkout-qualification-files-title"
+          >
+            <header class="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+              <div class="min-w-0">
+                <h2 id="checkout-qualification-files-title" class="text-lg font-black text-slate-950">{{ t.checkoutWizard.uploadedFilesTitle }}</h2>
+                <p class="mt-1 truncate text-sm text-slate-500">{{ qualificationFilesDialogTitle }}</p>
+              </div>
+              <button type="button" class="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900" :aria-label="t.common.close" @click="closeQualificationFilesDialog">
+                <X class="h-5 w-5" />
+              </button>
+            </header>
+
+            <div class="min-h-32 p-5">
+              <div v-if="qualificationFilesLoading" class="flex min-h-24 items-center justify-center gap-2 text-sm font-semibold text-slate-500">
+                <Loader2 class="h-5 w-5 animate-spin" />
+                {{ t.common.loading }}
+              </div>
+              <div v-else-if="qualificationFilesLoadFailed" class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+                {{ t.checkoutWizard.uploadedFilesLoadFailed }}
+              </div>
+              <div v-else-if="!qualificationApplicationFiles.length" class="rounded-lg border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500">
+                {{ t.checkoutWizard.uploadedFilesEmpty }}
+              </div>
+              <ul v-else class="grid gap-2">
+                <li v-for="(file, index) in qualificationApplicationFiles" :key="`${file.file_hash || file.file_name}-${index}`" class="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-3">
+                  <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+                    <FileText class="h-4 w-4" />
+                  </span>
+                  <span class="min-w-0 flex-1 truncate text-sm font-semibold text-slate-800" :title="file.file_name || ''">{{ file.file_name || t.checkoutWizard.uploadedFile }}</span>
+                  <a
+                    v-if="file.view_url"
+                    :href="file.view_url"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-blue-200 px-3 text-sm font-bold text-blue-700 hover:border-blue-400 hover:bg-blue-50"
+                  >
+                    <ExternalLink class="h-4 w-4" />
+                    {{ t.checkoutWizard.openUploadedFile }}
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </section>
+        </div>
+
         <div v-if="qualificationOrderConfirmDialogOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
           <section
             v-modal-dialog="closeQualificationOrderConfirmDialog"

@@ -9,6 +9,7 @@ import (
 
 	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
+	"github.com/go-chi/chi/v5"
 	"google.golang.org/grpc/codes"
 	gstatus "google.golang.org/grpc/status"
 )
@@ -345,6 +346,68 @@ func (h *Handler) ListCandidateApplications(w http.ResponseWriter, r *http.Reque
 		"prev_cursor":  res.GetPrevCursor(),
 		"has_more":     res.GetHasMore(),
 	})
+}
+
+// GetCandidateApplication GET /api/credentials/applications/{appId}
+func (h *Handler) GetCandidateApplication(w http.ResponseWriter, r *http.Request) {
+	candidateID := CandidateID(r)
+	if candidateID == "" {
+		WriteError(w, http.StatusUnauthorized, ErrUnauthorized, "candidate not authenticated")
+		return
+	}
+
+	applicationID := strings.TrimSpace(chi.URLParam(r, "appId"))
+	if applicationID == "" {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "field 'app_id' is required")
+		return
+	}
+
+	application, err := h.Creds.GetApplicationDetail(r.Context(), &gcredspb.GetApplicationDetailRequest{
+		AppUlid: applicationID,
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	if application == nil || strings.TrimSpace(application.GetCandidateUlid()) != candidateID {
+		WriteError(w, http.StatusNotFound, ErrNotFound, "credential application not found or access denied")
+		return
+	}
+
+	files := make([]map[string]interface{}, 0, len(application.GetFiles()))
+	for _, file := range application.GetFiles() {
+		files = append(files, candidateCredentialFilePayload(file))
+	}
+
+	WriteJSON(w, http.StatusOK, map[string]interface{}{
+		"app_ulid":       application.GetAppUlid(),
+		"app_id":         application.GetAppUlid(),
+		"candidate_ulid": application.GetCandidateUlid(),
+		"cred_def_ulid":  application.GetCredDefUlid(),
+		"cred_def_id":    application.GetCredDefUlid(),
+		"status":         application.GetStatus(),
+		"files":          files,
+		"auditor_ulid":   application.GetAuditorUlid(),
+		"audit_remark":   application.GetAuditRemark(),
+		"audit_at":       application.GetAuditAt(),
+		"created_at":     application.GetCreatedAt(),
+		"update_count":   application.GetUpdateCount(),
+	})
+}
+
+func candidateCredentialFilePayload(file *gcredspb.FileInfo) map[string]interface{} {
+	if file == nil {
+		return map[string]interface{}{}
+	}
+	return map[string]interface{}{
+		"file_hash":  file.GetFileHash(),
+		"file_name":  file.GetFileName(),
+		"file_type":  file.GetFileType(),
+		"file_ext":   file.GetFileExt(),
+		"file_size":  file.GetFileSize(),
+		"file_usage": file.GetFileUsage(),
+		"view_url":   file.GetViewUrl(),
+	}
 }
 
 func (h *Handler) latestCredentialApplication(ctx context.Context, candidateID, credDefID string) (map[string]interface{}, error) {

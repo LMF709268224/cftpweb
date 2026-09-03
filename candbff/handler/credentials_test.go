@@ -16,6 +16,8 @@ type credentialClientStub struct {
 	gcredspb.CredentialServiceClient
 	listCandidateApplicationsResponse *gcredspb.ListApplicationsResponse
 	listCandidateApplicationsRequest  *gcredspb.ListApplicationsRequest
+	applicationDetailResponse         *gcredspb.Application
+	applicationDetailRequest          *gcredspb.GetApplicationDetailRequest
 	definitionDetailResponse          *gcredspb.CredentialDefinition
 	definitionTranslationResponse     *gcredspb.GetCredDefTranslationsResponse
 }
@@ -56,6 +58,15 @@ func (s *credentialClientStub) ListCandidateApplications(
 ) (*gcredspb.ListApplicationsResponse, error) {
 	s.listCandidateApplicationsRequest = req
 	return s.listCandidateApplicationsResponse, nil
+}
+
+func (s *credentialClientStub) GetApplicationDetail(
+	_ context.Context,
+	req *gcredspb.GetApplicationDetailRequest,
+	_ ...grpc.CallOption,
+) (*gcredspb.Application, error) {
+	s.applicationDetailRequest = req
+	return s.applicationDetailResponse, nil
 }
 
 func (s *credentialClientStub) GetCredentialDefinitionDetail(
@@ -161,6 +172,81 @@ func TestListCredentialDefinitionsIncludesReferenceAttachments(t *testing.T) {
 	if constraint.Name != "Employment Certificate" || constraint.DisplayName != "雇佣证明" {
 		t.Fatalf("file constraint = %#v", constraint)
 	}
+}
+
+func TestGetCandidateApplicationReturnsOwnedUploadedFiles(t *testing.T) {
+	const (
+		candidateID   = "01J00000000000000000000000"
+		applicationID = "01J00000000000000000000002"
+	)
+	client := &credentialClientStub{applicationDetailResponse: &gcredspb.Application{
+		AppUlid:       applicationID,
+		CandidateUlid: candidateID,
+		CredDefUlid:   "01J00000000000000000000001",
+		Status:        "APPLICATION_STATUS_APPROVED",
+		Files: []*gcredspb.FileInfo{{
+			FileName:  "employment-proof.pdf",
+			FileExt:   ".pdf",
+			FileSize:  4096,
+			FileUsage: "employment_certificate",
+			ViewUrl:   "https://files.example/employment-proof.pdf?signature=temporary",
+		}},
+	}}
+	recorder := httptest.NewRecorder()
+	request := newCandidateHandlerRequest(
+		http.MethodGet,
+		"/api/credentials/applications/"+applicationID,
+		"",
+		candidateID,
+		map[string]string{"appId": applicationID},
+	)
+
+	(&Handler{Creds: client}).GetCandidateApplication(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body=%s", recorder.Code, http.StatusOK, recorder.Body.String())
+	}
+	if client.applicationDetailRequest == nil || client.applicationDetailRequest.GetAppUlid() != applicationID {
+		t.Fatalf("detail request = %#v", client.applicationDetailRequest)
+	}
+	var payload struct {
+		Data struct {
+			Files []struct {
+				FileName string `json:"file_name"`
+				ViewURL  string `json:"view_url"`
+			} `json:"files"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if len(payload.Data.Files) != 1 || payload.Data.Files[0].FileName != "employment-proof.pdf" || payload.Data.Files[0].ViewURL == "" {
+		t.Fatalf("files = %#v", payload.Data.Files)
+	}
+}
+
+func TestGetCandidateApplicationHidesAnotherCandidatesFiles(t *testing.T) {
+	const applicationID = "01J00000000000000000000002"
+	client := &credentialClientStub{applicationDetailResponse: &gcredspb.Application{
+		AppUlid:       applicationID,
+		CandidateUlid: "01J00000000000000000000009",
+		Files: []*gcredspb.FileInfo{{
+			FileName: "private.pdf",
+			ViewUrl:  "https://files.example/private.pdf?signature=temporary",
+		}},
+	}}
+	recorder := httptest.NewRecorder()
+	request := newCandidateHandlerRequest(
+		http.MethodGet,
+		"/api/credentials/applications/"+applicationID,
+		"",
+		"01J00000000000000000000000",
+		map[string]string{"appId": applicationID},
+	)
+
+	(&Handler{Creds: client}).GetCandidateApplication(recorder, request)
+
+	assertHandlerAPIError(t, recorder, http.StatusNotFound, ErrNotFound)
 }
 
 func TestListCredentialDefinitionsUsesActionableApplications(t *testing.T) {

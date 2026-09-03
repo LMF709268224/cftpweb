@@ -627,6 +627,7 @@ test("已持有有效资格的课程自动免考且不可取消", async ({ page 
         { unit_id: "unit-fintech", name: "L1B Fintech", amount: 75000 },
     ]
     const qualificationID = "qualification-auto-exemption"
+    const applicationID = "application-auto-exemption-approved"
     const automaticExemptionBundle = {
         ...bundle,
         stages: [{
@@ -696,7 +697,31 @@ test("已持有有效资格的课程自动免考且不可取消", async ({ page 
         if (pathname === "/api/credentials/definitions") {
             return { data: { definitions: [{ cred_def_ulid: qualificationID, name: "CFtA Certification" }] } }
         }
-        if (pathname === "/api/credentials/applications") return { data: { applications: [] } }
+        if (pathname === "/api/credentials/applications") {
+            return {
+                data: {
+                    applications: [{
+                        app_ulid: applicationID,
+                        cred_def_ulid: qualificationID,
+                        status: "APPLICATION_STATUS_APPROVED",
+                    }],
+                },
+            }
+        }
+        if (pathname === `/api/credentials/applications/${applicationID}`) {
+            return {
+                data: {
+                    app_ulid: applicationID,
+                    status: "APPLICATION_STATUS_APPROVED",
+                    files: [{
+                        file_hash: "employment-proof-hash",
+                        file_name: "employment-proof.pdf",
+                        file_ext: ".pdf",
+                        view_url: "https://files.example/employment-proof.pdf?signature=temporary",
+                    }],
+                },
+            }
+        }
         if (pathname === "/api/user/me") return { data: candidateUser }
         if (pathname === "/api/user/profile" && method === "PUT") return { data: { success: true } }
         if (pathname === `/api/mall/bundles/${bundleID}/purchase` && method === "POST") {
@@ -716,6 +741,17 @@ test("已持有有效资格的课程自动免考且不可取消", async ({ page 
     await expect(page.locator(`[data-testid="checkout-exemption-apply"][data-unit-id="${unitID}"]`)).toHaveCount(0)
     await expect(page.locator(`[data-testid="checkout-exemption-waive"][data-unit-id="${unitID}"]`)).toHaveCount(0)
     await expect(page.getByText("系统自动免考", { exact: true })).toBeVisible()
+    const qualificationCard = page.locator(".checkout-unit-card").filter({
+        has: page.getByText("CFtA Course", { exact: true }),
+    })
+    await qualificationCard.getByRole("button", { name: "查看已上传文件", exact: true }).click()
+    const uploadedFilesDialog = page.getByRole("dialog", { name: "已上传文件" })
+    await expect(uploadedFilesDialog.getByText("employment-proof.pdf", { exact: true })).toBeVisible()
+    await expect(uploadedFilesDialog.getByRole("link", { name: "查看", exact: true })).toHaveAttribute(
+        "href",
+        "https://files.example/employment-proof.pdf?signature=temporary",
+    )
+    await uploadedFilesDialog.getByRole("button", { name: "关闭", exact: true }).click()
     await expect(page.getByTestId("checkout-included-items")).toBeVisible()
     await expect(page.getByTestId("checkout-included-item")).toHaveCount(5)
     await expect(page.locator(`[data-testid="checkout-included-item"][data-item-id="${pipelineID}"]`))
@@ -1184,6 +1220,8 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
     const qualificationCard = page.locator(".checkout-unit-card").filter({
         has: page.getByText("Template Application Course", { exact: true }),
     })
+    await expect(qualificationCard.getByRole("button", { name: "上传证明材料", exact: true })).toBeVisible()
+    await qualificationCard.getByRole("button", { name: "上传证明材料", exact: true }).click()
     await expect(qualificationCard.getByRole("button", { name: "取消", exact: true })).toHaveCount(0)
     await expect(qualificationCard.getByRole("button", { name: "提交申请", exact: true })).toBeVisible()
 
