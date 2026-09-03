@@ -730,6 +730,11 @@ test("已持有有效资格的课程自动免考且不可取消", async ({ page 
     }
     await expect(page.locator(".checkout-total")).toContainText("基础总额")
     await expect(page.locator(".checkout-total")).toContainText("3,950")
+    const totalPrecedesPaperSelection = await page.locator(".checkout-total").evaluate((total) => {
+        const paperSelection = document.querySelector(".checkout-step-one-title")
+        return Boolean(paperSelection && (total.compareDocumentPosition(paperSelection) & Node.DOCUMENT_POSITION_FOLLOWING))
+    })
+    expect(totalPrecedesPaperSelection).toBe(true)
     expect(pricingModes).toContain("FULL_PIPELINE")
 
     await page.getByTestId("checkout-selection-next").click()
@@ -2117,6 +2122,7 @@ test("认证从商城下单、Stripe 支付到已购认证完整闭环", async (
     await page.locator(`[data-testid="certification-card"][data-bundle-id="${bundleID}"]`).click()
 
     await expect(page).toHaveURL(new RegExp(`/checkout/${bundleID}$`))
+    await expect(page.getByRole("heading", { name: "CFtP® 考试注册", exact: true })).toBeVisible()
     await expect(page.getByTestId("checkout-step-registration")).toBeVisible()
     await waitForCheckoutProfile(page)
     await page.getByTestId("checkout-agreement").check()
