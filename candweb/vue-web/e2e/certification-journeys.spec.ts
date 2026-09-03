@@ -1235,8 +1235,7 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
     const qualificationCard = page.locator(".checkout-unit-card").filter({
         has: page.getByText("Template Application Course", { exact: true }),
     })
-    await expect(qualificationCard.getByRole("button", { name: "上传证明材料", exact: true })).toBeVisible()
-    await qualificationCard.getByRole("button", { name: "上传证明材料", exact: true }).click()
+    await expect(qualificationCard.getByRole("button", { name: "上传证明材料", exact: true })).toHaveCount(0)
     await expect(qualificationCard.getByRole("button", { name: "取消", exact: true })).toHaveCount(0)
     await expect(qualificationCard.getByRole("button", { name: "提交申请", exact: true })).toBeVisible()
 
@@ -1300,8 +1299,9 @@ test("资格申请页允许 PendingUpload 申请上传", async ({ page }) => {
     await expect(page.locator(".credentials-apply-dialog").getByText("Included Qualification", { exact: true })).toBeVisible()
 })
 
-test("资格申请记录通过弹窗显示完整审核备注", async ({ page }) => {
+test("资格申请记录详情显示完整审核备注和已上传文件", async ({ page }) => {
     const auditRemark = "材料清晰，审核已通过。\n请在后续认证流程中继续使用该资格；如资格信息发生变化，请及时联系管理员更新。"
+    const fileURL = "https://files.example.com/application/evidence.pdf?signature=test"
     await installCandidateApiMocks(page, ({ pathname }) => {
         if (pathname === "/api/credentials/definitions") return { data: { definitions: [] } }
         if (pathname === "/api/credentials/applications") {
@@ -1329,23 +1329,45 @@ test("资格申请记录通过弹窗显示完整审核备注", async ({ page }) 
                 },
             }
         }
+        if (pathname === "/api/credentials/applications/application-with-audit-remark") {
+            return {
+                data: {
+                    app_ulid: "application-with-audit-remark",
+                    status: "APPLICATION_STATUS_APPROVED",
+                    audit_remark: auditRemark,
+                    created_at: "2026-08-29T00:00:00Z",
+                    files: [{
+                        file_hash: "evidence-file-hash",
+                        file_name: "employment-evidence.pdf",
+                        file_ext: ".pdf",
+                        file_size: 2048,
+                        file_usage: "Employment Certificate",
+                        view_url: fileURL,
+                    }],
+                },
+            }
+        }
         return undefined
     })
 
     await page.goto("/credentials", { waitUntil: "domcontentloaded" })
 
     await expect(page.getByText(auditRemark, { exact: true })).toHaveCount(0)
-    const viewRemarkButton = page.getByRole("button", { name: "查看备注", exact: true })
-    await expect(viewRemarkButton).toHaveCount(1)
-    await viewRemarkButton.click()
+    const viewDetailsButtons = page.getByRole("button", { name: "查看详情", exact: true })
+    await expect(viewDetailsButtons).toHaveCount(2)
+    const viewDetailsButton = page.locator("[data-testid='application-view-details']").last()
+    await viewDetailsButton.click()
 
-    const auditRemarkDialog = page.getByTestId("application-audit-remark-dialog")
-    await expect(auditRemarkDialog).toBeVisible()
-    await expect(auditRemarkDialog.getByText("Approved Qualification", { exact: true })).toBeVisible()
-    await expect(auditRemarkDialog.getByTestId("application-audit-remark-content")).toHaveText(auditRemark)
-    await auditRemarkDialog.getByTestId("application-audit-remark-close").click()
-    await expect(auditRemarkDialog).toBeHidden()
-    await expect(viewRemarkButton).toBeFocused()
+    const applicationDetailDialog = page.getByTestId("application-detail-dialog")
+    await expect(applicationDetailDialog).toBeVisible()
+    await expect(applicationDetailDialog.getByText("Approved Qualification", { exact: true })).toBeVisible()
+    await expect(applicationDetailDialog.getByTestId("application-audit-remark-content")).toHaveText(auditRemark)
+    await expect(applicationDetailDialog.getByText("employment-evidence.pdf", { exact: true })).toBeVisible()
+    await expect(applicationDetailDialog.getByRole("link", { name: "预览", exact: true })).toHaveAttribute("href", fileURL)
+    await expect(applicationDetailDialog.getByRole("link", { name: "下载", exact: true })).toHaveAttribute("download", "employment-evidence.pdf")
+    await applicationDetailDialog.getByTestId("application-detail-close").click()
+    await expect(applicationDetailDialog).toBeHidden()
+    await expect(viewDetailsButton).toBeFocused()
 })
 
 test("免考选择完成后按资格创建独立订单", async ({ page }) => {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue"
+import { computed, onMounted, ref, watch } from "vue"
 import { useRoute } from "vue-router"
-import { AlertCircle, Award, CheckCircle, Clock, FileText, Loader2, MessageSquareText, X, XCircle } from "lucide-vue-next"
+import { AlertCircle, Award, CheckCircle, Clock, Download, Eye, FileText, Loader2, X, XCircle } from "lucide-vue-next"
 import { getFileConstraintInfo } from "../lib/fileConstraints"
 import { CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, CANDIDATE_APPLICATION_STATUS_LABELS, statusEnumNameForStatus, statusLabel } from "@/lib/status-labels"
 import AppPagination from "@/components/AppPagination.vue"
@@ -37,11 +37,13 @@ const applicationsLoading = ref(false)
 const selectedDef = ref<any>(null)
 const resubmitAppId = ref("")
 const isApplyOpen = ref(false)
-const auditRemarkDialogOpen = ref(false)
-const auditRemarkDialogRef = ref<HTMLElement | null>(null)
-const selectedAuditRemark = ref("")
-const selectedAuditRemarkTitle = ref("")
-useBodyScrollLock(() => isApplyOpen.value || auditRemarkDialogOpen.value)
+const applicationDetailDialogOpen = ref(false)
+const applicationDetailDialogRef = ref<HTMLElement | null>(null)
+const selectedApplicationDetail = ref<any>(null)
+const applicationDetailLoading = ref(false)
+const applicationDetailError = ref(false)
+let applicationDetailRequestID = 0
+useBodyScrollLock(() => isApplyOpen.value || applicationDetailDialogOpen.value)
 const uploadedFiles = ref<Record<string, { name: string; url: string; ext: string; hash: string; size: number }>>({})
 const isSubmitting = ref(false)
 const uploadingConstraintName = ref("")
@@ -341,22 +343,71 @@ function applicationMeta(app: any) {
   return parts.join(" · ") || t.value.credentialsPage.application
 }
 
-function openAuditRemark(app: any) {
-  const remark = String(app?.audit_remark || "").trim()
-  if (!remark) return
-  selectedAuditRemark.value = remark
-  selectedAuditRemarkTitle.value = applicationTitle(app)
-  auditRemarkDialogOpen.value = true
+function applicationFileURL(file: any) {
+  const value = String(file?.view_url || "").trim()
+  if (!value) return ""
+  try {
+    const parsed = new URL(value)
+    return parsed.protocol === "https:" || parsed.protocol === "http:" ? parsed.toString() : ""
+  } catch {
+    return ""
+  }
 }
 
-function closeAuditRemark() {
-  auditRemarkDialogOpen.value = false
+function formatFileSize(value: unknown) {
+  const bytes = Number(value)
+  if (!Number.isFinite(bytes) || bytes <= 0) return ""
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+}
+
+const selectedApplicationFiles = computed(() =>
+  (Array.isArray(selectedApplicationDetail.value?.files) ? selectedApplicationDetail.value.files : [])
+    .filter((file: any) => applicationFileURL(file)),
+)
+
+async function loadApplicationDetail(app: any) {
+  const appID = applicationId(app)
+  if (!appID) return
+  const requestID = ++applicationDetailRequestID
+  applicationDetailLoading.value = true
+  applicationDetailError.value = false
+  try {
+    const detail = await apiClient(`/api/credentials/applications/${encodeURIComponent(appID)}`, {
+      suppressErrorToast: true,
+    })
+    if (requestID !== applicationDetailRequestID || !applicationDetailDialogOpen.value) return
+    selectedApplicationDetail.value = { ...app, ...detail }
+  } catch {
+    if (requestID === applicationDetailRequestID && applicationDetailDialogOpen.value) {
+      applicationDetailError.value = true
+    }
+  } finally {
+    if (requestID === applicationDetailRequestID) applicationDetailLoading.value = false
+  }
+}
+
+function openApplicationDetail(app: any) {
+  selectedApplicationDetail.value = { ...app, files: [] }
+  applicationDetailDialogOpen.value = true
+  void loadApplicationDetail(app)
+}
+
+function retryApplicationDetail() {
+  if (selectedApplicationDetail.value) void loadApplicationDetail(selectedApplicationDetail.value)
+}
+
+function closeApplicationDetail() {
+  applicationDetailRequestID += 1
+  applicationDetailDialogOpen.value = false
+  applicationDetailLoading.value = false
 }
 
 useDialogAccessibility(
-  () => auditRemarkDialogOpen.value,
-  auditRemarkDialogRef,
-  closeAuditRemark,
+  () => applicationDetailDialogOpen.value,
+  applicationDetailDialogRef,
+  closeApplicationDetail,
 )
 
 function latestApplicationForDef(credDefId: string) {
@@ -476,7 +527,7 @@ watch(
         </div>
         <div v-else class="overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
           <div class="space-y-3 p-3 md:space-y-2 md:p-0">
-            <div v-for="app in applications" :key="applicationId(app) || applicationCredentialDefinitionId(app)" class="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-3 rounded-xl border border-slate-100 bg-white px-3 py-4 shadow-sm shadow-slate-100/80 transition-colors hover:bg-primary/10 md:items-center md:rounded-none md:border-0 md:px-4 md:shadow-none md:gap-x-6 lg:grid-cols-[minmax(320px,2.4fr)_minmax(160px,1fr)_minmax(128px,180px)_104px] lg:gap-x-8">
+            <div v-for="app in applications" :key="applicationId(app) || applicationCredentialDefinitionId(app)" class="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-3 rounded-xl border border-slate-100 bg-white px-3 py-4 shadow-sm shadow-slate-100/80 transition-colors hover:bg-primary/10 md:items-center md:rounded-none md:border-0 md:px-4 md:shadow-none md:gap-x-6 lg:grid-cols-[minmax(280px,2.4fr)_minmax(120px,1fr)_104px_auto] lg:gap-x-6">
               <div class="min-w-0 lg:col-span-1">
                 <div class="break-words text-base font-semibold leading-6 text-foreground md:truncate md:font-medium" :title="applicationTitle(app)">{{ applicationTitle(app) }}</div>
                 <div class="mt-1 break-words text-sm leading-5 text-muted-foreground md:truncate" :title="applicationMeta(app)">{{ applicationMeta(app) }}</div>
@@ -485,18 +536,20 @@ watch(
                 <component :is="statusIcon(app.status)" class="h-3.5 w-3.5" />
                 {{ statusLabel(t, CANDIDATE_APPLICATION_STATUS_LABELS, app.status, 'credentialsPage.appStatusUnknown') }}
               </span>
-              <button
-                v-if="String(app.audit_remark || '').trim()"
-                type="button"
-                class="application-audit-remark-btn col-span-2 inline-flex w-fit cursor-pointer items-center justify-center gap-1.5 justify-self-start whitespace-nowrap rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-semibold text-primary transition-colors hover:border-primary/35 hover:bg-primary/10 active:bg-primary/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2 md:col-span-1 lg:col-start-3 lg:min-w-[88px]"
-                data-testid="application-view-audit-remark"
-                @click="openAuditRemark(app)"
-              >
-                <MessageSquareText class="h-3.5 w-3.5" aria-hidden="true" />
-                {{ t.credentialsPage.viewAuditRemark }}
-              </button>
-              <button v-if="isPendingUploadStatus(app.status) || canResubmit(app.status)" class="btn btn-primary col-span-2 h-9 w-full cursor-pointer whitespace-nowrap rounded-lg py-1 text-sm shadow-sm shadow-primary/20 md:col-span-1 md:w-auto md:justify-self-end lg:col-start-4" @click="handleApplyClick(definitionForApplication(app), canResubmit(app.status) ? applicationId(app) : '')">{{ isPendingUploadStatus(app.status) ? t.credentialsPage.uploadMaterials : t.credentialsPage.resubmitAction }}</button>
-              <span v-else class="col-span-2 justify-self-start whitespace-nowrap text-sm text-muted-foreground md:col-span-1 md:justify-self-end lg:col-start-4">{{ formatBackendDateOnly(app.created_at) || t.common.na }}</span>
+              <span class="col-span-2 justify-self-start whitespace-nowrap text-sm text-muted-foreground md:col-span-1 lg:col-start-3">{{ formatBackendDateOnly(app.created_at) || t.common.na }}</span>
+              <div class="col-span-2 flex w-full flex-wrap items-center justify-end gap-2 md:col-span-1 md:w-auto md:justify-self-end lg:col-start-4">
+                <button v-if="isPendingUploadStatus(app.status) || canResubmit(app.status)" class="btn btn-primary h-9 cursor-pointer whitespace-nowrap rounded-lg py-1 text-sm shadow-sm shadow-primary/20" @click="handleApplyClick(definitionForApplication(app), canResubmit(app.status) ? applicationId(app) : '')">{{ isPendingUploadStatus(app.status) ? t.credentialsPage.uploadMaterials : t.credentialsPage.resubmitAction }}</button>
+                <button
+                  type="button"
+                  class="application-details-btn btn btn-outline h-9 cursor-pointer whitespace-nowrap rounded-lg px-3 py-1 text-sm text-primary hover:border-primary/30 hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  data-testid="application-view-details"
+                  :disabled="!applicationId(app)"
+                  @click="openApplicationDetail(app)"
+                >
+                  <Eye class="h-4 w-4" aria-hidden="true" />
+                  {{ t.credentialsPage.viewDetails }}
+                </button>
+              </div>
             </div>
           </div>
           <AppPagination
@@ -519,46 +572,95 @@ watch(
     </div>
 
     <div
-      v-if="auditRemarkDialogOpen"
+      v-if="applicationDetailDialogOpen"
       class="app-safe-area-overlay fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-[2px]"
-      @click.self="closeAuditRemark"
+      @click.self="closeApplicationDetail"
     >
       <div
-        ref="auditRemarkDialogRef"
-        class="app-dialog-viewport-compact flex max-h-[86vh] w-full max-w-xl flex-col overflow-hidden rounded-[16px] bg-white shadow-[0_24px_70px_rgba(15,23,42,0.28)]"
+        ref="applicationDetailDialogRef"
+        class="app-dialog-viewport-compact flex max-h-[86vh] w-full max-w-2xl flex-col overflow-hidden rounded-[16px] bg-white shadow-[0_24px_70px_rgba(15,23,42,0.28)]"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="audit-remark-dialog-title"
-        aria-describedby="audit-remark-dialog-content"
+        aria-labelledby="application-detail-dialog-title"
         tabindex="-1"
-        data-testid="application-audit-remark-dialog"
+        data-testid="application-detail-dialog"
       >
         <div class="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-5 sm:px-6">
           <div class="min-w-0">
-            <h2 id="audit-remark-dialog-title" class="text-xl font-bold leading-snug text-slate-950">
-              {{ t.credentialsPage.auditRemark }}
+            <h2 id="application-detail-dialog-title" class="text-xl font-bold leading-snug text-slate-950">
+              {{ t.credentialsPage.applicationDetails }}
             </h2>
-            <p class="mt-1 break-words text-sm text-slate-500">{{ selectedAuditRemarkTitle }}</p>
+            <p class="mt-1 break-words text-sm text-slate-500">{{ applicationTitle(selectedApplicationDetail) }}</p>
           </div>
           <button
             type="button"
             class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:border-primary/25 hover:text-primary"
             :aria-label="t.common.close"
             :title="t.common.close"
-            @click="closeAuditRemark"
+            @click="closeApplicationDetail"
           >
             <X class="h-5 w-5" />
           </button>
         </div>
         <div class="min-h-0 overflow-y-auto px-5 py-5 sm:px-6">
-          <p
-            id="audit-remark-dialog-content"
-            class="whitespace-pre-wrap break-words text-sm leading-7 text-slate-800"
-            data-testid="application-audit-remark-content"
-          >{{ selectedAuditRemark }}</p>
+          <div v-if="applicationDetailLoading" class="flex min-h-52 items-center justify-center gap-2 text-sm text-slate-500" data-testid="application-detail-loading">
+            <Loader2 class="h-5 w-5 animate-spin text-primary" />
+            {{ t.common.loading }}
+          </div>
+          <div v-else-if="applicationDetailError" class="flex min-h-52 flex-col items-center justify-center gap-4 text-center" data-testid="application-detail-error">
+            <AlertCircle class="h-9 w-9 text-red-500" />
+            <p class="text-sm text-slate-600">{{ t.credentialsPage.detailsLoadFailed }}</p>
+            <button type="button" class="btn btn-outline" @click="retryApplicationDetail">{{ t.credentialsPage.retry }}</button>
+          </div>
+          <div v-else class="space-y-6">
+            <div class="grid gap-3 sm:grid-cols-2">
+              <div class="rounded-lg bg-slate-50 px-4 py-3">
+                <div class="text-xs font-medium text-slate-500">{{ t.credentialsPage.applicationStatus }}</div>
+                <div class="mt-1 text-sm font-semibold text-slate-900">
+                  {{ statusLabel(t, CANDIDATE_APPLICATION_STATUS_LABELS, selectedApplicationDetail?.status, 'credentialsPage.appStatusUnknown') }}
+                </div>
+              </div>
+              <div class="rounded-lg bg-slate-50 px-4 py-3">
+                <div class="text-xs font-medium text-slate-500">{{ t.credentialsPage.applicationSubmittedAt }}</div>
+                <div class="mt-1 text-sm font-semibold text-slate-900">{{ formatBackendDateOnly(selectedApplicationDetail?.created_at) || t.common.na }}</div>
+              </div>
+            </div>
+
+            <section>
+              <h3 class="text-sm font-semibold text-slate-950">{{ t.credentialsPage.auditRemark }}</h3>
+              <p class="mt-2 whitespace-pre-wrap break-words rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-7 text-slate-800" data-testid="application-audit-remark-content">{{ String(selectedApplicationDetail?.audit_remark || '').trim() || t.credentialsPage.noAuditRemark }}</p>
+            </section>
+
+            <section>
+              <h3 class="text-sm font-semibold text-slate-950">{{ t.credentialsPage.uploadedFiles }}</h3>
+              <div v-if="selectedApplicationFiles.length" class="mt-2 divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-200">
+                <div v-for="(file, index) in selectedApplicationFiles" :key="file.file_hash || `${file.file_name}-${index}`" class="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div class="flex min-w-0 items-start gap-3">
+                    <FileText class="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                    <div class="min-w-0">
+                      <div class="break-words text-sm font-semibold text-slate-900">{{ file.file_name || t.credentialsPage.uploadedFile }}</div>
+                      <div class="mt-1 flex flex-wrap gap-x-2 gap-y-1 text-xs text-slate-500">
+                        <span v-if="file.file_usage">{{ file.file_usage }}</span>
+                        <span v-if="formatFileSize(file.file_size)">{{ formatFileSize(file.file_size) }}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="flex shrink-0 flex-wrap gap-2">
+                    <a class="btn btn-outline h-9 px-3 text-xs" :href="applicationFileURL(file)" target="_blank" rel="noopener noreferrer">
+                      <Eye class="h-4 w-4" /> {{ t.credentialsPage.previewFile }}
+                    </a>
+                    <a class="btn btn-outline h-9 px-3 text-xs" :href="applicationFileURL(file)" :download="file.file_name || true" target="_blank" rel="noopener noreferrer">
+                      <Download class="h-4 w-4" /> {{ t.credentialsPage.downloadFile }}
+                    </a>
+                  </div>
+                </div>
+              </div>
+              <p v-else class="mt-2 rounded-lg border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-500">{{ t.credentialsPage.noUploadedFiles }}</p>
+            </section>
+          </div>
         </div>
         <div class="flex justify-end border-t border-slate-100 px-5 py-4 sm:px-6">
-          <button type="button" class="btn btn-primary min-w-24 justify-center" data-testid="application-audit-remark-close" @click="closeAuditRemark">
+          <button type="button" class="btn btn-primary min-w-24 justify-center" data-testid="application-detail-close" @click="closeApplicationDetail">
             {{ t.common.close }}
           </button>
         </div>

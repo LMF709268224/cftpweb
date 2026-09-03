@@ -2309,7 +2309,7 @@ function closePaymentEditDialog() {
                           {{ activeOrderUnitStatusLabel(unit) }}
                         </span>
                         <button
-                          v-if="canUploadQualificationForUnit(unit)"
+                          v-if="canUploadQualificationForUnit(unit) && !isQualificationEditorExpanded(unit.unit_id)"
                           type="button"
                           class="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-blue-700 px-3 text-sm font-bold text-white hover:bg-blue-800"
                           @click.stop="openQualificationUpload(unit)"
@@ -2329,7 +2329,7 @@ function closePaymentEditDialog() {
                                 : t.checkoutWizard.statusResubmit }}
                         </span>
                         <button
-                          v-if="canUploadQualificationForUnit(unit)"
+                          v-if="canUploadQualificationForUnit(unit) && !isQualificationEditorExpanded(unit.unit_id)"
                           type="button"
                           class="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-blue-700 px-3 text-sm font-bold text-white hover:bg-blue-800"
                           @click.stop="openQualificationUpload(unit)"
