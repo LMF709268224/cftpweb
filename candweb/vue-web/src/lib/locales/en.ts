@@ -1224,7 +1224,7 @@ export const en: AppTranslations = {
         certificateGenerating: "Generating",
         keepLearningTitle: "Keep learning to earn more certificates",
         keepLearningDesc: "Complete more course modules to earn additional professional certifications.",
-        browseCourses: "Browse Marketplace",
+        browseCourses: "Explore Learning & Certification Services",
         loadFailed: "Failed to load certificates",
         loadFailedDesc: "Certificate information is temporarily unavailable. Check your connection and try again.",
         retry: "Reload",

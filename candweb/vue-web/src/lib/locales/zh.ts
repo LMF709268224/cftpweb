@@ -1222,7 +1222,7 @@ export const zh = {
         certificateGenerating: "证书生成中",
         keepLearningTitle: "继续学习，获得更多认证",
         keepLearningDesc: "完成更多课程模块以获得额外的专业认证",
-        browseCourses: "去商城看看",
+        browseCourses: "去学习与认证服务看看",
         loadFailed: "证书加载失败",
         loadFailedDesc: "暂时无法获取证书信息，请检查网络后重试。",
         retry: "重新加载",
