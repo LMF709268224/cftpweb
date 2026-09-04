@@ -795,7 +795,7 @@ export const zh = {
         step3: "3 审查",
         step4: "4 支付",
         includedItems: "费用包含",
-        pipelineEnrollmentFee: "注册费用（仅收取一次）",
+        pipelineEnrollmentFee: "报名费",
         exemptionRecognitionFee: "免考认定费",
         baseTotal: "总费用",
         back: "返回",
