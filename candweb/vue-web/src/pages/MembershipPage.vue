@@ -800,7 +800,7 @@ watch(lang, () => {
                 <XCircle v-else class="h-4 w-4" />
                 {{ isCurrentPlan(plan) ? t.membership.currentPlan : t.membership.upgradeUnavailable }}
               </button>
-              <RouterLink v-else to="/marketplace" class="btn btn-primary mt-5 w-full rounded-xl">
+              <RouterLink v-else to="/certifications" class="btn btn-primary mt-5 w-full rounded-xl">
                 <ShoppingBag class="h-4 w-4" />
                 {{ t.membership.purchase }}
               </RouterLink>

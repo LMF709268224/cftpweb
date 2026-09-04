@@ -335,7 +335,7 @@ export const en: AppTranslations = {
         duration: "Duration",
         months: "months",
         courseDiscountCode: "Course Discount Code: ",
-        purchase: "Purchase in Marketplace",
+        purchase: "Explore Learning & Certification Services",
         upgrade: "Upgrade Membership",
         currentPlan: "Current Plan",
         upgradeUnavailable: "Upgrade Unavailable",

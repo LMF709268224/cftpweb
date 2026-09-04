@@ -333,7 +333,7 @@ export const zh = {
         duration: "时长",
         months: "个月",
         courseDiscountCode: "专属课程折扣码：",
-        purchase: "前往商城购买",
+        purchase: "去学习与认证服务看看",
         upgrade: "升级会员",
         currentPlan: "当前方案",
         upgradeUnavailable: "不可升级",
