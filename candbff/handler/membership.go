@@ -73,7 +73,6 @@ func (h *Handler) GetActiveMembership(w http.ResponseWriter, r *http.Request) {
 
 type PreviewMembershipUpgradeReq struct {
 	TargetMembershipULID string `json:"target_membership_ulid"`
-	Currency             string `json:"currency"`
 }
 
 type PreviewMembershipUpgradeRsp struct {
@@ -85,6 +84,7 @@ type PreviewMembershipUpgradeRsp struct {
 	NextCycleRenewalAmountMinor int64  `json:"next_cycle_renewal_amount_minor"`
 	TargetMembershipName        string `json:"target_membership_name"`
 	CurrentMembershipName       string `json:"current_membership_name"`
+	ProrationDate               int64  `json:"proration_date,omitempty"`
 }
 
 // PreviewMembershipUpgrade POST /api/membership/upgrade/preview
@@ -102,7 +102,6 @@ func (h *Handler) PreviewMembershipUpgrade(w http.ResponseWriter, r *http.Reques
 	}
 
 	req.TargetMembershipULID = strings.TrimSpace(req.TargetMembershipULID)
-	req.Currency = strings.TrimSpace(req.Currency)
 	if req.TargetMembershipULID == "" {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "field 'target_membership_ulid' is required")
 		return
@@ -111,7 +110,6 @@ func (h *Handler) PreviewMembershipUpgrade(w http.ResponseWriter, r *http.Reques
 	resp, err := h.Mall.PreviewMembershipUpgrade(r.Context(), &mallpb.PreviewMembershipUpgradeRequest{
 		CandidateUlid:        candidateID,
 		TargetMembershipUlid: req.TargetMembershipULID,
-		Currency:             req.Currency,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -127,13 +125,14 @@ func (h *Handler) PreviewMembershipUpgrade(w http.ResponseWriter, r *http.Reques
 		NextCycleRenewalAmountMinor: resp.GetNextCycleRenewalAmountMinor(),
 		TargetMembershipName:        resp.GetTargetMembershipName(),
 		CurrentMembershipName:       resp.GetCurrentMembershipName(),
+		ProrationDate:               resp.GetProrationDate(),
 	})
 }
 
 type UpgradeMembershipReq struct {
 	TargetMembershipULID string `json:"target_membership_ulid"`
-	Currency             string `json:"currency"`
 	IdempotencyKey       string `json:"idempotency_key"`
+	ProrationDate        int64  `json:"proration_date,omitempty"`
 }
 
 type UpgradeMembershipRsp struct {
@@ -164,18 +163,21 @@ func (h *Handler) UpgradeMembership(w http.ResponseWriter, r *http.Request) {
 	}
 
 	req.TargetMembershipULID = strings.TrimSpace(req.TargetMembershipULID)
-	req.Currency = strings.TrimSpace(req.Currency)
 	req.IdempotencyKey = strings.TrimSpace(req.IdempotencyKey)
 	if req.TargetMembershipULID == "" {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "field 'target_membership_ulid' is required")
+		return
+	}
+	if req.ProrationDate < 0 {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "field 'proration_date' must be a non-negative Unix timestamp")
 		return
 	}
 
 	resp, err := h.Mall.UpgradeMembership(r.Context(), &mallpb.UpgradeMembershipRequest{
 		CandidateUlid:        candidateID,
 		TargetMembershipUlid: req.TargetMembershipULID,
-		Currency:             req.Currency,
 		IdempotencyKey:       req.IdempotencyKey,
+		ProrationDate:        req.ProrationDate,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)

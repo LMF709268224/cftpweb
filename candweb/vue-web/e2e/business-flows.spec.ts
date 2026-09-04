@@ -208,6 +208,7 @@ test("会员升级先预览分摊费用并以幂等请求确认", async ({ page 
           eligible: true,
           immediate_charge_amount_minor: 1560,
           currency: "usd",
+          proration_date: 1780000000,
           current_period_ends_at: "2027-08-28T00:00:00Z",
           next_cycle_renewal_amount_minor: 30000,
           target_membership_name: "GFI Charterholder Member",
@@ -248,6 +249,7 @@ test("会员升级先预览分摊费用并以幂等请求确认", async ({ page 
   await dialog.getByRole("button", { name: "确认并支付" }).click()
   await expect.poll(() => upgradeBody).toMatchObject({
     target_membership_ulid: "membership-plan-charterholder",
+    proration_date: 1780000000,
   })
   expect((upgradeBody as { currency?: unknown }).currency).toBeUndefined()
   expect((upgradeBody as { idempotency_key?: string }).idempotency_key).toMatch(/^[0-9a-f-]{36}$/)
@@ -304,6 +306,7 @@ test("会员升级等待支付或3DS验证时不会提前提示成功", async ({
           eligible: true,
           immediate_charge_amount_minor: 1560,
           currency: "usd",
+          proration_date: 1780000000,
           current_period_ends_at: "2027-08-28T00:00:00Z",
           next_cycle_renewal_amount_minor: 30000,
           target_membership_name: "GFI Charterholder Member",

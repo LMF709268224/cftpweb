@@ -44,6 +44,7 @@ func (c *membershipUpgradeRegressionClient) PreviewMembershipUpgrade(
 		Eligible:                   true,
 		ImmediateChargeAmountMinor: 1560,
 		Currency:                   "usd",
+		ProrationDate:              1780000000,
 	}, nil
 }
 
@@ -261,7 +262,7 @@ func TestMembershipUpgradeHandlersKeepCandidateScope(t *testing.T) {
 		newCandidateHandlerRequest(
 			http.MethodPost,
 			"/api/membership/upgrade/preview",
-			`{"candidate_ulid":"forged-candidate","target_membership_ulid":" target-2 ","currency":" usd "}`,
+			`{"candidate_ulid":"forged-candidate","target_membership_ulid":" target-2 "}`,
 			"candidate-1",
 			nil,
 		),
@@ -270,9 +271,19 @@ func TestMembershipUpgradeHandlersKeepCandidateScope(t *testing.T) {
 		t.Fatalf("preview status = %d; body=%q", previewRecorder.Code, previewRecorder.Body.String())
 	}
 	if client.previewRequest.GetCandidateUlid() != "candidate-1" ||
-		client.previewRequest.GetTargetMembershipUlid() != "target-2" ||
-		client.previewRequest.GetCurrency() != "usd" {
+		client.previewRequest.GetTargetMembershipUlid() != "target-2" {
 		t.Fatalf("preview request = %#v", client.previewRequest)
+	}
+	var previewPayload struct {
+		Data struct {
+			ProrationDate int64 `json:"proration_date"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(previewRecorder.Body.Bytes(), &previewPayload); err != nil {
+		t.Fatalf("decode preview response: %v", err)
+	}
+	if previewPayload.Data.ProrationDate != 1780000000 {
+		t.Fatalf("preview proration date = %d", previewPayload.Data.ProrationDate)
 	}
 
 	upgradeRecorder := httptest.NewRecorder()
@@ -281,7 +292,7 @@ func TestMembershipUpgradeHandlersKeepCandidateScope(t *testing.T) {
 		newCandidateHandlerRequest(
 			http.MethodPost,
 			"/api/membership/upgrade",
-			`{"candidate_ulid":"forged-candidate","target_membership_ulid":" target-2 ","currency":" usd ","idempotency_key":" request-1 "}`,
+			`{"candidate_ulid":"forged-candidate","target_membership_ulid":" target-2 ","idempotency_key":" request-1 ","proration_date":1780000000}`,
 			"candidate-1",
 			nil,
 		),
@@ -291,8 +302,8 @@ func TestMembershipUpgradeHandlersKeepCandidateScope(t *testing.T) {
 	}
 	if client.upgradeRequest.GetCandidateUlid() != "candidate-1" ||
 		client.upgradeRequest.GetTargetMembershipUlid() != "target-2" ||
-		client.upgradeRequest.GetCurrency() != "usd" ||
-		client.upgradeRequest.GetIdempotencyKey() != "request-1" {
+		client.upgradeRequest.GetIdempotencyKey() != "request-1" ||
+		client.upgradeRequest.GetProrationDate() != 1780000000 {
 		t.Fatalf("upgrade request = %#v", client.upgradeRequest)
 	}
 	var upgradePayload struct {
@@ -469,4 +480,17 @@ func TestMembershipHandlersRejectMissingRequiredFields(t *testing.T) {
 		newCandidateHandlerRequest(http.MethodPost, "/api/membership/upgrade", `{}`, "candidate-1", nil),
 	)
 	assertHandlerAPIError(t, upgradeRecorder, http.StatusBadRequest, ErrInvalidRequest)
+
+	invalidProrationRecorder := httptest.NewRecorder()
+	upgradeHandler.UpgradeMembership(
+		invalidProrationRecorder,
+		newCandidateHandlerRequest(
+			http.MethodPost,
+			"/api/membership/upgrade",
+			`{"target_membership_ulid":"target-2","proration_date":-1}`,
+			"candidate-1",
+			nil,
+		),
+	)
+	assertHandlerAPIError(t, invalidProrationRecorder, http.StatusBadRequest, ErrInvalidRequest)
 }

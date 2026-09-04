@@ -462,6 +462,10 @@ async function confirmMembershipUpgrade() {
       target_membership_ulid: targetMembershipULID,
       idempotency_key: upgradeIdempotencyKey.value,
     }
+    const prorationDate = Number(upgradePreview.value?.proration_date)
+    if (Number.isSafeInteger(prorationDate) && prorationDate > 0) {
+      body.proration_date = prorationDate
+    }
 
     const response = await apiClient("/api/membership/upgrade", {
       method: "POST",
