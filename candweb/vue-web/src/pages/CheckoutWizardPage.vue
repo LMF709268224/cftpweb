@@ -291,10 +291,6 @@ const unitPriceDisplay = computed<Record<string, { accessAmount?: number, exempt
 const isMultiStage = computed(() => {
   return (bundleData.value?.stages?.length || 0) > 1
 })
-const hasExpandedQualificationEditors = computed(() =>
-  Object.values(expandedQualificationUnitIds.value).some(Boolean)
-)
-
 const isMembershipBundle = computed(() => {
   if (!bundleData.value) return false
   const itemTypes = bundleData.value.bundle_item_types || bundleData.value.item_types || []
@@ -1357,6 +1353,11 @@ async function submitQualificationApplication(unit: any) {
       [unitId]: {},
     }
     await refreshQualificationApplications()
+    try {
+      await refreshActiveCredentialApplicationOrder()
+    } catch (error) {
+      console.warn("Failed to refresh qualification order after material submission", error)
+    }
   } catch (error) {
     console.error(error)
     toast.error(t.value.credentialsPage.submitFailed)
@@ -1474,6 +1475,13 @@ function activeOrderLocksDecisionForUnit(unit: any) {
 }
 
 function activeOrderUnitStatusLabel(unit: any) {
+  const applicationState = exemptionCredentialState(unit)
+  if (applicationState === "active") return t.value.checkoutWizard.automaticExemptionApplied
+  if (applicationState === "pending") return t.value.checkoutWizard.qualificationUnderReview
+  if (applicationState === "pending_upload") return t.value.checkoutWizard.qualificationUploadReady
+  if (applicationState === "resubmit") return t.value.checkoutWizard.statusResubmit
+  if (applicationState === "rejected") return t.value.checkoutWizard.qualificationReviewRejected
+
   const order = credentialApplicationOrderForUnit(unit)
   if (!order) return ""
   const itemStatus = activeCredentialApplicationOrderItemStatus(unit)
@@ -1599,7 +1607,6 @@ function selectedUnitsNeedingApplication() {
   })
 }
 
-const hasSelectedUnitsNeedingApplication = computed(() => selectedUnitsNeedingApplication().length > 0)
 const qualificationOrderTargetUnit = computed(() => allExemptionUnits().find(
   (unit: any) => String(unit?.unit_id || "").trim() === qualificationOrderTargetUnitId.value,
 ) || null)
@@ -1618,8 +1625,6 @@ const qualificationOrderConfirmItems = computed(() => {
     ),
   }]
 })
-const hasUndecidedExemptionUnits = computed(() => allExemptionUnits().some((unit: any) => !exemptionDecision(unit)))
-
 function canRequestQualificationApplicationForUnit(unit: any) {
   const unitId = String(unit?.unit_id || "").trim()
   if (!unitId || !selectedExemptionUnitIds.value[unitId] || !selectedQualificationIdForUnit(unit)) return false
@@ -1790,13 +1795,79 @@ async function confirmSelectedQualificationApplications() {
   qualificationOrderTargetUnitId.value = ""
 }
 
-async function nextFromStep1() {
-  if (hasUndecidedExemptionUnits.value) {
-    toast.info(t.value.checkoutWizard.exemptionDecisionRequired)
-    return
+function checkoutUnitMessage(template: string, unit: any) {
+  const unitName = learningUnitDisplayName(
+    unit?.unit_name || unit?.name || unit?.unit_id,
+    t.value.checkoutWizard,
+  )
+  return template.replace("{{unit}}", unitName)
+}
+
+function stepOneValidationMessage() {
+  const units = allExemptionUnits()
+  const submittingUnit = units.find(
+    (unit: any) => String(unit?.unit_id || "").trim() === qualificationSubmittingUnitId.value,
+  )
+  if (submittingUnit) {
+    return checkoutUnitMessage(t.value.checkoutWizard.qualificationSubmissionInProgressForUnit, submittingUnit)
   }
-  if (hasSelectedUnitsNeedingApplication.value) {
-    toast.info(t.value.checkoutWizard.applySelectedExemptionsFirst)
+
+  const undecidedUnit = units.find((unit: any) => !exemptionDecision(unit))
+  if (undecidedUnit) {
+    return checkoutUnitMessage(t.value.checkoutWizard.exemptionDecisionRequiredForUnit, undecidedUnit)
+  }
+
+  const unitsNeedingApplication = new Set(
+    selectedUnitsNeedingApplication().map((unit: any) => String(unit?.unit_id || "").trim()),
+  )
+  for (const unit of units.filter((item: any) => exemptionDecision(item) === "exempt")) {
+    const unitId = String(unit?.unit_id || "").trim()
+    const state = exemptionCredentialState(unit)
+    const orderStatus = credentialApplicationOrderStatus(credentialApplicationOrderForUnit(unit))
+    const itemStatus = activeCredentialApplicationOrderItemStatus(unit)
+
+    if (state === "active" || itemStatus === "APPROVED") continue
+    if (!selectedQualificationIdForUnit(unit)) {
+      return checkoutUnitMessage(t.value.checkoutWizard.exemptionQualificationRequiredForUnit, unit)
+    }
+    if (state === "pending") {
+      return checkoutUnitMessage(t.value.checkoutWizard.qualificationUnderReviewForUnit, unit)
+    }
+    if (state === "resubmit") {
+      return checkoutUnitMessage(t.value.checkoutWizard.qualificationResubmitRequiredForUnit, unit)
+    }
+    if (state === "rejected") {
+      return checkoutUnitMessage(t.value.checkoutWizard.qualificationRejectedForUnit, unit)
+    }
+    if (state === "pending_upload") {
+      return checkoutUnitMessage(t.value.checkoutWizard.qualificationUploadRequiredForUnit, unit)
+    }
+    if (itemStatus === "SUBMITTED" || isCredentialApplicationUnderReviewStatus(orderStatus)) {
+      return checkoutUnitMessage(t.value.checkoutWizard.qualificationUnderReviewForUnit, unit)
+    }
+    if (itemStatus === "REJECTED") {
+      return checkoutUnitMessage(t.value.checkoutWizard.qualificationRejectedForUnit, unit)
+    }
+    if (isUploadReadyStatus(orderStatus)) {
+      return checkoutUnitMessage(t.value.checkoutWizard.qualificationUploadRequiredForUnit, unit)
+    }
+    if (isCredentialApplicationPaymentStatus(orderStatus)) {
+      return checkoutUnitMessage(t.value.checkoutWizard.qualificationPaymentRequiredForUnit, unit)
+    }
+    if (unitsNeedingApplication.has(unitId)) {
+      return checkoutUnitMessage(t.value.checkoutWizard.qualificationApplicationRequiredForUnit, unit)
+    }
+  }
+
+  return hardEligibilityBlockers.value.length > 0
+    ? eligibilityBlockerMessage(hardEligibilityBlockers.value[0])
+    : ""
+}
+
+async function nextFromStep1() {
+  const validationMessage = stepOneValidationMessage()
+  if (validationMessage) {
+    toast.info(validationMessage)
     return
   }
   try {
@@ -1892,8 +1963,6 @@ function exemptionCredentialBadgeClass(unit: any) {
 }
 
 function qualificationStatusHint(unit: any) {
-  const activeOrderHint = activeOrderUnitStatusLabel(unit)
-  if (activeOrderHint) return activeOrderHint
   switch (exemptionCredentialState(unit)) {
     case "active":
       return ""
@@ -1904,7 +1973,7 @@ function qualificationStatusHint(unit: any) {
     case "resubmit":
       return t.value.checkoutWizard.qualificationResubmitHint
     default:
-      return t.value.checkoutWizard.qualificationSubmitHint
+      return activeOrderUnitStatusLabel(unit) || t.value.checkoutWizard.qualificationSubmitHint
   }
 }
 
@@ -2702,8 +2771,7 @@ function closePaymentEditDialog() {
         >
           <button
             data-testid="checkout-selection-next"
-            class="checkout-next-button btn rounded-full px-8 py-3 text-white disabled:cursor-not-allowed disabled:opacity-50"
-            :disabled="checkoutHardBlocked || hasExpandedQualificationEditors || Boolean(qualificationSubmittingUnitId)"
+            class="checkout-next-button btn rounded-full px-8 py-3 text-white"
             @click="nextFromStep1"
           >
             {{ t.checkoutWizard.saveAndContinue }}

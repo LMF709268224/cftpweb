@@ -1090,6 +1090,8 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
     let uploadRequest: any
     let submitRequest: any
     let pricingSelections: any
+    let applicationStatus = "APPLICATION_STATUS_PENDING_UPLOAD"
+    let applicationOrderRequests = 0
     const checkoutBundle = {
         ...bundle,
         stages: [{
@@ -1177,12 +1179,13 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
                     applications: [{
                         app_ulid: "application-template-pending-upload",
                         cred_def_ulid: qualificationID,
-                        status: "APPLICATION_STATUS_PENDING_UPLOAD",
+                        status: applicationStatus,
                     }],
                 },
             }
         }
         if (pathname === "/api/credentials/application-orders") {
+            applicationOrderRequests += 1
             return {
                 data: {
                     orders: [{
@@ -1205,6 +1208,7 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
         }
         if (pathname === "/api/credentials/submit" && method === "POST") {
             submitRequest = body
+            applicationStatus = "APPLICATION_STATUS_PENDING"
             return { data: { app_ulid: "application-1", status: "PENDING" } }
         }
         return undefined
@@ -1245,11 +1249,17 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
         buffer: Buffer.from("pdf-content"),
     })
     await expect(page.getByText("employment-certificate.pdf 上传成功", { exact: true })).toBeVisible()
+    const initialApplicationOrderRequests = applicationOrderRequests
     await page.getByRole("button", { name: "提交申请", exact: true }).click()
 
     expect(uploadRequest.file_usage).toBe("Employment Certificate")
     expect(submitRequest.files).toHaveLength(1)
     expect(submitRequest.files[0].file_usage).toBe("Employment Certificate")
+    await expect.poll(() => applicationOrderRequests).toBeGreaterThan(initialApplicationOrderRequests)
+    await expect(qualificationCard).toContainText("免考证明材料已提交，请等待管理员审核；审核通过后系统将自动应用免考。")
+    await expect(qualificationCard).not.toContainText("资格申请已创建，请在下方上传材料。")
+    await page.getByTestId("checkout-selection-next").click()
+    await expect(page.getByText("“Template Application Course”的免考申请正在审核中，请等待审核结果。", { exact: true })).toBeVisible()
 })
 
 test("资格申请页允许 PendingUpload 申请上传", async ({ page }) => {
@@ -1455,6 +1465,16 @@ test("免考选择完成后按资格创建独立订单", async ({ page }) => {
     })
 
     await page.goto(`/checkout/${selectionBundleID}`, { waitUntil: "domcontentloaded" })
+    const selectionNextButton = page.getByTestId("checkout-selection-next")
+    await expect(selectionNextButton).toBeEnabled()
+    await selectionNextButton.click()
+    await expect(page.getByText("请先为“Apply Exemption Course”选择“申请免考”或“不申请免考”。", { exact: true })).toBeVisible()
+
+    await page.getByRole("button", { name: "中文 / EN" }).click()
+    await selectionNextButton.click()
+    await expect(page.getByText("Choose Apply for Exemption or Do Not Apply for Exemption for “Apply Exemption Course” first.", { exact: true })).toBeVisible()
+    await page.getByRole("button", { name: "EN / 中文" }).click()
+
     const waiveButton = page.locator(`[data-testid="checkout-exemption-waive"][data-unit-id="${waiveUnitID}"]`)
     await expect(waiveButton).toHaveText("不申请免考")
     await page.locator(`[data-testid="checkout-exemption-apply"][data-unit-id="${applyUnitID}"]`).click()
@@ -1464,6 +1484,8 @@ test("免考选择完成后按资格创建独立订单", async ({ page }) => {
 
     expect(applicationOrderBody).toBeUndefined()
     await expect(page.getByText("这里仅展示申请要求和官方模板。请先完成所有免考选择并支付资格审核费，付款成功后才能上传证明材料。", { exact: true })).toBeVisible()
+    await selectionNextButton.click()
+    await expect(page.getByText("请先为“Apply Exemption Course”创建免考资格审核申请。", { exact: true })).toBeVisible()
 
     const createApplicationButton = page.locator(
         `[data-testid="checkout-create-qualification-order"][data-unit-id="${applyUnitID}"]`,
