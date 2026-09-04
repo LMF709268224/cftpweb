@@ -1149,7 +1149,7 @@ export const zh = {
         subtitle: "查看申请进度",
         myApplications: "我的申请",
         statusColumn: "状态",
-        createdUpdatedAtColumn: "创建/更新时间",
+        createdAtColumn: "创建时间",
         actionsColumn: "操作",
         noApplications: "暂无申请",
         appStatusPending: "审核中",

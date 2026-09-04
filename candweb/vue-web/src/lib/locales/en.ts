@@ -1151,7 +1151,7 @@ export const en: AppTranslations = {
         subtitle: "Track the status of your applications.",
         myApplications: "My Applications",
         statusColumn: "Status",
-        createdUpdatedAtColumn: "Created / Updated",
+        createdAtColumn: "Created At",
         actionsColumn: "Actions",
         noApplications: "No applications yet.",
         appStatusPending: "Pending Review",

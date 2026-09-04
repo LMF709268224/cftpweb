@@ -339,10 +339,6 @@ function applicationMeta(app: any) {
   return app?.credential_category || t.value.credentialsPage.application
 }
 
-function applicationActivityTime(app: any) {
-  return app?.updated_at || app?.audit_at || app?.created_at
-}
-
 function applicationFileURL(file: any) {
   const value = String(file?.view_url || "").trim()
   if (!value) return ""
@@ -521,7 +517,7 @@ watch(
             <h2 class="truncate font-semibold text-card-foreground">{{ t.credentialsPage.myApplications }}</h2>
           </div>
           <span class="hidden text-center text-sm font-semibold text-slate-500 lg:block">{{ t.credentialsPage.statusColumn }}</span>
-          <span class="hidden text-sm font-semibold text-slate-500 lg:block">{{ t.credentialsPage.createdUpdatedAtColumn }}</span>
+          <span class="hidden text-sm font-semibold text-slate-500 lg:block">{{ t.credentialsPage.createdAtColumn }}</span>
           <span class="hidden text-right text-sm font-semibold text-slate-500 lg:block">{{ t.credentialsPage.actionsColumn }}</span>
         </div>
         <div v-if="applicationsLoading" class="credentials-applications-state flex items-center justify-center gap-2 rounded-[16px] bg-white py-14 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
@@ -545,7 +541,7 @@ watch(
                 <component :is="statusIcon(app.status)" class="h-3.5 w-3.5" />
                 {{ statusLabel(t, CANDIDATE_APPLICATION_STATUS_LABELS, app.status, 'credentialsPage.appStatusUnknown') }}
               </span>
-              <span class="col-span-2 justify-self-start whitespace-nowrap text-sm text-muted-foreground md:col-span-1 lg:col-start-3">{{ formatBackendDateOnly(applicationActivityTime(app), lang) || t.common.na }}</span>
+              <span class="col-span-2 justify-self-start whitespace-nowrap text-sm text-muted-foreground md:col-span-1 lg:col-start-3">{{ formatBackendDateOnly(app.created_at, lang) || t.common.na }}</span>
               <div class="col-span-2 flex w-full flex-wrap items-center justify-end gap-2 md:col-span-1 md:w-auto md:justify-self-end lg:col-start-4">
                 <button v-if="isPendingUploadStatus(app.status) || canResubmit(app.status)" class="btn btn-primary h-9 cursor-pointer whitespace-nowrap rounded-lg py-1 text-sm shadow-sm shadow-primary/20" @click="handleApplyClick(definitionForApplication(app), canResubmit(app.status) ? applicationId(app) : '')">{{ isPendingUploadStatus(app.status) ? t.credentialsPage.uploadMaterials : t.credentialsPage.resubmitAction }}</button>
                 <button
