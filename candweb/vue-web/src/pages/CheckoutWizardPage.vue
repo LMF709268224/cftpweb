@@ -208,7 +208,7 @@ const purchaseLineItems = computed<PurchaseLineItem[]>(() => {
           key: `pipeline:${configuredPipelineId}`,
           itemId: configuredPipelineId,
           name: t.value.checkoutWizard.pipelineEnrollmentFee,
-          stageName: String(bundleData.value?.name || "").trim(),
+          stageName: "",
           amount,
           currency: String(pipeline?.enrollment_fee?.currency || "USD"),
           kind: "pipeline",
