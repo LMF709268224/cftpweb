@@ -348,6 +348,7 @@ const certificateIssuedDate = computed(() =>
       detail.value?.instance?.created_at,
       detail.value?.instance?.createdAt,
     ),
+    lang.value,
   ) || "-",
 )
 const visibleCourseIds = computed(() =>
@@ -1278,7 +1279,7 @@ watch(lang, async () => {
                     {{ finalQualificationApplicationStatusLabel(qual.application.status) }}
                   </span>
                   <span v-if="qual.application.created_at" class="text-xs text-slate-500">
-                    {{ t.credentialsPage.submittedAt }} {{ formatBackendDateOnly(qual.application.created_at) }}
+                    {{ t.credentialsPage.submittedAt }} {{ formatBackendDateOnly(qual.application.created_at, lang) }}
                   </span>
                 </div>
                 <p

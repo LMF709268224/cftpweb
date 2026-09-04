@@ -7,6 +7,7 @@ import GfiHeader from "@/components/GfiHeader.vue"
 import GfiLineBackground from "@/components/GfiLineBackground.vue"
 import eventSource from "@/lib/gfiEventPosts.json"
 import { useTranslation } from "@/lib/language"
+import { formatBackendDateOnly } from "@/lib/utils"
 
 type EventKind = "all" | "webinars" | "conferences"
 
@@ -104,12 +105,6 @@ function periodCount(period: string) {
   return posts.value.filter((post) => period === "upcoming" ? isUpcoming(post) : !isUpcoming(post)).length
 }
 
-function formatDate(date: string, short = false) {
-  return new Intl.DateTimeFormat(short ? "en-GB" : "en-US", short
-    ? { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }
-    : { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" }).format(new Date(date))
-}
-
 function yearLabel(year: number) {
   return `${year}-${String((year + 1) % 100).padStart(2, "0")}`
 }
@@ -175,12 +170,12 @@ onBeforeUnmount(() => revealObserver?.disconnect())
               </div>
               <div class="event-copy">
                 <div v-if="kind !== 'conferences'" class="event-meta top-meta">
-                  <span>{{ formatDate(post.date) }}</span><i></i><b>{{ post.label }}</b>
+                  <span>{{ formatBackendDateOnly(post.date, lang) }}</span><i></i><b>{{ post.label }}</b>
                 </div>
                 <h2><RouterLink :to="`/gfi${post.slug}`">{{ post.title }}</RouterLink></h2>
                 <p>{{ post.description }}</p>
                 <div v-if="kind === 'conferences'" class="conference-meta">
-                  <span>{{ formatDate(post.date, true) }}</span><i></i><span>Past Event</span>
+                  <span>{{ formatBackendDateOnly(post.date, lang) }}</span><i></i><span>Past Event</span>
                 </div>
                 <RouterLink class="card-action" :to="`/gfi${post.slug}`">
                   {{ kind === "conferences" ? "View Highlights" : "Read More" }} <ArrowUpRight />

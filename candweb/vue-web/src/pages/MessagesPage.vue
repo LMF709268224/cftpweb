@@ -10,7 +10,7 @@ import { formatBackendDate } from "@/lib/utils"
 import { fetchUnreadCount } from "@/lib/unreadCountCache"
 import { useTranslation } from "@/lib/language"
 import { usePolling } from "@/lib/polling"
-type Message = { id: string; type: string; rawTitle: string; rawContent: string; time: string; isRead: boolean; isUnread: boolean }
+type Message = { id: string; type: string; rawTitle: string; rawContent: string; createdAt: string; isRead: boolean; isUnread: boolean }
 type MessageStatusFilter = "unread" | "read"
 type MessageAction = "read" | "delete"
 
@@ -326,7 +326,7 @@ async function fetchMessages(showLoading = true, suppressErrorToast = false) {
         type,
         rawTitle: title,
         rawContent: content,
-        time: formatBackendDate(m.created_at),
+        createdAt: String(m.created_at || ""),
         isRead: statusValue === 1,
         isUnread: statusValue === 0,
       }
@@ -413,7 +413,7 @@ async function handleViewDetail(message: Message, markUnread = true) {
       rawTitle: detail?.title || message.rawTitle,
       rawContent: detail?.content || message.rawContent,
       typeLabel: configFor(detailType).label,
-      time: formatBackendDate(detail?.created_at || ""),
+      createdAt: String(detail?.created_at || message.createdAt),
     }
     detailModalOpen.value = true
   } catch {
@@ -422,7 +422,7 @@ async function handleViewDetail(message: Message, markUnread = true) {
       rawTitle: message.rawTitle,
       rawContent: message.rawContent,
       typeLabel: configFor(message.type).label,
-      time: message.time,
+      createdAt: message.createdAt,
     }
     detailLoadError.value = true
     detailModalOpen.value = true
@@ -540,7 +540,7 @@ onMounted(() => {
               <h3 :class="['line-clamp-2 text-sm leading-snug text-card-foreground md:text-base', message.isUnread ? 'font-bold' : 'font-semibold']">{{ localizedMessageTitle(message.rawTitle, configFor(message.type).label) }}</h3>
               <span class="message-type-badge badge">{{ configFor(message.type).label }}</span>
             </div>
-            <span class="text-xs text-muted-foreground">{{ message.time }}</span>
+            <span class="text-xs text-muted-foreground">{{ formatBackendDate(message.createdAt, lang) }}</span>
             <div
               v-if="messageActionError?.id === message.id"
               class="message-row-feedback mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-red-200 bg-red-50 px-2.5 py-2 text-xs text-red-700"
@@ -609,7 +609,7 @@ onMounted(() => {
               <h2 id="message-detail-dialog-title" class="min-w-0 flex-1 text-xl font-bold leading-snug text-slate-950 sm:text-2xl">{{ localizedMessageTitle(selectedMessageDetail?.rawTitle || '', t.messagesPage.systemNotice) }}</h2>
               <span v-if="selectedMessageDetail?.typeLabel" class="badge shrink-0 border-primary/15 bg-primary/5 text-primary">{{ selectedMessageDetail.typeLabel }}</span>
             </div>
-            <p class="text-sm font-medium text-slate-500">{{ selectedMessageDetail?.time }}</p>
+            <p class="text-sm font-medium text-slate-500">{{ formatBackendDate(selectedMessageDetail?.createdAt, lang) }}</p>
           </div>
           <button type="button" class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-500 transition hover:border-primary/25 hover:text-primary md:h-10 md:w-10" :aria-label="t.common.close" :title="t.common.close" @click="closeMessageDetail">
             <X class="h-5 w-5" />

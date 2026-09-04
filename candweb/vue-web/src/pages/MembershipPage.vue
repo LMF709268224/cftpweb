@@ -12,6 +12,7 @@ import { useDialogAccessibility } from "@/lib/dialogAccessibility"
 import { formatMinorAmount } from "@/lib/display"
 import { useTranslation } from "@/lib/language"
 import { loadStripeFactory } from "@/lib/stripe"
+import { formatBackendDate } from "@/lib/utils"
 
 type RecordData = Record<string, any>
 
@@ -169,9 +170,7 @@ function activeRecordFromPayload(data: any) {
 function formatDate(value: unknown) {
   const raw = String(value || "")
   if (!raw) return "-"
-  const date = new Date(raw)
-  if (Number.isNaN(date.getTime())) return raw
-  return date.toLocaleString(lang.value === "zh" ? "zh-CN" : "en-US", { hour12: false })
+  return formatBackendDate(raw, lang.value)
 }
 
 function formatMoney(amount: unknown, currency = "USD") {

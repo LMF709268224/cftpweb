@@ -21,7 +21,7 @@ type OrderItem = {
   invoiceOrderId: string
   canViewInvoice: boolean
   items: string[]
-  date: string
+  createdAt: string
   amount: string
   currency: string
   bizType: string
@@ -81,7 +81,7 @@ const statusConfig = {
   cancelled: { labelKey: "statusCancelled", statusValue: "CANCEL" },
 } as const
 
-const { t } = useTranslation()
+const { t, lang } = useTranslation()
 
 const orders = ref<OrderItem[]>([])
 const loading = ref(true)
@@ -481,7 +481,7 @@ async function fetchOrders(showLoading = true, suppressErrorToast = false) {
         invoiceOrderId: o.pay_order_ulid || o.pipeline_pay_order_ulid || "",
         canViewInvoice: Boolean(o.can_view_invoice) && Number(o.amount || 0) > 0,
         items: [o.product_name || orderTypeLabel(o.biz_type)],
-        date: formatBackendDateMinute(o.created_at),
+        createdAt: String(o.created_at || ""),
         currency: (o.currency || "USD").toUpperCase(),
         bizType: o.biz_type || "",
         bizRefUlid: o.biz_ref_ulid || "",
@@ -691,7 +691,7 @@ onBeforeUnmount(() => {
                 <h3 class="order-title-mobile min-w-0 max-w-full font-medium text-card-foreground">{{ order.items.join(", ") }}</h3>
                 <span class="rounded-full border border-primary/15 bg-primary/5 px-2 py-0.5 text-xs font-semibold text-primary">{{ orderTypeLabel(order.bizType) }}</span>
               </div>
-              <p class="text-sm text-muted-foreground">{{ order.date }}</p>
+              <p class="text-sm text-muted-foreground">{{ formatBackendDateMinute(order.createdAt, lang) }}</p>
             </div>
           </button>
           <div class="order-actions pointer-events-none relative z-10 flex w-full flex-wrap items-center justify-end gap-x-3 gap-y-3 pl-16 md:grid md:w-auto md:shrink-0 md:grid-cols-[130px_148px_112px_112px_24px] md:gap-x-5 md:pl-0">
@@ -857,11 +857,11 @@ onBeforeUnmount(() => {
                 </div>
                 <div class="grid gap-1 py-3 sm:grid-cols-[140px_1fr] sm:gap-4">
                   <dt class="text-xs font-semibold text-slate-500">{{ t.orders.detailPaidAt }}</dt>
-                  <dd class="break-words text-sm font-semibold text-slate-950">{{ selectedOrderDetail.paid_at || "-" }}</dd>
+                  <dd class="break-words text-sm font-semibold text-slate-950">{{ formatBackendDateMinute(selectedOrderDetail.paid_at, lang) || "-" }}</dd>
                 </div>
                 <div class="grid gap-1 py-3 sm:grid-cols-[140px_1fr] sm:gap-4">
                   <dt class="text-xs font-semibold text-slate-500">{{ t.orders.detailCreatedAt }}</dt>
-                  <dd class="break-words text-sm font-semibold text-slate-950">{{ selectedOrderDetail.summary?.created_at || "-" }}</dd>
+                  <dd class="break-words text-sm font-semibold text-slate-950">{{ formatBackendDateMinute(selectedOrderDetail.summary?.created_at, lang) || "-" }}</dd>
                 </div>
               </dl>
             </section>
