@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
-import { ArrowLeft, ArrowRight, ClipboardList, ExternalLink, Eye, FileText, Loader2, RefreshCw, Send, CheckCircle2, CircleAlert, Clock, Trash2, UploadCloud, X } from "lucide-vue-next"
+import { ArrowLeft, ArrowRight, ChevronDown, ClipboardList, ExternalLink, Eye, FileText, Loader2, RefreshCw, Send, CheckCircle2, CircleAlert, Clock, Trash2, UploadCloud, X } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import CredentialAttachmentList from "@/components/CredentialAttachmentList.vue"
 import LocalizedDatePicker from "@/components/LocalizedDatePicker.vue"
@@ -58,6 +58,7 @@ const bundleData = ref<any>(null)
 const pricingDetail = ref<any>(null)
 const pricingEvaluation = ref<any>(null)
 const paymentMode = ref("FULL_PIPELINE")
+const stagePaymentOptionsExpanded = ref(false)
 const paymentPreview = ref<any>(null)
 const rawExemptionStages = ref<any[]>([])
 const exemptionStages = ref<any[]>([])
@@ -2793,7 +2794,24 @@ function closePaymentEditDialog() {
 
             <!-- PAYMENT MODE SELECTION -->
             <div v-if="isMultiStage" class="rounded-lg border border-border p-4 text-sm space-y-4">
-              <div class="mb-2 text-sm font-semibold">{{ t.checkoutWizard.paymentModeTitle }}</div>
+              <div class="flex items-center justify-between gap-4">
+                <div class="text-sm font-semibold">{{ t.checkoutWizard.paymentModeTitle }}</div>
+                <button
+                  type="button"
+                  data-testid="checkout-stage-payment-toggle"
+                  class="inline-flex shrink-0 items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+                  :aria-expanded="stagePaymentOptionsExpanded"
+                  aria-controls="checkout-stage-payment-option"
+                  @click="stagePaymentOptionsExpanded = !stagePaymentOptionsExpanded"
+                >
+                  <CheckCircle2 v-if="paymentMode === 'BY_STAGE'" class="h-3.5 w-3.5" />
+                  <span>{{ t.checkoutWizard.modeByStage }}</span>
+                  <ChevronDown
+                    class="h-3.5 w-3.5 transition-transform"
+                    :class="{ 'rotate-180': stagePaymentOptionsExpanded }"
+                  />
+                </button>
+              </div>
               
               <label class="flex items-start gap-3 rounded-lg border p-4 transition-colors hover:bg-slate-50 cursor-pointer" :class="{ 'border-emerald-500 bg-emerald-50/30': paymentMode === 'FULL_PIPELINE', 'border-border': paymentMode !== 'FULL_PIPELINE' }">
                 <input type="radio" v-model="paymentMode" value="FULL_PIPELINE" class="mt-1 h-4 w-4 text-emerald-600 focus:ring-emerald-500" />
@@ -2803,7 +2821,13 @@ function closePaymentEditDialog() {
                 </div>
               </label>
 
-              <label class="flex items-start gap-3 rounded-lg border p-4 transition-colors hover:bg-slate-50 cursor-pointer" :class="{ 'border-emerald-500 bg-emerald-50/30': paymentMode === 'BY_STAGE', 'border-border': paymentMode !== 'BY_STAGE' }">
+              <label
+                v-show="stagePaymentOptionsExpanded"
+                id="checkout-stage-payment-option"
+                data-testid="checkout-stage-payment-option"
+                class="flex items-start gap-3 rounded-lg border p-4 transition-colors hover:bg-slate-50 cursor-pointer"
+                :class="{ 'border-emerald-500 bg-emerald-50/30': paymentMode === 'BY_STAGE', 'border-border': paymentMode !== 'BY_STAGE' }"
+              >
                 <input type="radio" v-model="paymentMode" value="BY_STAGE" class="mt-1 h-4 w-4 text-emerald-600 focus:ring-emerald-500" />
                 <div>
                   <div class="font-medium text-slate-900">{{ t.checkoutWizard.modeByStage }}</div>
