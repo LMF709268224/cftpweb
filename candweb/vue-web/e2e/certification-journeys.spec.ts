@@ -1432,7 +1432,7 @@ test("免考选择完成后按资格创建独立订单", async ({ page }) => {
                 data: {
                     definitions: [
                         { cred_def_ulid: alternateApplyQualificationID, name: "Alternate Apply Qualification", respath: "/gcreds/core/alternate-apply" },
-                        { cred_def_ulid: applyQualificationID, name: "Apply Qualification", respath: "/gcreds/core/apply" },
+                        { cred_def_ulid: applyQualificationID, name: "CFtP 1A级财务豁免", respath: "/gcreds/core/apply" },
                         { cred_def_ulid: waiveQualificationID, name: "Waive Qualification", respath: "/gcreds/core/waive" },
                     ],
                 },
@@ -1455,9 +1455,12 @@ test("免考选择完成后按资格创建独立订单", async ({ page }) => {
     })
 
     await page.goto(`/checkout/${selectionBundleID}`, { waitUntil: "domcontentloaded" })
+    const waiveButton = page.locator(`[data-testid="checkout-exemption-waive"][data-unit-id="${waiveUnitID}"]`)
+    await expect(waiveButton).toHaveText("不申请免考")
     await page.locator(`[data-testid="checkout-exemption-apply"][data-unit-id="${applyUnitID}"]`).click()
     await page.locator(`[data-testid="checkout-exemption-qualification-select"][data-unit-id="${applyUnitID}"]`).selectOption(applyQualificationID)
-    await page.locator(`[data-testid="checkout-exemption-waive"][data-unit-id="${waiveUnitID}"]`).click()
+    await expect(page.locator("h4").filter({ hasText: /^CFtP 金融模块（L1A）免考申请$/ })).toBeVisible()
+    await waiveButton.click()
 
     expect(applicationOrderBody).toBeUndefined()
     await expect(page.getByText("这里仅展示申请要求和官方模板。请先完成所有免考选择并支付资格审核费，付款成功后才能上传证明材料。", { exact: true })).toBeVisible()
@@ -1470,7 +1473,7 @@ test("免考选择完成后按资格创建独立订单", async ({ page }) => {
     const confirmDialog = page.getByTestId("checkout-qualification-order-confirm-dialog")
     await expect(confirmDialog).toBeVisible()
     await expect(confirmDialog.getByText("Apply Exemption Course", { exact: true })).toBeVisible()
-    await expect(confirmDialog.getByText("Apply Qualification", { exact: true })).toBeVisible()
+    await expect(confirmDialog.getByText("CFtP 金融模块（L1A）免考申请", { exact: true })).toBeVisible()
     await expect(confirmDialog.getByText("Waive Exemption Course", { exact: true })).toHaveCount(0)
     await expect(confirmDialog.getByText("当前资格创建后不能修改", { exact: true })).toBeVisible()
     expect(applicationOrderBody).toBeUndefined()

@@ -1137,6 +1137,13 @@ function qualificationDefinitionForUnit(unit: any) {
   return qualificationDefinitions.value[qualId] || null
 }
 
+function qualificationApplicationDisplayName(value: unknown) {
+  const name = String(value || "").trim()
+  const normalized = name.replace(/\s+/g, " ")
+  const isL1AFinanceExemption = /^cftp\s*(?:1a级财务|l1a\s+finance)\s*(?:豁免|免考|exemption(?:\s+application)?)$/i.test(normalized)
+  return isL1AFinanceExemption ? t.value.checkoutWizard.l1aExemptionApplication : name
+}
+
 function qualificationFilesForUnit(unitId: string) {
   return qualificationUploadedFiles.value[unitId] || {}
 }
@@ -1602,13 +1609,13 @@ const qualificationOrderConfirmItems = computed(() => {
   return [{
     unitId: String(unit?.unit_id || "").trim(),
     unitName: String(unit?.unit_name || unit?.name || "").trim(),
-    qualificationName: String(
+    qualificationName: qualificationApplicationDisplayName(
       qualificationDefinitionForUnit(unit)?.name
       || (unit?.exemption_quals || []).find(
         (qualification: any) => String(qualification?.qual_id || "").trim() === selectedQualificationIdForUnit(unit),
       )?.name
       || "",
-    ).trim(),
+    ),
   }]
 })
 const hasUndecidedExemptionUnits = computed(() => allExemptionUnits().some((unit: any) => !exemptionDecision(unit)))
@@ -2404,7 +2411,7 @@ function closePaymentEditDialog() {
                             :key="qualification.qualId"
                             :value="qualification.qualId"
                           >
-                            {{ qualification.definition?.name || qualification.option?.name || qualification.qualId }}
+                            {{ qualificationApplicationDisplayName(qualification.definition?.name || qualification.option?.name || qualification.qualId) }}
                           </option>
                         </select>
                         <p class="mt-2 text-xs leading-5 text-slate-500">
@@ -2424,7 +2431,7 @@ function closePaymentEditDialog() {
                           </div>
                           <div>
                             <h4 class="font-semibold text-slate-900">
-                              {{ qualificationDefinitionForUnit(unit)?.name || t.credentialsPage.uploadMaterials }}
+                              {{ qualificationApplicationDisplayName(qualificationDefinitionForUnit(unit)?.name) || t.credentialsPage.uploadMaterials }}
                             </h4>
                             <p class="mt-1 text-sm leading-6 text-slate-600">
                               {{ qualificationDefinitionForUnit(unit)?.description || t.credentialsPage?.description }}
