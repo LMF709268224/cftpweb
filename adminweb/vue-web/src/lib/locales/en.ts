@@ -817,7 +817,7 @@ export const en: AdminTranslations = {
             pending: "Pending Review",
             pendingUpload: "Awaiting Upload",
             approved: "Approved",
-            rejected: "Rejected",
+            rejected: "Declined",
             resubmit: "Resubmission Required",
         },
         tabs: {
@@ -1994,7 +1994,7 @@ export const en: AdminTranslations = {
             IN_PROGRESS: "In progress",
             PASSED: "Passed",
             APPROVED: "Approved",
-            REJECTED: "Rejected",
+            REJECTED: "Declined",
             UNKNOWN: "No result provided",
         },
         mailTypeLabels: {

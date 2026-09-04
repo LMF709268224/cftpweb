@@ -209,7 +209,7 @@ export const en: AppTranslations = {
         settings: "Security Settings",
         logout: "Logout",
         groupLearning: "Certifications & Learning",
-        groupMine: "Mine",
+        groupMine: "My Account",
         resourcePacks: "Resources",
         languageCompact: "EN",
         languageToggle: "EN / 中文",
