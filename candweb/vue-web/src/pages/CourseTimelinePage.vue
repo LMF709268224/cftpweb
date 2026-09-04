@@ -22,7 +22,7 @@ type TimelineLog = {
 }
 
 const route = useRoute()
-const { t } = useTranslation()
+const { t, lang } = useTranslation()
 const pipelineId = computed(() => String(route.params.pipelineId || route.query.id || ""))
 const logs = ref<TimelineLog[]>([])
 const loading = ref(false)
@@ -138,7 +138,7 @@ onMounted(loadTimeline)
           <div class="mb-2 flex flex-wrap items-center gap-2">
             <span class="badge">{{ timelineEntityLabel(log.entity_type) }}</span>
             <span class="badge border-0 bg-primary/10 text-primary">{{ timelineEventLabel(log.event_type) }}</span>
-            <span class="text-sm text-muted-foreground">{{ formatBackendDate(log.created_at) || t.common.unknown }}</span>
+            <span class="text-sm text-muted-foreground">{{ formatBackendDate(log.created_at, lang) || t.common.unknown }}</span>
           </div>
           <div class="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <span>{{ timelineStatusLabel(t, log.entity_type, log.from_status) }}</span>

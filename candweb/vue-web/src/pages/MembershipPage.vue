@@ -170,7 +170,7 @@ function activeRecordFromPayload(data: any) {
 function formatDate(value: unknown) {
   const raw = String(value || "")
   if (!raw) return "-"
-  return formatBackendDate(raw)
+  return formatBackendDate(raw, lang.value)
 }
 
 function formatMoney(amount: unknown, currency = "USD") {

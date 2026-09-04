@@ -170,12 +170,12 @@ onBeforeUnmount(() => revealObserver?.disconnect())
               </div>
               <div class="event-copy">
                 <div v-if="kind !== 'conferences'" class="event-meta top-meta">
-                  <span>{{ formatBackendDateOnly(post.date) }}</span><i></i><b>{{ post.label }}</b>
+                  <span>{{ formatBackendDateOnly(post.date, lang) }}</span><i></i><b>{{ post.label }}</b>
                 </div>
                 <h2><RouterLink :to="`/gfi${post.slug}`">{{ post.title }}</RouterLink></h2>
                 <p>{{ post.description }}</p>
                 <div v-if="kind === 'conferences'" class="conference-meta">
-                  <span>{{ formatBackendDateOnly(post.date) }}</span><i></i><span>Past Event</span>
+                  <span>{{ formatBackendDateOnly(post.date, lang) }}</span><i></i><span>Past Event</span>
                 </div>
                 <RouterLink class="card-action" :to="`/gfi${post.slug}`">
                   {{ kind === "conferences" ? "View Highlights" : "Read More" }} <ArrowUpRight />

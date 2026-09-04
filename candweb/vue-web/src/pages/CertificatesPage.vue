@@ -141,8 +141,6 @@ function normalizeCertificates(list: any[]) {
         validUntilMs: cert.valid_until ? new Date(cert.valid_until).getTime() : 0,
         name: cert.name,
         description: cert.description || "",
-        issueDate: cert.created_at ? formatBackendDateOnly(cert.created_at) : t.value.common.na,
-        expiryDate: cert.valid_until ? formatBackendDateOnly(cert.valid_until) : t.value.common.permanent,
         credentialId: cert.cred_guid || cert.cred_id || t.value.common.na,
         source: cert.source || "",
         pdfAvailable: Boolean(pdfFile?.view_url),
@@ -248,10 +246,10 @@ watch(lang, () => {
                   <p class="mt-2 flex flex-wrap items-center gap-2 text-sm font-medium text-slate-600">
                     <span class="inline-flex items-center gap-1.5">
                       <Calendar class="h-4 w-4 text-primary" />
-                      {{ featuredCertificate.issueDate }}
+                      {{ formatBackendDateOnly(featuredCertificate.createdAt, lang) || t.common.na }}
                     </span>
                     <span class="text-slate-300">|</span>
-                    <span>{{ featuredCertificate.expiryDate }}</span>
+                    <span>{{ formatBackendDateOnly(featuredCertificate.validUntil, lang) || t.common.permanent }}</span>
                   </p>
                 </div>
               </div>
@@ -339,11 +337,11 @@ watch(lang, () => {
           <div class="certificate-date-grid mb-4 grid grid-cols-2 gap-3">
             <div class="certificate-date-item rounded-[14px] bg-[#eef3f8] p-3">
               <p class="mb-1 text-xs text-muted-foreground">{{ t.certificatesPage.issueDate }}</p>
-              <p class="flex items-center gap-1.5 font-medium text-card-foreground"><Calendar class="h-4 w-4 text-muted-foreground" /> {{ cert.issueDate }}</p>
+              <p class="flex items-center gap-1.5 font-medium text-card-foreground"><Calendar class="h-4 w-4 text-muted-foreground" /> {{ formatBackendDateOnly(cert.createdAt, lang) || t.common.na }}</p>
             </div>
             <div class="certificate-date-item rounded-[14px] bg-[#eef3f8] p-3">
               <p class="mb-1 text-xs text-muted-foreground">{{ t.certificatesPage.expiryDate }}</p>
-              <p class="flex items-center gap-1.5 font-medium text-card-foreground"><Calendar class="h-4 w-4 text-muted-foreground" /> {{ cert.expiryDate }}</p>
+              <p class="flex items-center gap-1.5 font-medium text-card-foreground"><Calendar class="h-4 w-4 text-muted-foreground" /> {{ formatBackendDateOnly(cert.validUntil, lang) || t.common.permanent }}</p>
             </div>
           </div>
           <div class="certificate-card-actions flex gap-3">

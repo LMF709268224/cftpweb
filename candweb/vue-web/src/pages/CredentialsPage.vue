@@ -545,7 +545,7 @@ watch(
                 <component :is="statusIcon(app.status)" class="h-3.5 w-3.5" />
                 {{ statusLabel(t, CANDIDATE_APPLICATION_STATUS_LABELS, app.status, 'credentialsPage.appStatusUnknown') }}
               </span>
-              <span class="col-span-2 justify-self-start whitespace-nowrap text-sm text-muted-foreground md:col-span-1 lg:col-start-3">{{ formatBackendDateOnly(applicationActivityTime(app)) || t.common.na }}</span>
+              <span class="col-span-2 justify-self-start whitespace-nowrap text-sm text-muted-foreground md:col-span-1 lg:col-start-3">{{ formatBackendDateOnly(applicationActivityTime(app), lang) || t.common.na }}</span>
               <div class="col-span-2 flex w-full flex-wrap items-center justify-end gap-2 md:col-span-1 md:w-auto md:justify-self-end lg:col-start-4">
                 <button v-if="isPendingUploadStatus(app.status) || canResubmit(app.status)" class="btn btn-primary h-9 cursor-pointer whitespace-nowrap rounded-lg py-1 text-sm shadow-sm shadow-primary/20" @click="handleApplyClick(definitionForApplication(app), canResubmit(app.status) ? applicationId(app) : '')">{{ isPendingUploadStatus(app.status) ? t.credentialsPage.uploadMaterials : t.credentialsPage.resubmitAction }}</button>
                 <button
@@ -632,7 +632,7 @@ watch(
               </div>
               <div class="rounded-lg bg-slate-50 px-4 py-3">
                 <div class="text-xs font-medium text-slate-500">{{ t.credentialsPage.applicationSubmittedAt }}</div>
-                <div class="mt-1 text-sm font-semibold text-slate-900">{{ formatBackendDateOnly(selectedApplicationDetail?.created_at) || t.common.na }}</div>
+                <div class="mt-1 text-sm font-semibold text-slate-900">{{ formatBackendDateOnly(selectedApplicationDetail?.created_at, lang) || t.common.na }}</div>
               </div>
             </div>
 

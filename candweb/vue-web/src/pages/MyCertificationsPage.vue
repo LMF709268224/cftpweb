@@ -42,8 +42,8 @@ function mapCandidatePipeline(pipeline: any): CandidatePipelineCard {
     progress: pipeline?.progress_available ? Math.round(Number(pipeline.progress)) : undefined,
     progressAvailable: Boolean(pipeline?.progress_available),
     statusValue: pipeline?.status,
-    startedAt: formatBackendDate(pipeline?.started_at),
-    completedAt: formatBackendDate(pipeline?.completed_at),
+    startedAt: String(pipeline?.started_at || ""),
+    completedAt: String(pipeline?.completed_at || ""),
   }
 }
 
@@ -159,8 +159,8 @@ watch(lang, () => {
 
               <div v-if="course.currentStage || course.startedAt || course.completedAt" class="my-certification-meta mt-5 flex flex-wrap gap-x-4 gap-y-2 text-sm text-muted-foreground">
                 <span v-if="course.currentStage">{{ t.courses.stage }}: {{ course.currentStage }}</span>
-                <span v-if="course.startedAt">{{ copy.startedAt }}: {{ course.startedAt }}</span>
-                <span v-if="course.completedAt">{{ copy.completedAt }}: {{ course.completedAt }}</span>
+                <span v-if="course.startedAt">{{ copy.startedAt }}: {{ formatBackendDate(course.startedAt, lang) }}</span>
+                <span v-if="course.completedAt">{{ copy.completedAt }}: {{ formatBackendDate(course.completedAt, lang) }}</span>
               </div>
             </div>
 

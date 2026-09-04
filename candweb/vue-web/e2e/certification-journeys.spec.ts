@@ -1395,10 +1395,10 @@ test("资格申请记录详情显示完整审核备注和已上传文件", async
     const viewDetailsButtons = page.getByRole("button", { name: "查看详情", exact: true })
     await expect(viewDetailsButtons).toHaveCount(1)
     const pendingUploadRow = page.locator(".application-row").filter({ has: page.getByText("Pending Upload Qualification", { exact: true }) })
-    await expect(pendingUploadRow).toContainText("29 Aug 2026")
+    await expect(pendingUploadRow).toContainText("2026年8月29日")
     await expect(pendingUploadRow.getByRole("button", { name: "查看详情", exact: true })).toHaveCount(0)
     const approvedRow = page.locator(".application-row").filter({ has: page.getByText("Approved Qualification", { exact: true }) })
-    await expect(approvedRow).toContainText("30 Aug 2026")
+    await expect(approvedRow).toContainText("2026年8月30日")
     const viewDetailsButton = page.locator("[data-testid='application-view-details']")
     await viewDetailsButton.click()
 
@@ -1412,6 +1412,10 @@ test("资格申请记录详情显示完整审核备注和已上传文件", async
     await applicationDetailDialog.getByTestId("application-detail-close").click()
     await expect(applicationDetailDialog).toBeHidden()
     await expect(viewDetailsButton).toBeFocused()
+    await page.getByRole("button", { name: "中文 / EN" }).click()
+    await expect(page.getByText("Created / Updated", { exact: true })).toBeVisible()
+    await expect(pendingUploadRow).toContainText("29 Aug 2026")
+    await expect(approvedRow).toContainText("30 Aug 2026")
 })
 
 test("免考选择完成后按资格创建独立订单", async ({ page }) => {

@@ -188,7 +188,7 @@ onBeforeUnmount(() => revealObserver?.disconnect())
               <RouterLink v-else :to="`/gfi${post.slug}`" :aria-label="post.title"><img :src="post.image" :alt="post.title" loading="lazy" decoding="async"></RouterLink>
             </div>
             <div class="post-copy">
-              <div class="post-meta"><span>{{ formatBackendDateOnly(post.date) }}</span><i></i><b>{{ visibleCategory(post) }}</b></div>
+              <div class="post-meta"><span>{{ formatBackendDateOnly(post.date, lang) }}</span><i></i><b>{{ visibleCategory(post) }}</b></div>
               <h2>{{ post.title }}</h2>
               <p>{{ post.description }}</p>
               <a v-if="kind !== 'news'" href="/marketplace" target="_blank" rel="noopener noreferrer">Access Full Report <ArrowUpRight /></a>

@@ -503,7 +503,7 @@ onBeforeUnmount(() => {
               <img :src="story.image" :alt="story.name" loading="lazy" decoding="async" />
               <div class="story-overlay">
                 <h3>{{ story.name }}</h3>
-                <p>{{ formatBackendDateOnly(story.date) }} <span /> #{{ copy.storyTag }}</p>
+                <p>{{ formatBackendDateOnly(story.date, lang) }} <span /> #{{ copy.storyTag }}</p>
                 <RouterLink :to="story.path">{{ copy.readStory }} <ArrowUpRight /></RouterLink>
               </div>
             </article>
@@ -550,7 +550,7 @@ onBeforeUnmount(() => {
             <article v-for="item in news" :key="item.title" class="news-card" data-reveal>
               <div class="news-image"><img :src="item.image" :alt="item.title" loading="lazy" decoding="async" /></div>
               <div class="news-copy">
-                <p>{{ formatBackendDateOnly(item.date) }} <span /> #{{ copy.newsTag }}</p>
+                <p>{{ formatBackendDateOnly(item.date, lang) }} <span /> #{{ copy.newsTag }}</p>
                 <h3>{{ item.title }}</h3>
                 <div class="news-description">{{ item.description }}</div>
                 <RouterLink :to="item.path">{{ copy.readMore }} <ArrowUpRight /></RouterLink>

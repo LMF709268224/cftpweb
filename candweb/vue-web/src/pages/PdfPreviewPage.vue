@@ -13,7 +13,7 @@ const ANNOTATION_STORAGE_VERSION = 1
 
 const route = useRoute()
 const router = useRouter()
-const { t } = useTranslation()
+const { t, lang } = useTranslation()
 const { currentUser, fetchUser } = useUser()
 const viewerSrc = ref("")
 const loading = ref(false)
@@ -260,7 +260,7 @@ async function setupAnnotationPersistence(registry: any) {
 }
 
 function formatPreviewDate(value: string) {
-  return formatBackendDate(value)
+  return formatBackendDate(value, lang.value)
 }
 
 async function loadPdf() {
