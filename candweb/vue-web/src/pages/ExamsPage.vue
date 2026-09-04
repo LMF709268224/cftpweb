@@ -498,7 +498,7 @@ onBeforeUnmount(() => {
         <h3 class="mb-2 text-lg font-semibold text-foreground">{{ emptyCopy[activeTab].title }}</h3>
         <p class="max-w-md text-muted-foreground">{{ emptyCopy[activeTab].description }}</p>
         <RouterLink to="/certifications" class="btn btn-primary mt-5 rounded-lg shadow-sm shadow-primary/20">
-          {{ t.courses.browseCoursesBtn }}
+          {{ t.examsPage.browseLearningServices }}
         </RouterLink>
       </div>
       <div v-else class="space-y-4">

@@ -957,6 +957,7 @@ export const en: AppTranslations = {
         resultLoadFailedDesc: "The exam result is temporarily unavailable. Check your connection and try again.",
         noExams: "No exam items yet",
         noExamsDesc: "When a course becomes eligible or the system creates a schedulable exam, it will appear here.",
+        browseLearningServices: "Explore Learning & Certification Services",
         noHistory: "No exam history yet",
         noHistoryDesc: "After exams are completed, your history and pass status will appear here.",
         noExemption: "No exemption records yet",
