@@ -1364,8 +1364,8 @@ test("资格申请记录详情显示完整审核备注和已上传文件", async
                             credential_category: "Exemption",
                             status: "APPLICATION_STATUS_APPROVED",
                             audit_remark: auditRemark,
-                            audit_at: "2026-08-30T00:00:00Z",
-                            created_at: "2026-08-29T00:00:00Z",
+                            audit_at: "2026-08-30T12:34:56Z",
+                            created_at: "2026-08-29T12:23:45Z",
                         },
                     ],
                     total: 2,
@@ -1378,7 +1378,8 @@ test("资格申请记录详情显示完整审核备注和已上传文件", async
                     app_ulid: "application-with-audit-remark",
                     status: "APPLICATION_STATUS_APPROVED",
                     audit_remark: "",
-                    created_at: "2026-08-29T00:00:00Z",
+                    audit_at: "2026-08-30T12:34:56Z",
+                    created_at: "2026-08-29T12:23:45Z",
                     files: [{
                         file_hash: "evidence-file-hash",
                         file_name: "employment-evidence.pdf",
@@ -1412,6 +1413,9 @@ test("资格申请记录详情显示完整审核备注和已上传文件", async
     const applicationDetailDialog = page.getByTestId("application-detail-dialog")
     await expect(applicationDetailDialog).toBeVisible()
     await expect(applicationDetailDialog.getByText("Approved Qualification", { exact: true })).toBeVisible()
+    await expect(applicationDetailDialog.getByTestId("application-submitted-at")).toHaveText(/^2026年8月29日 \d{2}:23:45$/)
+    await expect(applicationDetailDialog.getByText("管理员操作时间", { exact: true })).toBeVisible()
+    await expect(applicationDetailDialog.getByTestId("application-admin-action-at")).toHaveText(/^2026年8月30日 \d{2}:34:56$/)
     await expect(applicationDetailDialog.getByTestId("application-audit-remark-content")).toHaveText(auditRemark)
     await expect(applicationDetailDialog.getByText("employment-evidence.pdf", { exact: true })).toBeVisible()
     await expect(applicationDetailDialog.getByRole("link", { name: "预览", exact: true })).toHaveAttribute("href", fileURL)
