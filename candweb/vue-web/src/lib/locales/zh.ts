@@ -955,6 +955,7 @@ export const zh = {
         resultLoadFailedDesc: "暂时无法获取考试结果，请检查网络后重试。",
         noExams: "暂无待考试项",
         noExamsDesc: "当课程满足考试条件或系统生成可预约考试时，这里会显示待考试列表。",
+        browseLearningServices: "去学习与认证服务看看",
         noHistory: "暂无考试记录",
         noHistoryDesc: "完成考试后，这里会显示你的历史成绩与通过状态。",
         noExemption: "暂无免考记录",
