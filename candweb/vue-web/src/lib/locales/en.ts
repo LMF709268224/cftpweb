@@ -196,7 +196,7 @@ export const en: AppTranslations = {
     sidebar: {
         menu: "Menu",
         home: "Dashboard",
-        courses: "Learning & Certification Services",
+        courses: "Learning & Certification",
         myCertifications: "My Certification Exams",
         membership: "Membership",
         exams: "Exams",
