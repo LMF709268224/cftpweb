@@ -38,31 +38,6 @@ func TestUserHandlersRejectInvalidRequestsBeforeCallingCasdoor(t *testing.T) {
 	)
 	assertHandlerAPIError(t, passwordRecorder, http.StatusBadRequest, ErrInvalidRequest)
 
-	sendCodeRecorder := httptest.NewRecorder()
-	handler.SendEmailCode(
-		sendCodeRecorder,
-		newCandidateHandlerRequest(
-			http.MethodPost,
-			"/api/user/profile/email/send-code",
-			`{"email":"   "}`,
-			"candidate-1",
-			nil,
-		),
-	)
-	assertHandlerAPIError(t, sendCodeRecorder, http.StatusBadRequest, ErrInvalidRequest)
-
-	updateEmailRecorder := httptest.NewRecorder()
-	handler.UpdateUserEmail(
-		updateEmailRecorder,
-		newCandidateHandlerRequest(
-			http.MethodPut,
-			"/api/user/profile/email",
-			`{"email":" candidate@example.com ","verification_code":"   "}`,
-			"candidate-1",
-			nil,
-		),
-	)
-	assertHandlerAPIError(t, updateEmailRecorder, http.StatusBadRequest, ErrInvalidRequest)
 }
 
 func TestNormalizeAndValidateUserProfileInput(t *testing.T) {

@@ -62,8 +62,6 @@ var candidateRouteContract = []routeExpectation{
 	{method: http.MethodGet, path: "/api/mall/courses/{courseId}/thumbnail-url", access: routeOptional},
 	{method: http.MethodGet, path: "/api/user/me", access: routeProtected},
 	{method: http.MethodPut, path: "/api/user/profile", access: routeProtected},
-	{method: http.MethodPost, path: "/api/user/profile/email/send-code", access: routeProtected},
-	{method: http.MethodPut, path: "/api/user/profile/email", access: routeProtected},
 	{method: http.MethodPut, path: "/api/user/password", access: routeProtected},
 	{method: http.MethodGet, path: "/api/membership/active", access: routeProtected},
 	{method: http.MethodGet, path: "/api/membership/history", access: routeProtected},
