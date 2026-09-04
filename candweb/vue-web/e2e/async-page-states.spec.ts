@@ -26,11 +26,11 @@ const asyncPageCases: AsyncPageCase[] = [
     successData: { bundles: [] },
   },
   {
-    name: "我的认证",
+    name: "我的认证考试",
     path: "/my-certifications",
     endpoint: "/api/pipeline",
     errorTitle: "认证信息加载失败",
-    successTitle: "还没有购买认证",
+    successTitle: "还没有报名认证考试",
     successData: { list: [] },
   },
   {
