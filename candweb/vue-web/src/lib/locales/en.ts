@@ -1169,6 +1169,7 @@ export const en: AppTranslations = {
         applicationDetails: "Application Details",
         applicationStatus: "Application Status",
         applicationSubmittedAt: "Submitted At",
+        applicationAdminActionAt: "Admin Action At",
         noAuditRemark: "No review remark yet.",
         uploadedFiles: "Uploaded Files",
         uploadedFile: "Application file",

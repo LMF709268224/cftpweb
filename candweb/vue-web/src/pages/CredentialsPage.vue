@@ -12,7 +12,7 @@ import { apiClient } from "@/lib/apiClient"
 import { useBodyScrollLock } from "@/lib/bodyScrollLock"
 import { candidateVisibleCredentialDefinitions } from "@/lib/credentialDefinitions"
 import { useDialogAccessibility } from "@/lib/dialogAccessibility"
-import { formatBackendDateOnly } from "@/lib/utils"
+import { formatBackendDate, formatBackendDateOnly } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
 import { toast } from "vue-sonner"
 
@@ -628,7 +628,11 @@ watch(
               </div>
               <div class="rounded-lg bg-slate-50 px-4 py-3">
                 <div class="text-xs font-medium text-slate-500">{{ t.credentialsPage.applicationSubmittedAt }}</div>
-                <div class="mt-1 text-sm font-semibold text-slate-900">{{ formatBackendDateOnly(selectedApplicationDetail?.created_at, lang) || t.common.na }}</div>
+                <div class="mt-1 text-sm font-semibold text-slate-900" data-testid="application-submitted-at">{{ formatBackendDate(selectedApplicationDetail?.created_at, lang) || t.common.na }}</div>
+              </div>
+              <div v-if="selectedApplicationDetail?.audit_at" class="rounded-lg bg-slate-50 px-4 py-3 sm:col-span-2">
+                <div class="text-xs font-medium text-slate-500">{{ t.credentialsPage.applicationAdminActionAt }}</div>
+                <div class="mt-1 text-sm font-semibold text-slate-900" data-testid="application-admin-action-at">{{ formatBackendDate(selectedApplicationDetail.audit_at, lang) }}</div>
               </div>
             </div>
 

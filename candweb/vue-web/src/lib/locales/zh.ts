@@ -1167,6 +1167,7 @@ export const zh = {
         applicationDetails: "申请详情",
         applicationStatus: "申请状态",
         applicationSubmittedAt: "提交时间",
+        applicationAdminActionAt: "管理员操作时间",
         noAuditRemark: "暂无审核备注",
         uploadedFiles: "已上传文件",
         uploadedFile: "申请材料",
