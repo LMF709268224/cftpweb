@@ -1244,14 +1244,44 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
         buffer: Buffer.from("pdf-content"),
     })
     await expect(page.getByText("employment-certificate.pdf 上传成功", { exact: true })).toBeVisible()
+    await expect(qualificationCard.getByRole("link", { name: "预览", exact: true })).toHaveAttribute("href", /^blob:/)
+
+    const fileChooserPromise = page.waitForEvent("filechooser")
+    await qualificationCard.getByRole("button", { name: "更换", exact: true }).click()
+    const fileChooser = await fileChooserPromise
+    await fileChooser.setFiles({
+        name: "replacement-certificate.pdf",
+        mimeType: "application/pdf",
+        buffer: Buffer.from("replacement-pdf-content"),
+    })
+    await expect(page.getByText("replacement-certificate.pdf 上传成功", { exact: true })).toBeVisible()
+
+    await qualificationCard.getByRole("button", { name: "删除", exact: true }).click()
+    await expect(page.getByText("replacement-certificate.pdf 上传成功", { exact: true })).toHaveCount(0)
+    await page.getByRole("button", { name: "提交申请", exact: true }).click()
+    await expect(page.getByText("请先上传所有必填证明材料后再提交", { exact: true })).toBeVisible()
+    expect(submitRequest).toBeUndefined()
+
+    await page.locator(`[id="qualification-file-${unitID}-Employment Certificate"]`).setInputFiles({
+        name: "employment-certificate.pdf",
+        mimeType: "application/pdf",
+        buffer: Buffer.from("pdf-content"),
+    })
+    await expect(page.getByText("employment-certificate.pdf 上传成功", { exact: true })).toBeVisible()
     const initialApplicationOrderRequests = applicationOrderRequests
     await page.getByRole("button", { name: "提交申请", exact: true }).click()
+    const submitConfirmDialog = page.getByTestId("checkout-qualification-submit-confirm-dialog")
+    await expect(submitConfirmDialog.getByText("提交后申请将进入审核，审核期间无法修改或删除已上传材料。请确认材料无误后再提交。", { exact: true })).toBeVisible()
+    await submitConfirmDialog.getByRole("button", { name: "取消", exact: true }).click()
+    expect(submitRequest).toBeUndefined()
+    await page.getByRole("button", { name: "提交申请", exact: true }).click()
+    await submitConfirmDialog.getByRole("button", { name: "确认提交", exact: true }).click()
 
     expect(uploadRequest.file_usage).toBe("Employment Certificate")
     expect(submitRequest.files).toHaveLength(1)
     expect(submitRequest.files[0].file_usage).toBe("Employment Certificate")
     await expect.poll(() => applicationOrderRequests).toBeGreaterThan(initialApplicationOrderRequests)
-    await expect(qualificationCard).toContainText("免考证明材料已提交，请等待管理员审核；审核通过后系统将自动应用免考。")
+    await expect(qualificationCard).toContainText("材料已提交，正在审核。")
     await expect(qualificationCard).not.toContainText("资格申请已创建，请在下方上传材料。")
     await page.getByTestId("checkout-selection-next").click()
     await expect(page.getByText("“Template Application Course”的免考申请正在审核中，请等待审核结果。", { exact: true })).toBeVisible()

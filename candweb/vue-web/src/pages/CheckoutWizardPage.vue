@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
-import { ArrowLeft, ArrowRight, ClipboardList, ExternalLink, Eye, FileText, Loader2, Send, CheckCircle2, CircleAlert, Clock, UploadCloud, X } from "lucide-vue-next"
+import { ArrowLeft, ArrowRight, ClipboardList, ExternalLink, Eye, FileText, Loader2, RefreshCw, Send, CheckCircle2, CircleAlert, Clock, Trash2, UploadCloud, X } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import CredentialAttachmentList from "@/components/CredentialAttachmentList.vue"
 import LocalizedDatePicker from "@/components/LocalizedDatePicker.vue"
@@ -76,9 +76,19 @@ const qualificationOrderTargetUnitId = ref("")
 const qualificationApplications = ref<Record<string, any>>({})
 const qualificationDefinitions = ref<Record<string, any>>({})
 const expandedQualificationUnitIds = ref<Record<string, boolean>>({})
-const qualificationUploadedFiles = ref<Record<string, Record<string, { name: string; url: string; ext: string; hash: string; size: number }>>>({})
+type QualificationUploadedFile = {
+  name: string
+  url: string
+  ext: string
+  hash: string
+  size: number
+  previewUrl: string
+}
+
+const qualificationUploadedFiles = ref<Record<string, Record<string, QualificationUploadedFile>>>({})
 const qualificationUploadingKey = ref("")
 const qualificationSubmittingUnitId = ref("")
+const qualificationSubmitConfirmUnit = ref<any | null>(null)
 const qualificationFilesDialogOpen = ref(false)
 const qualificationFilesLoading = ref(false)
 const qualificationFilesLoadFailed = ref(false)
@@ -1067,6 +1077,9 @@ function stopPolling() {
 
 onUnmounted(() => {
   stopPolling()
+  Object.values(qualificationUploadedFiles.value).forEach((files) => {
+    Object.values(files).forEach((file) => URL.revokeObjectURL(file.previewUrl))
+  })
 })
 
 watch([qualificationApplications, currentStep], checkPolling, { deep: true })
@@ -1143,6 +1156,28 @@ function qualificationFilesForUnit(unitId: string) {
   return qualificationUploadedFiles.value[unitId] || {}
 }
 
+function clearQualificationFilesForUnit(unitId: string) {
+  Object.values(qualificationFilesForUnit(unitId)).forEach((file) => URL.revokeObjectURL(file.previewUrl))
+  qualificationUploadedFiles.value = {
+    ...qualificationUploadedFiles.value,
+    [unitId]: {},
+  }
+}
+
+function removeQualificationFile(unitId: string, constraintName: string) {
+  const files = qualificationFilesForUnit(unitId)
+  const file = files[constraintName]
+  if (!file) return
+
+  URL.revokeObjectURL(file.previewUrl)
+  const nextFiles = { ...files }
+  delete nextFiles[constraintName]
+  qualificationUploadedFiles.value = {
+    ...qualificationUploadedFiles.value,
+    [unitId]: nextFiles,
+  }
+}
+
 async function loadQualificationDefinition(qualId: string) {
   if (qualificationDefinitions.value[qualId]) return qualificationDefinitions.value[qualId]
   const response = await apiClient(`/api/credentials/definitions?qual_ulids=${encodeURIComponent(qualId)}`)
@@ -1189,10 +1224,7 @@ async function selectQualificationForUnit(unit: any, qualificationId: unknown) {
     ...selectedQualificationIdsByUnit.value,
     [unitId]: qualId,
   }
-  qualificationUploadedFiles.value = {
-    ...qualificationUploadedFiles.value,
-    [unitId]: {},
-  }
+  clearQualificationFilesForUnit(unitId)
   try {
     await openQualificationEditor(unit, qualId)
   } catch (error) {
@@ -1283,6 +1315,8 @@ async function uploadQualificationFile(unit: any, constraint: any, file: File) {
     if (!uploadResponse.ok) {
       throw new Error(`S3 upload failed: ${uploadResponse.status} ${uploadResponse.statusText}`)
     }
+    const previousFile = qualificationFilesForUnit(unitId)[constraintName]
+    if (previousFile) URL.revokeObjectURL(previousFile.previewUrl)
     qualificationUploadedFiles.value = {
       ...qualificationUploadedFiles.value,
       [unitId]: {
@@ -1293,6 +1327,7 @@ async function uploadQualificationFile(unit: any, constraint: any, file: File) {
           ext: fileExt,
           hash: fileHash,
           size: file.size,
+          previewUrl: URL.createObjectURL(file),
         },
       },
     }
@@ -1304,11 +1339,10 @@ async function uploadQualificationFile(unit: any, constraint: any, file: File) {
   }
 }
 
-async function submitQualificationApplication(unit: any) {
+function requestQualificationApplicationSubmit(unit: any) {
   const unitId = String(unit?.unit_id || "")
   const qualId = selectedQualificationIdForUnit(unit)
-  const definition = qualificationDefinitionForUnit(unit)
-  const constraints = definition?.file_constraints
+  const constraints = qualificationDefinitionForUnit(unit)?.file_constraints
   const uploadedFiles = qualificationFilesForUnit(unitId)
   if (!unitId || !qualId || !Array.isArray(constraints)) {
     toast.error(t.value.credentialsPage.materialRequirementsUnavailable)
@@ -1318,6 +1352,35 @@ async function submitQualificationApplication(unit: any) {
     || constraints.some((constraint: any) => constraint.is_required && !uploadedFiles[constraint.name])) {
     toast.error(t.value.credentialsPage.requiredMaterialsMissing)
     return
+  }
+  qualificationSubmitConfirmUnit.value = unit
+}
+
+function closeQualificationSubmitConfirmDialog() {
+  if (qualificationSubmittingUnitId.value) return
+  qualificationSubmitConfirmUnit.value = null
+}
+
+async function confirmQualificationApplicationSubmit() {
+  const unit = qualificationSubmitConfirmUnit.value
+  if (!unit || qualificationSubmittingUnitId.value) return
+  if (await submitQualificationApplication(unit)) qualificationSubmitConfirmUnit.value = null
+}
+
+async function submitQualificationApplication(unit: any): Promise<boolean> {
+  const unitId = String(unit?.unit_id || "")
+  const qualId = selectedQualificationIdForUnit(unit)
+  const definition = qualificationDefinitionForUnit(unit)
+  const constraints = definition?.file_constraints
+  const uploadedFiles = qualificationFilesForUnit(unitId)
+  if (!unitId || !qualId || !Array.isArray(constraints)) {
+    toast.error(t.value.credentialsPage.materialRequirementsUnavailable)
+    return false
+  }
+  if (Object.keys(uploadedFiles).length === 0
+    || constraints.some((constraint: any) => constraint.is_required && !uploadedFiles[constraint.name])) {
+    toast.error(t.value.credentialsPage.requiredMaterialsMissing)
+    return false
   }
 
   const evidenceFiles = Object.keys(uploadedFiles).map((constraintName) => ({
@@ -1347,19 +1410,18 @@ async function submitQualificationApplication(unit: any) {
     }
     toast.success(t.value.credentialsPage.submitSuccess)
     closeQualificationEditor(unitId)
-    qualificationUploadedFiles.value = {
-      ...qualificationUploadedFiles.value,
-      [unitId]: {},
-    }
+    clearQualificationFilesForUnit(unitId)
     await refreshQualificationApplications()
     try {
       await refreshActiveCredentialApplicationOrder()
     } catch (error) {
       console.warn("Failed to refresh qualification order after material submission", error)
     }
+    return true
   } catch (error) {
     console.error(error)
     toast.error(t.value.credentialsPage.submitFailed)
+    return false
   } finally {
     qualificationSubmittingUnitId.value = ""
   }
@@ -1587,6 +1649,7 @@ async function setExemptionDecision(unit: any, decision: "exempt" | "waive") {
     closeQualificationEditor(unitId)
     const nextQualificationSelections = { ...selectedQualificationIdsByUnit.value }
     const nextUploadedFiles = { ...qualificationUploadedFiles.value }
+    Object.values(nextUploadedFiles[unitId] || {}).forEach((file) => URL.revokeObjectURL(file.previewUrl))
     delete nextQualificationSelections[unitId]
     delete nextUploadedFiles[unitId]
     selectedQualificationIdsByUnit.value = nextQualificationSelections
@@ -2520,7 +2583,7 @@ function closePaymentEditDialog() {
                               <span>{{ qualificationConstraintDisplayName(constraint) }}</span>
                             </div>
                             <p class="mt-1 text-xs text-slate-500">{{ qualificationFormatHint(constraint) }}</p>
-                            <div v-if="canUploadQualificationForUnit(unit)" class="mt-3 flex flex-wrap items-center gap-3">
+                            <div v-if="canUploadQualificationForUnit(unit) && !qualificationFilesForUnit(unit.unit_id)[constraint.name]" class="mt-3 flex flex-wrap items-center gap-3">
                               <button
                                 type="button"
                                 class="btn btn-outline h-9 rounded-lg px-3 text-xs"
@@ -2540,21 +2603,54 @@ function closePaymentEditDialog() {
                               >
                                 {{ qualificationFilesForUnit(unit.unit_id)[constraint.name]?.name || t.credentialsPage.noFileChosen }}
                               </span>
-                              <input
-                                :id="qualificationConstraintInputId(unit.unit_id, constraint.name)"
-                                type="file"
-                                class="hidden"
-                                :accept="getFileConstraintInfo(constraint.type).acceptStr"
-                                @change="onQualificationFileChange($event, unit, constraint)"
-                              />
                             </div>
-                            <p
+                            <input
+                              :id="qualificationConstraintInputId(unit.unit_id, constraint.name)"
+                              type="file"
+                              class="hidden"
+                              :accept="getFileConstraintInfo(constraint.type).acceptStr"
+                              @change="onQualificationFileChange($event, unit, constraint)"
+                            />
+                            <div
                               v-if="qualificationFilesForUnit(unit.unit_id)[constraint.name]"
-                              class="mt-3 flex items-center gap-1 text-xs font-medium text-emerald-600"
+                              class="mt-3 flex flex-col gap-3 rounded-lg border border-emerald-200 bg-emerald-50/60 p-3 sm:flex-row sm:items-center sm:justify-between"
                             >
-                              <CheckCircle2 class="h-3.5 w-3.5" />
-                              {{ qualificationUploadSuccessText(qualificationFilesForUnit(unit.unit_id)[constraint.name].name) }}
-                            </p>
+                              <p class="flex min-w-0 items-center gap-1 text-xs font-medium text-emerald-700">
+                                <CheckCircle2 class="h-3.5 w-3.5 shrink-0" />
+                                <span class="truncate" :title="qualificationFilesForUnit(unit.unit_id)[constraint.name].name">
+                                  {{ qualificationUploadSuccessText(qualificationFilesForUnit(unit.unit_id)[constraint.name].name) }}
+                                </span>
+                              </p>
+                              <div class="flex shrink-0 flex-wrap gap-2">
+                                <a
+                                  :href="qualificationFilesForUnit(unit.unit_id)[constraint.name].previewUrl"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  class="inline-flex h-8 items-center gap-1 rounded-lg border border-emerald-300 bg-white px-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100"
+                                >
+                                  <Eye class="h-3.5 w-3.5" />
+                                  {{ t.credentialsPage.previewFile }}
+                                </a>
+                                <button
+                                  type="button"
+                                  class="inline-flex h-8 items-center gap-1 rounded-lg border border-blue-200 bg-white px-2.5 text-xs font-bold text-blue-700 hover:bg-blue-50"
+                                  :disabled="Boolean(qualificationUploadingKey) || qualificationSubmittingUnitId === unit.unit_id"
+                                  @click="triggerQualificationFileInput(unit.unit_id, constraint.name)"
+                                >
+                                  <RefreshCw class="h-3.5 w-3.5" />
+                                  {{ t.credentialsPage.replaceFile }}
+                                </button>
+                                <button
+                                  type="button"
+                                  class="inline-flex h-8 items-center gap-1 rounded-lg border border-rose-200 bg-white px-2.5 text-xs font-bold text-rose-700 hover:bg-rose-50"
+                                  :disabled="Boolean(qualificationUploadingKey) || qualificationSubmittingUnitId === unit.unit_id"
+                                  @click="removeQualificationFile(unit.unit_id, constraint.name)"
+                                >
+                                  <Trash2 class="h-3.5 w-3.5" />
+                                  {{ t.credentialsPage.removeFile }}
+                                </button>
+                              </div>
+                            </div>
                           </div>
                         </div>
 
@@ -2563,7 +2659,7 @@ function closePaymentEditDialog() {
                             type="button"
                             class="btn bg-emerald-600 text-white hover:bg-emerald-700"
                             :disabled="Boolean(qualificationUploadingKey) || qualificationSubmittingUnitId === unit.unit_id"
-                            @click="submitQualificationApplication(unit)"
+                            @click="requestQualificationApplicationSubmit(unit)"
                           >
                             <Loader2 v-if="qualificationSubmittingUnitId === unit.unit_id" class="h-4 w-4 animate-spin" />
                             {{ qualificationSubmittingUnitId === unit.unit_id
@@ -2799,6 +2895,60 @@ function closePaymentEditDialog() {
       </main>
 
       <Teleport to="body">
+        <div v-if="qualificationSubmitConfirmUnit" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
+          <section
+            v-modal-dialog="closeQualificationSubmitConfirmDialog"
+            data-testid="checkout-qualification-submit-confirm-dialog"
+            class="w-full max-w-lg overflow-hidden rounded-lg bg-white shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="checkout-qualification-submit-confirm-title"
+          >
+            <header class="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+              <div class="flex min-w-0 items-start gap-3">
+                <CircleAlert class="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+                <div>
+                  <h2 id="checkout-qualification-submit-confirm-title" class="text-lg font-black text-slate-950">
+                    {{ t.credentialsPage.submitConfirmTitle }}
+                  </h2>
+                  <p class="mt-2 text-sm leading-6 text-slate-600">
+                    {{ t.credentialsPage.submitConfirmDescription }}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50"
+                :aria-label="t.common.close"
+                :disabled="Boolean(qualificationSubmittingUnitId)"
+                @click="closeQualificationSubmitConfirmDialog"
+              >
+                <X class="h-4 w-4" />
+              </button>
+            </header>
+            <footer class="flex flex-col-reverse gap-3 bg-slate-50 px-5 py-4 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                class="inline-flex min-h-10 items-center justify-center rounded-lg border border-slate-300 bg-white px-4 font-bold text-slate-700 hover:bg-slate-100"
+                :disabled="Boolean(qualificationSubmittingUnitId)"
+                @click="closeQualificationSubmitConfirmDialog"
+              >
+                {{ t.common.cancel }}
+              </button>
+              <button
+                type="button"
+                data-testid="checkout-confirm-qualification-submit"
+                class="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 font-bold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                :disabled="Boolean(qualificationSubmittingUnitId)"
+                @click="confirmQualificationApplicationSubmit"
+              >
+                <Loader2 v-if="qualificationSubmittingUnitId" class="h-4 w-4 animate-spin" />
+                {{ qualificationSubmittingUnitId ? t.credentialsPage.submitting : t.credentialsPage.confirmSubmitApplication }}
+              </button>
+            </footer>
+          </section>
+        </div>
+
         <div v-if="qualificationFilesDialogOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
           <section
             v-modal-dialog="closeQualificationFilesDialog"
