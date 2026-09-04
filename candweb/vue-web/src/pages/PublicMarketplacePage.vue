@@ -10,7 +10,6 @@ import { isAuthenticated } from "@/lib/authStorage"
 import { formatCurrencyMinorAmount } from "@/lib/display"
 import { startGfiLogin } from "@/lib/gfiLogin"
 import { useTranslation } from "@/lib/language"
-import { learningUnitDisplayName } from "@/lib/learningUnitNames"
 
 type ProductCategory = "all" | "certification" | "bundle" | "membership"
 
@@ -167,10 +166,7 @@ async function fetchData() {
       const firstStageNames = stages.slice(0, 2).map((stage: any) => stage?.name).filter(Boolean).join(" / ")
       return {
         id: bundle.bundle_id,
-        title: learningUnitDisplayName(
-          certificationDisplayName(bundle.name) || t.value.common.unknownCourse,
-          t.value.checkoutWizard,
-        ),
+        title: certificationDisplayName(bundle.name) || t.value.common.unknownCourse,
         description: String(bundle.description || "").trim() || firstStageNames || `${stages.length} ${t.value.courses.stages} / ${unitCount} ${t.value.courses.units}`,
         provider: bundle.category_tips || t.value.courses.certificationPath,
         image: typeof bundle?.thumbnail_url === "string" ? bundle.thumbnail_url : "",

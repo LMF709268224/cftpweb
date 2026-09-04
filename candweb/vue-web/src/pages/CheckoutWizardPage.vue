@@ -12,7 +12,6 @@ import { ApiClientError, apiClient } from "@/lib/apiClient"
 import { isSystemCredentialDefinition } from "@/lib/credentialDefinitions"
 import { formatCurrencyMinorAmount } from "@/lib/display"
 import { useTranslation } from "@/lib/language"
-import { learningUnitDisplayName } from "@/lib/learningUnitNames"
 import { useUser } from "@/lib/user"
 import {
   CN_CITY_LABELS,
@@ -182,7 +181,7 @@ const purchaseLineItems = computed<PurchaseLineItem[]>(() => {
         const unitId = String(unit?.unit_id || "").trim()
         if (!unitId) continue
         unitDetails.set(unitId, {
-          name: learningUnitDisplayName(unit?.unit_name || unit?.name || unitId, t.value.checkoutWizard) || unitId,
+          name: String(unit?.unit_name || unit?.name || unitId).trim() || unitId,
           stageName,
         })
       }
@@ -1796,10 +1795,7 @@ async function confirmSelectedQualificationApplications() {
 }
 
 function checkoutUnitMessage(template: string, unit: any) {
-  const unitName = learningUnitDisplayName(
-    unit?.unit_name || unit?.name || unit?.unit_id,
-    t.value.checkoutWizard,
-  )
+  const unitName = String(unit?.unit_name || unit?.name || unit?.unit_id || "").trim()
   return template.replace("{{unit}}", unitName)
 }
 
@@ -2341,7 +2337,7 @@ function closePaymentEditDialog() {
                     <div class="checkout-unit-main mb-4">
                       <div class="checkout-unit-id mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{{ unit.unit_id }}</div>
                       <div class="flex items-start justify-between gap-3">
-                        <h3 class="checkout-unit-title min-w-0 text-xl font-bold text-slate-800">{{ learningUnitDisplayName(unit.unit_name || unit.unit_id, t.checkoutWizard) }}</h3>
+                        <h3 class="checkout-unit-title min-w-0 text-xl font-bold text-slate-800">{{ unit.unit_name || unit.unit_id }}</h3>
                         <button
                           v-if="canViewQualificationFiles(unit)"
                           type="button"

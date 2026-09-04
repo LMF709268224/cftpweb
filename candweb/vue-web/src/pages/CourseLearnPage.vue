@@ -46,7 +46,6 @@ import {
   reportsInProgressStagePurchase,
 } from "@/lib/stageOrderRecovery"
 import { useTranslation } from "@/lib/language"
-import { learningUnitDisplayName } from "@/lib/learningUnitNames"
 import { telemetry } from "@/lib/telemetry"
 import { formatBackendDate } from "@/lib/utils"
 import { usePolling } from "@/lib/polling"
@@ -536,10 +535,7 @@ const resourceContentTabs = computed(() => {
     },
   ]
 })
-const certificationTitle = computed(() => learningUnitDisplayName(
-  course.value?.title || runtime.value?.config?.name || t.value.common.unknownCourse,
-  t.value.checkoutWizard,
-))
+const certificationTitle = computed(() => course.value?.title || runtime.value?.config?.name || t.value.common.unknownCourse)
 const courseDescription = computed(() => course.value?.description || t.value.learning.certificationDefaultDesc)
 const courseDescriptionCanExpand = computed(() => courseDescription.value.length > 180)
 const allLessonsMarkedCompleted = computed(() =>

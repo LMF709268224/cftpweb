@@ -759,14 +759,9 @@ test("已持有有效资格的课程自动免考且不可取消", async ({ page 
     const exemptionItem = page.locator(`[data-testid="checkout-included-item"][data-item-id="${unitID}"]`)
     await expect(exemptionItem).toContainText("免考认定费")
     await expect(exemptionItem).toContainText("50")
-    const localizedUnitNames: Record<string, string> = {
-        "unit-foundation": "基础模块（L0）",
-        "unit-finance": "金融模块（L1A）",
-        "unit-fintech": "金融科技模块（L1B）",
-    }
     for (const unit of includedUnits) {
         const item = page.locator(`[data-testid="checkout-included-item"][data-item-id="${unit.unit_id}"]`)
-        await expect(item).toContainText(localizedUnitNames[unit.unit_id])
+        await expect(item).toContainText(unit.name)
         await expect(item).toContainText((unit.amount / 100).toLocaleString("en-US", { maximumFractionDigits: 2 }))
     }
     await expect(page.locator(".checkout-step-one-title")).toContainText("可免考科目与申请")
@@ -783,7 +778,7 @@ test("已持有有效资格的课程自动免考且不可取消", async ({ page 
     await expect(page.locator(".checkout-step-one-title")).toContainText("Exemption-Eligible Subjects & Applications")
     await expect(page.locator(`[data-testid="checkout-included-item"][data-item-id="${pipelineID}"]`))
         .toContainText("Registration Fee (One-Time Charge)")
-    await expect(page.locator(`[data-testid="checkout-included-item"][data-item-id="unit-foundation"]`)).toContainText("L0 Foundation")
+    await expect(page.locator(`[data-testid="checkout-included-item"][data-item-id="unit-foundation"]`)).toContainText("CFtP Foundation Course")
     await expect(page.locator(`[data-testid="checkout-included-item"][data-item-id="unit-finance"]`)).toContainText("L1A Finance")
     await expect(page.locator(`[data-testid="checkout-included-item"][data-item-id="unit-fintech"]`)).toContainText("L1B Fintech")
     await expect(page.locator(".checkout-total")).toContainText("Total Fee")

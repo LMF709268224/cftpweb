@@ -7,7 +7,6 @@ import PaymentSessionDialog from "@/components/PaymentSessionDialog.vue"
 import { ApiClientError, apiClient } from "@/lib/apiClient"
 import { useBodyScrollLock } from "@/lib/bodyScrollLock"
 import { useTranslation } from "@/lib/language"
-import { learningUnitDisplayName } from "@/lib/learningUnitNames"
 import { CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, statusEnumNameForStatus } from "@/lib/status-labels"
 
 type ExemptionQualification = string | {
@@ -156,8 +155,7 @@ function unitIsEligible(unit: StageExemptionUnit) {
 }
 
 function unitLabel(unit: StageExemptionUnit) {
-  const name = firstString(unit.unit_name, unit.name, unit.unit_id, t.value.common.unknown)
-  return learningUnitDisplayName(name, t.value.checkoutWizard)
+  return firstString(unit.unit_name, unit.name, unit.unit_id, t.value.common.unknown)
 }
 
 function formatMoney(amount: number, currency: string) {
