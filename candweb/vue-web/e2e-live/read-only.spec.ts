@@ -6,7 +6,7 @@ test.setTimeout(600_000)
 const portalPages = [
   { path: "/dashboard", heading: "欢迎来到门户" },
   { path: "/certifications", heading: "商城" },
-  { path: "/my-certifications", heading: "我的认证" },
+  { path: "/my-certifications", heading: "我的认证考试" },
   { path: "/exams", heading: "考试" },
   { path: "/records", heading: "档案" },
   { path: "/resource-packs", heading: "资源包" },

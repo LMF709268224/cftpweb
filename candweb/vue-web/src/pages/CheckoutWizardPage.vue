@@ -3194,7 +3194,7 @@ function closePaymentEditDialog() {
   border-radius: 999px;
   color: #078653;
   background: #e2f5eb;
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 700;
 }
 
