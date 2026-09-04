@@ -1357,6 +1357,7 @@ test("资格申请记录详情显示完整审核备注和已上传文件", async
                             credential_category: "Exemption",
                             status: "APPLICATION_STATUS_APPROVED",
                             audit_remark: auditRemark,
+                            audit_at: "2026-08-30T00:00:00Z",
                             created_at: "2026-08-29T00:00:00Z",
                         },
                     ],
@@ -1387,11 +1388,17 @@ test("资格申请记录详情显示完整审核备注和已上传文件", async
 
     await page.goto("/credentials", { waitUntil: "domcontentloaded" })
 
+    await expect(page.getByText("状态", { exact: true })).toBeVisible()
+    await expect(page.getByText("创建/更新时间", { exact: true })).toBeVisible()
+    await expect(page.getByText("操作", { exact: true })).toBeVisible()
     await expect(page.getByText(auditRemark, { exact: true })).toHaveCount(0)
     const viewDetailsButtons = page.getByRole("button", { name: "查看详情", exact: true })
     await expect(viewDetailsButtons).toHaveCount(1)
     const pendingUploadRow = page.locator(".application-row").filter({ has: page.getByText("Pending Upload Qualification", { exact: true }) })
+    await expect(pendingUploadRow).toContainText("29 Aug 2026")
     await expect(pendingUploadRow.getByRole("button", { name: "查看详情", exact: true })).toHaveCount(0)
+    const approvedRow = page.locator(".application-row").filter({ has: page.getByText("Approved Qualification", { exact: true }) })
+    await expect(approvedRow).toContainText("30 Aug 2026")
     const viewDetailsButton = page.locator("[data-testid='application-view-details']")
     await viewDetailsButton.click()
 

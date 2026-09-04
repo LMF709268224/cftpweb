@@ -5,6 +5,7 @@ import { AlertTriangle, ArrowLeft, Calendar, FileText, Loader2, RotateCw } from 
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
 import { useUser } from "@/lib/user"
+import { formatBackendDate } from "@/lib/utils"
 
 const SLOW_PREVIEW_NOTICE_MS =  60 * 1000
 const ANNOTATION_SAVE_DEBOUNCE_MS = 800
@@ -258,27 +259,8 @@ async function setupAnnotationPersistence(registry: any) {
   annotationEventCleanup = normalizeAnnotationEventCleanup(subscription)
 }
 
-function padDatePart(value: number) {
-  return String(value).padStart(2, "0")
-}
-
 function formatPreviewDate(value: string) {
-  if (!value) return ""
-
-  const numericValue = Number(value)
-  const date = Number.isFinite(numericValue) && value.trim() !== ""
-    ? new Date(numericValue < 10000000000 ? numericValue * 1000 : numericValue)
-    : new Date(value)
-
-  if (Number.isNaN(date.getTime())) return value
-
-  const year = date.getFullYear()
-  const month = padDatePart(date.getMonth() + 1)
-  const day = padDatePart(date.getDate())
-  const hours = padDatePart(date.getHours())
-  const minutes = padDatePart(date.getMinutes())
-  const seconds = padDatePart(date.getSeconds())
-  return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`
+  return formatBackendDate(value)
 }
 
 async function loadPdf() {

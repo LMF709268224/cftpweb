@@ -336,11 +336,11 @@ function applicationTitle(app: any) {
 }
 
 function applicationMeta(app: any) {
-  const parts = [
-    app?.credential_category,
-    app?.created_at ? `${t.value.credentialsPage.submittedAt} ${formatBackendDateOnly(app.created_at)}` : "",
-  ].filter(Boolean)
-  return parts.join(" · ") || t.value.credentialsPage.application
+  return app?.credential_category || t.value.credentialsPage.application
+}
+
+function applicationActivityTime(app: any) {
+  return app?.updated_at || app?.audit_at || app?.created_at
 }
 
 function applicationFileURL(file: any) {
@@ -513,11 +513,16 @@ watch(
       </section>
 
       <section>
-        <div class="credentials-applications-header mb-4 flex items-center gap-3 rounded-[16px] bg-white px-4 py-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-          <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <FileText class="h-4 w-4" />
+        <div class="credentials-applications-header mb-4 flex items-center gap-3 rounded-[16px] bg-white px-4 py-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] lg:grid lg:grid-cols-[minmax(280px,2.4fr)_minmax(120px,1fr)_minmax(160px,1fr)_minmax(130px,auto)] lg:gap-x-6">
+          <div class="flex min-w-0 items-center gap-3">
+            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <FileText class="h-4 w-4" />
+            </div>
+            <h2 class="truncate font-semibold text-card-foreground">{{ t.credentialsPage.myApplications }}</h2>
           </div>
-          <h2 class="font-semibold text-card-foreground">{{ t.credentialsPage.myApplications }}</h2>
+          <span class="hidden text-center text-sm font-semibold text-slate-500 lg:block">{{ t.credentialsPage.statusColumn }}</span>
+          <span class="hidden text-sm font-semibold text-slate-500 lg:block">{{ t.credentialsPage.createdUpdatedAtColumn }}</span>
+          <span class="hidden text-right text-sm font-semibold text-slate-500 lg:block">{{ t.credentialsPage.actionsColumn }}</span>
         </div>
         <div v-if="applicationsLoading" class="credentials-applications-state flex items-center justify-center gap-2 rounded-[16px] bg-white py-14 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
           <Loader2 class="h-5 w-5 animate-spin text-primary" />
@@ -531,16 +536,16 @@ watch(
         </div>
         <div v-else class="overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
           <div class="space-y-3 p-3 md:space-y-2 md:p-0">
-            <div v-for="app in applications" :key="applicationId(app) || applicationCredentialDefinitionId(app)" class="application-row grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-3 rounded-xl border border-slate-100 bg-white px-3 py-4 shadow-sm shadow-slate-100/80 transition-colors hover:bg-primary/10 md:items-center md:rounded-none md:border-0 md:px-4 md:shadow-none md:gap-x-6 lg:grid-cols-[minmax(280px,2.4fr)_minmax(120px,1fr)_104px_auto] lg:gap-x-6">
+            <div v-for="app in applications" :key="applicationId(app) || applicationCredentialDefinitionId(app)" class="application-row grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-3 rounded-xl border border-slate-100 bg-white px-3 py-4 shadow-sm shadow-slate-100/80 transition-colors hover:bg-primary/10 md:items-center md:rounded-none md:border-0 md:px-4 md:shadow-none md:gap-x-6 lg:grid-cols-[minmax(280px,2.4fr)_minmax(120px,1fr)_minmax(160px,1fr)_minmax(130px,auto)] lg:gap-x-6">
               <div class="min-w-0 lg:col-span-1">
                 <div class="break-words text-base font-semibold leading-6 text-foreground md:truncate md:font-medium" :title="applicationTitle(app)">{{ applicationTitle(app) }}</div>
                 <div class="mt-1 break-words text-sm leading-5 text-muted-foreground md:truncate" :title="applicationMeta(app)">{{ applicationMeta(app) }}</div>
               </div>
-              <span :class="['inline-flex w-fit min-w-0 items-center justify-center gap-1.5 justify-self-end rounded-full border px-3 py-1 text-xs font-semibold lg:min-w-[88px]', applicationStatusPillClass(app.status)]">
+              <span :class="['inline-flex w-fit min-w-0 items-center justify-center gap-1.5 justify-self-end rounded-full border px-3 py-1 text-xs font-semibold lg:min-w-[88px] lg:justify-self-center', applicationStatusPillClass(app.status)]">
                 <component :is="statusIcon(app.status)" class="h-3.5 w-3.5" />
                 {{ statusLabel(t, CANDIDATE_APPLICATION_STATUS_LABELS, app.status, 'credentialsPage.appStatusUnknown') }}
               </span>
-              <span class="col-span-2 justify-self-start whitespace-nowrap text-sm text-muted-foreground md:col-span-1 lg:col-start-3">{{ formatBackendDateOnly(app.created_at) || t.common.na }}</span>
+              <span class="col-span-2 justify-self-start whitespace-nowrap text-sm text-muted-foreground md:col-span-1 lg:col-start-3">{{ formatBackendDateOnly(applicationActivityTime(app)) || t.common.na }}</span>
               <div class="col-span-2 flex w-full flex-wrap items-center justify-end gap-2 md:col-span-1 md:w-auto md:justify-self-end lg:col-start-4">
                 <button v-if="isPendingUploadStatus(app.status) || canResubmit(app.status)" class="btn btn-primary h-9 cursor-pointer whitespace-nowrap rounded-lg py-1 text-sm shadow-sm shadow-primary/20" @click="handleApplyClick(definitionForApplication(app), canResubmit(app.status) ? applicationId(app) : '')">{{ isPendingUploadStatus(app.status) ? t.credentialsPage.uploadMaterials : t.credentialsPage.resubmitAction }}</button>
                 <button

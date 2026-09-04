@@ -857,11 +857,11 @@ onBeforeUnmount(() => {
                 </div>
                 <div class="grid gap-1 py-3 sm:grid-cols-[140px_1fr] sm:gap-4">
                   <dt class="text-xs font-semibold text-slate-500">{{ t.orders.detailPaidAt }}</dt>
-                  <dd class="break-words text-sm font-semibold text-slate-950">{{ selectedOrderDetail.paid_at || "-" }}</dd>
+                  <dd class="break-words text-sm font-semibold text-slate-950">{{ formatBackendDateMinute(selectedOrderDetail.paid_at) || "-" }}</dd>
                 </div>
                 <div class="grid gap-1 py-3 sm:grid-cols-[140px_1fr] sm:gap-4">
                   <dt class="text-xs font-semibold text-slate-500">{{ t.orders.detailCreatedAt }}</dt>
-                  <dd class="break-words text-sm font-semibold text-slate-950">{{ selectedOrderDetail.summary?.created_at || "-" }}</dd>
+                  <dd class="break-words text-sm font-semibold text-slate-950">{{ formatBackendDateMinute(selectedOrderDetail.summary?.created_at) || "-" }}</dd>
                 </div>
               </dl>
             </section>

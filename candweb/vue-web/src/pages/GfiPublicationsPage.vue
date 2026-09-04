@@ -7,6 +7,7 @@ import GfiHeader from "@/components/GfiHeader.vue"
 import GfiLineBackground from "@/components/GfiLineBackground.vue"
 import publicationSource from "@/lib/gfiPublicationPosts.json"
 import { useTranslation } from "@/lib/language"
+import { formatBackendDateOnly } from "@/lib/utils"
 
 type PublicationKind = "reports" | "insights" | "news"
 type PublicationPost = {
@@ -108,10 +109,6 @@ const journals = [
   },
 ]
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" }).format(new Date(value))
-}
-
 function visibleCategory(post: PublicationPost) {
   const category = post.categories.find((item) => !item.startsWith("#"))
   if (category) return `#${category}`
@@ -191,7 +188,7 @@ onBeforeUnmount(() => revealObserver?.disconnect())
               <RouterLink v-else :to="`/gfi${post.slug}`" :aria-label="post.title"><img :src="post.image" :alt="post.title" loading="lazy" decoding="async"></RouterLink>
             </div>
             <div class="post-copy">
-              <div class="post-meta"><span>{{ formatDate(post.date) }}</span><i></i><b>{{ visibleCategory(post) }}</b></div>
+              <div class="post-meta"><span>{{ formatBackendDateOnly(post.date) }}</span><i></i><b>{{ visibleCategory(post) }}</b></div>
               <h2>{{ post.title }}</h2>
               <p>{{ post.description }}</p>
               <a v-if="kind !== 'news'" href="/marketplace" target="_blank" rel="noopener noreferrer">Access Full Report <ArrowUpRight /></a>
