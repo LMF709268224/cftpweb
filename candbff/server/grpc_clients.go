@@ -10,7 +10,6 @@ import (
 	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
 	gexampb "github.com/afnandelfin620-star/cftptest/cftp/gexam"
 	lmspb "github.com/afnandelfin620-star/cftptest/cftp/glms"
-	gmailpb "github.com/afnandelfin620-star/cftptest/cftp/gmail"
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
 	gmbrpb "github.com/afnandelfin620-star/cftptest/cftp/gmbr"
 	gmidpb "github.com/afnandelfin620-star/cftptest/cftp/gmid"
@@ -35,7 +34,6 @@ type GrpcClientPool struct {
 	gmidConn  *grpc.ClientConn
 	gpayConn  *grpc.ClientConn
 	gmbrConn  *grpc.ClientConn
-	gmailConn *grpc.ClientConn
 
 	// gRPC 客户端
 	Mall  mallpb.MallServiceClient
@@ -48,7 +46,6 @@ type GrpcClientPool struct {
 	Gmid  gmidpb.MidServiceClient
 	Gpay  gpaypb.PayServiceClient
 	Gmbr  gmbrpb.GmbrServiceClient
-	Gmail gmailpb.MailServiceClient
 }
 
 // dialGrpc 建立 gRPC 连接
@@ -170,15 +167,6 @@ func NewGrpcClientPool(creds credentials.TransportCredentials) (*GrpcClientPool,
 	}
 	pool.Gmbr = gmbrpb.NewGmbrServiceClient(pool.gmbrConn)
 
-	// --- gmail ---
-	addr = grpcAddr(config.EnvGmailGrpcAddr, "gmail")
-	pool.gmailConn, err = dialGrpc(addr, creds)
-	if err != nil {
-		slog.Error("Failed to create gRPC client", "service", "gmail", "addr", addr, "error", err)
-		return nil, err
-	}
-	pool.Gmail = gmailpb.NewMailServiceClient(pool.gmailConn)
-
 	initialized = true
 	return pool, nil
 }
@@ -187,7 +175,7 @@ func NewGrpcClientPool(creds credentials.TransportCredentials) (*GrpcClientPool,
 func (p *GrpcClientPool) Close() {
 	conns := []*grpc.ClientConn{
 		p.mallConn, p.lmsConn, p.gccConn, p.gprogConn, p.gmsgConn,
-		p.credsConn, p.gexamConn, p.gmidConn, p.gpayConn, p.gmbrConn, p.gmailConn,
+		p.credsConn, p.gexamConn, p.gmidConn, p.gpayConn, p.gmbrConn,
 	}
 	for _, c := range conns {
 		if c != nil {

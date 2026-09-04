@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue"
+import { computed, onMounted, reactive, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
 import { Loader2, Settings } from "lucide-vue-next"
@@ -27,7 +27,7 @@ import {
   type PhonePrefixOption,
   resolvePhoneCountryCode,
 } from "@/lib/locationOptions"
-import { GENDER_OPTIONS, PROFILE_TEXT_LIMITS, isValidEmail, isValidInternationalPhone, isValidPostalCode, normalizeGender, normalizeInternationalPhone, normalizePostalCode, trimToMax } from "@/lib/profileFormValidation"
+import { GENDER_OPTIONS, PROFILE_TEXT_LIMITS, isValidInternationalPhone, isValidPostalCode, normalizeGender, normalizeInternationalPhone, normalizePostalCode, trimToMax } from "@/lib/profileFormValidation"
 import { useUser } from "@/lib/user"
 
 const route = useRoute()
@@ -58,20 +58,8 @@ const profile = reactive({
   education: "",
 })
 const password = reactive({ oldPassword: "", newPassword: "", confirmPassword: "" })
-const emailUpdate = reactive({ newEmail: "", verificationCode: "" })
 const isProfileLoading = ref(false)
 const isPasswordLoading = ref(false)
-const isEmailUpdating = ref(false)
-const isEmailCodeSending = ref(false)
-const emailCodeCountdown = ref(0)
-const resendCodeText = computed(() => t.value.settings.resendCode.replace('{{seconds}}', String(emailCodeCountdown.value)))
-let emailCodeInterval: number | undefined
-
-function clearEmailCodeInterval() {
-  if (emailCodeInterval === undefined) return
-  window.clearInterval(emailCodeInterval)
-  emailCodeInterval = undefined
-}
 
 const selectedCountryCode = ref("")
 const selectedProvinceCode = ref("")
@@ -417,67 +405,6 @@ async function handleUpdatePassword() {
   }
 }
 
-async function handleSendEmailCode() {
-  if (!emailUpdate.newEmail) {
-    toast.error(t.value.settings.validationRequired.replace("{{field}}", t.value.settings.newEmail))
-    return
-  }
-  if (!isValidEmail(emailUpdate.newEmail)) {
-    toast.error(t.value.settings.validationInvalidEmail)
-    return
-  }
-  isEmailCodeSending.value = true
-  try {
-    await apiClient("/api/user/profile/email/send-code", {
-      method: "POST",
-      body: JSON.stringify({ email: emailUpdate.newEmail, lang: lang.value }),
-    })
-    toast.success(t.value.settings.codeSent)
-    emailCodeCountdown.value = 60
-    clearEmailCodeInterval()
-    emailCodeInterval = window.setInterval(() => {
-      emailCodeCountdown.value--
-      if (emailCodeCountdown.value <= 0) {
-        clearEmailCodeInterval()
-      }
-    }, 1000)
-  } catch (e) {
-    // Error is handled by apiClient toast
-  } finally {
-    isEmailCodeSending.value = false
-  }
-}
-
-async function handleUpdateEmail() {
-  if (!emailUpdate.newEmail || !emailUpdate.verificationCode) {
-    toast.error(t.value.settings.validationRequired.replace("{{field}}", !emailUpdate.newEmail ? t.value.settings.newEmail : t.value.settings.verificationCode))
-    return
-  }
-  if (!isValidEmail(emailUpdate.newEmail)) {
-    toast.error(t.value.settings.validationInvalidEmail)
-    return
-  }
-  isEmailUpdating.value = true
-  try {
-    await apiClient("/api/user/profile/email", {
-      method: "PUT",
-      body: JSON.stringify({ email: emailUpdate.newEmail, verification_code: emailUpdate.verificationCode }),
-    })
-    toast.success(t.value.settings.updateEmailSuccess)
-    emailUpdate.newEmail = ""
-    emailUpdate.verificationCode = ""
-    clearEmailCodeInterval()
-    emailCodeCountdown.value = 0
-    const updatedUser = await fetchUser(true)
-    if (updatedUser?.email) profile.email = updatedUser.email
-  } catch (e) {
-    // Error is handled by apiClient toast
-  } finally {
-    isEmailUpdating.value = false
-  }
-}
-
-onBeforeUnmount(clearEmailCodeInterval)
 </script>
 
 <template>
@@ -523,7 +450,6 @@ onBeforeUnmount(clearEmailCodeInterval)
             <label class="space-y-2">
               <span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.email }}</span>
               <input v-model="profile.email" class="input bg-muted" disabled required />
-              <p class="text-xs text-muted-foreground">{{ t.settings.emailChangeHint }}</p>
             </label>
             <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.displayName }}</span><input v-model="profile.displayName" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" :placeholder="t.settings.displayNamePlaceholder" /></label>
             <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.realName }}</span><input v-model="profile.realName" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" :placeholder="t.settings.realNamePlaceholder" /></label>
@@ -612,25 +538,6 @@ onBeforeUnmount(clearEmailCodeInterval)
         </form>
         </div>
 
-        <div class="settings-section-header settings-email-header flex flex-col space-y-1.5 p-6 mt-6 border-t border-border">
-          <h2 class="text-xl font-semibold leading-none tracking-tight">{{ t.settings.updateEmail }}</h2>
-          <p class="text-sm text-muted-foreground">{{ t.settings.updateEmailDesc }}</p>
-        </div>
-        <div class="settings-section-content p-6 pt-0">
-          <form class="settings-form max-w-xl space-y-4" novalidate @submit.prevent="handleUpdateEmail">
-            <label class="block space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.newEmail }}</span><input v-model="emailUpdate.newEmail" class="input" type="email" required /></label>
-            <label class="block space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.verificationCode }}</span>
-              <div class="flex gap-2">
-                <input v-model="emailUpdate.verificationCode" class="input flex-1" type="text" required />
-                <button type="button" class="btn btn-outline" :disabled="isEmailCodeSending || emailCodeCountdown > 0" @click="handleSendEmailCode">
-                  <Loader2 v-if="isEmailCodeSending" class="h-4 w-4 animate-spin mr-2" />
-                  {{ emailCodeCountdown > 0 ? resendCodeText : t.settings.sendCode }}
-                </button>
-              </div>
-            </label>
-            <button class="btn btn-primary" :disabled="isEmailUpdating"><Loader2 v-if="isEmailUpdating" class="h-4 w-4 animate-spin mr-2" /> {{ t.settings.updateEmailBtn }}</button>
-          </form>
-        </div>
       </div>
     </div>
       </main>
@@ -705,8 +612,5 @@ onBeforeUnmount(clearEmailCodeInterval)
     margin-top: 6px;
   }
 
-  .settings-email-header {
-    margin-top: 0;
-  }
 }
 </style>

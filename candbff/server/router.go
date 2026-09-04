@@ -90,8 +90,6 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Route("/user", func(r chi.Router) {
 				r.Get("/me", h.GetUserMe)
 				r.Put("/profile", h.UpdateUserProfile)
-				r.Post("/profile/email/send-code", h.SendEmailCode)
-				r.Put("/profile/email", h.UpdateUserEmail)
 				r.Put("/password", h.UpdateUserPassword)
 			})
 

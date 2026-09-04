@@ -8,14 +8,12 @@ import (
 	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
 	gexampb "github.com/afnandelfin620-star/cftptest/cftp/gexam"
 	lmspb "github.com/afnandelfin620-star/cftptest/cftp/glms"
-	gmailpb "github.com/afnandelfin620-star/cftptest/cftp/gmail"
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
 	gmbrpb "github.com/afnandelfin620-star/cftptest/cftp/gmbr"
 	gmidpb "github.com/afnandelfin620-star/cftptest/cftp/gmid"
 	gmsgpb "github.com/afnandelfin620-star/cftptest/cftp/gmsg"
 	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
 	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
-	"github.com/redis/go-redis/v9"
 )
 
 // ── Context 键 ──
@@ -42,13 +40,11 @@ type Handler struct {
 	Gmid                gmidpb.MidServiceClient
 	Gpay                gpaypb.PayServiceClient
 	Gmbr                gmbrpb.GmbrServiceClient
-	Gmail               gmailpb.MailServiceClient
 	CasdoorEndpoint     string
 	CasdoorClientId     string
 	CasdoorClientSecret string
 	CasdoorAppName      string
 	CasdoorOrgName      string
-	Rdb                 *redis.Client
 	profileUsers        profileUserStore
 }
 
@@ -63,13 +59,11 @@ func New(
 	gmid gmidpb.MidServiceClient,
 	gpay gpaypb.PayServiceClient,
 	gmbr gmbrpb.GmbrServiceClient,
-	gmail gmailpb.MailServiceClient,
 	casdoorEndpoint string,
 	casdoorClientId string,
 	casdoorClientSecret string,
 	casdoorAppName string,
 	casdoorOrgName string,
-	rdb *redis.Client,
 ) *Handler {
 	return &Handler{
 		Lms:                 lms,
@@ -82,13 +76,11 @@ func New(
 		Gmid:                gmid,
 		Gpay:                gpay,
 		Gmbr:                gmbr,
-		Gmail:               gmail,
 		CasdoorEndpoint:     casdoorEndpoint,
 		CasdoorClientId:     casdoorClientId,
 		CasdoorClientSecret: casdoorClientSecret,
 		CasdoorAppName:      casdoorAppName,
 		CasdoorOrgName:      casdoorOrgName,
-		Rdb:                 rdb,
 	}
 }
 
