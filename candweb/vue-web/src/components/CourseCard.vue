@@ -7,6 +7,7 @@ import { CANDIDATE_PIPELINE_STATUS_LABELS, statusLabel } from "@/lib/status-labe
 import { startGfiLogin } from "@/lib/gfiLogin"
 import { useTranslation } from "@/lib/language"
 import { apiClient } from "@/lib/apiClient"
+import { membershipPrerequisiteQualificationLabels } from "@/lib/eligibilityBlockers"
 import { preloadCheckoutWizard } from "@/router"
 
 type CourseCardStat = { label: string; value: string | number }
@@ -177,7 +178,13 @@ const actionClass = computed(() => {
 function blockerText(blocker?: EligibilityBlocker) {
   if (!blocker) return ""
   if (isCombinationProduct.value && (hasPurchasedPipeline.value !== hasPurchasedMembership.value)) return cardCopy.value.partiallyOwnedBundle
-  if (blocker.blocker_type === "MISSING_PREREQUISITE_QUALIFICATION") return cardCopy.value.missingQualification
+  if (blocker.blocker_type === "MISSING_PREREQUISITE_QUALIFICATION") {
+    const qualificationLabels = isMembershipProduct.value ? membershipPrerequisiteQualificationLabels(blocker) : []
+    if (qualificationLabels.length > 0) {
+      return cardCopy.value.missingNamedQualification.replace("{qualification}", qualificationLabels.join(", "))
+    }
+    return isMembershipProduct.value ? cardCopy.value.missingMembershipQualification : cardCopy.value.missingQualification
+  }
   if (blocker.blocker_type === "MISSING_UNLOCK_QUALIFICATION") return cardCopy.value.missingMembershipQualification
   if (blocker.blocker_type === "ALREADY_PURCHASED") return cardCopy.value.alreadyPurchased
   if (blocker.blocker_type === "IN_PROGRESS_PURCHASE") return cardCopy.value.inProgressPurchase
