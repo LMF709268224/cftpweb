@@ -689,7 +689,7 @@ onBeforeUnmount(() => {
             <div class="min-w-0">
               <div class="order-heading-line mb-1 flex min-w-0 flex-wrap items-center gap-2">
                 <h3 class="order-title-mobile min-w-0 max-w-full font-medium text-card-foreground">{{ order.items.join(", ") }}</h3>
-                <span class="rounded-full border border-primary/15 bg-primary/5 px-2 py-0.5 text-xs font-semibold text-primary">{{ orderTypeLabel(order.bizType) }}</span>
+                <span class="order-type-badge rounded-full border border-primary/15 bg-primary/5 px-2 py-0.5 text-xs font-semibold text-primary">{{ orderTypeLabel(order.bizType) }}</span>
               </div>
               <p class="text-sm text-muted-foreground">{{ formatBackendDateMinute(order.createdAt, lang) }}</p>
             </div>
@@ -939,6 +939,34 @@ onBeforeUnmount(() => {
 .order-title-mobile {
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+@media (max-width: 1399px) {
+  :global(html[lang="en"] .order-type-badge) {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1199px) {
+  :global(html[lang="en"] .order-row) {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  :global(html[lang="en"] .order-summary) {
+    width: 100%;
+  }
+
+  :global(html[lang="en"] .order-title-mobile) {
+    overflow-wrap: normal;
+    word-break: normal;
+  }
+
+  :global(html[lang="en"] .order-actions) {
+    width: 100%;
+    grid-template-columns: minmax(110px, 1fr) 148px 132px 112px 24px;
+  }
 }
 
 @media (max-width: 767px) {
