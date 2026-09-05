@@ -1539,8 +1539,10 @@ function activeOrderIncludesUnit(unit: any) {
 
 function activeOrderLocksDecisionForUnit(unit: any) {
   const order = credentialApplicationOrderForUnit(unit)
-  if (!order || credentialApplicationOrderIsTerminal(order)) return false
-  return true
+  if (!order) return false
+  const itemStatus = activeCredentialApplicationOrderItemStatus(unit)
+  if (itemStatus === "APPROVED" || itemStatus === "SUBMITTED") return true
+  return itemStatus === "PENDING" && !credentialApplicationOrderIsTerminal(order)
 }
 
 function activeOrderUnitStatusLabel(unit: any) {
@@ -1592,10 +1594,12 @@ async function refreshActiveCredentialApplicationOrder() {
     nextQualificationSelections[unitId] = qualId
     const itemStatus = String(item?.item_status || "").trim().toUpperCase()
     const status = credentialApplicationOrderStatus(order)
-    if (["PENDING", "SUBMITTED", "APPROVED"].includes(itemStatus)
+    if (itemStatus !== "REJECTED" && (
+      ["PENDING", "SUBMITTED", "APPROVED"].includes(itemStatus)
       || isCredentialApplicationPaymentStatus(status)
       || isUploadReadyStatus(status)
-      || isCredentialApplicationUnderReviewStatus(status)) {
+      || isCredentialApplicationUnderReviewStatus(status)
+    )) {
       nextSelections[unitId] = true
       delete nextWaivers[unitId]
     }
@@ -1712,12 +1716,17 @@ function canRequestQualificationApplicationForUnit(unit: any) {
   const state = exemptionCredentialState(unit)
   if (["active", "pending", "pending_upload", "resubmit"].includes(state)) return false
   const existingOrder = credentialApplicationOrderForUnit(unit)
-  return !existingOrder || credentialApplicationOrderIsTerminal(existingOrder) || isCredentialApplicationPaymentStatus(credentialApplicationOrderStatus(existingOrder))
+  return !existingOrder
+    || activeCredentialApplicationOrderItemStatus(unit) === "REJECTED"
+    || credentialApplicationOrderIsTerminal(existingOrder)
+    || isCredentialApplicationPaymentStatus(credentialApplicationOrderStatus(existingOrder))
 }
 
 function qualificationApplicationActionLabel(unit: any) {
   const existingOrder = credentialApplicationOrderForUnit(unit)
-  return existingOrder && isCredentialApplicationPaymentStatus(credentialApplicationOrderStatus(existingOrder))
+  return existingOrder
+    && activeCredentialApplicationOrderItemStatus(unit) !== "REJECTED"
+    && isCredentialApplicationPaymentStatus(credentialApplicationOrderStatus(existingOrder))
     ? t.value.checkoutWizard.continueQualificationPayment
     : t.value.checkoutWizard.applyThisExemption
 }
@@ -1842,7 +1851,8 @@ function requestSelectedQualificationApplications(unit: any) {
     return
   }
   const existingOrder = credentialApplicationOrderForUnit(unit)
-  if (existingOrder && !credentialApplicationOrderIsTerminal(existingOrder)) {
+  const existingItemStatus = activeCredentialApplicationOrderItemStatus(unit)
+  if (existingOrder && existingItemStatus !== "REJECTED" && !credentialApplicationOrderIsTerminal(existingOrder)) {
     const status = credentialApplicationOrderStatus(existingOrder)
     if (isCredentialApplicationPaymentStatus(status)) {
       activeCredentialApplicationOrder.value = existingOrder
@@ -1914,17 +1924,19 @@ function stepOneValidationMessage() {
     if (state === "resubmit") {
       return checkoutUnitMessage(t.value.checkoutWizard.qualificationResubmitRequiredForUnit, unit)
     }
-    if (state === "rejected") {
-      return checkoutUnitMessage(t.value.checkoutWizard.qualificationRejectedForUnit, unit)
-    }
     if (state === "pending_upload") {
       return checkoutUnitMessage(t.value.checkoutWizard.qualificationUploadRequiredForUnit, unit)
     }
+    if (state === "rejected" || itemStatus === "REJECTED") {
+      return checkoutUnitMessage(
+        unitsNeedingApplication.has(unitId)
+          ? t.value.checkoutWizard.qualificationApplicationRequiredForUnit
+          : t.value.checkoutWizard.qualificationRejectedForUnit,
+        unit,
+      )
+    }
     if (itemStatus === "SUBMITTED" || isCredentialApplicationUnderReviewStatus(orderStatus)) {
       return checkoutUnitMessage(t.value.checkoutWizard.qualificationUnderReviewForUnit, unit)
-    }
-    if (itemStatus === "REJECTED") {
-      return checkoutUnitMessage(t.value.checkoutWizard.qualificationRejectedForUnit, unit)
     }
     if (isUploadReadyStatus(orderStatus)) {
       return checkoutUnitMessage(t.value.checkoutWizard.qualificationUploadRequiredForUnit, unit)

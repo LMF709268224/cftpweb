@@ -1560,7 +1560,7 @@ test("资格申请记录详情显示完整审核备注和已上传文件", async
     await expect(approvedRow).toContainText("29 Aug 2026")
 })
 
-test("免考选择完成后按资格创建独立订单", async ({ page }) => {
+test("免考选择完成后按资格创建独立订单，已拒绝资格仍可重新申请或按原价购买", async ({ page }) => {
     const selectionBundleID = "bundle-explicit-exemption-decisions"
     const stageID = "stage-explicit-exemption-decisions"
     const applyUnitID = "unit-apply-exemption"
@@ -1612,7 +1612,7 @@ test("免考选择完成后按资格创建独立订单", async ({ page }) => {
         },
     }
 
-    await installCandidateApiMocks(page, ({ pathname, method, body }) => {
+    await installCandidateApiMocks(page, ({ pathname, url, method, body }) => {
         if (pathname === `/api/mall/bundles/${selectionBundleID}` && method === "GET") return { data: selectionBundle }
         if (pathname === `/api/mall/bundles/${selectionBundleID}/pricing-detail`) return { data: { can_checkout: true } }
         if (pathname === "/api/credentials/definitions") {
@@ -1626,7 +1626,30 @@ test("免考选择完成后按资格创建独立订单", async ({ page }) => {
                 },
             }
         }
-        if (pathname === "/api/credentials/applications") return { data: { applications: [] } }
+        if (pathname === "/api/credentials/applications") {
+            const qualificationID = url.searchParams.get("cred_def_ulid")
+            return {
+                data: {
+                    applications: qualificationID === applyQualificationID
+                        ? [{
+                            cred_def_ulid: applyQualificationID,
+                            status: "APPLICATION_STATUS_REJECTED",
+                        }]
+                        : [],
+                },
+            }
+        }
+        if (pathname === "/api/credentials/application-orders" && method === "GET") {
+            return {
+                data: {
+                    orders: [{
+                        application_order_ulid: "application-order-rejected-qualification",
+                        order_status: "UNDER_REVIEW",
+                        items: [{ qual_id: applyQualificationID, item_status: "REJECTED" }],
+                    }],
+                },
+            }
+        }
         if (pathname === "/api/credentials/application-orders" && method === "POST") {
             applicationOrderBody = body
             return {
@@ -1644,7 +1667,8 @@ test("免考选择完成后按资格创建独立订单", async ({ page }) => {
 
     await page.goto(`/checkout/${selectionBundleID}`, { waitUntil: "domcontentloaded" })
     const selectionNextButton = page.getByTestId("checkout-selection-next")
-    await expect(page.getByText("尚未选择", { exact: true })).toHaveCount(2)
+    await expect(page.getByText("尚未选择", { exact: true })).toHaveCount(1)
+    await expect(page.getByText("资格申请未通过", { exact: true })).toBeVisible()
     const chineseApplyButton = page.locator(`[data-testid="checkout-exemption-apply"][data-unit-id="${applyUnitID}"]`)
     const chineseWaiveButton = page.locator(`[data-testid="checkout-exemption-waive"][data-unit-id="${waiveUnitID}"]`)
     await expect(chineseApplyButton).toHaveAttribute("role", "radio")
@@ -1653,7 +1677,7 @@ test("免考选择完成后按资格创建独立订单", async ({ page }) => {
     await expect(chineseWaiveButton).toContainText("按原价购买")
     await expect(chineseWaiveButton).toContainText("直接参加考试，无需提交证明材料。")
     await page.getByRole("button", { name: "中文 / EN" }).click()
-    await expect(page.getByText("No option selected", { exact: true })).toHaveCount(2)
+    await expect(page.getByText("No option selected", { exact: true })).toHaveCount(1)
     const englishApplyButton = page.locator(`[data-testid="checkout-exemption-apply"][data-unit-id="${applyUnitID}"]`)
     const englishWaiveButton = page.locator(`[data-testid="checkout-exemption-waive"][data-unit-id="${waiveUnitID}"]`)
     await expect(englishApplyButton).toHaveAttribute("role", "radio")
@@ -1665,7 +1689,7 @@ test("免考选择完成后按资格创建独立订单", async ({ page }) => {
     await expect(englishWaiveButton).toHaveAttribute("aria-checked", "true")
     await expect(englishWaiveButton).toHaveClass(/is-selected/)
     await expect(englishApplyButton).toHaveAttribute("aria-checked", "false")
-    await expect(page.getByText("No option selected", { exact: true })).toHaveCount(1)
+    await expect(page.getByText("No option selected", { exact: true })).toHaveCount(0)
     await page.getByRole("button", { name: "EN / 中文" }).click()
     await expect(selectionNextButton).toBeEnabled()
     await selectionNextButton.click()
