@@ -1514,6 +1514,10 @@ test("免考选择完成后按资格创建独立订单", async ({ page }) => {
 
     await page.goto(`/checkout/${selectionBundleID}`, { waitUntil: "domcontentloaded" })
     const selectionNextButton = page.getByTestId("checkout-selection-next")
+    await expect(page.getByText("尚未选择", { exact: true })).toHaveCount(2)
+    await page.getByRole("button", { name: "中文 / EN" }).click()
+    await expect(page.getByText("No option selected", { exact: true })).toHaveCount(2)
+    await page.getByRole("button", { name: "EN / 中文" }).click()
     await expect(selectionNextButton).toBeEnabled()
     await selectionNextButton.click()
     await expect(page.getByText("请先为“Apply Exemption Course”选择“申请免考”或“不申请免考”。", { exact: true })).toBeVisible()
@@ -1529,6 +1533,7 @@ test("免考选择完成后按资格创建独立订单", async ({ page }) => {
     await page.locator(`[data-testid="checkout-exemption-qualification-select"][data-unit-id="${applyUnitID}"]`).selectOption(applyQualificationID)
     await expect(page.locator("h4").filter({ hasText: /^CFtP 金融模块（L1A）免考申请$/ })).toBeVisible()
     await waiveButton.click()
+    await expect(page.getByText("尚未选择", { exact: true })).toHaveCount(0)
 
     expect(applicationOrderBody).toBeUndefined()
     await expect(page.getByText("这里仅展示申请要求和官方模板。请先完成所有免考选择并支付资格审核费，付款成功后才能上传证明材料。", { exact: true })).toBeVisible()
@@ -2273,6 +2278,9 @@ test("认证从商城下单、Stripe 支付到已购认证完整闭环", async (
 
     await expect(page).toHaveURL(new RegExp(`/checkout/${bundleID}$`))
     await expect(page.getByRole("heading", { name: "CFtP® 考试注册", exact: true })).toBeVisible()
+    await page.getByRole("button", { name: "中文 / EN" }).click()
+    await expect(page.getByRole("heading", { name: "Chartered Fintech Professional (CFtP®) Programme Registration", exact: true })).toBeVisible()
+    await page.getByRole("button", { name: "EN / 中文" }).click()
     await expect(page.getByTestId("checkout-step-registration")).toBeVisible()
     await waitForCheckoutProfile(page)
     await page.getByTestId("checkout-agreement").check()

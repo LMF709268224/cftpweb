@@ -825,6 +825,7 @@ export const en: AppTranslations = {
         statusResubmit: "More materials required",
         statusRejected: "Qualification application declined",
         statusMissing: "Qualification not held",
+        noExemptionOptionSelected: "No option selected",
         statusExpired: "Qualification expired",
         statusRevoked: "Qualification revoked",
         statusUnavailable: "Qualification status unavailable",

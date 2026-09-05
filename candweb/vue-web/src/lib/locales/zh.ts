@@ -823,6 +823,7 @@ export const zh = {
         statusResubmit: "需要补充材料",
         statusRejected: "资格申请未通过",
         statusMissing: "未持有资格",
+        noExemptionOptionSelected: "尚未选择",
         statusExpired: "资格已过期",
         statusRevoked: "资格已撤销",
         statusUnavailable: "资格状态暂不可用",

@@ -307,11 +307,15 @@ const isMembershipBundle = computed(() => {
   return itemTypes.some((type: string) => String(type).includes("membership"))
 })
 const purchaseType = computed(() => isMembershipBundle.value ? "membership" : "certification")
+const CFTP_ENGLISH_REGISTRATION_TITLE = "Chartered Fintech Professional (CFtP®) Programme Registration"
+const isCftpRegistration = computed(() => /CFtP/i.test(String(bundleData.value?.name || "")))
 
 const registrationTitle = computed(() => {
   if (!bundleData.value) return t.value.checkoutWizard.checkoutTitle
 
   const bundleName = String(bundleData.value.name || "").trim()
+  if (lang.value === "en" && isCftpRegistration.value) return CFTP_ENGLISH_REGISTRATION_TITLE
+
   const subject = /CFtP/i.test(bundleName) ? "CFtP®" : bundleName
   if (!subject) return t.value.checkoutWizard.examRegistrationTitle
 
@@ -1617,6 +1621,12 @@ function exemptionDecision(unit: any): "exempt" | "waive" | "" {
   return ""
 }
 
+function showExemptionCredentialBadge(unit: any) {
+  const state = exemptionCredentialState(unit)
+  if (!isCftpRegistration.value || !["missing", "unavailable"].includes(state)) return true
+  return !exemptionDecision(unit)
+}
+
 function canUploadQualificationForUnit(unit: any) {
   const status = qualificationApplicationForUnit(unit)?.status
   return isApplicationPendingUploadStatus(status) || isApplicationResubmitStatus(status)
@@ -1979,7 +1989,12 @@ function exemptionCredentialState(unit: any): ExemptionCredentialState {
 }
 
 function exemptionCredentialLabel(unit: any) {
-  switch (exemptionCredentialState(unit)) {
+  const state = exemptionCredentialState(unit)
+  if (isCftpRegistration.value && !exemptionDecision(unit) && ["missing", "unavailable"].includes(state)) {
+    return t.value.checkoutWizard.noExemptionOptionSelected
+  }
+
+  switch (state) {
     case "active":
       return t.value.checkoutWizard.statusApproved
     case "pending":
@@ -2415,7 +2430,7 @@ function closePaymentEditDialog() {
                       </div>
                       <p v-if="unit.exemption_quals?.[0]?.description" class="checkout-unit-description mt-2 text-sm text-slate-500">{{ unit.exemption_quals[0].description }}</p>
                       
-                      <div :class="['checkout-unit-badge mt-3 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium', exemptionCredentialBadgeClass(unit)]">
+                      <div v-if="showExemptionCredentialBadge(unit)" :class="['checkout-unit-badge mt-3 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium', exemptionCredentialBadgeClass(unit)]">
                         <CheckCircle2 v-if="exemptionCredentialState(unit) === 'active'" class="mr-1 h-3.5 w-3.5" />
                         <Clock v-else-if="['pending', 'expired'].includes(exemptionCredentialState(unit))" class="mr-1 h-3.5 w-3.5" />
                         <CircleAlert v-else class="mr-1 h-3.5 w-3.5" />
