@@ -324,7 +324,7 @@ test("支付成功页在移动端不会因长 ID 横向溢出", async ({ page })
 
   await expect(card).toBeVisible();
   await expect(page.getByRole("link", { name: "查看我的认证" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "返回商城" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "返回学习与认证服务" })).toBeVisible();
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await expect.poll(() => orderId.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
 

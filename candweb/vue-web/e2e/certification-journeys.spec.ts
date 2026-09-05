@@ -178,10 +178,10 @@ test("商城和结账页展示并拦截层级互斥资格", async ({ page }) => 
         ...bundle,
         bundle_id: blocker.id,
         name: `Blocked ${blocker.id}`,
-        eligibility: { can_purchase: false, can_unlock: false, blockers: [{ blocker_type: blocker.type }] },
+        eligibility: { can_purchase: false, can_unlock: false, blockers: [{ blocker_type: blocker.type, description: blocker.message }] },
         purchase_state: {
             ...bundle.purchase_state,
-            eligibility: { can_purchase: false, can_unlock: false, blockers: [{ blocker_type: blocker.type }] },
+            eligibility: { can_purchase: false, can_unlock: false, blockers: [{ blocker_type: blocker.type, description: blocker.message }] },
         },
     }))
 
