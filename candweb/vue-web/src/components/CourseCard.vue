@@ -7,6 +7,7 @@ import { CANDIDATE_PIPELINE_STATUS_LABELS, statusLabel } from "@/lib/status-labe
 import { startGfiLogin } from "@/lib/gfiLogin"
 import { useTranslation } from "@/lib/language"
 import { apiClient } from "@/lib/apiClient"
+import { membershipPrerequisiteQualificationLabels } from "@/lib/eligibilityBlockers"
 import { preloadCheckoutWizard } from "@/router"
 
 type CourseCardStat = { label: string; value: string | number }
@@ -21,6 +22,7 @@ const props = defineProps<{
   pipelineId?: string
   membershipId?: string
   membershipGpath?: string
+  membershipRequiredCredRespaths?: string[]
   itemTypes?: string[]
   isPipelineBundle?: boolean
   isMembershipBundle?: boolean
@@ -55,6 +57,10 @@ const eligibilityRefreshFailed = ref(false)
 const currentEligibility = computed<EligibilityPreview | null>(() => freshBundle.value?.purchase_state?.eligibility || freshBundle.value?.eligibility || props.eligibility || null)
 const currentActiveOrder = computed<ActiveOrderPreview | null>(() => freshBundle.value?.purchase_state?.active_order || freshBundle.value?.active_order || props.activeOrder || null)
 const currentActiveMembership = computed<Record<string, unknown> | null>(() => freshBundle.value?.active_membership || props.activeMembership || null)
+const currentMembershipRequiredCredRespaths = computed(() => {
+  const references = freshBundle.value?.membership_required_cred_respaths || props.membershipRequiredCredRespaths
+  return Array.isArray(references) ? references : []
+})
 const blockers = computed(() => currentEligibility.value?.blockers || [])
 const credentialCenterBlockers = computed(() => blockers.value.filter((blocker) => [
   "EXEMPTION_DOCUMENTS_PENDING_UPLOAD",
@@ -177,7 +183,13 @@ const actionClass = computed(() => {
 function blockerText(blocker?: EligibilityBlocker) {
   if (!blocker) return ""
   if (isCombinationProduct.value && (hasPurchasedPipeline.value !== hasPurchasedMembership.value)) return cardCopy.value.partiallyOwnedBundle
-  if (blocker.blocker_type === "MISSING_PREREQUISITE_QUALIFICATION") return blocker.description || ""
+  if (blocker.blocker_type === "MISSING_PREREQUISITE_QUALIFICATION") {
+    if (!isMembershipProduct.value) return cardCopy.value.missingQualification
+    const qualificationLabels = membershipPrerequisiteQualificationLabels(blocker, currentMembershipRequiredCredRespaths.value)
+    return qualificationLabels.length > 0
+      ? cardCopy.value.missingNamedQualification.replace("{qualification}", qualificationLabels.join(", "))
+      : cardCopy.value.missingMembershipQualification
+  }
   if (blocker.blocker_type === "MISSING_UNLOCK_QUALIFICATION") return cardCopy.value.missingMembershipQualification
   if (blocker.blocker_type === "ALREADY_PURCHASED") return cardCopy.value.alreadyPurchased
   if (blocker.blocker_type === "IN_PROGRESS_PURCHASE") return cardCopy.value.inProgressPurchase

@@ -721,6 +721,19 @@ func extractMembershipID(bundle *mallpb.BundleInfo) string {
 	return ""
 }
 
+func addMembershipBundleMetadata(target map[string]interface{}, membership *gmbrpb.Membership) string {
+	if target == nil || membership == nil {
+		return ""
+	}
+	membershipGpath := membership.GetMembershipGpath()
+	target["membership_gpath"] = membershipGpath
+	target["membership_name"] = membership.GetName()
+	target["membership_status"] = membership.GetStatus()
+	target["membership_tier_level"] = membership.GetTierLevel()
+	target["membership_required_cred_respaths"] = membership.GetRequiredCredRespaths()
+	return membershipGpath
+}
+
 func appendUniqueString(list []string, value string) []string {
 	value = normalizeBundleItemType(value)
 	if value == "" {
@@ -1386,11 +1399,7 @@ func (h *Handler) enrichBundle(ctx context.Context, b *mallpb.BundleInfo, state 
 		})
 		if err == nil && membership != nil {
 			membership = h.localizedMembership(ctx, membership, locale)
-			membershipGpath = membership.GetMembershipGpath()
-			m["membership_gpath"] = membershipGpath
-			m["membership_name"] = membership.GetName()
-			m["membership_status"] = membership.GetStatus()
-			m["membership_tier_level"] = membership.GetTierLevel()
+			membershipGpath = addMembershipBundleMetadata(m, membership)
 			if m["category_tips"] == "" {
 				m["category_tips"] = membership.GetName()
 			}

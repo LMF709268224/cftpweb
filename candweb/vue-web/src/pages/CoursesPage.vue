@@ -130,6 +130,9 @@ async function fetchData() {
         pipelineId: pipelineBundle ? b.pipeline_id : "",
         membershipId: membershipBundle ? b.membership_id : "",
         membershipGpath: membershipBundle ? b.membership_gpath : "",
+        membershipRequiredCredRespaths: membershipBundle && Array.isArray(b?.membership_required_cred_respaths)
+          ? b.membership_required_cred_respaths
+          : [],
         itemTypes,
         isPipelineBundle: pipelineBundle,
         isMembershipBundle: membershipBundle,

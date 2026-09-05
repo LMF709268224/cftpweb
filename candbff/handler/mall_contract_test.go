@@ -5,6 +5,7 @@ import (
 
 	gccpb "github.com/afnandelfin620-star/cftptest/cftp/gcc"
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
+	gmbrpb "github.com/afnandelfin620-star/cftptest/cftp/gmbr"
 )
 
 func TestEligibilityFromBundlePreservesConflictBlockers(t *testing.T) {
@@ -36,6 +37,22 @@ func TestEligibilityFromBundlePreservesConflictBlockers(t *testing.T) {
 		if result.Blockers[index].BlockerType != blockerType || result.Blockers[index].Details[0] != blockerType+" detail" {
 			t.Fatalf("blocker %d was not preserved: %+v", index, result.Blockers[index])
 		}
+	}
+}
+
+func TestAddMembershipBundleMetadataIncludesPrerequisiteConfiguration(t *testing.T) {
+	target := map[string]interface{}{}
+	membershipGpath := addMembershipBundleMetadata(target, &gmbrpb.Membership{
+		MembershipGpath:      "/membership/gfi",
+		RequiredCredRespaths: []string{"/gcreds/core/cftp"},
+	})
+
+	if membershipGpath != "/membership/gfi" {
+		t.Fatalf("membership gpath = %q", membershipGpath)
+	}
+	respaths, ok := target["membership_required_cred_respaths"].([]string)
+	if !ok || len(respaths) != 1 || respaths[0] != "/gcreds/core/cftp" {
+		t.Fatalf("membership prerequisite respaths = %#v", target["membership_required_cred_respaths"])
 	}
 }
 

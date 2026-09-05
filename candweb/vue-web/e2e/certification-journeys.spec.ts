@@ -214,6 +214,7 @@ test("会员商品展示升级、在途订单和前置资格 blocker", async ({ 
     const pendingBundleID = "bundle-membership-order-pending"
     const missingQualificationBundleID = "bundle-membership-missing-qualification"
     const pendingDescription = "会员升级订单正在处理，请等待激活完成。"
+    const requiredCredRespath = "/gcreds/core/cftp"
     const missingQualificationDescription = "candidate does not satisfy prerequisite qualification /gcreds/core/cftp for membership Charterholder Membership"
     const membershipBundle = {
         ...bundle,
@@ -274,6 +275,7 @@ test("会员商品展示升级、在途订单和前置资格 blocker", async ({ 
         bundle_id: missingQualificationBundleID,
         name: "Charterholder Membership Prerequisite",
         active_membership: null,
+        membership_required_cred_respaths: [requiredCredRespath],
         eligibility: {
             can_purchase: false,
             blockers: [{
@@ -317,7 +319,7 @@ test("会员商品展示升级、在途订单和前置资格 blocker", async ({ 
     await expect(page).toHaveURL(/\/certifications$/)
 
     const missingQualificationCard = page.locator(`[data-testid="certification-card"][data-bundle-id="${missingQualificationBundleID}"]`)
-    await expect(missingQualificationCard.getByText(missingQualificationDescription, { exact: true })).toBeVisible()
+    await expect(missingQualificationCard.getByText("缺少前置资格：CFTP", { exact: true })).toBeVisible()
 
     await page.goto(`/checkout/${upgradeBundleID}`, { waitUntil: "domcontentloaded" })
     const blockerPanel = page.getByTestId("checkout-eligibility-blockers")
@@ -326,7 +328,14 @@ test("会员商品展示升级、在途订单和前置资格 blocker", async ({ 
     await expect(page).toHaveURL(new RegExp(`/membership\\?tab=levels&upgrade=${targetMembershipID}$`))
 
     await page.goto(`/checkout/${missingQualificationBundleID}`, { waitUntil: "domcontentloaded" })
-    await expect(page.getByTestId("checkout-eligibility-blockers").getByText(missingQualificationDescription, { exact: true })).toBeVisible()
+    const missingQualificationBlockers = page.getByTestId("checkout-eligibility-blockers")
+    await expect(missingQualificationBlockers.getByText("缺少前置资格：CFTP", { exact: true })).toBeVisible()
+
+    await page.evaluate(() => {
+        window.localStorage.setItem("app_lang", "en")
+        window.dispatchEvent(new Event("lang_change"))
+    })
+    await expect(missingQualificationBlockers.getByText("Missing prerequisite qualification: CFTP", { exact: true })).toBeVisible()
 })
 
 test("免考材料待上传时显示本地化原因并进入对应资格申请", async ({ page }) => {
