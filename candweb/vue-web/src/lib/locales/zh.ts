@@ -829,7 +829,7 @@ export const zh = {
         statusUnavailable: "资格状态暂不可用",
         applyQualification: "申请资格后免考",
         resubmitQualification: "补充资格材料",
-        qualificationSubmitHint: "请提交免考证明材料。管理员审核通过后，系统将自动应用免考。",
+        qualificationSubmitHint: "请提交免考证明材料。审核通过后，免考将反映在总费用中。",
         qualificationPendingHint: "材料已提交，正在审核。",
         qualificationResubmitHint: "管理员已退回本次申请，请根据审核意见补充证明材料并重新提交。",
         qualificationUploadReady: "资格申请已创建，请在下方上传材料。",
