@@ -42,6 +42,8 @@ const selectedProvinceCode = ref("")
 const countryOptions = ref<CountryOption[]>([])
 const provinceOptions = ref<any[]>([])
 const cityOptions = ref<any[]>([])
+let profileInitializationPromise: Promise<void> | null = null
+let locationInitializationPromise: Promise<void> | null = null
 const showProvinceField = computed(() => !selectedCountryCode.value || countryUsesProvinceField(selectedCountryCode.value))
 const showCityField = computed(() => !selectedCountryCode.value || countryUsesCityField(selectedCountryCode.value))
 const locationGridClass = computed(() => {
@@ -305,6 +307,30 @@ async function loadProfile() {
   }
 }
 
+function initializeProfile() {
+  if (!profileInitializationPromise) {
+    profileInitializationPromise = loadProfile()
+  }
+  return profileInitializationPromise
+}
+
+function initializeLocationData() {
+  if (!locationInitializationPromise) {
+    locationInitializationPromise = loadLocationData()
+      .then(() => {
+        refreshCountryOptions()
+        syncLocationSelectionFromForm()
+      })
+      .catch((err: unknown) => {
+        locationInitializationPromise = null
+        console.error("Failed to load location data", err)
+        toast.error(t.value.common.locationDataLoadFailed, { id: "location-data-load-failed" })
+        throw err
+      })
+  }
+  return locationInitializationPromise
+}
+
 async function fetchOrgConfig() {
   try {
     const configRes = await apiClient("/api/public/config/organization")
@@ -322,17 +348,12 @@ async function fetchOrgConfig() {
 }
 
 onMounted(() => {
-  void loadProfile()
-  void loadLocationData()
+  void initializeProfile()
+  void initializeLocationData()
     .then(() => {
-      refreshCountryOptions()
-      syncLocationSelectionFromForm()
       void fetchOrgConfig()
     })
-    .catch((err: unknown) => {
-      console.error("Failed to load location data", err)
-      toast.error(t.value.common.locationDataLoadFailed, { id: "location-data-load-failed" })
-    })
+    .catch(() => undefined)
 })
 
 watch(lang, () => {
@@ -366,6 +387,16 @@ async function handleSubmit() {
   if (!unitId) {
     toast.error(t.value.common.error)
     return
+  }
+  loading.value = true
+  try {
+    await Promise.all([initializeProfile(), initializeLocationData()])
+    syncLocationSelectionFromForm()
+  } catch (err) {
+    console.error("Exam signup initialization failed", err)
+    return
+  } finally {
+    loading.value = false
   }
   sanitizeSignupForm()
   Object.assign(formData, normalizeLocationForSubmission(
