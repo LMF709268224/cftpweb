@@ -1069,7 +1069,7 @@ export const zh = {
         viewMembership: "查看我的会员",
         viewOrders: "查看订单",
         resolvingOrder: "正在确认订单内容...",
-        goToMall: "返回商城",
+        goToMall: "返回学习与认证服务",
     },
     settings: {
         title: "设置",

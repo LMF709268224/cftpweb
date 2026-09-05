@@ -303,17 +303,19 @@ onBeforeUnmount(() => {
 
 <style scoped>
 @media (min-width: 1024px) and (max-width: 1399px) {
-  :global(html[lang="en"] .courses-page-controls .courses-category-scroll) {
-    min-width: 0;
-    flex: 1 1 auto;
-    overflow-x: hidden;
+  .courses-page-controls {
+    flex-wrap: wrap;
   }
 
-  :global(html[lang="en"] .courses-page-controls .courses-category-filter) {
-    display: grid;
-    width: 100%;
+  .courses-category-scroll {
+    flex: 0 0 auto;
     min-width: 0;
-    grid-template-columns: .55fr 1.45fr .75fr 1.55fr;
+    overflow-x: visible;
+  }
+
+  .courses-category-filter {
+    width: auto;
+    min-width: 0;
   }
 
   :global(html[lang="en"] .courses-page-controls .courses-category-option) {
@@ -323,29 +325,17 @@ onBeforeUnmount(() => {
     white-space: nowrap;
   }
 
+  .courses-search {
+    width: clamp(180px, 28vw, 320px);
+    max-width: 320px;
+    min-width: 180px;
+    flex: 0 1 320px;
+  }
+
   :global(html[lang="en"] .courses-page-controls .courses-search) {
     width: 220px;
     max-width: 220px;
-    flex: 0 1 220px;
-  }
-}
-
-@media (min-width: 1024px) and (max-width: 1149px) {
-  :global(html[lang="en"] .courses-page-controls) {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  :global(html[lang="en"] .courses-page-controls .courses-category-scroll) {
-    width: 100%;
-    flex: none;
-  }
-
-  :global(html[lang="en"] .courses-page-controls .courses-search) {
-    width: 100%;
-    max-width: none;
-    margin-left: 0;
-    flex: none;
+    flex-basis: 220px;
   }
 }
 
