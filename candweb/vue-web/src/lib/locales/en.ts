@@ -1071,7 +1071,7 @@ export const en: AppTranslations = {
         viewMembership: "View My Membership",
         viewOrders: "View Order",
         resolvingOrder: "Confirming order details...",
-        goToMall: "Go to Mall",
+        goToMall: "Back to Learning & Certification Services",
     },
     settings: {
         title: "Settings",
