@@ -41,7 +41,7 @@ const route = useRoute()
 const router = useRouter()
 const { t, lang } = useTranslation()
 const { currentUser, fetchUser } = useUser()
-type EligibilityBlocker = { blocker_type?: string; description?: string }
+type EligibilityBlocker = { blocker_type?: string; description?: string; details?: unknown[] }
 const HARD_ELIGIBILITY_BLOCKER_TYPES = new Set([
   "ALREADY_PURCHASED",
   "MISSING_PREREQUISITE_QUALIFICATION",
@@ -2169,7 +2169,7 @@ const membershipUpgradeBlocker = computed(() => hardEligibilityBlockers.value.fi
 function eligibilityBlockerMessage(blocker?: EligibilityBlocker) {
   const copy = t.value.purchaseDialog
   if (!blocker) return t.value.checkoutWizard.purchaseUnavailable
-  if (blocker?.blocker_type === "MISSING_PREREQUISITE_QUALIFICATION") return copy.missingQualification
+  if (blocker?.blocker_type === "MISSING_PREREQUISITE_QUALIFICATION") return blocker.description || ""
   if (blocker?.blocker_type === "MISSING_UNLOCK_QUALIFICATION") return copy.missingMembershipQualification
   if (blocker?.blocker_type === "ALREADY_PURCHASED") {
     return isMembershipBundle.value ? copy.alreadyPurchasedMembership : copy.alreadyPurchased
