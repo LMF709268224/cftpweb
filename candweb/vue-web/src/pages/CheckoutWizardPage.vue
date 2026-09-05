@@ -51,6 +51,8 @@ const HARD_ELIGIBILITY_BLOCKER_TYPES = new Set([
   "CONFLICT_CHECK_UNAVAILABLE",
   "EXEMPTION_DOCUMENTS_PENDING_UPLOAD",
   "EXEMPTION_UNDER_REVIEW",
+  "MEMBERSHIP_UPGRADE_REQUIRED",
+  "MEMBERSHIP_ORDER_IN_PROGRESS",
 ])
 const bundleId = String(route.params.bundleId || route.query.bundleId || "")
 const currentStep = ref(1)
@@ -2162,6 +2164,7 @@ const hardEligibilityBlockers = computed<EligibilityBlocker[]>(() => {
 })
 
 const checkoutHardBlocked = computed(() => hardEligibilityBlockers.value.length > 0)
+const membershipUpgradeBlocker = computed(() => hardEligibilityBlockers.value.find((blocker) => blocker.blocker_type === "MEMBERSHIP_UPGRADE_REQUIRED"))
 
 function eligibilityBlockerMessage(blocker?: EligibilityBlocker) {
   const copy = t.value.purchaseDialog
@@ -2171,12 +2174,25 @@ function eligibilityBlockerMessage(blocker?: EligibilityBlocker) {
   if (blocker?.blocker_type === "ALREADY_PURCHASED") {
     return isMembershipBundle.value ? copy.alreadyPurchasedMembership : copy.alreadyPurchased
   }
+  if (blocker?.blocker_type === "MEMBERSHIP_UPGRADE_REQUIRED") return blocker.description || copy.membershipUpgradeRequired
+  if (blocker?.blocker_type === "MEMBERSHIP_ORDER_IN_PROGRESS") return blocker.description || copy.membershipOrderInProgress
   if (blocker?.blocker_type === "FORBIDDEN_QUALIFICATION") return copy.forbiddenQualification
   if (blocker?.blocker_type === "CONFLICT_PIPELINE_IN_PROGRESS") return copy.conflictPipelineInProgress
   if (blocker?.blocker_type === "CONFLICT_CHECK_UNAVAILABLE") return copy.conflictCheckUnavailable
   if (blocker?.blocker_type === "EXEMPTION_DOCUMENTS_PENDING_UPLOAD") return copy.exemptionDocumentsPendingUpload
   if (blocker?.blocker_type === "EXEMPTION_UNDER_REVIEW") return copy.exemptionUnderReview
   return blocker?.description || copy.unknownBlocker || t.value.checkoutWizard.purchaseUnavailable
+}
+
+async function goToMembershipUpgrade() {
+  const targetMembershipID = String(bundleData.value?.membership_id || "").trim()
+  await router.push({
+    path: "/membership",
+    query: {
+      tab: "levels",
+      ...(targetMembershipID ? { upgrade: targetMembershipID } : {}),
+    },
+  })
 }
 
 async function createPurchaseOrder() {
@@ -2365,6 +2381,14 @@ function closePaymentEditDialog() {
                   {{ eligibilityBlockerMessage(blocker) }}
                 </li>
               </ul>
+              <button
+                v-if="membershipUpgradeBlocker"
+                type="button"
+                class="mt-3 inline-flex h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-white"
+                @click="goToMembershipUpgrade"
+              >
+                {{ t.purchaseDialog.goToMembershipUpgrade }}
+              </button>
             </div>
           </div>
           <!-- Step 1: Selection -->
@@ -2958,6 +2982,7 @@ function closePaymentEditDialog() {
           <button
             data-testid="checkout-selection-next"
             class="checkout-next-button btn rounded-full px-8 py-3 text-white"
+            :disabled="loading || checkoutHardBlocked"
             @click="nextFromStep1"
           >
             {{ t.checkoutWizard.saveAndContinue }}

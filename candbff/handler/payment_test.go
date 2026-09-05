@@ -358,6 +358,42 @@ func TestGetOrderReturnsCandidateScopedOrderItems(t *testing.T) {
 	}
 }
 
+func TestGetOrderAllowsMembershipUpgradeOrder(t *testing.T) {
+	mall := &paymentOrderMallClientStub{
+		detailResponse: &mallpb.GetOrderDetailResponse{
+			Found: true,
+			Detail: &mallpb.OrderDetail{
+				Summary: &mallpb.OrderSummary{
+					OrderUlid:     "membership-upgrade-order-1",
+					CandidateUlid: "candidate-1",
+					BizType:       orderBizMembershipUpgrade,
+					BizRefUlid:    "membership-plan-2",
+					OrderStatus:   "WAIT_PAYMENT",
+					PaymentStatus: "WAIT_PAY",
+				},
+			},
+		},
+	}
+	pay := &paymentOrderPayClientStub{}
+	request := newCandidateHandlerRequest(
+		http.MethodGet,
+		"/api/orders/membership-upgrade-order-1",
+		"",
+		"candidate-1",
+		map[string]string{"orderId": "membership-upgrade-order-1"},
+	)
+	recorder := httptest.NewRecorder()
+
+	(&Handler{Mall: mall, Gpay: pay}).GetOrder(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body=%q", recorder.Code, http.StatusOK, recorder.Body.String())
+	}
+	if pay.itemsRequest == nil || pay.itemsRequest.GetOrderUlid() != "membership-upgrade-order-1" {
+		t.Fatalf("ListOrderItems request = %+v", pay.itemsRequest)
+	}
+}
+
 func TestCancelOrderRejectsUnsupportedBusinessType(t *testing.T) {
 	request := newCandidateHandlerRequest(
 		http.MethodPost,

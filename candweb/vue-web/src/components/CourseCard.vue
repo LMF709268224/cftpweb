@@ -72,12 +72,15 @@ const isMembershipProduct = computed(() => Boolean(props.isMembershipBundle || p
 const isCombinationProduct = computed(() => isPipelineProduct.value && isMembershipProduct.value)
 const isMembershipOnlyProduct = computed(() => isMembershipProduct.value && !isPipelineProduct.value)
 const alreadyPurchasedBlockers = computed(() => blockers.value.filter((blocker) => blocker.blocker_type === "ALREADY_PURCHASED"))
+const membershipUpgradeBlocker = computed(() => blockers.value.find((blocker) => blocker.blocker_type === "MEMBERSHIP_UPGRADE_REQUIRED"))
+const membershipOrderInProgressBlocker = computed(() => blockers.value.find((blocker) => blocker.blocker_type === "MEMBERSHIP_ORDER_IN_PROGRESS"))
 const hasPurchasedPipeline = computed(() => alreadyPurchasedBlockers.value.some((blocker) => String(blocker.description || "").toLowerCase().includes("pipeline")))
 const hasPurchasedMembership = computed(() =>
   Boolean(currentActiveMembership.value) ||
   alreadyPurchasedBlockers.value.some((blocker) => String(blocker.description || "").toLowerCase().includes("membership")),
 )
 const effectivePurchased = computed(() => {
+  if (membershipUpgradeBlocker.value || membershipOrderInProgressBlocker.value) return false
   if (props.isPurchased) return true
   if (isCombinationProduct.value) return hasPurchasedPipeline.value && hasPurchasedMembership.value
   if (isPipelineProduct.value) return hasPurchasedPipeline.value
@@ -147,6 +150,8 @@ const actionCopy = computed(() => {
   if (effectivePurchased.value) return isPipelineProduct.value ? cardCopy.value.enterCertification : cardCopy.value.membershipCenter
   if (statusRefreshing.value) return cardCopy.value.eligibilityCheckInProgress
   if (eligibilityRefreshFailed.value) return eligibilityCopy.value.retry
+  if (membershipUpgradeBlocker.value) return cardCopy.value.goToMembershipUpgrade
+  if (membershipOrderInProgressBlocker.value) return cardCopy.value.membershipOrderInProgress
   if (hasInProgressOrder.value) return cardCopy.value.continuePayment
   if (currentEligibility.value?.can_purchase) return isMembershipOnlyProduct.value ? cardCopy.value.becomeMember : cardCopy.value.enrollNow
   if (hasAdditionalExemptionOption.value) return cardCopy.value.continueExemptionSelection
@@ -160,6 +165,8 @@ const actionClass = computed(() => {
   if (props.loginRequired) return "bg-primary text-white shadow-sm shadow-primary/20 group-hover:bg-primary/90"
   if (statusRefreshing.value) return "bg-slate-200 text-slate-500"
   if (eligibilityRefreshFailed.value) return "bg-primary text-white shadow-sm shadow-primary/20 group-hover:bg-primary/90"
+  if (membershipUpgradeBlocker.value) return "bg-primary text-white shadow-sm shadow-primary/20 group-hover:bg-primary/90"
+  if (membershipOrderInProgressBlocker.value) return "bg-slate-200 text-slate-500"
   if (credentialCenterBlocker.value) return "bg-primary text-white shadow-sm shadow-primary/20 group-hover:bg-primary/90"
   if (currentEligibility.value && !effectivePurchased.value && !currentEligibility.value.can_purchase && !hasInProgressOrder.value) {
     return "bg-slate-200 text-slate-500"
@@ -174,6 +181,8 @@ function blockerText(blocker?: EligibilityBlocker) {
   if (blocker.blocker_type === "MISSING_UNLOCK_QUALIFICATION") return cardCopy.value.missingMembershipQualification
   if (blocker.blocker_type === "ALREADY_PURCHASED") return cardCopy.value.alreadyPurchased
   if (blocker.blocker_type === "IN_PROGRESS_PURCHASE") return cardCopy.value.inProgressPurchase
+  if (blocker.blocker_type === "MEMBERSHIP_UPGRADE_REQUIRED") return blocker.description || cardCopy.value.membershipUpgradeRequired
+  if (blocker.blocker_type === "MEMBERSHIP_ORDER_IN_PROGRESS") return blocker.description || cardCopy.value.membershipOrderInProgress
   if (blocker.blocker_type === "PIPELINE_NOT_FOUND") return cardCopy.value.pipelineNotFound
   if (blocker.blocker_type === "FORBIDDEN_QUALIFICATION") return cardCopy.value.forbiddenQualification
   if (blocker.blocker_type === "CONFLICT_PIPELINE_IN_PROGRESS") return cardCopy.value.conflictPipelineInProgress
@@ -216,6 +225,22 @@ const accessState = computed(() => {
   }
   if (eligibilityRefreshFailed.value) {
     return { label: eligibilityCopy.value.failed, icon: AlertCircle, className: "border-red-200 bg-red-50 text-red-700", hint: "" }
+  }
+  if (membershipUpgradeBlocker.value) {
+    return {
+      label: cardCopy.value.membershipUpgradeRequired,
+      icon: Crown,
+      className: "border-blue-200 bg-blue-50 text-blue-800",
+      hint: blockerText(membershipUpgradeBlocker.value),
+    }
+  }
+  if (membershipOrderInProgressBlocker.value) {
+    return {
+      label: cardCopy.value.membershipOrderInProgress,
+      icon: Clock,
+      className: "border-amber-200 bg-amber-50 text-amber-800",
+      hint: blockerText(membershipOrderInProgressBlocker.value),
+    }
   }
   if (currentEligibility.value?.can_purchase || hasInProgressOrder.value) {
     return { label: isMembershipOnlyProduct.value ? cardCopy.value.readyMembership : cardCopy.value.ready, icon: isMembershipOnlyProduct.value ? Crown : ClipboardCheck, className: "border-emerald-200 bg-emerald-50 text-emerald-700", hint: "" }
@@ -266,6 +291,20 @@ async function handleCardClick() {
   const refreshed = await refreshBundleState()
   if (!refreshed) return
   if (effectivePurchased.value) return
+  if (membershipUpgradeBlocker.value) {
+    await router.push({
+      path: "/membership",
+      query: {
+        tab: "levels",
+        ...(props.membershipId ? { upgrade: props.membershipId } : {}),
+      },
+    })
+    return
+  }
+  if (membershipOrderInProgressBlocker.value) {
+    toast.info(blockerText(membershipOrderInProgressBlocker.value))
+    return
+  }
   if (hasInProgressOrder.value) {
     toast.info(t.value.purchaseDialog?.inProgressPurchaseDesc || cardCopy.value.inProgressPurchase)
     router.push({ path: "/orders" })
@@ -295,8 +334,9 @@ async function handleCardClick() {
     :data-bundle-id="id"
     :data-pipeline-id="pipelineId || ''"
     :aria-busy="statusRefreshing"
+    :aria-disabled="Boolean(membershipOrderInProgressBlocker)"
     class="group flex h-full flex-col overflow-hidden rounded-lg border border-[#ccd7e8] bg-white transition-colors duration-200 hover:border-primary"
-    :class="!effectivePurchased && 'cursor-pointer'"
+    :class="!effectivePurchased && !membershipOrderInProgressBlocker ? 'cursor-pointer' : 'cursor-default'"
     @click="handleCardClick"
     @pointerenter="!effectivePurchased && preloadCheckoutWizard()"
     @focusin="!effectivePurchased && preloadCheckoutWizard()"

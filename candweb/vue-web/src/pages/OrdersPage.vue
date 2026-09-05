@@ -244,6 +244,7 @@ useDialogAccessibility(() => orderDetailDialogOpen.value, orderDetailDialogRef, 
 
 function canContinuePayment(order: OrderItem) {
   if (!order.bizType || !order.bizRefUlid) return false
+  if (normalizedStatus(order.bizType) === "MEMBERSHIP_UPGRADE") return false
   if (paymentSyncingOrderId.value === order.id || isPaidPaymentStatus(order.payment_status)) return false
   return actionableOrderStatuses.has(normalizedStatus(order.order_status))
 }
@@ -270,6 +271,7 @@ function handlePaymentDialogOpenChange(open: boolean) {
 }
 
 function canCancelOrder(order: OrderItem) {
+  if (normalizedStatus(order.bizType) === "MEMBERSHIP_UPGRADE") return false
   return Boolean(
     order.bizType
     && order.bizRefUlid
@@ -399,6 +401,8 @@ function orderTypeLabel(bizType?: string) {
       return t.value.orders.typeCredentialApplication
     case "BUNDLE_PURCHASE":
       return t.value.orders.typeBundlePurchase
+    case "MEMBERSHIP_UPGRADE":
+      return t.value.orders.typeMembershipUpgrade
     default:
       return normalized || t.value.orders.typeOther
   }
