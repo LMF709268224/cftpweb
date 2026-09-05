@@ -1627,6 +1627,11 @@ function showExemptionCredentialBadge(unit: any) {
   return !exemptionDecision(unit)
 }
 
+function usesCftpExemptionChoices(unit: any) {
+  if (!isCftpRegistration.value || activeOrderLocksDecisionForUnit(unit)) return false
+  return !["active", "pending", "pending_upload", "resubmit"].includes(exemptionCredentialState(unit))
+}
+
 function canUploadQualificationForUnit(unit: any) {
   const status = qualificationApplicationForUnit(unit)?.status
   return isApplicationPendingUploadStatus(status) || isApplicationResubmitStatus(status)
@@ -2406,7 +2411,7 @@ function closePaymentEditDialog() {
                     :class="[
                       'checkout-unit-card group relative flex flex-col justify-between overflow-hidden rounded-2xl border p-5 transition-all duration-300',
                       isQualificationEditorExpanded(unit.unit_id) ? 'md:col-span-2' : '',
-                      selectedExemptionUnitIds[unit.unit_id]
+                      selectedExemptionUnitIds[unit.unit_id] && !usesCftpExemptionChoices(unit)
                         ? 'border-emerald-400 bg-emerald-50/40 shadow-md ring-1 ring-emerald-400'
                         : unit.qualified
                           ? 'cursor-pointer border-border hover:border-emerald-200 hover:shadow-sm'
@@ -2489,6 +2494,56 @@ function closePaymentEditDialog() {
                           {{ t.credentialsPage.uploadMaterials }}
                         </button>
                       </div>
+                      <div
+                        v-else-if="usesCftpExemptionChoices(unit)"
+                        class="cftp-exemption-choice-list"
+                        role="radiogroup"
+                        :aria-label="t.checkoutWizard.exemptionDecisionLabel"
+                      >
+                        <button
+                          type="button"
+                          role="radio"
+                          data-testid="checkout-exemption-apply"
+                          :data-unit-id="unit.unit_id"
+                          :aria-checked="exemptionDecision(unit) === 'exempt'"
+                          :class="['cftp-exemption-choice', { 'is-selected': exemptionDecision(unit) === 'exempt' }]"
+                          @click="setExemptionDecision(unit, 'exempt')"
+                        >
+                          <span class="cftp-exemption-choice-indicator" aria-hidden="true">
+                            <CheckCircle2 v-if="exemptionDecision(unit) === 'exempt'" class="h-5 w-5" />
+                          </span>
+                          <span class="cftp-exemption-choice-content">
+                            <span class="cftp-exemption-choice-title">{{ t.checkoutWizard.applyExemptionDecision }}</span>
+                            <span class="cftp-exemption-choice-description">{{ t.checkoutWizard.cftpApplyExemptionDescription }}</span>
+                            <span class="cftp-exemption-choice-meta">
+                              <span>{{ t.checkoutWizard.cftpApplyExemptionFeeNote }}</span>
+                              <strong>{{ formatMoney(unitPriceDisplay[unit.unit_id]?.exemptionAmount || 0, unitPriceDisplay[unit.unit_id]?.currency) }}</strong>
+                            </span>
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          role="radio"
+                          data-testid="checkout-exemption-waive"
+                          :data-unit-id="unit.unit_id"
+                          :aria-checked="exemptionDecision(unit) === 'waive'"
+                          :class="['cftp-exemption-choice', { 'is-selected': exemptionDecision(unit) === 'waive' }]"
+                          @click="setExemptionDecision(unit, 'waive')"
+                        >
+                          <span class="cftp-exemption-choice-indicator" aria-hidden="true">
+                            <CheckCircle2 v-if="exemptionDecision(unit) === 'waive'" class="h-5 w-5" />
+                          </span>
+                          <span class="cftp-exemption-choice-content">
+                            <span class="cftp-exemption-choice-title">{{ t.checkoutWizard.cftpPayFullPriceDecision }}</span>
+                            <span class="cftp-exemption-choice-description">{{ t.checkoutWizard.cftpPayFullPriceDescription }}</span>
+                            <span class="cftp-exemption-choice-meta">
+                              <strong v-if="unitPriceDisplay[unit.unit_id]?.accessAmount !== undefined">
+                                {{ formatMoney(unitPriceDisplay[unit.unit_id]?.accessAmount, unitPriceDisplay[unit.unit_id]?.currency) }}
+                              </strong>
+                            </span>
+                          </span>
+                        </button>
+                      </div>
                       <div v-else class="grid gap-2 sm:grid-cols-2" role="group" :aria-label="t.checkoutWizard.exemptionDecisionLabel">
                         <button
                           type="button"
@@ -2520,7 +2575,7 @@ function closePaymentEditDialog() {
                           {{ t.checkoutWizard.waiveExemptionDecision }}
                         </button>
                       </div>
-                      <div class="mt-3 flex items-center justify-end">
+                      <div v-if="!usesCftpExemptionChoices(unit)" class="mt-3 flex items-center justify-end">
                         <span v-if="selectedExemptionUnitIds[unit.unit_id]" class="checkout-unit-selected-price">
                           {{ formatMoney(unitPriceDisplay[unit.unit_id]?.exemptionAmount || 0, unitPriceDisplay[unit.unit_id]?.currency) }}
                         </span>
@@ -3427,6 +3482,101 @@ function closePaymentEditDialog() {
 .checkout-unit-action {
   color: var(--gfi-ink-soft, #2a4575);
   font-size: 13px;
+}
+
+.cftp-exemption-choice-list {
+  display: grid;
+  gap: 10px;
+}
+
+.cftp-exemption-choice {
+  display: grid;
+  width: 100%;
+  min-height: 112px;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 10px;
+  padding: 14px;
+  border: 2px solid rgba(9, 87, 249, 0.48);
+  border-radius: 8px;
+  color: #002a66;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.cftp-exemption-choice:hover {
+  border-color: #0957f9;
+  background: #f7faff;
+}
+
+.cftp-exemption-choice.is-selected {
+  border-color: #0957f9;
+  color: #fff;
+  background: #002a66;
+  box-shadow: 0 0 0 2px rgba(9, 87, 249, 0.2);
+}
+
+.cftp-exemption-choice.is-selected:hover {
+  background: #002a66;
+}
+
+.cftp-exemption-choice-indicator {
+  display: flex;
+  width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(9, 87, 249, 0.55);
+  border-radius: 999px;
+  color: #0957f9;
+  background: #fff;
+}
+
+.cftp-exemption-choice.is-selected .cftp-exemption-choice-indicator {
+  border-color: #fff;
+}
+
+.cftp-exemption-choice-content {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+}
+
+.cftp-exemption-choice-title {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.cftp-exemption-choice-description,
+.cftp-exemption-choice-meta {
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.cftp-exemption-choice-description {
+  color: #476080;
+}
+
+.cftp-exemption-choice-meta {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  color: #61718c;
+}
+
+.cftp-exemption-choice-meta strong {
+  flex: none;
+  color: #002a66;
+  font-size: 15px;
+}
+
+.cftp-exemption-choice.is-selected .cftp-exemption-choice-description,
+.cftp-exemption-choice.is-selected .cftp-exemption-choice-meta,
+.cftp-exemption-choice.is-selected .cftp-exemption-choice-meta strong {
+  color: #fff;
 }
 
 .checkout-unit-default-price,
