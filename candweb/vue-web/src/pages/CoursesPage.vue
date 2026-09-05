@@ -262,7 +262,7 @@ onBeforeUnmount(() => {
             </div>
           </div>
 
-          <div class="relative w-full lg:ml-auto lg:max-w-md">
+          <div class="courses-search relative w-full lg:ml-auto lg:max-w-md">
             <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input v-model="searchQuery" class="input pl-10" :placeholder="t.courses.searchPlaceholder" />
           </div>
@@ -302,6 +302,53 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+@media (min-width: 1024px) and (max-width: 1399px) {
+  :global(html[lang="en"] .courses-page-controls .courses-category-scroll) {
+    min-width: 0;
+    flex: 1 1 auto;
+    overflow-x: hidden;
+  }
+
+  :global(html[lang="en"] .courses-page-controls .courses-category-filter) {
+    display: grid;
+    width: 100%;
+    min-width: 0;
+    grid-template-columns: .55fr 1.45fr .75fr 1.55fr;
+  }
+
+  :global(html[lang="en"] .courses-page-controls .courses-category-option) {
+    min-width: 0;
+    padding-inline: 8px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  :global(html[lang="en"] .courses-page-controls .courses-search) {
+    width: 220px;
+    max-width: 220px;
+    flex: 0 1 220px;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1149px) {
+  :global(html[lang="en"] .courses-page-controls) {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  :global(html[lang="en"] .courses-page-controls .courses-category-scroll) {
+    width: 100%;
+    flex: none;
+  }
+
+  :global(html[lang="en"] .courses-page-controls .courses-search) {
+    width: 100%;
+    max-width: none;
+    margin-left: 0;
+    flex: none;
+  }
+}
+
 @media (max-width: 767px) {
   .courses-page-intro {
     margin-bottom: 16px;

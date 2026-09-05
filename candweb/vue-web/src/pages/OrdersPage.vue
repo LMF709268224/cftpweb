@@ -694,23 +694,23 @@ onBeforeUnmount(() => {
               <p class="text-sm text-muted-foreground">{{ formatBackendDateMinute(order.createdAt, lang) }}</p>
             </div>
           </button>
-          <div class="order-actions pointer-events-none relative z-10 flex w-full flex-wrap items-center justify-end gap-x-3 gap-y-3 pl-16 md:grid md:w-auto md:shrink-0 md:grid-cols-[130px_148px_112px_112px_24px] md:gap-x-5 md:pl-0">
+          <div class="order-actions pointer-events-none relative z-10 flex w-full flex-wrap items-center justify-end gap-x-3 gap-y-3 pl-16 md:grid md:w-auto md:shrink-0 md:grid-cols-[120px_148px_132px_112px_24px] md:gap-x-3 md:pl-0">
             <div class="mr-auto flex justify-start md:mr-0 md:justify-center">
               <span class="badge text-xs" :class="orderStatusBadgeClass(order)">
                 {{ orderStatusLabel(order) }}
               </span>
             </div>
             <div class="text-right">
-              <button v-if="canContinuePayment(order)" @click.stop="continueOrderPayment(order)" class="pointer-events-auto inline-flex h-10 min-w-[148px] items-center justify-center whitespace-nowrap rounded-lg bg-primary/10 px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/20 md:h-8 md:w-full">
+              <button v-if="canContinuePayment(order)" @click.stop="continueOrderPayment(order)" class="pointer-events-auto inline-flex h-10 min-w-[148px] items-center justify-center whitespace-nowrap rounded-lg bg-primary/10 px-4 text-sm font-semibold text-primary transition-colors hover:bg-primary/20 md:h-9 md:w-full">
                 {{ t.orders.continuePayment }}
               </button>
               <p v-else class="order-amount text-lg font-semibold text-card-foreground">{{ order.amount }}</p>
             </div>
-            <button v-if="canCancelOrder(order)" type="button" class="pointer-events-auto inline-flex h-10 w-full items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-600 transition-colors hover:border-red-300 hover:bg-red-100 md:h-8" @click.stop="openCancelConfirm(order)">
+            <button v-if="canCancelOrder(order)" type="button" class="pointer-events-auto inline-flex h-10 w-full min-w-[132px] items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-red-200 bg-white px-4 text-sm font-semibold text-red-600 shadow-sm transition-colors hover:border-red-300 hover:bg-red-50 md:h-9" @click.stop="openCancelConfirm(order)">
               <Loader2 v-if="cancelLoading === order.bizRefUlid" class="h-4 w-4 animate-spin" />
               {{ t.orders.cancelPayment }}
             </button>
-            <span v-else class="order-action-placeholder h-10 w-[112px] md:h-8" />
+            <span v-else class="order-action-placeholder h-10 w-[132px] md:h-9" />
             <button v-if="order.canViewInvoice" @click.stop="viewInvoice(order.invoiceOrderId)" class="pointer-events-auto inline-flex h-10 w-[112px] items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-primary/10 px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/20 md:h-9">
               <Loader2 v-if="invoiceLoading === order.invoiceOrderId" class="h-4 w-4 animate-spin" />
               {{ t.orders.viewInvoice }}
