@@ -35,7 +35,6 @@ import {
 import { GENDER_OPTIONS, PROFILE_TEXT_LIMITS, isValidEmail, isValidInternationalPhone, isValidPostalCode, normalizeGender, normalizeInternationalPhone, normalizePostalCode, trimToMax } from "@/lib/profileFormValidation"
 import { CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, statusEnumNameForStatus } from "@/lib/status-labels"
 import { getFileConstraintInfo } from "@/lib/fileConstraints"
-import { membershipPrerequisiteQualificationLabels } from "@/lib/eligibilityBlockers"
 import { sha256Hex, uploadWithTimeout } from "@/lib/upload"
 
 const route = useRoute()
@@ -2170,13 +2169,7 @@ const membershipUpgradeBlocker = computed(() => hardEligibilityBlockers.value.fi
 function eligibilityBlockerMessage(blocker?: EligibilityBlocker) {
   const copy = t.value.purchaseDialog
   if (!blocker) return t.value.checkoutWizard.purchaseUnavailable
-  if (blocker?.blocker_type === "MISSING_PREREQUISITE_QUALIFICATION") {
-    const qualificationLabels = isMembershipBundle.value ? membershipPrerequisiteQualificationLabels(blocker) : []
-    if (qualificationLabels.length > 0) {
-      return copy.missingNamedQualification.replace("{qualification}", qualificationLabels.join(", "))
-    }
-    return isMembershipBundle.value ? copy.missingMembershipQualification : copy.missingQualification
-  }
+  if (blocker?.blocker_type === "MISSING_PREREQUISITE_QUALIFICATION") return blocker.description || ""
   if (blocker?.blocker_type === "MISSING_UNLOCK_QUALIFICATION") return copy.missingMembershipQualification
   if (blocker?.blocker_type === "ALREADY_PURCHASED") {
     return isMembershipBundle.value ? copy.alreadyPurchasedMembership : copy.alreadyPurchased
