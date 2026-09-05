@@ -541,6 +541,54 @@ test("待报名考试从列表进入对应报名页面", async ({ page }) => {
   )
 })
 
+test("考试报名首次提交会等待地区数据并补全国家级地区参数", async ({ page }) => {
+  let releaseLocationData: (() => void) | undefined
+  const locationDataReady = new Promise<void>((resolve) => {
+    releaseLocationData = resolve
+  })
+  let signupBody: unknown
+
+  await page.route(/country-state-city.*\.js/, async (route) => {
+    await locationDataReady
+    await route.continue()
+  })
+  await installCandidateApiMocks(page, ({ pathname, method, body }: ApiMockContext) => {
+    if (pathname === "/api/user/me") {
+      return {
+        data: {
+          ...candidateUser,
+          country: "Singapore",
+          region: "Singapore",
+          province: "",
+          city: "",
+        },
+      }
+    }
+    if (pathname === "/api/user/profile" && method === "PUT") {
+      return { data: { success: true } }
+    }
+    if (pathname === "/api/exams/units/course-unit-1/signup" && method === "POST") {
+      signupBody = body
+      return { data: { success: true } }
+    }
+    return undefined
+  })
+
+  await page.goto("/exams/signup?unitId=course-unit-1&returnTo=%2Fexams", { waitUntil: "domcontentloaded" })
+  await expect(page.getByTestId("exam-signup-first-name")).toHaveValue(candidateUser.first_name)
+
+  await page.getByTestId("exam-signup-submit").click()
+  await page.waitForTimeout(100)
+  expect(signupBody).toBeUndefined()
+
+  releaseLocationData?.()
+  await expect.poll(() => signupBody).toMatchObject({
+    country: "Singapore",
+    province: "Singapore",
+    city: "Singapore",
+  })
+})
+
 test("等待教授批卷的考试不显示为不合格或开放成绩入口", async ({ page }) => {
   await installCandidateApiMocks(page, ({ pathname }: ApiMockContext) => {
     if (pathname === "/api/exams") {
