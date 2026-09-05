@@ -1569,7 +1569,7 @@ test("免考选择完成后按资格创建独立订单", async ({ page }) => {
     await expect(confirmDialog.getByText("Apply Exemption Course", { exact: true })).toBeVisible()
     await expect(confirmDialog.getByText("CFtP 金融模块（L1A）免考申请", { exact: true })).toBeVisible()
     await expect(confirmDialog.getByText("Waive Exemption Course", { exact: true })).toHaveCount(0)
-    await expect(confirmDialog.getByText("当前资格创建后不能修改", { exact: true })).toBeVisible()
+    await expect(confirmDialog.getByText("资格申请提交后不能修改", { exact: true })).toBeVisible()
     expect(applicationOrderBody).toBeUndefined()
 
     await page.getByTestId("checkout-cancel-qualification-order").click()
