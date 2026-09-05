@@ -208,6 +208,96 @@ test("商城和结账页展示并拦截层级互斥资格", async ({ page }) => 
     await expect(page.getByTestId("checkout-next")).toBeDisabled()
 })
 
+test("会员商品按升级和在途订单 blocker 禁止原价购买", async ({ page }) => {
+    const targetMembershipID = "membership-plan-charterholder"
+    const upgradeBundleID = "bundle-membership-upgrade-required"
+    const pendingBundleID = "bundle-membership-order-pending"
+    const pendingDescription = "会员升级订单正在处理，请等待激活完成。"
+    const membershipBundle = {
+        ...bundle,
+        pipeline_id: "",
+        membership_id: targetMembershipID,
+        bundle_item_types: ["membership"],
+        is_pipeline_bundle: false,
+        is_membership_bundle: true,
+        active_membership: {
+            membership_ulid: "membership-plan-affiliate",
+            status: "active",
+        },
+    }
+    const upgradeBundle = {
+        ...membershipBundle,
+        bundle_id: upgradeBundleID,
+        name: "Charterholder Membership",
+        eligibility: {
+            can_purchase: false,
+            blockers: [{
+                blocker_type: "MEMBERSHIP_UPGRADE_REQUIRED",
+                description: "请使用会员补差价升级通道。",
+            }],
+        },
+        purchase_state: {
+            eligibility: {
+                can_purchase: false,
+                blockers: [{
+                    blocker_type: "MEMBERSHIP_UPGRADE_REQUIRED",
+                    description: "请使用会员补差价升级通道。",
+                }],
+            },
+        },
+    }
+    const pendingBundle = {
+        ...membershipBundle,
+        bundle_id: pendingBundleID,
+        name: "Pending Membership",
+        eligibility: {
+            can_purchase: false,
+            blockers: [{
+                blocker_type: "MEMBERSHIP_ORDER_IN_PROGRESS",
+                description: pendingDescription,
+            }],
+        },
+        purchase_state: {
+            eligibility: {
+                can_purchase: false,
+                blockers: [{
+                    blocker_type: "MEMBERSHIP_ORDER_IN_PROGRESS",
+                    description: pendingDescription,
+                }],
+            },
+        },
+    }
+
+    await installCandidateApiMocks(page, ({ pathname, method }) => {
+        if (pathname === "/api/mall/bundles" && method === "GET") {
+            return { data: { bundles: [upgradeBundle, pendingBundle] } }
+        }
+        if (pathname === `/api/mall/bundles/${upgradeBundleID}` && method === "GET") return { data: upgradeBundle }
+        if (pathname === `/api/mall/bundles/${pendingBundleID}` && method === "GET") return { data: pendingBundle }
+        if (pathname.endsWith("/pricing-detail")) return { data: {} }
+        return undefined
+    })
+
+    await page.goto("/certifications", { waitUntil: "domcontentloaded" })
+    const upgradeCard = page.locator(`[data-testid="certification-card"][data-bundle-id="${upgradeBundleID}"]`)
+    await expect(upgradeCard.getByText("需要补差价升级", { exact: true })).toBeVisible()
+    await expect(upgradeCard.getByText("前往升级会员", { exact: true })).toBeVisible()
+    await upgradeCard.click()
+    await expect(page).toHaveURL(new RegExp(`/membership\\?tab=levels&upgrade=${targetMembershipID}$`))
+
+    await page.goto("/certifications", { waitUntil: "domcontentloaded" })
+    const pendingCard = page.locator(`[data-testid="certification-card"][data-bundle-id="${pendingBundleID}"]`)
+    await expect(pendingCard.getByText(pendingDescription, { exact: true })).toBeVisible()
+    await pendingCard.click()
+    await expect(page).toHaveURL(/\/certifications$/)
+
+    await page.goto(`/checkout/${upgradeBundleID}`, { waitUntil: "domcontentloaded" })
+    const blockerPanel = page.getByTestId("checkout-eligibility-blockers")
+    await expect(blockerPanel).toContainText("请使用会员补差价升级通道。")
+    await blockerPanel.getByRole("button", { name: "前往升级会员", exact: true }).click()
+    await expect(page).toHaveURL(new RegExp(`/membership\\?tab=levels&upgrade=${targetMembershipID}$`))
+})
+
 test("免考材料待上传时显示本地化原因并进入对应资格申请", async ({ page }) => {
     const blockedBundleID = "bundle-exemption-documents-pending"
     const blockedUnitID = "unit-exemption-documents-pending"

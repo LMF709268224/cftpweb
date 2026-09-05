@@ -164,6 +164,7 @@ test("会员取消续费后刷新为已取消状态", async ({ page }) => {
 
 test("会员升级先预览分摊费用并以幂等请求确认", async ({ page }) => {
   let upgraded = false
+  let upgradeOrderPolls = 0
   let previewBody: unknown
   let upgradeBody: unknown
 
@@ -218,26 +219,33 @@ test("会员升级先预览分摊费用并以幂等请求确认", async ({ page 
     }
     if (pathname === "/api/membership/upgrade" && method === "POST") {
       upgradeBody = body
-      upgraded = true
       return {
         data: {
           success: true,
-          status: "COMPLETED",
+          status: "PENDING_PAYMENT",
           order_ulid: "membership-upgrade-order-1",
-          membership_record_ulid: "membership-record-2",
           paid_amount_minor: 1560,
           currency: "usd",
+        },
+      }
+    }
+    if (pathname === "/api/orders/membership-upgrade-order-1" && method === "GET") {
+      upgradeOrderPolls += 1
+      upgraded = upgradeOrderPolls >= 2
+      return {
+        data: {
+          summary: {
+            order_status: upgraded ? "COMPLETED" : "WAIT_PAYMENT",
+            payment_status: upgraded ? "PAID" : "WAIT_PAY",
+          },
         },
       }
     }
     return undefined
   })
 
-  await page.goto("/membership", { waitUntil: "domcontentloaded" })
-  await page.getByRole("button", { name: "会员等级", exact: true }).click()
-
+  await page.goto("/membership?tab=levels&upgrade=membership-plan-charterholder", { waitUntil: "domcontentloaded" })
   await expect(page.getByRole("button", { name: "当前方案" })).toBeDisabled()
-  await page.getByRole("button", { name: "升级会员" }).click()
 
   const dialog = page.getByRole("dialog", { name: "确认会员升级" })
   await expect(dialog).toBeVisible()
@@ -253,11 +261,13 @@ test("会员升级先预览分摊费用并以幂等请求确认", async ({ page 
   })
   expect((upgradeBody as { currency?: unknown }).currency).toBeUndefined()
   expect((upgradeBody as { idempotency_key?: string }).idempotency_key).toMatch(/^[0-9a-f-]{36}$/)
+  await expect.poll(() => upgradeOrderPolls).toBeGreaterThan(1)
   await expect(page.locator(".membership-current-name")).toContainText("GFI Charterholder Member")
 })
 
 test("会员升级等待支付或3DS验证时不会提前提示成功", async ({ page }) => {
   let upgradeStatus = "PENDING_PAYMENT"
+  let upgradeOrderPolls = 0
 
   await page.addInitScript(() => {
     ;(window as any).Stripe = () => ({
@@ -324,6 +334,17 @@ test("会员升级等待支付或3DS验证时不会提前提示成功", async ({
         },
       }
     }
+    if (pathname.startsWith("/api/orders/membership-upgrade-") && method === "GET") {
+      upgradeOrderPolls += 1
+      return {
+        data: {
+          summary: {
+            order_status: "WAIT_PAYMENT",
+            payment_status: "WAIT_PAY",
+          },
+        },
+      }
+    }
     return undefined
   })
 
@@ -336,6 +357,7 @@ test("会员升级等待支付或3DS验证时不会提前提示成功", async ({
   await expect(page.getByText("升级订单处理中，请稍候。", { exact: true })).toBeVisible()
   await expect(dialog).toBeHidden()
   await expect(page.getByText("会员升级成功", { exact: true })).toHaveCount(0)
+  await expect.poll(() => upgradeOrderPolls).toBeGreaterThan(0)
 
   upgradeStatus = "REQUIRES_ACTION"
   await page.getByRole("button", { name: "会员等级", exact: true }).click()

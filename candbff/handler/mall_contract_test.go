@@ -12,6 +12,8 @@ func TestEligibilityFromBundlePreservesConflictBlockers(t *testing.T) {
 		"FORBIDDEN_QUALIFICATION",
 		"CONFLICT_PIPELINE_IN_PROGRESS",
 		"CONFLICT_CHECK_UNAVAILABLE",
+		"MEMBERSHIP_UPGRADE_REQUIRED",
+		"MEMBERSHIP_ORDER_IN_PROGRESS",
 	}
 	blockers := make([]*mallpb.EligibilityBlocker, 0, len(blockerTypes))
 	for _, blockerType := range blockerTypes {

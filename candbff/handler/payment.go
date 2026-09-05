@@ -18,6 +18,7 @@ const (
 	orderBizCourseRetakePayment  = "COURSE_RETAKE_PAYMENT"
 	orderBizCredentialApply      = "CREDENTIAL_APPLICATION"
 	orderBizBundlePurchase       = "BUNDLE_PURCHASE"
+	orderBizMembershipUpgrade    = "MEMBERSHIP_UPGRADE"
 	defaultCandidateOrderPageMax = 50
 )
 
@@ -27,6 +28,7 @@ var candidateOrderBizTypes = []string{
 	orderBizCourseRetakePayment,
 	orderBizCredentialApply,
 	orderBizBundlePurchase,
+	orderBizMembershipUpgrade,
 }
 
 type candidateCancelableOrder struct {
@@ -536,6 +538,8 @@ func orderBizTypeLabel(bizType string) string {
 		return "Credential Application Order"
 	case orderBizBundlePurchase:
 		return "Bundle Purchase"
+	case orderBizMembershipUpgrade:
+		return "Membership Upgrade"
 	default:
 		return strings.TrimSpace(bizType)
 	}

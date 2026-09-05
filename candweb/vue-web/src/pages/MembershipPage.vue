@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
-import { RouterLink } from "vue-router"
+import { RouterLink, useRoute } from "vue-router"
 import { AlertCircle, ArrowUpCircle, Check, ChevronDown, Crown, Loader2, PanelLeft, Percent, RefreshCw, ShoppingBag, Star, X, XCircle } from "lucide-vue-next"
 import { toast } from "vue-sonner"
 import AppShell from "@/components/AppShell.vue"
@@ -17,6 +17,7 @@ import { formatBackendDate } from "@/lib/utils"
 type RecordData = Record<string, any>
 
 const { t, lang } = useTranslation()
+const route = useRoute()
 const activeTab = ref("overview")
 const loading = ref(false)
 const loadError = ref(false)
@@ -59,7 +60,10 @@ let membershipRequestId = 0
 let membershipPlansRequestId = 0
 let membershipHistoryRequestId = 0
 let membershipBillingsRequestId = 0
-let upgradeRefreshTimeoutID: number | undefined
+let upgradePollGeneration = 0
+let requestedUpgradeTarget = ""
+const upgradeOrderPollAttempts = 8
+const upgradeOrderPollIntervalMs = 1500
 
 const tabs = computed(() => [
   { id: "overview", label: t.value.membership.tabsOverview },
@@ -115,10 +119,6 @@ const cancelMembershipButtonLabel = computed(() => {
 
 const currentTierLevel = computed(() => Number(currentPlan.value?.tier_level || currentRecord.value?.tier_level || 0))
 
-const currentMembershipGpath = computed(() => String(
-  currentPlan.value?.membership_gpath || currentRecord.value?.membership_gpath || "",
-).trim())
-
 function isCurrentPlan(plan: RecordData) {
   const planID = String(plan?.membership_ulid || "").trim()
   const currentID = String(currentRecord.value?.membership_ulid || "").trim()
@@ -128,12 +128,9 @@ function isCurrentPlan(plan: RecordData) {
 function canUpgradeToPlan(plan: RecordData) {
   if (!hasActiveMembership.value || isCurrentPlan(plan)) return false
   const targetID = String(plan?.membership_ulid || "").trim()
-  const targetGpath = String(plan?.membership_gpath || "").trim()
   const targetTier = Number(plan?.tier_level || 0)
   return Boolean(
     targetID
-    && currentMembershipGpath.value
-    && targetGpath === currentMembershipGpath.value
     && targetTier > currentTierLevel.value,
   )
 }
@@ -474,30 +471,25 @@ async function confirmMembershipUpgrade() {
     if (response?.success === false) throw new Error(response?.message || t.value.membership.upgradeFailed)
     const status = String(response?.status || "").trim().toUpperCase()
 
-    if (status === "COMPLETED") {
-      toast.success(t.value.membership.upgradeSucceeded)
-      upgrading.value = false
-      closeUpgradeDialog()
-      activeTab.value = "overview"
-      await loadMembership()
-      return
-    }
-
     if (status === "REQUIRES_ACTION") {
       await confirmMembershipUpgradePayment(String(response?.client_secret || "").trim())
+      const orderULID = String(response?.order_ulid || "").trim()
+      if (!orderULID) throw new Error(t.value.membership.upgradeOrderMissing)
       upgrading.value = false
       closeUpgradeDialog()
       activeTab.value = "overview"
-      scheduleUpgradeMembershipRefresh()
+      void pollMembershipUpgradeOrder(orderULID, targetMembershipULID)
       return
     }
 
     if (status === "PENDING_PAYMENT") {
+      const orderULID = String(response?.order_ulid || "").trim()
+      if (!orderULID) throw new Error(t.value.membership.upgradeOrderMissing)
       toast.info(t.value.membership.upgradePaymentPending)
       upgrading.value = false
       closeUpgradeDialog()
       activeTab.value = "overview"
-      scheduleUpgradeMembershipRefresh()
+      void pollMembershipUpgradeOrder(orderULID, targetMembershipULID)
       return
     }
 
@@ -539,12 +531,50 @@ async function confirmMembershipUpgradePayment(clientSecret: string) {
   }
 }
 
-function scheduleUpgradeMembershipRefresh() {
-  if (upgradeRefreshTimeoutID !== undefined) window.clearTimeout(upgradeRefreshTimeoutID)
-  upgradeRefreshTimeoutID = window.setTimeout(() => {
-    upgradeRefreshTimeoutID = undefined
-    void loadMembership()
-  }, 1500)
+function waitForUpgradeOrderPoll() {
+  return new Promise<void>((resolve) => window.setTimeout(resolve, upgradeOrderPollIntervalMs))
+}
+
+async function pollMembershipUpgradeOrder(orderULID: string, targetMembershipULID: string) {
+  const pollGeneration = ++upgradePollGeneration
+  for (let attempt = 0; attempt < upgradeOrderPollAttempts && pollGeneration === upgradePollGeneration; attempt += 1) {
+    try {
+      const detail = await apiClient(`/api/orders/${encodeURIComponent(orderULID)}`, { suppressErrorToast: true })
+      const orderStatus = String(detail?.summary?.order_status || "").trim().toUpperCase()
+      const paymentStatus = String(detail?.summary?.payment_status || "").trim().toUpperCase()
+      if (orderStatus === "COMPLETED") {
+        const nextActiveMembership = await loadActiveMembershipFromHistory(history.value)
+        if (pollGeneration !== upgradePollGeneration) return
+        if (nextActiveMembership) activeMembership.value = nextActiveMembership
+
+        const activeMembershipULID = String(currentRecord.value?.membership_ulid || "").trim()
+        if (activeMembershipULID === targetMembershipULID) {
+          await loadMembership()
+          if (pollGeneration === upgradePollGeneration) toast.success(t.value.membership.upgradeSucceeded)
+          return
+        }
+      }
+      if (["CANCELLED", "CLOSED"].includes(orderStatus) || paymentStatus === "FAILED") {
+        toast.error(t.value.membership.upgradeFailed)
+        return
+      }
+    } catch (error) {
+      console.warn("Failed to poll membership upgrade order", error)
+    }
+
+    if (attempt < upgradeOrderPollAttempts - 1) await waitForUpgradeOrderPoll()
+  }
+
+  if (pollGeneration === upgradePollGeneration) toast.warning(t.value.membership.upgradeSyncDelayed)
+}
+
+async function openRequestedUpgrade() {
+  if (String(route.query.tab || "") === "levels") activeTab.value = "levels"
+  const targetMembershipULID = String(route.query.upgrade || "").trim()
+  if (!targetMembershipULID || requestedUpgradeTarget === targetMembershipULID) return
+  requestedUpgradeTarget = targetMembershipULID
+  const targetPlan = plans.value.find((plan) => String(plan?.membership_ulid || "").trim() === targetMembershipULID)
+  if (targetPlan && canUpgradeToPlan(targetPlan)) await openUpgradePreview(targetPlan)
 }
 
 async function cancelMembership() {
@@ -599,8 +629,9 @@ function handleBillingPaginationChange() {
   window.scrollTo({ top: 0, behavior: "smooth" })
 }
 
-onMounted(() => {
-  void loadMembership()
+onMounted(async () => {
+  await loadMembership()
+  await openRequestedUpgrade()
 })
 
 onBeforeUnmount(() => {
@@ -608,7 +639,7 @@ onBeforeUnmount(() => {
   membershipPlansRequestId += 1
   membershipHistoryRequestId += 1
   membershipBillingsRequestId += 1
-  if (upgradeRefreshTimeoutID !== undefined) window.clearTimeout(upgradeRefreshTimeoutID)
+  upgradePollGeneration += 1
 })
 
 watch(lang, () => {
