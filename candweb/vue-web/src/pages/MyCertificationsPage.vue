@@ -30,7 +30,7 @@ const loadError = ref(false)
 const copy = computed(() => t.value.myCertificationsPage)
 
 function certificationDisplayName(value?: string) {
-  return String(value || "").replace(/\bPipeline\b/g, "Certification").replace(/管线/g, "认证")
+  return String(value || "").replace(/\bPipeline\b/g, "Certification").replace(/管线/g, "专业认证")
 }
 
 function mapCandidatePipeline(pipeline: any): CandidatePipelineCard {

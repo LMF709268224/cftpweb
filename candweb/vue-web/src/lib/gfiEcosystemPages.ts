@@ -56,19 +56,19 @@ export const partnerGroups: Array<{ key: string; title: LocalizedText; descripti
 export const membershipTiers = [
   {
     title: { zh: "附属会员", en: "Affiliate Member" }, price: 49,
-    description: { zh: "附属会员是进入GFI生态系统的入口。专为探索金融科技、建立基础知识或寻求全球行业洞察和网络接触的个人而设计。", en: "Affiliate Membership is the entry point into the GFI ecosystem. It is designed for individuals exploring fintech, building foundational knowledge, or seeking exposure to global industry insights and networks." },
+    description: { zh: "附属会员资格是进入GFI生态系统的入口。专为探索金融科技、建立基础知识或寻求全球行业洞察和网络接触的个人而设计。", en: "Affiliate Membership is the entry point into the GFI ecosystem. It is designed for individuals exploring fintech, building foundational knowledge, or seeking exposure to global industry insights and networks." },
     benefits: { zh: ["访问网络研讨会录像和回放", "优先邀请参加GFI活动", "访问GFI报告和白皮书", "GFI通讯", "GFI学习门户短期课程享10%折扣"], en: ["Access to webinar recordings and replays", "Priority invitations to GFI events", "Access to GFI reports and whitepapers", "GFI newsletter", "10% discount on short courses on the GFI Learning Portal"] },
     best: { zh: "学生、早期职业专业人士和探索金融科技基础知识和全球行业接触的职业转换者。", en: "Students, early-career professionals, and career switchers exploring fintech fundamentals and global industry exposure." },
   },
   {
     title: { zh: "准会员", en: "Associate Member" }, price: 129,
-    description: { zh: "准会员认可正在积极建立金融科技能力并朝着正式认证方向发展的专业人士。它支持更深入的学习、实践接触以及与GFI社区更紧密的互动。", en: "Associate Membership recognises professionals who are actively building fintech capability and progressing towards formal certification. It supports deeper learning, practical exposure, and closer engagement with the GFI community." },
+    description: { zh: "准会员资格认可正在积极建立金融科技能力并朝着正式专业认证方向发展的专业人士。它支持更深入的学习、实践接触以及与GFI社区更紧密的互动。", en: "Associate Membership recognises professionals who are actively building fintech capability and progressing towards formal certification. It supports deeper learning, practical exposure, and closer engagement with the GFI community." },
     benefits: { zh: ["附属会员全部福利，以及", "使用CFtA称号的权利", "访问GFI精选资源和洞察", "通过GFI合作网络获得职业机会", "GFI学习门户短期课程享15%折扣"], en: ["All Affiliate Member benefits, plus", "Right to use the CFtA designation", "Access to curated GFI resources and insights", "Career opportunities through GFI's partner network", "15% discount on short courses on the GFI Learning Portal"] },
-    best: { zh: "积极建立结构化金融科技专业知识并朝着认证方向发展的CFtP候选人和CFtA持有者。", en: "CFtP candidates and CFtA holders actively building structured fintech expertise and progressing towards certification." },
+    best: { zh: "积极建立结构化金融科技专业知识并朝着专业认证方向发展的CFtP考生和CFtA持有者。", en: "CFtP candidates and CFtA holders actively building structured fintech expertise and progressing towards certification." },
   },
   {
     title: { zh: "特许会员", en: "Charterholder Member" }, price: 169,
-    description: { zh: "特许会员代表GFI最高级别的专业认可。专为CFtP®特许持有者保留，它标志着掌握、可信度和对道德和负责任的金融科技领导的承诺。", en: "Charterholder Membership represents GFI's highest level of professional recognition. Reserved for CFtP® charterholders, it signals mastery, credibility, and a commitment to ethical and responsible fintech leadership." },
+    description: { zh: "特许会员资格代表GFI最高级别的专业认可。专为CFtP®特许持有者保留，它标志着掌握、可信度和对道德和负责任的金融科技领导的承诺。", en: "Charterholder Membership represents GFI's highest level of professional recognition. Reserved for CFtP® charterholders, it signals mastery, credibility, and a commitment to ethical and responsible fintech leadership." },
     benefits: { zh: ["准会员全部福利，以及", "使用CFtP称号的权利", "受邀加入FLEX国际中心（人才与公司投资者对接平台）", "GFI学习门户短期课程享20%折扣"], en: ["All Associate Member benefits, plus", "Right to use the CFtP designation", "Invitation to join the FLEX International Hub", "20% discount on short courses on the GFI Learning Portal"] },
     best: { zh: "寻求认可的专业地位、领导机会和持续行业参与的CFtP®特许持有者。", en: "CFtP® charterholders seeking recognised professional standing, leadership opportunities, and continued industry engagement." },
   },
@@ -81,7 +81,7 @@ export const membershipRows = [
   ["实习机会", "—", "可用", "完全访问"], ["职业机会", "—", "—", "完全访问"],
   ["FLEX职业门户网站列表", "—", "—", "包含"], ["使用CFtP称号", "—", "—", "包含"],
   ["闭门领导论坛", "—", "—", "包含"], ["课程和内容更新", "—", "—", "包含"],
-  ["专业地位", "社区成员", "认证候选人", "特许专业人士"],
+  ["专业地位", "社区成员", "专业认证考生", "特许专业人士"],
 ]
 
 export const corporateTiers = [

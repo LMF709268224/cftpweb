@@ -45,7 +45,7 @@ const pageCopy = computed(() => lang.value === "zh"
       membershipAction: "成为会员",
       searchPlaceholder: "搜索...",
       loadErrorTitle: "相关内容暂时无法加载",
-      loadErrorDesc: "请稍后重试，或登录后进入学习与认证服务查看。",
+      loadErrorDesc: "请稍后重试，或登录后进入学习与专业认证服务查看。",
       retry: "重新加载",
     }
   : {
@@ -91,7 +91,7 @@ const filteredCourses = computed(() => {
 })
 
 function certificationDisplayName(value?: string) {
-  return String(value || "").replace(/\bPipeline\b/g, "Certification").replace(/管线/g, "认证")
+  return String(value || "").replace(/\bPipeline\b/g, "Certification").replace(/管线/g, "专业认证")
 }
 
 function formatDisplayAmount(amount: number, currency = "USD") {

@@ -94,19 +94,19 @@ onBeforeUnmount(() => {
       <section class="cert-hero" :style="{ backgroundImage: `url(${certificationAssets.hero})` }">
         <div class="cert-container" data-reveal>
           <h1>{{ lang === "zh" ? "金融科技专业认证" : "Professional Fintech Certifications" }}</h1>
-          <p>{{ lang === "zh" ? "行业认可的认证，旨在在您职业生涯的每个阶段建立金融科技能力、可信度和领导力。" : "Industry-recognised certifications designed to build fintech capability, credibility, and leadership at every stage of your career." }}</p>
-          <RouterLink to="/gfi/certifications/pathway"><span>{{ lang === "zh" ? "探索您的认证路径" : "Explore Your Certification Path" }}</span><i><ArrowUpRight /></i></RouterLink>
+          <p>{{ lang === "zh" ? "行业认可的专业认证，旨在在您职业生涯的每个阶段建立金融科技能力、可信度和领导力。" : "Industry-recognised certifications designed to build fintech capability, credibility, and leadership at every stage of your career." }}</p>
+          <RouterLink to="/gfi/certifications/pathway"><span>{{ lang === "zh" ? "探索您的专业认证路径" : "Explore Your Certification Path" }}</span><i><ArrowUpRight /></i></RouterLink>
         </div>
       </section>
 
       <section class="cert-impact">
         <div class="cert-container impact-grid">
           <div data-reveal>
-            <span class="cert-pill">{{ lang === "zh" ? "认证影响力" : "Certifications Impact" }}</span>
+            <span class="cert-pill">{{ lang === "zh" ? "专业认证影响力" : "Certifications Impact" }}</span>
             <h2>{{ lang === "zh" ? "树立金融科技全球标准" : "Setting the Global Standard for Fintech" }}</h2>
-            <p>{{ lang === "zh" ? "全球金融科技学院（GFI）为在金融、科技、监管与创新交汇处前行的专业人士，提供结构化的认证路径。" : "The Global Fintech Institute (GFI) offers a structured certification pathway for professionals navigating the intersection of finance, technology, regulation, and innovation." }}</p>
-            <article><BarChart3 /><div><h3>{{ lang === "zh" ? "行业、学术与政策共创" : "Co-created with industry, academia, and policy" }}</h3><p>{{ lang === "zh" ? "我们的认证由业界从业者、学术机构与政策相关方共同打造，确保内容的前瞻性、严谨性与实际应用价值。" : "Our certifications are developed in collaboration with industry practitioners, academic institutions, and policy stakeholders to ensure relevance, rigour, and real-world applicability." }}</p></div></article>
-            <article><Link2 /><div><h3>{{ lang === "zh" ? "覆盖职业发展的可信标杆" : "Trusted benchmark across your career" }}</h3><p>{{ lang === "zh" ? "无论您是开启金融科技之旅，还是迈向领导力阶段，GFI认证都是值得信赖的专业卓越基准。" : "Whether you are starting your fintech journey or advancing into leadership, GFI certifications provide a trusted benchmark for professional excellence." }}</p></div></article>
+            <p>{{ lang === "zh" ? "全球金融科技学院（GFI）为在金融、科技、监管与创新交汇处前行的专业人士，提供结构化的专业认证路径。" : "The Global Fintech Institute (GFI) offers a structured certification pathway for professionals navigating the intersection of finance, technology, regulation, and innovation." }}</p>
+            <article><BarChart3 /><div><h3>{{ lang === "zh" ? "行业、学术与政策共创" : "Co-created with industry, academia, and policy" }}</h3><p>{{ lang === "zh" ? "我们的专业认证由业界从业者、学术机构与政策相关方共同打造，确保内容的前瞻性、严谨性与实际应用价值。" : "Our certifications are developed in collaboration with industry practitioners, academic institutions, and policy stakeholders to ensure relevance, rigour, and real-world applicability." }}</p></div></article>
+            <article><Link2 /><div><h3>{{ lang === "zh" ? "覆盖职业发展的可信标杆" : "Trusted benchmark across your career" }}</h3><p>{{ lang === "zh" ? "无论您是开启金融科技之旅，还是迈向领导力阶段，GFI专业认证都是值得信赖的专业卓越基准。" : "Whether you are starting your fintech journey or advancing into leadership, GFI certifications provide a trusted benchmark for professional excellence." }}</p></div></article>
           </div>
           <img data-reveal :src="certificationAssets.globalStandard" :alt="lang === 'zh' ? '树立金融科技全球标准' : 'Setting the global standard for fintech'">
         </div>
@@ -114,11 +114,11 @@ onBeforeUnmount(() => {
 
       <section class="flagship-section">
         <div class="cert-container">
-          <h2 data-reveal>{{ lang === "zh" ? "我们的旗舰认证" : "Our Flagship Certifications" }}</h2>
+          <h2 data-reveal>{{ lang === "zh" ? "我们的旗舰专业认证" : "Our Flagship Certifications" }}</h2>
           <div class="flagship-grid">
             <article data-reveal>
               <h3>{{ lang === "zh" ? "特许金融科技助理 (CFtA)" : "Chartered Fintech Associate (CFtA)" }}</h3>
-              <strong>{{ lang === "zh" ? "基础认证" : "Foundational certification" }}</strong>
+              <strong>{{ lang === "zh" ? "基础专业认证" : "Foundational certification" }}</strong>
               <p>{{ lang === "zh" ? "CFtA专为寻求金融科技基础知识扎实基础的个人而设计。它介绍了数字金融、新兴技术、监管和负责任的创新等关键概念。" : "The CFtA is designed for individuals seeking a strong grounding in fintech fundamentals. It introduces key concepts across digital finance, emerging technologies, regulation, and responsible innovation." }}</p>
               <h4>Who it's for</h4>
               <ul><li v-for="item in (lang === 'zh' ? ['学生和早期职业专业人士','进入金融科技领域的职业转换者','寻求基础金融科技素养的专业人士'] : ['Students and early-career professionals','Career switchers entering fintech','Professionals seeking foundational fintech literacy'])" :key="item">{{ item }}</li></ul>
@@ -143,9 +143,9 @@ onBeforeUnmount(() => {
       <section class="cert-why">
         <div class="cert-container why-grid">
           <div data-reveal>
-            <h2>{{ lang === "zh" ? "为什么选择GFI认证" : "Why Choose GFI Certifications" }}</h2>
-            <p>{{ lang === "zh" ? "GFI认证旨在反映金融科技在当今的实际运作方式——跨越边界、技术和监管环境。它们专为需要在复杂的现实环境中做出明智决策的专业人士而设计，而不仅仅是通过考试。" : "GFI certifications are designed to reflect how fintech actually operates today — across borders, technologies, and regulatory environments. They are built for professionals who need to make informed decisions in complex, real-world settings, not just pass an exam." }}</p>
-            <article><BarChart3 /><div><h3>{{ lang === "zh" ? "行业验证，全球相关" : "Industry-Validated, Globally Relevant" }}</h3><p>{{ lang === "zh" ? "与从业者和学术合作伙伴共同开发，GFI认证提供严格、实用的知识，适用于各种市场和监管环境，而不仅仅是单一司法管辖区。" : "Developed with practitioners and academic partners, GFI certifications deliver rigorous, real-world knowledge that applies across markets and regulatory environments, not just a single jurisdiction." }}</p></div></article>
+            <h2>{{ lang === "zh" ? "为什么选择GFI专业认证" : "Why Choose GFI Certifications" }}</h2>
+            <p>{{ lang === "zh" ? "GFI专业认证旨在反映金融科技在当今的实际运作方式——跨越边界、技术和监管环境。它们专为需要在复杂的现实环境中做出明智决策的专业人士而设计，而不仅仅是通过考试。" : "GFI certifications are designed to reflect how fintech actually operates today — across borders, technologies, and regulatory environments. They are built for professionals who need to make informed decisions in complex, real-world settings, not just pass an exam." }}</p>
+            <article><BarChart3 /><div><h3>{{ lang === "zh" ? "行业验证，全球相关" : "Industry-Validated, Globally Relevant" }}</h3><p>{{ lang === "zh" ? "与从业者和学术合作伙伴共同开发，GFI专业认证提供严格、实用的知识，适用于各种市场和监管环境，而不仅仅是单一司法管辖区。" : "Developed with practitioners and academic partners, GFI certifications deliver rigorous, real-world knowledge that applies across markets and regulatory environments, not just a single jurisdiction." }}</p></div></article>
             <article><Link2 /><div><h3>{{ lang === "zh" ? "为负责任的长期职业而建" : "Built for Responsible, Long-Term Careers" }}</h3><p>{{ lang === "zh" ? "道德和治理嵌入核心，支持从基础到特许持有者的清晰进展，确保专业人士建立随着金融科技发展而持续的能力和信誉。" : "Ethics and governance are embedded at the core, supported by a clear progression from foundation to charterholder, ensuring professionals build capability and credibility that endure as fintech evolves." }}</p></div></article>
           </div>
           <div class="cert-stats" data-reveal>
@@ -158,8 +158,8 @@ onBeforeUnmount(() => {
 
       <section class="cert-cta">
         <div class="cert-container" data-reveal>
-          <div><small>{{ lang === "zh" ? "认证" : "Certifications" }}</small><h2>{{ lang === "zh" ? "探索您的认证路径" : "Explore Your Certification Path" }}</h2><p>{{ lang === "zh" ? "了解GFI认证如何适合您的背景和职业目标。" : "Learn how GFI certifications fit your background and career goals." }}</p><RouterLink to="/gfi/certifications/pathway">{{ lang === "zh" ? "查看认证路径" : "View Certification Pathway" }} <ArrowUpRight /></RouterLink></div>
-          <img :src="certificationAssets.professional" :alt="lang === 'zh' ? '探索您的认证路径' : 'Explore Your Certification Path'">
+          <div><small>{{ lang === "zh" ? "专业认证" : "Certifications" }}</small><h2>{{ lang === "zh" ? "探索您的专业认证路径" : "Explore Your Certification Path" }}</h2><p>{{ lang === "zh" ? "了解GFI专业认证如何适合您的背景和职业目标。" : "Learn how GFI certifications fit your background and career goals." }}</p><RouterLink to="/gfi/certifications/pathway">{{ lang === "zh" ? "查看专业认证路径" : "View Certification Pathway" }} <ArrowUpRight /></RouterLink></div>
+          <img :src="certificationAssets.professional" :alt="lang === 'zh' ? '探索您的专业认证路径' : 'Explore Your Certification Path'">
         </div>
       </section>
     </main>
@@ -168,20 +168,20 @@ onBeforeUnmount(() => {
       <section class="pathway-intro">
         <div class="cert-container" data-reveal>
           <h1><span>{{ lang === "zh" ? "您在金融科技领域的" : "Your Pathway to" }}</span> <strong>{{ lang === "zh" ? "专业认可之路" : "Professional Recognition in FinTech" }}</strong></h1>
-          <p>{{ lang === "zh" ? "GFI的认证框架设计为渐进式路径，允许专业人士根据其背景在合适的级别进入，并随着其能力和经验的增长而进步。" : "GFI's certification framework is designed as a progressive pathway, allowing professionals to enter at the right level based on their background, and advance as their capability and experience grow." }}</p>
+          <p>{{ lang === "zh" ? "GFI的专业认证框架设计为渐进式路径，允许专业人士根据其背景在合适的级别进入，并随着其能力和经验的增长而进步。" : "GFI's certification framework is designed as a progressive pathway, allowing professionals to enter at the right level based on their background, and advance as their capability and experience grow." }}</p>
         </div>
       </section>
       <section class="pathway-steps">
         <div class="cert-container">
-          <header data-reveal><span class="cert-pill">{{ lang === "zh" ? "认证路径" : "Certification Pathway" }}</span><h2>{{ lang === "zh" ? "三步解锁您的路径" : "Unlock Your Pathway in 3-Steps" }}</h2></header>
+          <header data-reveal><span class="cert-pill">{{ lang === "zh" ? "专业认证路径" : "Certification Pathway" }}</span><h2>{{ lang === "zh" ? "三步解锁您的路径" : "Unlock Your Pathway in 3-Steps" }}</h2></header>
           <article v-for="stage in pathwayStages" :key="stage.number" class="pathway-card" data-reveal>
             <div><b>{{ stage.number }}</b><h3>{{ l(stage.title) }}</h3><strong>{{ l(stage.level) }}</strong><p v-for="paragraph in stage.paragraphs" :key="l(paragraph)">{{ l(paragraph) }}</p><RouterLink v-if="stage.link" :to="stage.link">{{ l(stage.linkLabel!) }} <ArrowUpRight /></RouterLink></div>
             <div class="pathway-art" :style="{ backgroundImage: `url(${certificationAssets.pathwayPattern})` }"><img :src="stage.image" :alt="l(stage.title)"></div>
           </article>
-          <aside class="direct-entry" data-reveal><h2>{{ lang === "zh" ? "直接入学与豁免" : "Direct Entry & Exemptions" }}</h2><p>{{ lang === "zh" ? "GFI认可先前的学习。具有以下条件的候选人可能有资格直接进入CFtP®：" : "GFI recognizes prior learning. Direct entry into CFtP® may be available for candidates with:" }}</p><ul><li v-for="item in (lang === 'zh' ? ['来自认可机构的相关大学学位','专业认证，如CFA、CAIA或同等资格','GFI认可的认证项目'] : ['Relevant university degrees from recognised institutions','Professional certifications such as CFA, CAIA, or equivalent','Accredited programmes recognised by GFI'])" :key="item">{{ item }}</li></ul><p>{{ lang === "zh" ? "符合条件的候选人可能获得选定基础或一级组件的豁免，需经审查。" : "Eligible candidates may receive exemptions from selected foundation or Level 1 components, subject to review." }}</p><p>{{ lang === "zh" ? "这确保路径既严格又灵活，尊重先前的学习，同时保持标准。" : "This ensures the pathway remains rigorous yet flexible, respecting prior learning while maintaining standards." }}</p></aside>
+          <aside class="direct-entry" data-reveal><h2>{{ lang === "zh" ? "直接入学与豁免" : "Direct Entry & Exemptions" }}</h2><p>{{ lang === "zh" ? "GFI认可先前的学习。具有以下条件的考生可能有资格直接进入CFtP®：" : "GFI recognizes prior learning. Direct entry into CFtP® may be available for candidates with:" }}</p><ul><li v-for="item in (lang === 'zh' ? ['来自认可机构的相关大学学位','专业认证，如CFA、CAIA或同等资格认证','GFI认可的认证项目'] : ['Relevant university degrees from recognised institutions','Professional certifications such as CFA, CAIA, or equivalent','Accredited programmes recognised by GFI'])" :key="item">{{ item }}</li></ul><p>{{ lang === "zh" ? "符合条件的考生可能获得选定基础或一级组件的豁免，需经审查。" : "Eligible candidates may receive exemptions from selected foundation or Level 1 components, subject to review." }}</p><p>{{ lang === "zh" ? "这确保路径既严格又灵活，尊重先前的学习，同时保持标准。" : "This ensures the pathway remains rigorous yet flexible, respecting prior learning while maintaining standards." }}</p></aside>
         </div>
       </section>
-      <section class="cert-cta pathway-cta"><div class="cert-container" data-reveal><div><small>{{ lang === "zh" ? "获得指导" : "Get Guidance" }}</small><h2>{{ lang === "zh" ? "不确定您适合哪个？" : "Not sure where you fit?" }}</h2><p>{{ lang === "zh" ? "告诉我们您的背景，我们将指导您找到合适的认证路径。" : "Tell us about your background and we will guide you to the right certification pathway." }}</p><RouterLink to="/gfi/contact">{{ lang === "zh" ? "联系我们" : "Contact Us" }} <ArrowUpRight /></RouterLink></div><img :src="certificationAssets.professional" :alt="lang === 'zh' ? '不确定您适合哪个？' : 'Not sure where you fit?'"></div></section>
+      <section class="cert-cta pathway-cta"><div class="cert-container" data-reveal><div><small>{{ lang === "zh" ? "获得指导" : "Get Guidance" }}</small><h2>{{ lang === "zh" ? "不确定您适合哪个？" : "Not sure where you fit?" }}</h2><p>{{ lang === "zh" ? "告诉我们您的背景，我们将指导您找到合适的专业认证路径。" : "Tell us about your background and we will guide you to the right certification pathway." }}</p><RouterLink to="/gfi/contact">{{ lang === "zh" ? "联系我们" : "Contact Us" }} <ArrowUpRight /></RouterLink></div><img :src="certificationAssets.professional" :alt="lang === 'zh' ? '不确定您适合哪个？' : 'Not sure where you fit?'"></div></section>
     </main>
 
     <main v-else-if="program" class="programme-main">

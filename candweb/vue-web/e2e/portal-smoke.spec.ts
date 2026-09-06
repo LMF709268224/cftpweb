@@ -7,14 +7,14 @@ import {
 
 const portalPages = [
   { path: "/dashboard", heading: "欢迎来到门户" },
-  { path: "/certifications", heading: "学习与认证服务" },
-  { path: "/my-certifications", heading: "我的认证考试" },
+  { path: "/certifications", heading: "学习与专业认证服务" },
+  { path: "/my-certifications", heading: "我的专业认证考试" },
   { path: "/exams", heading: "考试" },
   { path: "/records", heading: "档案" },
   { path: "/resource-packs", heading: "资源包" },
-  { path: "/credentials", heading: "资格申请" },
-  { path: "/certificates", heading: "证书" },
-  { path: "/membership", heading: "会员" },
+  { path: "/credentials", heading: "资格认证申请" },
+  { path: "/certificates", heading: "认证证书" },
+  { path: "/membership", heading: "会员资格" },
   { path: "/orders", heading: "订单" },
   { path: "/messages", heading: "消息" },
   { path: "/settings", heading: "设置" },
@@ -248,25 +248,25 @@ test("登录后商城区分认证报名与会员加入文案", async ({ page }) 
   const pendingMembershipCard = page.locator('[data-bundle-id="candidate-membership-pending"]');
   const loadingCertificationCard = page.locator('[data-bundle-id="candidate-certification-loading"]');
   const failedCertificationCard = page.locator('[data-bundle-id="candidate-certification-failed"]');
-  await expect(certificationCard).toContainText("可报名认证考试");
+  await expect(certificationCard).toContainText("可报名专业认证考试");
   await expect(certificationCard).toContainText("去报名");
   await expect(membershipCard).toContainText("可成为会员");
   await expect(membershipCard).toContainText("成为会员");
-  await expect(pendingCertificationCard).toContainText("待确认报名资格");
-  await expect(pendingCertificationCard).toContainText("查看报名资格");
-  await expect(pendingMembershipCard).toContainText("待确认会员资格");
-  await expect(pendingMembershipCard).toContainText("查看会员资格");
+  await expect(pendingCertificationCard).toContainText("待确认报考资格");
+  await expect(pendingCertificationCard).toContainText("查看报考资格");
+  await expect(pendingMembershipCard).toContainText("待确认会员报考资格");
+  await expect(pendingMembershipCard).toContainText("查看会员报考资格");
 
   await loadingCertificationCard.click();
   await expect(loadingCertificationCard).toHaveAttribute("aria-busy", "true");
-  await expect(loadingCertificationCard).toContainText("正在确认报名资格...");
+  await expect(loadingCertificationCard).toContainText("正在确认报考资格...");
   await expect(loadingCertificationCard).toContainText("请稍候...");
   releaseEligibilityCheck?.();
   await expect(loadingCertificationCard).toContainText("暂不可报名");
 
   await failedCertificationCard.click();
-  await expect(failedCertificationCard).toContainText("报名资格获取失败");
-  await expect(failedCertificationCard).toContainText("重新检查报名资格");
+  await expect(failedCertificationCard).toContainText("报考资格获取失败");
+  await expect(failedCertificationCard).toContainText("重新检查报考资格");
   await expect(page).toHaveURL(/\/certifications$/);
 
   await page.evaluate(() => {
@@ -324,7 +324,7 @@ test("支付成功页在移动端不会因长 ID 横向溢出", async ({ page })
 
   await expect(card).toBeVisible();
   await expect(page.getByRole("link", { name: "查看我的认证" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "返回学习与认证服务" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "返回学习与专业认证服务" })).toBeVisible();
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await expect.poll(() => orderId.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
 
@@ -349,9 +349,9 @@ test("会员购买成功页进入会员中心而不是我的认证", async ({ pa
 
   await page.goto("/checkout/success/membership-order", { waitUntil: "domcontentloaded" });
 
-  await expect(page.getByRole("heading", { name: "会员购买成功" })).toBeVisible();
-  await expect(page.getByText("您的会员订单已成功提交。", { exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "查看我的会员" })).toHaveAttribute("href", "/membership");
+  await expect(page.getByRole("heading", { name: "会员资格购买成功" })).toBeVisible();
+  await expect(page.getByText("您的会员资格订单已成功提交。", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "查看我的会员资格" })).toHaveAttribute("href", "/membership");
   await expect(page.getByRole("link", { name: "查看我的认证" })).toHaveCount(0);
 });
 

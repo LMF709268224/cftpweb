@@ -18,19 +18,19 @@ type AsyncPageCase = {
 
 const asyncPageCases: AsyncPageCase[] = [
   {
-    name: "学习与认证服务",
+    name: "学习与专业认证服务",
     path: "/certifications",
     endpoint: "/api/mall/bundles",
-    errorTitle: "学习与认证服务加载失败",
+    errorTitle: "学习与专业认证服务加载失败",
     successTitle: "暂无相关内容",
     successData: { bundles: [] },
   },
   {
-    name: "我的认证考试",
+    name: "我的专业认证考试",
     path: "/my-certifications",
     endpoint: "/api/pipeline",
     errorTitle: "认证信息加载失败",
-    successTitle: "还没有报名认证考试",
+    successTitle: "还没有报名专业认证考试",
     successData: { list: [] },
   },
   {
@@ -66,10 +66,10 @@ const asyncPageCases: AsyncPageCase[] = [
     successData: { title: "重试测验", questions: [], remaining_seconds: 0 },
   },
   {
-    name: "资格申请",
+    name: "资格认证申请",
     path: "/credentials",
     endpoint: "/api/credentials/definitions",
-    errorTitle: "资格申请加载失败",
+    errorTitle: "资格认证申请加载失败",
     successTitle: "暂无申请",
     successData: { definitions: [] },
   },
@@ -90,10 +90,10 @@ const asyncPageCases: AsyncPageCase[] = [
     successData: { logs: [] },
   },
   {
-    name: "认证详情",
+    name: "专业认证详情",
     path: "/certifications/pipeline-regression",
     endpoint: "/api/mall/pipelines/pipeline-regression/runtime",
-    errorTitle: "认证详情加载失败",
+    errorTitle: "专业认证详情加载失败",
     successTitle: "重试后认证详情",
     successData: {
       config: {

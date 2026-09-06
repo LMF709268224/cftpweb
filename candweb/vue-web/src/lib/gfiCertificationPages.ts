@@ -34,7 +34,7 @@ export const pathwayStages = [
     title: certText("特许金融科技助理 (CFtA)", "Chartered Fintech Associate (CFtA)"),
     level: certText("基础级别", "Foundation Level"),
     paragraphs: [
-      certText("CFtA专为正在建立金融科技基础知识理解的人士设计。它提供金融、技术、监管和道德的结构化介绍，帮助候选人全面了解金融科技如何在市场中运作。", "The CFtA is designed for individuals building their understanding of fintech fundamentals. It provides a structured introduction to finance, technology, regulation, and ethics, helping candidates develop a holistic view of how fintech operates across markets."),
+      certText("CFtA专为正在建立金融科技基础知识理解的人士设计。它提供金融、技术、监管和道德的结构化介绍，帮助考生全面了解金融科技如何在市场中运作。", "The CFtA is designed for individuals building their understanding of fintech fundamentals. It provides a structured introduction to finance, technology, regulation, and ethics, helping candidates develop a holistic view of how fintech operates across markets."),
       certText("这一步非常适合进入金融科技领域、转换角色或寻求共同知识基础的人士，然后再进入更专业或高级的职责。", "This step is ideal for those entering fintech, transitioning roles, or seeking a common knowledge baseline before advancing into more specialised or senior responsibilities."),
     ],
     link: "/gfi/programmes/cfta",
@@ -44,10 +44,10 @@ export const pathwayStages = [
   {
     number: "02",
     title: certText("特许金融科技专业人士 (CFtP®)", "Chartered Fintech Professional (CFtP®)"),
-    level: certText("高级认证", "Advanced Certification"),
+    level: certText("高级专业认证", "Advanced Certification"),
     paragraphs: [
       certText("CFtP®建立在基础知识之上，专注于高级应用、治理、技术风险和全球金融科技趋势。它专为在受监管、高影响环境中运营的专业人士设计，这些环境中的决策需要技术深度和良好的判断力。", "The CFtP® builds on foundational knowledge to focus on advanced applications, governance, technology risk, and global fintech trends. It is designed for professionals operating in regulated, high-impact environments where decisions require technical depth and sound judgement."),
-      certText("进入此阶段的候选人不仅展示了专业知识，还展示了在涉及机构、监管机构和跨境运营的复杂现实环境中应用框架的能力。", "Candidates who progress to this stage demonstrate not only subject-matter expertise, but the ability to apply frameworks across complex, real-world contexts involving institutions, regulators, and cross-border operations."),
+      certText("进入此阶段的考生不仅展示了专业知识，还展示了在涉及机构、监管机构和跨境运营的复杂现实环境中应用框架的能力。", "Candidates who progress to this stage demonstrate not only subject-matter expertise, but the ability to apply frameworks across complex, real-world contexts involving institutions, regulators, and cross-border operations."),
     ],
     link: "/gfi/programmes/cftp",
     linkLabel: certText("探索直接CFtP®入学", "Explore Direct CFtP® Entry"),
@@ -58,7 +58,7 @@ export const pathwayStages = [
     title: certText("CFtP®特许持有人身份", "CFtP® Charterholder Status"),
     level: certText("认可的专业人士", "Recognized Professional"),
     paragraphs: [
-      certText("CFtP®特许持有人身份授予已完成CFtP®计划、满足所需工作经验标准并承诺遵守GFI道德和专业标准的专业人士。它代表从认证到认可的专业地位的转变。", "CFtP® Charterholder Status is awarded to professionals who have completed the CFtP® programme, met the required work experience criteria, and committed to GFI's ethical and professional standards. It represents a transition from certification to recognised professional standing."),
+      certText("CFtP®特许持有人身份授予已完成CFtP®计划、满足所需工作经验标准并承诺遵守GFI道德和专业标准的专业人士。它代表从专业认证到认可的专业地位的转变。", "CFtP® Charterholder Status is awarded to professionals who have completed the CFtP® programme, met the required work experience criteria, and committed to GFI's ethical and professional standards. It represents a transition from certification to recognised professional standing."),
       certText("特许持有人因其可信度、责任感和领导准备而受到认可。此身份可访问高级网络、领导论坛和职业机会，向雇主、合作伙伴和政策制定者表明值得信赖的能力。", "Charterholders are recognised for their credibility, accountability, and readiness to lead. This status grants access to senior networks, leadership forums, and career opportunities, signalling trusted capability to employers, partners, and policymakers."),
     ],
     link: "",
@@ -80,10 +80,10 @@ const cftaTabs: CertificationTab[] = [
         heading: certText("项目优势", "Programme Strengths"),
         bullets: [
           certText("基础且全面: 完整介绍金融科技基础知识和金融系统", "Foundational & Comprehensive: Complete introduction to fintech fundamentals and financial systems"),
-          certText("行业认可认证: 在金融服务和金融科技领域受到尊重的证书", "Industry-Recognized Certification: Credential respected across financial services and fintech sectors"),
+          certText("行业认可专业认证: 在金融服务和金融科技领域受到尊重的专业资质", "Industry-Recognized Certification: Credential respected across financial services and fintech sectors"),
           certText("易于接受的入学要求: 最低N级教育，无需金融科技经验", "Accessible Entry Requirements: Designed for candidates starting their fintech learning journey"),
           certText("灵活的在线形式: 全天候24/7可用，自主学习方式", "Flexible Online Format: Available 24/7 with self-paced learning approach"),
-          certText("职业发展基础: 通向CFtP等高级认证的完美跳板", "Career Pathway Foundation: Perfect stepping stone to advanced certifications like CFtP"),
+          certText("职业发展基础: 通向CFtP等高级专业认证的完美跳板", "Career Pathway Foundation: Perfect stepping stone to advanced certifications like CFtP"),
         ],
       },
       {
@@ -116,11 +116,11 @@ const cftaTabs: CertificationTab[] = [
   },
   {
     key: "eligibility",
-    label: certText("入学要求", "Eligibility"),
+    label: certText("报考资格", "Eligibility"),
     content: [{
       heading: certText("注册要求", "Registration Requirements"),
-      paragraphs: [certText("要成为CFtA候选人，您必须注册CFtA项目并报名考试。要注册，您必须满足以下所有标准：", "To become a CFtA candidate, you must enrol in the CFtA Program and register for the exam. To enrol, you must meet the criteria below:")],
-      bullets: [certText("最低N级或同等学历", "Candidates must be at least 18 years old to enrol in the CFtA certification exam"), certText("候选人必须年满18岁才能注册CFtA认证考试", "Must be able to read and write in English (exam language)"), certText("必须能够用英语读写(考试语言)", "")],
+      paragraphs: [certText("要成为CFtA考生，您必须注册CFtA项目并报名考试。要注册，您必须满足以下所有标准：", "To become a CFtA candidate, you must enrol in the CFtA Program and register for the exam. To enrol, you must meet the criteria below:")],
+      bullets: [certText("最低N级或同等学历", "Candidates must be at least 18 years old to enrol in the CFtA certification exam"), certText("考生必须年满18岁才能报名CFtA专业认证考试", "Must be able to read and write in English (exam language)"), certText("必须能够用英语读写(考试语言)", "")],
     }],
   },
   {
@@ -128,10 +128,10 @@ const cftaTabs: CertificationTab[] = [
     label: certText("考试与费用", "Exam & Fees"),
     content: [
       { heading: certText("考试和费用", "Exam & Fees") },
-      { heading: certText("考试注册指南", "Exam Registration Guidelines"), bullets: [certText("在GFI网站或学习平台上完成注册", "Complete registration on the GFI website or Learn platform"), certText("提交所需文件并确认详细信息", "Submit required documents and confirm details"), certText("通过信用卡或银行转账支付费用", "Pay fees via credit card or bank transfer"), certText("收到包含考试详情的确认电子邮件", "Receive confirmation email with exam details")] },
+      { heading: certText("考试报名指南", "Exam Registration Guidelines"), bullets: [certText("在GFI网站或学习平台上完成注册", "Complete registration on the GFI website or Learn platform"), certText("提交所需文件并确认详细信息", "Submit required documents and confirm details"), certText("通过信用卡或银行转账支付费用", "Pay fees via credit card or bank transfer"), certText("收到包含考试详情的确认电子邮件", "Receive confirmation email with exam details")] },
       { heading: certText("考试详情", "Exam Details"), bullets: [certText("在线考试: 每天24/7可用", "Online Exam: Available daily 24/7")] },
       { heading: certText("费用结构", "Fees Structure"), groups: [
-        { heading: certText("常规", "Regular"), bullets: [certText("注册费: $100", "Total Fees Payable: USD 600"), certText("考试注册: $600", ""), certText("应付总费用: $700", "")] },
+        { heading: certText("常规", "Regular"), bullets: [certText("注册费: $100", "Total Fees Payable: USD 600"), certText("考试报名: $600", ""), certText("应付总费用: $700", "")] },
         { heading: certText("附属会员资格", "Associate Membership"), bullets: [certText("第1年: 免费", "1st Year: Waived"), certText("后续年份: $129(每年计费)", "Subsequent Year(s): $129 (Billed annually)")] },
       ] },
       { heading: certText("取消和退款", "Cancellations & Refunds"), bullets: [certText("截止日期前允许退款(适用管理费)", "Refunds allowed before deadline (admin fee applies)"), certText("截止日期后不退款", "No refunds after deadline")] },
@@ -148,9 +148,9 @@ const cftpTabs: CertificationTab[] = [
         heading: certText("项目优势", "Programme Strengths"),
         bullets: [
           certText("高级且全面：深入涵盖金融、金融科技应用和新兴技术", "Advanced & Comprehensive: In-depth coverage of finance, fintech applications, and emerging technologies"),
-          certText("双途径入学：通过CFtA认证或具有相关资格的直接入学", "Dual Pathway Entry: Accessible via CFtA certification or direct entry with relevant qualifications"),
+          certText("双途径入学：通过CFtA专业认证或具有相关资格认证的直接入学", "Dual Pathway Entry: Accessible via CFtA certification or direct entry with relevant qualifications"),
           certText("行业领先课程：人工智能/机器学习、区块链、量子计算和网络安全的前沿内容", "Industry-Leading Curriculum: Cutting-edge content in AI/ML, blockchain, quantum computing, and cybersecurity"),
-          certText("全球认可：在金融市场、央行和金融科技领域受到尊重的证书", "Global Recognition: Credential respected across financial markets, central banks, and fintech sectors"),
+          certText("全球认可：在金融市场、央行和金融科技领域受到尊重的专业资质", "Global Recognition: Credential respected across financial markets, central banks, and fintech sectors"),
           certText("专业卓越：为寻求职业发展的中高级专业人士设计", "Professional Excellence: Designed for mid to senior-level professionals seeking career advancement"),
         ],
       },
@@ -160,8 +160,8 @@ const cftpTabs: CertificationTab[] = [
           certText("职业中期专业人士寻求专门从事高级金融科技应用", "Mid-Career Professionals seeking to specialize in advanced fintech applications"),
           certText("高级领导者希望深化其金融科技专业知识和信誉", "Senior Leaders wanting to deepen their fintech expertise and credibility"),
           certText("金融和科技高管在传统金融和创新之间架起桥梁", "Finance & Tech Executives bridging gaps between traditional finance and innovation"),
-          certText("CFtA持有者准备晋升到专业级认证", "CFtA Holders ready to advance to professional-level certification"),
-          certText("合格专业人士具有相关学位或认证（CFA、CAIA等）", "Qualified Professionals with relevant degrees or certifications (CFA, CAIA, etc.)"),
+          certText("CFtA持有者准备晋升到更高级别的专业认证", "CFtA Holders ready to advance to professional-level certification"),
+          certText("合格专业人士具有相关学位或专业认证（CFA、CAIA等）", "Qualified Professionals with relevant degrees or certifications (CFA, CAIA, etc.)"),
         ],
       },
       {
@@ -181,18 +181,18 @@ const cftpTabs: CertificationTab[] = [
         { heading: certText("1A 金融", "1A Finance"), bullets: [certText("经济学：宏观经济原理和金融市场", "Economics: Macroeconomic principles and financial markets"), certText("财务报表分析：高级分析技术", "Financial Statement Analysis: Advanced analytical techniques"), certText("财务管理：公司金融和资本配置", "Financial Management: Corporate finance and capital allocation"), certText("投资管理：投资组合理论和资产管理", "Investment Management: Portfolio theory and asset management")] },
         { heading: certText("1B 金融科技", "1B Fintech"), bullets: [certText("数据结构与Python：金融编程基础", "Data Structures & Python: Programming fundamentals for finance"), certText("大数据与数据科学：分析和数据处理", "Big Data & Data Science: Analytics and data processing"), certText("人工智能与机器学习：算法交易和风险建模", "AI & Machine Learning: Algorithmic trading and risk modeling"), certText("计算机网络与安全：基础设施和网络安全", "Computer Networks & Security: Infrastructure and cybersecurity")] },
         { heading: certText("第二级：应用与趋势", "Level 2: Applications & Trends"), bullets: [] },
-        { heading: certText("核心高级模块", "Core Advanced Modules"), bullets: [certText("道德与治理（II）：高级道德框架和监管合规", "Ethics & Governance (II): Advanced ethical frameworks and regulatory compliance"), certText("金融中的人工智能、机器学习和深度学习：高级应用和实施", "AI, Machine Learning & Deep Learning in Finance: Advanced applications and implementation"), certText("区块链编程与数字货币：智能合约和加密货币技术", "Blockchain Programming & Digital Currency: Smart contracts and cryptocurrency technologies"), certText("云计算、网络安全与量子计算：基础设施和新兴技术", "Cloud Computing, Cybersecurity & Quantum Computing: Infrastructure and emerging technologies"), certText("合规与技术风险管理：监管框架和风险缓解", "Compliance & Technology Risk Management: Regulatory frameworks and risk mitigation"), certText("全球金融科技趋势：市场分析和未来发展", "Global Fintech Trends: Market analysis and future developments")] },
+        { heading: certText("核心高级课程模块", "Core Advanced Modules"), bullets: [certText("道德与治理（II）：高级道德框架和监管合规", "Ethics & Governance (II): Advanced ethical frameworks and regulatory compliance"), certText("金融中的人工智能、机器学习和深度学习：高级应用和实施", "AI, Machine Learning & Deep Learning in Finance: Advanced applications and implementation"), certText("区块链编程与数字货币：智能合约和加密货币技术", "Blockchain Programming & Digital Currency: Smart contracts and cryptocurrency technologies"), certText("云计算、网络安全与量子计算：基础设施和新兴技术", "Cloud Computing, Cybersecurity & Quantum Computing: Infrastructure and emerging technologies"), certText("合规与技术风险管理：监管框架和风险缓解", "Compliance & Technology Risk Management: Regulatory frameworks and risk mitigation"), certText("全球金融科技趋势：市场分析和未来发展", "Global Fintech Trends: Market analysis and future developments")] },
       ],
     }],
   },
   {
     key: "eligibility",
-    label: certText("入学要求", "Eligibility"),
+    label: certText("报考资格", "Eligibility"),
     content: [{
-      heading: certText("入学要求", "Eligibility"),
+      heading: certText("报考资格", "Eligibility"),
       groups: [
-        { heading: certText("CFtA到CFtP®途径", "CFtA to CFtP® Pathway"), bullets: [certText("通过CFtA认证入学（无需学位）", "Entry via CFtA certification (no degree required)"), certText("必须年满21岁", "Must be above 21 years of age"), certText("2年相关工作经验", "2 years relevant work experience"), certText("2个专业推荐人", "2 professional references"), certText("所需考试：1AB级（基础）、1A级和1B级（金融、金融科技）、2A级和2B级（应用）", "Exams Required: Level 1AB (Foundation), Level 1A & 1B (Finance, Fintech), Level 2A & 2B (Applications)")] },
-        { heading: certText("直接到CFtP®途径（需要学位）", "Direct to CFtP® Pathway (Degree Required)"), bullets: [certText("认可机构的学士学位，或", "Bachelor's degree from recognized institution, OR"), certText("相关专业资格（CFA、CAIA等），或", "Relevant professional qualification (CFA, CAIA, etc.), OR"), certText("认可大学的最后一年学习", "Final-year studies in recognized universities"), certText("必须年满21岁", "Must be above 21 years of age"), certText("2年相关工作经验", "2 years relevant work experience"), certText("2个专业推荐人", "2 professional references"), certText("所需考试：基础（1AB）、1A级和1B级、2A级和2B级", "Exams Required: Foundation (1AB), Level 1A & 1B, Level 2A & 2B")] },
+        { heading: certText("CFtA到CFtP®途径", "CFtA to CFtP® Pathway"), bullets: [certText("通过CFtA专业认证入学（无需学位）", "Entry via CFtA certification (no degree required)"), certText("必须年满21岁", "Must be above 21 years of age"), certText("2年相关工作经验", "2 years relevant work experience"), certText("2个专业推荐人", "2 professional references"), certText("所需考试：1AB级（基础）、1A级和1B级（金融、金融科技）、2A级和2B级（应用）", "Exams Required: Level 1AB (Foundation), Level 1A & 1B (Finance, Fintech), Level 2A & 2B (Applications)")] },
+        { heading: certText("直接到CFtP®途径（需要学位）", "Direct to CFtP® Pathway (Degree Required)"), bullets: [certText("认可机构的学士学位，或", "Bachelor's degree from recognized institution, OR"), certText("相关专业资格认证（CFA、CAIA等），或", "Relevant professional qualification (CFA, CAIA, etc.), OR"), certText("认可大学的最后一年学习", "Final-year studies in recognized universities"), certText("必须年满21岁", "Must be above 21 years of age"), certText("2年相关工作经验", "2 years relevant work experience"), certText("2个专业推荐人", "2 professional references"), certText("所需考试：基础（1AB）、1A级和1B级、2A级和2B级", "Exams Required: Foundation (1AB), Level 1A & 1B, Level 2A & 2B")] },
       ],
     }],
   },
@@ -223,8 +223,8 @@ const cftpTabs: CertificationTab[] = [
       { heading: certText("考试详情", "Exam Details"), bullets: [certText("基础（1AB）：120分钟内60道多选题（仅直接途径）", "Foundation (1AB): 60 MCQs in 120 minutes (direct pathway only)"), certText("1A级金融/1B级金融科技：每次考试180分钟内90道多选题", "Level 1A Finance / 1B Fintech: 90 MCQs in 180 minutes per exam"), certText("2级（2A和2B）：每次180分钟内75道多选题加3道简答题", "Level 2 (2A and 2B): 75 MCQs plus 3 short-answer questions in 180 minutes each")] },
       { heading: certText("注册规则", "Registration Rules"), bullets: [certText("每个考试窗口一个级别", "One level per examination window"), certText("必须通过1级才能参加2级", "Must pass Level 1 before attempting Level 2"), certText("每次注册2次考试机会", "Two examination attempts per registration"), certText("CFtA持有者可绕过学位要求", "CFtA holders may bypass the degree requirement")] },
       { heading: certText("费用结构", "Fees Structure"), groups: [
-        { heading: certText("CFtA到CFtP®途径", "CFtA to CFtP® Pathway"), bullets: [certText("项目注册：$300", "Programme registration: $300"), certText("CFtA费用：$600", "CFtA fee: $600"), certText("考试注册：每级别$1,500（1级和2级）", "Exam registration: $1,500 per level (Level 1 and Level 2)"), certText("应付总费用：$3,900", "Total fees payable: $3,900")] },
-        { heading: certText("直接到CFtP®途径", "Direct to CFtP® Pathway"), bullets: [certText("项目注册：$300", "Programme registration: $300"), certText("考试注册：每级别$1,500（1级和2级）", "Exam registration: $1,500 per level (Level 1 and Level 2)"), certText("应付总费用：$3,300", "Total fees payable: $3,300")] },
+        { heading: certText("CFtA到CFtP®途径", "CFtA to CFtP® Pathway"), bullets: [certText("项目注册：$300", "Programme registration: $300"), certText("CFtA费用：$600", "CFtA fee: $600"), certText("考试报名：每级别$1,500（1级和2级）", "Exam registration: $1,500 per level (Level 1 and Level 2)"), certText("应付总费用：$3,900", "Total fees payable: $3,900")] },
+        { heading: certText("直接到CFtP®途径", "Direct to CFtP® Pathway"), bullets: [certText("项目注册：$300", "Programme registration: $300"), certText("考试报名：每级别$1,500（1级和2级）", "Exam registration: $1,500 per level (Level 1 and Level 2)"), certText("应付总费用：$3,300", "Total fees payable: $3,300")] },
         { heading: certText("附属会员资格", "Associate Membership"), bullets: [certText("第1年：免费", "1st Year: Waived"), certText("后续年份：$129（每年计费）", "Subsequent Year(s): $129 (Billed annually)")] },
       ] },
       { heading: certText("取消与退款", "Cancellations & Refunds"), bullets: [certText("截止日期前允许退款（适用管理费）", "Refunds allowed before deadline (admin fee applies)"), certText("截止日期后不退款", "No refunds after deadline"), certText("所有价格以美元计算，2025年有效", "All prices are in USD and valid for 2025")] },

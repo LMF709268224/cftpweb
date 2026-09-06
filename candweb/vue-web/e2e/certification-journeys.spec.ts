@@ -308,7 +308,7 @@ test("会员商品展示升级、在途订单和前置资格 blocker", async ({ 
     await page.goto("/certifications", { waitUntil: "domcontentloaded" })
     const upgradeCard = page.locator(`[data-testid="certification-card"][data-bundle-id="${upgradeBundleID}"]`)
     await expect(upgradeCard.getByText("需要补差价升级", { exact: true })).toBeVisible()
-    await expect(upgradeCard.getByText("前往升级会员", { exact: true })).toBeVisible()
+    await expect(upgradeCard.getByText("前往升级会员资格", { exact: true })).toBeVisible()
     await upgradeCard.click()
     await expect(page).toHaveURL(new RegExp(`/membership\\?tab=levels&upgrade=${targetMembershipID}$`))
 
@@ -319,17 +319,17 @@ test("会员商品展示升级、在途订单和前置资格 blocker", async ({ 
     await expect(page).toHaveURL(/\/certifications$/)
 
     const missingQualificationCard = page.locator(`[data-testid="certification-card"][data-bundle-id="${missingQualificationBundleID}"]`)
-    await expect(missingQualificationCard.getByText("缺少前置资格：CFTP", { exact: true })).toBeVisible()
+    await expect(missingQualificationCard.getByText("缺少前置资格认证：CFTP", { exact: true })).toBeVisible()
 
     await page.goto(`/checkout/${upgradeBundleID}`, { waitUntil: "domcontentloaded" })
     const blockerPanel = page.getByTestId("checkout-eligibility-blockers")
     await expect(blockerPanel).toContainText("请使用会员补差价升级通道。")
-    await blockerPanel.getByRole("button", { name: "前往升级会员", exact: true }).click()
+    await blockerPanel.getByRole("button", { name: "前往升级会员资格", exact: true }).click()
     await expect(page).toHaveURL(new RegExp(`/membership\\?tab=levels&upgrade=${targetMembershipID}$`))
 
     await page.goto(`/checkout/${missingQualificationBundleID}`, { waitUntil: "domcontentloaded" })
     const missingQualificationBlockers = page.getByTestId("checkout-eligibility-blockers")
-    await expect(missingQualificationBlockers.getByText("缺少前置资格：CFTP", { exact: true })).toBeVisible()
+    await expect(missingQualificationBlockers.getByText("缺少前置资格认证：CFTP", { exact: true })).toBeVisible()
 
     await page.evaluate(() => {
         window.localStorage.setItem("app_lang", "en")
@@ -389,7 +389,7 @@ test("免考材料待上传时显示本地化原因并进入对应资格申请",
     await page.goto("/certifications", { waitUntil: "domcontentloaded" })
     const card = page.locator(`[data-testid="certification-card"][data-bundle-id="${blockedBundleID}"]`)
     await expect(card.getByText("请先上传免考材料", { exact: true })).toBeVisible()
-    await expect(card.getByText("免考材料尚未上传。请先前往资格申请上传材料，完成审核后再购买认证。", { exact: true })).toBeVisible()
+    await expect(card.getByText("免考材料尚未上传。请先前往资格认证申请上传材料，完成审核后再购买专业认证。", { exact: true })).toBeVisible()
     await expect(card.getByText("去上传材料", { exact: true })).toBeVisible()
     await expect(card).not.toContainText(backendDescription)
 
@@ -475,7 +475,7 @@ test("商城同时存在审核中和待上传免考时进入全部对应资格",
 
     await page.goto("/certifications", { waitUntil: "domcontentloaded" })
     const card = page.locator(`[data-testid="certification-card"][data-bundle-id="${blockedBundleID}"]`)
-    await expect(card.getByText("免考资格审核中", { exact: true })).toBeVisible()
+    await expect(card.getByText("免考资格认证审核中", { exact: true })).toBeVisible()
     await card.click()
     await expect(page).toHaveURL(new RegExp(
         `/credentials\\?qual_ids=${underReviewQualificationID},${pendingUploadQualificationID}$`,
@@ -699,7 +699,7 @@ test("终审资格已有待上传申请时仍可为另一资格独立建单", as
     await page.goto(`/certifications/${pipelineID}`, { waitUntil: "domcontentloaded" })
     const action = page.getByTestId("final-qualification-action")
     await expect(action).toBeVisible()
-    await expect(action).toContainText("提交资格申请")
+    await expect(action).toContainText("提交资格认证申请")
     await action.click()
 
     await expect.poll(() => applicationOrderBody).toEqual({
@@ -1422,7 +1422,7 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
     expect(submitRequest.files[0].file_usage).toBe("Employment Certificate")
     await expect.poll(() => applicationOrderRequests).toBeGreaterThan(initialApplicationOrderRequests)
     await expect(qualificationCard).toContainText("材料已提交，正在审核。")
-    await expect(qualificationCard).not.toContainText("资格申请已创建，请在下方上传材料。")
+    await expect(qualificationCard).not.toContainText("资格认证申请已创建，请在下方上传材料。")
     await page.getByTestId("checkout-selection-next").click()
     await expect(page.getByText("“Template Application Course”的免考申请正在审核中，请等待审核结果。", { exact: true })).toBeVisible()
 })
@@ -1670,7 +1670,7 @@ test("免考选择完成后按资格创建独立订单，已拒绝资格仍可�
     await page.goto(`/checkout/${selectionBundleID}`, { waitUntil: "domcontentloaded" })
     const selectionNextButton = page.getByTestId("checkout-selection-next")
     await expect(page.getByText("尚未选择", { exact: true })).toHaveCount(1)
-    await expect(page.getByText("资格申请未通过", { exact: true })).toBeVisible()
+    await expect(page.getByText("资格认证申请未通过", { exact: true })).toBeVisible()
     const chineseApplyButton = page.locator(`[data-testid="checkout-exemption-apply"][data-unit-id="${applyUnitID}"]`)
     const chineseWaiveButton = page.locator(`[data-testid="checkout-exemption-waive"][data-unit-id="${waiveUnitID}"]`)
     await expect(chineseApplyButton).toHaveAttribute("role", "radio")
@@ -1711,9 +1711,9 @@ test("免考选择完成后按资格创建独立订单，已拒绝资格仍可�
     await expect(page.getByText("尚未选择", { exact: true })).toHaveCount(0)
 
     expect(applicationOrderBody).toBeUndefined()
-    await expect(page.getByText("这里仅展示申请要求和官方模板。请先完成所有免考选择并支付资格审核费，付款成功后才能上传证明材料。", { exact: true })).toBeVisible()
+    await expect(page.getByText("这里仅展示申请要求和官方模板。请先完成所有免考选择并支付资格认证审核费，付款成功后才能上传证明材料。", { exact: true })).toBeVisible()
     await selectionNextButton.click()
-    await expect(page.getByText("请先为“Apply Exemption Course”创建免考资格审核申请。", { exact: true })).toBeVisible()
+    await expect(page.getByText("请先为“Apply Exemption Course”创建免考资格认证审核申请。", { exact: true })).toBeVisible()
 
     const createApplicationButton = page.locator(
         `[data-testid="checkout-create-qualification-order"][data-unit-id="${applyUnitID}"]`,
@@ -1725,7 +1725,7 @@ test("免考选择完成后按资格创建独立订单，已拒绝资格仍可�
     await expect(confirmDialog.getByText("Apply Exemption Course", { exact: true })).toBeVisible()
     await expect(confirmDialog.getByText("CFtP 金融模块（L1A）免考申请", { exact: true })).toBeVisible()
     await expect(confirmDialog.getByText("Waive Exemption Course", { exact: true })).toHaveCount(0)
-    await expect(confirmDialog.getByText("资格申请提交后不能修改", { exact: true })).toBeVisible()
+    await expect(confirmDialog.getByText("资格认证申请提交后不能修改", { exact: true })).toBeVisible()
     expect(applicationOrderBody).toBeUndefined()
 
     await page.getByTestId("checkout-cancel-qualification-order").click()
@@ -2087,7 +2087,7 @@ test("阶段付款因免考资料未完成被阻止时显示明确原因", async
     const stageInstanceID = "stage-instance-exemption-application-pending"
     const unitID = "unit-exemption-application-pending"
     const courseName = "L1A Finance"
-    const expectedMessage = `“${courseName}”已创建免考申请，但资料尚未提交，目前不能继续付款。请前往资格申请上传并提交资料。`
+    const expectedMessage = `“${courseName}”已创建免考申请，但资料尚未提交，目前不能继续付款。请前往资格认证申请上传并提交资料。`
 
     const runtime = {
         instance: { pipeline_ulid: pipelineInstanceID },
@@ -2233,7 +2233,7 @@ test("阶段免考弹窗直接显示待提交资料和等待审核状态", async
 test("免考资料审核中的微服务错误显示明确原因", () => {
     const backendMessage = 'you have an in-progress exemption application for course unit "L1A Finance"; to protect you from unnecessary charges, please wait patiently for the review result before purchasing'
     expect(localizeApiErrorMessage("PRECONDITION_FAILED", backendMessage, "zh")).toBe(
-        '“L1A Finance”的免考资料已提交，正在等待管理员审核，目前不能继续付款。请前往资格申请查看审核状态。',
+        '“L1A Finance”的免考资料已提交，正在等待管理员审核，目前不能继续付款。请前往资格认证申请查看审核状态。',
     )
 })
 
@@ -2450,7 +2450,7 @@ test("认证从商城下单、Stripe 支付到已购认证完整闭环", async (
     await page.locator(`[data-testid="certification-card"][data-bundle-id="${bundleID}"]`).click()
 
     await expect(page).toHaveURL(new RegExp(`/checkout/${bundleID}$`))
-    await expect(page.getByRole("heading", { name: "CFtP® 考试注册", exact: true })).toBeVisible()
+    await expect(page.getByRole("heading", { name: "CFtP® 考试报名", exact: true })).toBeVisible()
     await page.getByRole("button", { name: "中文 / EN" }).click()
     await expect(page.getByRole("heading", { name: "Chartered Fintech Professional (CFtP®) Programme Registration", exact: true })).toBeVisible()
     await page.getByRole("button", { name: "EN / 中文" }).click()
