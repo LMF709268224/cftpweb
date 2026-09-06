@@ -202,12 +202,22 @@ func (h *Handler) completedByStagePipelineOrder(
 	pipelineCcUlid string,
 	pipelineUlid string,
 ) (*mallpb.PipelineOrderSummary, error) {
+	return h.completedPipelineOrder(ctx, candidateID, pipelineCcUlid, pipelineUlid, "BY_STAGE")
+}
+
+func (h *Handler) completedPipelineOrder(
+	ctx context.Context,
+	candidateID string,
+	pipelineCcUlid string,
+	pipelineUlid string,
+	paymentMode string,
+) (*mallpb.PipelineOrderSummary, error) {
 	const pageSize uint32 = 100
 	filters := &mallpb.PipelineOrderFilters{
 		CandidateUlid:  candidateID,
 		PipelineCcUlid: pipelineCcUlid,
 		OrderStatus:    "COMPLETED",
-		PaymentMode:    "BY_STAGE",
+		PaymentMode:    paymentMode,
 	}
 	cursor := ""
 	guard := newCursorScanGuard()
@@ -253,4 +263,35 @@ func (h *Handler) completedByStagePipelineOrder(
 		}
 		cursor = nextCursor
 	}
+}
+
+func (h *Handler) sourceBundleUlidForPipeline(
+	ctx context.Context,
+	candidateID string,
+	pipelineCcUlid string,
+	pipelineUlid string,
+) (string, error) {
+	pipelineOrder, err := h.completedPipelineOrder(ctx, candidateID, pipelineCcUlid, pipelineUlid, "")
+	if err != nil || pipelineOrder == nil {
+		return "", err
+	}
+	bundleOrderUlid := strings.TrimSpace(pipelineOrder.GetBundleOrderUlid())
+	if bundleOrderUlid == "" {
+		return "", nil
+	}
+
+	bundleOrderResp, err := h.Mall.GetBundleOrderDetail(ctx, &mallpb.GetBundleOrderDetailRequest{
+		BundleOrderUlid: bundleOrderUlid,
+	})
+	if err != nil {
+		return "", err
+	}
+	if !bundleOrderResp.GetFound() || bundleOrderResp.GetDetail() == nil {
+		return "", nil
+	}
+	summary := bundleOrderResp.GetDetail().GetSummary()
+	if summary == nil || strings.TrimSpace(summary.GetCandidateUlid()) != strings.TrimSpace(candidateID) {
+		return "", nil
+	}
+	return strings.TrimSpace(summary.GetBundleUlid()), nil
 }

@@ -262,6 +262,20 @@ func (h *Handler) GetPipelineRuntime(w http.ResponseWriter, r *http.Request) {
 			out.PipelineStatus = runtimeResp.GetPipeline().GetStatus().String()
 			out.CurrentStageUlid = strings.TrimSpace(runtimeResp.GetPipeline().GetCurrentStageUlid())
 		}
+		if h.Mall != nil {
+			bundleUlid, bundleErr := h.sourceBundleUlidForPipeline(ctx, candidateID, gccResp.GetPipelineUlid(), p.GetPipelineUlid())
+			if bundleErr != nil {
+				slog.Warn(
+					"failed to resolve source bundle for pipeline runtime",
+					"candidate_id", candidateID,
+					"pipeline_cc_ulid", gccResp.GetPipelineUlid(),
+					"pipeline_ulid", p.GetPipelineUlid(),
+					"error", bundleErr,
+				)
+			} else {
+				out.BundleUlid = bundleUlid
+			}
+		}
 		if stageDetails := runtimeResp.GetStages(); len(stageDetails) > 0 {
 			for _, stage := range stageDetails {
 				if stage == nil || stage.GetStage() == nil {

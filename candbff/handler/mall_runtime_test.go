@@ -2,11 +2,13 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	gccpb "github.com/afnandelfin620-star/cftptest/cftp/gcc"
+	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
 	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
 	"github.com/go-chi/chi/v5"
 	"google.golang.org/grpc"
@@ -31,6 +33,70 @@ type mallRuntimeProgClientStub struct {
 	listResp  *gprogpb.ListCandidatePipelinesRsp
 	listErr   error
 	detailErr error
+}
+
+type mallRuntimeMallClientStub struct {
+	mallpb.MallServiceClient
+	listPipelineOrdersRequests []*mallpb.ListPipelineOrdersRequest
+	pipelineOrderDetailRequest *mallpb.GetPipelineOrderDetailRequest
+	bundleOrderDetailRequest   *mallpb.GetBundleOrderDetailRequest
+}
+
+func (s *mallRuntimeMallClientStub) ListPipelineOrders(
+	_ context.Context,
+	req *mallpb.ListPipelineOrdersRequest,
+	_ ...grpc.CallOption,
+) (*mallpb.ListPipelineOrdersResponse, error) {
+	s.listPipelineOrdersRequests = append(s.listPipelineOrdersRequests, req)
+	return &mallpb.ListPipelineOrdersResponse{
+		Items: []*mallpb.PipelineOrderSummary{{
+			PipelineOrderUlid: "pipeline-order-1",
+			CandidateUlid:     "candidate-1",
+			PipelineCcUlid:    "pipeline-config-1",
+			OrderStatus:       "COMPLETED",
+			BundleOrderUlid:   "bundle-order-1",
+		}},
+	}, nil
+}
+
+func (s *mallRuntimeMallClientStub) GetPipelineOrderDetail(
+	_ context.Context,
+	req *mallpb.GetPipelineOrderDetailRequest,
+	_ ...grpc.CallOption,
+) (*mallpb.GetPipelineOrderDetailResponse, error) {
+	s.pipelineOrderDetailRequest = req
+	return &mallpb.GetPipelineOrderDetailResponse{
+		Found: true,
+		Detail: &mallpb.PipelineOrderDetail{
+			Summary: &mallpb.PipelineOrderSummary{
+				PipelineOrderUlid: "pipeline-order-1",
+				CandidateUlid:     "candidate-1",
+				PipelineCcUlid:    "pipeline-config-1",
+				OrderStatus:       "COMPLETED",
+				BundleOrderUlid:   "bundle-order-1",
+			},
+			InstantiatedPipelineUlid: "pipeline-instance-1",
+		},
+	}, nil
+}
+
+func (s *mallRuntimeMallClientStub) GetBundleOrderDetail(
+	_ context.Context,
+	req *mallpb.GetBundleOrderDetailRequest,
+	_ ...grpc.CallOption,
+) (*mallpb.GetBundleOrderDetailResponse, error) {
+	s.bundleOrderDetailRequest = req
+	return &mallpb.GetBundleOrderDetailResponse{
+		Found: true,
+		Detail: &mallpb.BundleOrderDetail{
+			Summary: &mallpb.BundleOrderSummary{
+				BundleOrderUlid: "bundle-order-1",
+				CandidateUlid:   "candidate-1",
+				BundleUlid:      "retired-bundle-1",
+				OrderStatus:     "COMPLETED",
+			},
+		},
+	}, nil
 }
 
 func (s *mallRuntimeProgClientStub) ListCandidatePipelines(
@@ -127,6 +193,54 @@ func TestGetPipelineRuntimeKeepsNotPurchasedStateWhenLookupSucceeds(t *testing.T
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d, want %d; body = %s", rec.Code, http.StatusOK, rec.Body.String())
+	}
+}
+
+func TestGetPipelineRuntimeReturnsSourceBundleFromExactPipelineInstance(t *testing.T) {
+	mallClient := &mallRuntimeMallClientStub{}
+	h := &Handler{
+		Gcc: &mallRuntimeCCClientStub{},
+		Gprog: &mallRuntimeProgClientStub{
+			listResp: &gprogpb.ListCandidatePipelinesRsp{
+				Pipelines: []*gprogpb.PipelineSummary{{
+					PipelineUlid:   "pipeline-instance-1",
+					PipelineCcUlid: "pipeline-config-1",
+				}},
+			},
+		},
+		Mall: mallClient,
+	}
+	recorder := httptest.NewRecorder()
+
+	h.GetPipelineRuntime(recorder, mallPipelineRequest())
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body = %s", recorder.Code, http.StatusOK, recorder.Body.String())
+	}
+	var response struct {
+		Data PipelineRuntimeRsp `json:"data"`
+	}
+	if err := json.NewDecoder(recorder.Body).Decode(&response); err != nil {
+		t.Fatalf("decode response: %v; body=%q", err, recorder.Body.String())
+	}
+	if response.Data.BundleUlid != "retired-bundle-1" {
+		t.Fatalf("bundle_ulid = %q, want retired-bundle-1", response.Data.BundleUlid)
+	}
+	if len(mallClient.listPipelineOrdersRequests) != 1 {
+		t.Fatalf("ListPipelineOrders requests = %d, want 1", len(mallClient.listPipelineOrdersRequests))
+	}
+	filters := mallClient.listPipelineOrdersRequests[0].GetFilters()
+	if filters.GetCandidateUlid() != "candidate-1" ||
+		filters.GetPipelineCcUlid() != "pipeline-config-1" ||
+		filters.GetOrderStatus() != "COMPLETED" ||
+		filters.GetPaymentMode() != "" {
+		t.Fatalf("ListPipelineOrders filters = %+v, want exact candidate/pipeline completed orders", filters)
+	}
+	if mallClient.pipelineOrderDetailRequest.GetPipelineOrderUlid() != "pipeline-order-1" {
+		t.Fatalf("pipeline order detail id = %q, want pipeline-order-1", mallClient.pipelineOrderDetailRequest.GetPipelineOrderUlid())
+	}
+	if mallClient.bundleOrderDetailRequest.GetBundleOrderUlid() != "bundle-order-1" {
+		t.Fatalf("bundle order detail id = %q, want bundle-order-1", mallClient.bundleOrderDetailRequest.GetBundleOrderUlid())
 	}
 }
 

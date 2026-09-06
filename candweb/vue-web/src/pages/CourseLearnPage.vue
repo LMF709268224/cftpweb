@@ -264,6 +264,7 @@ const paymentDialogTitle = computed(() =>
 
 const courseId = computed(() => String(route.params.courseId || route.query.courseId || ""))
 const pipelineId = computed(() => String(route.params.pipelineId || route.query.pipelineId || ""))
+const sourceBundleId = computed(() => firstString(runtime.value?.bundle_ulid))
 const routeLessonId = computed(() => String(route.params.lessonId || route.query.lessonId || ""))
 const pageLoading = computed(() => loading.value || initializing.value)
 const completeCourse = computed(() => payload.value?.complete_course)
@@ -2601,6 +2602,7 @@ watch(selectedMaterial, () => {
         v-model:open="stageExemptionDialogOpen"
         :stage="stageExemptionStage"
         :pipeline-id="pipelineId"
+        :bundle-id="sourceBundleId"
         :submitting="stageExemptionSubmitting"
         @submit="handleStageExemptionSubmit"
       />

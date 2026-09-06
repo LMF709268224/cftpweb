@@ -202,6 +202,7 @@ type PipelineCreateRsp struct {
 type PipelineRuntimeRsp struct {
 	Config             PipelineConfig   `json:"config"`
 	Instance           PipelineSummary  `json:"instance,omitempty"`
+	BundleUlid         string           `json:"bundle_ulid,omitempty"`
 	PipelineStatus     string           `json:"pipeline_status,omitempty"`
 	CurrentStageUlid   string           `json:"current_stage_ulid,omitempty"`
 	CurrentStageStatus string           `json:"current_stage_status,omitempty"`

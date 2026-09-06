@@ -617,13 +617,16 @@ test("已有免考待上传时仍可从商城为另一科目独立建单", async
 test("终审资格已有待上传申请时仍可为另一资格独立建单", async ({ page }) => {
     const pendingQualificationID = "qualification-final-pending-upload"
     const newQualificationID = "qualification-final-new-order"
+    const sourceBundleID = "retired-bundle-final-qualification"
     let applicationOrderBody: unknown
+    let bundleListRequests = 0
 
     await installCandidateApiMocks(page, ({ pathname, url, method, body }) => {
         if (pathname === `/api/mall/pipelines/${pipelineID}/runtime`) {
             return {
                 data: {
                     instance: { pipeline_ulid: pipelineInstanceID },
+                    bundle_ulid: sourceBundleID,
                     config: {
                         pipeline_cc_ulid: pipelineID,
                         name: "Parallel Final Qualifications",
@@ -680,9 +683,7 @@ test("终审资格已有待上传申请时仍可为另一资格独立建单", as
                 },
             }
         }
-        if (pathname === "/api/mall/bundles") {
-            return { data: { bundles: [{ bundle_id: bundleID, pipeline_id: pipelineID }] } }
-        }
+        if (pathname === "/api/mall/bundles") bundleListRequests += 1
         if (pathname === "/api/credentials/application-orders" && method === "POST") {
             applicationOrderBody = body
             return {
@@ -703,9 +704,10 @@ test("终审资格已有待上传申请时仍可为另一资格独立建单", as
 
     await expect.poll(() => applicationOrderBody).toEqual({
         pipeline_cc_ulid: pipelineID,
-        bundle_ulid: bundleID,
+        bundle_ulid: sourceBundleID,
         qual_ulids: [newQualificationID],
     })
+    expect(bundleListRequests).toBe(0)
     await expect(page).toHaveURL(new RegExp(`/certifications/${pipelineID}$`))
 })
 
@@ -1752,6 +1754,7 @@ test("分阶段购买先完成免考声明再创建阶段订单", async ({ page 
 
     const runtime = {
         instance: { pipeline_ulid: pipelineInstanceID },
+        bundle_ulid: bundleID,
         config: {
             pipeline_cc_ulid: pipelineID,
             name: "By-stage Exemption Certification",
@@ -1796,7 +1799,6 @@ test("分阶段购买先完成免考声明再创建阶段订单", async ({ page 
 
     await installCandidateApiMocks(page, ({ pathname, method, body }) => {
         if (pathname === `/api/mall/pipelines/${pipelineID}/runtime`) return { data: runtime }
-        if (pathname === "/api/mall/bundles") return { data: { bundles: [bundle] } }
         if (pathname === `/api/mall/bundles/${bundleID}/pricing-detail`) {
             return {
                 data: {
@@ -1883,6 +1885,7 @@ test("分阶段购买可先申请免考资格并支付审核费", async ({ page 
 
     const runtime = {
         instance: { pipeline_ulid: pipelineInstanceID },
+        bundle_ulid: bundleID,
         config: {
             pipeline_cc_ulid: pipelineID,
             name: "By-stage Qualification Application Certification",
@@ -1928,9 +1931,6 @@ test("分阶段购买可先申请免考资格并支付审核费", async ({ page 
             }
         }
         if (pathname === "/api/credentials/applications") return { data: { applications: [] } }
-        if (pathname === "/api/mall/bundles" && method === "GET") {
-            return { data: { bundles: [{ bundle_id: bundleID, pipeline_id: pipelineID }] } }
-        }
         if (pathname === "/api/credentials/application-orders" && method === "POST") {
             applicationOrderBody = body
             return {

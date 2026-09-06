@@ -44,6 +44,7 @@ import { formatBackendDateOnly } from "@/lib/utils"
 type PipelineDetail = {
   config?: PipelineConfig
   instance?: Record<string, any>
+  bundle_ulid?: string
   next_step?: PipelineNextStep
   pipeline_status?: string | number
   current_stage_status?: string | number
@@ -159,7 +160,6 @@ const courseSummariesLoading = ref(false)
 const credentialDefinitionsLoading = ref(false)
 const certificateLoading = ref(false)
 const finalQualificationLoading = ref(false)
-const resolvedBundleId = ref("")
 const finalQualificationPaymentOpen = ref(false)
 const finalQualificationPaymentSession = ref<{
   paymentKey?: string
@@ -199,6 +199,7 @@ function formatCourseDuration(minutes?: number) {
 
 const pipelineId = computed(() => String(route.params.pipelineId || route.query.id || ""))
 const pipeline = computed(() => detail.value?.config)
+const sourceBundleId = computed(() => firstString(detail.value?.bundle_ulid))
 const stages = computed<StageConfig[]>(() => pipeline.value?.stages || [])
 const totalUnits = computed(() => stages.value.reduce((total, stage) => total + (stage.units?.length || 0), 0))
 const purchased = computed(() => Boolean(detail.value?.instance && Object.keys(detail.value.instance).length > 0))
@@ -697,16 +698,6 @@ function isInProgressCredentialApplicationError(error: unknown) {
   )
 }
 
-async function resolveBundleIdForPipeline() {
-  if (resolvedBundleId.value) return resolvedBundleId.value
-  if (!pipelineId.value) return ""
-  const res = await apiClient("/api/mall/bundles?page_size=100")
-  const found = (res?.bundles || []).find((bundle: any) => firstString(bundle?.pipeline_id, bundle?.pipeline_cc_ulid) === pipelineId.value)
-  const bundleId = firstString(found?.bundle_id, found?.bundle_ulid)
-  resolvedBundleId.value = bundleId
-  return bundleId
-}
-
 async function missingFinalQualificationIds() {
   const ids = finalQualificationIds.value
   if (ids.length === 0) return []
@@ -783,7 +774,7 @@ async function handleFinalQualificationApplication() {
     }
     const targetQualId = createTarget.qualId
 
-    const bundleId = await resolveBundleIdForPipeline()
+    const bundleId = sourceBundleId.value
     if (!bundleId) {
       toast.error(t.value.learning.finalQualificationBundleMissing)
       return
@@ -1530,6 +1521,7 @@ watch(lang, async () => {
         v-model:open="stageExemptionDialogOpen"
         :stage="stageExemptionStage"
         :pipeline-id="pipelineId"
+        :bundle-id="sourceBundleId"
         :submitting="stageExemptionSubmitting"
         @submit="handleStageExemptionSubmit"
       />

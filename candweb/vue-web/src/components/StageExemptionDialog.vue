@@ -44,6 +44,7 @@ const props = defineProps<{
   open: boolean
   stage: StageExemptionStage | null
   pipelineId: string
+  bundleId: string
   submitting?: boolean
 }>()
 
@@ -75,7 +76,6 @@ const pricingLoading = ref(false)
 const pricingLoaded = ref(false)
 const applicationConfirmTarget = ref<QualificationApplicationTarget | null>(null)
 const applicationLoadingUnitId = ref("")
-const resolvedBundleId = ref("")
 const credentialPaymentOpen = ref(false)
 const credentialPaymentSession = ref<{
   orderId: string
@@ -443,24 +443,12 @@ async function latestCredentialApplication(qualificationId: string) {
   return (Array.isArray(response?.applications) ? response.applications : [])[0] || null
 }
 
-async function resolveBundleIdForPipeline() {
-  if (resolvedBundleId.value) return resolvedBundleId.value
-  const pipelineId = firstString(props.pipelineId)
-  if (!pipelineId) return ""
-  const response = await apiClient("/api/mall/bundles?page_size=100")
-  const bundle = (Array.isArray(response?.bundles) ? response.bundles : []).find(
-    (item: any) => firstString(item?.pipeline_id, item?.pipeline_cc_ulid) === pipelineId,
-  )
-  resolvedBundleId.value = firstString(bundle?.bundle_id, bundle?.bundle_ulid)
-  return resolvedBundleId.value
-}
-
 async function loadPricing() {
   pricingByUnit.value = {}
   pricingLoading.value = true
   pricingLoaded.value = false
   try {
-    const bundleId = await resolveBundleIdForPipeline()
+    const bundleId = firstString(props.bundleId)
     if (!bundleId) return
 
     const params = new URLSearchParams({ payment_mode: "BY_STAGE" })
@@ -525,7 +513,7 @@ async function confirmQualificationApplication() {
       return
     }
 
-    const bundleId = await resolveBundleIdForPipeline()
+    const bundleId = firstString(props.bundleId)
     if (!bundleId) {
       toast.error(t.value.learning.finalQualificationBundleMissing)
       return
@@ -588,7 +576,7 @@ async function confirmQualificationApplication() {
 }
 
 watch(
-  () => [props.open, props.stage?.stage_id, props.stage?.stage_cc_ulid, props.pipelineId],
+  () => [props.open, props.stage?.stage_id, props.stage?.stage_cc_ulid, props.pipelineId, props.bundleId],
   ([open]) => {
     if (open) {
       void loadEligibility()
@@ -596,13 +584,6 @@ watch(
     }
   },
   { immediate: true },
-)
-
-watch(
-  () => props.pipelineId,
-  () => {
-    resolvedBundleId.value = ""
-  },
 )
 </script>
 
