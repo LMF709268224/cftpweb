@@ -2263,7 +2263,7 @@ watch(selectedMaterial, () => {
             <div class="mb-3 flex shrink-0 items-center justify-between gap-3">
               <div class="flex items-center gap-2">
                 <BookOpen class="h-4 w-4 text-primary" />
-                <h2 class="text-sm font-semibold text-foreground">{{ t.learning.lessonContentTitle }}</h2>
+                <h2 class="text-sm font-semibold text-foreground">{{ t.learning.lessons }}</h2>
               </div>
               <span class="badge shrink-0 border-slate-200 bg-slate-50 text-slate-700">{{ lessons.length }}</span>
             </div>
