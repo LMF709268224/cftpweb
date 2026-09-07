@@ -1362,7 +1362,7 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
     })
     await expect(page.locator(`[data-testid="checkout-exemption-apply"][data-unit-id="${unitID}"]`)).toHaveCount(0)
 
-    await expect(page.getByText("模板与参考文件", { exact: true })).toBeVisible()
+    await expect(page.getByRole("heading", { name: "工作经验证明模板", exact: true })).toBeVisible()
     await expect(page.getByRole("link", { name: "预览模板" })).toHaveAttribute(
         "href",
         "https://downloads.example/work-experience-template.docx",
@@ -1376,7 +1376,7 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
     })
     await expect(qualificationCard.getByRole("button", { name: "上传证明材料", exact: true })).toHaveCount(0)
     await expect(qualificationCard.getByRole("button", { name: "取消", exact: true })).toHaveCount(0)
-    await expect(qualificationCard.getByRole("button", { name: "提交申请", exact: true })).toBeVisible()
+    await expect(qualificationCard.getByRole("button", { name: "提交审核", exact: true })).toBeVisible()
 
     await page.locator(`[id="qualification-file-${unitID}-Employment Certificate"]`).setInputFiles({
         name: "employment-certificate.pdf",
@@ -1398,7 +1398,7 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
 
     await qualificationCard.getByRole("button", { name: "删除", exact: true }).click()
     await expect(page.getByText("replacement-certificate.pdf 上传成功", { exact: true })).toHaveCount(0)
-    await page.getByRole("button", { name: "提交申请", exact: true }).click()
+    await page.getByRole("button", { name: "提交审核", exact: true }).click()
     await expect(page.getByText("请先上传所有必填证明材料后再提交", { exact: true })).toBeVisible()
     expect(submitRequest).toBeUndefined()
 
@@ -1409,12 +1409,12 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
     })
     await expect(page.getByText("employment-certificate.pdf 上传成功", { exact: true })).toBeVisible()
     const initialApplicationOrderRequests = applicationOrderRequests
-    await page.getByRole("button", { name: "提交申请", exact: true }).click()
+    await page.getByRole("button", { name: "提交审核", exact: true }).click()
     const submitConfirmDialog = page.getByTestId("checkout-qualification-submit-confirm-dialog")
     await expect(submitConfirmDialog.getByText("提交后申请将进入审核，审核期间无法修改或删除已上传材料。请确认材料无误后再提交。", { exact: true })).toBeVisible()
     await submitConfirmDialog.getByRole("button", { name: "取消", exact: true }).click()
     expect(submitRequest).toBeUndefined()
-    await page.getByRole("button", { name: "提交申请", exact: true }).click()
+    await page.getByRole("button", { name: "提交审核", exact: true }).click()
     await submitConfirmDialog.getByRole("button", { name: "确认提交", exact: true }).click()
 
     expect(uploadRequest.file_usage).toBe("Employment Certificate")

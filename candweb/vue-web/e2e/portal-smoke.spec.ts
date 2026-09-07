@@ -407,8 +407,10 @@ test("资格申请详情提供官方模板预览与下载", async ({ page }) => 
 
   await page.goto("/credentials?qual_ulids=credential-with-template", { waitUntil: "domcontentloaded" })
   const dialog = page.locator(".credentials-apply-dialog")
-  await expect(dialog.getByText("模板与参考文件", { exact: true })).toBeVisible()
-  await expect(dialog.getByText("工作经验证明模板", { exact: true })).toBeVisible()
+  await expect(dialog.getByRole("heading", { name: "工作经验证明模板", exact: true })).toBeVisible()
+  await expect(
+    dialog.locator(".credential-attachment-details").getByText("工作经验证明模板", { exact: true }),
+  ).toBeVisible()
   await expect(page.getByText("System Managed Qualification", { exact: true })).toHaveCount(0)
   await expect(dialog.getByRole("link", { name: "预览模板" })).toHaveAttribute(
     "href",
