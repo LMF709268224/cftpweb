@@ -1392,7 +1392,7 @@ watch(lang, async () => {
             <h2 class="text-lg font-semibold text-foreground">{{ t.courses.stageListTitle }}</h2>
             <p class="mt-1 text-sm text-muted-foreground">{{ t.courses.stageListDesc }}</p>
           </div>
-          <span class="badge border-slate-200 bg-slate-50 text-slate-700">{{ stages.length }} {{ t.courses.stages }} / {{ totalUnits }} {{ t.courses.units }}</span>
+          <span class="badge border-slate-200 bg-slate-50 text-slate-700">{{ stages.length }} {{ t.courses.stages }} {{ lang === "en" ? "\u00b7" : "/" }} {{ totalUnits }} {{ t.courses.units }}</span>
         </div>
 
         <LoadingState v-if="stageListLoading" :label="t.common.loading" variant="section" :rows="3" />
