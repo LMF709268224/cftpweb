@@ -537,7 +537,7 @@ watch(
                 <div class="break-words text-base font-semibold leading-6 text-foreground md:truncate md:font-medium" :title="applicationTitle(app)">{{ applicationTitle(app) }}</div>
                 <div class="mt-1 break-words text-sm leading-5 text-muted-foreground md:truncate" :title="applicationMeta(app)">{{ applicationMeta(app) }}</div>
               </div>
-              <span :class="['inline-flex w-fit min-w-0 items-center justify-center gap-1.5 justify-self-end rounded-full border px-3 py-1 text-xs font-semibold lg:min-w-[88px] lg:justify-self-center', applicationStatusPillClass(app.status)]">
+              <span :class="['inline-flex w-fit min-w-0 items-center justify-center gap-1.5 justify-self-end rounded-full border px-3 py-1 text-xs font-semibold lg:min-w-[88px] lg:justify-self-center', { 'whitespace-nowrap': lang === 'en' }, applicationStatusPillClass(app.status)]">
                 <component :is="statusIcon(app.status)" class="h-3.5 w-3.5" />
                 {{ statusLabel(t, CANDIDATE_APPLICATION_STATUS_LABELS, app.status, 'credentialsPage.appStatusUnknown') }}
               </span>
