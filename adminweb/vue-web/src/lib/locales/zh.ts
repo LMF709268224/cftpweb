@@ -270,7 +270,7 @@ export const zh = {
             respath: "请输入资源路径，例如 /gcc/credential/cfta",
             optional: "可选",
             description: "描述",
-            filePurpose: "告诉考生这是什么文件，例如 Employment Certificate",
+            filePurpose: "告诉考生这是什么文件，例如 就业证明",
         },
         respathHint: "用于系统底层的唯一标识和权限控制，建议使用有意义的英文路径，例如 /gcc/credential/cfta",
         fileConstraintsHint: "用于告诉考生申请该资格时需要上传哪些材料。",

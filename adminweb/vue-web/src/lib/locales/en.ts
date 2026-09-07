@@ -272,7 +272,7 @@ export const en: AdminTranslations = {
             respath: "Enter resource path, e.g., /gcc/credential/cfta",
             optional: "Optional",
             description: "Description",
-            filePurpose: "Tell candidates what this file is, e.g., Employment Certificate",
+            filePurpose: "Tell candidates what this file is, e.g., Proof of Employment",
         },
         respathHint: "Used as a unique identifier and for permission control. It is recommended to use a meaningful English path, e.g., /gcc/credential/cfta",
         fileConstraintsHint: "Use this to tell candidates which files must be uploaded for this credential.",
