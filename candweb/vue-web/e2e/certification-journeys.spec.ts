@@ -134,7 +134,7 @@ test("证书成功提示在名称前说明认证类型", async ({ page }) => {
     })
 
     await page.goto(`/certifications/${completedPipelineID}`, { waitUntil: "domcontentloaded" })
-    await expect(page.getByText("你已经成功获得以下认证：", { exact: true })).toBeVisible()
+    await expect(page.getByText("你已经成功获得以下专业认证：", { exact: true })).toBeVisible()
 
     english = true
     await page.evaluate(() => {
@@ -151,27 +151,27 @@ test("商城和结账页展示并拦截层级互斥资格", async ({ page }) => 
         {
             id: "bundle-forbidden-qualification",
             type: "FORBIDDEN_QUALIFICATION",
-            message: "已持有更高阶认证，不能报读",
+            message: "已持有更高级别的资格认证，不能报读",
         },
         {
             id: "bundle-conflict-in-progress",
             type: "CONFLICT_PIPELINE_IN_PROGRESS",
-            message: "有互斥认证正在进行",
+            message: "有互斥专业认证正在进行",
         },
         {
             id: "bundle-conflict-unavailable",
             type: "CONFLICT_CHECK_UNAVAILABLE",
-            message: "暂时无法核验互斥认证状态",
+            message: "暂时无法核验互斥专业认证状态",
         },
         {
             id: "bundle-missing-prerequisite",
             type: "MISSING_PREREQUISITE_QUALIFICATION",
-            message: "缺少报名资格",
+            message: "缺少资格认证",
         },
         {
             id: "bundle-missing-membership-qualification",
             type: "MISSING_UNLOCK_QUALIFICATION",
-            message: "缺少会员前置资格",
+            message: "缺少会员资格所需的前置资格认证",
         },
     ]
     const blockedBundles = blockerCases.map((blocker) => ({
@@ -204,7 +204,7 @@ test("商城和结账页展示并拦截层级互斥资格", async ({ page }) => 
 
     await page.goto(`/checkout/${blockerCases[1].id}`, { waitUntil: "domcontentloaded" })
     const blockerPanel = page.getByTestId("checkout-eligibility-blockers")
-    await expect(blockerPanel).toContainText("你有互斥认证正在进行，请先完成或取消后再购买")
+    await expect(blockerPanel).toContainText("你有互斥专业认证正在进行，请先完成或取消后再购买")
     await expect(page.getByTestId("checkout-next")).toBeDisabled()
 })
 
@@ -1706,7 +1706,7 @@ test("免考选择完成后按资格创建独立订单，已拒绝资格仍可�
     await expect(waiveButton).toContainText("按原价购买")
     await page.locator(`[data-testid="checkout-exemption-apply"][data-unit-id="${applyUnitID}"]`).click()
     await page.locator(`[data-testid="checkout-exemption-qualification-select"][data-unit-id="${applyUnitID}"]`).selectOption(applyQualificationID)
-    await expect(page.locator("h4").filter({ hasText: /^CFtP 金融模块（L1A）免考申请$/ })).toBeVisible()
+    await expect(page.locator("h4").filter({ hasText: /^CFtP 金融课程模块（L1A）免考申请$/ })).toBeVisible()
     await waiveButton.click()
     await expect(page.getByText("尚未选择", { exact: true })).toHaveCount(0)
 
@@ -1723,7 +1723,7 @@ test("免考选择完成后按资格创建独立订单，已拒绝资格仍可�
     const confirmDialog = page.getByTestId("checkout-qualification-order-confirm-dialog")
     await expect(confirmDialog).toBeVisible()
     await expect(confirmDialog.getByText("Apply Exemption Course", { exact: true })).toBeVisible()
-    await expect(confirmDialog.getByText("CFtP 金融模块（L1A）免考申请", { exact: true })).toBeVisible()
+    await expect(confirmDialog.getByText("CFtP 金融课程模块（L1A）免考申请", { exact: true })).toBeVisible()
     await expect(confirmDialog.getByText("Waive Exemption Course", { exact: true })).toHaveCount(0)
     await expect(confirmDialog.getByText("资格认证申请提交后不能修改", { exact: true })).toBeVisible()
     expect(applicationOrderBody).toBeUndefined()
@@ -1851,8 +1851,8 @@ test("分阶段购买先完成免考声明再创建阶段订单", async ({ page 
     const exemptedUnit = page.locator(`[data-testid="stage-exemption-unit"][data-unit-id="${exemptedUnitID}"]`)
     await expect(exemptedUnit.getByTestId("stage-exemption-fee")).toHaveText("免考认定费 US$200.00")
     await expect(exemptedUnit.getByTestId("stage-access-fee")).toHaveText("课程原价 US$600.00")
-    await expect(exemptedUnit.getByText("已持有有效资格，系统将自动应用免考并按免考认定费结算。", { exact: true })).toBeVisible()
-    const qualifiedWaiveButton = exemptedUnit.getByRole("button", { name: "已有资格，自动按免考价结算", exact: true })
+    await expect(exemptedUnit.getByText("已持有有效资格认证，系统将自动应用免考并按免考认定费结算。", { exact: true })).toBeVisible()
+    const qualifiedWaiveButton = exemptedUnit.getByRole("button", { name: "已有资格认证，自动按免考价结算", exact: true })
     await expect(qualifiedWaiveButton).toBeDisabled()
 
     const waivedUnit = page.locator(`[data-testid="stage-exemption-unit"][data-unit-id="${waivedUnitID}"]`)
@@ -2467,7 +2467,7 @@ test("认证从商城下单、Stripe 支付到已购认证完整闭环", async (
     paid = true
     await page.getByTestId("fake-stripe-complete").click()
     await expect(page).toHaveURL(/\/checkout\/success\/order-regression/)
-    await page.getByRole("link", { name: "查看我的认证" }).click()
+    await page.getByRole("link", { name: "查看我的专业认证" }).click()
 
     await expect(page.locator(
         `[data-testid="owned-certification-details"][data-pipeline-config-id="${pipelineID}"]`,

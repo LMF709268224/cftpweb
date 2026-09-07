@@ -247,7 +247,7 @@ test("会员升级先预览分摊费用并以幂等请求确认", async ({ page 
   await page.goto("/membership?tab=levels&upgrade=membership-plan-charterholder", { waitUntil: "domcontentloaded" })
   await expect(page.getByRole("button", { name: "当前方案" })).toBeDisabled()
 
-  const dialog = page.getByRole("dialog", { name: "确认会员升级" })
+  const dialog = page.getByRole("dialog", { name: "确认会员资格升级" })
   await expect(dialog).toBeVisible()
   await expect(dialog.getByText("USD 15.6", { exact: true })).toBeVisible()
   await expect.poll(() => previewBody).toEqual({
@@ -351,24 +351,24 @@ test("会员升级等待支付或3DS验证时不会提前提示成功", async ({
   await page.goto("/membership", { waitUntil: "domcontentloaded" })
   await page.getByRole("button", { name: "会员等级", exact: true }).click()
 
-  await page.getByRole("button", { name: "升级会员" }).click()
-  let dialog = page.getByRole("dialog", { name: "确认会员升级" })
+  await page.getByRole("button", { name: "升级会员资格" }).click()
+  let dialog = page.getByRole("dialog", { name: "确认会员资格升级" })
   await dialog.getByRole("button", { name: "确认并支付" }).click()
   await expect(page.getByText("升级订单处理中，请稍候。", { exact: true })).toBeVisible()
   await expect(dialog).toBeHidden()
-  await expect(page.getByText("会员升级成功", { exact: true })).toHaveCount(0)
+  await expect(page.getByText("会员资格升级成功", { exact: true })).toHaveCount(0)
   await expect.poll(() => upgradeOrderPolls).toBeGreaterThan(0)
 
   upgradeStatus = "REQUIRES_ACTION"
   await page.getByRole("button", { name: "会员等级", exact: true }).click()
-  await page.getByRole("button", { name: "升级会员" }).click()
-  dialog = page.getByRole("dialog", { name: "确认会员升级" })
+  await page.getByRole("button", { name: "升级会员资格" }).click()
+  dialog = page.getByRole("dialog", { name: "确认会员资格升级" })
   await dialog.getByRole("button", { name: "确认并支付" }).click()
 
   await expect.poll(() => page.evaluate(() => (window as any).__membershipUpgradeClientSecret)).toBe("pi_membership_3ds_secret")
   await expect(page.getByText("支付成功，会员权益正在生效。", { exact: true })).toBeVisible()
   await expect(dialog).toBeHidden()
-  await expect(page.getByText("会员升级成功", { exact: true })).toHaveCount(0)
+  await expect(page.getByText("会员资格升级成功", { exact: true })).toHaveCount(0)
 })
 
 test("会员刷新只应用最后一次请求返回的记录", async ({ page }) => {
@@ -433,7 +433,7 @@ test("会员刷新只应用最后一次请求返回的记录", async ({ page }) 
   })
 
   await page.goto("/membership", { waitUntil: "domcontentloaded" })
-  await page.getByRole("button", { name: "会员历史", exact: true }).click()
+  await page.getByRole("button", { name: "会员资格历史", exact: true }).click()
   await expect(page.getByText("INITIAL-MEMBERSHIP", { exact: true })).toBeVisible()
 
   const refreshButton = page.locator(".membership-refresh-btn")
@@ -445,7 +445,7 @@ test("会员刷新只应用最后一次请求返回的记录", async ({ page }) 
   await expect.poll(() => historyRequests).toBe(3)
   await expect.poll(() => billingRequests).toBe(3)
   await expect(page.getByText("LATEST-MEMBERSHIP", { exact: true })).toBeVisible()
-  await page.getByRole("button", { name: "账单记录", exact: true }).click()
+  await page.getByRole("button", { name: "账单与付款", exact: true }).click()
   await expect(page.getByText("LATEST-BILLING", { exact: true })).toBeVisible()
 
   await page.waitForTimeout(1_100)

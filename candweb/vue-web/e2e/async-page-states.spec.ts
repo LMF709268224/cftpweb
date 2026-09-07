@@ -77,7 +77,7 @@ const asyncPageCases: AsyncPageCase[] = [
     name: "会员",
     path: "/membership",
     endpoint: "/api/membership/plans",
-    errorTitle: "会员信息加载失败",
+    errorTitle: "会员资格信息加载失败",
     successTitle: "暂无有效会员",
     successData: { memberships: [] },
   },
@@ -166,7 +166,7 @@ test("首页统计全部加载失败后可以重试", async ({ page }) => {
 
   await expect(page.getByRole("heading", { name: "首页统计加载失败" })).toBeVisible()
   await page.getByRole("button", { name: "重新加载" }).click()
-  await expect(page.getByRole("heading", { name: "已购买认证" })).toBeVisible()
+  await expect(page.getByRole("heading", { name: "已购买专业认证" })).toBeVisible()
 
   for (const endpoint of Object.keys(responses)) {
     expect(requestCounts.get(endpoint)).toBe(2)

@@ -323,7 +323,7 @@ test("支付成功页在移动端不会因长 ID 横向溢出", async ({ page })
   const orderId = page.locator(".checkout-success-id").first();
 
   await expect(card).toBeVisible();
-  await expect(page.getByRole("link", { name: "查看我的认证" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "查看我的专业认证" })).toBeVisible();
   await expect(page.getByRole("link", { name: "返回学习与专业认证服务" })).toBeVisible();
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await expect.poll(() => orderId.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
@@ -352,7 +352,7 @@ test("会员购买成功页进入会员中心而不是我的认证", async ({ pa
   await expect(page.getByRole("heading", { name: "会员资格购买成功" })).toBeVisible();
   await expect(page.getByText("您的会员资格订单已成功提交。", { exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "查看我的会员资格" })).toHaveAttribute("href", "/membership");
-  await expect(page.getByRole("link", { name: "查看我的认证" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "查看我的专业认证" })).toHaveCount(0);
 });
 
 test("资格申请详情提供官方模板预览与下载", async ({ page }) => {
