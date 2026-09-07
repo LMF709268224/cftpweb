@@ -1477,7 +1477,7 @@ watch(lang, async () => {
                 </div>
               </div>
               <div class="course-detail-unit-actions flex flex-wrap items-center justify-end gap-2">
-                <span :class="['badge', unitStateClass(unit)]">{{ t.learning.unitStatusLabel }}: {{ unitStateText(unit) }}</span>
+                <span :class="['badge', unitStateClass(unit)]">{{ unitStateText(unit) }}</span>
                 <span
                   v-if="unit.glms_course_id"
                   class="badge border-primary bg-primary text-primary-foreground"

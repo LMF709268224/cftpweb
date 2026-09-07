@@ -507,7 +507,7 @@ export const zh = {
         statusIssuingCert: "认证证书签发中",
         statusCancelled: "已取消",
         statusLearning: "学习中",
-        statusWaitingStudy: "待学习",
+        statusWaitingStudy: "准备开始",
         statusWaitingSignupExam: "待报名考试",
         statusExamOpen: "可预约考试",
         statusExamScheduled: "已预约考试",
