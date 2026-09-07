@@ -689,7 +689,7 @@ watch(
           <p class="text-sm text-muted-foreground">{{ t.credentialsPage.description }}: {{ selectedDef?.description }}</p>
           <CredentialAttachmentList :attachments="selectedDef?.attachments" class="border-t border-border pt-4" />
           <div class="space-y-4 border-t border-border pt-4">
-            <h4 class="text-sm font-semibold">{{ t.credentialsPage.uploadMaterials }}</h4>
+            <h4 class="text-sm font-semibold">{{ t.credentialsPage.supportingDocuments }}</h4>
             <div v-for="constraint in selectedDef?.file_constraints || []" :key="constraint.name" class="space-y-2 rounded-lg bg-muted p-3">
               <div class="flex items-center gap-1">
                 <span v-if="constraint.is_required" class="text-sm font-bold text-destructive">*</span>
