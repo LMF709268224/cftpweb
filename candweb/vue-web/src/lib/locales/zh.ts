@@ -496,7 +496,7 @@ export const zh = {
         statusSummaryDesc: "结合当前学习和专业认证流程状态，判断下一步应该做什么。",
         pipelineStatusLabel: "专业认证流程状态",
         currentStageNameLabel: "当前阶段名称",
-        currentStageStatusLabel: "阶段状态",
+        currentStageStatusLabel: "认证状态",
         stageOrderLabel: "阶段",
         unitStatusLabel: "当前课程单元",
         nextStepUnitStatusLabel: "下一步单元状态",
