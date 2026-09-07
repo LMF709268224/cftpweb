@@ -1443,7 +1443,6 @@ watch(lang, async () => {
               <span :class="['badge', stageStateClass(stageIndex)]">
                 {{ stageStateText(stageIndex) }}
               </span>
-              <span class="badge border-slate-200 bg-slate-50 text-slate-700">{{ t.learning.stageOrderLabel }} {{ stage.sort_order || stageIndex + 1 }}</span>
             </div>
           </div>
 
