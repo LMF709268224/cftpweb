@@ -24,6 +24,7 @@ import {
   timelineStatusBadgeClassForStatus,
   timelineStatusLabelWithDiagnostics,
   statusEnumNameForStatus,
+  COURSE_UNIT_STATUS_ENUM_NAMES,
   STAGE_STATUS_ENUM_NAMES,
 } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
@@ -462,6 +463,13 @@ function unitStateText(unit: UnitConfig) {
 function unitStateClass(unit: UnitConfig) {
   if (!purchased.value || !unit.runtime_status) return "border-slate-200 bg-slate-50 text-slate-600"
   return timelineStatusBadgeClassForStatus("COURSE_UNIT", unit.runtime_status)
+}
+
+function learningActionText(unit: UnitConfig) {
+  const status = statusEnumNameForStatus(COURSE_UNIT_STATUS_ENUM_NAMES, unit.runtime_status)
+  return status === "COURSE_UNIT_STATUS_WAITING_STUDY"
+    ? t.value.courses.startLearning
+    : t.value.courses.continueLearning
 }
 
 function learningHref(courseId?: string) {
@@ -1433,9 +1441,8 @@ watch(lang, async () => {
             </div>
             <div class="flex flex-wrap gap-2">
               <span :class="['badge', stageStateClass(stageIndex)]">
-                {{ t.learning.currentStageStatusLabel }}: {{ stageStateText(stageIndex) }}
+                {{ stageStateText(stageIndex) }}
               </span>
-              <span class="badge border-slate-200 bg-slate-50 text-slate-700">{{ t.learning.stageOrderLabel }} {{ stage.sort_order || stageIndex + 1 }}</span>
             </div>
           </div>
 
@@ -1477,12 +1484,12 @@ watch(lang, async () => {
                 </div>
               </div>
               <div class="course-detail-unit-actions flex flex-wrap items-center justify-end gap-2">
-                <span :class="['badge', unitStateClass(unit)]">{{ t.learning.unitStatusLabel }}: {{ unitStateText(unit) }}</span>
+                <span :class="['badge', unitStateClass(unit)]">{{ unitStateText(unit) }}</span>
                 <span
                   v-if="unit.glms_course_id"
                   class="badge border-primary bg-primary text-primary-foreground"
                 >
-                  {{ t.courses.openLearning }}
+                  {{ learningActionText(unit) }}
                 </span>
               </div>
             </component>
