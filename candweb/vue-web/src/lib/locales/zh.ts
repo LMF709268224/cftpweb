@@ -378,6 +378,8 @@ export const zh = {
         stages: "阶段",
         units: "课程单元",
         openLearning: "进入学习",
+        startLearning: "开始学习",
+        continueLearning: "继续学习",
         stageListTitle: "阶段列表",
         stageListDesc: "按专业认证流程阶段展开课程单元，当前阶段会高亮显示；前序和后续阶段仅表示配置顺序位置。",
         noStagesTitle: "暂无阶段内容",

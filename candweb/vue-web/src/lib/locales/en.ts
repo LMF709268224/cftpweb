@@ -380,6 +380,8 @@ export const en: AppTranslations = {
         stages: "Levels",
         units: "Modules",
         openLearning: "Open Learning",
+        startLearning: "Start Learning",
+        continueLearning: "Continue Learning",
         stageListTitle: "Certification Pathway",
         stageListDesc: "View your certification pathway and progress through each level in sequence.",
         noStagesTitle: "No stages yet",
