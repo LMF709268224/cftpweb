@@ -1231,7 +1231,10 @@ watch(lang, async () => {
             </div>
             <div class="flex items-center gap-1.5">
               <Award class="h-4 w-4" />
-              <span>{{ pipeline.award_certs?.length || 0 }} {{ t.courses.awardedCertificates }}</span>
+              <span>
+                {{ pipeline.award_certs?.length || 0 }}
+                {{ (pipeline.award_certs?.length || 0) === 1 ? t.courses.awardedCertificate : t.courses.awardedCertificates }}
+              </span>
             </div>
           </div>
 
