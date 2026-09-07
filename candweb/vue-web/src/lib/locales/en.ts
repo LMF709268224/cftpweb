@@ -472,7 +472,7 @@ export const en: AppTranslations = {
     learning: {
         title: "Learning",
         subtitle: "Continue learning the courses you purchased",
-        backToCourse: "Back to course details",
+        backToCourse: "Back to Certification Pathway",
         certificationDetailLoadFailed: "Failed to load certification details",
         certificationDetailLoadFailedDesc: "Certification details are temporarily unavailable. Check your connection and try again.",
         courseLearningLoadFailed: "Failed to load course content",
@@ -486,6 +486,7 @@ export const en: AppTranslations = {
         lessons: "Lessons",
         chapterPrefix: "Chapter",
         progressLabel: "Learning Progress",
+        progressCompleteSuffix: "Complete",
         completedLessonsBadge: "Completed lessons",
         passedQuizBadge: "Passed quizzes",
         syncProgress: "Sync Progress",

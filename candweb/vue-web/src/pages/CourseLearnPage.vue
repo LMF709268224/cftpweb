@@ -1875,10 +1875,10 @@ watch(selectedMaterial, () => {
                 <ChevronRight v-else class="h-3.5 w-3.5" />
               </button>
               <div class="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                <span class="inline-flex items-center gap-1"><BookOpen class="h-3.5 w-3.5" />{{ chapters.length }} {{ t.learning.chapters }}</span>
+                <span class="inline-flex items-center gap-1"><BookOpen class="h-3.5 w-3.5" />{{ chapters.length }} {{ lang === "en" && chapters.length === 1 ? t.learning.chapterPrefix : t.learning.chapters }}</span>
                 <span class="inline-flex items-center gap-1"><Clock class="h-3.5 w-3.5" />{{ lessons.length }} {{ t.learning.lessons }}</span>
-                <span class="inline-flex items-center gap-1 text-primary"><CheckCircle2 class="h-3.5 w-3.5" />{{ progressPercentage }}%</span>
-                <span v-if="courseHasExam" class="inline-flex items-center gap-1 text-amber-600"><FileText class="h-3.5 w-3.5" />{{ t.learning.phaseExam }}</span>
+                <span class="inline-flex items-center gap-1 text-primary"><CheckCircle2 class="h-3.5 w-3.5" />{{ progressPercentage }}%<template v-if="lang === 'en'"> {{ t.learning.progressCompleteSuffix }}</template></span>
+                <span v-if="courseHasExam" class="inline-flex items-center gap-1 text-amber-600"><FileText class="h-3.5 w-3.5" /><template v-if="lang === 'en'">1 </template>{{ t.learning.phaseExam }}</span>
               </div>
             </div>
           </div>

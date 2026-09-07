@@ -484,6 +484,7 @@ export const zh = {
         lessons: "课时",
         chapterPrefix: "章节",
         progressLabel: "学习进度",
+        progressCompleteSuffix: "完成",
         completedLessonsBadge: "已完成课时",
         passedQuizBadge: "通过测验",
         syncProgress: "同步进度",
