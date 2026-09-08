@@ -1371,7 +1371,8 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
 
     await page.goto(`/checkout/${bundleID}`, { waitUntil: "domcontentloaded" })
     const blockerPanel = page.getByTestId("checkout-eligibility-blockers")
-    await expect(blockerPanel).toContainText("免考材料尚未上传")
+    await expect(blockerPanel.getByRole("heading", { name: "流程暂未继续", exact: true })).toBeVisible()
+    await expect(blockerPanel.getByText("您的免考申请材料尚未提交，请在下方或者前往【资格认证申请】上传并提交材料，待审核通过后，再完成认证报名支付。", { exact: true })).toBeVisible()
     await expect(page.getByText("System Only Course", { exact: true })).toHaveCount(0)
     await expect.poll(() => pricingSelections).toEqual({
         [pipelineID]: {
@@ -1446,7 +1447,7 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
     await expect(qualificationCard).toContainText("材料已提交，正在审核。")
     await expect(qualificationCard).not.toContainText("资格认证申请已创建，请在下方上传材料。")
     await expect(blockerPanel).toContainText("免考资格认证正在审核中")
-    await expect(blockerPanel).not.toContainText("免考材料尚未上传")
+    await expect(blockerPanel).not.toContainText("您的免考申请材料尚未提交")
     await expect(page.getByTestId("checkout-selection-next")).toBeDisabled()
 })
 
