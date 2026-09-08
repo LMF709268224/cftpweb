@@ -294,10 +294,20 @@ func (h *Handler) UpdateMailTemplate(w http.ResponseWriter, r *http.Request) {
 	if !requireRequestFields(w, path, "path", input.Name, "name", input.SubjectTemplate, "subject_template", htmlBody, "html_body") {
 		return
 	}
-	parameterSchema, err := normalizeParameterSchema(input.ParameterSchema)
+
+	builtInPaths, err := h.Gmail.GetAllBuiltInPaths(r.Context(), &gmailpb.GetAllBuiltInPathsRequest{})
 	if err != nil {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "parameter_schema must be valid JSON")
+		slog.Error("GetAllBuiltInPaths before UpdateMailTemplate failed", "error", err)
+		HandleGrpcError(w, err)
 		return
+	}
+	parameterSchema := ""
+	if !isBuiltInMailTemplate(path, builtInPaths.GetPaths()) {
+		parameterSchema, err = normalizeParameterSchema(input.ParameterSchema)
+		if err != nil {
+			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "parameter_schema must be valid JSON")
+			return
+		}
 	}
 
 	resp, err := h.Gmail.UpdateTemplate(r.Context(), &gmailpb.UpdateTemplateRequest{
@@ -316,6 +326,15 @@ func (h *Handler) UpdateMailTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	WriteJSON(w, http.StatusOK, resp)
+}
+
+func isBuiltInMailTemplate(path string, paths []*gmailpb.BuiltInPathInfo) bool {
+	for _, info := range paths {
+		if info.GetPath() == path {
+			return true
+		}
+	}
+	return false
 }
 
 func (h *Handler) DeleteMailTemplate(w http.ResponseWriter, r *http.Request) {
