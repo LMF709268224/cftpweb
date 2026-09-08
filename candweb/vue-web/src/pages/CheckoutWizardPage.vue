@@ -29,7 +29,6 @@ import {
   normalizeAddressCountryCode,
   normalizeLocationForSubmission,
   type CountryOption,
-  type PhonePrefixOption,
   resolvePhoneCountryCode,
 } from "@/lib/locationOptions"
 import { GENDER_OPTIONS, PROFILE_TEXT_LIMITS, isValidEmail, isValidInternationalPhone, isValidPostalCode, normalizeGender, normalizeInternationalPhone, normalizePostalCode, trimToMax } from "@/lib/profileFormValidation"
@@ -366,7 +365,12 @@ const locationGridClass = computed(() => {
   const fieldCount = 1 + Number(showProvinceField.value) + Number(showCityField.value)
   return fieldCount === 3 ? "sm:grid-cols-3" : fieldCount === 2 ? "sm:grid-cols-2" : "sm:grid-cols-1"
 })
-const orgPhonePrefixes = ref<PhonePrefixOption[]>([])
+const organizationPhoneCountryCodes = ref<unknown>([])
+const phonePrefixLocale = computed(() => lang.value === "zh" ? "zh-CN" : "en")
+const orgPhonePrefixes = computed(() => getOrganizationPhonePrefixes(
+  organizationPhoneCountryCodes.value,
+  phonePrefixLocale.value,
+))
 const genderOptions = GENDER_OPTIONS
 const formData = reactive({
   first_name: "",
@@ -612,7 +616,7 @@ async function fetchOrgConfig() {
   try {
     const configRes = await apiClient("/api/public/config/organization")
     if (configRes && configRes.country_codes) {
-      orgPhonePrefixes.value = getOrganizationPhonePrefixes(configRes.country_codes)
+      organizationPhoneCountryCodes.value = configRes.country_codes
       formData.phone_country_code = resolvePhoneCountryCode(
         formData.phone_country_code,
         orgPhonePrefixes.value,

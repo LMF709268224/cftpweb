@@ -184,9 +184,10 @@ function formatPhonePrefix(phonecode: unknown) {
   return countryCallingCode ? `+${countryCallingCode}` : ""
 }
 
-export function getOrganizationPhonePrefixes(countryCodes: unknown): PhonePrefixOption[] {
+export function getOrganizationPhonePrefixes(countryCodes: unknown, locale = "en"): PhonePrefixOption[] {
   if (!Array.isArray(countryCodes) || allCountriesCache.length === 0) return []
 
+  const displayNames = new Intl.DisplayNames([locale], { type: "region" })
   const normalizedCodes = countryCodes
     .map((code) => String(code || "").trim())
     .filter(Boolean)
@@ -194,7 +195,7 @@ export function getOrganizationPhonePrefixes(countryCodes: unknown): PhonePrefix
     (code) => code === "*" || code.toLowerCase() === "all",
   )
   const countries = includesAllCountries
-    ? [...allCountriesCache].sort((a, b) => String(a.name).localeCompare(String(b.name), "en"))
+    ? [...allCountriesCache]
     : normalizedCodes
         .map((code) => allCountriesCache.find(
           (country) => String(country.isoCode).toUpperCase() === code.toUpperCase(),
@@ -202,7 +203,7 @@ export function getOrganizationPhonePrefixes(countryCodes: unknown): PhonePrefix
         .filter(Boolean)
 
   const seenCodes = new Set<string>()
-  return countries.flatMap((country) => {
+  const prefixes = countries.flatMap((country) => {
     const code = String(country.isoCode || "").trim().toUpperCase()
     const dialCode = formatPhonePrefix(country.phonecode)
     if (!code || !dialCode || seenCodes.has(code)) return []
@@ -210,9 +211,13 @@ export function getOrganizationPhonePrefixes(countryCodes: unknown): PhonePrefix
     return [{
       code,
       dialCode,
-      name: String(country.name || code),
+      name: displayNames.of(code) || String(country.name || code),
     }]
   })
+
+  return includesAllCountries
+    ? prefixes.sort((a, b) => a.name.localeCompare(b.name, locale))
+    : prefixes
 }
 
 export function resolvePhoneCountryCode(
