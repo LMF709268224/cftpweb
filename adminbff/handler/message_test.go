@@ -10,6 +10,8 @@ import (
 
 	gmsgpb "github.com/afnandelfin620-star/cftptest/cftp/gmsg"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type messageReadClientStub struct {
@@ -75,50 +77,23 @@ func TestListSentMessagesReturnsReadOnlyMessagePage(t *testing.T) {
 	}
 }
 
-func TestIsBuiltInMessageTemplate(t *testing.T) {
-	tests := []struct {
-		name string
-		path string
-		list []*gmsgpb.BuiltInPathInfo
-		want bool
-	}{
-		{
-			name: "matching built-in path",
-			path: "/msg/course/completed/gprog",
-			list: []*gmsgpb.BuiltInPathInfo{{Path: "/msg/course/completed/gprog"}},
-			want: true,
-		},
-		{
-			name: "custom path",
-			path: "/msg/custom/course-completed",
-			list: []*gmsgpb.BuiltInPathInfo{{Path: "/msg/course/completed/gprog"}},
-			want: false,
-		},
-		{name: "empty list", path: "/msg/course/completed/gprog", want: false},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := isBuiltInMessageTemplate(tt.path, tt.list); got != tt.want {
-				t.Fatalf("isBuiltInMessageTemplate() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 type messageTemplateClientStub struct {
 	gmsgpb.MessageServiceClient
-	updateRequest *gmsgpb.UpdateTemplateRequest
+	builtInPathRequest *gmsgpb.GetBuiltInPathRequest
+	builtInPathError   error
+	updateRequest      *gmsgpb.UpdateTemplateRequest
 }
 
-func (s *messageTemplateClientStub) GetAllBuiltInPaths(
+func (s *messageTemplateClientStub) GetBuiltInPath(
 	_ context.Context,
-	_ *gmsgpb.GetAllBuiltInPathsRequest,
+	req *gmsgpb.GetBuiltInPathRequest,
 	_ ...grpc.CallOption,
-) (*gmsgpb.GetAllBuiltInPathsResponse, error) {
-	return &gmsgpb.GetAllBuiltInPathsResponse{
-		Paths: []*gmsgpb.BuiltInPathInfo{{Path: "/msg/course/completed/gprog"}},
-	}, nil
+) (*gmsgpb.GetBuiltInPathResponse, error) {
+	s.builtInPathRequest = req
+	if s.builtInPathError != nil {
+		return nil, s.builtInPathError
+	}
+	return &gmsgpb.GetBuiltInPathResponse{Info: &gmsgpb.BuiltInPathInfo{Path: req.GetPath()}}, nil
 }
 
 func (s *messageTemplateClientStub) UpdateTemplate(
@@ -135,9 +110,9 @@ func TestUpdateTemplateClearsParameterSchemaForBuiltInTemplate(t *testing.T) {
 	h := &Handler{Gmsg: client}
 	recorder := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodPut, "/api/messages/templates", strings.NewReader(`{
-		"path":"/msg/course/completed/gprog",
-		"title_tpl":"Course completed",
-		"content_tpl":"Open {{CandidatePortalBaseURL}}/profile/pipelines",
+		"path":"/msg/bundle/payment-paid/gmall",
+		"title_tpl":"Bundle purchase completed",
+		"content_tpl":"Bundle purchase completed",
 		"parameter_schema":"{}"
 	}`))
 
@@ -149,7 +124,34 @@ func TestUpdateTemplateClearsParameterSchemaForBuiltInTemplate(t *testing.T) {
 	if client.updateRequest == nil {
 		t.Fatal("UpdateTemplate() did not call the message service")
 	}
+	if client.builtInPathRequest == nil || client.builtInPathRequest.GetPath() != "/msg/bundle/payment-paid/gmall" {
+		t.Fatalf("GetBuiltInPath() request = %+v", client.builtInPathRequest)
+	}
 	if client.updateRequest.GetParameterSchema() != "" {
 		t.Fatalf("parameter_schema = %q, want empty", client.updateRequest.GetParameterSchema())
+	}
+}
+
+func TestUpdateTemplatePreservesParameterSchemaForCustomTemplate(t *testing.T) {
+	client := &messageTemplateClientStub{builtInPathError: status.Error(codes.NotFound, "not a built-in path")}
+	h := &Handler{Gmsg: client}
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodPut, "/api/messages/templates", strings.NewReader(`{
+		"path":"/msg/custom/course-completed",
+		"title_tpl":"Course completed",
+		"content_tpl":"Course completed",
+		"parameter_schema":"{\"type\":\"object\"}"
+	}`))
+
+	h.UpdateTemplate(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body=%s", recorder.Code, http.StatusOK, recorder.Body.String())
+	}
+	if client.updateRequest == nil {
+		t.Fatal("UpdateTemplate() did not call the message service")
+	}
+	if client.updateRequest.GetParameterSchema() != `{"type":"object"}` {
+		t.Fatalf("parameter_schema = %q", client.updateRequest.GetParameterSchema())
 	}
 }

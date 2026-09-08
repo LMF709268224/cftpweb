@@ -9,6 +9,8 @@ import (
 	"github.com/oklog/ulid/v2"
 
 	gmsgpb "github.com/afnandelfin620-star/cftptest/cftp/gmsg"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type SendMessageInput struct {
@@ -189,21 +191,22 @@ func (h *Handler) UpdateTemplate(w http.ResponseWriter, r *http.Request) {
 	if !requireRequestFields(w, req.Path, "path", req.TitleTpl, "title_tpl", req.ContentTpl, "content_tpl") {
 		return
 	}
-	builtInPaths, err := h.Gmsg.GetAllBuiltInPaths(r.Context(), &gmsgpb.GetAllBuiltInPathsRequest{})
-	if err != nil {
-		slog.Error("GetAllBuiltInPaths before UpdateTemplate failed", "error", err)
-		HandleGrpcError(w, err)
-		return
-	}
-	if isBuiltInMessageTemplate(req.Path, builtInPaths.GetPaths()) {
+	_, err := h.Gmsg.GetBuiltInPath(r.Context(), &gmsgpb.GetBuiltInPathRequest{
+		Query: &gmsgpb.GetBuiltInPathRequest_Path{Path: req.Path},
+	})
+	if err == nil {
 		req.ParameterSchema = ""
-	} else {
-		parameterSchema, err := normalizeParameterSchema(req.ParameterSchema)
-		if err != nil {
+	} else if status.Code(err) == codes.NotFound {
+		parameterSchema, schemaErr := normalizeParameterSchema(req.ParameterSchema)
+		if schemaErr != nil {
 			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "parameter_schema must be valid JSON")
 			return
 		}
 		req.ParameterSchema = parameterSchema
+	} else {
+		slog.Error("GetBuiltInPath before UpdateTemplate failed", "path", req.Path, "error", err)
+		HandleGrpcError(w, err)
+		return
 	}
 
 	resp, err := h.Gmsg.UpdateTemplate(r.Context(), &req)
@@ -213,15 +216,6 @@ func (h *Handler) UpdateTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	WriteJSON(w, http.StatusOK, resp)
-}
-
-func isBuiltInMessageTemplate(path string, paths []*gmsgpb.BuiltInPathInfo) bool {
-	for _, info := range paths {
-		if info.GetPath() == path {
-			return true
-		}
-	}
-	return false
 }
 
 func (h *Handler) DeleteMessageTemplate(w http.ResponseWriter, r *http.Request) {
