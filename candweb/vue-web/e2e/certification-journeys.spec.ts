@@ -1265,12 +1265,32 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
             },
         },
     }
+    const checkoutBundleWithApplicationEligibility = () => {
+        const blockerType = applicationStatus === "APPLICATION_STATUS_PENDING"
+            ? "EXEMPTION_UNDER_REVIEW"
+            : "EXEMPTION_DOCUMENTS_PENDING_UPLOAD"
+        const eligibility = {
+            can_purchase: false,
+            can_unlock: false,
+            blockers: [{ blocker_type: blockerType, details: [unitID] }],
+        }
+        return {
+            ...checkoutBundle,
+            eligibility,
+            purchase_state: {
+                ...checkoutBundle.purchase_state,
+                eligibility,
+            },
+        }
+    }
 
     await page.route("https://uploads.example/**", async (route) => {
         await route.fulfill({ status: 200, body: "" })
     })
     await installCandidateApiMocks(page, ({ pathname, url, method, body }) => {
-        if (pathname === `/api/mall/bundles/${bundleID}` && method === "GET") return { data: checkoutBundle }
+        if (pathname === `/api/mall/bundles/${bundleID}` && method === "GET") {
+            return { data: checkoutBundleWithApplicationEligibility() }
+        }
         if (pathname === `/api/mall/bundles/${bundleID}/pricing-detail`) {
             pricingSelections = JSON.parse(url.searchParams.get("selected_exemptions_json") || "{}")
             return { data: { units: [], memberships: [] } }
@@ -1350,6 +1370,8 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
     })
 
     await page.goto(`/checkout/${bundleID}`, { waitUntil: "domcontentloaded" })
+    const blockerPanel = page.getByTestId("checkout-eligibility-blockers")
+    await expect(blockerPanel).toContainText("免考材料尚未上传")
     await expect(page.getByText("System Only Course", { exact: true })).toHaveCount(0)
     await expect.poll(() => pricingSelections).toEqual({
         [pipelineID]: {
@@ -1423,8 +1445,9 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
     await expect.poll(() => applicationOrderRequests).toBeGreaterThan(initialApplicationOrderRequests)
     await expect(qualificationCard).toContainText("材料已提交，正在审核。")
     await expect(qualificationCard).not.toContainText("资格认证申请已创建，请在下方上传材料。")
-    await page.getByTestId("checkout-selection-next").click()
-    await expect(page.getByText("“Template Application Course”的免考申请正在审核中，请等待审核结果。", { exact: true })).toBeVisible()
+    await expect(blockerPanel).toContainText("免考资格认证正在审核中")
+    await expect(blockerPanel).not.toContainText("免考材料尚未上传")
+    await expect(page.getByTestId("checkout-selection-next")).toBeDisabled()
 })
 
 test("资格申请页允许 PendingUpload 申请上传", async ({ page }) => {
