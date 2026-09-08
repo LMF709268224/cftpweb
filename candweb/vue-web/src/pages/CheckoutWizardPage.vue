@@ -1429,6 +1429,12 @@ async function submitQualificationApplication(unit: any): Promise<boolean> {
     } catch (error) {
       console.warn("Failed to refresh qualification order after material submission", error)
     }
+    try {
+      const response = await fetchBundlePayload()
+      await applyBundleInfoWithQualificationDefinitions(response)
+    } catch (error) {
+      console.warn("Failed to refresh checkout eligibility after material submission", error)
+    }
     return true
   } catch (error) {
     console.error(error)
