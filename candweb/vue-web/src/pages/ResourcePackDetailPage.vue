@@ -57,7 +57,13 @@ const copy = computed(() => {
   const page = t.value.resourcePackDetailPage
   return {
     ...page,
-    title: isWebinarsPack.value ? page.titleWebinars : isReportsPack.value ? page.titleReports : page.titleDefault,
+    title: isInsightsPack.value
+      ? page.titleInsights
+      : isWebinarsPack.value
+        ? page.titleWebinars
+        : isReportsPack.value
+          ? page.titleReports
+          : page.titleDefault,
     subtitle: isInsightsPack.value
       ? page.subtitleInsights
       : isWebinarsPack.value
