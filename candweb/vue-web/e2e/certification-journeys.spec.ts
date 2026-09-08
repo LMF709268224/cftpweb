@@ -2723,6 +2723,57 @@ test("已购认证进入课程、完成课件并通过测验完整闭环", async
     expect(quizStartRequests).toBe(2)
 })
 
+test("测验通过但教材未标记完成时提示返回教材", async ({ page }) => {
+    const runtime = pipelineRuntime()
+    Object.assign(runtime.config.stages[0].units[0], { exam_id: "exam-regression" })
+
+    await installCandidateApiMocks(page, ({ pathname, method }) => {
+        if (pathname === `/api/mall/pipelines/${pipelineID}/runtime`) return { data: runtime }
+        if (pathname === `/api/mall/courses/${courseID}`) {
+            return { data: { course_id: courseID, title: "Regression Learning Course", duration_min: 30 } }
+        }
+        if (pathname === `/api/mall/courses/${courseID}/thumbnail-url`) return { data: {} }
+        if (pathname === `/api/pipeline/courses/${courseID}/complete`) {
+            return {
+                data: {
+                    complete_course: {
+                        course: { course_id: courseID, title: "Regression Learning Course", duration_min: 30 },
+                        chapters: [{
+                            chapter: { chapter_id: "chapter-regression", title: "Regression Chapter" },
+                            lessons: [{
+                                lesson: {
+                                    lesson_id: lessonID,
+                                    title: "Regression Lesson",
+                                    lesson_type: "article",
+                                    body: "<p>Regression lesson content</p>",
+                                },
+                                quizzes: [],
+                            }],
+                            quizzes: [],
+                        }],
+                        materials: [],
+                        quizzes: [{ quiz: { quiz_id: quizID, title: "Regression Quiz", quiz_type: 1 } }],
+                    },
+                    quiz_progress: { [quizID]: { is_passed: true } },
+                },
+            }
+        }
+        if (pathname === "/api/progress") return { data: { records: [] } }
+        if (pathname === `/api/progress/courses/${courseID}/sync` && method === "POST") {
+            return { data: { progress_percentage: 50, completed_lessons_count: 0, passed_quizzes_count: 1 } }
+        }
+        if (pathname === "/api/exams") return { data: { exams: [], total: 0 } }
+        return undefined
+    })
+
+    await page.goto(`/certifications/${pipelineID}/learn/${courseID}`, { waitUntil: "domcontentloaded" })
+    await page.locator('[data-testid="certification-flow-step"][data-step-id="exam"]').first().click()
+
+    await expect(page.getByRole("heading", { name: "请先完成教材学习", exact: true })).toBeVisible()
+    await expect(page.getByText("测验已通过。请返回教材，在每个教材课时中点击“标记为已完成”。完成后即可预约考试。", { exact: true })).toBeVisible()
+    await expect(page.getByTestId("exam-signup-link")).toHaveCount(0)
+})
+
 test("同阶段课程可分别进入各自的考试报名", async ({ page }) => {
     const courseAID = "course-parallel-a"
     const courseBID = "course-parallel-b"

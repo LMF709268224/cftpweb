@@ -548,6 +548,32 @@ const allLessonsMarkedCompleted = computed(() =>
 )
 const lessonStepDone = computed(() => allLessonsMarkedCompleted.value)
 const quizStepDone = computed(() => quizTasks.value.length > 0 && completedQuizTaskCount.value >= quizTasks.value.length)
+const courseExamEmptyState = computed(() => {
+  if (canSignupCurrentCourseExam.value) {
+    return {
+      title: t.value.examsPage.noExams,
+      description: t.value.examsPage.noExamsDesc,
+    }
+  }
+  if (!lessonStepDone.value) {
+    return {
+      title: t.value.learning.examLearningIncompleteTitle,
+      description: quizStepDone.value
+        ? t.value.learning.examLearningIncompleteAfterQuizDesc
+        : t.value.learning.examLearningIncompleteDesc,
+    }
+  }
+  if (quizTasks.value.length > 0 && !quizStepDone.value) {
+    return {
+      title: t.value.learning.examQuizIncompleteTitle,
+      description: t.value.learning.examQuizIncompleteDesc.replace("{{count}}", String(remainingQuizTaskCount.value)),
+    }
+  }
+  return {
+    title: t.value.examsPage.noExams,
+    description: t.value.examsPage.noExamsDesc,
+  }
+})
 const examStepDone = computed(() => {
   if (nextStepState.value.action === "view_certificate" || pipelineIsTerminal(pipelineStatus.value)) return true
   if (normalizeEnumValueUpper(courseRuntimeUnitStatus.value).includes("COMPLETED")) return true
@@ -2054,8 +2080,8 @@ watch(selectedMaterial, () => {
           </div>
           <div v-else-if="courseExams.length === 0" class="rounded-md border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
             <CalendarClock class="mx-auto mb-3 h-8 w-8 text-primary" />
-            <h3 class="font-semibold text-foreground">{{ t.examsPage.noExams }}</h3>
-            <p class="mt-2 text-sm text-muted-foreground">{{ t.examsPage.noExamsDesc }}</p>
+            <h3 class="font-semibold text-foreground">{{ courseExamEmptyState.title }}</h3>
+            <p class="mt-2 text-sm text-muted-foreground">{{ courseExamEmptyState.description }}</p>
             <RouterLink
               v-if="canSignupCurrentCourseExam"
               :to="currentCourseExamSignupLink"
