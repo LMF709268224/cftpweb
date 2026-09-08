@@ -34,19 +34,19 @@ const asyncPageCases: AsyncPageCase[] = [
     successData: { list: [] },
   },
   {
-    name: "资源包",
+    name: "专属合集",
     path: "/resource-packs",
     endpoint: "/api/resource-packs",
-    errorTitle: "资源包加载失败",
-    successTitle: "暂无可访问资源包",
+    errorTitle: "专属合集加载失败",
+    successTitle: "暂无可访问的专属合集",
     successData: { packs: [], next_page_token: "" },
   },
   {
-    name: "资源包详情",
+    name: "专属合集详情",
     path: "/resource-packs/pack-regression",
     endpoint: "/api/resource-packs/pack-regression/files",
     errorTitle: "资源文件加载失败",
-    successTitle: "这个资源包暂无文件",
+    successTitle: "这个专属合集暂无文件",
     successData: { files: [], next_page_token: "" },
   },
   {
@@ -173,7 +173,7 @@ test("首页统计全部加载失败后可以重试", async ({ page }) => {
   }
 })
 
-test("资源包列表只应用最后一次请求返回的数据", async ({ page }) => {
+test("专属合集列表只应用最后一次请求返回的数据", async ({ page }) => {
   let requestCount = 0
   let firstRequestStarted = false
   let releaseFirstRequest!: () => void
@@ -216,7 +216,7 @@ test("资源包列表只应用最后一次请求返回的数据", async ({ page 
   await expect(page.getByText("STALE RESOURCE PACK", { exact: true })).toHaveCount(0)
 })
 
-test("资源包详情只应用最后一次请求返回的文件", async ({ page }) => {
+test("专属合集详情只应用最后一次请求返回的文件", async ({ page }) => {
   let requestCount = 0
   let firstRequestStarted = false
   let releaseFirstRequest!: () => void
