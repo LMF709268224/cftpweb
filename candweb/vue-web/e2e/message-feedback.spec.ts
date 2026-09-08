@@ -108,3 +108,88 @@ test("较早的筛选请求不会覆盖最后一次筛选结果", async ({ page 
   await expect(page.getByText("最后的已读结果")).toBeVisible()
   await expect(page.getByText("较早的未读结果")).toHaveCount(0)
 })
+
+test("消息正文支持语言分段和安全站内链接", async ({ page }) => {
+  const localizedMessage = {
+    ...baseMessage,
+    status: 1,
+    title: "<!--lang:en-US-->Localized message<!--lang:zh-CN-->本地化消息",
+    content: [
+      "<!--lang:en-US-->",
+      "### Dear Candidate",
+      "English message body.",
+      "[View My Certifications]({{CandidatePortalBaseURL}}/my-certifications)",
+      "[Direct internal link](/my-certifications)",
+      "[External help](https://example.com/help)",
+      "[Unsafe link](javascript:alert(1))",
+      "",
+      "<!--lang:zh-CN-->",
+      "### 尊敬的考生",
+      "中文消息正文。",
+      "[查看我的专业认证]({{CandidatePortalBaseURL}}/my-certifications)",
+    ].join("\n"),
+  }
+
+  await installCandidateApiMocks(page, ({ pathname, method }) => {
+    if (pathname === "/api/messages" && method === "GET") {
+      return { data: { messages: [localizedMessage], has_more: false } }
+    }
+    if (pathname === `/api/messages/${baseMessage.message_id}` && method === "GET") {
+      return { data: localizedMessage }
+    }
+    return undefined
+  })
+
+  await page.goto("/messages", { waitUntil: "domcontentloaded" })
+  await page.getByText("本地化消息", { exact: true }).click()
+
+  const dialog = page.getByRole("dialog")
+  await expect(dialog.getByRole("heading", { name: "尊敬的考生" })).toBeVisible()
+  await expect(dialog.getByText("中文消息正文。")).toBeVisible()
+  await expect(dialog.getByText("English message body.")).toHaveCount(0)
+  await expect(dialog.getByRole("link", { name: "查看我的专业认证" })).toHaveAttribute("href", "/my-certifications")
+
+  await page.evaluate(async () => {
+    const modulePath = "/src/lib/language.ts"
+    const { changeLanguage } = await import(modulePath)
+    changeLanguage("en")
+  })
+
+  await expect(dialog.getByRole("heading", { name: "Dear Candidate" })).toBeVisible()
+  await expect(dialog.getByText("English message body.")).toBeVisible()
+  await expect(dialog.getByText("中文消息正文。")).toHaveCount(0)
+
+  const markedInternalLink = dialog.getByRole("link", { name: "View My Certifications" })
+  await expect(markedInternalLink).toHaveAttribute("href", "/my-certifications")
+  await expect(dialog.getByRole("link", { name: "Direct internal link" })).toHaveAttribute("href", "/my-certifications")
+  await expect(dialog.getByRole("link", { name: "External help" })).toHaveAttribute("target", "_blank")
+  await expect(dialog.getByRole("link", { name: "Unsafe link" })).toHaveCount(0)
+
+  await markedInternalLink.click()
+  await expect(page).toHaveURL(/\/my-certifications$/)
+})
+
+test("没有语言标记的旧消息正文保持完整显示", async ({ page }) => {
+  const legacyMessage = {
+    ...baseMessage,
+    status: 1,
+    content: "Dear Candidate / 尊敬的考生\n\nLegacy body / 旧消息正文",
+  }
+
+  await installCandidateApiMocks(page, ({ pathname, method }) => {
+    if (pathname === "/api/messages" && method === "GET") {
+      return { data: { messages: [legacyMessage], has_more: false } }
+    }
+    if (pathname === `/api/messages/${baseMessage.message_id}` && method === "GET") {
+      return { data: legacyMessage }
+    }
+    return undefined
+  })
+
+  await page.goto("/messages", { waitUntil: "domcontentloaded" })
+  await page.getByText(baseMessage.title).click()
+
+  const dialog = page.getByRole("dialog")
+  await expect(dialog.getByText("Dear Candidate / 尊敬的考生")).toBeVisible()
+  await expect(dialog.getByText("Legacy body / 旧消息正文")).toBeVisible()
+})

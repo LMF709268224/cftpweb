@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
+import { useRouter } from "vue-router"
 import { toast } from "vue-sonner"
 import { AlertCircle, Bell, CheckCheck, ChevronRight, Circle, CreditCard, FileText, Gift, Loader2, Megaphone, MessageSquare, MoreHorizontal, RefreshCw, Trash2, X } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
@@ -9,12 +10,14 @@ import { useDialogAccessibility } from "@/lib/dialogAccessibility"
 import { formatBackendDate } from "@/lib/utils"
 import { fetchUnreadCount } from "@/lib/unreadCountCache"
 import { useTranslation } from "@/lib/language"
+import { hasLocalizedMessageSections, messageMarkdownToHtml, selectLocalizedMessageText } from "@/lib/messageContent"
 import { usePolling } from "@/lib/polling"
 type Message = { id: string; type: string; rawTitle: string; rawContent: string; createdAt: string; isRead: boolean; isUnread: boolean }
 type MessageStatusFilter = "unread" | "read"
 type MessageAction = "read" | "delete"
 
 const { t, lang } = useTranslation()
+const router = useRouter()
 const selectedStatus = ref<MessageStatusFilter | null>(null)
 const detailModalOpen = ref(false)
 useBodyScrollLock(() => detailModalOpen.value)
@@ -182,66 +185,23 @@ function cleanMarkdown(value: string) {
 }
 
 function localizedMessageTitle(value: string, fallback: string) {
-  const cleaned = cleanMarkdown(value || "")
+  const localized = selectLocalizedMessageText(value || "", lang.value)
+  const cleaned = cleanMarkdown(localized)
   if (!cleaned) return fallback
+  if (hasLocalizedMessageSections(value || "")) return cleaned
   return splitBilingualText(cleaned)
 }
 
-function escapeHtml(value: string) {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;")
-}
+function handleMessageContentClick(event: MouseEvent) {
+  const target = event.target
+  if (!(target instanceof Element)) return
+  const link = target.closest<HTMLAnchorElement>('a[data-message-internal-link="true"]')
+  if (!link) return
 
-function renderInlineMarkdown(value: string) {
-  return escapeHtml(value)
-    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-    .replace(/\[(.*?)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-primary underline underline-offset-2">$1</a>')
-    .replace(/\{\{.*?\}\}/g, "")
-}
-
-function markdownToHtml(markdown: string) {
-  const source = String(markdown || "").replace(/\r\n/g, "\n").trim()
-  if (!source) return ""
-
-  const lines = source.split("\n")
-  const html: string[] = []
-  let listItems: string[] = []
-  const flushList = () => {
-    if (listItems.length === 0) return
-    html.push(`<ul class="my-3 list-disc space-y-1 pl-5">${listItems.join("")}</ul>`)
-    listItems = []
-  }
-
-  for (const rawLine of lines) {
-    const line = rawLine.trim()
-    if (!line) {
-      flushList()
-      continue
-    }
-
-    const heading = line.match(/^(#{1,6})\s+(.+)$/)
-    if (heading) {
-      flushList()
-      const level = Math.min(heading[1].length + 2, 6)
-      html.push(`<h${level} class="mt-3 font-semibold text-foreground">${renderInlineMarkdown(heading[2])}</h${level}>`)
-      continue
-    }
-
-    const bullet = line.match(/^[-*]\s+(.+)$/)
-    if (bullet) {
-      listItems.push(`<li>${renderInlineMarkdown(bullet[1])}</li>`)
-      continue
-    }
-
-    flushList()
-    html.push(`<p class="my-2">${renderInlineMarkdown(line)}</p>`)
-  }
-  flushList()
-  return html.join("")
+  const href = link.getAttribute("href") || ""
+  if (!/^\/(?!\/)/.test(href)) return
+  event.preventDefault()
+  void router.push(href)
 }
 
 function formatPayloadSummary(payload: unknown) {
@@ -631,7 +591,12 @@ onMounted(() => {
               {{ t.messagesPage.retry }}
             </button>
           </div>
-          <div v-else class="message-detail-content rounded-xl border border-slate-100 bg-white px-5 py-4 text-sm leading-7 text-slate-800 shadow-sm shadow-slate-200/70" v-html="markdownToHtml(selectedMessageDetail?.rawContent || '')" />
+          <div
+            v-else
+            class="message-detail-content rounded-xl border border-slate-100 bg-white px-5 py-4 text-sm leading-7 text-slate-800 shadow-sm shadow-slate-200/70"
+            @click="handleMessageContentClick"
+            v-html="messageMarkdownToHtml(selectedMessageDetail?.rawContent || '', lang)"
+          />
         </div>
       </div>
     </div>
