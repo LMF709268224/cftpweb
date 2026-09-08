@@ -11,7 +11,7 @@ const portalPages = [
   { path: "/my-certifications", heading: "我的专业认证考试" },
   { path: "/exams", heading: "考试" },
   { path: "/records", heading: "档案" },
-  { path: "/resource-packs", heading: "资源包" },
+  { path: "/resource-packs", heading: "专属合集" },
   { path: "/credentials", heading: "资格认证申请" },
   { path: "/certificates", heading: "认证证书" },
   { path: "/membership", heading: "会员资格" },
