@@ -1338,6 +1338,7 @@ export const en: AppTranslations = {
         discount: "Discount",
         tax: "Tax",
         total: "Total due",
+        couponToggle: "Have a discount code?",
         couponTitle: "Discount code",
         couponHint: "Apply discount codes to refresh the discount preview. Applied codes will be used when payment starts.",
         couponPlaceholder: "Enter discount codes, separated by commas or spaces",

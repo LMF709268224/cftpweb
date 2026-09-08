@@ -292,7 +292,7 @@ test("订单页嵌入式支付成功后留在订单页并刷新订单状态", as
   await expect(completedRow.getByRole("button", { name: "继续支付" })).toHaveCount(0)
 })
 
-test("无效促销码原因根据界面语言本地化", async ({ page }) => {
+test("折扣码默认收起且无效原因根据界面语言本地化", async ({ page }) => {
   const order = orderFixture({
     order_id: "order-invalid-promotion-code",
     product_name: "CFtP Invalid Promotion Code Bundle",
@@ -326,17 +326,19 @@ test("无效促销码原因根据界面语言本地化", async ({ page }) => {
   await row.getByRole("button", { name: "继续支付" }).click()
 
   const couponInput = page.locator("#purchase-coupon-input")
+  await expect(couponInput).toHaveCount(0)
+  await page.getByRole("button", { name: "有折扣码？" }).click()
   await couponInput.fill("missing-code")
-  await page.getByRole("button", { name: "应用促销码" }).click()
-  await expect(page.getByText("未知促销码", { exact: true })).toBeVisible()
+  await page.getByRole("button", { name: "应用折扣码" }).click()
+  await expect(page.getByText("未知折扣码", { exact: true })).toBeVisible()
   await expect(page.getByText("Promotion code not found", { exact: true })).toHaveCount(0)
 
   await page.evaluate(() => {
     localStorage.setItem("app_lang", "en")
     window.dispatchEvent(new Event("lang_change"))
   })
-  await page.getByRole("button", { name: "Apply promotion code" }).click()
-  await expect(page.getByText("Unknown promotion code", { exact: true })).toBeVisible()
+  await page.getByRole("button", { name: "Apply discount code" }).click()
+  await expect(page.getByText("Unknown discount code", { exact: true })).toBeVisible()
   await expect(page.getByText("Promotion code not found", { exact: true })).toHaveCount(0)
 })
 

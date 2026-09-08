@@ -1336,6 +1336,7 @@ export const zh = {
         discount: "优惠",
         tax: "税费",
         total: "应付合计",
+        couponToggle: "有折扣码？",
         couponTitle: "折扣码",
         couponHint: "输入折扣码后先应用，系统会重新预览优惠金额；支付时会使用已应用的折扣码。",
         couponPlaceholder: "输入折扣码，多个可用逗号或空格分隔",
