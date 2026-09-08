@@ -257,6 +257,14 @@ func (h *Handler) GetPipelineRuntime(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		mergeRuntimeStatuses(&out.Config, runtimeResp)
+		if h.Lms != nil {
+			enrollments, enrollmentErr := h.listCandidateEnrollments(ctx, candidateID)
+			if enrollmentErr != nil {
+				slog.Warn("failed to load candidate course access for pipeline runtime", "error", enrollmentErr, "candidate_id", candidateID)
+			} else {
+				mergeLearningAccess(&out.Config, enrollments)
+			}
+		}
 		out.NextStep = buildPipelineNextStep(runtimeResp, gccResp, p)
 		if runtimeResp.GetPipeline() != nil {
 			out.PipelineStatus = runtimeResp.GetPipeline().GetStatus().String()
@@ -369,6 +377,40 @@ func mergeRuntimeStatuses(config *PipelineConfig, runtime *gprog.GetPipelineDeta
 			}
 			config.Stages[stageIndex].Units[unitIndex].RuntimeStatus = unit.GetStatus().String()
 			config.Stages[stageIndex].Units[unitIndex].CourseUnitUlid = unit.GetCourseUnitUlid()
+		}
+	}
+}
+
+func mergeLearningAccess(config *PipelineConfig, enrollments []*lmspb.CandidateEnrollmentSummary) {
+	if config == nil || len(enrollments) == 0 {
+		return
+	}
+
+	enrollmentStatuses := make(map[string]string, len(enrollments))
+	for _, enrollment := range enrollments {
+		if enrollment == nil {
+			continue
+		}
+		courseID := strings.TrimSpace(enrollment.GetCourseUlid())
+		if courseID == "" {
+			continue
+		}
+		status := strings.TrimSpace(enrollment.GetStatus())
+		currentStatus, exists := enrollmentStatuses[courseID]
+		if !exists || currentStatus == "" || strings.EqualFold(status, "completed") {
+			enrollmentStatuses[courseID] = status
+		}
+	}
+
+	for stageIndex := range config.Stages {
+		for unitIndex := range config.Stages[stageIndex].Units {
+			unit := &config.Stages[stageIndex].Units[unitIndex]
+			status, ok := enrollmentStatuses[strings.TrimSpace(unit.GlmsCourseUlid)]
+			if !ok {
+				continue
+			}
+			unit.HasLearningAccess = true
+			unit.EnrollmentStatus = status
 		}
 	}
 }

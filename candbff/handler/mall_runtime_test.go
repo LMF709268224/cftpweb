@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	gccpb "github.com/afnandelfin620-star/cftptest/cftp/gcc"
+	lmspb "github.com/afnandelfin620-star/cftptest/cftp/glms"
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
 	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
 	"github.com/go-chi/chi/v5"
@@ -18,6 +19,7 @@ import (
 
 type mallRuntimeCCClientStub struct {
 	gccpb.CCServiceClient
+	pipeline *gccpb.PipelineConfig
 }
 
 func (s *mallRuntimeCCClientStub) GetPipeline(
@@ -25,14 +27,31 @@ func (s *mallRuntimeCCClientStub) GetPipeline(
 	_ *gccpb.GetPipelineRequest,
 	_ ...grpc.CallOption,
 ) (*gccpb.PipelineConfig, error) {
+	if s.pipeline != nil {
+		return s.pipeline, nil
+	}
 	return &gccpb.PipelineConfig{PipelineUlid: "pipeline-config-1"}, nil
 }
 
 type mallRuntimeProgClientStub struct {
 	gprogpb.ProgServiceClient
-	listResp  *gprogpb.ListCandidatePipelinesRsp
-	listErr   error
-	detailErr error
+	listResp   *gprogpb.ListCandidatePipelinesRsp
+	listErr    error
+	detailResp *gprogpb.GetPipelineDetailRsp
+	detailErr  error
+}
+
+type mallRuntimeLMSClientStub struct {
+	lmspb.LmsServiceClient
+	enrollments []*lmspb.CandidateEnrollmentSummary
+}
+
+func (s *mallRuntimeLMSClientStub) ListCandidateEnrollments(
+	_ context.Context,
+	_ *lmspb.ListCandidateEnrollmentsRequest,
+	_ ...grpc.CallOption,
+) (*lmspb.ListCandidateEnrollmentsResponse, error) {
+	return &lmspb.ListCandidateEnrollmentsResponse{Enrollments: s.enrollments}, nil
 }
 
 type mallRuntimeMallClientStub struct {
@@ -120,6 +139,9 @@ func (s *mallRuntimeProgClientStub) GetPipelineDetail(
 ) (*gprogpb.GetPipelineDetailRsp, error) {
 	if s.detailErr != nil {
 		return nil, s.detailErr
+	}
+	if s.detailResp != nil {
+		return s.detailResp, nil
 	}
 	return &gprogpb.GetPipelineDetailRsp{}, nil
 }
@@ -241,6 +263,59 @@ func TestGetPipelineRuntimeReturnsSourceBundleFromExactPipelineInstance(t *testi
 	}
 	if mallClient.bundleOrderDetailRequest.GetBundleOrderUlid() != "bundle-order-1" {
 		t.Fatalf("bundle order detail id = %q, want bundle-order-1", mallClient.bundleOrderDetailRequest.GetBundleOrderUlid())
+	}
+}
+
+func TestGetPipelineRuntimeIncludesLearningAccessForCompletedEnrollment(t *testing.T) {
+	h := &Handler{
+		Gcc: &mallRuntimeCCClientStub{pipeline: &gccpb.PipelineConfig{
+			PipelineUlid: "pipeline-config-1",
+			Stages: []*gccpb.StageConfig{{
+				StageUlid: "stage-config-1",
+				Units: []*gccpb.UnitConfig{
+					{UnitUlid: "unit-config-completed", GlmsCourseUlid: "course-completed"},
+					{UnitUlid: "unit-config-unavailable", GlmsCourseUlid: "course-unavailable"},
+				},
+			}},
+		}},
+		Gprog: &mallRuntimeProgClientStub{
+			listResp: &gprogpb.ListCandidatePipelinesRsp{Pipelines: []*gprogpb.PipelineSummary{{
+				PipelineUlid:   "pipeline-instance-1",
+				PipelineCcUlid: "pipeline-config-1",
+			}}},
+			detailResp: &gprogpb.GetPipelineDetailRsp{Stages: []*gprogpb.StageDetail{{
+				Stage: &gprogpb.StageSummary{
+					StageCcUlid: "stage-config-1",
+					Status:      gprogpb.StageStatus_STAGE_STATUS_COMPLETED,
+				},
+			}}},
+		},
+		Lms: &mallRuntimeLMSClientStub{enrollments: []*lmspb.CandidateEnrollmentSummary{{
+			EnrollmentId: "enrollment-completed",
+			CourseUlid:   "course-completed",
+			Status:       "completed",
+		}}},
+	}
+	recorder := httptest.NewRecorder()
+
+	h.GetPipelineRuntime(recorder, mallPipelineRequest())
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body = %s", recorder.Code, http.StatusOK, recorder.Body.String())
+	}
+	var response struct {
+		Data PipelineRuntimeRsp `json:"data"`
+	}
+	if err := json.NewDecoder(recorder.Body).Decode(&response); err != nil {
+		t.Fatalf("decode response: %v; body=%q", err, recorder.Body.String())
+	}
+	completed := response.Data.Config.Stages[0].Units[0]
+	if !completed.HasLearningAccess || completed.EnrollmentStatus != "completed" {
+		t.Fatalf("completed unit access = %+v, want completed enrollment access", completed)
+	}
+	unavailable := response.Data.Config.Stages[0].Units[1]
+	if unavailable.HasLearningAccess || unavailable.EnrollmentStatus != "" {
+		t.Fatalf("unavailable unit access = %+v, want no learning access", unavailable)
 	}
 }
 
