@@ -1803,7 +1803,7 @@ test("免考选择完成后按资格创建独立订单，已拒绝资格仍可�
     await expect(page.getByText("尚未选择", { exact: true })).toHaveCount(0)
 
     expect(applicationOrderBody).toBeUndefined()
-    await expect(page.getByText("这里仅展示申请要求和官方模板。请先完成所有免考选择并支付资格认证审核费，付款成功后才能上传证明材料。", { exact: true })).toBeVisible()
+    await expect(page.getByText("当前尚未创建免考申请。请点击下方“申请该项免考”，确认并完成资格认证审核费支付后，再上传证明材料并提交审核。", { exact: true })).toBeVisible()
     await selectionNextButton.click()
     await expect(page.getByText("请先为“Apply Exemption Course”创建免考资格认证审核申请。", { exact: true })).toBeVisible()
 
