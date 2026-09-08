@@ -292,7 +292,8 @@ func TestGetPipelineRuntimeIncludesLearningAccessForCompletedEnrollment(t *testi
 		},
 		Lms: &mallRuntimeLMSClientStub{enrollments: []*lmspb.CandidateEnrollmentSummary{{
 			EnrollmentId: "enrollment-completed",
-			CourseUlid:   "course-completed",
+			CourseUlid:   "course-version-completed",
+			CourseId:     "course-completed",
 			Status:       "completed",
 		}}},
 	}

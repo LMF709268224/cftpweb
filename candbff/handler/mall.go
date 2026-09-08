@@ -391,14 +391,12 @@ func mergeLearningAccess(config *PipelineConfig, enrollments []*lmspb.CandidateE
 		if enrollment == nil {
 			continue
 		}
-		courseID := strings.TrimSpace(enrollment.GetCourseUlid())
-		if courseID == "" {
-			continue
-		}
 		status := strings.TrimSpace(enrollment.GetStatus())
-		currentStatus, exists := enrollmentStatuses[courseID]
-		if !exists || currentStatus == "" || strings.EqualFold(status, "completed") {
-			enrollmentStatuses[courseID] = status
+		for _, courseID := range candidateEnrollmentCourseIdentifiers(enrollment) {
+			currentStatus, exists := enrollmentStatuses[courseID]
+			if !exists || currentStatus == "" || strings.EqualFold(status, "completed") {
+				enrollmentStatuses[courseID] = status
+			}
 		}
 	}
 
