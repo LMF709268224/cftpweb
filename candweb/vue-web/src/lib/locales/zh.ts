@@ -871,7 +871,7 @@ export const zh = {
         waiveExemptionDecision: "不申请免考",
         cftpApplyExemptionDescription: "提交学历证书及成绩单以供审核。",
         cftpApplyExemptionFeeNote: "仅审核通过后收费，未通过不收费。",
-        cftpPayFullPriceDecision: "按原价购买",
+        cftpPayFullPriceDecision: "不申请免考",
         cftpPayFullPriceDescription: "直接参加考试，无需提交证明材料。",
         exemptionDecisionRequired: "请为每门可免考课程明确选择申请免考或按原价购买。",
         applyThisExemption: "申请该项免考",

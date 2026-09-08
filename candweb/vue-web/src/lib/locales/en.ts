@@ -873,7 +873,7 @@ export const en: AppTranslations = {
         waiveExemptionDecision: "Do Not Apply for Exemption",
         cftpApplyExemptionDescription: "Submit your degree certificate and transcript for review.",
         cftpApplyExemptionFeeNote: "Charged only if approved. No charge if denied.",
-        cftpPayFullPriceDecision: "Pay full price",
+        cftpPayFullPriceDecision: "Do Not Apply for Exemption",
         cftpPayFullPriceDescription: "Sit the exam. No evidence required.",
         exemptionDecisionRequired: "Choose either an exemption application or full-price purchase for every exemption-eligible course.",
         applyThisExemption: "Apply for this exemption",
