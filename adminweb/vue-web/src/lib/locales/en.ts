@@ -1388,7 +1388,7 @@ export const en: AdminTranslations = {
         },
         saving: "Saving...",
         saveTemplate: "Save Template",
-        reset: "Clear",
+        reset: "Cancel",
         detailTitle: "Email Details",
         cancelMail: "Cancel Email",
         statusDetail: "Status Details",

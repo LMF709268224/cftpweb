@@ -1386,7 +1386,7 @@ export const zh = {
         },
         saving: "保存中...",
         saveTemplate: "保存模板",
-        reset: "清空",
+        reset: "取消",
         detailTitle: "邮件详情",
         cancelMail: "取消邮件",
         statusDetail: "状态详情",
