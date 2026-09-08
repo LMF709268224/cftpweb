@@ -10,7 +10,7 @@ test.beforeEach(async ({ page }) => {
   await seedAuthenticatedCandidate(page)
 })
 
-test("Casdoor 所有地区配置展开为完整电话区号列表", async ({ page }) => {
+test("Casdoor 所有地区配置展开为随界面语言本地化的电话区号列表", async ({ page }) => {
   await installCandidateApiMocks(page, ({ pathname }) => {
     if (pathname === "/api/user/me") {
       return {
@@ -31,12 +31,23 @@ test("Casdoor 所有地区配置展开为完整电话区号列表", async ({ pag
   const phoneCountryCode = page.getByTestId("settings-phone-country-code")
   await expect(phoneCountryCode).toHaveValue("SG")
   await expect(phoneCountryCode.locator('option[value="All"]')).toHaveCount(0)
+  await expect(phoneCountryCode.locator('option[value="SG"]')).toHaveText("+65 · 新加坡")
+  await expect(phoneCountryCode.locator('option[value="DM"]')).toHaveText("+1 · 多米尼克")
+  await expect(phoneCountryCode.locator('option[value="DO"]')).toHaveText(
+    "+1 · 多米尼加共和国",
+  )
+  expect(await phoneCountryCode.locator("option").count()).toBeGreaterThan(200)
+
+  await page.evaluate(() => {
+    localStorage.setItem("app_lang", "en")
+    window.dispatchEvent(new Event("lang_change"))
+  })
+  await expect(phoneCountryCode).toHaveValue("SG")
   await expect(phoneCountryCode.locator('option[value="SG"]')).toHaveText("+65 · Singapore")
   await expect(phoneCountryCode.locator('option[value="DM"]')).toHaveText("+1 · Dominica")
   await expect(phoneCountryCode.locator('option[value="DO"]')).toHaveText(
     "+1 · Dominican Republic",
   )
-  expect(await phoneCountryCode.locator("option").count()).toBeGreaterThan(200)
 })
 
 test("消息可以批量标记已读并删除", async ({ page }) => {

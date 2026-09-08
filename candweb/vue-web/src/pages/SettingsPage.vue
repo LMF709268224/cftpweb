@@ -24,7 +24,6 @@ import {
   normalizeAddressCountryCode,
   normalizeLocationForSubmission,
   type CountryOption,
-  type PhonePrefixOption,
   resolvePhoneCountryCode,
 } from "@/lib/locationOptions"
 import { GENDER_OPTIONS, PROFILE_TEXT_LIMITS, isValidInternationalPhone, isValidPostalCode, normalizeGender, normalizeInternationalPhone, normalizePostalCode, trimToMax } from "@/lib/profileFormValidation"
@@ -63,7 +62,12 @@ const isPasswordLoading = ref(false)
 
 const selectedCountryCode = ref("")
 const selectedProvinceCode = ref("")
-const orgPhonePrefixes = ref<PhonePrefixOption[]>([])
+const organizationPhoneCountryCodes = ref<unknown>([])
+const phonePrefixLocale = computed(() => lang.value === "zh" ? "zh-CN" : "en")
+const orgPhonePrefixes = computed(() => getOrganizationPhonePrefixes(
+  organizationPhoneCountryCodes.value,
+  phonePrefixLocale.value,
+))
 const countryOptions = ref<CountryOption[]>([])
 const provinceOptions = ref<any[]>([])
 const cityOptions = ref<any[]>([])
@@ -275,7 +279,7 @@ onMounted(async () => {
       
       const configRes = await apiClient("/api/public/config/organization")
       if (configRes && configRes.country_codes) {
-        orgPhonePrefixes.value = getOrganizationPhonePrefixes(configRes.country_codes)
+        organizationPhoneCountryCodes.value = configRes.country_codes
         profile.phoneCountryCode = resolvePhoneCountryCode(
           profile.phoneCountryCode,
           orgPhonePrefixes.value,
