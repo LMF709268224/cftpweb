@@ -142,6 +142,8 @@ type StageConfig struct {
 }
 type UnitConfig struct {
 	RuntimeStatus            string   `json:"runtime_status,omitempty"`
+	HasLearningAccess        bool     `json:"has_learning_access,omitempty"`
+	EnrollmentStatus         string   `json:"enrollment_status,omitempty"`
 	StripeProductId          string   `json:"stripe_product_id,omitempty"`
 	StripePriceId            string   `json:"stripe_price_id,omitempty"`
 	ExemptionStripeProductId string   `json:"exemption_stripe_product_id,omitempty"`

@@ -146,6 +146,74 @@ test("证书成功提示在名称前说明认证类型", async ({ page }) => {
     await expect(certificateDetails.getByText("CFtA Accreditation Track", { exact: true })).toBeVisible()
 })
 
+test("已完成阶段仍可重新进入有学习权限的课程", async ({ page }) => {
+    const completedCourseID = "course-completed-review"
+    const unavailableCourseID = "course-without-access"
+
+    await installCandidateApiMocks(page, ({ pathname, method }) => {
+        if (pathname === `/api/mall/pipelines/${pipelineID}/runtime`) {
+            return {
+                data: {
+                    instance: { pipeline_ulid: pipelineInstanceID },
+                    config: {
+                        pipeline_cc_ulid: pipelineID,
+                        name: "Completed Course Review Certification",
+                        stages: [{
+                            stage_id: "stage-completed-review",
+                            name: "Completed Stage",
+                            runtime_status: "STAGE_STATUS_COMPLETED",
+                            units: [
+                                {
+                                    unit_id: "unit-completed-review",
+                                    glms_course_id: completedCourseID,
+                                    name: "Completed Review Course",
+                                    has_learning_access: true,
+                                    enrollment_status: "completed",
+                                },
+                                {
+                                    unit_id: "unit-without-access",
+                                    glms_course_id: unavailableCourseID,
+                                    name: "Unavailable Future Course",
+                                },
+                            ],
+                        }],
+                    },
+                    pipeline_status: "PIPELINE_STATUS_RUNNING",
+                },
+            }
+        }
+        if (pathname === `/api/mall/courses/${completedCourseID}`) {
+            return { data: { course_id: completedCourseID, title: "Completed Review Course", duration_min: 30 } }
+        }
+        if (pathname === `/api/mall/courses/${completedCourseID}/thumbnail-url`) return { data: {} }
+        if (pathname === `/api/pipeline/courses/${completedCourseID}/complete`) {
+            return {
+                data: {
+                    complete_course: {
+                        course: { course_id: completedCourseID, title: "Completed Review Course", duration_min: 30 },
+                        chapters: [],
+                    },
+                },
+            }
+        }
+        if (pathname === `/api/progress/courses/${completedCourseID}/sync` && method === "POST") {
+            return { data: { success: true, course_status: "completed", progress_percentage: 100 } }
+        }
+        return undefined
+    })
+
+    await page.goto(`/certifications/${pipelineID}`, { waitUntil: "domcontentloaded" })
+
+    const completedCourse = page.locator(`[data-testid="course-unit-link"][data-course-id="${completedCourseID}"]`)
+    await expect(completedCourse).toBeVisible()
+    await expect(completedCourse.getByText("已完成", { exact: true })).toBeVisible()
+    await expect(page.locator(`[data-testid="course-unit-link"][data-course-id="${unavailableCourseID}"]`)).toHaveCount(0)
+
+    await completedCourse.click()
+    await expect(page).toHaveURL(new RegExp(`/certifications/${pipelineID}/learn/${completedCourseID}`))
+    await expect(page.getByRole("heading", { name: "Completed Review Course", exact: true }).first()).toBeVisible()
+})
+
 test("商城和结账页展示并拦截层级互斥资格", async ({ page }) => {
     const blockerCases = [
         {

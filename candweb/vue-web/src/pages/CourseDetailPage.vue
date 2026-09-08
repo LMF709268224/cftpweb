@@ -18,9 +18,11 @@ import {
 import {
   CANDIDATE_APPLICATION_STATUS_ENUM_NAMES,
   CANDIDATE_APPLICATION_STATUS_LABELS,
+  CANDIDATE_COURSE_STATUS_LABELS,
   courseUnitNextStepActionFromStatus,
   stageStatusHintLabel,
   statusLabel,
+  statusBadgeClassForStatusValue,
   timelineStatusBadgeClassForStatus,
   timelineStatusLabelWithDiagnostics,
   statusEnumNameForStatus,
@@ -82,6 +84,8 @@ type UnitConfig = {
   name?: string
   glms_course_id?: string
   runtime_status?: string | number
+  has_learning_access?: boolean
+  enrollment_status?: string
   allow_retake?: boolean
   allow_exemption?: boolean
   exemption_quals?: Array<string | {
@@ -419,7 +423,7 @@ function hasRuntimeStatus(status?: string | number | null) {
 }
 
 function canShowUnit(unit: UnitConfig) {
-  return purchased.value && hasRuntimeStatus(unit.runtime_status)
+  return purchased.value && (hasRuntimeStatus(unit.runtime_status) || unit.has_learning_access === true)
 }
 
 function visibleStageUnits(stage: StageConfig) {
@@ -456,13 +460,20 @@ function stageStateClass(index: number) {
 }
 
 function unitStateText(unit: UnitConfig) {
-  if (!purchased.value || !unit.runtime_status) return t.value.courses.positionNotPurchased
-  return unitStatusLabel(unit.runtime_status)
+  if (!purchased.value) return t.value.courses.positionNotPurchased
+  if (hasRuntimeStatus(unit.runtime_status)) return unitStatusLabel(unit.runtime_status)
+  const enrollmentStatus = String(unit.enrollment_status || "").trim().toLowerCase()
+  if (enrollmentStatus === "learning" || enrollmentStatus === "completed") {
+    return statusLabel(t.value, CANDIDATE_COURSE_STATUS_LABELS, enrollmentStatus)
+  }
+  return unit.has_learning_access ? t.value.courses.purchased : t.value.courses.positionNotPurchased
 }
 
 function unitStateClass(unit: UnitConfig) {
-  if (!purchased.value || !unit.runtime_status) return "border-slate-200 bg-slate-50 text-slate-600"
-  return timelineStatusBadgeClassForStatus("COURSE_UNIT", unit.runtime_status)
+  if (!purchased.value) return "border-slate-200 bg-slate-50 text-slate-600"
+  if (hasRuntimeStatus(unit.runtime_status)) return timelineStatusBadgeClassForStatus("COURSE_UNIT", unit.runtime_status)
+  if (unit.has_learning_access) return statusBadgeClassForStatusValue(unit.enrollment_status)
+  return "border-slate-200 bg-slate-50 text-slate-600"
 }
 
 function learningActionText(unit: UnitConfig) {

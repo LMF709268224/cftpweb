@@ -635,11 +635,41 @@ func (h *Handler) findEnrollmentIdByCourse(ctx context.Context, candidateID, cou
 		return "", err
 	}
 	for _, e := range enrollments {
-		if e.GetCourseUlid() == courseID && strings.TrimSpace(e.GetEnrollmentId()) != "" {
+		if candidateEnrollmentMatchesCourse(e, courseID) && strings.TrimSpace(e.GetEnrollmentId()) != "" {
 			return strings.TrimSpace(e.GetEnrollmentId()), nil
 		}
 	}
 	return "", errCandidateEnrollmentNotFound
+}
+
+func candidateEnrollmentMatchesCourse(enrollment *lmspb.CandidateEnrollmentSummary, courseID string) bool {
+	courseID = strings.TrimSpace(courseID)
+	if courseID == "" {
+		return false
+	}
+	for _, enrollmentCourseID := range candidateEnrollmentCourseIdentifiers(enrollment) {
+		if enrollmentCourseID == courseID {
+			return true
+		}
+	}
+	return false
+}
+
+// GLMS exposes both the version ULID and the legacy course ID on an enrollment.
+func candidateEnrollmentCourseIdentifiers(enrollment *lmspb.CandidateEnrollmentSummary) []string {
+	if enrollment == nil {
+		return nil
+	}
+	courseUlid := strings.TrimSpace(enrollment.GetCourseUlid())
+	courseID := strings.TrimSpace(enrollment.GetCourseId())
+	identifiers := make([]string, 0, 2)
+	if courseUlid != "" {
+		identifiers = append(identifiers, courseUlid)
+	}
+	if courseID != "" && courseID != courseUlid {
+		identifiers = append(identifiers, courseID)
+	}
+	return identifiers
 }
 
 func (h *Handler) SyncCourseProgress(w http.ResponseWriter, r *http.Request) {
@@ -850,13 +880,11 @@ func (h *Handler) candidateEnrollmentProgressByCourse(r *http.Request, candidate
 		if enrollment == nil {
 			continue
 		}
-		courseID := strings.TrimSpace(enrollment.GetCourseUlid())
-		if courseID == "" {
-			continue
-		}
 		progress := enrollment.GetProgressPercentage()
-		if current, ok := out[courseID]; !ok || progress > current {
-			out[courseID] = progress
+		for _, courseID := range candidateEnrollmentCourseIdentifiers(enrollment) {
+			if current, ok := out[courseID]; !ok || progress > current {
+				out[courseID] = progress
+			}
 		}
 	}
 
