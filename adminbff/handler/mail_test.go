@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"html/template"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -11,6 +12,19 @@ import (
 	gmailpb "github.com/afnandelfin620-star/cftptest/cftp/gmail"
 	"google.golang.org/grpc"
 )
+
+func TestNormalizeTemplateSyntaxPreservesControlActions(t *testing.T) {
+	input := `{{if .ValidUntil}}{{ValidUntil}}{{else}}No expiry{{end}} <a href="{{CandidatePortalBaseURL}}/certificates">View</a>`
+	want := `{{if .ValidUntil}}{{.ValidUntil}}{{else}}No expiry{{end}} <a href="{{.CandidatePortalBaseURL}}/certificates">View</a>`
+
+	got := normalizeTemplateSyntax(input)
+	if got != want {
+		t.Fatalf("normalizeTemplateSyntax() = %q, want %q", got, want)
+	}
+	if _, err := template.New("mail").Parse(got); err != nil {
+		t.Fatalf("normalized template does not parse: %v", err)
+	}
+}
 
 func TestIsBuiltInMailTemplate(t *testing.T) {
 	tests := []struct {

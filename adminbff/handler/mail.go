@@ -41,6 +41,22 @@ type mailTemplateInput struct {
 
 var tplVarRegex = regexp.MustCompile(`{{\s*([a-zA-Z0-9_]+)\s*}}`)
 
+var templateActionKeywords = map[string]struct{}{
+	"block":    {},
+	"break":    {},
+	"continue": {},
+	"define":   {},
+	"else":     {},
+	"end":      {},
+	"false":    {},
+	"if":       {},
+	"nil":      {},
+	"range":    {},
+	"template": {},
+	"true":     {},
+	"with":     {},
+}
+
 func firstNonEmpty(values ...string) string {
 	for _, value := range values {
 		if strings.TrimSpace(value) != "" {
@@ -51,7 +67,14 @@ func firstNonEmpty(values ...string) string {
 }
 
 func normalizeTemplateSyntax(value string) string {
-	return tplVarRegex.ReplaceAllString(value, "{{.$1}}")
+	return tplVarRegex.ReplaceAllStringFunc(value, func(action string) string {
+		matches := tplVarRegex.FindStringSubmatch(action)
+		identifier := matches[1]
+		if _, ok := templateActionKeywords[identifier]; ok {
+			return action
+		}
+		return "{{." + identifier + "}}"
+	})
 }
 
 func normalizeParameterSchema(value string) (string, error) {
