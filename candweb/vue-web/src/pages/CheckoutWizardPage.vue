@@ -2962,9 +2962,28 @@ function closePaymentEditDialog() {
               </label>
             </div>
 
-              <div v-if="dynamicPaymentPreview" class="rounded-lg bg-muted/30 p-4 border border-border">
+            <div v-if="dynamicPaymentPreview" class="rounded-lg bg-muted/30 p-4 border border-border">
               <div class="mb-3 text-sm font-semibold">{{ t.checkoutWizard.priceSummary }}</div>
               <div class="space-y-2 text-sm">
+                <div
+                  v-if="purchaseLineItems.length > 0"
+                  class="checkout-included-items-list mb-3 border-b border-border pb-3"
+                  data-testid="checkout-review-line-items"
+                >
+                  <div
+                    v-for="item in purchaseLineItems"
+                    :key="item.key"
+                    class="checkout-included-item"
+                    data-testid="checkout-review-line-item"
+                    :data-item-id="item.itemId"
+                  >
+                    <div class="min-w-0">
+                      <div class="checkout-included-item-name">{{ item.name }}</div>
+                      <div v-if="item.stageName" class="checkout-included-item-stage">{{ item.stageName }}</div>
+                    </div>
+                    <div class="checkout-included-item-price">{{ formatMoney(item.amount, item.currency) }}</div>
+                  </div>
+                </div>
                 <div class="flex justify-between">
                   <span class="text-muted-foreground">{{ t.checkoutWizard.subtotal }}</span>
                   <span class="font-medium">{{ dynamicPaymentPreview.amount_label || formatMoney(dynamicPaymentPreview.subtotal, dynamicPaymentPreview.currency) }}</span>
