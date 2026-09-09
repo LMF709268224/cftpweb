@@ -25,29 +25,69 @@ type UserInfo struct {
 }
 
 type UserMeRsp struct {
-	Name             string   `json:"name"`
-	Email            string   `json:"email"`
-	DisplayName      string   `json:"display_name"`
-	FirstName        string   `json:"first_name"`
-	LastName         string   `json:"last_name"`
-	PhoneCountryCode string   `json:"phone_country_code"`
-	Phone            string   `json:"phone"`
-	HomePhone        string   `json:"home_phone"`
-	Country          string   `json:"country"`
-	Province         string   `json:"province"`
-	City             string   `json:"city"`
-	Region           string   `json:"region"`
-	Location         string   `json:"location"`
-	Address          []string `json:"address"`
-	AddressText      string   `json:"address_text"`
-	PostalCode       string   `json:"postal_code"`
-	Affiliation      string   `json:"affiliation"`
-	Title            string   `json:"title"`
-	RealName         string   `json:"real_name"`
-	Bio              string   `json:"bio"`
-	Gender           string   `json:"gender"`
-	Birthday         string   `json:"birthday"`
-	Education        string   `json:"education"`
+	Name             string               `json:"name"`
+	Email            string               `json:"email"`
+	DisplayName      string               `json:"display_name"`
+	FirstName        string               `json:"first_name"`
+	LastName         string               `json:"last_name"`
+	PhoneCountryCode string               `json:"phone_country_code"`
+	Phone            string               `json:"phone"`
+	HomePhone        string               `json:"home_phone"`
+	Country          string               `json:"country"`
+	Province         string               `json:"province"`
+	City             string               `json:"city"`
+	Region           string               `json:"region"`
+	Location         string               `json:"location"`
+	Address          []string             `json:"address"`
+	AddressText      string               `json:"address_text"`
+	PostalCode       string               `json:"postal_code"`
+	Affiliation      string               `json:"affiliation"`
+	Title            string               `json:"title"`
+	RealName         string               `json:"real_name"`
+	Bio              string               `json:"bio"`
+	Gender           string               `json:"gender"`
+	Birthday         string               `json:"birthday"`
+	Education        string               `json:"education"`
+	AccountStatus    UserAccountStatusRsp `json:"account_status"`
+}
+
+type UserAccountStatusRsp struct {
+	Membership    UserMembershipStatusRsp    `json:"membership"`
+	Certification UserCertificationStatusRsp `json:"certification"`
+	Qualification UserQualificationStatusRsp `json:"qualification"`
+}
+
+type UserMembershipStatusRsp struct {
+	Available            bool   `json:"available"`
+	IsMember             bool   `json:"is_member"`
+	MembershipRecordULID string `json:"membership_record_ulid,omitempty"`
+	MembershipULID       string `json:"membership_ulid,omitempty"`
+	MembershipGpath      string `json:"membership_gpath,omitempty"`
+	PlanName             string `json:"plan_name,omitempty"`
+	TierLevel            int32  `json:"tier_level,omitempty"`
+	Status               string `json:"status,omitempty"`
+	ExpiresAt            string `json:"expires_at,omitempty"`
+}
+
+type UserCertificationStatusRsp struct {
+	Available     bool                       `json:"available"`
+	IsCandidate   bool                       `json:"is_candidate"`
+	PurchaseCount int                        `json:"purchase_count"`
+	Programs      []UserCertificationProgram `json:"programs"`
+}
+
+type UserCertificationProgram struct {
+	PipelineULID       string `json:"pipeline_ulid"`
+	PipelineConfigULID string `json:"pipeline_config_ulid"`
+	PipelineGpath      string `json:"pipeline_gpath,omitempty"`
+	Name               string `json:"name,omitempty"`
+	Status             string `json:"status"`
+}
+
+type UserQualificationStatusRsp struct {
+	Available        bool `json:"available"`
+	HasQualification bool `json:"has_qualification"`
+	CredentialCount  int  `json:"credential_count"`
 }
 
 type UserProfileInput struct {

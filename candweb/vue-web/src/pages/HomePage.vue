@@ -2,14 +2,16 @@
 import { computed, onMounted, ref } from "vue"
 import type { Component } from "vue"
 import { RouterLink } from "vue-router"
-import { AlertCircle, Award, BookOpen, CheckCircle2, ClipboardList, Loader2, PackageOpen, PanelLeft, Receipt, RefreshCw } from "lucide-vue-next"
+import { AlertCircle, Award, BookOpen, CheckCircle2, ClipboardList, Crown, GraduationCap, Loader2, PackageOpen, PanelLeft, Receipt, RefreshCw, ShieldCheck } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import PageFeedback from "@/components/PageFeedback.vue"
 import { apiClient } from "@/lib/apiClient"
 import { isAuthenticated } from "@/lib/authStorage"
 import { useTranslation } from "@/lib/language"
+import { useUser } from "@/lib/user"
 
 const { t } = useTranslation()
+const { currentUser, isLoading: userLoading } = useUser()
 const dashboardLoading = ref(false)
 const dashboardLoaded = ref(false)
 const counts = ref({
@@ -147,6 +149,69 @@ const dashboardErrorCount = computed(() => Object.values(countErrors.value).filt
 const dashboardLoadFailed = computed(() => dashboardLoaded.value && dashboardErrorCount.value === 5)
 const dashboardPartialLoadFailed = computed(() => dashboardLoaded.value && dashboardErrorCount.value > 0 && !dashboardLoadFailed.value)
 
+type AccountStatusItem = {
+  key: string
+  label: string
+  value: string
+  active: boolean
+  icon: Component
+}
+
+function countLabel(template: string, count: number) {
+  return template.replace("{count}", String(count))
+}
+
+const accountStatusItems = computed<AccountStatusItem[]>(() => {
+  const status = currentUser.value?.account_status
+  const items: AccountStatusItem[] = []
+
+  if (status?.membership?.available) {
+    items.push({
+      key: "membership",
+      label: t.value.home.accountMembership,
+      value: status.membership.is_member
+        ? status.membership.plan_name || t.value.home.accountActiveMember
+        : t.value.home.accountNotMember,
+      active: status.membership.is_member,
+      icon: Crown,
+    })
+  }
+
+  if (status?.certification?.available) {
+    const programNames = status.certification.programs
+      .map((program) => String(program.name || "").trim())
+      .filter(Boolean)
+    items.push({
+      key: "certification",
+      label: t.value.home.accountCertification,
+      value: status.certification.is_candidate
+        ? programNames.join(" · ") || countLabel(t.value.home.accountPurchasedPrograms, status.certification.purchase_count)
+        : t.value.home.accountNoCertification,
+      active: status.certification.is_candidate,
+      icon: GraduationCap,
+    })
+  }
+
+  if (status?.qualification?.available) {
+    items.push({
+      key: "qualification",
+      label: t.value.home.accountQualification,
+      value: status.qualification.has_qualification
+        ? countLabel(t.value.home.accountQualificationsHeld, status.qualification.credential_count)
+        : t.value.home.accountNoQualification,
+      active: status.qualification.has_qualification,
+      icon: ShieldCheck,
+    })
+  }
+
+  return items
+})
+const accountStatusGridClass = computed(() => {
+  if (accountStatusItems.value.length >= 3) return "md:grid-cols-3"
+  if (accountStatusItems.value.length === 2) return "md:grid-cols-2"
+  return "md:grid-cols-1"
+})
+
 const cardStyles = {
   orange: {
     panel: "from-[#fffdf2] to-[#fff3b8]",
@@ -261,6 +326,39 @@ onMounted(() => {
         <section class="w-full text-center">
           <h1 class="text-[36px] font-bold leading-tight tracking-tight text-[#0957f9]">{{ guideCopy.title }}</h1>
           <p class="mx-auto mt-4 max-w-5xl text-lg leading-8 text-[#4a4f59]">{{ guideCopy.subtitle }}</p>
+        </section>
+
+        <section
+          v-if="userLoading || accountStatusItems.length > 0"
+          data-testid="dashboard-account-status"
+          class="mx-auto mt-9 w-full max-w-[1120px] border-y border-slate-200 bg-white/70"
+          :aria-label="t.home.accountStatusTitle"
+        >
+          <div v-if="userLoading && accountStatusItems.length === 0" class="grid min-h-24 grid-cols-1 divide-y divide-slate-200 md:grid-cols-3 md:divide-x md:divide-y-0" role="status">
+            <div v-for="item in 3" :key="`account-status-skeleton-${item}`" class="flex items-center gap-3 px-5 py-5">
+              <div class="h-10 w-10 shrink-0 animate-pulse rounded-full bg-slate-100" />
+              <div class="min-w-0 flex-1 space-y-2">
+                <div class="h-3 w-20 animate-pulse rounded bg-slate-100" />
+                <div class="h-4 w-32 animate-pulse rounded bg-slate-100" />
+              </div>
+            </div>
+          </div>
+          <div v-else :class="['grid min-h-24 grid-cols-1 divide-y divide-slate-200 md:divide-x md:divide-y-0', accountStatusGridClass]">
+            <div
+              v-for="item in accountStatusItems"
+              :key="item.key"
+              :data-testid="`dashboard-account-status-${item.key}`"
+              class="flex min-w-0 items-center gap-3 px-5 py-5 text-left"
+            >
+              <div :class="['flex h-10 w-10 shrink-0 items-center justify-center rounded-full', item.active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500']">
+                <component :is="item.icon" class="h-5 w-5" />
+              </div>
+              <div class="min-w-0">
+                <div class="text-xs font-medium text-slate-500">{{ item.label }}</div>
+                <div class="mt-1 break-words text-sm font-semibold text-slate-900">{{ item.value }}</div>
+              </div>
+            </div>
+          </div>
         </section>
 
         <section class="portal-card-section mx-auto mt-12 w-full max-w-[1380px]">

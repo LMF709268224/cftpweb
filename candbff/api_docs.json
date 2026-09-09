@@ -117,6 +117,60 @@
     },
     {
       "method": "GET",
+      "path": "/api/user/me",
+      "description": "获取当前用户资料及由业务微服务聚合的账号状态",
+      "auth_required": true,
+      "request": {
+        "params": [],
+        "query": [],
+        "body": null
+      },
+      "response": {
+        "data": {
+          "name": { "type": "string", "description": "Casdoor 用户名" },
+          "email": { "type": "string", "description": "用户邮箱" },
+          "display_name": { "type": "string", "description": "用户显示名称" },
+          "account_status": {
+            "type": "object",
+            "description": "账号业务状态；每项 available=false 表示对应微服务数据不可用，不能解释为否",
+            "membership": {
+              "available": { "type": "bool", "description": "gmbr 状态是否成功获取" },
+              "is_member": { "type": "bool", "description": "是否存在活跃会员记录" },
+              "membership_record_ulid": { "type": "string", "description": "活跃会员记录 ULID" },
+              "membership_ulid": { "type": "string", "description": "会员方案 ULID" },
+              "membership_gpath": { "type": "string", "description": "会员体系 GPath" },
+              "plan_name": { "type": "string", "description": "会员方案名称，例如微服务配置的 CFtP Fellow" },
+              "tier_level": { "type": "int", "description": "会员方案层级" },
+              "status": { "type": "string", "description": "会员记录状态" },
+              "expires_at": { "type": "string", "description": "会员到期时间" }
+            },
+            "certification": {
+              "available": { "type": "bool", "description": "gprog 状态是否成功获取" },
+              "is_candidate": { "type": "bool", "description": "是否存在已创建的认证管线" },
+              "purchase_count": { "type": "int", "description": "已购买并创建的认证管线数量" },
+              "programs": {
+                "type": "array",
+                "description": "认证管线及由 gcc 返回的配置名称和 GPath",
+                "items": {
+                  "pipeline_ulid": { "type": "string" },
+                  "pipeline_config_ulid": { "type": "string" },
+                  "pipeline_gpath": { "type": "string" },
+                  "name": { "type": "string" },
+                  "status": { "type": "string" }
+                }
+              }
+            },
+            "qualification": {
+              "available": { "type": "bool", "description": "gcreds 状态是否成功获取" },
+              "has_qualification": { "type": "bool", "description": "是否持有有效专业资格" },
+              "credential_count": { "type": "int", "description": "有效专业资格数量" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "method": "GET",
       "path": "/api/courses",
       "description": "获取课程列表",
       "auth_required": true,

@@ -1,10 +1,16 @@
 package handler
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 	"strings"
+	"sync"
 
+	gccpb "github.com/afnandelfin620-star/cftptest/cftp/gcc"
+	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
+	gmbrpb "github.com/afnandelfin620-star/cftptest/cftp/gmbr"
+	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 )
 
@@ -46,14 +52,19 @@ const (
 func (h *Handler) GetUserMe(w http.ResponseWriter, r *http.Request) {
 	name := CandidateName(r)
 
-	fullUser, err := casdoorsdk.GetUser(name)
+	fullUser, err := h.getProfileUserStore().GetUser(name)
 	if err != nil {
 		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to get user info")
+		return
+	}
+	if fullUser == nil {
+		WriteError(w, http.StatusNotFound, ErrNotFound, "user not found")
 		return
 	}
 
 	addressText := addressLine(fullUser.Address, 0)
 	province := firstNonEmpty(addressLine(fullUser.Address, 1), getUserProperty(fullUser, userPropProvince))
+	accountStatus := h.loadUserAccountStatus(r.Context(), CandidateID(r), requestLocale(r))
 
 	WriteJSON(w, http.StatusOK, UserMeRsp{
 		Name:             fullUser.Name,
@@ -79,7 +90,138 @@ func (h *Handler) GetUserMe(w http.ResponseWriter, r *http.Request) {
 		Gender:           fullUser.Gender,
 		Birthday:         fullUser.Birthday,
 		Education:        fullUser.Education,
+		AccountStatus:    accountStatus,
 	})
+}
+
+func (h *Handler) loadUserAccountStatus(ctx context.Context, candidateID, locale string) UserAccountStatusRsp {
+	var membership UserMembershipStatusRsp
+	var certification UserCertificationStatusRsp
+	var qualification UserQualificationStatusRsp
+
+	var wg sync.WaitGroup
+	wg.Add(3)
+	go func() {
+		defer wg.Done()
+		membership = h.loadUserMembershipStatus(ctx, candidateID, locale)
+	}()
+	go func() {
+		defer wg.Done()
+		certification = h.loadUserCertificationStatus(ctx, candidateID, locale)
+	}()
+	go func() {
+		defer wg.Done()
+		qualification = h.loadUserQualificationStatus(ctx, candidateID)
+	}()
+	wg.Wait()
+
+	return UserAccountStatusRsp{
+		Membership:    membership,
+		Certification: certification,
+		Qualification: qualification,
+	}
+}
+
+func (h *Handler) loadUserMembershipStatus(ctx context.Context, candidateID, locale string) UserMembershipStatusRsp {
+	out := UserMembershipStatusRsp{}
+	if h.Gmbr == nil || strings.TrimSpace(candidateID) == "" {
+		return out
+	}
+
+	resp, err := h.Gmbr.GetActiveMembership(ctx, &gmbrpb.GetActiveMembershipRequest{CandidateUlid: candidateID})
+	if err != nil {
+		slog.Warn("failed to load current user membership status", "candidate_id", candidateID, "error", err)
+		return out
+	}
+	out.Available = true
+	record := resp.GetMembership()
+	if record == nil {
+		return out
+	}
+
+	out.IsMember = true
+	out.MembershipRecordULID = strings.TrimSpace(record.GetMembershipRecordUlid())
+	out.MembershipULID = strings.TrimSpace(record.GetMembershipUlid())
+	out.MembershipGpath = strings.TrimSpace(record.GetMembershipGpath())
+	out.Status = strings.TrimSpace(record.GetStatus())
+	out.ExpiresAt = strings.TrimSpace(record.GetExpiresAt())
+	if out.MembershipULID == "" {
+		return out
+	}
+
+	plan, err := h.Gmbr.GetMembership(ctx, &gmbrpb.GetMembershipRequest{MembershipUlid: out.MembershipULID})
+	if err != nil {
+		slog.Warn("failed to load current user membership plan", "candidate_id", candidateID, "membership_ulid", out.MembershipULID, "error", err)
+		return out
+	}
+	plan = h.localizedMembership(ctx, plan, locale)
+	out.PlanName = strings.TrimSpace(plan.GetName())
+	out.TierLevel = plan.GetTierLevel()
+	if out.MembershipGpath == "" {
+		out.MembershipGpath = strings.TrimSpace(plan.GetMembershipGpath())
+	}
+	return out
+}
+
+func (h *Handler) loadUserCertificationStatus(ctx context.Context, candidateID, locale string) UserCertificationStatusRsp {
+	out := UserCertificationStatusRsp{Programs: []UserCertificationProgram{}}
+	if h.Gprog == nil || strings.TrimSpace(candidateID) == "" {
+		return out
+	}
+
+	resp, err := h.Gprog.ListCandidatePipelines(ctx, &gprogpb.ListCandidatePipelinesReq{CandidateUlid: candidateID})
+	if err != nil {
+		slog.Warn("failed to load current user certification status", "candidate_id", candidateID, "error", err)
+		return out
+	}
+	out.Available = true
+
+	for _, pipeline := range resp.GetPipelines() {
+		if pipeline == nil {
+			continue
+		}
+		program := UserCertificationProgram{
+			PipelineULID:       strings.TrimSpace(pipeline.GetPipelineUlid()),
+			PipelineConfigULID: strings.TrimSpace(pipeline.GetPipelineCcUlid()),
+			Status:             pipeline.GetStatus().String(),
+		}
+		if h.Gcc != nil && program.PipelineConfigULID != "" {
+			config, configErr := h.Gcc.GetPipeline(ctx, &gccpb.GetPipelineRequest{
+				Query: &gccpb.GetPipelineRequest_PipelineUlid{PipelineUlid: program.PipelineConfigULID},
+			})
+			if configErr != nil {
+				slog.Warn("failed to load current user certification config", "candidate_id", candidateID, "pipeline_config_ulid", program.PipelineConfigULID, "error", configErr)
+			} else {
+				config = h.localizedPipeline(ctx, config, locale)
+				program.PipelineGpath = strings.TrimSpace(config.GetPipelineGpath())
+				program.Name = strings.TrimSpace(config.GetName())
+			}
+		}
+		out.Programs = append(out.Programs, program)
+	}
+	out.PurchaseCount = len(out.Programs)
+	out.IsCandidate = out.PurchaseCount > 0
+	return out
+}
+
+func (h *Handler) loadUserQualificationStatus(ctx context.Context, candidateID string) UserQualificationStatusRsp {
+	out := UserQualificationStatusRsp{}
+	if h.Creds == nil || strings.TrimSpace(candidateID) == "" {
+		return out
+	}
+
+	resp, err := h.Creds.GetCandidateCredentialCount(ctx, &gcredspb.GetCandidateCredentialCountRequest{
+		CandidateUlid: candidateID,
+		Limit:         1000,
+	})
+	if err != nil {
+		slog.Warn("failed to load current user qualification status", "candidate_id", candidateID, "error", err)
+		return out
+	}
+	out.Available = true
+	out.CredentialCount = int(resp.GetCount())
+	out.HasQualification = out.CredentialCount > 0
+	return out
 }
 
 // UpdateUserProfile PUT /api/user/profile

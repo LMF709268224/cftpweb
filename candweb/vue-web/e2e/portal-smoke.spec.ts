@@ -129,6 +129,80 @@ for (const portalPage of portalPages) {
   });
 }
 
+test("首页展示由当前用户接口返回的会员和认证状态", async ({ page }) => {
+  await seedAuthenticatedCandidate(page);
+  await installCandidateApiMocks(page, ({ pathname }) => {
+    if (pathname === "/api/user/me") {
+      return {
+        data: {
+          name: "Regression Candidate",
+          account_status: {
+            membership: {
+              available: true,
+              is_member: true,
+              plan_name: "CFtP Fellow",
+            },
+            certification: {
+              available: true,
+              is_candidate: true,
+              purchase_count: 1,
+              programs: [{
+                pipeline_ulid: "pipeline-1",
+                pipeline_config_ulid: "pipeline-config-1",
+                pipeline_gpath: "/pipelines/cftp",
+                name: "CFtP",
+                status: "PIPELINE_STATUS_RUNNING",
+              }],
+            },
+            qualification: {
+              available: true,
+              has_qualification: true,
+              credential_count: 2,
+            },
+          },
+        },
+      };
+    }
+    return emptyPortalResponse({ pathname } as ApiMockContext);
+  });
+
+  await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+
+  const accountStatus = page.getByTestId("dashboard-account-status");
+  await expect(accountStatus).toBeVisible();
+  await expect(page.getByTestId("dashboard-account-status-membership")).toContainText("CFtP Fellow");
+  await expect(page.getByTestId("dashboard-account-status-certification")).toContainText("CFtP");
+  await expect(page.getByTestId("dashboard-account-status-qualification")).toContainText("已持有 2 项有效资格");
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(accountStatus).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
+});
+
+test("首页不展示微服务未能确认的用户状态", async ({ page }) => {
+  await seedAuthenticatedCandidate(page);
+  await installCandidateApiMocks(page, ({ pathname }) => {
+    if (pathname === "/api/user/me") {
+      return {
+        data: {
+          name: "Regression Candidate",
+          account_status: {
+            membership: { available: false, is_member: false },
+            certification: { available: false, is_candidate: false, purchase_count: 0, programs: [] },
+            qualification: { available: false, has_qualification: false, credential_count: 0 },
+          },
+        },
+      };
+    }
+    return emptyPortalResponse({ pathname } as ApiMockContext);
+  });
+
+  await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+
+  await expect(page.getByTestId("dashboard-card-certifications")).toBeVisible();
+  await expect(page.getByTestId("dashboard-account-status")).toHaveCount(0);
+});
+
 test("公开商城按商品类型区分报名与成为会员文案", async ({ page }) => {
   await seedAuthenticatedCandidate(page);
   await installCandidateApiMocks(page, ({ pathname }) => {

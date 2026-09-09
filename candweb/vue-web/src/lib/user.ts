@@ -11,7 +11,39 @@ export interface UserProfile {
   work_phone_country_code?: string
   work_phone?: string
   avatar: string
+  account_status?: UserAccountStatus
   [key: string]: any
+}
+
+export interface UserAccountStatus {
+  membership?: {
+    available: boolean
+    is_member: boolean
+    membership_record_ulid?: string
+    membership_ulid?: string
+    membership_gpath?: string
+    plan_name?: string
+    tier_level?: number
+    status?: string
+    expires_at?: string
+  }
+  certification?: {
+    available: boolean
+    is_candidate: boolean
+    purchase_count: number
+    programs: Array<{
+      pipeline_ulid: string
+      pipeline_config_ulid: string
+      pipeline_gpath?: string
+      name?: string
+      status: string
+    }>
+  }
+  qualification?: {
+    available: boolean
+    has_qualification: boolean
+    credential_count: number
+  }
 }
 
 const currentUser = ref<UserProfile | null>(null)
