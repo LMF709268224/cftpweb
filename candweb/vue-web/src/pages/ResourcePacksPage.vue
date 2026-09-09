@@ -62,6 +62,7 @@ async function loadPacks(pageToken = "") {
 function rememberPack(pack: ResourcePack) {
   if (!pack.pack_id) return
   sessionStorage.setItem(`resource-pack-title:${pack.pack_id}`, pack.title || "")
+  sessionStorage.setItem(`resource-pack-description:${pack.pack_id}`, pack.description || "")
   sessionStorage.setItem(`resource-pack-respath:${pack.pack_id}`, pack.respath || "")
 }
 

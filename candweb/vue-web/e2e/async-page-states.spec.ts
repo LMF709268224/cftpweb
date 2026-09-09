@@ -216,6 +216,41 @@ test("专属合集列表只应用最后一次请求返回的数据", async ({ pa
   await expect(page.getByText("STALE RESOURCE PACK", { exact: true })).toHaveCount(0)
 })
 
+test("专属合集详情沿用入口卡片的接口标题和说明", async ({ page }) => {
+  const packId = "pack-entry-copy"
+  const title = "接口返回的专属资料标题"
+  const description = "接口返回的专属资料说明"
+
+  await seedAuthenticatedCandidate(page)
+  await installCandidateApiMocks(page, ({ pathname }) => {
+    if (pathname === "/api/resource-packs") {
+      return {
+        data: {
+          packs: [{ pack_id: packId, title, description, respath: "/resources/custom" }],
+          next_page_token: "",
+        },
+      }
+    }
+    if (pathname === `/api/resource-packs/${packId}/files`) {
+      return { data: { files: [], next_page_token: "" } }
+    }
+    return undefined
+  })
+
+  await page.goto("/resource-packs", { waitUntil: "domcontentloaded" })
+  const packCard = page.getByRole("link").filter({ hasText: title })
+  await expect(packCard).toContainText(description)
+  await packCard.click()
+
+  await expect(page).toHaveURL(new RegExp(`/resource-packs/${packId}$`))
+  await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible()
+  await expect(page.getByText(description, { exact: true })).toBeVisible()
+
+  await page.reload({ waitUntil: "domcontentloaded" })
+  await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible()
+  await expect(page.getByText(description, { exact: true })).toBeVisible()
+})
+
 test("专属合集详情只应用最后一次请求返回的文件", async ({ page }) => {
   let requestCount = 0
   let firstRequestStarted = false

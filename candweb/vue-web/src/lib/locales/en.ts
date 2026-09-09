@@ -441,12 +441,6 @@ export const en: AppTranslations = {
     },
     resourcePackDetailPage: {
         titleDefault: "Resource Collection Detail",
-        titleInsights: "Insights",
-        titleWebinars: "Webinars",
-        titleReports: "Reports",
-        subtitleInsights: "Member-exclusive research & analysis from fintech experts",
-        subtitleWebinars: "On-demand recordings & slides from expert-led webinars",
-        subtitleReports: "Exclusive industry reports & research for members",
         subtitleDefault: "Browse reports, videos, and materials you are allowed to access. Click a card to preview online.",
         back: "Back to collections",
         search: "Search resources",

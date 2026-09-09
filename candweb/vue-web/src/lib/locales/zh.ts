@@ -439,12 +439,6 @@ export const zh = {
     },
     resourcePackDetailPage: {
         titleDefault: "专属合集详情",
-        titleInsights: "洞察",
-        titleWebinars: "线上研讨会",
-        titleReports: "报告",
-        subtitleInsights: "会员专享金融科技专家深度洞察与行业分析",
-        subtitleWebinars: "专家线上研讨会回放与资料",
-        subtitleReports: "会员专享行业研究与深度报告",
         subtitleDefault: "浏览你有权限访问的报告、视频和资料，点击卡片即可在线预览。",
         back: "返回专属合集",
         search: "搜索资源标题或说明",
