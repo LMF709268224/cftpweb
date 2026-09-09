@@ -216,7 +216,7 @@ export const zh = {
     },
     home: {
         portalTitle: "欢迎来到门户",
-        portalSubtitle: "探索我们的专业认证、课程、网络研讨会、洞察和报告，持续提升你的专业知识。",
+        portalSubtitle: "探索我们的专业认证、课程、线上研讨会、洞察和报告，持续提升你的专业知识。",
         completedCertifications: "已完成专业认证",
         coursesInProgress: "课程进行中",
         purchasedCertifications: "已购买专业认证",
