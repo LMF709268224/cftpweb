@@ -893,7 +893,7 @@ export const en: AppTranslations = {
         qualificationOrderConfirmWarning: "Once submitted, this qualification application cannot be changed or submitted again. Other qualifications are unaffected; you can return and decide whether to apply for each one separately.",
         qualificationOrderConfirmNextStep: "After submission, you will proceed to the review fee payment step. Supporting documents can be uploaded after payment is completed.",
         qualificationOrderConfirmAction: "Confirm Exemption Application",
-        uploadAfterPaymentHint: "No exemption application has been created yet. Select Apply for this exemption below, confirm the application, and pay the qualification review fee. You can then upload supporting documents and submit them for review.",
+        uploadAfterPaymentHint: "This section only displays the application requirements and official templates. Please select Apply for this exemption and upload the relevant supporting documents.",
         checkoutBlockedByExemption: "Checkout is blocked by the current exemption status. Follow the message shown before continuing.",
         pricingRefreshFailed: "The latest exemption status and price could not be confirmed. Please try again.",
         reviewName: "Name:",

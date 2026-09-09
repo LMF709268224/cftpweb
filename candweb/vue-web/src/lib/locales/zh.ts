@@ -891,7 +891,7 @@ export const zh = {
         qualificationOrderConfirmWarning: "该资格认证申请提交后不能更换或重复提交。其他资格认证不受影响，你可以返回后分别决定是否申请，并独立提交申请。",
         qualificationOrderConfirmNextStep: "申请提交后将进入审核费用支付流程，支付成功后方可上传该资格认证的证明材料。",
         qualificationOrderConfirmAction: "确认申请免考",
-        uploadAfterPaymentHint: "当前尚未创建免考申请。请点击下方“申请该项免考”，确认并完成资格认证审核费支付后，再上传证明材料并提交审核。",
+        uploadAfterPaymentHint: "这里仅展示申请要求和官方模板。请先点击申请该项免考并上传相关证明材料。",
         checkoutBlockedByExemption: "当前免考状态暂不允许结账，请按提示处理后再继续。",
         pricingRefreshFailed: "暂时无法确认最新免考状态和价格，请稍后重试。",
         reviewName: "姓名：",
