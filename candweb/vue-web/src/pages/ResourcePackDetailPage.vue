@@ -43,34 +43,17 @@ let thumbnailGeneration = 0
 
 const packId = computed(() => String(route.params.packId || route.query.id || ""))
 const storedPackTitle = computed(() => (packId.value ? sessionStorage.getItem(`resource-pack-title:${packId.value}`) || "" : ""))
+const storedPackDescription = computed(() => (packId.value ? sessionStorage.getItem(`resource-pack-description:${packId.value}`) || "" : ""))
 const storedPackRespath = computed(() => (packId.value ? sessionStorage.getItem(`resource-pack-respath:${packId.value}`) || "" : ""))
 const isInsightsPack = computed(() =>
   `${storedPackTitle.value} ${storedPackRespath.value}`.toLowerCase().includes("insight"),
-)
-const isWebinarsPack = computed(() =>
-  `${storedPackTitle.value} ${storedPackRespath.value}`.toLowerCase().includes("webinar"),
-)
-const isReportsPack = computed(() =>
-  `${storedPackTitle.value} ${storedPackRespath.value}`.toLowerCase().includes("report"),
 )
 const copy = computed(() => {
   const page = t.value.resourcePackDetailPage
   return {
     ...page,
-    title: isInsightsPack.value
-      ? page.titleInsights
-      : isWebinarsPack.value
-        ? page.titleWebinars
-        : isReportsPack.value
-          ? page.titleReports
-          : page.titleDefault,
-    subtitle: isInsightsPack.value
-      ? page.subtitleInsights
-      : isWebinarsPack.value
-        ? page.subtitleWebinars
-        : isReportsPack.value
-          ? page.subtitleReports
-        : page.subtitleDefault,
+    title: storedPackTitle.value || page.titleDefault,
+    subtitle: storedPackDescription.value || page.subtitleDefault,
   }
 })
 
