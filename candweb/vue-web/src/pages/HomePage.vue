@@ -331,31 +331,31 @@ onMounted(() => {
         <section
           v-if="userLoading || accountStatusItems.length > 0"
           data-testid="dashboard-account-status"
-          class="mx-auto mt-9 w-full max-w-[1120px] border-y border-slate-200 bg-white/70"
+          class="mx-auto mt-8 w-full max-w-[1120px] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.06)]"
           :aria-label="t.home.accountStatusTitle"
         >
-          <div v-if="userLoading && accountStatusItems.length === 0" class="grid min-h-24 grid-cols-1 divide-y divide-slate-200 md:grid-cols-3 md:divide-x md:divide-y-0" role="status">
-            <div v-for="item in 3" :key="`account-status-skeleton-${item}`" class="flex items-center gap-3 px-5 py-5">
-              <div class="h-10 w-10 shrink-0 animate-pulse rounded-full bg-slate-100" />
+          <div v-if="userLoading && accountStatusItems.length === 0" class="grid min-h-[112px] grid-cols-1 divide-y divide-slate-200 md:grid-cols-3 md:divide-x md:divide-y-0" role="status">
+            <div v-for="item in 3" :key="`account-status-skeleton-${item}`" class="flex items-center gap-4 px-6 py-5 sm:px-7">
+              <div class="h-11 w-11 shrink-0 animate-pulse rounded-lg bg-slate-100" />
               <div class="min-w-0 flex-1 space-y-2">
                 <div class="h-3 w-20 animate-pulse rounded bg-slate-100" />
                 <div class="h-4 w-32 animate-pulse rounded bg-slate-100" />
               </div>
             </div>
           </div>
-          <div v-else :class="['grid min-h-24 grid-cols-1 divide-y divide-slate-200 md:divide-x md:divide-y-0', accountStatusGridClass]">
+          <div v-else :class="['grid min-h-[112px] grid-cols-1 divide-y divide-slate-200 md:divide-x md:divide-y-0', accountStatusGridClass]">
             <div
               v-for="item in accountStatusItems"
               :key="item.key"
               :data-testid="`dashboard-account-status-${item.key}`"
-              class="flex min-w-0 items-center gap-3 px-5 py-5 text-left"
+              class="flex min-w-0 items-center gap-4 px-6 py-5 text-left sm:px-7"
             >
-              <div :class="['flex h-10 w-10 shrink-0 items-center justify-center rounded-full', item.active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500']">
+              <div :class="['flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border', item.active ? 'border-emerald-100 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-500']">
                 <component :is="item.icon" class="h-5 w-5" />
               </div>
               <div class="min-w-0">
-                <div class="text-xs font-medium text-slate-500">{{ item.label }}</div>
-                <div class="mt-1 break-words text-sm font-semibold text-slate-900">{{ item.value }}</div>
+                <div class="text-xs font-medium leading-5 text-slate-500">{{ item.label }}</div>
+                <div class="mt-0.5 break-words text-sm font-semibold leading-6 text-slate-900">{{ item.value }}</div>
               </div>
             </div>
           </div>
