@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
-import { ArrowLeft, ArrowRight, ChevronDown, ClipboardList, ExternalLink, Eye, FileText, Loader2, RefreshCw, Send, CheckCircle2, CircleAlert, Clock, Trash2, UploadCloud, X } from "lucide-vue-next"
+import { ArrowLeft, ArrowRight, BadgePercent, ChevronDown, ClipboardList, ExternalLink, Eye, FileText, Loader2, RefreshCw, Send, CheckCircle2, CircleAlert, Clock, Trash2, UploadCloud, X } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import CredentialAttachmentList from "@/components/CredentialAttachmentList.vue"
 import LocalizedDatePicker from "@/components/LocalizedDatePicker.vue"
@@ -2941,8 +2941,17 @@ function closePaymentEditDialog() {
               
               <label class="flex items-start gap-3 rounded-lg border p-4 transition-colors hover:bg-slate-50 cursor-pointer" :class="{ 'border-emerald-500 bg-emerald-50/30': paymentMode === 'FULL_PIPELINE', 'border-border': paymentMode !== 'FULL_PIPELINE' }">
                 <input type="radio" v-model="paymentMode" value="FULL_PIPELINE" class="mt-1 h-4 w-4 text-emerald-600 focus:ring-emerald-500" />
-                <div>
-                  <div class="font-medium text-slate-900">{{ t.checkoutWizard.modeFullPipeline }}</div>
+                <div class="min-w-0 flex-1">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <div class="font-medium text-slate-900">{{ t.checkoutWizard.modeFullPipeline }}</div>
+                    <span
+                      v-if="isCftpRegistration"
+                      data-testid="checkout-full-payment-discount-badge"
+                      class="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700"
+                    >
+                      {{ t.checkoutWizard.fullPaymentDiscountBadge }}
+                    </span>
+                  </div>
                   <div class="text-xs text-slate-500 mt-1">{{ t.checkoutWizard.modeFullPipelineDesc }}</div>
                 </div>
               </label>
@@ -2984,6 +2993,22 @@ function closePaymentEditDialog() {
                     <div class="checkout-included-item-price">{{ formatMoney(item.amount, item.currency) }}</div>
                   </div>
                 </div>
+                <div
+                  v-if="isCftpRegistration && isMultiStage && paymentMode === 'FULL_PIPELINE'"
+                  data-testid="checkout-full-payment-discount-notice"
+                  class="flex flex-col gap-2 py-1 text-emerald-700 sm:flex-row sm:items-start sm:justify-between sm:gap-4"
+                >
+                  <div class="flex min-w-0 items-start gap-2">
+                    <BadgePercent class="mt-0.5 h-4 w-4 shrink-0" />
+                    <div class="min-w-0">
+                      <div class="font-semibold">{{ t.checkoutWizard.fullPaymentDiscountTitle }}</div>
+                      <div class="mt-0.5 text-xs leading-5 text-emerald-700/80">
+                        {{ t.checkoutWizard.fullPaymentDiscountDesc }}
+                      </div>
+                    </div>
+                  </div>
+                  <span class="shrink-0 font-semibold">{{ t.checkoutWizard.fullPaymentDiscountPending }}</span>
+                </div>
                 <div class="flex justify-between">
                   <span class="text-muted-foreground">{{ t.checkoutWizard.subtotal }}</span>
                   <span class="font-medium">{{ dynamicPaymentPreview.amount_label || formatMoney(dynamicPaymentPreview.subtotal, dynamicPaymentPreview.currency) }}</span>
@@ -2993,7 +3018,11 @@ function closePaymentEditDialog() {
                   <span class="font-medium">-{{ formatMoney(dynamicPaymentPreview.discount_total, dynamicPaymentPreview.currency) }}</span>
                 </div>
                 <div class="mt-2 flex justify-between border-t border-border pt-2">
-                  <span class="font-semibold text-foreground">{{ t.checkoutWizard.total }}</span>
+                  <span class="font-semibold text-foreground">
+                    {{ isCftpRegistration && isMultiStage && paymentMode === 'FULL_PIPELINE'
+                      ? t.checkoutWizard.preDiscountTotal
+                      : t.checkoutWizard.total }}
+                  </span>
                   <span class="text-lg font-bold text-foreground">{{ dynamicPaymentPreview.pay_amount_label || formatMoney(dynamicPaymentPreview.total, dynamicPaymentPreview.currency) }}</span>
                 </div>
               </div>
