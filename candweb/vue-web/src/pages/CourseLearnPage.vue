@@ -1982,12 +1982,12 @@ watch(selectedMaterial, () => {
         </div>
       </section>
 
-      <section id="course-learn-content" class="grid gap-4 xl:grid-cols-[280px_minmax(0,1fr)]">
-        <aside class="rounded-md border border-slate-200 bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.06)] xl:sticky xl:top-4 xl:self-start">
+      <section id="course-learn-content" class="grid gap-4 min-[1400px]:grid-cols-[280px_minmax(0,1fr)]">
+        <aside class="course-content-nav rounded-md border border-slate-200 bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.06)] min-[1400px]:sticky min-[1400px]:top-4 min-[1400px]:self-start">
           <div class="mb-6">
             <h2 class="course-learn-heading text-xl font-bold text-foreground">{{ t.learning.certificationMaterialsTitle }}</h2>
           </div>
-          <div class="space-y-2">
+          <div class="course-content-primary-nav space-y-2">
             <button
               v-for="step in certificationFlowSteps"
               :key="step.id"
@@ -2024,9 +2024,9 @@ watch(selectedMaterial, () => {
               </span>
             </button>
           </div>
-          <div v-if="resourceContentTabs.length > 0" data-testid="supplementary-content-nav" class="mt-6 border-t border-slate-100 pt-5">
+          <div v-if="resourceContentTabs.length > 0" data-testid="supplementary-content-nav" class="course-content-supplementary-nav mt-6 border-t border-slate-100 pt-5">
             <h3 class="mb-3 text-xs font-semibold text-muted-foreground">{{ t.learning.supplementaryContentTitle }}</h3>
-            <div class="space-y-2">
+            <div class="course-content-secondary-nav space-y-2">
               <button
                 v-for="tab in resourceContentTabs"
                 :key="tab.id"
@@ -2725,6 +2725,29 @@ watch(selectedMaterial, () => {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+}
+
+@media (min-width: 1280px) and (max-width: 1399px) {
+  .course-content-nav > :first-child {
+    margin-bottom: 0.75rem;
+  }
+
+  .course-content-primary-nav,
+  .course-content-secondary-nav {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  .course-content-primary-nav > :not([hidden]) ~ :not([hidden]),
+  .course-content-secondary-nav > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 0;
+  }
+
+  .course-content-supplementary-nav {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
   }
 }
 
