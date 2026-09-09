@@ -66,3 +66,49 @@ test("resource file detail is read without upload, edit, or delete", async ({ pa
   expect(requests.some((request) => request.includes("upload-url"))).toBe(false)
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
 })
+
+test("resource file creation only allows draft resource packs", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  await installAdminApiMocks(page, ({ method, pathname }) => {
+    if (method === "GET" && pathname === "/api/lms/resource-packs") {
+      return {
+        data: {
+          packs: [
+            resourcePack,
+            { pack_id: "pack-draft", title: "Draft Resources", status: "Draft", version: 1 },
+          ],
+          has_more: false,
+          next_cursor: "",
+        },
+      }
+    }
+    if (method === "GET" && pathname === "/api/lms/resource-pack-files") {
+      return { data: { files: [resourceFile], total: 1, has_more: false, next_cursor: "" } }
+    }
+    return undefined
+  })
+
+  await page.goto("/resource-pack-files")
+  await page.getByRole("button", { name: "新增资源文件" }).click()
+
+  const dialog = page.getByLabel("新增资源文件")
+  const ownerSelect = dialog.getByRole("combobox").first()
+  await expect(ownerSelect).toHaveValue("pack-draft")
+  await expect(ownerSelect.getByRole("option", { name: /Regression Resources.*不可新增文件/ })).toHaveAttribute("disabled", "")
+  await expect(ownerSelect.getByRole("option", { name: /Draft Resources/ })).toBeEnabled()
+  await expect(dialog.getByText("只有草稿状态的资源包可以新增资源文件。", { exact: true })).toBeVisible()
+})
+
+test("resource file editing keeps its existing resource pack", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  const requests: string[] = []
+  await installResourceFileReadMocks(page, requests)
+
+  await page.goto("/resource-pack-files")
+  await page.getByRole("button", { name: "编辑" }).click()
+
+  const dialog = page.getByLabel("编辑资源文件")
+  const ownerSelect = dialog.getByRole("combobox").first()
+  await expect(ownerSelect).toBeDisabled()
+  await expect(ownerSelect).toHaveValue("pack-1")
+})

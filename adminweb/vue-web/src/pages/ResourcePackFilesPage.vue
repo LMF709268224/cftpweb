@@ -115,6 +115,21 @@ function packById(id: unknown) {
   return packs.value.find((pack) => packId(pack) === value) || null
 }
 
+function isDraftPack(pack: JsonRecord | null) {
+  return String(pack?.status || "").trim().toUpperCase().includes("DRAFT")
+}
+
+function creatablePackId(preferredId: unknown) {
+  const preferred = packById(preferredId)
+  if (isDraftPack(preferred)) return packId(preferred)
+  return packId(packs.value.find((pack) => isDraftPack(pack)) || null)
+}
+
+function packOptionText(pack: JsonRecord) {
+  const label = copy.value.ownerText(packTitle(pack), packId(pack))
+  return mode.value === "create" && !isDraftPack(pack) ? copy.value.unavailablePackOption(label) : label
+}
+
 function ownerText(file: JsonRecord | null) {
   const pack = packById(file?.pack_id)
   const id = String(file?.pack_id || "-")
@@ -129,7 +144,7 @@ function fileTypeLabel(value: unknown) {
 function fillForm(file: JsonRecord | null) {
   form.value = {
     file_id: String(file?.file_id || ""),
-    pack_id: String(file?.pack_id || packFilter.value || packs.value[0]?.pack_id || ""),
+    pack_id: file ? String(file.pack_id || "") : creatablePackId(packFilter.value),
     title: String(file?.title || ""),
     description: String(file?.description || ""),
     thumbnail_object_key: String(file?.thumbnail_object_key || ""),
@@ -333,6 +348,10 @@ async function saveFile() {
   }
   if (mode.value === "create" && !form.value.pack_id) {
     toast.error(copy.value.toasts.packRequired)
+    return
+  }
+  if (mode.value === "create" && !isDraftPack(packById(form.value.pack_id))) {
+    toast.error(copy.value.toasts.packUnavailable)
     return
   }
   if (mode.value === "edit" && (!form.value.file_id || form.value.version <= 0)) {
@@ -688,8 +707,9 @@ onUnmounted(() => {
             <div v-if="mode === 'detail'" class="mt-2 readonly-field">{{ packFieldText(form.pack_id) }}</div>
             <select v-else v-model="form.pack_id" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="mode === 'edit'">
               <option value="">{{ copy.selectPack }}</option>
-              <option v-for="pack in packs" :key="packId(pack)" :value="packId(pack)">{{ copy.ownerText(packTitle(pack), packId(pack)) }}</option>
+              <option v-for="pack in packs" :key="packId(pack)" :value="packId(pack)" :disabled="mode === 'create' && !isDraftPack(pack)">{{ packOptionText(pack) }}</option>
             </select>
+            <span v-if="mode === 'create'" class="mt-2 block text-xs font-semibold text-slate-500">{{ copy.draftPackHint }}</span>
           </label>
           <label class="block">
             <span class="block text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.title }}</span>
