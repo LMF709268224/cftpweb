@@ -49,6 +49,8 @@ type bundleEnrichmentState struct {
 	membershipHistory        []*gmbrpb.UserMembership
 	activeMembershipByGpath  map[string]*gmbrpb.UserMembership
 	loadedMembershipsByGpath map[string]bool
+	ownedPipelineIDs         map[string]bool
+	ownedPipelineIDsByGpath  map[string][]string
 }
 
 type bundleActiveOrderSummary struct {
@@ -896,22 +898,91 @@ func (h *Handler) newBundleEnrichmentState(ctx context.Context, candidateID stri
 		locale:                   normalizedLocale(locale),
 		activeMembershipByGpath:  map[string]*gmbrpb.UserMembership{},
 		loadedMembershipsByGpath: map[string]bool{},
+		ownedPipelineIDs:         map[string]bool{},
+		ownedPipelineIDsByGpath:  map[string][]string{},
 	}
-	if state.candidateID == "" || h.Gmbr == nil {
+	if state.candidateID == "" {
 		return state
 	}
-	resp, err := h.Gmbr.ListUserMemberships(ctx, &gmbrpb.ListUserMembershipsRequest{
-		Filters: &gmbrpb.UserMembershipFilters{
-			CandidateUlid: state.candidateID,
-		},
-		PageSize: 100,
+	if h.Gmbr != nil {
+		resp, err := h.Gmbr.ListUserMemberships(ctx, &gmbrpb.ListUserMembershipsRequest{
+			Filters: &gmbrpb.UserMembershipFilters{
+				CandidateUlid: state.candidateID,
+			},
+			PageSize: 100,
+		})
+		if err != nil {
+			slog.Warn("Failed to preload membership history for bundle list", "error", err, "candidate_id", state.candidateID)
+		} else {
+			state.membershipHistory = resp.GetUserMemberships()
+		}
+	}
+	h.preloadOwnedPipelines(ctx, state)
+	return state
+}
+
+func (h *Handler) preloadOwnedPipelines(ctx context.Context, state *bundleEnrichmentState) {
+	if state == nil || state.candidateID == "" || h.Gprog == nil {
+		return
+	}
+	resp, err := h.Gprog.ListCandidatePipelines(ctx, &gprogpb.ListCandidatePipelinesReq{
+		CandidateUlid: state.candidateID,
 	})
 	if err != nil {
-		slog.Warn("Failed to preload membership history for bundle list", "error", err, "candidate_id", state.candidateID)
-		return state
+		slog.Warn("Failed to preload purchased certifications for bundle list", "error", err, "candidate_id", state.candidateID)
+		return
 	}
-	state.membershipHistory = resp.GetUserMemberships()
-	return state
+	for _, pipeline := range resp.GetPipelines() {
+		if pipeline == nil {
+			continue
+		}
+		pipelineID := strings.TrimSpace(pipeline.GetPipelineCcUlid())
+		if pipelineID == "" {
+			continue
+		}
+		state.ownedPipelineIDs[pipelineID] = true
+		if h.Gcc == nil {
+			continue
+		}
+		config, configErr := h.Gcc.GetPipeline(ctx, &gccpb.GetPipelineRequest{
+			Query: &gccpb.GetPipelineRequest_PipelineUlid{PipelineUlid: pipelineID},
+		})
+		if configErr != nil {
+			slog.Warn("Failed to load purchased certification config for bundle list", "error", configErr, "candidate_id", state.candidateID, "pipeline_id", pipelineID)
+			continue
+		}
+		pipelineGpath := strings.TrimSpace(config.GetPipelineGpath())
+		if pipelineGpath == "" {
+			continue
+		}
+		matchingIDs := state.ownedPipelineIDsByGpath[pipelineGpath]
+		alreadyRecorded := false
+		for _, matchingID := range matchingIDs {
+			if matchingID == pipelineID {
+				alreadyRecorded = true
+				break
+			}
+		}
+		if !alreadyRecorded {
+			state.ownedPipelineIDsByGpath[pipelineGpath] = append(matchingIDs, pipelineID)
+		}
+	}
+}
+
+func ownedPipelineID(state *bundleEnrichmentState, pipeline *gccpb.PipelineConfig) string {
+	if state == nil || pipeline == nil {
+		return ""
+	}
+	pipelineID := strings.TrimSpace(pipeline.GetPipelineUlid())
+	if state.ownedPipelineIDs[pipelineID] {
+		return pipelineID
+	}
+	pipelineGpath := strings.TrimSpace(pipeline.GetPipelineGpath())
+	matchingIDs := state.ownedPipelineIDsByGpath[pipelineGpath]
+	if pipelineGpath == "" || len(matchingIDs) != 1 {
+		return ""
+	}
+	return matchingIDs[0]
 }
 
 func findMatchingMembershipRecord(records []*gmbrpb.UserMembership, membershipID string, membershipGpath string) *gmbrpb.UserMembership {
@@ -1437,6 +1508,9 @@ func (h *Handler) enrichBundle(ctx context.Context, b *mallpb.BundleInfo, state 
 		})
 		if err == nil && pipeline != nil {
 			pipeline = h.localizedPipeline(ctx, pipeline, locale)
+			if purchasedPipelineID := ownedPipelineID(state, pipeline); purchasedPipelineID != "" {
+				m["owned_pipeline_id"] = purchasedPipelineID
+			}
 			m["pipeline_status"] = pipeline.GetStatus()
 			m["pipeline_is_active"] = isActivePipelineStatus(pipeline.GetStatus())
 			m["stages"] = toStages(pipeline.GetStages())

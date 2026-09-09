@@ -20,6 +20,7 @@ type ExemptionOptions = { stages?: any[] }
 const props = defineProps<{
   id: string
   pipelineId?: string
+  ownedPipelineId?: string
   membershipId?: string
   membershipGpath?: string
   membershipRequiredCredRespaths?: string[]
@@ -97,7 +98,12 @@ const hasInProgressOrder = computed(() => Boolean(currentActiveOrder.value) || b
 const resolvedStatusLabel = computed(() =>
   props.statusValue !== undefined ? statusLabel(t.value, CANDIDATE_PIPELINE_STATUS_LABELS, props.statusValue) : props.statusLabel,
 )
-const purchasedTarget = computed(() => isPipelineProduct.value ? `/certifications/${encodeURIComponent(props.pipelineId || props.id)}` : "/membership")
+const purchasedTarget = computed(() => {
+  if (!isPipelineProduct.value) return "/membership"
+  return props.ownedPipelineId
+    ? `/certifications/${encodeURIComponent(props.ownedPipelineId)}`
+    : "/my-certifications"
+})
 
 function exemptionQualifications(unit: any) {
   return (Array.isArray(unit?.exemption_quals) ? unit.exemption_quals : [])

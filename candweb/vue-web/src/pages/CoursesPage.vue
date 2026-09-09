@@ -128,6 +128,7 @@ async function fetchData() {
       return {
         id: b.bundle_id,
         pipelineId: pipelineBundle ? b.pipeline_id : "",
+        ownedPipelineId: pipelineBundle ? b.owned_pipeline_id : "",
         membershipId: membershipBundle ? b.membership_id : "",
         membershipGpath: membershipBundle ? b.membership_gpath : "",
         membershipRequiredCredRespaths: membershipBundle && Array.isArray(b?.membership_required_cred_respaths)

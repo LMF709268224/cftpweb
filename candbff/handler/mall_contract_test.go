@@ -82,6 +82,44 @@ func TestEligibilityDoesNotBypassPurchaseBlockersForExemptionManagement(t *testi
 	}
 }
 
+func TestOwnedPipelineIDUsesPurchasedVersionForTheSameGpath(t *testing.T) {
+	state := &bundleEnrichmentState{
+		ownedPipelineIDs: map[string]bool{
+			"PIPELINE-CONFIG-V1": true,
+		},
+		ownedPipelineIDsByGpath: map[string][]string{
+			"/pipelines/cftp": {"PIPELINE-CONFIG-V1"},
+		},
+	}
+
+	got := ownedPipelineID(state, &gccpb.PipelineConfig{
+		PipelineUlid:  "PIPELINE-CONFIG-V2",
+		PipelineGpath: "/pipelines/cftp",
+	})
+
+	if got != "PIPELINE-CONFIG-V1" {
+		t.Fatalf("owned pipeline id = %q, want PIPELINE-CONFIG-V1", got)
+	}
+}
+
+func TestOwnedPipelineIDDoesNotGuessBetweenHistoricalPurchases(t *testing.T) {
+	state := &bundleEnrichmentState{
+		ownedPipelineIDs: map[string]bool{},
+		ownedPipelineIDsByGpath: map[string][]string{
+			"/pipelines/cftp": {"PIPELINE-CONFIG-V1", "PIPELINE-CONFIG-V2"},
+		},
+	}
+
+	got := ownedPipelineID(state, &gccpb.PipelineConfig{
+		PipelineUlid:  "PIPELINE-CONFIG-V3",
+		PipelineGpath: "/pipelines/cftp",
+	})
+
+	if got != "" {
+		t.Fatalf("owned pipeline id = %q, want empty for ambiguous history", got)
+	}
+}
+
 func TestToPipelineConfigSeparatesFinalAuditRequirementsAndAwards(t *testing.T) {
 	pipeline := &gccpb.PipelineConfig{
 		PipelineUlid: "pipeline-1",

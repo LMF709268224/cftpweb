@@ -146,6 +146,46 @@ test("证书成功提示在名称前说明认证类型", async ({ page }) => {
     await expect(certificateDetails.getByText("CFtA Accreditation Track", { exact: true })).toBeVisible()
 })
 
+test("商城已购认证在管理员发布新版本后进入用户购买的版本", async ({ page }) => {
+    const currentPipelineID = "pipeline-config-v2"
+    const ownedPipelineID = "pipeline-config-v1"
+    const updatedBundle = {
+        ...bundle,
+        pipeline_id: currentPipelineID,
+        owned_pipeline_id: ownedPipelineID,
+        eligibility: {
+            can_purchase: false,
+            can_unlock: false,
+            blockers: [{ blocker_type: "ALREADY_PURCHASED", description: "pipeline already purchased" }],
+        },
+        purchase_state: {
+            ...bundle.purchase_state,
+            eligibility: {
+                can_purchase: false,
+                can_unlock: false,
+                blockers: [{ blocker_type: "ALREADY_PURCHASED", description: "pipeline already purchased" }],
+            },
+        },
+    }
+
+    await installCandidateApiMocks(page, ({ pathname, method }) => {
+        if (pathname === "/api/mall/bundles" && method === "GET") {
+            return { data: { bundles: [updatedBundle] } }
+        }
+        if (pathname === `/api/mall/pipelines/${ownedPipelineID}/runtime` && method === "GET") {
+            return { data: pipelineRuntime() }
+        }
+        return undefined
+    })
+
+    await page.goto("/certifications", { waitUntil: "domcontentloaded" })
+    const card = page.locator(`[data-testid="certification-card"][data-bundle-id="${bundleID}"]`)
+    await expect(card.getByText("已购买", { exact: true })).toBeVisible()
+    await card.click()
+
+    await expect(page).toHaveURL(new RegExp(`/certifications/${ownedPipelineID}$`))
+})
+
 test("已完成阶段仍可重新进入有学习权限的课程", async ({ page }) => {
     const completedCourseID = "course-completed-review"
     const unavailableCourseID = "course-without-access"
