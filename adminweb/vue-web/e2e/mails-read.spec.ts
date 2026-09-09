@@ -18,7 +18,7 @@ const sentMail = {
   created_at: "2026-08-11T01:00:00Z",
 }
 
-async function installMailReadMocks(page: Page, requests: string[]) {
+async function installMailReadMocks(page: Page, requests: string[], mail = sentMail) {
   return installAdminApiMocks(page, ({ method, pathname }) => {
     requests.push(`${method} ${pathname}`)
     if (method === "GET" && pathname === "/api/user/list") {
@@ -34,13 +34,16 @@ async function installMailReadMocks(page: Page, requests: string[]) {
       return { data: { ...mailTemplate, html_body: "<p>Read-only mail body</p>", parameter_schema: '{"type":"object"}' } }
     }
     if (method === "GET" && pathname === "/api/mails/sent") {
-      return { data: { mails: [sentMail], total: 1, has_more: false, next_cursor: "" } }
+      return { data: { mails: [mail], total: 1, has_more: false, next_cursor: "" } }
     }
     if (method === "GET" && pathname === "/api/mails") {
-      return { data: { ...sentMail, html_body: "<p>Read-only delivered mail</p>", template_path: "certification/regression" } }
+      return { data: { ...mail, html_body: "<p>Read-only delivered mail</p>", template_path: "certification/regression" } }
     }
     if (method === "GET" && pathname === "/api/mails/status") {
-      return { data: { mail_ulid: "mail-1", status: "SENT", provider_message_id: "provider-1" } }
+      return { data: { mail_ulid: "mail-1", status: mail.status, provider_message_id: "provider-1" } }
+    }
+    if (method === "POST" && pathname === "/api/mails/cancel") {
+      return { data: {} }
     }
     return undefined
   })
@@ -105,4 +108,29 @@ test("sent mail detail and delivery status are read without cancellation", async
   expect(requests).toContain("GET /api/mails/status")
   expect(requests.some((request) => request.includes("/cancel"))).toBe(false)
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
+})
+
+test("cancelling a scheduled mail requires explicit confirmation", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  const requests: string[] = []
+  const schedulingMail = { ...sentMail, status: "SCHEDULING" }
+  await installMailReadMocks(page, requests, schedulingMail)
+  await page.goto("/mails")
+
+  await page.getByRole("button", { name: "发送记录" }).click()
+  await page.getByRole("button", { name: "查看详情" }).click()
+  const detailDialog = page.getByRole("dialog", { name: "邮件详情" })
+  await detailDialog.getByRole("button", { name: "取消邮件", exact: true }).click()
+
+  let confirmDialog = page.getByRole("dialog", { name: "确认取消邮件" })
+  await expect(confirmDialog).toBeVisible()
+  expect(requests).not.toContain("POST /api/mails/cancel")
+
+  await confirmDialog.getByRole("button", { name: "取消", exact: true }).click()
+  expect(requests).not.toContain("POST /api/mails/cancel")
+
+  await detailDialog.getByRole("button", { name: "取消邮件", exact: true }).click()
+  confirmDialog = page.getByRole("dialog", { name: "确认取消邮件" })
+  await confirmDialog.getByRole("button", { name: "确认取消", exact: true }).click()
+  await expect.poll(() => requests.filter((request) => request === "POST /api/mails/cancel").length).toBe(1)
 })

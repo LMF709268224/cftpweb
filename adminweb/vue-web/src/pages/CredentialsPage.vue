@@ -50,6 +50,7 @@ const attachmentFileType = ref(0)
 const attachmentFile = ref<File | null>(null)
 const attachmentInput = ref<HTMLInputElement | null>(null)
 const savingAttachment = ref(false)
+const pendingAttachmentRemoval = ref<{ index: number; attachment: CredentialAttachment } | null>(null)
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.credentials)
 let listRequestId = 0
@@ -217,13 +218,27 @@ async function uploadAttachment() {
   }
 }
 
-async function removeAttachment(index: number) {
+function requestRemoveAttachment(index: number) {
   if (!selected.value || savingAttachment.value) return
+  const attachment = credentialAttachments(selected.value)[index]
+  if (!attachment) return
+  pendingAttachmentRemoval.value = { index, attachment }
+}
+
+function closeAttachmentRemoveConfirm() {
+  if (savingAttachment.value) return
+  pendingAttachmentRemoval.value = null
+}
+
+async function confirmRemoveAttachment() {
+  const pending = pendingAttachmentRemoval.value
+  if (!selected.value || !pending || savingAttachment.value) return
   savingAttachment.value = true
   try {
-    const next = credentialAttachments(selected.value).filter((_, current) => current !== index)
+    const next = credentialAttachments(selected.value).filter((_, current) => current !== pending.index)
     await replaceAttachments(next)
     toast.success(copy.value.toasts.attachmentRemoved)
+    pendingAttachmentRemoval.value = null
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.attachmentRemoveFailed))
@@ -285,6 +300,7 @@ function startCreate() {
 
 function closeDetail() {
   invalidateDetailRequest()
+  pendingAttachmentRemoval.value = null
   detailOpen.value = false
   if (mode.value === "create") mode.value = "detail"
 }
@@ -314,6 +330,7 @@ async function loadDefinitionDetail(definition: JsonRecord) {
 }
 
 async function selectDefinition(definition: JsonRecord) {
+  pendingAttachmentRemoval.value = null
   selected.value = definition
   mode.value = "detail"
   detailOpen.value = true
@@ -592,7 +609,7 @@ onMounted(load)
                         <a v-if="attachment.download_url" class="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-300 px-3 text-sm font-bold text-blue-700" :href="attachment.download_url" target="_blank" rel="noopener noreferrer">
                           <Download class="h-4 w-4" /> {{ copy.attachments.download }}
                         </a>
-                        <button class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-red-200 text-red-600 disabled:opacity-50" type="button" :aria-label="copy.attachments.remove" :disabled="savingAttachment" @click="removeAttachment(index)">
+                        <button class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-red-200 text-red-600 disabled:opacity-50" type="button" :aria-label="copy.attachments.remove" :disabled="savingAttachment" @click="requestRemoveAttachment(index)">
                           <Trash2 class="h-4 w-4" />
                         </button>
                       </div>
@@ -640,6 +657,26 @@ onMounted(load)
             </button>
           </div>
         </div>
+      </div>
+    </Teleport>
+
+    <Teleport to="body">
+      <div v-if="pendingAttachmentRemoval" class="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/55 p-4 md:p-6">
+        <section v-modal-dialog="closeAttachmentRemoveConfirm" class="w-full max-w-md rounded-2xl bg-white p-4 shadow-2xl md:rounded-3xl md:p-6">
+          <h2 class="text-xl font-black text-slate-950 md:text-2xl">{{ copy.attachments.removeConfirmTitle }}</h2>
+          <p class="mt-3 text-sm font-semibold leading-6 text-slate-500">{{ copy.attachments.removeConfirmDescription }}</p>
+          <div class="mt-5 rounded-2xl bg-red-50 p-4">
+            <div class="break-words font-black text-slate-950">{{ pendingAttachmentRemoval.attachment.name || pendingAttachmentRemoval.attachment.file_name }}</div>
+            <div class="mt-1 break-all text-sm font-semibold text-slate-500">{{ pendingAttachmentRemoval.attachment.file_name }}</div>
+          </div>
+          <div class="mt-6 flex flex-col justify-end gap-3 sm:flex-row">
+            <button data-dialog-initial-focus class="h-11 min-w-24 rounded-xl border border-slate-900 px-5 font-bold text-slate-950 disabled:opacity-50" type="button" :disabled="savingAttachment" @click="closeAttachmentRemoveConfirm">{{ copy.cancel }}</button>
+            <button class="inline-flex h-11 min-w-28 items-center justify-center gap-2 rounded-xl bg-red-600 px-5 font-bold text-white disabled:opacity-50" type="button" :disabled="savingAttachment" @click="confirmRemoveAttachment">
+              <Loader2 v-if="savingAttachment" class="h-4 w-4 animate-spin" />
+              {{ savingAttachment ? copy.attachments.saving : copy.attachments.confirmRemove }}
+            </button>
+          </div>
+        </section>
       </div>
     </Teleport>
   </section>

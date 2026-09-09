@@ -115,6 +115,7 @@ const lastPage = ref(1)
 
 const activeTab = ref<DetailTab>("summary")
 const mode = ref<Mode>("detail")
+const showDeprecateConfirm = ref(false)
 const showDeleteConfirm = ref(false)
 const replacementPipelineId = ref("")
 const replacementMembershipId = ref("")
@@ -802,6 +803,7 @@ async function selectBundle(bundle: JsonRecord, open = true) {
   detailOpen.value = open
   mode.value = "detail"
   activeTab.value = "summary"
+  showDeprecateConfirm.value = false
   showDeleteConfirm.value = false
   replacementPipelineId.value = ""
   replacementMembershipId.value = ""
@@ -826,6 +828,7 @@ function newBundle() {
   detailOpen.value = true
   mode.value = "create"
   activeTab.value = "meta"
+  showDeprecateConfirm.value = false
   showDeleteConfirm.value = false
   createItems.value = [createBundleItem()]
   form.value = { ...emptyForm }
@@ -841,6 +844,11 @@ function closeDetail() {
 function closeDeleteConfirm() {
   if (deleting.value) return
   showDeleteConfirm.value = false
+}
+
+function closeDeprecateConfirm() {
+  if (deprecating.value) return
+  showDeprecateConfirm.value = false
 }
 
 const uploadingThumbnail = ref(false)
@@ -1218,11 +1226,15 @@ async function publish() {
 }
 
 async function deprecate() {
-  if (!canDeprecateSelectedBundle.value || statusActionBusy.value) return
+  if (!canDeprecateSelectedBundle.value || statusActionBusy.value) {
+    showDeprecateConfirm.value = false
+    return
+  }
   deprecating.value = true
   try {
     await apiClient(`/api/mall/bundles/${encodeURIComponent(selectedId.value)}/deprecate`, { method: "POST" })
     toast.success(copy.value.toasts.deprecated)
+    showDeprecateConfirm.value = false
     await load()
     await refreshSelectedBundleDetail()
   } catch (err) {
@@ -1893,7 +1905,7 @@ onMounted(load)
                       <Loader2 v-if="publishing" class="h-4 w-4 animate-spin" />
                       {{ publishing ? copy.publishing : copy.publish }}
                     </button>
-                    <button v-if="canDeprecateSelectedBundle" class="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 text-sm font-bold text-amber-700 shadow-sm transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="statusActionBusy" @click="deprecate">
+                    <button v-if="canDeprecateSelectedBundle" class="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 text-sm font-bold text-amber-700 shadow-sm transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="statusActionBusy" @click="showDeprecateConfirm = true">
                       <Loader2 v-if="deprecating" class="h-4 w-4 animate-spin" />
                       {{ deprecating ? copy.deprecating : copy.deprecate }}
                     </button>
@@ -1916,6 +1928,26 @@ onMounted(load)
           </div>
         </template>
         </section>
+      </div>
+    </Teleport>
+
+    <Teleport to="body">
+      <div v-if="showDeprecateConfirm && canDeprecateSelectedBundle" class="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/60 p-4 md:p-6">
+        <div v-modal-dialog="closeDeprecateConfirm" class="w-full max-w-md rounded-2xl bg-white p-4 shadow-2xl md:rounded-3xl md:p-6">
+          <h2 class="text-xl font-black md:text-2xl">{{ copy.deprecateConfirmTitle }}</h2>
+          <p class="mt-3 text-sm text-slate-600">{{ copy.deprecateConfirmDescription }}</p>
+          <div class="mt-5 rounded-2xl bg-amber-50 p-4">
+            <div class="font-black">{{ bundleName(selected) }}</div>
+            <div class="mt-1 break-all text-xs text-slate-500">{{ selectedId }}</div>
+          </div>
+          <div class="mt-6 flex flex-col items-stretch justify-end gap-3 sm:flex-row sm:items-center">
+            <button data-dialog-initial-focus class="inline-flex h-11 min-w-[96px] items-center justify-center rounded-xl border px-5 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="deprecating" @click="closeDeprecateConfirm">{{ copy.cancel }}</button>
+            <button class="inline-flex h-11 min-w-[112px] items-center justify-center gap-2 rounded-xl bg-amber-600 px-5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="deprecating" @click="deprecate">
+              <Loader2 v-if="deprecating" class="h-4 w-4 animate-spin" />
+              {{ deprecating ? copy.deprecating : copy.confirmDeprecate }}
+            </button>
+          </div>
+        </div>
       </div>
     </Teleport>
 

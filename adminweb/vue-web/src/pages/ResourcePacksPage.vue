@@ -16,6 +16,7 @@ const loading = ref(false)
 const detailLoading = ref(false)
 const saving = ref(false)
 const detailOpen = ref(false)
+const pendingRevertPack = ref<JsonRecord | null>(null)
 const deleteConfirmOpen = ref(false)
 const mode = ref<"create" | "edit" | "detail">("detail")
 const pageToken = ref("")
@@ -262,6 +263,22 @@ function closeDeleteConfirm() {
   deleteConfirmOpen.value = false
 }
 
+function requestRevertPack(pack: JsonRecord | null) {
+  if (!pack || !canRevertPack(pack) || saving.value) return
+  const id = packId(pack)
+  const version = packVersion(pack)
+  if (!id || version <= 0) {
+    toast.error(copy.value.toasts.actionRequiresVersion)
+    return
+  }
+  pendingRevertPack.value = pack
+}
+
+function closeRevertConfirm() {
+  if (saving.value) return
+  pendingRevertPack.value = null
+}
+
 function startCreate() {
   detailRequestId += 1
   detailLoading.value = false
@@ -375,7 +392,7 @@ async function runPackAction(pack: JsonRecord | null, action: "publish" | "rever
   const version = packVersion(pack)
   if (!id || version <= 0) {
     toast.error(copy.value.toasts.actionRequiresVersion)
-    return
+    return false
   }
 
   saving.value = true
@@ -387,12 +404,20 @@ async function runPackAction(pack: JsonRecord | null, action: "publish" | "rever
     if (action === "publish") toast.success(copy.value.toasts.published)
     if (action === "revert-to-draft") toast.success(copy.value.toasts.reverted)
     await load()
+    return true
   } catch (err) {
     console.error(err)
     toast.error(packActionErrorMessage(err, action))
+    return false
   } finally {
     saving.value = false
   }
+}
+
+async function confirmRevertPack() {
+  const pack = pendingRevertPack.value
+  if (!pack || saving.value) return
+  if (await runPackAction(pack, "revert-to-draft")) pendingRevertPack.value = null
 }
 
 async function duplicatePack(pack: JsonRecord | null) {
@@ -597,7 +622,7 @@ onMounted(load)
               <button v-if="canPublishPack(pack)" class="inline-flex items-center justify-center rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-700 transition hover:underline disabled:opacity-50 lg:border-0 lg:bg-transparent lg:px-0 lg:py-0" type="button" :disabled="saving" @click.stop="runPackAction(pack, 'publish')">
                 {{ copy.publishPack }}
               </button>
-              <button v-if="canRevertPack(pack)" class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 transition hover:underline disabled:opacity-50 lg:border-0 lg:bg-transparent lg:px-0 lg:py-0" type="button" :disabled="saving" @click.stop="runPackAction(pack, 'revert-to-draft')">
+              <button v-if="canRevertPack(pack)" class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 transition hover:underline disabled:opacity-50 lg:border-0 lg:bg-transparent lg:px-0 lg:py-0" type="button" :disabled="saving" @click.stop="requestRevertPack(pack)">
                 {{ copy.revertPack }}
               </button>
               <button v-if="canDeletePack(pack)" class="inline-flex items-center justify-center rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm font-bold text-red-600 transition hover:underline lg:border-0 lg:bg-transparent lg:px-0 lg:py-0" type="button" @click="requestDeletePack(pack)">
@@ -842,6 +867,26 @@ onMounted(load)
           </div>
         </div>
       </section>
+
+      <Teleport to="body">
+        <div v-if="pendingRevertPack" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 md:p-6">
+          <section v-modal-dialog="closeRevertConfirm" class="w-full max-w-[460px] rounded-2xl bg-white p-4 shadow-2xl md:rounded-3xl md:p-6">
+            <h2 class="text-xl font-black text-slate-950 md:text-2xl">{{ copy.revertConfirmTitle }}</h2>
+            <p class="mt-3 text-sm font-semibold text-slate-500">{{ copy.revertConfirmDescription }}</p>
+            <div class="mt-5 rounded-2xl bg-amber-50 p-4">
+              <div class="break-words font-black text-slate-950">{{ packTitle(pendingRevertPack) }}</div>
+              <div class="mt-1 break-all text-sm font-semibold text-slate-500">{{ packId(pendingRevertPack) }}</div>
+            </div>
+            <div class="mt-6 flex flex-col justify-end gap-3 sm:flex-row">
+              <button data-dialog-initial-focus class="rounded-xl border border-slate-900 px-5 py-3 font-bold text-slate-950 disabled:opacity-50" type="button" :disabled="saving" @click="closeRevertConfirm">{{ copy.cancel }}</button>
+              <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-600 px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="confirmRevertPack">
+                <Loader2 v-if="saving" class="h-4 w-4 animate-spin" />
+                {{ saving ? copy.reverting : copy.confirmRevertAction }}
+              </button>
+            </div>
+          </section>
+        </div>
+      </Teleport>
 
       <Teleport to="body">
         <div v-if="deleteConfirmOpen && selected" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 md:p-6">

@@ -24,6 +24,9 @@ async function installResourcePackReadMocks(page: Page, requests: string[]) {
     if (method === "GET" && pathname === "/api/lms/resource-packs/pack-1") {
       return { data: { ...resourcePack, description: "Read-only resource pack detail" } }
     }
+    if (method === "POST" && pathname === "/api/lms/resource-packs/pack-1/revert-to-draft") {
+      return { data: {} }
+    }
     return undefined
   })
 }
@@ -57,4 +60,24 @@ test("resource pack detail is read without publishing or editing", async ({ page
   expect(requests).toContain("GET /api/lms/resource-packs/pack-1")
   expect(requests.some((request) => request.includes("/publish") || request.includes("/revert-to-draft"))).toBe(false)
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
+})
+
+test("unpublishing a resource pack requires explicit confirmation", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  const requests: string[] = []
+  await installResourcePackReadMocks(page, requests)
+  await page.goto("/resource-packs")
+
+  await page.getByRole("button", { name: "下架", exact: true }).click()
+  let confirmDialog = page.getByRole("dialog", { name: "确认下架资源包" })
+  await expect(confirmDialog).toBeVisible()
+  expect(requests).not.toContain("POST /api/lms/resource-packs/pack-1/revert-to-draft")
+
+  await confirmDialog.getByRole("button", { name: "取消", exact: true }).click()
+  expect(requests).not.toContain("POST /api/lms/resource-packs/pack-1/revert-to-draft")
+
+  await page.getByRole("button", { name: "下架", exact: true }).click()
+  confirmDialog = page.getByRole("dialog", { name: "确认下架资源包" })
+  await confirmDialog.getByRole("button", { name: "确认下架", exact: true }).click()
+  await expect.poll(() => requests.filter((request) => request === "POST /api/lms/resource-packs/pack-1/revert-to-draft").length).toBe(1)
 })

@@ -41,6 +41,7 @@ const mailStatusDetail = ref<JsonRecord | null>(null)
 const mailDetailLoading = ref(false)
 const mailDetailOpen = ref(false)
 const canceling = ref(false)
+const cancelConfirmOpen = ref(false)
 const stats = ref<JsonRecord | null>(null)
 
 const usersLoading = ref(false)
@@ -159,6 +160,10 @@ function templateFieldLabel(key: string) {
 
 function mailId(mail: JsonRecord | null | undefined) {
   return String(pickFirst(mail || {}, ["mail_id", "mail_ulid", "id"]) || "")
+}
+
+function mailTitle(mail: JsonRecord | null | undefined) {
+  return String(pickFirst(mail || {}, ["subject", "template_path", "mail_id", "mail_ulid"]) || copy.value.defaults.mail)
 }
 
 function mailStatus(mail: JsonRecord | null | undefined) {
@@ -559,7 +564,9 @@ async function openMail(mail: JsonRecord | null, open = true) {
 }
 
 function closeMailDetail() {
+  if (canceling.value) return
   mailDetailRequestId += 1
+  cancelConfirmOpen.value = false
   mailDetailOpen.value = false
   selectedMail.value = null
   mailDetail.value = null
@@ -567,10 +574,29 @@ function closeMailDetail() {
   mailDetailLoading.value = false
 }
 
-async function cancelMail() {
+function requestCancelMail() {
   const id = mailId(selectedMail.value)
   if (!id) return
   if (!selectedMailCanCancel.value) {
+    toast.error(copy.value.toasts.cancelNotAllowed)
+    return
+  }
+  cancelConfirmOpen.value = true
+}
+
+function closeCancelConfirm() {
+  if (canceling.value) return
+  cancelConfirmOpen.value = false
+}
+
+async function cancelMail() {
+  const id = mailId(selectedMail.value)
+  if (!id) {
+    cancelConfirmOpen.value = false
+    return
+  }
+  if (!selectedMailCanCancel.value) {
+    cancelConfirmOpen.value = false
     toast.error(copy.value.toasts.cancelNotAllowed)
     return
   }
@@ -578,6 +604,7 @@ async function cancelMail() {
   try {
     await apiClient("/api/mails/cancel", { method: "POST", body: JSON.stringify({ mail_id: id }) })
     toast.success(copy.value.toasts.mailCancelled)
+    cancelConfirmOpen.value = false
     await loadSentMails()
   } catch (err) {
     console.error(err)
@@ -996,7 +1023,7 @@ onMounted(async () => {
                 class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50 sm:flex-none"
                 type="button"
                 :disabled="!selectedMail || canceling"
-                @click="cancelMail"
+                @click="requestCancelMail"
               >
                 <XCircle class="h-4 w-4" />
                 {{ copy.cancelMail }}
@@ -1038,6 +1065,26 @@ onMounted(async () => {
                 :copy-error-message="copy.toasts.jsonCopyFailed"
               />
             </template>
+          </div>
+        </section>
+      </div>
+    </Teleport>
+
+    <Teleport to="body">
+      <div v-if="cancelConfirmOpen && selectedMail" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/55 p-4 md:p-6">
+        <section v-modal-dialog="closeCancelConfirm" class="w-full max-w-md rounded-2xl bg-white p-4 shadow-2xl md:rounded-3xl md:p-6">
+          <h2 class="text-xl font-black text-slate-950 md:text-2xl">{{ copy.cancelConfirmTitle }}</h2>
+          <p class="mt-3 text-sm font-semibold leading-6 text-slate-500">{{ copy.cancelConfirmDescription }}</p>
+          <div class="mt-5 rounded-2xl bg-red-50 p-4">
+            <div class="break-words font-black text-slate-950">{{ mailTitle(selectedMail) }}</div>
+            <div class="mt-1 break-all text-sm font-semibold text-slate-500">{{ mailId(selectedMail) }}</div>
+          </div>
+          <div class="mt-6 flex flex-col justify-end gap-3 sm:flex-row">
+            <button data-dialog-initial-focus class="h-11 min-w-24 rounded-xl border border-slate-900 px-5 font-bold text-slate-950 disabled:opacity-50" type="button" :disabled="canceling" @click="closeCancelConfirm">{{ copy.reset }}</button>
+            <button class="inline-flex h-11 min-w-28 items-center justify-center gap-2 rounded-xl bg-red-600 px-5 font-bold text-white disabled:opacity-50" type="button" :disabled="canceling" @click="cancelMail">
+              <Loader2 v-if="canceling" class="h-4 w-4 animate-spin" />
+              {{ canceling ? copy.cancellingMail : copy.confirmCancelMail }}
+            </button>
           </div>
         </section>
       </div>

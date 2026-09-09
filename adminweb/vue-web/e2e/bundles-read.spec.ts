@@ -54,6 +54,9 @@ async function installBundleReadMocks(page: Page, requests: string[]) {
         },
       }
     }
+    if (method === "POST" && pathname === "/api/mall/bundles/bundle-1/deprecate") {
+      return { data: {} }
+    }
     return undefined
   })
 }
@@ -92,6 +95,29 @@ test("bundle detail reads summary and linked items without editing", async ({ pa
   expect(requests).toContain("GET /api/mall/bundles/bundle-1")
   expect(requests.some((request) => request.includes("/publish") || request.includes("/deprecate") || request.includes("/sync-display-pricing") || request.startsWith("DELETE "))).toBe(false)
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
+})
+
+test("deprecating a bundle requires explicit confirmation", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  const requests: string[] = []
+  await installBundleReadMocks(page, requests)
+  await page.goto("/bundles")
+
+  await page.getByRole("button", { name: "查看详情" }).first().click()
+  await page.getByRole("button", { name: /状态操作/ }).click()
+  await page.getByRole("button", { name: "下架", exact: true }).click()
+
+  let confirmDialog = page.getByRole("dialog", { name: "确认下架商品" })
+  await expect(confirmDialog).toBeVisible()
+  expect(requests).not.toContain("POST /api/mall/bundles/bundle-1/deprecate")
+
+  await confirmDialog.getByRole("button", { name: "取消", exact: true }).click()
+  expect(requests).not.toContain("POST /api/mall/bundles/bundle-1/deprecate")
+
+  await page.getByRole("button", { name: "下架", exact: true }).click()
+  confirmDialog = page.getByRole("dialog", { name: "确认下架商品" })
+  await confirmDialog.getByRole("button", { name: "确认下架", exact: true }).click()
+  await expect.poll(() => requests.filter((request) => request === "POST /api/mall/bundles/bundle-1/deprecate").length).toBe(1)
 })
 
 test("membership-only bundle replaces its stale membership reference", async ({ page }) => {

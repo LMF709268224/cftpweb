@@ -44,6 +44,9 @@ async function installCredentialReadMocks(page: Page, requests: string[]) {
     if (method === "GET" && pathname === "/api/credentials/definitions/credential-1") {
       return { data: credentialDetail }
     }
+    if (method === "PUT" && pathname === "/api/credentials/definitions/credential-1/attachments") {
+      return { data: { success: true } }
+    }
     return undefined
   })
 }
@@ -77,6 +80,35 @@ test("credential definition detail displays metadata without a mutation", async 
 
   expect(requests).toContain("GET /api/credentials/definitions/credential-1")
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
+})
+
+test("removing a credential attachment requires explicit confirmation", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  const requests: string[] = []
+  let updateRequestBody: Record<string, unknown> | undefined
+  page.on("request", (request) => {
+    if (request.method() === "PUT" && new URL(request.url()).pathname.endsWith("/attachments")) {
+      updateRequestBody = request.postDataJSON()
+    }
+  })
+  await installCredentialReadMocks(page, requests)
+  await page.goto("/credentials")
+
+  await page.getByRole("button", { name: "查看详情" }).click()
+  const detailDialog = page.getByRole("dialog", { name: "Regression Credential" })
+  await detailDialog.getByRole("button", { name: "删除附件" }).click()
+
+  let confirmDialog = page.getByRole("dialog", { name: "确认删除附件" })
+  await expect(confirmDialog).toBeVisible()
+  expect(updateRequestBody).toBeUndefined()
+
+  await confirmDialog.getByRole("button", { name: "取消", exact: true }).click()
+  expect(updateRequestBody).toBeUndefined()
+
+  await detailDialog.getByRole("button", { name: "删除附件" }).click()
+  confirmDialog = page.getByRole("dialog", { name: "确认删除附件" })
+  await confirmDialog.getByRole("button", { name: "确认删除", exact: true }).click()
+  await expect.poll(() => updateRequestBody).toEqual({ attachments: [] })
 })
 
 test("credential definition attachment is uploaded directly and saved as a complete list", async ({ page }) => {
