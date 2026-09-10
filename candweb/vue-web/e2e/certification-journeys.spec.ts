@@ -984,7 +984,7 @@ test("已持有有效资格的课程自动免考且不可取消", async ({ page 
     const qualificationCard = page.locator(".checkout-unit-card").filter({
         has: page.getByText("CFtA Course", { exact: true }),
     })
-    await qualificationCard.getByRole("button", { name: "查看已上传文件", exact: true }).click()
+    await qualificationCard.getByRole("button", { name: "查看证明材料", exact: true }).click()
     const uploadedFilesDialog = page.getByRole("dialog", { name: "已上传文件" })
     await expect(uploadedFilesDialog.getByText("employment-proof.pdf", { exact: true })).toBeVisible()
     await expect(uploadedFilesDialog.getByRole("link", { name: "查看", exact: true })).toHaveAttribute(
@@ -1005,7 +1005,7 @@ test("已持有有效资格的课程自动免考且不可取消", async ({ page 
         await expect(item).toContainText(unit.name)
         await expect(item).toContainText((unit.amount / 100).toLocaleString("en-US", { maximumFractionDigits: 2 }))
     }
-    await expect(page.locator(".checkout-step-one-title")).toContainText("可免考科目与申请")
+    await expect(page.locator(".checkout-step-one-title")).toContainText("模块免考")
     await expect(page.locator(".checkout-total")).toContainText("总费用")
     await expect(page.locator(".checkout-total")).toContainText("3,950")
     const totalPrecedesPaperSelection = await page.locator(".checkout-total").evaluate((total) => {
@@ -1016,7 +1016,8 @@ test("已持有有效资格的课程自动免考且不可取消", async ({ page 
     expect(pricingModes).toContain("FULL_PIPELINE")
 
     await page.getByRole("button", { name: "中文 / EN" }).click()
-    await expect(page.locator(".checkout-step-one-title")).toContainText("Exemption-Eligible Subjects & Applications")
+    await expect(page.locator(".checkout-step-one-title")).toContainText("Module Exemptions")
+    await expect(qualificationCard.getByRole("button", { name: "View Supporting Documents", exact: true })).toBeVisible()
     await expect(enrollmentFeeItem).toContainText("Enrollment fee")
     await expect(enrollmentFeeItem.locator(".checkout-included-item-stage")).toHaveCount(0)
     await expect(page.locator(`[data-testid="checkout-included-item"][data-item-id="unit-foundation"]`)).toContainText("CFtP Foundation Course")
@@ -1557,11 +1558,16 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
     expect(submitRequest.files).toHaveLength(1)
     expect(submitRequest.files[0].file_usage).toBe("Employment Certificate")
     await expect.poll(() => applicationOrderRequests).toBeGreaterThan(initialApplicationOrderRequests)
-    await expect(qualificationCard).toContainText("材料已提交，正在审核。")
+    await expect(qualificationCard).toContainText("免考申请已提交，目前正在审核中。")
+    await expect(qualificationCard).toContainText("我们正在审核你的证明材料。审核结果确定后，我们会通知你。")
     await expect(qualificationCard).not.toContainText("资格认证申请已创建，请在下方上传材料。")
     await expect(blockerPanel).toContainText("免考资格认证正在审核中")
     await expect(blockerPanel).not.toContainText("您的免考申请材料尚未提交")
     await expect(page.getByTestId("checkout-selection-next")).toBeDisabled()
+
+    await page.getByRole("button", { name: "中文 / EN" }).click()
+    await expect(qualificationCard).toContainText("Your exemption application has been submitted and is currently under review.")
+    await expect(qualificationCard).toContainText("We are reviewing your supporting documents. You will be notified once a decision has been made.")
 })
 
 test("资格申请页允许 PendingUpload 申请上传", async ({ page }) => {
