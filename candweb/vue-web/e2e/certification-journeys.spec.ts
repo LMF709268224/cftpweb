@@ -1572,8 +1572,12 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
 
 test("资格申请页允许 PendingUpload 申请上传", async ({ page }) => {
     const includedQualificationID = "qualification-active-order-included"
+    let uploadRequests = 0
 
-    await installCandidateApiMocks(page, ({ pathname }) => {
+    await page.route("https://uploads.example/**", async (route) => {
+        await route.fulfill({ status: 200, body: "" })
+    })
+    await installCandidateApiMocks(page, ({ pathname, method }) => {
         if (pathname === "/api/credentials/definitions") {
             return {
                 data: {
@@ -1582,7 +1586,12 @@ test("资格申请页允许 PendingUpload 申请上传", async ({ page }) => {
                         name: "Included Qualification",
                         category: "Exemption",
                         respath: "/gcreds/core/included",
-                        file_constraints: [],
+                        file_constraints: [{
+                            name: "Employment Certificate",
+                            display_name: "雇佣证明",
+                            type: 2,
+                            is_required: true,
+                        }],
                         latest_application: {
                             app_ulid: "application-active-order-pending-upload",
                             cred_def_ulid: includedQualificationID,
@@ -1603,6 +1612,16 @@ test("资格申请页允许 PendingUpload 申请上传", async ({ page }) => {
                 },
             }
         }
+        if (pathname === "/api/credentials/upload-url" && method === "POST") {
+            uploadRequests += 1
+            return {
+                data: {
+                    upload_url: `https://uploads.example/final-qualification-${uploadRequests}.pdf`,
+                    file_key: `credentials/final-qualification-${uploadRequests}.pdf`,
+                    signed_headers: {},
+                },
+            }
+        }
         return undefined
     })
 
@@ -1614,7 +1633,33 @@ test("资格申请页允许 PendingUpload 申请上传", async ({ page }) => {
     await expect(includedQualificationCard.getByRole("button", { name: "上传证明材料", exact: true })).toBeEnabled()
     await expect(page.getByText("Excluded Qualification", { exact: true })).toHaveCount(0)
     await includedQualificationCard.getByRole("button", { name: "上传证明材料", exact: true }).click()
-    await expect(page.locator(".credentials-apply-dialog").getByText("Included Qualification", { exact: true })).toBeVisible()
+    const applyDialog = page.locator(".credentials-apply-dialog")
+    await expect(applyDialog.getByText("Included Qualification", { exact: true })).toBeVisible()
+
+    const fileInput = applyDialog.locator('[id="file-Employment Certificate"]')
+    await fileInput.setInputFiles({
+        name: "final-qualification.pdf",
+        mimeType: "application/pdf",
+        buffer: Buffer.from("final-qualification-pdf"),
+    })
+    await expect(applyDialog.getByText("final-qualification.pdf 上传成功", { exact: true })).toBeVisible()
+    await expect(applyDialog.getByRole("link", { name: "预览", exact: true })).toHaveAttribute("href", /^blob:/)
+
+    const fileChooserPromise = page.waitForEvent("filechooser")
+    await applyDialog.getByRole("button", { name: "更换", exact: true }).click()
+    const fileChooser = await fileChooserPromise
+    await fileChooser.setFiles({
+        name: "replacement-final-qualification.pdf",
+        mimeType: "application/pdf",
+        buffer: Buffer.from("replacement-final-qualification-pdf"),
+    })
+    await expect(applyDialog.getByText("replacement-final-qualification.pdf 上传成功", { exact: true })).toBeVisible()
+    await expect(applyDialog.getByText("final-qualification.pdf 上传成功", { exact: true })).toHaveCount(0)
+
+    await applyDialog.getByRole("button", { name: "删除", exact: true }).click()
+    await expect(applyDialog.getByText("replacement-final-qualification.pdf 上传成功", { exact: true })).toHaveCount(0)
+    await expect(applyDialog.getByRole("link", { name: "预览", exact: true })).toHaveCount(0)
+    expect(uploadRequests).toBe(2)
 })
 
 test("资格申请记录详情显示完整审核备注和已上传文件", async ({ page }) => {
