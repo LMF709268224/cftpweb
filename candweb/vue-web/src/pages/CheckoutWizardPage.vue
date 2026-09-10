@@ -2573,7 +2573,10 @@ function closePaymentEditDialog() {
                             <span class="cftp-exemption-choice-description">{{ t.checkoutWizard.cftpApplyExemptionDescription }}</span>
                             <span class="cftp-exemption-choice-meta">
                               <span>{{ t.checkoutWizard.cftpApplyExemptionFeeNote }}</span>
-                              <strong>{{ formatMoney(unitPriceDisplay[unit.unit_id]?.exemptionAmount || 0, unitPriceDisplay[unit.unit_id]?.currency) }}</strong>
+                              <strong>
+                                {{ t.checkoutWizard.cftpExemptionFeeLabel }}
+                                {{ formatMoney(unitPriceDisplay[unit.unit_id]?.exemptionAmount || 0, unitPriceDisplay[unit.unit_id]?.currency) }}
+                              </strong>
                             </span>
                           </span>
                         </button>
@@ -2594,6 +2597,7 @@ function closePaymentEditDialog() {
                             <span class="cftp-exemption-choice-description">{{ t.checkoutWizard.cftpPayFullPriceDescription }}</span>
                             <span class="cftp-exemption-choice-meta">
                               <strong v-if="unitPriceDisplay[unit.unit_id]?.accessAmount !== undefined">
+                                {{ t.checkoutWizard.cftpExaminationFeeLabel }}
                                 {{ formatMoney(unitPriceDisplay[unit.unit_id]?.accessAmount, unitPriceDisplay[unit.unit_id]?.currency) }}
                               </strong>
                             </span>
