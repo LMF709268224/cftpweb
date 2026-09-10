@@ -847,7 +847,7 @@ export const en: AppTranslations = {
         statusUnavailable: "Qualification status unavailable",
         applyQualification: "Apply for exemption",
         resubmitQualification: "Add qualification materials",
-        qualificationSubmitHint: "Submit your exemption evidence for review. Once approved, the exemption will be reflected in your total.",
+        qualificationSubmitHint: "Apply for an exemption by submitting the required supporting documents. If approved, you will not be required to take the examination for this module.",
         qualificationPendingHint: "Your exemption application has been submitted and is currently under review.",
         qualificationResubmitHint: "An administrator returned this application. Update the supporting evidence and resubmit it for review.",
         qualificationUploadReady: "Qualification application created. Upload the materials below.",

@@ -845,7 +845,7 @@ export const zh = {
         statusUnavailable: "资格认证状态暂不可用",
         applyQualification: "申请资格认证后免考",
         resubmitQualification: "补充资格认证材料",
-        qualificationSubmitHint: "请提交免考证明材料。审核通过后，免考将反映在总费用中。",
+        qualificationSubmitHint: "请提交所需证明材料申请免考。审核通过后，您无需参加该模块的考试。",
         qualificationPendingHint: "免考申请已提交，目前正在审核中。",
         qualificationResubmitHint: "管理员已退回本次申请，请根据审核意见补充证明材料并重新提交。",
         qualificationUploadReady: "资格认证申请已创建，请在下方上传材料。",
