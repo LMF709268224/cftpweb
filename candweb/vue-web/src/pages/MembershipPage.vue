@@ -719,7 +719,7 @@ watch(lang, () => {
           </section>
 
           <div class="membership-tabs mb-4 rounded-[14px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.04)] md:px-6 md:pt-4 md:pb-0">
-            <div class="relative md:hidden">
+            <div class="membership-tabs-select relative md:hidden">
               <select
                 v-model="activeTab"
                 class="input h-11 cursor-pointer appearance-none rounded-xl border-slate-200 bg-slate-50 pr-10 font-semibold text-foreground shadow-sm shadow-slate-100/70 focus:bg-white"
@@ -732,7 +732,7 @@ watch(lang, () => {
               <ChevronDown class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             </div>
 
-            <div class="hidden flex-wrap gap-x-8 gap-y-2 border-b border-border md:flex">
+            <div class="membership-tabs-list hidden flex-wrap gap-x-8 gap-y-2 border-b border-border md:flex">
               <button
                 v-for="tab in tabs"
                 :key="tab.id"
@@ -1140,7 +1140,32 @@ watch(lang, () => {
 
   .membership-tabs {
     margin-bottom: 12px;
+    overflow: hidden;
     padding: 12px;
+  }
+
+  .membership-tabs-select {
+    display: none;
+  }
+
+  .membership-tabs-list {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 20px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .membership-tabs-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .membership-tabs-list > button {
+    flex: 0 0 auto;
+    min-height: 44px;
+    padding-bottom: 12px;
   }
 
   .membership-overview-grid,
