@@ -547,7 +547,7 @@ watch(
                 <button
                   v-if="!isPendingUploadStatus(app.status)"
                   type="button"
-                  class="application-details-btn btn btn-outline h-9 cursor-pointer whitespace-nowrap rounded-lg px-3 py-1 text-sm text-primary hover:border-primary/30 hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  class="application-details-btn btn h-9 cursor-pointer whitespace-nowrap rounded-lg bg-primary px-3 py-1 text-sm text-white shadow-sm shadow-primary/20 hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                   data-testid="application-view-details"
                   :disabled="!applicationId(app)"
                   @click="openApplicationDetail(app)"
