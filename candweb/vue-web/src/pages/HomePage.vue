@@ -260,13 +260,17 @@ const cardStyles = {
   },
 } as const
 
-async function countFromRequest(endpoint: string, listKey: string): Promise<number | null> {
+async function countFromRequest(endpoint: string, listKey: string, totalKey?: string): Promise<number | null> {
   try {
     const res = await apiClient(endpoint, { suppressErrorToast: true })
     const list = res?.[listKey]
     if (!Array.isArray(list)) {
       console.error(`Invalid dashboard response from ${endpoint}: expected array at ${listKey}`)
       return null
+    }
+    if (totalKey && res?.[totalKey] !== null && res?.[totalKey] !== undefined) {
+      const total = Number(res[totalKey])
+      if (Number.isFinite(total) && total >= 0) return total
     }
     return list.length
   } catch (err) {
@@ -282,9 +286,9 @@ async function loadDashboardStats() {
     const [certifications, certificates, exams, resourcePacks, orders] = await Promise.all([
       countFromRequest("/api/pipeline", "list"),
       countFromRequest("/api/certificates", "certificates"),
-      countFromRequest("/api/exams?page=1&page_size=50", "exams"),
+      countFromRequest("/api/exams?page=1&page_size=50", "exams", "total"),
       countFromRequest("/api/resource-packs?page_size=20", "packs"),
-      countFromRequest("/api/orders?page=1&page_size=50", "orders"),
+      countFromRequest("/api/orders?page=1&page_size=50", "orders", "total_orders"),
     ])
 
     countErrors.value = {

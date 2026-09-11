@@ -179,6 +179,24 @@ test("首页展示由当前用户接口返回的会员和认证状态", async ({
   expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
 });
 
+test("首页统计使用接口返回的总数而不是当前分页数量", async ({ page }) => {
+  await seedAuthenticatedCandidate(page);
+  await installCandidateApiMocks(page, (context) => {
+    if (context.pathname === "/api/exams") {
+      return { data: { exams: Array.from({ length: 50 }, () => ({})), total: 60 } };
+    }
+    if (context.pathname === "/api/orders") {
+      return { data: { orders: Array.from({ length: 50 }, () => ({})), total_orders: 74 } };
+    }
+    return emptyPortalResponse(context);
+  });
+
+  await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+
+  await expect(page.getByTestId("dashboard-card-exams")).toContainText("60");
+  await expect(page.getByTestId("dashboard-card-orders")).toContainText("74");
+});
+
 test("首页不展示微服务未能确认的用户状态", async ({ page }) => {
   await seedAuthenticatedCandidate(page);
   await installCandidateApiMocks(page, ({ pathname }) => {
