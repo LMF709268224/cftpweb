@@ -2201,12 +2201,12 @@ watch(selectedMaterial, () => {
                     <button class="btn rounded-lg border border-primary/30 bg-white text-primary" :disabled="scheduleLoading" @click="handleInlineRescheduleExam(exam)">
                       <Loader2 v-if="scheduleLoading" class="h-4 w-4 animate-spin" />
                       <RefreshCw v-else class="h-4 w-4" />
-                      {{ t.learning.actionRescheduleExam }}
+                      {{ t.examsPage.actionRescheduleExam }}
                     </button>
                     <button class="btn rounded-lg border border-red-200 bg-white text-red-700" :disabled="scheduleLoading" @click="handleInlineCancelExam(exam)">
                       <Loader2 v-if="scheduleLoading" class="h-4 w-4 animate-spin" />
                       <XCircle v-else class="h-4 w-4" />
-                      {{ t.learning.actionCancelExam }}
+                      {{ t.examsPage.actionCancelExam }}
                     </button>
                   </template>
                   <RouterLink v-if="hasExamResult(exam)" :to="`/exams/result?examId=${encodeURIComponent(exam.exam_id)}`" class="btn btn-primary rounded-lg">{{ t.examsPage.viewResult }}</RouterLink>

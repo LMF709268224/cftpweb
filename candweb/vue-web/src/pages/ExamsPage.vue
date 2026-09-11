@@ -643,12 +643,12 @@ onBeforeUnmount(() => {
                   <button class="btn h-10 w-full rounded-lg border border-primary/30 bg-white px-5 text-primary sm:w-auto" :disabled="scheduleLoadingExamId === exam.exam_id" @click="handleRescheduleExam(exam)">
                     <Loader2 v-if="scheduleLoadingExamId === exam.exam_id" class="h-4 w-4 animate-spin" />
                     <RefreshCw v-else class="h-4 w-4" />
-                    {{ t.learning.actionRescheduleExam }}
+                    {{ t.examsPage.actionRescheduleExam }}
                   </button>
                   <button class="btn h-10 w-full rounded-lg border border-red-200 bg-white px-5 text-red-700 sm:w-auto" :disabled="scheduleLoadingExamId === exam.exam_id" @click="handleCancelExam(exam)">
                     <Loader2 v-if="scheduleLoadingExamId === exam.exam_id" class="h-4 w-4 animate-spin" />
                     <XCircle v-else class="h-4 w-4" />
-                    {{ t.learning.actionCancelExam }}
+                    {{ t.examsPage.actionCancelExam }}
                   </button>
                 </template>
                 <RouterLink v-if="hasExamResult(exam)" :to="`/exams/result?examId=${encodeURIComponent(exam.exam_id)}`" class="btn btn-primary h-10 w-full rounded-lg px-5 shadow-sm shadow-primary/20 sm:w-auto">{{ t.examsPage.viewResult }}</RouterLink>
