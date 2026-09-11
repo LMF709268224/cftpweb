@@ -8,12 +8,9 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"os"
 	"slices"
 	"strconv"
 	"strings"
-
-	"candbff/config"
 
 	gccpb "github.com/afnandelfin620-star/cftptest/cftp/gcc"
 	lmspb "github.com/afnandelfin620-star/cftptest/cftp/glms"
@@ -502,6 +499,9 @@ func (h *Handler) GetLessonVideoPlayURL(w http.ResponseWriter, r *http.Request) 
 	})
 }
 
+// TODO(security): src is a client-supplied complete URL. A user can replace an
+// uploaded S3 URL with a phishing URL that an administrator later follows.
+// Store an object key/file ID and generate a candidate-scoped URL server-side.
 func (h *Handler) GetResourcePreviewURL(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
 	resourceURL := strings.TrimSpace(r.URL.Query().Get("src"))
@@ -538,6 +538,7 @@ func (h *Handler) PreviewLessonPDF(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) PreviewResourceURL(w http.ResponseWriter, r *http.Request) {
+	// The security TODO above also applies to this redirecting variant.
 	candidateID := CandidateID(r)
 	resourceURL := strings.TrimSpace(r.URL.Query().Get("src"))
 	if !requireRequestFields(w, candidateID, "candidate_id", resourceURL, "src") {
@@ -568,7 +569,7 @@ func redirectPreview(w http.ResponseWriter, r *http.Request, sourceURL string) {
 
 func isValidPreviewResourceURL(resourceURL string) bool {
 	parsed, err := url.Parse(resourceURL)
-	if err != nil || parsed == nil || parsed.User != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" || !isConfiguredPreviewOrigin(parsed) {
+	if err != nil || parsed == nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" {
 		return false
 	}
 	hostname := parsed.Hostname()
@@ -585,25 +586,6 @@ func isValidPreviewResourceURL(resourceURL string) bool {
 		}
 	}
 	return true
-}
-
-func isConfiguredPreviewOrigin(parsed *url.URL) bool {
-	if parsed == nil {
-		return false
-	}
-	for _, rawOrigin := range strings.Split(os.Getenv(config.EnvPreviewAllowedOrigins), ",") {
-		allowed, err := url.Parse(strings.TrimSpace(rawOrigin))
-		if err != nil || allowed == nil || allowed.User != nil || allowed.Path != "" || allowed.RawQuery != "" || allowed.Fragment != "" {
-			continue
-		}
-		if (allowed.Scheme != "http" && allowed.Scheme != "https") || allowed.Host == "" {
-			continue
-		}
-		if strings.EqualFold(parsed.Scheme, allowed.Scheme) && strings.EqualFold(parsed.Host, allowed.Host) {
-			return true
-		}
-	}
-	return false
 }
 
 func (h *Handler) lessonViewURL(ctx context.Context, candidateID, lessonID string) (*lmspb.CreateViewURLResponse, *lmspb.Lesson, error) {

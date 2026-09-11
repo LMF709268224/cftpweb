@@ -33,9 +33,6 @@ const (
 	// PAYMENT_RETURN_ALLOWED_ORIGINS 支付成功/取消回跳允许的 origin，逗号分隔。
 	// 未设置时只允许当前请求的 origin。
 	EnvPaymentReturnAllowedOrigins = "PAYMENT_RETURN_ALLOWED_ORIGINS"
-	// PREVIEW_ALLOWED_ORIGINS 允许资源预览跳转的 origin，逗号分隔。
-	// 未配置时禁止通用资源 URL 预览。
-	EnvPreviewAllowedOrigins = "PREVIEW_ALLOWED_ORIGINS"
 
 	// ROLE_STUDENT_BASIC 学生基础角色名，默认为 "role_student_basic"
 	EnvRoleStudentBasic = "ROLE_STUDENT_BASIC"
