@@ -622,6 +622,7 @@ func (h *Handler) ListExams(w http.ResponseWriter, r *http.Request) {
 		if detail, err := h.Gexam.GetExamDetail(r.Context(), &gexampb.GetExamRequest{ExamUlid: exam.GetExamUlid()}); err == nil && detail != nil {
 			item.PipelineUlid = detail.GetPipelineUlid()
 			item.CourseUnitUlid = detail.GetCourseUnitUlid()
+			item.DeliveryMode = detail.GetDeliveryMode()
 		} else if err != nil {
 			slog.Warn("ListExams get exam detail failed", "exam_id", exam.GetExamUlid(), "error", err)
 		}

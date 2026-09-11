@@ -21,6 +21,7 @@ import {
   Sparkles,
   Target,
   Video,
+  XCircle,
 } from "lucide-vue-next"
 import {
   CANDIDATE_COURSE_STATUS_LABELS,
@@ -887,6 +888,21 @@ function canScheduleExam(exam: any) {
   const status = normalizedExamStatus(exam?.exam_status)
   return Boolean(exam?.exam_id && ((status && status.includes("OPEN")) || isExamOpenUnit(exam)))
 }
+function isScheduledExam(exam: any) {
+  return shouldShowStoredExamDetails(exam) && normalizedExamStatus(exam?.exam_status) === "SCHEDULED"
+}
+function canManageScheduledExam(exam: any) {
+  if (pipelineCancelled.value || !isScheduledExam(exam) || hasExamResult(exam) || isWaitingScheduleSync(exam)) return false
+  if (!hasText(exam?.confirmation_number)) return false
+  const rawStart = String(exam?.appointment_start_time || "").trim()
+  if (!rawStart) return true
+  const start = Date.parse(rawStart)
+  return !Number.isFinite(start) || start > Date.now()
+}
+function isOnlineExam(exam: any) {
+  const mode = normalizeEnumValueUpper(exam?.delivery_mode)
+  return mode.includes("PROCTOR") || mode.includes("ONLINE")
+}
 
 function canSignupExam(exam: any) {
   if (pipelineCancelled.value) return false
@@ -1246,17 +1262,19 @@ async function startQuiz(quizId: string) {
   }
 }
 
-async function handleInlineScheduleExam(exam: any) {
-  if (!canScheduleExam(exam) || scheduleLoading.value) return
+async function openInlineScheduleAction(exam: any, action: "schedule" | "reschedule" | "cancel") {
+  if (scheduleLoading.value) return
+  if (action === "schedule" ? !canScheduleExam(exam) : !canManageScheduledExam(exam)) return
   scheduleLoading.value = true
   try {
     const termUrlBase = window.location.origin + "/api/public/webhooks/exams/callback"
-    const params = new URLSearchParams({ url_type: "schd", term_url_base: termUrlBase })
+    const urlType = action === "schedule" ? (isOnlineExam(exam) ? "proctorsch" : "schd") : action === "cancel" ? "cancel" : (isOnlineExam(exam) ? "proctorresch" : "reschd")
+    const params = new URLSearchParams({ url_type: urlType, term_url_base: termUrlBase })
     if (runtime.value?.instance?.pipeline_ulid) params.set("pipeline_ulid", runtime.value.instance.pipeline_ulid)
     if (exam.course_unit_ulid || courseRuntimeUnitUlid.value) params.set("course_ulid", exam.course_unit_ulid || courseRuntimeUnitUlid.value)
     const res = await apiClient(`/api/exams/${encodeURIComponent(exam.exam_id)}/schedule-url?${params.toString()}`)
     if (res?.url) {
-      toast.info(t.value.examsPage.scheduleRedirecting)
+      toast.info(action === "schedule" ? t.value.examsPage.scheduleRedirecting : action === "cancel" ? t.value.examsPage.cancelRedirecting : t.value.examsPage.rescheduleRedirecting)
       window.open(res.url, "_blank", "noopener,noreferrer")
     } else {
       toast.error(t.value.examsPage.scheduleURLMissing)
@@ -1266,6 +1284,15 @@ async function handleInlineScheduleExam(exam: any) {
   } finally {
     scheduleLoading.value = false
   }
+}
+async function handleInlineScheduleExam(exam: any) {
+  await openInlineScheduleAction(exam, "schedule")
+}
+async function handleInlineRescheduleExam(exam: any) {
+  await openInlineScheduleAction(exam, "reschedule")
+}
+async function handleInlineCancelExam(exam: any) {
+  await openInlineScheduleAction(exam, "cancel")
 }
 
 function normalizeStageOrderStatus(value: unknown) {
@@ -2170,6 +2197,18 @@ watch(selectedMaterial, () => {
                     <ExternalLink v-else class="h-4 w-4" />
                     {{ t.learning.actionScheduleExam }}
                   </button>
+                  <template v-if="canManageScheduledExam(exam)">
+                    <button class="btn rounded-lg border border-primary/30 bg-white text-primary" :disabled="scheduleLoading" @click="handleInlineRescheduleExam(exam)">
+                      <Loader2 v-if="scheduleLoading" class="h-4 w-4 animate-spin" />
+                      <RefreshCw v-else class="h-4 w-4" />
+                      {{ t.examsPage.actionRescheduleExam }}
+                    </button>
+                    <button class="btn rounded-lg border border-red-200 bg-white text-red-700" :disabled="scheduleLoading" @click="handleInlineCancelExam(exam)">
+                      <Loader2 v-if="scheduleLoading" class="h-4 w-4 animate-spin" />
+                      <XCircle v-else class="h-4 w-4" />
+                      {{ t.examsPage.actionCancelExam }}
+                    </button>
+                  </template>
                   <RouterLink v-if="hasExamResult(exam)" :to="`/exams/result?examId=${encodeURIComponent(exam.exam_id)}`" class="btn btn-primary rounded-lg">{{ t.examsPage.viewResult }}</RouterLink>
                   <span v-else-if="isPendingGradingExam(exam)" class="inline-flex h-10 items-center justify-center rounded-lg border border-amber-200 bg-amber-50 px-4 text-sm font-semibold text-amber-800">{{ t.examsPage.statusPendingGrading }}</span>
                 </div>

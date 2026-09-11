@@ -94,7 +94,7 @@ export function localizeApiErrorMessage(
     return formatMessage(validation.exemptionReviewPending, { name: match[1] })
   }
 
-  const isGenericMessage = /^(Bad Request|Unauthorized|Forbidden|Not Found|Method Not Allowed|Internal Server Error|Bad Gateway|Service Unavailable|Error)$/i.test(message || "")
+  const isGenericMessage = /^(Bad Request|Unauthorized|Forbidden|Not Found|Method Not Allowed|Conflict|Internal Server Error|Bad Gateway|Service Unavailable|Error)$/i.test(message || "")
 
   if (errorCode && ErrorMessages[errorCode] && (!message || isGenericMessage)) {
     return getErrorMessage(errorCode, lang)

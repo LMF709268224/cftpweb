@@ -2427,6 +2427,15 @@ test("免考资料审核中的微服务错误显示明确原因", () => {
     )
 })
 
+test("手机号冲突的通用 HTTP 消息按当前语言显示业务错误", () => {
+    expect(localizeApiErrorMessage("PHONE_ALREADY_IN_USE", "Conflict", "zh")).toBe(
+        "该手机号已被其他账号使用，请更换手机号后重试。",
+    )
+    expect(localizeApiErrorMessage("PHONE_ALREADY_IN_USE", "Conflict", "en")).toBe(
+        "This phone number is already in use by another account. Please use a different number.",
+    )
+})
+
 test("分阶段购买已有未支付订单时跳过免考选择并进入订单页", async ({ page }) => {
     const stageID = "stage-existing-payment"
     const stageInstanceID = "stage-instance-existing-payment"
