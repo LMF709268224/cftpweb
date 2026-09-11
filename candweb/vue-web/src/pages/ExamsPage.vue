@@ -367,8 +367,6 @@ async function openScheduleAction(exam: any, action: "schedule" | "reschedule" |
     const termUrlBase = window.location.origin + "/api/public/webhooks/exams/callback"
     const urlType = action === "schedule" ? (isOnlineExam(exam) ? "proctorsch" : "schd") : action === "cancel" ? "cancel" : (isOnlineExam(exam) ? "proctorresch" : "reschd")
     const params = new URLSearchParams({ url_type: urlType, term_url_base: termUrlBase })
-    params.set("pipeline_ulid", exam.pipeline_ulid)
-    params.set("course_ulid", exam.course_unit_ulid)
     const res = await apiClient(`/api/exams/${encodeURIComponent(exam.exam_id)}/schedule-url?${params.toString()}`)
     if (res?.url) {
       if (action === "schedule") markSchedulePending(exam.exam_id)
