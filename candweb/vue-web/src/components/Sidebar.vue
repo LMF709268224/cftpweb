@@ -218,15 +218,15 @@ async function handleLogout() {
         </button>
       </div>
 
-      <nav class="flex-1 space-y-1 px-4 py-4 text-[14px] text-sidebar-foreground">
-        <div class="px-1 pb-2 pt-1 text-xs font-medium text-[#c1cef6]">{{ t.sidebar.menu }}</div>
+      <nav class="flex-1 space-y-1 px-4 py-4 text-[13px] text-sidebar-foreground">
+        <div class="px-4 pb-2 pt-1 text-sm font-semibold leading-5 text-[#dce6ff]">{{ t.sidebar.menu }}</div>
         <div
           v-for="(item, index) in navItems"
           :key="item.href"
         >
           <div
             v-if="item.group && item.group !== navItems[index - 1]?.group"
-            class="px-4 pb-1 pt-4 text-xs font-medium text-[#c1cef6]"
+            class="px-4 pb-1 pt-4 text-sm font-semibold leading-5 text-[#dce6ff]"
           >
             {{ item.group }}
           </div>
@@ -234,7 +234,7 @@ async function handleLogout() {
             :to="item.href"
             :class="[
               'group/nav-item flex h-11 items-center justify-between rounded-lg px-4 transition-colors duration-200',
-              isNavItemActive(item.href) ? 'bg-sidebar-accent font-semibold text-white' : 'text-white/80 hover:bg-white/10 hover:text-white',
+              isNavItemActive(item.href) ? 'bg-sidebar-accent font-semibold text-white' : 'text-white/75 hover:bg-white/10 hover:text-white',
             ]"
             @click="mobileMenuOpen = false"
             @pointerenter="preloadCandidateRoute(item.href)"
@@ -297,15 +297,15 @@ async function handleLogout() {
       <img v-else src="/gfi/gfi-logo-blue.svg" :alt="t.common.instituteName" class="h-auto w-[112px] object-contain brightness-0 invert" />
     </RouterLink>
 
-    <nav :class="['flex-1 space-y-1 text-[14px] text-sidebar-foreground', isSidebarCollapsed ? 'px-0 py-0' : 'px-4 py-3']">
-      <div v-if="!isSidebarCollapsed" class="px-1 pb-2 text-xs font-medium text-[#c1cef6]">{{ t.sidebar.menu }}</div>
+    <nav :class="['flex-1 space-y-1 text-[13px] text-sidebar-foreground', isSidebarCollapsed ? 'px-0 py-0' : 'px-4 py-3']">
+      <div v-if="!isSidebarCollapsed" class="px-4 pb-2 text-sm font-semibold leading-5 text-[#dce6ff]">{{ t.sidebar.menu }}</div>
       <div
         v-for="(item, index) in navItems"
         :key="item.href"
       >
         <div
           v-if="!isSidebarCollapsed && item.group && item.group !== navItems[index - 1]?.group"
-          class="px-4 pb-1 pt-4 text-xs font-medium text-[#c1cef6]"
+          class="px-4 pb-1 pt-4 text-sm font-semibold leading-5 text-[#dce6ff]"
         >
           {{ item.group }}
         </div>
@@ -315,7 +315,7 @@ async function handleLogout() {
           :class="[
             'group/nav-item relative flex h-9 items-center rounded-lg transition-colors duration-200',
             isSidebarCollapsed ? 'mx-auto w-9 justify-center px-0' : 'justify-between px-4',
-            isNavItemActive(item.href) ? 'bg-sidebar-accent font-semibold text-white' : 'text-white/80 hover:bg-white/10 hover:text-white',
+            isNavItemActive(item.href) ? 'bg-sidebar-accent font-semibold text-white' : 'text-white/75 hover:bg-white/10 hover:text-white',
           ]"
           @pointerenter="preloadCandidateRoute(item.href)"
           @focus="preloadCandidateRoute(item.href)"
