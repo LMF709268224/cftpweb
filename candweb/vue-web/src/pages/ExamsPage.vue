@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { RouterLink, useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
-import { AlertCircle, CalendarClock, CheckCircle2, ClipboardList, ExternalLink, History, Loader2, RefreshCw, Search, ShieldCheck, XCircle } from "lucide-vue-next"
+import { AlertCircle, CalendarClock, CheckCircle2, ClipboardList, ExternalLink, History, Loader2, RefreshCw, Search, ShieldCheck } from "lucide-vue-next"
 import { EXAM_STATUS_LABELS, normalizeEnumValueUpper, statusBadgeClassForStatusValue, statusLabel } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
 import AppPagination from "@/components/AppPagination.vue"
@@ -22,7 +22,6 @@ const loading = ref(false)
 const loadError = ref(false)
 const scheduleLoadingExamId = ref<string | null>(null)
 const pendingScheduleExamIds = ref<Record<string, number>>({})
-const pendingExamActionIds = ref<Record<string, number>>({})
 const retakeLoadingUnitId = ref<string | null>(null)
 const search = ref("")
 const exams = ref<any[]>([])
@@ -143,15 +142,6 @@ function cleanupExpiredPendingScheduleIds(now = Date.now()) {
     }
   }
   if (changed) pendingScheduleExamIds.value = next
-  const actionNext = { ...pendingExamActionIds.value }
-  let actionChanged = false
-  for (const [examId, startedAt] of Object.entries(actionNext)) {
-    if (now - startedAt > SCHEDULE_PENDING_TTL_MS) {
-      delete actionNext[examId]
-      actionChanged = true
-    }
-  }
-  if (actionChanged) pendingExamActionIds.value = actionNext
 }
 function markSchedulePending(examId?: string | null) {
   const normalized = String(examId || "").trim()
@@ -194,31 +184,6 @@ function canScheduleExamFromBackend(exam: any) {
 }
 function canScheduleExam(exam: any) {
   return canScheduleExamFromBackend(exam) && !isSchedulePending(exam)
-}
-function markExamActionPending(examId?: string | null) {
-  const normalized = String(examId || "").trim()
-  if (!normalized) return
-  pendingExamActionIds.value = { ...pendingExamActionIds.value, [normalized]: Date.now() }
-}
-function isExamActionPending(exam: any) {
-  const examId = examIdOf(exam)
-  const startedAt = examId ? pendingExamActionIds.value[examId] : undefined
-  return Boolean(startedAt && Date.now() - startedAt <= SCHEDULE_PENDING_TTL_MS)
-}
-function isScheduledExam(exam: any) {
-  return shouldShowStoredExamDetails(exam) && normalizedExamStatus(exam?.exam_status) === "SCHEDULED"
-}
-function canManageScheduledExam(exam: any) {
-  if (activeTab.value === "history" || !isScheduledExam(exam) || hasExamResult(exam) || isWaitingScheduleSync(exam) || isSchedulePending(exam) || isExamActionPending(exam)) return false
-  if (!hasText(exam?.confirmation_number)) return false
-  const rawStart = String(exam?.appointment_start_time || "").trim()
-  if (!rawStart) return true
-  const start = Date.parse(rawStart)
-  return !Number.isFinite(start) || start > Date.now()
-}
-function isOnlineExam(exam: any) {
-  const mode = normalizeEnumValueUpper(exam?.delivery_mode)
-  return mode.includes("PROCTOR") || mode.includes("ONLINE")
 }
 function canSignupExam(exam: any) {
   return Boolean(activeTab.value !== "history" && exam.course_unit_ulid && isWaitingSignupExamUnit(exam))
@@ -291,7 +256,7 @@ function syncPendingScheduleState(latestExams: any[]) {
 }
 function hasPendingScheduleExams() {
   cleanupExpiredPendingScheduleIds()
-  return Object.keys(pendingScheduleExamIds.value).length > 0 || Object.keys(pendingExamActionIds.value).length > 0
+  return Object.keys(pendingScheduleExamIds.value).length > 0
 }
 function refreshAfterScheduleReturn() {
   if (!hasPendingScheduleExams()) return
@@ -359,19 +324,16 @@ async function loadExams(tab: TabId = activeTab.value, keyword = search.value, s
   }
 }
 
-async function openScheduleAction(exam: any, action: "schedule" | "reschedule" | "cancel") {
+async function handleScheduleExam(exam: any) {
   if (!exam.exam_id || scheduleLoadingExamId.value) return
-  if (action === "schedule" ? !canScheduleExam(exam) : !canManageScheduledExam(exam)) return
   scheduleLoadingExamId.value = exam.exam_id
   try {
     const termUrlBase = window.location.origin + "/api/public/webhooks/exams/callback"
-    const urlType = action === "schedule" ? (isOnlineExam(exam) ? "proctorsch" : "schd") : action === "cancel" ? "cancel" : (isOnlineExam(exam) ? "proctorresch" : "reschd")
-    const params = new URLSearchParams({ url_type: urlType, term_url_base: termUrlBase })
+    const params = new URLSearchParams({ url_type: "schd", term_url_base: termUrlBase })
     const res = await apiClient(`/api/exams/${encodeURIComponent(exam.exam_id)}/schedule-url?${params.toString()}`)
     if (res?.url) {
-      if (action === "schedule") markSchedulePending(exam.exam_id)
-      else markExamActionPending(exam.exam_id)
-      toast.info(action === "schedule" ? t.value.examsPage.scheduleRedirecting : action === "cancel" ? t.value.examsPage.cancelRedirecting : t.value.examsPage.rescheduleRedirecting)
+      markSchedulePending(exam.exam_id)
+      toast.info(t.value.examsPage.scheduleRedirecting)
       window.open(res.url, "_blank", "noopener,noreferrer")
     } else {
       toast.error(t.value.examsPage.scheduleURLMissing)
@@ -381,15 +343,6 @@ async function openScheduleAction(exam: any, action: "schedule" | "reschedule" |
   } finally {
     scheduleLoadingExamId.value = null
   }
-}
-async function handleScheduleExam(exam: any) {
-  await openScheduleAction(exam, "schedule")
-}
-async function handleRescheduleExam(exam: any) {
-  await openScheduleAction(exam, "reschedule")
-}
-async function handleCancelExam(exam: any) {
-  await openScheduleAction(exam, "cancel")
 }
 
 async function handleApplyRetake(exam: any) {
@@ -639,18 +592,6 @@ onBeforeUnmount(() => {
                   <ExternalLink v-else class="h-4 w-4" />
                   {{ t.learning.actionScheduleExam }}
                 </button>
-                <template v-if="canManageScheduledExam(exam)">
-                  <button class="btn h-10 w-full rounded-lg border border-primary/30 bg-white px-5 text-primary sm:w-auto" :disabled="scheduleLoadingExamId === exam.exam_id" @click="handleRescheduleExam(exam)">
-                    <Loader2 v-if="scheduleLoadingExamId === exam.exam_id" class="h-4 w-4 animate-spin" />
-                    <RefreshCw v-else class="h-4 w-4" />
-                    {{ t.examsPage.actionRescheduleExam }}
-                  </button>
-                  <button class="btn h-10 w-full rounded-lg border border-red-200 bg-white px-5 text-red-700 sm:w-auto" :disabled="scheduleLoadingExamId === exam.exam_id" @click="handleCancelExam(exam)">
-                    <Loader2 v-if="scheduleLoadingExamId === exam.exam_id" class="h-4 w-4 animate-spin" />
-                    <XCircle v-else class="h-4 w-4" />
-                    {{ t.examsPage.actionCancelExam }}
-                  </button>
-                </template>
                 <RouterLink v-if="hasExamResult(exam)" :to="`/exams/result?examId=${encodeURIComponent(exam.exam_id)}`" class="btn btn-primary h-10 w-full rounded-lg px-5 shadow-sm shadow-primary/20 sm:w-auto">{{ t.examsPage.viewResult }}</RouterLink>
                 <span v-else-if="isPendingGradingExam(exam)" class="inline-flex h-10 w-full items-center justify-center rounded-lg border border-amber-200 bg-amber-50 px-5 text-sm font-semibold text-amber-800 sm:w-auto">{{ t.examsPage.statusPendingGrading }}</span>
               </div>
