@@ -13,6 +13,11 @@ import (
 	lmspb "github.com/afnandelfin620-star/cftptest/cftp/glms"
 )
 
+const (
+	maxResourcePackLookupPages = 100
+	maxResourcePackLookupRPCs  = 500
+)
+
 // ListResourcePacks GET /api/resource-packs
 func (h *Handler) ListResourcePacks(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
@@ -205,10 +210,14 @@ func (h *Handler) GetResourcePackFileViewURL(w http.ResponseWriter, r *http.Requ
 
 func (h *Handler) findResourcePackFileForCandidate(r *http.Request, candidateID string, fileID string) (*lmspb.ResourcePackFile, error) {
 	const pageSize uint32 = 100
-	const maxPages = 1000
+	lookupRPCs := 0
 	packCursor := ""
 	seenPackCursors := make(map[string]struct{})
-	for packPage := 0; packPage < maxPages; packPage++ {
+	for packPage := 0; packPage < maxResourcePackLookupPages; packPage++ {
+		if lookupRPCs >= maxResourcePackLookupRPCs {
+			return nil, status.Error(codes.ResourceExhausted, "resource pack lookup exceeded request budget")
+		}
+		lookupRPCs++
 		packsResp, err := h.Lms.ListResourcePacks(r.Context(), &lmspb.ListResourcePacksCandidateRequest{
 			Filters: &lmspb.ResourcePackCandidateFilters{
 				CandidateUlid: candidateID,
@@ -224,7 +233,11 @@ func (h *Handler) findResourcePackFileForCandidate(r *http.Request, candidateID 
 			fileCursor := ""
 			seenFileCursors := make(map[string]struct{})
 			filesComplete := false
-			for filePage := 0; filePage < maxPages; filePage++ {
+			for filePage := 0; filePage < maxResourcePackLookupPages; filePage++ {
+				if lookupRPCs >= maxResourcePackLookupRPCs {
+					return nil, status.Error(codes.ResourceExhausted, "resource pack lookup exceeded request budget")
+				}
+				lookupRPCs++
 				listResp, err := h.Lms.ListResourcePackFiles(r.Context(), &lmspb.ListResourcePackFilesCandidateRequest{
 					Filters: &lmspb.ResourcePackFileCandidateFilters{
 						CandidateUlid: candidateID,
@@ -256,7 +269,7 @@ func (h *Handler) findResourcePackFileForCandidate(r *http.Request, candidateID 
 				fileCursor = nextCursor
 			}
 			if !filesComplete {
-				return nil, status.Error(codes.Internal, "resource pack file pagination exceeded max pages")
+				return nil, status.Error(codes.ResourceExhausted, "resource pack file pagination exceeded lookup budget")
 			}
 		}
 
@@ -274,7 +287,7 @@ func (h *Handler) findResourcePackFileForCandidate(r *http.Request, candidateID 
 		packCursor = nextCursor
 	}
 
-	return nil, status.Error(codes.Internal, "resource pack pagination exceeded max pages")
+	return nil, status.Error(codes.ResourceExhausted, "resource pack pagination exceeded lookup budget")
 }
 
 func parseUint32Query(r *http.Request, key string) uint32 {

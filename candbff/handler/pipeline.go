@@ -499,6 +499,9 @@ func (h *Handler) GetLessonVideoPlayURL(w http.ResponseWriter, r *http.Request) 
 	})
 }
 
+// TODO(security): src is a client-supplied complete URL. A user can replace an
+// uploaded S3 URL with a phishing URL that an administrator later follows.
+// Store an object key/file ID and generate a candidate-scoped URL server-side.
 func (h *Handler) GetResourcePreviewURL(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
 	resourceURL := strings.TrimSpace(r.URL.Query().Get("src"))
@@ -535,6 +538,7 @@ func (h *Handler) PreviewLessonPDF(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) PreviewResourceURL(w http.ResponseWriter, r *http.Request) {
+	// The security TODO above also applies to this redirecting variant.
 	candidateID := CandidateID(r)
 	resourceURL := strings.TrimSpace(r.URL.Query().Get("src"))
 	if !requireRequestFields(w, candidateID, "candidate_id", resourceURL, "src") {

@@ -1176,18 +1176,12 @@ func (h *Handler) activeBundleOrder(ctx context.Context, candidateID string, bun
 	if candidateID == "" || bundleID == "" {
 		return nil, nil
 	}
-	resp, err := h.Mall.ListBundleOrders(ctx, &mallpb.ListBundleOrdersRequest{
-		Filters: &mallpb.BundleOrderFilters{
-			CandidateUlid: candidateID,
-			BundleUlid:    bundleID,
-		},
-		PageSize: 20,
-	})
+	orders, err := h.listCandidateBundleOrders(ctx, candidateID, bundleID, 20)
 	if err != nil {
 		slog.Warn("Failed to load active bundle order during enrichment", "error", err, "candidate_id", candidateID, "bundle_id", bundleID)
 		return nil, nil
 	}
-	for _, item := range resp.GetItems() {
+	for _, item := range orders {
 		if item == nil || !isOpenMallOrderStatus(item.GetOrderStatus()) {
 			continue
 		}
@@ -1227,14 +1221,9 @@ func (h *Handler) activeBundleOrder(ctx context.Context, candidateID string, bun
 
 	if hasBlocker {
 		// Search ALL bundle orders for this candidate to find the blocking one
-		respAll, err := h.Mall.ListBundleOrders(ctx, &mallpb.ListBundleOrdersRequest{
-			Filters: &mallpb.BundleOrderFilters{
-				CandidateUlid: candidateID,
-			},
-			PageSize: 50,
-		})
+		ordersAll, err := h.listCandidateBundleOrders(ctx, candidateID, "", 50)
 		if err == nil {
-			for _, item := range respAll.GetItems() {
+			for _, item := range ordersAll {
 				if item == nil || !isOpenMallOrderStatus(item.GetOrderStatus()) {
 					continue
 				}
@@ -1289,6 +1278,37 @@ func (h *Handler) activeBundleOrder(ctx context.Context, candidateID string, bun
 	}
 
 	return nil, nil
+}
+
+func (h *Handler) listCandidateBundleOrders(ctx context.Context, candidateID, bundleID string, pageSize uint32) ([]*mallpb.BundleOrderSummary, error) {
+	orders := make([]*mallpb.BundleOrderSummary, 0)
+	cursor := ""
+	guard := newCursorScanGuard()
+	for {
+		resp, err := h.Mall.ListBundleOrders(ctx, &mallpb.ListBundleOrdersRequest{
+			Filters: &mallpb.BundleOrderFilters{
+				CandidateUlid: candidateID,
+				BundleUlid:    bundleID,
+			},
+			Cursor:   cursor,
+			PageSize: pageSize,
+		})
+		if err != nil {
+			return nil, err
+		}
+		if resp == nil {
+			return nil, gstatus.Error(codes.Internal, "empty bundle orders response")
+		}
+		orders = append(orders, resp.GetItems()...)
+		nextCursor, done, guardErr := guard.next(cursor, resp.GetHasMore(), resp.GetNextCursor())
+		if guardErr != nil {
+			return nil, gstatus.Error(codes.Internal, guardErr.Error())
+		}
+		if done {
+			return orders, nil
+		}
+		cursor = nextCursor
+	}
 }
 
 func (h *Handler) pipelineExemptionOptions(ctx context.Context, candidateID string, pipelineID string, locale string) *PipelineExemptionOptionsRsp {
