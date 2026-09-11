@@ -984,7 +984,7 @@ test("已持有有效资格的课程自动免考且不可取消", async ({ page 
     const qualificationCard = page.locator(".checkout-unit-card").filter({
         has: page.getByText("CFtA Course", { exact: true }),
     })
-    await qualificationCard.getByRole("button", { name: "查看已上传文件", exact: true }).click()
+    await qualificationCard.getByRole("button", { name: "查看证明材料", exact: true }).click()
     const uploadedFilesDialog = page.getByRole("dialog", { name: "已上传文件" })
     await expect(uploadedFilesDialog.getByText("employment-proof.pdf", { exact: true })).toBeVisible()
     await expect(uploadedFilesDialog.getByRole("link", { name: "查看", exact: true })).toHaveAttribute(
@@ -1005,7 +1005,7 @@ test("已持有有效资格的课程自动免考且不可取消", async ({ page 
         await expect(item).toContainText(unit.name)
         await expect(item).toContainText((unit.amount / 100).toLocaleString("en-US", { maximumFractionDigits: 2 }))
     }
-    await expect(page.locator(".checkout-step-one-title")).toContainText("可免考科目与申请")
+    await expect(page.locator(".checkout-step-one-title")).toContainText("模块免考")
     await expect(page.locator(".checkout-total")).toContainText("总费用")
     await expect(page.locator(".checkout-total")).toContainText("3,950")
     const totalPrecedesPaperSelection = await page.locator(".checkout-total").evaluate((total) => {
@@ -1016,7 +1016,8 @@ test("已持有有效资格的课程自动免考且不可取消", async ({ page 
     expect(pricingModes).toContain("FULL_PIPELINE")
 
     await page.getByRole("button", { name: "中文 / EN" }).click()
-    await expect(page.locator(".checkout-step-one-title")).toContainText("Exemption-Eligible Subjects & Applications")
+    await expect(page.locator(".checkout-step-one-title")).toContainText("Module Exemptions")
+    await expect(qualificationCard.getByRole("button", { name: "View Supporting Documents", exact: true })).toBeVisible()
     await expect(enrollmentFeeItem).toContainText("Enrollment fee")
     await expect(enrollmentFeeItem.locator(".checkout-included-item-stage")).toHaveCount(0)
     await expect(page.locator(`[data-testid="checkout-included-item"][data-item-id="unit-foundation"]`)).toContainText("CFtP Foundation Course")
@@ -1557,17 +1558,26 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
     expect(submitRequest.files).toHaveLength(1)
     expect(submitRequest.files[0].file_usage).toBe("Employment Certificate")
     await expect.poll(() => applicationOrderRequests).toBeGreaterThan(initialApplicationOrderRequests)
-    await expect(qualificationCard).toContainText("材料已提交，正在审核。")
+    await expect(qualificationCard).toContainText("免考申请已提交，目前正在审核中。")
+    await expect(qualificationCard).toContainText("我们正在审核你的证明材料。审核结果确定后，我们会通知你。")
     await expect(qualificationCard).not.toContainText("资格认证申请已创建，请在下方上传材料。")
     await expect(blockerPanel).toContainText("免考资格认证正在审核中")
     await expect(blockerPanel).not.toContainText("您的免考申请材料尚未提交")
     await expect(page.getByTestId("checkout-selection-next")).toBeDisabled()
+
+    await page.getByRole("button", { name: "中文 / EN" }).click()
+    await expect(qualificationCard).toContainText("Your exemption application has been submitted and is currently under review.")
+    await expect(qualificationCard).toContainText("We are reviewing your supporting documents. You will be notified once a decision has been made.")
 })
 
 test("资格申请页允许 PendingUpload 申请上传", async ({ page }) => {
     const includedQualificationID = "qualification-active-order-included"
+    let uploadRequests = 0
 
-    await installCandidateApiMocks(page, ({ pathname }) => {
+    await page.route("https://uploads.example/**", async (route) => {
+        await route.fulfill({ status: 200, body: "" })
+    })
+    await installCandidateApiMocks(page, ({ pathname, method }) => {
         if (pathname === "/api/credentials/definitions") {
             return {
                 data: {
@@ -1576,7 +1586,12 @@ test("资格申请页允许 PendingUpload 申请上传", async ({ page }) => {
                         name: "Included Qualification",
                         category: "Exemption",
                         respath: "/gcreds/core/included",
-                        file_constraints: [],
+                        file_constraints: [{
+                            name: "Employment Certificate",
+                            display_name: "雇佣证明",
+                            type: 2,
+                            is_required: true,
+                        }],
                         latest_application: {
                             app_ulid: "application-active-order-pending-upload",
                             cred_def_ulid: includedQualificationID,
@@ -1597,6 +1612,16 @@ test("资格申请页允许 PendingUpload 申请上传", async ({ page }) => {
                 },
             }
         }
+        if (pathname === "/api/credentials/upload-url" && method === "POST") {
+            uploadRequests += 1
+            return {
+                data: {
+                    upload_url: `https://uploads.example/final-qualification-${uploadRequests}.pdf`,
+                    file_key: `credentials/final-qualification-${uploadRequests}.pdf`,
+                    signed_headers: {},
+                },
+            }
+        }
         return undefined
     })
 
@@ -1608,7 +1633,33 @@ test("资格申请页允许 PendingUpload 申请上传", async ({ page }) => {
     await expect(includedQualificationCard.getByRole("button", { name: "上传证明材料", exact: true })).toBeEnabled()
     await expect(page.getByText("Excluded Qualification", { exact: true })).toHaveCount(0)
     await includedQualificationCard.getByRole("button", { name: "上传证明材料", exact: true }).click()
-    await expect(page.locator(".credentials-apply-dialog").getByText("Included Qualification", { exact: true })).toBeVisible()
+    const applyDialog = page.locator(".credentials-apply-dialog")
+    await expect(applyDialog.getByText("Included Qualification", { exact: true })).toBeVisible()
+
+    const fileInput = applyDialog.locator('[id="file-Employment Certificate"]')
+    await fileInput.setInputFiles({
+        name: "final-qualification.pdf",
+        mimeType: "application/pdf",
+        buffer: Buffer.from("final-qualification-pdf"),
+    })
+    await expect(applyDialog.getByText("final-qualification.pdf 上传成功", { exact: true })).toBeVisible()
+    await expect(applyDialog.getByRole("link", { name: "预览", exact: true })).toHaveAttribute("href", /^blob:/)
+
+    const fileChooserPromise = page.waitForEvent("filechooser")
+    await applyDialog.getByRole("button", { name: "更换", exact: true }).click()
+    const fileChooser = await fileChooserPromise
+    await fileChooser.setFiles({
+        name: "replacement-final-qualification.pdf",
+        mimeType: "application/pdf",
+        buffer: Buffer.from("replacement-final-qualification-pdf"),
+    })
+    await expect(applyDialog.getByText("replacement-final-qualification.pdf 上传成功", { exact: true })).toBeVisible()
+    await expect(applyDialog.getByText("final-qualification.pdf 上传成功", { exact: true })).toHaveCount(0)
+
+    await applyDialog.getByRole("button", { name: "删除", exact: true }).click()
+    await expect(applyDialog.getByText("replacement-final-qualification.pdf 上传成功", { exact: true })).toHaveCount(0)
+    await expect(applyDialog.getByRole("link", { name: "预览", exact: true })).toHaveCount(0)
+    expect(uploadRequests).toBe(2)
 })
 
 test("资格申请记录详情显示完整审核备注和已上传文件", async ({ page }) => {
@@ -1812,18 +1863,20 @@ test("免考选择完成后按资格创建独立订单，已拒绝资格仍可�
     const chineseWaiveButton = page.locator(`[data-testid="checkout-exemption-waive"][data-unit-id="${waiveUnitID}"]`)
     await expect(chineseApplyButton).toHaveAttribute("role", "radio")
     await expect(chineseApplyButton).toHaveAttribute("aria-checked", "false")
-    await expect(chineseApplyButton).toContainText("提交学历证书及成绩单以供审核。")
-    await expect(chineseWaiveButton).toContainText("不申请免考")
-    await expect(chineseWaiveButton).toContainText("直接参加考试，无需提交证明材料。")
+    await expect(chineseApplyButton).toContainText("提交您的学位证书和学业成绩单。")
+    await expect(chineseApplyButton).toContainText("免考费：")
+    await expect(chineseWaiveButton).toContainText("参加考试")
+    await expect(chineseWaiveButton).toContainText("参加该模块的考试。")
     await page.getByRole("button", { name: "中文 / EN" }).click()
     await expect(page.getByText("No option selected", { exact: true })).toHaveCount(1)
     const englishApplyButton = page.locator(`[data-testid="checkout-exemption-apply"][data-unit-id="${applyUnitID}"]`)
     const englishWaiveButton = page.locator(`[data-testid="checkout-exemption-waive"][data-unit-id="${waiveUnitID}"]`)
     await expect(englishApplyButton).toHaveAttribute("role", "radio")
     await expect(englishApplyButton).toHaveAttribute("aria-checked", "false")
-    await expect(englishApplyButton).toContainText("Submit your degree certificate and transcript for review.")
-    await expect(englishWaiveButton).toContainText("Do Not Apply for Exemption")
-    await expect(englishWaiveButton).toContainText("Sit the exam. No evidence required.")
+    await expect(englishApplyButton).toContainText("Submit your degree certificate and academic transcript.")
+    await expect(englishApplyButton).toContainText("Exemption Fee:")
+    await expect(englishWaiveButton).toContainText("Take the Examination")
+    await expect(englishWaiveButton).toContainText("Take the examination for this module.")
     await englishWaiveButton.click()
     await expect(englishWaiveButton).toHaveAttribute("aria-checked", "true")
     await expect(englishWaiveButton).toHaveClass(/is-selected/)
@@ -1832,15 +1885,15 @@ test("免考选择完成后按资格创建独立订单，已拒绝资格仍可�
     await page.getByRole("button", { name: "EN / 中文" }).click()
     await expect(selectionNextButton).toBeEnabled()
     await selectionNextButton.click()
-    await expect(page.getByText("请先为“Apply Exemption Course”选择“申请免考”或“不申请免考”。", { exact: true })).toBeVisible()
+    await expect(page.getByText("请先为“Apply Exemption Course”选择“申请免考”或“参加考试”。", { exact: true })).toBeVisible()
 
     await page.getByRole("button", { name: "中文 / EN" }).click()
     await selectionNextButton.click()
-    await expect(page.getByText("Choose Apply for Exemption or Do Not Apply for Exemption for “Apply Exemption Course” first.", { exact: true })).toBeVisible()
+    await expect(page.getByText("Choose Apply for Exemption or Take the Examination for “Apply Exemption Course” first.", { exact: true })).toBeVisible()
     await page.getByRole("button", { name: "EN / 中文" }).click()
 
     const waiveButton = page.locator(`[data-testid="checkout-exemption-waive"][data-unit-id="${waiveUnitID}"]`)
-    await expect(waiveButton).toContainText("不申请免考")
+    await expect(waiveButton).toContainText("参加考试")
     await page.locator(`[data-testid="checkout-exemption-apply"][data-unit-id="${applyUnitID}"]`).click()
     await page.locator(`[data-testid="checkout-exemption-qualification-select"][data-unit-id="${applyUnitID}"]`).selectOption(applyQualificationID)
     await expect(page.locator("h4").filter({ hasText: /^CFtP 金融课程模块（L1A）免考申请$/ })).toBeVisible()

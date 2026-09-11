@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue"
+import { computed, onMounted, onUnmounted, ref, watch } from "vue"
 import { useRoute } from "vue-router"
-import { AlertCircle, Award, CheckCircle, Clock, Download, Eye, FileText, Loader2, X, XCircle } from "lucide-vue-next"
+import { AlertCircle, Award, CheckCircle, Clock, Download, Eye, FileText, Loader2, RefreshCw, Trash2, X, XCircle } from "lucide-vue-next"
 import { getFileConstraintInfo } from "../lib/fileConstraints"
 import { CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, CANDIDATE_APPLICATION_STATUS_LABELS, statusEnumNameForStatus, statusLabel } from "@/lib/status-labels"
 import AppPagination from "@/components/AppPagination.vue"
@@ -44,7 +44,16 @@ const applicationDetailLoading = ref(false)
 const applicationDetailError = ref(false)
 let applicationDetailRequestID = 0
 useBodyScrollLock(() => isApplyOpen.value || applicationDetailDialogOpen.value)
-const uploadedFiles = ref<Record<string, { name: string; url: string; ext: string; hash: string; size: number }>>({})
+type UploadedCredentialFile = {
+  name: string
+  url: string
+  ext: string
+  hash: string
+  size: number
+  previewUrl: string
+}
+
+const uploadedFiles = ref<Record<string, UploadedCredentialFile>>({})
 const isSubmitting = ref(false)
 const uploadingConstraintName = ref("")
 
@@ -146,13 +155,14 @@ function handleApplyClick(def: any, appId = "") {
   if (!existing || (!isPendingUploadStatus(existing.status) && !canResubmit(existing.status))) return
   resubmitAppId.value = canResubmit(existing.status) ? (appId || applicationId(existing)) : ""
   selectedDef.value = def
-  uploadedFiles.value = {}
+  clearUploadedFiles()
   isApplyOpen.value = true
 }
 
 function onConstraintFileChange(event: Event, constraint: any) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
+  input.value = ""
   if (file) void handleFileUpload(constraint, file)
 }
 
@@ -172,6 +182,26 @@ function constraintDisplayName(constraint: any) {
 
 function triggerFileInput(constraintName: string) {
   document.getElementById(`file-${constraintName}`)?.click()
+}
+
+function clearUploadedFiles() {
+  Object.values(uploadedFiles.value).forEach((file) => URL.revokeObjectURL(file.previewUrl))
+  uploadedFiles.value = {}
+}
+
+function removeUploadedFile(constraintName: string) {
+  const file = uploadedFiles.value[constraintName]
+  if (!file) return
+
+  URL.revokeObjectURL(file.previewUrl)
+  const nextFiles = { ...uploadedFiles.value }
+  delete nextFiles[constraintName]
+  uploadedFiles.value = nextFiles
+}
+
+function closeApplyDialog() {
+  clearUploadedFiles()
+  isApplyOpen.value = false
 }
 
 async function handleFileUpload(constraint: any, file: File) {
@@ -201,7 +231,19 @@ async function handleFileUpload(constraint: any, file: File) {
     })
     const uploadRes = await uploadWithTimeout(res.upload_url, { method: "PUT", headers: new Headers(res.signed_headers || {}), body: file })
     if (!uploadRes.ok) throw new Error(`S3 upload failed: ${uploadRes.status} ${uploadRes.statusText}`)
-    uploadedFiles.value = { ...uploadedFiles.value, [constraintName]: { name: file.name, url: res.file_key, ext: fileExt, hash: fileHash, size: file.size } }
+    const previousFile = uploadedFiles.value[constraintName]
+    if (previousFile) URL.revokeObjectURL(previousFile.previewUrl)
+    uploadedFiles.value = {
+      ...uploadedFiles.value,
+      [constraintName]: {
+        name: file.name,
+        url: res.file_key,
+        ext: fileExt,
+        hash: fileHash,
+        size: file.size,
+        previewUrl: URL.createObjectURL(file),
+      },
+    }
   } catch (err: any) {
     toast.error(`${t.value.credentialsPage.uploadFailed}: ${err?.message || err}`)
   } finally {
@@ -244,7 +286,7 @@ async function handleSubmitApplication() {
       await apiClient("/api/credentials/submit", { method: "POST", body: JSON.stringify({ cred_def_ulid: credentialDefinitionId(selectedDef.value), files: evidenceFiles }) })
     }
     toast.success(t.value.credentialsPage.submitSuccess)
-    isApplyOpen.value = false
+    closeApplyDialog()
     applicationPage.value = 1
     await fetchData()
   } catch {
@@ -253,6 +295,8 @@ async function handleSubmitApplication() {
     isSubmitting.value = false
   }
 }
+
+onUnmounted(clearUploadedFiles)
 
 function statusIcon(status: string) {
   const s = statusEnumNameForStatus(CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, status).toUpperCase()
@@ -547,7 +591,7 @@ watch(
                 <button
                   v-if="!isPendingUploadStatus(app.status)"
                   type="button"
-                  class="application-details-btn btn btn-outline h-9 cursor-pointer whitespace-nowrap rounded-lg px-3 py-1 text-sm text-primary hover:border-primary/30 hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  class="application-details-btn btn h-9 cursor-pointer whitespace-nowrap rounded-lg bg-primary px-3 py-1 text-sm text-white shadow-sm shadow-primary/20 hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                   data-testid="application-view-details"
                   :disabled="!applicationId(app)"
                   @click="openApplicationDetail(app)"
@@ -681,7 +725,12 @@ watch(
       <div class="credentials-apply-dialog w-full max-w-md rounded-[16px] bg-white p-4 shadow-lg shadow-slate-900/20">
         <div class="credentials-apply-header flex items-start justify-between gap-4">
           <h2 class="text-lg font-semibold leading-none tracking-tight">{{ selectedDef?.name }}</h2>
-          <button class="credentials-apply-close flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-500 transition hover:border-primary/25 hover:text-primary" @click="isApplyOpen = false">
+          <button
+            class="credentials-apply-close flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-500 transition hover:border-primary/25 hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+            :disabled="isSubmitting || Boolean(uploadingConstraintName)"
+            :aria-label="t.common.close"
+            @click="closeApplyDialog"
+          >
             <X class="h-5 w-5" />
           </button>
         </div>
@@ -708,12 +757,51 @@ watch(
               <p class="text-xs text-muted-foreground">
                 {{ getFormatHint(constraint) }}
               </p>
-              <p v-if="uploadedFiles[constraint.name]" class="flex items-center gap-1 text-xs text-green-600"><CheckCircle class="h-3 w-3" /> {{ uploadSuccessText(uploadedFiles[constraint.name].name) }}</p>
+              <div
+                v-if="uploadedFiles[constraint.name]"
+                class="mt-3 flex flex-col gap-3 rounded-lg border border-emerald-200 bg-emerald-50/60 p-3"
+              >
+                <p class="flex min-w-0 items-center gap-1 text-xs font-medium text-emerald-700">
+                  <CheckCircle class="h-3.5 w-3.5 shrink-0" />
+                  <span class="truncate" :title="uploadedFiles[constraint.name].name">
+                    {{ uploadSuccessText(uploadedFiles[constraint.name].name) }}
+                  </span>
+                </p>
+                <div class="flex flex-wrap gap-2">
+                  <a
+                    :href="uploadedFiles[constraint.name].previewUrl"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="inline-flex h-8 items-center gap-1 rounded-lg border border-emerald-300 bg-white px-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100"
+                  >
+                    <Eye class="h-3.5 w-3.5" />
+                    {{ t.credentialsPage.previewFile }}
+                  </a>
+                  <button
+                    type="button"
+                    class="inline-flex h-8 items-center gap-1 rounded-lg border border-blue-200 bg-white px-2.5 text-xs font-bold text-blue-700 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    :disabled="Boolean(uploadingConstraintName) || isSubmitting"
+                    @click="triggerFileInput(constraint.name)"
+                  >
+                    <RefreshCw class="h-3.5 w-3.5" />
+                    {{ t.credentialsPage.replaceFile }}
+                  </button>
+                  <button
+                    type="button"
+                    class="inline-flex h-8 items-center gap-1 rounded-lg border border-rose-200 bg-white px-2.5 text-xs font-bold text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    :disabled="Boolean(uploadingConstraintName) || isSubmitting"
+                    @click="removeUploadedFile(constraint.name)"
+                  >
+                    <Trash2 class="h-3.5 w-3.5" />
+                    {{ t.credentialsPage.removeFile }}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
         <div class="credentials-apply-actions flex justify-end gap-3">
-          <button class="btn btn-outline cursor-pointer rounded-lg" @click="isApplyOpen = false">{{ t.common.cancel }}</button>
+          <button class="btn btn-outline cursor-pointer rounded-lg disabled:cursor-not-allowed" :disabled="isSubmitting || Boolean(uploadingConstraintName)" @click="closeApplyDialog">{{ t.common.cancel }}</button>
           <button class="btn btn-primary cursor-pointer rounded-lg shadow-sm shadow-primary/20 disabled:cursor-not-allowed" :disabled="isSubmitting || Boolean(uploadingConstraintName)" @click="handleSubmitApplication">
             <Loader2 v-if="isSubmitting" class="h-4 w-4 animate-spin" />
             {{ isSubmitting ? t.credentialsPage.submitting : t.credentialsPage.submitApplication }}
