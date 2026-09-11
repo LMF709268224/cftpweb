@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"candbff/config"
 	gccpb "github.com/afnandelfin620-star/cftptest/cftp/gcc"
 	lmspb "github.com/afnandelfin620-star/cftptest/cftp/glms"
 	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
@@ -16,6 +17,23 @@ import (
 
 type pipelineAccessProgClientStub struct {
 	gprogpb.ProgServiceClient
+}
+
+func TestPreviewResourceURLRequiresConfiguredOrigin(t *testing.T) {
+	t.Setenv(config.EnvPreviewAllowedOrigins, "https://files.example.test")
+	h := &Handler{}
+	recorder := httptest.NewRecorder()
+	request := newCandidateHandlerRequest(
+		http.MethodGet,
+		"/api/pipeline/resource-preview?src=https://evil.example.test/document.pdf",
+		"",
+		"candidate-1",
+		nil,
+	)
+
+	h.PreviewResourceURL(recorder, request)
+
+	assertHandlerAPIError(t, recorder, http.StatusBadRequest, ErrInvalidRequest)
 }
 
 func (s *pipelineAccessProgClientStub) ListCandidatePipelines(

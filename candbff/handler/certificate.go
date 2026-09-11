@@ -6,6 +6,8 @@ import (
 
 	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
 	"github.com/go-chi/chi/v5"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // ListCertificates GET /api/certificates 证书列表
@@ -13,20 +15,40 @@ func (h *Handler) ListCertificates(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
 	locale := requestLocale(r)
 
-	credsResp, err := h.Creds.ListCandidateCredentials(r.Context(), &gcredspb.ListCandidateCredentialsRequest{
-		CandidateUlid: candidateID,
-		PageSize:      100,
-	})
-	if err != nil {
-		HandleGrpcError(w, err)
-		return
+	credentials := make([]*gcredspb.CredentialSummary, 0)
+	cursor := ""
+	guard := newCursorScanGuard()
+	for {
+		credsResp, err := h.Creds.ListCandidateCredentials(r.Context(), &gcredspb.ListCandidateCredentialsRequest{
+			CandidateUlid: candidateID,
+			Cursor:        cursor,
+			PageSize:      100,
+		})
+		if err != nil {
+			HandleGrpcError(w, err)
+			return
+		}
+		if credsResp == nil {
+			HandleGrpcError(w, status.Error(codes.Internal, "empty candidate credentials response"))
+			return
+		}
+		credentials = append(credentials, credsResp.GetCredentials()...)
+		nextCursor, done, guardErr := guard.next(cursor, credsResp.GetHasMore(), credsResp.GetNextCursor())
+		if guardErr != nil {
+			HandleGrpcError(w, status.Error(codes.Internal, guardErr.Error()))
+			return
+		}
+		if done {
+			break
+		}
+		cursor = nextCursor
 	}
 
 	out := ListCertificatesRsp{
 		Certificates: make([]CertificateItem, 0),
 	}
 
-	for _, cred := range credsResp.GetCredentials() {
+	for _, cred := range credentials {
 		if cred == nil || strings.EqualFold(strings.TrimSpace(cred.GetSource()), "application") {
 			continue
 		}

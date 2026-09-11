@@ -20,6 +20,8 @@ type certificateRegressionClient struct {
 	definitionRequest *gcredspb.GetCredentialDefinitionDetailRequest
 	detailRequest     *gcredspb.GetCredentialDetailRequest
 	listResponse      *gcredspb.ListCandidateCredentialsResponse
+	listResponses     []*gcredspb.ListCandidateCredentialsResponse
+	listCalls         int
 	listErr           error
 	detailResponse    *gcredspb.Credential
 	detailErr         error
@@ -33,6 +35,14 @@ func (c *certificateRegressionClient) ListCandidateCredentials(
 	c.listRequest = request
 	if c.listErr != nil {
 		return nil, c.listErr
+	}
+	if len(c.listResponses) > 0 {
+		index := c.listCalls
+		if index >= len(c.listResponses) {
+			index = len(c.listResponses) - 1
+		}
+		c.listCalls++
+		return c.listResponses[index], nil
 	}
 	if c.listResponse != nil {
 		return c.listResponse, nil
@@ -186,6 +196,44 @@ func TestListCertificatesExcludesApplicationCredentials(t *testing.T) {
 	}
 	if response.Data.Certificates[0].CredUlid != "certificate-credential" {
 		t.Fatalf("credential = %q, want certificate-credential", response.Data.Certificates[0].CredUlid)
+	}
+}
+
+func TestListCertificatesReadsAllCredentialPages(t *testing.T) {
+	client := &certificateRegressionClient{
+		listResponses: []*gcredspb.ListCandidateCredentialsResponse{
+			{
+				Credentials: []*gcredspb.CredentialSummary{{
+					CredUlid: "credential-1", CandidateUlid: "candidate-1", CredDefUlid: "definition-1", Source: "pdf_cert",
+				}},
+				HasMore: true, NextCursor: "cursor-2",
+			},
+			{
+				Credentials: []*gcredspb.CredentialSummary{{
+					CredUlid: "credential-2", CandidateUlid: "candidate-1", CredDefUlid: "definition-2", Source: "pdf_cert",
+				}},
+			},
+		},
+	}
+	handler := &Handler{Creds: client}
+	recorder := httptest.NewRecorder()
+
+	handler.ListCertificates(recorder, newCandidateHandlerRequest(http.MethodGet, "/api/certificates", "", "candidate-1", nil))
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body=%q", recorder.Code, http.StatusOK, recorder.Body.String())
+	}
+	if client.listCalls != 2 || client.listRequest.GetCursor() != "cursor-2" {
+		t.Fatalf("list calls = %d, final request = %#v", client.listCalls, client.listRequest)
+	}
+	var response struct {
+		Data ListCertificatesRsp `json:"data"`
+	}
+	if err := json.NewDecoder(recorder.Body).Decode(&response); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if len(response.Data.Certificates) != 2 {
+		t.Fatalf("certificates = %d, want 2", len(response.Data.Certificates))
 	}
 }
 

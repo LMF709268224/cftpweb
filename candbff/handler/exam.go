@@ -174,6 +174,18 @@ func (h *Handler) PrepareRetakePayment(w http.ResponseWriter, r *http.Request) {
 		payment.message = firstNonEmpty(orderResp.GetMessage(), payment.message)
 		reusedExisting = orderResp.GetReusedExisting()
 	}
+	if strings.TrimSpace(payment.courseRetakeOrderUlid) == "" {
+		WriteError(w, http.StatusBadGateway, ErrServiceUnavailable, "retake payment status did not include an order ID")
+		return
+	}
+	if err := h.verifyRetakeOrderOwnership(r.Context(), candidateID, payment.courseRetakeOrderUlid, courseUnitUlid, input.CourseUnitCcULID, input.RetriedCount); err != nil {
+		if status.Code(err) == codes.NotFound || status.Code(err) == codes.PermissionDenied {
+			WriteError(w, http.StatusNotFound, ErrNotFound, "retake order not found or access denied")
+			return
+		}
+		HandleGrpcError(w, err)
+		return
+	}
 
 	if payment.isFree && !isOrderCompleted(payment.orderStatus) {
 		WriteError(w, http.StatusBadGateway, ErrServiceUnavailable, "free retake order was not completed")
@@ -206,11 +218,6 @@ func (h *Handler) PrepareRetakePayment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if payment.courseRetakeOrderUlid == "" {
-		WriteError(w, http.StatusBadGateway, ErrServiceUnavailable, "retake payment status did not include an order ID")
-		return
-	}
-
 	initResp, err := h.Mall.InitiatePayment(r.Context(), &mallpb.InitiatePaymentRequest{
 		BizType:    orderBizCourseRetakePayment,
 		BizRefUlid: payment.courseRetakeOrderUlid,
@@ -236,6 +243,27 @@ func (h *Handler) PrepareRetakePayment(w http.ResponseWriter, r *http.Request) {
 		ReusedExisting:        reusedExisting,
 		Message:               payment.message,
 	})
+}
+
+func (h *Handler) verifyRetakeOrderOwnership(ctx context.Context, candidateID, orderID, courseUnitUlid, courseUnitCcUlid string, retriedCount uint32) error {
+	resp, err := h.Mall.GetCourseRetakeOrderSummary(ctx, &mallpb.GetCourseRetakeOrderSummaryRequest{
+		CourseRetakeOrderUlid: strings.TrimSpace(orderID),
+	})
+	if err != nil {
+		return err
+	}
+	if resp == nil {
+		return status.Error(codes.Internal, "empty retake order summary response")
+	}
+	summary := resp.GetSummary()
+	if !resp.GetFound() || summary == nil ||
+		strings.TrimSpace(summary.GetCandidateUlid()) != strings.TrimSpace(candidateID) ||
+		strings.TrimSpace(summary.GetCourseUnitUlid()) != strings.TrimSpace(courseUnitUlid) ||
+		strings.TrimSpace(summary.GetCourseUnitCcUlid()) != strings.TrimSpace(courseUnitCcUlid) ||
+		summary.GetRetriedCount() != retriedCount {
+		return status.Error(codes.NotFound, "retake order not found or access denied")
+	}
+	return nil
 }
 
 func (h *Handler) retakePipelineUlid(ctx context.Context, courseUnitUlid, expectedCourseUnitCcUlid string) (string, error) {
@@ -763,40 +791,57 @@ func (h *Handler) completedBundleOrdersByPipeline(r *http.Request, candidateID s
 	if strings.TrimSpace(candidateID) == "" {
 		return out
 	}
-	resp, err := h.Mall.ListBundleOrders(r.Context(), &mallpb.ListBundleOrdersRequest{
-		Filters: &mallpb.BundleOrderFilters{
-			CandidateUlid: candidateID,
-		},
-		PageSize: 100,
-	})
-	if err != nil {
-		slog.Warn("ListExams list bundle orders failed", "candidate_id", candidateID, "error", err)
-		return out
-	}
-	for _, order := range resp.GetItems() {
-		if order == nil || strings.TrimSpace(order.GetBundleOrderUlid()) == "" {
-			continue
-		}
-		if !isOrderCompleted(order.GetOrderStatus()) {
-			continue
-		}
-		bundle, err := h.Mall.GetBundle(r.Context(), &mallpb.GetBundleRequest{
-			Query: &mallpb.GetBundleRequest_BundleUlid{BundleUlid: order.GetBundleUlid()},
+	cursor := ""
+	guard := newCursorScanGuard()
+	for {
+		resp, err := h.Mall.ListBundleOrders(r.Context(), &mallpb.ListBundleOrdersRequest{
+			Filters: &mallpb.BundleOrderFilters{
+				CandidateUlid: candidateID,
+			},
+			Cursor:   cursor,
+			PageSize: 100,
 		})
 		if err != nil {
-			slog.Warn("ListExams get bundle for order failed", "bundle_id", order.GetBundleUlid(), "bundle_order_ulid", order.GetBundleOrderUlid(), "error", err)
-			continue
+			slog.Warn("ListExams list bundle orders failed", "candidate_id", candidateID, "error", err)
+			return out
 		}
-		pipelineCcUlid := h.extractPipelineID(bundle.GetBundle())
-		if pipelineCcUlid == "" {
-			continue
+		if resp == nil {
+			slog.Warn("ListExams received empty bundle orders response", "candidate_id", candidateID)
+			return out
 		}
-		if out[pipelineCcUlid] == "" || strings.Compare(order.GetCreatedAt(), createdAtByPipeline[pipelineCcUlid]) > 0 {
-			out[pipelineCcUlid] = order.GetBundleOrderUlid()
-			createdAtByPipeline[pipelineCcUlid] = order.GetCreatedAt()
+		for _, order := range resp.GetItems() {
+			if order == nil || strings.TrimSpace(order.GetBundleOrderUlid()) == "" {
+				continue
+			}
+			if !isOrderCompleted(order.GetOrderStatus()) {
+				continue
+			}
+			bundle, err := h.Mall.GetBundle(r.Context(), &mallpb.GetBundleRequest{
+				Query: &mallpb.GetBundleRequest_BundleUlid{BundleUlid: order.GetBundleUlid()},
+			})
+			if err != nil {
+				slog.Warn("ListExams get bundle for order failed", "bundle_id", order.GetBundleUlid(), "bundle_order_ulid", order.GetBundleOrderUlid(), "error", err)
+				continue
+			}
+			pipelineCcUlid := h.extractPipelineID(bundle.GetBundle())
+			if pipelineCcUlid == "" {
+				continue
+			}
+			if out[pipelineCcUlid] == "" || strings.Compare(order.GetCreatedAt(), createdAtByPipeline[pipelineCcUlid]) > 0 {
+				out[pipelineCcUlid] = order.GetBundleOrderUlid()
+				createdAtByPipeline[pipelineCcUlid] = order.GetCreatedAt()
+			}
 		}
+		nextCursor, done, guardErr := guard.next(cursor, resp.GetHasMore(), resp.GetNextCursor())
+		if guardErr != nil {
+			slog.Warn("ListExams bundle order pagination failed", "candidate_id", candidateID, "error", guardErr)
+			return out
+		}
+		if done {
+			return out
+		}
+		cursor = nextCursor
 	}
-	return out
 }
 
 func (h *Handler) pipelineConfigIDFromRuntime(r *http.Request, pipelineUlid string) string {

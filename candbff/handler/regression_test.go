@@ -20,6 +20,22 @@ type retakeMallClientStub struct {
 	statusResp    *mallpb.GetCourseUnitRetakePaymentStatusResponse
 	statusErr     error
 	lastStatusReq *mallpb.GetCourseUnitRetakePaymentStatusRequest
+	summaryResp   *mallpb.GetCourseRetakeOrderSummaryResponse
+	summaryErr    error
+}
+
+func (s *retakeMallClientStub) GetCourseRetakeOrderSummary(
+	_ context.Context,
+	req *mallpb.GetCourseRetakeOrderSummaryRequest,
+	_ ...grpc.CallOption,
+) (*mallpb.GetCourseRetakeOrderSummaryResponse, error) {
+	if s.summaryErr != nil {
+		return nil, s.summaryErr
+	}
+	if s.summaryResp != nil {
+		return s.summaryResp, nil
+	}
+	return &mallpb.GetCourseRetakeOrderSummaryResponse{}, nil
 }
 
 func (s *retakeMallClientStub) GetCourseUnitRetakePaymentStatus(
@@ -121,6 +137,24 @@ func TestRetakePaymentSnapshotUsesExactStatusResponse(t *testing.T) {
 	}
 	if got.courseRetakeOrderUlid != "retake-order" || got.orderStatus != "WAIT_RETAKE_PAYMENT" || got.payOrderUlid != "pay-order" {
 		t.Fatalf("payment order snapshot = %+v", got)
+	}
+}
+
+func TestVerifyRetakeOrderOwnershipRejectsAnotherCandidate(t *testing.T) {
+	h := &Handler{Mall: &retakeMallClientStub{summaryResp: &mallpb.GetCourseRetakeOrderSummaryResponse{
+		Found: true,
+		Summary: &mallpb.CourseRetakeOrderSummary{
+			CourseRetakeOrderUlid: "retake-order",
+			CourseUnitUlid:        "unit",
+			CourseUnitCcUlid:      "unit-config",
+			CandidateUlid:         "candidate-2",
+			RetriedCount:          1,
+		},
+	}}}
+
+	err := h.verifyRetakeOrderOwnership(context.Background(), "candidate-1", "retake-order", "unit", "unit-config", 1)
+	if status.Code(err) != codes.NotFound {
+		t.Fatalf("verifyRetakeOrderOwnership() = %v, want NotFound", err)
 	}
 }
 
