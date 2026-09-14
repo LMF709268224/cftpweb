@@ -56,11 +56,38 @@ if [ -z "${GOARCH:-}" ]; then
 fi
 
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+CFTP_MODULE_DIR="${CFTP_MODULE_DIR:-${ROOT_DIR}/../cftptest/cftp}"
+
+if [ ! -f "${CFTP_MODULE_DIR}/go.mod" ]; then
+  echo "ERROR: Local cftptest/cftp module was not found: ${CFTP_MODULE_DIR}"
+  echo "Set CFTP_MODULE_DIR to the cftptest/cftp directory and try again."
+  exit 1
+fi
+
+CFTP_MODULE_DIR=$(cd "$CFTP_MODULE_DIR" && pwd)
+CFTP_MODULE_PATH=$(cd "$CFTP_MODULE_DIR" && GOWORK=off go list -m -f '{{.Path}}')
+if [ "$CFTP_MODULE_PATH" != "github.com/afnandelfin620-star/cftptest/cftp" ]; then
+  echo "ERROR: Unexpected local module path: ${CFTP_MODULE_PATH}"
+  exit 1
+fi
+
+WORKSPACE_DIR=$(mktemp -d)
+cleanup_workspace() {
+  rm -rf "$WORKSPACE_DIR"
+}
+trap cleanup_workspace EXIT
+
+(cd "$WORKSPACE_DIR" && go work init \
+  "${ROOT_DIR}/candbff" \
+  "${ROOT_DIR}/adminbff" \
+  "$CFTP_MODULE_DIR")
+GO_WORK_FILE="${WORKSPACE_DIR}/go.work"
 
 echo "=========================================================="
 echo "CFTP Web Docker image build started"
 echo "Tag: ${IMAGE_TAG} | Arch: ${GOARCH}"
 echo "Services (${#SERVICES[@]}): ${SERVICES[*]}"
+echo "Local cftp module: ${CFTP_MODULE_DIR}"
 echo "=========================================================="
 
 for service in "${SERVICES[@]}"; do
@@ -79,7 +106,14 @@ for service in "${SERVICES[@]}"; do
 
   service_dir="${ROOT_DIR}/${service}"
   echo ">>> Building Linux binary for ${service}..."
-  (cd "$service_dir" && CGO_ENABLED=0 GOOS=linux GOARCH="$GOARCH" go build -ldflags="-s -w" -o "$service" .)
+  case "$service" in
+    candbff|adminbff)
+      (cd "$service_dir" && GOWORK="$GO_WORK_FILE" CGO_ENABLED=0 GOOS=linux GOARCH="$GOARCH" go build -ldflags="-s -w" -o "$service" .)
+      ;;
+    candweb|adminweb)
+      (cd "$service_dir" && GOWORK=off CGO_ENABLED=0 GOOS=linux GOARCH="$GOARCH" go build -ldflags="-s -w" -o "$service" .)
+      ;;
+  esac
 
   echo ">>> Building Docker image localhost/${service}:${IMAGE_TAG}..."
   "${DOCKER_CMD[@]}" build \

@@ -8,6 +8,7 @@
 2. 已准备好 Go 1.27.1、Node.js 20+ 和 npm，用于构建四个服务镜像。
 3. 后端微服务 Compose 已启动，并且其私有网络名称与 `BACKEND_NETWORK_NAME` 一致。例如后端项目名为 `cftp-dev` 时，网络通常是 `cftp-dev_cftp-net`。
 4. `cfgserver` 中已经配置 `canserver` 和 `adminserver` 两套 BFF 配置。
+5. 默认在相邻目录 `../cftptest/cftp` 读取共享 Go 模块，避免构建服务器访问私有 GitHub 仓库。其他目录可通过 `CFTP_MODULE_DIR` 环境变量指定。
 
 ## 构建门户镜像
 
