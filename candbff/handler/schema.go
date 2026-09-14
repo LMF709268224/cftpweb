@@ -497,7 +497,6 @@ type ExamListItem struct {
 	AppointmentStartTime string           `json:"appointment_start_time,omitempty"`
 	AppointmentEndTime   string           `json:"appointment_end_time,omitempty"`
 	SiteName             string           `json:"site_name,omitempty"`
-	DeliveryMode         string           `json:"delivery_mode,omitempty"`
 	LastTermurlTimestamp string           `json:"last_termurl_timestamp,omitempty"`
 	LastTermurlType      string           `json:"last_termurl_type,omitempty"`
 }
