@@ -83,10 +83,53 @@ services:
       retries: 5
       start_period: 10s
 
+  cand:
+    image: caddy:2-alpine
+    container_name: ${PORTAL_CONTAINER_PREFIX:?PORTAL_CONTAINER_PREFIX is required in .env}-cand
+    restart: unless-stopped
+    environment:
+      BFF_UPSTREAM: candbff:8080
+      WEB_UPSTREAM: candweb:8080
+    volumes:
+      - ./portal/Caddyfile:/etc/caddy/Caddyfile:ro
+    networks:
+      - web-net
+      - gateway-net
+    expose:
+      - "3000"
+    depends_on:
+      candbff:
+        condition: service_healthy
+      candweb:
+        condition: service_healthy
+
+  admin:
+    image: caddy:2-alpine
+    container_name: ${PORTAL_CONTAINER_PREFIX:?PORTAL_CONTAINER_PREFIX is required in .env}-admin
+    restart: unless-stopped
+    environment:
+      BFF_UPSTREAM: adminbff:8080
+      WEB_UPSTREAM: adminweb:8081
+    volumes:
+      - ./portal/Caddyfile:/etc/caddy/Caddyfile:ro
+    networks:
+      - web-net
+      - gateway-net
+    expose:
+      - "3000"
+    depends_on:
+      adminbff:
+        condition: service_healthy
+      adminweb:
+        condition: service_healthy
+
 networks:
   web-net:
     name: ${WEB_NETWORK_NAME:-cftp-web-net}
     driver: bridge
   backend-net:
     name: ${BACKEND_NETWORK_NAME:-cftp-dev_cftp-net}
+    external: true
+  gateway-net:
+    name: ${GATEWAY_NETWORK_NAME:-cftp-gateway-net}
     external: true
