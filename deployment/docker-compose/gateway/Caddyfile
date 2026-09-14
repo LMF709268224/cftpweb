@@ -1,0 +1,24 @@
+{
+    admin off
+    email {$ACME_EMAIL}
+}
+
+{$CANDIDATE_PORTAL_DOMAIN} {
+    @api path /api /api/*
+    handle @api {
+        reverse_proxy candbff:8080
+    }
+    handle {
+        reverse_proxy candweb:8080
+    }
+}
+
+{$ADMIN_PORTAL_DOMAIN} {
+    @api path /api /api/*
+    handle @api {
+        reverse_proxy adminbff:8080
+    }
+    handle {
+        reverse_proxy adminweb:8081
+    }
+}

@@ -1,0 +1,27 @@
+name: ${COMPOSE_PROJECT_NAME:-cftp-web-gateway}
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-cftp-web-gateway}-caddy
+    restart: unless-stopped
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    env_file:
+      - .env
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      - web-net
+
+volumes:
+  caddy-data:
+  caddy-config:
+
+networks:
+  web-net:
+    name: ${WEB_NETWORK_NAME:-cftp-web-net}
+    external: true
