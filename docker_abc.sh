@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Docker Compose equivalent of the legacy per-service abc.sh scripts.
+# The legacy scripts remain unchanged and continue to deploy to K3s.
+# Usage:
+#   ./docker_abc.sh
+#   ./docker_abc.sh candbff candweb
+
+ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+COMPOSE_DIR="${ROOT_DIR}/deployment/docker-compose"
+ENV_FILE="${COMPOSE_DIR}/.env"
+
+if [ ! -f "$ENV_FILE" ]; then
+  echo "ERROR: Missing ${ENV_FILE}"
+  echo "Create it from .env.example and configure the target environment first."
+  exit 1
+fi
+
+IMAGE_TAG=$(awk -F= '$1 == "IMAGE_TAG" { print substr($0, index($0, "=") + 1) }' "$ENV_FILE" | tail -n 1 | tr -d '\r')
+IMAGE_TAG="${IMAGE_TAG:-v1}"
+
+echo ">>> Updating source code..."
+git -C "$ROOT_DIR" pull --ff-only
+
+echo ">>> Building Docker Compose images with tag ${IMAGE_TAG}..."
+if [ "$#" -gt 0 ]; then
+  bash "${ROOT_DIR}/build_compose_images.sh" "$IMAGE_TAG" "$@"
+else
+  bash "${ROOT_DIR}/build_compose_images.sh" "$IMAGE_TAG"
+fi
+
+if docker info >/dev/null 2>&1; then
+  DOCKER_CMD=(docker)
+elif sudo docker info >/dev/null 2>&1; then
+  DOCKER_CMD=(sudo docker)
+else
+  echo "ERROR: Docker daemon is not available."
+  exit 1
+fi
+
+echo ">>> Validating Docker Compose configuration..."
+"${DOCKER_CMD[@]}" compose --project-directory "$COMPOSE_DIR" config --quiet
+
+echo ">>> Starting Docker Compose services..."
+if [ "$#" -gt 0 ]; then
+  "${DOCKER_CMD[@]}" compose --project-directory "$COMPOSE_DIR" up -d --no-deps "$@"
+else
+  "${DOCKER_CMD[@]}" compose --project-directory "$COMPOSE_DIR" up -d
+fi
+
+"${DOCKER_CMD[@]}" compose --project-directory "$COMPOSE_DIR" ps
