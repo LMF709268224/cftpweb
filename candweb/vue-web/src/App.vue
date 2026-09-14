@@ -7,7 +7,7 @@ import { isAuthenticated } from "@/lib/authStorage"
 import { useTranslation } from "@/lib/language"
 
 const { fetchUser } = useUser()
-const { t } = useTranslation()
+const { t, lang } = useTranslation()
 const route = useRoute()
 const router = useRouter()
 const appError = ref("")
@@ -47,6 +47,13 @@ watch(
   () => {
     appError.value = ""
     if (shouldFetchUser()) void fetchUser()
+  },
+)
+
+watch(
+  () => lang.value,
+  () => {
+    if (shouldFetchUser()) void fetchUser(true)
   },
 )
 
