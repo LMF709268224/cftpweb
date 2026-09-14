@@ -860,6 +860,10 @@ watch(
     padding-block: 32px;
   }
 
+  .application-details-btn {
+    width: 100%;
+  }
+
   .credentials-apply-backdrop {
     padding-top: max(12px, var(--app-safe-area-top));
     padding-right: max(12px, var(--app-safe-area-right));
