@@ -1,6 +1,6 @@
 # cftpweb Docker Compose 部署
 
-这个目录负责考生门户和管理门户。四个业务容器是 `candweb`、`candbff`、`adminweb`、`adminbff`；另外使用两个轻量 Caddy 容器 `cand`、`admin` 作为同源入口，在容器内部将 `/api` 转发给对应 BFF、将其他请求转发给对应 Web。业务微服务（包括 `cfgserver`、`gexam`、`gmall` 等）仍由 `cftptest/deployment/docker-compose` 管理。
+这个目录负责考生门户和管理门户。四个业务容器是 `candweb`、`candbff`、`adminweb`、`adminbff`。公网入口由 `cftptest/deployment/docker-compose/gateway` 的全局 Caddy 统一管理，并在同一域名下将 `/api` 转发给 BFF、将其他请求转发给 Web。业务微服务（包括 `cfgserver`、`gexam`、`gmall` 等）仍由 `cftptest/deployment/docker-compose` 管理。
 
 ## 前置条件
 
@@ -38,18 +38,17 @@ docker compose logs -f candbff
 
 完成 `.env` 配置后，也可以在仓库根目录执行 `./docker_abc.sh`，一次完成 `git pull`、四个镜像构建、Compose 配置校验和服务启动。传入服务名时只更新指定容器，例如 `./docker_abc.sh candbff candweb`。
 
-Compose 会创建 `WEB_NETWORK_NAME` 指定的门户私有网络，并把两个 BFF 同时接入 `BACKEND_NETWORK_NAME` 指定的后端网络。两个门户入口还会接入现有的 `GATEWAY_NETWORK_NAME`。BFF 的 gRPC 地址全部支持在 `.env` 中显式指定；不指定时会按服务名解析，例如 `gexam:50051`。
+Compose 会创建 `WEB_NETWORK_NAME` 指定的门户私有网络，并把两个 BFF 同时接入 `BACKEND_NETWORK_NAME` 指定的后端网络。四个门户容器还会接入现有的 `GATEWAY_NETWORK_NAME`，并使用 `PORTAL_CONTAINER_PREFIX` 创建供全局 Caddy 使用的网络别名。BFF 的 gRPC 地址默认按服务名解析，例如 `gexam:50051`，无需在 `.env` 中配置。
 
-默认不暴露宿主机端口。开发环境的门户入口容器名为 `cftp-dev-cand` 和 `cftp-dev-admin`，监听容器端口 3000，与 `cftptest/deployment/docker-compose/gateway/Caddyfile` 的目标一致；生产环境将 `PORTAL_CONTAINER_PREFIX` 改为 `cftp-prod`。
+默认不暴露宿主机端口。开发环境的全局 Caddy 将请求路由到 `cftp-dev-candweb:8080`、`cftp-dev-candbff:8080`、`cftp-dev-adminweb:8081` 和 `cftp-dev-adminbff:8080`；生产环境将 `PORTAL_CONTAINER_PREFIX` 改为 `cftp-prod`。
 
 ## 全局 Caddy 路由
 
 不要在本项目中启动第二个公网 Caddy。宿主机 80/443 由 `cftptest/deployment/docker-compose/gateway` 下的全局 Caddy 独占，其路由应为：
 
-- 开发考生端域名转发到 `cftp-dev-cand:3000`；
-- 开发管理端域名转发到 `cftp-dev-admin:3000`；
-- 生产考生端域名转发到 `cftp-prod-cand:3000`；
-- 生产管理端域名转发到 `cftp-prod-admin:3000`。
+- 开发考生端域名的 `/api/*` 转发到 `cftp-dev-candbff:8080`，其他路径转发到 `cftp-dev-candweb:8080`；
+- 开发管理端域名的 `/api/*` 转发到 `cftp-dev-adminbff:8080`，其他路径转发到 `cftp-dev-adminweb:8081`；
+- 生产环境使用相同规则，将前缀替换为 `cftp-prod`。
 
 修改全局 Caddy 的 `.env` 或 `Caddyfile` 后，在其目录执行 `docker compose restart caddy`。
 
