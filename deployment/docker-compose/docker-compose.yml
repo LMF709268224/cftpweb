@@ -1,4 +1,4 @@
-name: ${COMPOSE_PROJECT_NAME:-cftp-web}
+name: ${COMPOSE_PROJECT_NAME:-cftp}
 
 x-bff-base: &bff-base
   restart: unless-stopped
@@ -11,8 +11,8 @@ x-bff-base: &bff-base
 
 services:
   candbff:
-    image: ${IMAGE_REGISTRY:-localhost}/candbff:${IMAGE_TAG:-v1}
-    container_name: ${COMPOSE_PROJECT_NAME:-cftp-web}-candbff
+    image: ${IMAGE_REGISTRY:-localhost}/candbff:${IMAGE_TAG:-dev-latest}
+    container_name: ${COMPOSE_PROJECT_NAME:-cftp}-candbff
     <<: *bff-base
     networks:
       web-net:
@@ -38,8 +38,8 @@ services:
       start_period: 15s
 
   adminbff:
-    image: ${IMAGE_REGISTRY:-localhost}/adminbff:${IMAGE_TAG:-v1}
-    container_name: ${COMPOSE_PROJECT_NAME:-cftp-web}-adminbff
+    image: ${IMAGE_REGISTRY:-localhost}/adminbff:${IMAGE_TAG:-dev-latest}
+    container_name: ${COMPOSE_PROJECT_NAME:-cftp}-adminbff
     <<: *bff-base
     networks:
       web-net:
@@ -63,8 +63,8 @@ services:
       start_period: 15s
 
   candweb:
-    image: ${IMAGE_REGISTRY:-localhost}/candweb:${IMAGE_TAG:-v1}
-    container_name: ${COMPOSE_PROJECT_NAME:-cftp-web}-candweb
+    image: ${IMAGE_REGISTRY:-localhost}/candweb:${IMAGE_TAG:-dev-latest}
+    container_name: ${COMPOSE_PROJECT_NAME:-cftp}-candweb
     restart: unless-stopped
     environment:
       PORT: 8080
@@ -83,8 +83,8 @@ services:
       start_period: 10s
 
   adminweb:
-    image: ${IMAGE_REGISTRY:-localhost}/adminweb:${IMAGE_TAG:-v1}
-    container_name: ${COMPOSE_PROJECT_NAME:-cftp-web}-adminweb
+    image: ${IMAGE_REGISTRY:-localhost}/adminweb:${IMAGE_TAG:-dev-latest}
+    container_name: ${COMPOSE_PROJECT_NAME:-cftp}-adminweb
     restart: unless-stopped
     environment:
       PORT: 8081

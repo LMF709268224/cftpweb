@@ -18,7 +18,7 @@ if [ ! -f "$ENV_FILE" ]; then
 fi
 
 IMAGE_TAG=$(awk -F= '$1 == "IMAGE_TAG" { print substr($0, index($0, "=") + 1) }' "$ENV_FILE" | tail -n 1 | tr -d '\r')
-IMAGE_TAG="${IMAGE_TAG:-v1}"
+IMAGE_TAG="${IMAGE_TAG:-dev-latest}"
 
 echo ">>> Updating source code..."
 git -C "$ROOT_DIR" pull --ff-only

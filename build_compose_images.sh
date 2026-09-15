@@ -5,10 +5,10 @@ set -euo pipefail
 # abc.sh -> image_build.sh -> Buildah/K3s workflow.
 # Usage:
 #   ./build_compose_images.sh
-#   ./build_compose_images.sh v1
-#   ./build_compose_images.sh v1 candbff candweb
+#   ./build_compose_images.sh dev-latest
+#   ./build_compose_images.sh dev-latest candbff candweb
 
-IMAGE_TAG="${1:-v1}"
+IMAGE_TAG="${1:-dev-latest}"
 if [ "$#" -gt 0 ]; then
   shift
 fi
