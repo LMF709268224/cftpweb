@@ -3,7 +3,6 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useRouter } from "vue-router"
 import { toast } from "vue-sonner"
 import { AlertCircle, ArrowRight, BookOpen, Clock, LoaderCircle, Search } from "lucide-vue-next"
-import GfiFooter from "@/components/GfiFooter.vue"
 import GfiHeader from "@/components/GfiHeader.vue"
 import { apiClient } from "@/lib/apiClient"
 import { isAuthenticated } from "@/lib/authStorage"
@@ -338,7 +337,6 @@ onBeforeUnmount(() => {
       </section>
     </main>
 
-    <GfiFooter />
   </div>
 </template>
 
