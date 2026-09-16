@@ -3,7 +3,7 @@ name: ${COMPOSE_PROJECT_NAME:-cftp}
 x-bff-base: &bff-base
   restart: unless-stopped
   env_file:
-    - .env
+    - ${PORTAL_ENV_FILE:-.env}
   networks:
     web-net:
     backend-net:
