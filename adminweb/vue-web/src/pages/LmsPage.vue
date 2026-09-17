@@ -5181,7 +5181,7 @@ onMounted(() => {
 
               <section v-if="showQuestionOptionsSection" class="rounded-2xl border border-slate-200">
                 <div class="border-b border-slate-200 p-4">
-                  <h3 class="font-black">{{ copy.optionsTitle }}</h3>
+                  <h3 class="font-black"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.optionsTitle }}</h3>
                   <p class="mt-1 text-xs text-slate-500">{{ selectedQuestionId ? copy.optionsSelectedHint : copy.optionsNeedQuestionHint }}</p>
                 </div>
                 <div v-if="optionsLoading" class="p-6 text-center text-slate-500">

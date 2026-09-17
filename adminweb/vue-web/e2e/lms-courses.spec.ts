@@ -287,6 +287,8 @@ test("quiz and question rows identify invalid question option configuration", as
 
   const questionRow = page.getByText("Question without options", { exact: true }).locator("../..").locator("..")
   await expect(questionRow.getByText("缺少配置", { exact: true })).toHaveAttribute("title", "请至少添加两个选项")
+  await questionRow.getByRole("button", { name: "查看详情" }).click()
+  await expect(page.getByRole("heading", { name: "选项", exact: true }).locator("span[aria-hidden='true']")).toHaveText("*")
 })
 
 test("publishing reports the exact missing lesson field before calling the API", async ({ page }) => {
