@@ -15,7 +15,7 @@ DEPLOY_ENV="test"
 
 if [ "${1:-}" = "--env" ]; then
   if [ "$#" -lt 2 ]; then
-    echo "ERROR: --env requires an environment name. Supported value: prod"
+    echo "ERROR: --env requires an environment name. Supported values: test, prod"
     exit 1
   fi
 
@@ -25,13 +25,13 @@ fi
 
 case "$DEPLOY_ENV" in
   test)
-    ENV_FILE="${COMPOSE_DIR}/.env"
+    ENV_FILE="${COMPOSE_DIR}/.env.dev"
     ;;
   prod)
     ENV_FILE="${COMPOSE_DIR}/.env.prod"
     ;;
   *)
-    echo "ERROR: Unsupported environment: ${DEPLOY_ENV}. Supported value: prod"
+    echo "ERROR: Unsupported environment: ${DEPLOY_ENV}. Supported values: test, prod"
     exit 1
     ;;
 esac
