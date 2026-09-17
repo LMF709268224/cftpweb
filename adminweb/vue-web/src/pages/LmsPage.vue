@@ -5023,8 +5023,15 @@ onMounted(() => {
                 </label>
                 <textarea v-model="quizForm.description" class="mt-3 min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.description" />
                 <div class="mt-3 grid gap-3 sm:grid-cols-2">
-                  <input v-model="quizForm.passing_score" class="h-11 rounded-xl border border-slate-200 px-3" :placeholder="copy.passingScorePlaceholder" type="number" />
-                  <input v-model="quizForm.time_limit" class="h-11 rounded-xl border border-slate-200 px-3" :placeholder="copy.timeLimitPlaceholder" type="number" />
+                  <label class="block">
+                    <span class="text-sm font-bold">{{ copy.passingScorePlaceholder }}</span>
+                    <input v-model="quizForm.passing_score" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" max="100" min="0" step="1" type="number" />
+                  </label>
+                  <label class="block">
+                    <span class="text-sm font-bold">{{ copy.timeLimitPlaceholder }}</span>
+                    <input v-model="quizForm.time_limit" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" min="0" step="1" type="number" />
+                    <span class="mt-1 block text-xs text-slate-500">{{ copy.unlimitedTimeHint }}</span>
+                  </label>
                 </div>
                 <label class="mt-3 inline-flex items-center gap-2 text-sm font-bold text-slate-600">
                   <input v-model="quizForm.randomize_questions" type="checkbox" />

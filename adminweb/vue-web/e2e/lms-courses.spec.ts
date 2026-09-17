@@ -291,6 +291,21 @@ test("quiz and question rows identify invalid question option configuration", as
   await expect(page.getByRole("heading", { name: "选项", exact: true }).locator("span[aria-hidden='true']")).toHaveText("*")
 })
 
+test("quiz score and time limit keep visible labels when editing existing values", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  const requests: string[] = []
+  await installDraftInvalidConfigCourseMocks(page, requests)
+  await page.goto("/lms")
+
+  await page.getByRole("button", { name: "编辑", exact: true }).first().click()
+  const quizRow = page.getByText("Invalid Options Quiz", { exact: true }).locator("../..").locator("..")
+  await quizRow.getByRole("button", { name: "编辑测验" }).click()
+
+  await expect(page.getByLabel("及格分数（0–100）")).toHaveValue("70")
+  await expect(page.getByLabel("答题时限（分钟）")).toHaveValue("0")
+  await expect(page.getByText("填 0 表示不限时", { exact: true })).toBeVisible()
+})
+
 test("publishing reports the exact missing lesson field before calling the API", async ({ page }) => {
   await seedAuthenticatedAdmin(page)
   const requests: string[] = []
