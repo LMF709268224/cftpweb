@@ -33,6 +33,22 @@ async function installLmsCourseReadMocks(page: Page, requests: string[]) {
     if (method === "GET" && pathname === "/api/lms/courses/course-1/supplementary-material") {
       return { data: {} }
     }
+    if (method === "GET" && pathname === "/api/lms/quizzes/quiz-1/questions") {
+      return {
+        data: {
+          questions: [
+            { question_ulid: "question-1", question_text: "Regression question", question_type: 1, points: 10, sort_order: 1, option_count: 2 },
+            { question_ulid: "question-2", question_text: "Question without options", question_type: 1, points: 10, sort_order: 2, option_count: 0 },
+          ],
+        },
+      }
+    }
+    if (method === "GET" && pathname === "/api/lms/questions/question-1") {
+      return { data: { question: { question_ulid: "question-1", question_text: "Regression question", question_type: 1, points: 10, sort_order: 1, option_count: 2 } } }
+    }
+    if (method === "GET" && pathname === "/api/lms/questions/question-2") {
+      return { data: { question: { question_ulid: "question-2", question_text: "Question without options", question_type: 1, points: 10, sort_order: 2, option_count: 0 } } }
+    }
     if (method === "GET" && pathname === "/api/lms/courses/course-1/complete") {
       return {
         data: {
@@ -68,7 +84,13 @@ async function installLmsCourseReadMocks(page: Page, requests: string[]) {
                   quiz: { quiz_ulid: "quiz-1", title: "Regression Quiz", description: "Chapter review", passing_score: 70, time_limit: 30, randomize_questions: true, quiz_type: 1 },
                   questions: [{
                     question: { question_ulid: "question-1", question_text: "Regression question", question_type: 1, points: 10, sort_order: 1, is_required: true, explanation: "Regression explanation", media_items_json: "[]" },
-                    options: [{ option_ulid: "option-1", option_text: "Correct", is_correct: true, sort_order: 1 }],
+                    options: [
+                      { option_ulid: "option-1", option_text: "Correct", is_correct: true, sort_order: 1 },
+                      { option_ulid: "option-2", option_text: "Incorrect", is_correct: false, sort_order: 2 },
+                    ],
+                  }, {
+                    question: { question_ulid: "question-2", question_text: "Question without options", question_type: 1, points: 10, sort_order: 2, is_required: true, explanation: "", media_items_json: "[]" },
+                    options: [],
                   }],
                 }],
               },
@@ -88,7 +110,7 @@ async function installLmsCourseReadMocks(page: Page, requests: string[]) {
   })
 }
 
-async function installDraftLinkCourseMocks(page: Page, requests: string[], externalUrl = "") {
+async function installDraftLinkCourseMocks(page: Page, requests: string[], externalUrl = "", publishError = "") {
   const draftCourse = { ...course, status: "Draft", is_published: false }
   const linkLesson = {
     lesson_ulid: "lesson-link",
@@ -125,6 +147,77 @@ async function installDraftLinkCourseMocks(page: Page, requests: string[], exter
             }],
             quizzes: [],
             materials: [],
+          },
+        },
+      }
+    }
+    if (method === "POST" && pathname === "/api/lms/courses/course-1/publish") {
+      return publishError ? { status: 409, message: publishError } : { data: {} }
+    }
+    return undefined
+  })
+}
+
+async function installDraftInvalidConfigCourseMocks(page: Page, requests: string[]) {
+  const draftCourse = { ...course, status: "Draft", is_published: false }
+  const chapter = { chapter_ulid: "chapter-invalid", title: "Invalid Config Chapter", sort_order: 1 }
+  const lesson = {
+    lesson_ulid: "lesson-invalid-media",
+    title: "PDF Missing Hash",
+    sort_order: 1,
+    lesson_type: 3,
+    media_object_key: "courses/course-1/lesson.pdf",
+    media_file_hash: "",
+  }
+  const material = {
+    material_ulid: "material-invalid",
+    title: "Workbook Missing File",
+    material_type: 1,
+    file_object_key: "",
+    file_hash: "",
+    sort_order: 1,
+  }
+  const quizDetail = {
+    quiz: { quiz_ulid: "quiz-invalid", title: "Invalid Options Quiz", passing_score: 70, quiz_type: 1 },
+    questions: [
+      {
+        question: { question_ulid: "question-single", question_text: "Single needs another option", question_type: 1 },
+        options: [{ option_ulid: "option-single", option_text: "Only", is_correct: true }],
+      },
+      {
+        question: { question_ulid: "question-multiple", question_text: "Multiple needs a correct option", question_type: 2 },
+        options: [
+          { option_ulid: "option-multiple-1", option_text: "A", is_correct: false },
+          { option_ulid: "option-multiple-2", option_text: "B", is_correct: false },
+        ],
+      },
+      {
+        question: { question_ulid: "question-boolean", question_text: "True false has two correct", question_type: 3 },
+        options: [
+          { option_ulid: "option-boolean-1", option_text: "True", is_correct: true },
+          { option_ulid: "option-boolean-2", option_text: "False", is_correct: true },
+        ],
+      },
+    ],
+  }
+
+  return installAdminApiMocks(page, ({ method, pathname }) => {
+    requests.push(`${method} ${pathname}`)
+    if (method === "GET" && pathname === "/api/lms/courses") return { data: { courses: [draftCourse], has_more: false, next_cursor: "" } }
+    if (method === "GET" && pathname === "/api/lms/courses/course-1/detail") {
+      return { data: { course_detail: { course: draftCourse, chapter_count: 1, lesson_count: 1, quiz_count: 1, material_count: 1 } } }
+    }
+    if (method === "GET" && pathname === "/api/lms/courses/course-1/chapters") return { data: { chapters: [chapter] } }
+    if (method === "GET" && pathname === "/api/lms/courses/course-1/materials") return { data: { materials: [material] } }
+    if (method === "GET" && pathname === "/api/lms/courses/course-1/supplementary-material") return { data: {} }
+    if (method === "GET" && pathname === "/api/lms/courses/course-1/complete") {
+      return {
+        data: {
+          complete_course: {
+            course: draftCourse,
+            chapters: [{ chapter, lessons: [{ lesson }], quizzes: [quizDetail] }],
+            quizzes: [],
+            materials: [material],
           },
         },
       }
@@ -178,8 +271,23 @@ test("Token courseware lesson completeness uses the external courseware ID", asy
 
   const configuredLesson = page.getByText("Configured Token Lesson", { exact: true }).locator("..")
   const unconfiguredLesson = page.getByText("Unconfigured Token Lesson", { exact: true }).locator("..")
-  await expect(configuredLesson.getByText("缺少内容", { exact: true })).toHaveCount(0)
-  await expect(unconfiguredLesson.getByText("缺少内容", { exact: true })).toBeVisible()
+  await expect(configuredLesson.getByText("缺少配置", { exact: true })).toHaveCount(0)
+  await expect(unconfiguredLesson.getByText("缺少配置", { exact: true })).toBeVisible()
+})
+
+test("quiz and question rows identify invalid question option configuration", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  const requests: string[] = []
+  await installLmsCourseReadMocks(page, requests)
+  await page.goto("/lms")
+
+  await page.getByRole("button", { name: "编辑", exact: true }).first().click()
+  const quizRow = page.getByText("Regression Quiz", { exact: true }).locator("../..").locator("..")
+  await expect(quizRow.getByText("缺少配置", { exact: true })).toHaveAttribute("title", /Question without options.*至少添加两个选项/)
+  await quizRow.getByRole("button", { name: "查看详情" }).click()
+
+  const questionRow = page.getByText("Question without options", { exact: true }).locator("../..").locator("..")
+  await expect(questionRow.getByText("缺少配置", { exact: true })).toHaveAttribute("title", "请至少添加两个选项")
 })
 
 test("publishing reports the exact missing lesson field before calling the API", async ({ page }) => {
@@ -191,7 +299,36 @@ test("publishing reports the exact missing lesson field before calling the API",
   await page.getByRole("button", { name: "编辑", exact: true }).first().click()
   await page.getByRole("button", { name: "发布课程" }).click()
 
-  await expect(page.getByText(/课时「Missing Link Lesson」：缺少外部链接 URL/)).toBeVisible()
+  await expect(page.getByText(/课时「Missing Link Lesson」：缺少或无效的外部链接 URL/)).toBeVisible()
+  expect(requests).not.toContain("POST /api/lms/courses/course-1/publish")
+})
+
+test("all locally detectable publish errors are tagged and reported precisely", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  const requests: string[] = []
+  await installDraftInvalidConfigCourseMocks(page, requests)
+  await page.goto("/lms")
+
+  await page.getByRole("button", { name: "编辑", exact: true }).first().click()
+
+  const lessonRow = page.getByText("PDF Missing Hash", { exact: true }).locator("../..").locator("..")
+  await expect(lessonRow.getByText("缺少配置", { exact: true })).toHaveAttribute("title", /媒体 File Hash/)
+
+  const materialRow = page.getByText("Workbook Missing File", { exact: true }).locator("../..").locator("..")
+  await expect(materialRow.getByText("缺少配置", { exact: true })).toHaveAttribute("title", /文件 Object Key、文件 Hash/)
+
+  const quizRow = page.getByText("Invalid Options Quiz", { exact: true }).locator("../..").locator("..")
+  const quizTag = quizRow.getByText("缺少配置", { exact: true })
+  await expect(quizTag).toHaveAttribute("title", /Single needs another option.*至少添加两个选项/)
+  await expect(quizTag).toHaveAttribute("title", /Multiple needs a correct option.*至少选择一个正确选项/)
+  await expect(quizTag).toHaveAttribute("title", /True false has two correct.*只能选择一个正确选项/)
+
+  await page.getByRole("button", { name: "发布课程" }).click()
+  await expect(page.getByText(/课时「PDF Missing Hash」：缺少或无效的媒体 File Hash/)).toBeVisible()
+  await expect(page.getByText(/资料「Workbook Missing File」：缺少或无效的文件 Object Key、文件 Hash/)).toBeVisible()
+  await expect(page.getByText(/题目「Single needs another option」：请至少添加两个选项/)).toBeVisible()
+  await expect(page.getByText(/题目「Multiple needs a correct option」：请至少选择一个正确选项/)).toBeVisible()
+  await expect(page.getByText(/题目「True false has two correct」：请选择且只能选择一个正确选项/)).toBeVisible()
   expect(requests).not.toContain("POST /api/lms/courses/course-1/publish")
 })
 
@@ -206,6 +343,19 @@ test("editing a Link lesson restores its external URL", async ({ page }) => {
   await lessonRow.getByRole("button", { name: "编辑课时" }).click()
 
   await expect(page.getByPlaceholder("https://")).toHaveValue("https://example.test/lesson")
+})
+
+test("publishing preserves a precise server-side conflict reason", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  const requests: string[] = []
+  await installDraftLinkCourseMocks(page, requests, "https://example.test/lesson", 'course "course-1" version conflict')
+  await page.goto("/lms")
+
+  await page.getByRole("button", { name: "编辑", exact: true }).first().click()
+  await page.getByRole("button", { name: "发布课程" }).click()
+
+  await expect(page.getByText("发布前课程数据已变化，请刷新页面后重试", { exact: true })).toBeVisible()
+  expect(requests).toContain("POST /api/lms/courses/course-1/publish")
 })
 
 test("course detail exposes import-ready JSON with a GPath warning", async ({ page }) => {
@@ -293,6 +443,39 @@ test("course import rejects a referenced asset without a SHA-256 hash before cre
   expect(requests.filter(request => request === "POST /api/lms/courses")).toHaveLength(0)
 })
 
+test("course import identifies a quiz question with no options before creating a draft", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  const requests: string[] = []
+  await installAdminApiMocks(page, ({ method, pathname }) => {
+    requests.push(`${method} ${pathname}`)
+    if (method === "GET" && pathname === "/api/lms/courses") {
+      return { data: { courses: [], has_more: false, next_cursor: "" } }
+    }
+    return undefined
+  })
+
+  await page.goto("/lms")
+  await page.getByRole("button", { name: "从 JSON 创建课程" }).click()
+  await page.getByPlaceholder("也可以直接粘贴 JSON").fill(JSON.stringify({
+    title: "Invalid Quiz Course",
+    course_gpath: "/courses/invalid-quiz-course",
+    chapters: [{
+      title: "Chapter 1",
+      lessons: [{ title: "Text lesson", lesson_type: 2, body: "Lesson body" }],
+    }],
+    quizzes: [{
+      title: "Chapter 2 Quiz",
+      quizzable_type: 3,
+      quiz_type: 1,
+      questions: [{ question_text: "Which answer is correct?", question_type: 1, options: [] }],
+    }],
+  }))
+  await page.getByRole("button", { name: "开始导入" }).click()
+
+  await expect(page.getByText(/测验「Chapter 2 Quiz」的第 1 道题「Which answer is correct\?」至少需要一个选项/)).toBeVisible()
+  expect(requests.filter(request => request === "POST /api/lms/courses")).toHaveLength(0)
+})
+
 test("course import restores materials, supplementary content, and every quiz scope", async ({ page }) => {
   await seedAuthenticatedAdmin(page)
   const requests: string[] = []
@@ -366,9 +549,9 @@ test("course import restores materials, supplementary content, and every quiz sc
     }],
     supplementary_material: { kind: "supplementary_materials", data_json: "[]" },
     quizzes: [
-      { title: "Course Quiz", quizzable_type: 3, quiz_type: 1, questions: [{ question_text: "Course question", question_type: 1, options: [] }] },
-      { title: "Chapter Quiz", quizzable_type: 2, chapter_index: 0, quiz_type: 2, questions: [{ question_text: "Chapter question", question_type: 2, options: [] }] },
-      { title: "Lesson Quiz", quizzable_type: 1, chapter_index: 0, lesson_index: 0, quiz_type: "must_pass", questions: [{ question_text: "Lesson question", question_type: "TRUE_FALSE", options: [] }] },
+      { title: "Course Quiz", quizzable_type: 3, quiz_type: 1, questions: [{ question_text: "Course question", question_type: 1, options: [{ option_text: "Answer", is_correct: true, sort_order: 1 }] }] },
+      { title: "Chapter Quiz", quizzable_type: 2, chapter_index: 0, quiz_type: 2, questions: [{ question_text: "Chapter question", question_type: 2, options: [{ option_text: "Answer", is_correct: true, sort_order: 1 }] }] },
+      { title: "Lesson Quiz", quizzable_type: 1, chapter_index: 0, lesson_index: 0, quiz_type: "must_pass", questions: [{ question_text: "Lesson question", question_type: "TRUE_FALSE", options: [{ option_text: "True", is_correct: true, sort_order: 1 }] }] },
     ],
   }))
   await page.getByRole("button", { name: "开始导入" }).click()

@@ -6,7 +6,7 @@ import ReadonlyField from "@/components/ReadonlyField.vue"
 import LmsPrerequisitesTab from "@/components/LmsPrerequisitesTab.vue"
 import TranslationsEditor from "@/components/TranslationsEditor.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
-import { apiClient } from "@/lib/apiClient"
+import { ApiError, apiClient } from "@/lib/apiClient"
 import { copyTextToClipboard } from "@/lib/clipboard"
 import { isVideoFile, MAX_BASIC_VIDEO_UPLOAD_BYTES, sha256Hex, uploadToDirectURL } from "@/lib/directUpload"
 import { formatDate, type JsonRecord } from "@/lib/display"
@@ -164,9 +164,18 @@ type LessonListItem = {
   chapter: JsonRecord | null
 }
 
+type QuestionConfigIssueCode = "atLeastTwoOptions" | "exactlyTwoOptions" | "exactlyOneCorrect" | "atLeastOneCorrect"
+
+type QuestionConfigIssue = {
+  questionId: string
+  questionTitle: string
+  code: QuestionConfigIssueCode
+}
+
 type QuizListItem = {
   quiz: JsonRecord
   questionCount: number
+  questionIssues: QuestionConfigIssue[]
   ownerType: number
   owner: JsonRecord | null
   chapter: JsonRecord | null
@@ -350,6 +359,17 @@ const completeChapterRecords = computed(() => {
     .filter(isJsonRecord)
     .map((record) => record.chapter && isJsonRecord(record.chapter) ? record.chapter : record)
 })
+const allMaterialRecords = computed(() => {
+  const completeMaterials = Array.isArray(completeCourseRecord.value?.materials)
+    ? completeCourseRecord.value.materials.filter(isJsonRecord)
+    : []
+  const records = [...completeMaterials]
+  const knownIds = new Set(records.map(materialId).filter(Boolean))
+  for (const material of materials.value) {
+    if (!knownIds.has(materialId(material))) records.push(material)
+  }
+  return records
+})
 const courseDetailDialogChapterRecords = computed(() => {
   const chapterDetails = Array.isArray(courseDetailDialogCompleteRecord.value?.chapters) ? courseDetailDialogCompleteRecord.value.chapters : []
   return chapterDetails
@@ -386,7 +406,7 @@ const allQuizItems = computed<QuizListItem[]>(() => {
   for (const quizDetail of courseQuizzes) {
     const quiz = extractQuizRecord(quizDetail)
     const questions = quizDetail && typeof quizDetail === "object" && Array.isArray((quizDetail as JsonRecord).questions) ? (quizDetail as JsonRecord).questions as unknown[] : []
-    if (quiz) items.push({ quiz, questionCount: questions.length, ownerType: 3, owner: selectedCourse.value, chapter: null, lesson: null })
+    if (quiz) items.push({ quiz, questionCount: questions.length, questionIssues: questionConfigIssues(questions), ownerType: 3, owner: selectedCourse.value, chapter: null, lesson: null })
   }
   const chapterDetails = Array.isArray(complete.chapters) ? complete.chapters : []
   for (const detail of chapterDetails) {
@@ -397,7 +417,7 @@ const allQuizItems = computed<QuizListItem[]>(() => {
     for (const quizDetail of chapterQuizzes) {
       const quiz = extractQuizRecord(quizDetail)
       const questions = quizDetail && typeof quizDetail === "object" && Array.isArray((quizDetail as JsonRecord).questions) ? (quizDetail as JsonRecord).questions as unknown[] : []
-      if (quiz) items.push({ quiz, questionCount: questions.length, ownerType: 2, owner: chapter, chapter, lesson: null })
+      if (quiz) items.push({ quiz, questionCount: questions.length, questionIssues: questionConfigIssues(questions), ownerType: 2, owner: chapter, chapter, lesson: null })
     }
     const lessonDetails = Array.isArray(record.lessons) ? record.lessons : []
     for (const lessonDetail of lessonDetails) {
@@ -408,7 +428,7 @@ const allQuizItems = computed<QuizListItem[]>(() => {
       for (const quizDetail of lessonQuizzes) {
         const quiz = extractQuizRecord(quizDetail)
         const questions = quizDetail && typeof quizDetail === "object" && Array.isArray((quizDetail as JsonRecord).questions) ? (quizDetail as JsonRecord).questions as unknown[] : []
-        if (quiz) items.push({ quiz, questionCount: questions.length, ownerType: 1, owner: lesson, chapter, lesson })
+        if (quiz) items.push({ quiz, questionCount: questions.length, questionIssues: questionConfigIssues(questions), ownerType: 1, owner: lesson, chapter, lesson })
       }
     }
   }
@@ -420,6 +440,7 @@ const allQuizItems = computed<QuizListItem[]>(() => {
     items.push({
       quiz,
       questionCount: Number(quiz.question_count || 0),
+      questionIssues: [],
       ownerType,
       owner: ownerType === 3 ? selectedCourse.value : ownerType === 2 ? selectedChapter.value : selectedLesson.value,
       chapter: ownerType === 2 ? selectedChapter.value : selectedLessonOwnerChapter.value,
@@ -644,19 +665,119 @@ function isChapterEmpty(chapter: JsonRecord | null | undefined) {
   return !hasLesson && !hasQuiz
 }
 
-function isLessonEmpty(lesson: JsonRecord | null | undefined) {
-  if (!lesson) return false
+function hasText(value: unknown) {
+  return String(value ?? "").trim().length > 0
+}
+
+function isValidSha256(value: unknown) {
+  return /^[0-9a-f]{64}$/i.test(String(value ?? "").trim())
+}
+
+function lessonMissingFields(lesson: JsonRecord | null | undefined) {
+  if (!lesson) return []
   const type = String(lesson.lesson_type || "")
-  if (type === "1") return !lesson.video_stream_uid
-  if (type === "2") return !lesson.body
-  if (type === "7") return !lesson.external_url && !lesson.asset_object_key
-  if (type === "8") return !lesson.external_courseware_ulid
-  return !lesson.asset_object_key && !lesson.media_object_key && !lesson.media_file_hash
+  if (type === "1") return hasText(lesson.video_stream_uid) ? [] : [copy.value.lessonFieldLabels.video_stream_uid]
+  if (type === "2") return hasText(lesson.body) ? [] : [copy.value.lessonFieldLabels.body]
+  if (type === "7") return hasText(lesson.external_url) ? [] : [copy.value.externalUrl]
+  if (type === "8") return hasText(lesson.external_courseware_ulid) ? [] : [copy.value.externalCourseware]
+  if (!["3", "4", "5", "6"].includes(type)) return []
+
+  const fields: string[] = []
+  if (!hasText(lesson.media_object_key)) fields.push(copy.value.lessonFieldLabels.media_object_key)
+  if (!isValidSha256(lesson.media_file_hash)) fields.push(copy.value.lessonFieldLabels.media_file_hash)
+  return fields
+}
+
+function isLessonEmpty(lesson: JsonRecord | null | undefined) {
+  return lessonMissingFields(lesson).length > 0
 }
 
 function isQuizEmpty(item: QuizListItem | null | undefined) {
   if (!item) return false
-  return item.questionCount === 0
+  return item.questionCount === 0 || item.questionIssues.length > 0
+}
+
+function questionOptionRecords(value: unknown): JsonRecord[] | null {
+  if (!isJsonRecord(value)) return null
+  if (Array.isArray(value.options)) return value.options.filter(isJsonRecord)
+  const question = extractNestedRecord(value, "question")
+  if (question && Array.isArray(question.options)) return question.options.filter(isJsonRecord)
+  return null
+}
+
+function questionOptionCount(value: unknown): number | null {
+  if (!isJsonRecord(value)) return null
+  const options = questionOptionRecords(value)
+  if (options) return options.length
+  const question = extractNestedRecord(value, "question")
+  if (!question) return null
+  const rawCount = question.option_count ?? value.option_count
+  if (rawCount === undefined || rawCount === null || rawCount === "") return null
+  const count = Number(rawCount)
+  return Number.isFinite(count) ? count : null
+}
+
+function isCorrectOption(option: JsonRecord) {
+  const value = option.is_correct
+  return value === true || value === 1 || String(value).toLowerCase() === "true"
+}
+
+function questionConfigIssue(value: unknown): QuestionConfigIssue | null {
+  const question = extractNestedRecord(value, "question")
+  if (!question) return null
+  const type = normalizeImportQuestionType(question.question_type)
+  if (!type || type === "ESSAY") return null
+
+  const optionCount = questionOptionCount(value)
+  let code: QuestionConfigIssueCode | "" = ""
+  if ((type === "SINGLE_CHOICE" || type === "MULTIPLE_CHOICE") && optionCount !== null && optionCount < 2) {
+    code = "atLeastTwoOptions"
+  } else if (type === "TRUE_FALSE" && optionCount !== null && optionCount !== 2) {
+    code = "exactlyTwoOptions"
+  } else {
+    const optionRecords = questionOptionRecords(value)
+    if (optionRecords) {
+      const correctCount = optionRecords.filter(isCorrectOption).length
+      if ((type === "SINGLE_CHOICE" || type === "TRUE_FALSE") && correctCount !== 1) code = "exactlyOneCorrect"
+      if (type === "MULTIPLE_CHOICE" && correctCount < 1) code = "atLeastOneCorrect"
+    }
+  }
+  if (!code) return null
+  return {
+    questionId: questionId(question),
+    questionTitle: questionTitle(question),
+    code,
+  }
+}
+
+function questionConfigIssues(questions: unknown[]) {
+  return questions.flatMap((value) => {
+    const issue = questionConfigIssue(value)
+    return issue ? [issue] : []
+  })
+}
+
+function questionConfigReason(code: QuestionConfigIssueCode) {
+  return copy.value.questionConfigReasons[code]
+}
+
+function questionMissingConfigTitle(question: JsonRecord) {
+  const issue = questionConfigIssue(question)
+    || selectedQuizItem.value?.questionIssues.find((item) => item.questionId === questionId(question))
+  return issue ? questionConfigReason(issue.code) : copy.value.missingConfig
+}
+
+function quizMissingConfigTitle(item: QuizListItem) {
+  if (item.questionCount === 0) return copy.value.publishIssueQuiz(quizTitle(item.quiz))
+  return item.questionIssues
+    .map((issue) => copy.value.publishIssueQuestion(quizTitle(item.quiz), issue.questionTitle, questionConfigReason(issue.code)))
+    .join("; ")
+}
+
+function isQuestionEmpty(question: JsonRecord | null | undefined) {
+  if (!question) return false
+  return Boolean(questionConfigIssue(question)
+    || selectedQuizItem.value?.questionIssues.some((item) => item.questionId === questionId(question)))
 }
 
 function isSupplementaryMaterialEmpty(item: SupplementaryMaterialItem | null | undefined) {
@@ -666,13 +787,20 @@ function isSupplementaryMaterialEmpty(item: SupplementaryMaterialItem | null | u
   return false
 }
 
-function lessonMissingField(lesson: JsonRecord) {
-  const type = String(lesson.lesson_type || "")
-  if (type === "1") return copy.value.lessonFieldLabels.video_stream_uid
-  if (type === "2") return copy.value.lessonFieldLabels.body
-  if (type === "7") return copy.value.externalUrl
-  if (type === "8") return copy.value.externalCourseware
-  return copy.value.assetObjectKeyLabel
+function materialMissingFields(material: JsonRecord | null | undefined) {
+  if (!material) return []
+  const fields: string[] = []
+  if (!hasText(material.file_object_key)) fields.push(copy.value.fileObjectKey)
+  if (!isValidSha256(material.file_hash)) fields.push(copy.value.fileHash)
+  return fields
+}
+
+function isMaterialEmpty(material: JsonRecord | null | undefined) {
+  return materialMissingFields(material).length > 0
+}
+
+function missingFieldsTitle(fields: string[]) {
+  return copy.value.missingFields(fields)
 }
 
 function coursePublishIssues() {
@@ -684,14 +812,93 @@ function coursePublishIssues() {
     if (isChapterEmpty(chapter)) issues.push(copy.value.publishIssueChapter(chapterTitle(chapter)))
   }
   for (const item of allLessonItems.value) {
-    if (isLessonEmpty(item.lesson)) {
-      issues.push(copy.value.publishIssueLesson(lessonTitle(item.lesson), lessonMissingField(item.lesson)))
-    }
+    const fields = lessonMissingFields(item.lesson)
+    if (fields.length) issues.push(copy.value.publishIssueLesson(lessonTitle(item.lesson), fields))
+  }
+  for (const material of allMaterialRecords.value) {
+    const fields = materialMissingFields(material)
+    if (fields.length) issues.push(copy.value.publishIssueMaterial(materialTitle(material), fields))
   }
   for (const item of allQuizItems.value) {
-    if (isQuizEmpty(item)) issues.push(copy.value.publishIssueQuiz(quizTitle(item.quiz)))
+    if (item.questionCount === 0) {
+      issues.push(copy.value.publishIssueQuiz(quizTitle(item.quiz)))
+      continue
+    }
+    for (const questionIssue of item.questionIssues) {
+      issues.push(copy.value.publishIssueQuestion(
+        quizTitle(item.quiz),
+        questionIssue.questionTitle,
+        questionConfigReason(questionIssue.code),
+      ))
+    }
   }
   return issues
+}
+
+function coursePublishApiError(err: unknown) {
+  if (!(err instanceof ApiError)) return apiErrorMessage(err, copy.value.toasts.coursePublishFailed)
+  const detail = err.message.trim()
+  if (!detail || detail.toLowerCase() === "conflict") return apiErrorMessage(err, copy.value.toasts.coursePublishFailed)
+
+  if (/must contain at least one chapter/i.test(detail)) {
+    return copy.value.toasts.coursePublishValidationFailed([copy.value.publishIssueNoChapters])
+  }
+  const chapterMatch = detail.match(/chapter\s+["']([^"']+)["']/i)
+  if (chapterMatch?.[1] && /at least one lesson or quiz/i.test(detail)) {
+    return copy.value.toasts.coursePublishValidationFailed([
+      copy.value.publishIssueChapter(chapterTitle(chapterById(chapterMatch[1]) || { chapter_ulid: chapterMatch[1] })),
+    ])
+  }
+
+  const lessonMatch = detail.match(/lesson\s+["']([^"']+)["']/i)
+  if (lessonMatch?.[1]) {
+    const lesson = allLessonItems.value.find((item) => lessonId(item.lesson) === lessonMatch[1])?.lesson
+    const title = lessonTitle(lesson || { lesson_ulid: lessonMatch[1] })
+    if (/missing video_stream_uid/i.test(detail)) return copy.value.toasts.coursePublishValidationFailed([copy.value.publishIssueLesson(title, [copy.value.lessonFieldLabels.video_stream_uid])])
+    if (/missing external_courseware_id/i.test(detail)) return copy.value.toasts.coursePublishValidationFailed([copy.value.publishIssueLesson(title, [copy.value.externalCourseware])])
+    if (/missing external_url/i.test(detail)) return copy.value.toasts.coursePublishValidationFailed([copy.value.publishIssueLesson(title, [copy.value.externalUrl])])
+    if (/missing media_object_key/i.test(detail)) return copy.value.toasts.coursePublishValidationFailed([copy.value.publishIssueLesson(title, [copy.value.lessonFieldLabels.media_object_key])])
+    if (/invalid or missing media_file_hash/i.test(detail)) return copy.value.toasts.coursePublishValidationFailed([copy.value.publishIssueLesson(title, [copy.value.lessonFieldLabels.media_file_hash])])
+    if (/non-existent external courseware/i.test(detail)) return copy.value.toasts.coursePublishExternalCoursewareMissing(title)
+    if (/video stream/i.test(detail)) return copy.value.toasts.coursePublishRemoteLessonInvalid(title, copy.value.lessonTypes.video)
+    if (/media asset/i.test(detail)) return copy.value.toasts.coursePublishRemoteLessonInvalid(title, copy.value.lessonFieldLabels.media_object_key)
+  }
+
+  const materialMatch = detail.match(/material\s+["']([^"']+)["']/i)
+  if (materialMatch?.[1]) {
+    const material = allMaterialRecords.value.find((item) => materialId(item) === materialMatch[1])
+    const title = materialTitle(material || { material_ulid: materialMatch[1] })
+    if (/missing file_object_key/i.test(detail)) return copy.value.toasts.coursePublishValidationFailed([copy.value.publishIssueMaterial(title, [copy.value.fileObjectKey])])
+    if (/invalid or missing file_hash/i.test(detail)) return copy.value.toasts.coursePublishValidationFailed([copy.value.publishIssueMaterial(title, [copy.value.fileHash])])
+    if (/file asset/i.test(detail)) return copy.value.toasts.coursePublishRemoteMaterialInvalid(title)
+  }
+
+  const questionMatch = detail.match(/question\s+["']([^"']+)["']\s+under quiz\s+["']([^"']+)["']/i)
+  if (questionMatch?.[1] && questionMatch[2]) {
+    const quizItem = allQuizItems.value.find((item) => quizId(item.quiz) === questionMatch[2])
+    const knownQuestion = quizItem?.questionIssues.find((item) => item.questionId === questionMatch[1])
+    let reason = ""
+    if (/at least two options/i.test(detail)) reason = questionConfigReason("atLeastTwoOptions")
+    else if (/exactly two options/i.test(detail)) reason = questionConfigReason("exactlyTwoOptions")
+    else if (/exactly one correct option/i.test(detail)) reason = questionConfigReason("exactlyOneCorrect")
+    else if (/at least one correct option/i.test(detail)) reason = questionConfigReason("atLeastOneCorrect")
+    if (reason) {
+      return copy.value.toasts.coursePublishValidationFailed([copy.value.publishIssueQuestion(
+        quizTitle(quizItem?.quiz || { quiz_ulid: questionMatch[2] }),
+        knownQuestion?.questionTitle || questionMatch[1],
+        reason,
+      )])
+    }
+  }
+
+  const quizMatch = detail.match(/quiz\s+["']([^"']+)["']/i)
+  if (quizMatch?.[1] && /at least one question/i.test(detail)) {
+    const quiz = allQuizItems.value.find((item) => quizId(item.quiz) === quizMatch[1])?.quiz
+    return copy.value.toasts.coursePublishValidationFailed([copy.value.publishIssueQuiz(quizTitle(quiz || { quiz_ulid: quizMatch[1] }))])
+  }
+  if (/course thumbnail/i.test(detail)) return copy.value.toasts.coursePublishThumbnailInvalid
+  if (/version conflict|version mismatch|stale/i.test(detail)) return copy.value.toasts.coursePublishVersionConflict
+  return copy.value.toasts.coursePublishBackendFailed(detail)
 }
 
 function chapterById(id: string) {
@@ -1640,13 +1847,9 @@ async function publishCourse() {
     await loadCourses()
     const refreshed = courses.value.find((item) => courseId(item) === selectedCourseId.value)
     if (refreshed) selectedCourse.value = refreshed
-  } catch (err: any) {
+  } catch (err) {
     console.error(err)
-    if (err?.status === 409) {
-      toast.error(apiErrorMessage(err, copy.value.toasts.coursePublishMissingConfig))
-    } else {
-      toast.error(apiErrorMessage(err, copy.value.toasts.coursePublishFailed))
-    }
+    toast.error(coursePublishApiError(err))
   } finally {
     publishing.value = false
   }
@@ -3233,13 +3436,20 @@ function parseCourseImportPackage(value: unknown): CourseImportPackage {
     if (!quizTitle || !targetIsValid || !quizType || !rawQuestions?.length) {
       throw new Error(copy.value.toasts.importInvalidPackage)
     }
-    const questions = rawQuestions.map((rawQuestion) => {
+    const questions = rawQuestions.map((rawQuestion, questionIndex) => {
       if (!isJsonRecord(rawQuestion) || !String(rawQuestion.question_text || "").trim()) {
         throw new Error(copy.value.toasts.importInvalidPackage)
       }
       const questionType = normalizeImportQuestionType(rawQuestion.question_type)
       if (!questionType || !Array.isArray(rawQuestion.options)) {
         throw new Error(copy.value.toasts.importInvalidPackage)
+      }
+      if (rawQuestion.options.length === 0) {
+        throw new Error(copy.value.toasts.importQuestionOptionsRequired(
+          quizTitle,
+          questionIndex + 1,
+          String(rawQuestion.question_text).trim(),
+        ))
       }
       return { ...rawQuestion, question_type: questionType }
     })
@@ -3915,7 +4125,7 @@ onMounted(() => {
             <div class="min-w-0">
               <div class="flex items-center gap-2 overflow-hidden">
                 <span class="truncate text-lg font-black text-slate-950">{{ chapterTitle(chapter) }}</span>
-                <span v-if="isChapterEmpty(chapter)" class="shrink-0 rounded border border-red-200 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-600">{{ copy.missingConfig }}</span>
+                <span v-if="isChapterEmpty(chapter)" class="shrink-0 rounded border border-red-200 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-600" :title="copy.publishIssueChapter(chapterTitle(chapter))">{{ copy.missingConfig }}</span>
               </div>
               <div class="mt-1 truncate font-mono text-xs font-semibold text-slate-500">ID: {{ chapterId(chapter) || "-" }}</div>
             </div>
@@ -4047,7 +4257,7 @@ onMounted(() => {
             <div class="min-w-0">
               <div class="flex items-center gap-2 overflow-hidden">
                 <span class="truncate text-lg font-black text-slate-950">{{ lessonTitle(item.lesson) }}</span>
-                <span v-if="isLessonEmpty(item.lesson)" class="shrink-0 rounded border border-red-200 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-600">{{ copy.missingConfig }}</span>
+                <span v-if="isLessonEmpty(item.lesson)" class="shrink-0 rounded border border-red-200 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-600" :title="missingFieldsTitle(lessonMissingFields(item.lesson))">{{ copy.missingConfig }}</span>
               </div>
               <div class="mt-1 truncate font-mono text-xs font-semibold text-slate-500">ID: {{ lessonId(item.lesson) || "-" }}</div>
             </div>
@@ -4321,7 +4531,7 @@ onMounted(() => {
                     <td class="px-4 py-4">
                       <div class="flex items-center gap-2 overflow-hidden">
                         <span class="truncate font-black text-slate-950">{{ item.title }}</span>
-                        <span v-if="isSupplementaryMaterialEmpty(item)" class="shrink-0 rounded border border-red-200 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-600">{{ copy.missingConfig }}</span>
+                        <span v-if="isSupplementaryMaterialEmpty(item)" class="shrink-0 rounded border border-red-200 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-600" :title="missingFieldsTitle([copy.externalUrl])">{{ copy.missingConfig }}</span>
                       </div>
                       <div v-if="item.description" class="mt-1 max-w-2xl text-sm text-slate-500">{{ item.description }}</div>
                     </td>
@@ -4501,7 +4711,10 @@ onMounted(() => {
                 <tbody class="divide-y divide-slate-100">
                   <tr v-for="material in materials" :key="materialId(material)" class="transition hover:bg-sky-50">
                     <td class="px-5 py-4">
-                      <div class="font-black text-slate-950">{{ materialTitle(material) }}</div>
+                      <div class="flex items-center gap-2">
+                        <span class="font-black text-slate-950">{{ materialTitle(material) }}</span>
+                        <span v-if="isMaterialEmpty(material)" class="shrink-0 rounded border border-red-200 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-600" :title="missingFieldsTitle(materialMissingFields(material))">{{ copy.missingConfig }}</span>
+                      </div>
                       <div v-if="material.description" class="mt-1 line-clamp-2 text-xs font-semibold text-slate-500">{{ material.description }}</div>
                     </td>
                     <td class="px-5 py-4 font-semibold text-slate-700">{{ materialTypeLabel(material.material_type) }}</td>
@@ -4683,7 +4896,7 @@ onMounted(() => {
             <div class="min-w-0">
               <div class="flex items-center gap-2 overflow-hidden">
                 <span class="truncate text-lg font-black text-slate-950">{{ quizTitle(item.quiz) }}</span>
-                <span v-if="isQuizEmpty(item)" class="shrink-0 rounded border border-red-200 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-600">{{ copy.missingConfig }}</span>
+                <span v-if="isQuizEmpty(item)" class="shrink-0 rounded border border-red-200 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-600" :title="quizMissingConfigTitle(item)">{{ copy.missingConfig }}</span>
               </div>
               <div class="mt-1 truncate font-mono text-xs font-semibold text-slate-500">ID: {{ quizId(item.quiz) || "-" }}</div>
             </div>
@@ -4850,7 +5063,10 @@ onMounted(() => {
                       :class="questionId(question) === selectedQuestionId ? 'bg-sky-50/70' : ''"
                     >
                       <div class="min-w-0">
-                        <div class="line-clamp-2 font-black text-slate-950">{{ questionTitle(question) }}</div>
+                        <div class="flex items-start gap-2">
+                          <div class="line-clamp-2 min-w-0 font-black text-slate-950">{{ questionTitle(question) }}</div>
+                          <span v-if="isQuestionEmpty(question)" class="shrink-0 rounded border border-red-200 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-600" :title="questionMissingConfigTitle(question)">{{ copy.missingConfig }}</span>
+                        </div>
                         <div class="mt-1 break-all font-mono text-xs font-semibold text-slate-500">ID: {{ questionId(question) || "-" }}</div>
                       </div>
                       <div class="text-sm font-bold text-slate-700">
