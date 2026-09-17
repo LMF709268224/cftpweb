@@ -11,7 +11,7 @@ import { useTranslation } from "@/lib/language"
 import { preloadCheckoutWizard } from "@/router"
 
 const { t, lang } = useTranslation()
-type CourseCategoryFilter = "all" | "certification" | "bundle" | "membership"
+type CourseCategoryFilter = "all" | "certification" | "membership"
 
 const searchQuery = ref("")
 const activeCategory = ref<CourseCategoryFilter>("all")
@@ -32,21 +32,19 @@ const emptyCopy = computed(() => t.value.courses)
 const categoryOptions = computed<Array<{ key: CourseCategoryFilter; label: string }>>(() => [
   { key: "all", label: t.value.courses.categoryAll },
   { key: "certification", label: t.value.courses.categoryCertification },
-  { key: "bundle", label: t.value.courses.categoryBundle },
   { key: "membership", label: t.value.courses.categoryMembership },
 ])
 
-function courseCategory(course: any): Exclude<CourseCategoryFilter, "all"> | "other" {
-  if (course.isPipelineBundle && course.isMembershipBundle) return "bundle"
-  if (course.isPipelineBundle) return "certification"
-  if (course.isMembershipBundle) return "membership"
-  return "other"
+function matchesCourseCategory(course: any, category: CourseCategoryFilter) {
+  if (category === "all") return true
+  if (category === "certification") return Boolean(course.isPipelineBundle)
+  return Boolean(course.isMembershipBundle)
 }
 
 const filteredCourses = computed(() => {
   const keyword = searchQuery.value.trim().toLowerCase()
   return allCourses.value.filter((course) => {
-    const matchesCategory = activeCategory.value === "all" || courseCategory(course) === activeCategory.value
+    const matchesCategory = matchesCourseCategory(course, activeCategory.value)
     const matchesSearch = !keyword ||
       course.title.toLowerCase().includes(keyword) ||
       course.description.toLowerCase().includes(keyword)

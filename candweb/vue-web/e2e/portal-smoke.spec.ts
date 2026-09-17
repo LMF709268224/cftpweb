@@ -249,6 +249,7 @@ test("公开商城按商品类型区分报名与成为会员文案", async ({ pa
 
   const certificationCard = page.locator("article.product-card").filter({ hasText: "公开认证项目" });
   const membershipCard = page.locator("article.product-card").filter({ hasText: "公开会员服务" });
+  await expect(page.getByRole("button", { name: "课程", exact: true })).toHaveCount(0);
   await expect(certificationCard.getByRole("button")).toContainText("去报名");
   await expect(membershipCard.getByRole("button")).toContainText("成为会员");
 
@@ -256,6 +257,7 @@ test("公开商城按商品类型区分报名与成为会员文案", async ({ pa
     localStorage.setItem("app_lang", "en");
     window.dispatchEvent(new Event("lang_change"));
   });
+  await expect(page.getByRole("button", { name: "Courses", exact: true })).toHaveCount(0);
   await expect(certificationCard.getByRole("button")).toContainText("Enroll Now");
   await expect(membershipCard.getByRole("button")).toContainText("Become a Member");
 });
@@ -334,6 +336,7 @@ test("登录后商城区分认证报名与会员加入文案", async ({ page }) 
 
   await page.goto("/certifications", { waitUntil: "domcontentloaded" });
 
+  await expect(page.getByRole("button", { name: "课程", exact: true })).toHaveCount(0);
   const certificationCard = page.locator('[data-bundle-id="candidate-certification"]');
   const membershipCard = page.locator('[data-bundle-id="candidate-membership"]');
   const pendingCertificationCard = page.locator('[data-bundle-id="candidate-certification-pending"]');
@@ -365,6 +368,7 @@ test("登录后商城区分认证报名与会员加入文案", async ({ page }) 
     localStorage.setItem("app_lang", "en");
     window.dispatchEvent(new Event("lang_change"));
   });
+  await expect(page.getByRole("button", { name: "Courses", exact: true })).toHaveCount(0);
   await expect(certificationCard).toContainText("Ready to enroll in a certification exam");
   await expect(certificationCard).toContainText("Enroll Now");
   await expect(membershipCard).toContainText("Eligible for membership");

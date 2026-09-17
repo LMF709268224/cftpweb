@@ -10,7 +10,7 @@ import { formatCurrencyMinorAmount } from "@/lib/display"
 import { startGfiLogin } from "@/lib/gfiLogin"
 import { useTranslation } from "@/lib/language"
 
-type ProductCategory = "all" | "certification" | "bundle" | "membership"
+type ProductCategory = "all" | "certification" | "membership"
 
 type PublicCourse = {
   id: string
@@ -64,26 +64,25 @@ const pageCopy = computed(() => lang.value === "zh"
 const categoryOptions = computed<Array<{ key: ProductCategory; label: string }>>(() => [
   { key: "all", label: t.value.courses.categoryAll },
   { key: "certification", label: t.value.courses.categoryCertification },
-  { key: "bundle", label: t.value.courses.categoryBundle },
   { key: "membership", label: t.value.courses.categoryMembership },
 ])
 
-function courseCategory(course: PublicCourse): Exclude<ProductCategory, "all"> | "other" {
-  if (course.isPipelineBundle && course.isMembershipBundle) return "bundle"
-  if (course.isPipelineBundle) return "certification"
-  if (course.isMembershipBundle) return "membership"
-  return "other"
+function matchesCourseCategory(course: PublicCourse, category: ProductCategory) {
+  if (category === "all") return true
+  if (category === "certification") return course.isPipelineBundle
+  return course.isMembershipBundle
 }
 
 function categoryLabel(course: PublicCourse) {
-  const category = courseCategory(course)
-  return categoryOptions.value.find((option) => option.key === category)?.label || course.provider
+  if (course.isPipelineBundle) return t.value.courses.categoryCertification
+  if (course.isMembershipBundle) return t.value.courses.categoryMembership
+  return course.provider
 }
 
 const filteredCourses = computed(() => {
   const keyword = searchQuery.value.trim().toLowerCase()
   return allCourses.value.filter((course) => {
-    const matchesCategory = activeCategory.value === "all" || courseCategory(course) === activeCategory.value
+    const matchesCategory = matchesCourseCategory(course, activeCategory.value)
     const matchesSearch = !keyword || course.title.toLowerCase().includes(keyword) || course.description.toLowerCase().includes(keyword)
     return matchesCategory && matchesSearch
   })
