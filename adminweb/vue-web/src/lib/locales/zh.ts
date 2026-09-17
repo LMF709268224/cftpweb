@@ -939,13 +939,21 @@ export const zh = {
         },
         placeholders: {
             keyword: "搜索摘要",
-            sourceService: "gcreds / glms / ...",
-            action: "CREATE / UPDATE / AUDIT / ...",
-            status: "SUCCESS / FAILED / ...",
+            action: "输入或选择规范动作",
             operator: "operator ULID",
-            resourceType: "credential_application",
+            resourceType: "输入或选择资源类型",
             resourceId: "资源 ULID",
             dateTime: "年/月/日 --:--",
+        },
+        options: {
+            allSources: "全部来源服务",
+            allStatuses: "全部状态",
+            statuses: {
+                SUCCESS: "SUCCESS - 成功",
+                FAILED: "FAILED - 失败",
+                PENDING: "PENDING - 处理中",
+                REJECTED: "REJECTED - 已拒绝",
+            },
         },
         columns: {
             time: "时间",

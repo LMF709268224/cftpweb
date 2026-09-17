@@ -68,3 +68,41 @@ test("audit detail displays the nested summary without a mutation", async ({ pag
   expect(requests).toContain("GET /api/audit/logs/audit-1")
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
 })
+
+test("audit filters use canonical options and preserve exact query values", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  const listQueries: URLSearchParams[] = []
+  await installAdminApiMocks(page, ({ method, pathname, url }) => {
+    if (method === "GET" && pathname === "/api/audit/logs") {
+      listQueries.push(new URLSearchParams(url.search))
+      return {
+        data: {
+          items: [auditSummary],
+          has_more: false,
+          next_cursor: "",
+        },
+      }
+    }
+    return undefined
+  })
+
+  await page.goto("/audit/logs")
+  await expect(page.getByText("Viewed credential application", { exact: true })).toBeVisible()
+
+  const sourceFilter = page.getByLabel("来源服务")
+  const statusFilter = page.getByLabel("状态")
+  await expect(sourceFilter).toHaveValue("")
+  await expect(statusFilter).toHaveValue("")
+  await sourceFilter.selectOption("adminbff")
+  await statusFilter.selectOption("FAILED")
+  await page.getByLabel("动作").fill("publish_course")
+  await page.getByLabel("资源类型").fill("course")
+  await page.getByRole("button", { name: "查询" }).click()
+
+  await expect.poll(() => listQueries.length).toBe(2)
+  const query = listQueries.at(-1)
+  expect(query?.get("source_service")).toBe("adminbff")
+  expect(query?.get("status")).toBe("FAILED")
+  expect(query?.get("action")).toBe("publish_course")
+  expect(query?.get("resource_type")).toBe("course")
+})

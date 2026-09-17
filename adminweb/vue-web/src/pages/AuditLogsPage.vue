@@ -3,6 +3,12 @@ import { FileText, Loader2, RefreshCw, Search, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
+import {
+  AUDIT_ACTION_SUGGESTIONS,
+  AUDIT_RESOURCE_TYPE_SUGGESTIONS,
+  AUDIT_SOURCE_SERVICE_OPTIONS,
+  AUDIT_STATUS_OPTIONS,
+} from "@/lib/auditFilterOptions"
 import { formatDate, humanizeKey, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 
@@ -238,15 +244,24 @@ onMounted(load)
         </label>
         <label class="grid gap-2 text-sm font-bold">
           {{ copy.filters.sourceService }}
-          <input v-model="filters.source_service" class="h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.sourceService" @keydown.enter="resetAndLoad" />
+          <select v-model="filters.source_service" class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3">
+            <option value="">{{ copy.options.allSources }}</option>
+            <option v-for="source in AUDIT_SOURCE_SERVICE_OPTIONS" :key="source" :value="source">{{ source }}</option>
+          </select>
         </label>
         <label class="grid gap-2 text-sm font-bold">
           {{ copy.filters.action }}
-          <input v-model="filters.action" class="h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.action" @keydown.enter="resetAndLoad" />
+          <input v-model="filters.action" list="audit-action-options" class="h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.action" @keydown.enter="resetAndLoad" />
+          <datalist id="audit-action-options">
+            <option v-for="action in AUDIT_ACTION_SUGGESTIONS" :key="action" :value="action" />
+          </datalist>
         </label>
         <label class="grid gap-2 text-sm font-bold">
           {{ copy.filters.status }}
-          <input v-model="filters.status" class="h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.status" @keydown.enter="resetAndLoad" />
+          <select v-model="filters.status" class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3">
+            <option value="">{{ copy.options.allStatuses }}</option>
+            <option v-for="status in AUDIT_STATUS_OPTIONS" :key="status" :value="status">{{ copy.options.statuses[status] }}</option>
+          </select>
         </label>
         <label class="grid gap-2 text-sm font-bold">
           {{ copy.filters.operator }}
@@ -254,7 +269,10 @@ onMounted(load)
         </label>
         <label class="grid gap-2 text-sm font-bold">
           {{ copy.filters.resourceType }}
-          <input v-model="filters.resource_type" class="h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.resourceType" @keydown.enter="resetAndLoad" />
+          <input v-model="filters.resource_type" list="audit-resource-type-options" class="h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.resourceType" @keydown.enter="resetAndLoad" />
+          <datalist id="audit-resource-type-options">
+            <option v-for="resourceType in AUDIT_RESOURCE_TYPE_SUGGESTIONS" :key="resourceType" :value="resourceType" />
+          </datalist>
         </label>
         <label class="grid gap-2 text-sm font-bold">
           {{ copy.filters.resourceId }}

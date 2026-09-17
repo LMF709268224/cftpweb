@@ -941,13 +941,21 @@ export const en: AdminTranslations = {
         },
         placeholders: {
             keyword: "Search summary",
-            sourceService: "gcreds / glms / ...",
-            action: "CREATE / UPDATE / AUDIT / ...",
-            status: "SUCCESS / FAILED / ...",
+            action: "Type or select a canonical action",
             operator: "operator ULID",
-            resourceType: "credential_application",
+            resourceType: "Type or select a resource type",
             resourceId: "resource ULID",
             dateTime: "MM/DD/YYYY --:--",
+        },
+        options: {
+            allSources: "All source services",
+            allStatuses: "All statuses",
+            statuses: {
+                SUCCESS: "SUCCESS",
+                FAILED: "FAILED",
+                PENDING: "PENDING",
+                REJECTED: "REJECTED",
+            },
         },
         columns: {
             time: "Time",
