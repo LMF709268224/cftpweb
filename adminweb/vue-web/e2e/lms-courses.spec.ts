@@ -90,7 +90,6 @@ async function installLmsCourseReadMocks(page: Page, requests: string[]) {
                     ],
                   }, {
                     question: { question_ulid: "question-2", question_text: "Question without options", question_type: 1, points: 10, sort_order: 2, is_required: true, explanation: "", media_items_json: "[]" },
-                    options: [],
                   }],
                 }],
               },

@@ -700,8 +700,11 @@ function isQuizEmpty(item: QuizListItem | null | undefined) {
 function questionOptionRecords(value: unknown): JsonRecord[] | null {
   if (!isJsonRecord(value)) return null
   if (Array.isArray(value.options)) return value.options.filter(isJsonRecord)
-  const question = extractNestedRecord(value, "question")
-  if (question && Array.isArray(question.options)) return question.options.filter(isJsonRecord)
+  if (isJsonRecord(value.question)) {
+    if (Array.isArray(value.question.options)) return value.question.options.filter(isJsonRecord)
+    // encoding/json omits an empty repeated field from QuizQuestionDetail.
+    return []
+  }
   return null
 }
 
