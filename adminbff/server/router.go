@@ -40,6 +40,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 	// ---------- 需要认证的 API ----------
 	r.Route("/api", func(r chi.Router) {
 		r.Use(s.authMiddleware)
+		r.Use(s.auditMiddleware)
 
 		// ===== 用户 (User) =====
 		r.Route("/user", func(r chi.Router) {

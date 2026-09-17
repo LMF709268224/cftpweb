@@ -118,6 +118,40 @@ func TestRouterMatchesAdminRouteFingerprint(t *testing.T) {
 	}
 }
 
+func TestEveryProtectedMutationHasAuditPolicy(t *testing.T) {
+	registered := make(map[auditRoute]struct{})
+	for _, registeredRoute := range registeredAdminRoutes(t) {
+		parts := strings.SplitN(registeredRoute, " ", 2)
+		if len(parts) != 2 {
+			t.Fatalf("invalid registered route %q", registeredRoute)
+		}
+		key := route(parts[0], parts[1])
+		registered[key] = struct{}{}
+		if _, public := adminPublicRoutes[registeredRoute]; public {
+			continue
+		}
+		switch parts[0] {
+		case http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete:
+			_, audited := adminAuditOperations[key]
+			_, excluded := nonAuditedAdminMutations[key]
+			if audited == excluded {
+				t.Fatalf("protected mutation %s must have exactly one audit policy; audited=%t excluded=%t", registeredRoute, audited, excluded)
+			}
+		}
+	}
+
+	for key := range adminAuditOperations {
+		if _, ok := registered[key]; !ok {
+			t.Errorf("audit policy refers to an unregistered route: %s %s", key.Method, key.Path)
+		}
+	}
+	for key := range nonAuditedAdminMutations {
+		if _, ok := registered[key]; !ok {
+			t.Errorf("audit exclusion refers to an unregistered route: %s %s", key.Method, key.Path)
+		}
+	}
+}
+
 func TestProtectedRoutesRequireAuthentication(t *testing.T) {
 	router := newTestRouter()
 	for _, route := range registeredAdminRoutes(t) {

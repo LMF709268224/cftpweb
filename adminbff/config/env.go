@@ -64,6 +64,9 @@ const (
 	// GAUDIT_GRPC_ADDR gaudit audit log service address
 	EnvGauditGrpcAddr = "GAUDIT_GRPC_ADDR"
 
+	// NATS_ADDR NATS broker address used to publish admin audit events
+	EnvNatsAddr = "NATS_ADDR"
+
 	// ── CORS ──
 	// CORS_ALLOWED_ORIGINS  允许的跨域来源，逗号分隔，默认 "*" 允许所有
 	EnvCORSOrigins = "CORS_ALLOWED_ORIGINS"

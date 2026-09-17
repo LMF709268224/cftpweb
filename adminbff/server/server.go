@@ -13,10 +13,11 @@ import (
 
 // Server 是 adminserver 的核心结构
 type Server struct {
-	config     *config.Config
-	grpcPool   *GrpcClientPool
-	httpServer *http.Server
-	casdoor    *CasdoorClient
+	config         *config.Config
+	grpcPool       *GrpcClientPool
+	httpServer     *http.Server
+	casdoor        *CasdoorClient
+	auditPublisher auditEventPublisher
 }
 
 func NewServer() *Server {
@@ -42,6 +43,13 @@ func (s *Server) Run(ctx context.Context) error {
 		return err
 	}
 	s.grpcPool = pool
+
+	auditPublisher, err := newNATSAuditPublisher()
+	if err != nil {
+		pool.Close()
+		return fmt.Errorf("initialize admin audit publisher: %w", err)
+	}
+	s.auditPublisher = auditPublisher
 
 	h := handler.New(
 		pool.Lms,
@@ -79,6 +87,14 @@ func (s *Server) Run(ctx context.Context) error {
 
 func (s *Server) gracefulShutdown() {
 	s.shutdownHTTP()
+
+	if s.auditPublisher != nil {
+		if err := s.auditPublisher.Close(); err != nil {
+			slog.Warn("Failed to close audit publisher", "error", err)
+		} else {
+			slog.Info("Audit publisher closed")
+		}
+	}
 
 	if s.grpcPool != nil {
 		s.grpcPool.Close()

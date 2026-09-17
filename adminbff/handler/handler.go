@@ -102,6 +102,11 @@ func AdminName(r *http.Request) string {
 	return v
 }
 
+func AdminEmail(r *http.Request) string {
+	v, _ := r.Context().Value(CtxKeyEmail).(string)
+	return v
+}
+
 // ── Context 注入辅助 ──
 
 func WithCandidate(ctx context.Context, id, email, name, token string) context.Context {
