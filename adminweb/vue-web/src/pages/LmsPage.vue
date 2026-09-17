@@ -666,6 +666,34 @@ function isSupplementaryMaterialEmpty(item: SupplementaryMaterialItem | null | u
   return false
 }
 
+function lessonMissingField(lesson: JsonRecord) {
+  const type = String(lesson.lesson_type || "")
+  if (type === "1") return copy.value.lessonFieldLabels.video_stream_uid
+  if (type === "2") return copy.value.lessonFieldLabels.body
+  if (type === "7") return copy.value.externalUrl
+  if (type === "8") return copy.value.externalCourseware
+  return copy.value.assetObjectKeyLabel
+}
+
+function coursePublishIssues() {
+  if (!completeCourseRecord.value) return []
+
+  const issues: string[] = []
+  if (!completeChapterRecords.value.length) issues.push(copy.value.publishIssueNoChapters)
+  for (const chapter of completeChapterRecords.value) {
+    if (isChapterEmpty(chapter)) issues.push(copy.value.publishIssueChapter(chapterTitle(chapter)))
+  }
+  for (const item of allLessonItems.value) {
+    if (isLessonEmpty(item.lesson)) {
+      issues.push(copy.value.publishIssueLesson(lessonTitle(item.lesson), lessonMissingField(item.lesson)))
+    }
+  }
+  for (const item of allQuizItems.value) {
+    if (isQuizEmpty(item)) issues.push(copy.value.publishIssueQuiz(quizTitle(item.quiz)))
+  }
+  return issues
+}
+
 function chapterById(id: string) {
   return chapters.value.find((item) => chapterId(item) === id) || null
 }
@@ -1597,6 +1625,11 @@ async function cloneCourse(course: JsonRecord) {
 
 async function publishCourse() {
   if (!selectedCourseId.value) return
+  const issues = coursePublishIssues()
+  if (issues.length) {
+    toast.error(copy.value.toasts.coursePublishValidationFailed(issues))
+    return
+  }
   publishing.value = true
   try {
     await apiClient(`/api/lms/courses/${encodeURIComponent(selectedCourseId.value)}/publish`, {
@@ -1844,7 +1877,9 @@ function editLesson(lesson: JsonRecord, openDialog = true) {
     sort_order: String(lesson.sort_order || 1),
     lesson_type: String(lesson.lesson_type || 2),
     body: String(lesson.body || ""),
-    asset_object_key: String(lesson.media_object_key || lesson.asset_object_key || lesson.file_object_key || ""),
+    asset_object_key: String(String(lesson.lesson_type || "") === "7"
+      ? lesson.external_url || ""
+      : lesson.media_object_key || lesson.asset_object_key || lesson.file_object_key || ""),
     asset_file_hash: String(lesson.media_file_hash || lesson.asset_file_hash || lesson.file_hash || ""),
     video_stream_uid: String(lesson.video_stream_uid || ""),
     external_courseware_ulid: String(lesson.external_courseware_ulid || ""),

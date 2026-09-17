@@ -88,6 +88,52 @@ async function installLmsCourseReadMocks(page: Page, requests: string[]) {
   })
 }
 
+async function installDraftLinkCourseMocks(page: Page, requests: string[], externalUrl = "") {
+  const draftCourse = { ...course, status: "Draft", is_published: false }
+  const linkLesson = {
+    lesson_ulid: "lesson-link",
+    title: externalUrl ? "Configured Link Lesson" : "Missing Link Lesson",
+    sort_order: 1,
+    lesson_type: 7,
+    body: "Link lesson body",
+    external_url: externalUrl,
+    version: 2,
+  }
+
+  return installAdminApiMocks(page, ({ method, pathname }) => {
+    requests.push(`${method} ${pathname}`)
+    if (method === "GET" && pathname === "/api/lms/courses") {
+      return { data: { courses: [draftCourse], has_more: false, next_cursor: "" } }
+    }
+    if (method === "GET" && pathname === "/api/lms/courses/course-1/detail") {
+      return { data: { course_detail: { course: draftCourse, chapter_count: 1, lesson_count: 1, quiz_count: 0, material_count: 0 } } }
+    }
+    if (method === "GET" && pathname === "/api/lms/courses/course-1/chapters") {
+      return { data: { chapters: [{ chapter_ulid: "chapter-link", title: "Link Chapter", sort_order: 1 }] } }
+    }
+    if (method === "GET" && pathname === "/api/lms/courses/course-1/materials") return { data: { materials: [] } }
+    if (method === "GET" && pathname === "/api/lms/courses/course-1/supplementary-material") return { data: {} }
+    if (method === "GET" && pathname === "/api/lms/courses/course-1/complete") {
+      return {
+        data: {
+          complete_course: {
+            course: draftCourse,
+            chapters: [{
+              chapter: { chapter_ulid: "chapter-link", title: "Link Chapter", sort_order: 1 },
+              lessons: [{ lesson: linkLesson }],
+              quizzes: [],
+            }],
+            quizzes: [],
+            materials: [],
+          },
+        },
+      }
+    }
+    if (method === "POST" && pathname === "/api/lms/courses/course-1/publish") return { data: {} }
+    return undefined
+  })
+}
+
 test("LMS course list renders the returned read-only summary", async ({ page }) => {
   await seedAuthenticatedAdmin(page)
   const requests: string[] = []
@@ -134,6 +180,32 @@ test("Token courseware lesson completeness uses the external courseware ID", asy
   const unconfiguredLesson = page.getByText("Unconfigured Token Lesson", { exact: true }).locator("..")
   await expect(configuredLesson.getByText("缺少内容", { exact: true })).toHaveCount(0)
   await expect(unconfiguredLesson.getByText("缺少内容", { exact: true })).toBeVisible()
+})
+
+test("publishing reports the exact missing lesson field before calling the API", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  const requests: string[] = []
+  await installDraftLinkCourseMocks(page, requests)
+  await page.goto("/lms")
+
+  await page.getByRole("button", { name: "编辑", exact: true }).first().click()
+  await page.getByRole("button", { name: "发布课程" }).click()
+
+  await expect(page.getByText(/课时「Missing Link Lesson」：缺少外部链接 URL/)).toBeVisible()
+  expect(requests).not.toContain("POST /api/lms/courses/course-1/publish")
+})
+
+test("editing a Link lesson restores its external URL", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  const requests: string[] = []
+  await installDraftLinkCourseMocks(page, requests, "https://example.test/lesson")
+  await page.goto("/lms")
+
+  await page.getByRole("button", { name: "编辑", exact: true }).first().click()
+  const lessonRow = page.getByText("Configured Link Lesson", { exact: true }).locator("../..").locator("..")
+  await lessonRow.getByRole("button", { name: "编辑课时" }).click()
+
+  await expect(page.getByPlaceholder("https://")).toHaveValue("https://example.test/lesson")
 })
 
 test("course detail exposes import-ready JSON with a GPath warning", async ({ page }) => {
