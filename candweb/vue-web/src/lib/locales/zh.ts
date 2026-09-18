@@ -380,6 +380,8 @@ export const zh = {
         searchPlaceholder: "搜索...",
         categoryAll: "全部",
         categoryCertification: "专业认证考试",
+        categoryTipsCertification: "认证",
+        categoryTipsCourse: "课程",
         categoryMembership: "专属会员权益",
         courseProgress: "学习进度",
         browseCoursesBtn: "去商城看看",

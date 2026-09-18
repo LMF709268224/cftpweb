@@ -11,7 +11,7 @@ import { useTranslation } from "@/lib/language"
 import { preloadCheckoutWizard } from "@/router"
 
 const { t, lang } = useTranslation()
-type CourseCategoryFilter = "all" | "certification" | "membership"
+type CourseCategoryFilter = "all" | "Certification" | "Course" | "membership"
 
 const searchQuery = ref("")
 const activeCategory = ref<CourseCategoryFilter>("all")
@@ -31,14 +31,19 @@ function clearPaymentPollInterval() {
 const emptyCopy = computed(() => t.value.courses)
 const categoryOptions = computed<Array<{ key: CourseCategoryFilter; label: string }>>(() => [
   { key: "all", label: t.value.courses.categoryAll },
-  { key: "certification", label: t.value.courses.categoryCertification },
+  { key: "Certification", label: t.value.courses.categoryTipsCertification },
+  { key: "Course", label: t.value.courses.categoryTipsCourse },
   { key: "membership", label: t.value.courses.categoryMembership },
 ])
 
+function normalizedCategoryTips(value: unknown) {
+  return String(value || "").trim().toLowerCase()
+}
+
 function matchesCourseCategory(course: any, category: CourseCategoryFilter) {
   if (category === "all") return true
-  if (category === "certification") return Boolean(course.isPipelineBundle)
-  return Boolean(course.isMembershipBundle)
+  if (category === "membership") return Boolean(course.isMembershipBundle)
+  return Boolean(course.isPipelineBundle) && normalizedCategoryTips(course.categoryTips) === normalizedCategoryTips(category)
 }
 
 const filteredCourses = computed(() => {
@@ -141,6 +146,7 @@ async function fetchData() {
         isPurchased: false,
         image: typeof b?.thumbnail_url === "string" ? b.thumbnail_url : "",
         priceLabel: bundlePriceLabel(b),
+        categoryTips: String(b.category_tips || "").trim(),
         students: typeof b.purchase_count === "number" ? b.purchase_count : undefined,
         versionLabel: `${t.value.courses.version} ${b.version || 0}`,
         eligibility: b?.eligibility || null,

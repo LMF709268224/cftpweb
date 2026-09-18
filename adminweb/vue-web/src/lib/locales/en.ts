@@ -2928,6 +2928,11 @@ export const en: AdminTranslations = {
         listTitle: "Certification List",
         listDescription: "Open details to maintain the full configuration by level.",
         categoryPlaceholder: "Category tips, e.g. CFtP/CFtP",
+        categoryTipsPlaceholder: "Select a category",
+        categoryTipsOptions: {
+            certification: "Certification",
+            course: "Course",
+        },
         allStatus: "All Statuses",
         onlyCurrent: "Current versions only",
         loading: "Loading...",

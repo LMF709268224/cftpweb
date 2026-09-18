@@ -10,7 +10,7 @@ import { formatCurrencyMinorAmount } from "@/lib/display"
 import { startGfiLogin } from "@/lib/gfiLogin"
 import { useTranslation } from "@/lib/language"
 
-type ProductCategory = "all" | "certification" | "membership"
+type ProductCategory = "all" | "Certification" | "Course" | "membership"
 
 type PublicCourse = {
   id: string
@@ -19,6 +19,7 @@ type PublicCourse = {
   provider: string
   image: string
   priceLabel: string
+  categoryTips: string
   isPipelineBundle: boolean
   isMembershipBundle: boolean
 }
@@ -63,18 +64,27 @@ const pageCopy = computed(() => lang.value === "zh"
 
 const categoryOptions = computed<Array<{ key: ProductCategory; label: string }>>(() => [
   { key: "all", label: t.value.courses.categoryAll },
-  { key: "certification", label: t.value.courses.categoryCertification },
+  { key: "Certification", label: t.value.courses.categoryTipsCertification },
+  { key: "Course", label: t.value.courses.categoryTipsCourse },
   { key: "membership", label: t.value.courses.categoryMembership },
 ])
 
+function normalizedCategoryTips(value: unknown) {
+  return String(value || "").trim().toLowerCase()
+}
+
 function matchesCourseCategory(course: PublicCourse, category: ProductCategory) {
   if (category === "all") return true
-  if (category === "certification") return course.isPipelineBundle
-  return course.isMembershipBundle
+  if (category === "membership") return course.isMembershipBundle
+  return course.isPipelineBundle && normalizedCategoryTips(course.categoryTips) === normalizedCategoryTips(category)
 }
 
 function categoryLabel(course: PublicCourse) {
-  if (course.isPipelineBundle) return t.value.courses.categoryCertification
+  if (course.isPipelineBundle) {
+    const category = normalizedCategoryTips(course.categoryTips)
+    if (category === "certification") return t.value.courses.categoryTipsCertification
+    if (category === "course") return t.value.courses.categoryTipsCourse
+  }
   if (course.isMembershipBundle) return t.value.courses.categoryMembership
   return course.provider
 }
@@ -169,6 +179,7 @@ async function fetchData() {
         provider: bundle.category_tips || t.value.courses.certificationPath,
         image: typeof bundle?.thumbnail_url === "string" ? bundle.thumbnail_url : "",
         priceLabel: bundlePriceLabel(bundle),
+        categoryTips: String(bundle.category_tips || "").trim(),
         isPipelineBundle: pipelineBundle,
         isMembershipBundle: membershipBundle,
       }

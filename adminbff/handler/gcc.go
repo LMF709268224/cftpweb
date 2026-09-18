@@ -298,6 +298,9 @@ func (h *Handler) UpdatePipelineMetadata(w http.ResponseWriter, r *http.Request)
 	if req.NewName != nil && !requireRequestField(w, *req.NewName, "new_name") {
 		return
 	}
+	if req.CategoryTips != nil && !requireRequestField(w, *req.CategoryTips, "category_tips") {
+		return
+	}
 
 	resp, err := h.Gcc.UpdatePipelineMetadata(r.Context(), &req)
 	if err != nil {

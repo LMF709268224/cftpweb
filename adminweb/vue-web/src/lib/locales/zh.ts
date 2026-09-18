@@ -2926,6 +2926,11 @@ export const zh = {
         listTitle: "认证列表",
         listDescription: "进入详情后按层级维护完整配置。",
         categoryPlaceholder: "分类提示，例如 CFtP/CFtP",
+        categoryTipsPlaceholder: "请选择分类",
+        categoryTipsOptions: {
+            certification: "认证",
+            course: "课程",
+        },
         allStatus: "全部状态",
         onlyCurrent: "仅当前版本",
         loading: "正在加载...",

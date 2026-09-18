@@ -382,6 +382,8 @@ export const en: AppTranslations = {
         searchPlaceholder: "Search...",
         categoryAll: "All",
         categoryCertification: "Certification Exams",
+        categoryTipsCertification: "Certification",
+        categoryTipsCourse: "Course",
         categoryMembership: "Exclusive Membership Benefits",
         courseProgress: "Course Progress",
         browseCoursesBtn: "Browse Marketplace",

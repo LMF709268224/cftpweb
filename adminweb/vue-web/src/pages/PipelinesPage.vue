@@ -42,7 +42,7 @@ const emptyForm: PipelineForm = {
   name: "",
   description: "",
   pipeline_gpath: "",
-  category_tips: "default",
+  category_tips: "",
   structure_json: JSON.stringify(emptyStructure(), null, 2),
 }
 
@@ -82,6 +82,17 @@ const limit = 20
 let detailRequestId = 0
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.pipelineConfigAdmin)
+const categoryTipOptions = computed(() => {
+  const options = [
+    { value: "Certification", label: copy.value.categoryTipsOptions.certification },
+    { value: "Course", label: copy.value.categoryTipsOptions.course },
+  ]
+  const currentValue = form.value.category_tips.trim()
+  if (currentValue && !options.some((option) => option.value === currentValue)) {
+    options.unshift({ value: currentValue, label: currentValue })
+  }
+  return options
+})
 const pipelineTranslationFields = computed(() => [
   { key: "name", label: copy.value.fields.name, maxLength: 128 },
   { key: "description", label: copy.value.fields.description, kind: "textarea" as const, maxLength: 1024 },
@@ -890,7 +901,7 @@ async function createPipeline() {
 
 async function saveMetadata() {
   if (!selectedId.value) return
-  if (!form.value.name.trim()) {
+  if (!form.value.name.trim() || !form.value.category_tips.trim()) {
     toast.error(copy.value.toasts.nameRequired)
     return
   }
@@ -901,6 +912,7 @@ async function saveMetadata() {
       body: JSON.stringify({
         new_name: form.value.name.trim(),
         description: form.value.description.trim(),
+        category_tips: form.value.category_tips.trim(),
       }),
     })
     toast.success(copy.value.toasts.metadataSaved)
@@ -1238,7 +1250,10 @@ onMounted(() => {
             <div class="mt-4 grid gap-4 md:grid-cols-2">
               <label class="grid content-start gap-2 text-sm font-bold">
                 <span><span v-if="creating" class="mr-1 text-red-500">*</span>{{ copy.fields.categoryTips }}</span>
-                <input v-model="form.category_tips" :disabled="!creating" class="h-12 w-full rounded-xl border border-slate-200 px-4 disabled:bg-slate-100 disabled:text-slate-500" />
+                <select v-model="form.category_tips" :disabled="deprecated" class="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 disabled:bg-slate-100 disabled:text-slate-500">
+                  <option value="" disabled>{{ copy.categoryTipsPlaceholder }}</option>
+                  <option v-for="option in categoryTipOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+                </select>
               </label>
               <label class="grid content-start gap-2 text-sm font-bold">
                 <span><span v-if="creating" class="mr-1 text-red-500">*</span>{{ copy.fields.respath }}</span>

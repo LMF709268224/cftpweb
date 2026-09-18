@@ -11,6 +11,7 @@ import (
 
 	gccpb "github.com/afnandelfin620-star/cftptest/cftp/gcc"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type pipelineStructureClientStub struct {
@@ -21,6 +22,16 @@ type pipelineStructureClientStub struct {
 func (s *pipelineStructureClientStub) UpdatePipelineStructure(_ context.Context, req *gccpb.UpdatePipelineStructureRequest, _ ...grpc.CallOption) (*gccpb.PipelineConfig, error) {
 	s.request = req
 	return &gccpb.PipelineConfig{PipelineUlid: req.GetPipelineUlid()}, nil
+}
+
+type pipelineMetadataClientStub struct {
+	gccpb.CCServiceClient
+	request *gccpb.UpdateMetadataRequest
+}
+
+func (s *pipelineMetadataClientStub) UpdatePipelineMetadata(_ context.Context, req *gccpb.UpdateMetadataRequest, _ ...grpc.CallOption) (*emptypb.Empty, error) {
+	s.request = req
+	return &emptypb.Empty{}, nil
 }
 
 func TestCatalogHandlersReportUnavailableContract(t *testing.T) {
@@ -104,5 +115,24 @@ func TestUpdatePipelineStructureRejectsObsoleteTopLevelFields(t *testing.T) {
 	}
 	if client.request != nil {
 		t.Fatal("obsolete structure request reached GCC")
+	}
+}
+
+func TestUpdatePipelineMetadataPreservesCategoryTips(t *testing.T) {
+	client := &pipelineMetadataClientStub{}
+	recorder := httptest.NewRecorder()
+	request := requestWithURLParam(http.MethodPut, "/api/pipelines/pipeline-1/metadata", "pipeline_id", "pipeline-1")
+	request.Body = io.NopCloser(strings.NewReader(`{"new_name":"Updated certification","description":"Updated description","category_tips":"Course"}`))
+
+	(&Handler{Gcc: client}).UpdatePipelineMetadata(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body=%s", recorder.Code, http.StatusOK, recorder.Body.String())
+	}
+	if client.request == nil {
+		t.Fatal("UpdatePipelineMetadata was not called")
+	}
+	if client.request.GetTargetUlid() != "pipeline-1" || client.request.GetNewName() != "Updated certification" || client.request.GetDescription() != "Updated description" || client.request.GetCategoryTips() != "Course" {
+		t.Fatalf("metadata request = %+v", client.request)
 	}
 }
