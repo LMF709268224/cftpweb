@@ -1,7 +1,14 @@
 name: ${COMPOSE_PROJECT_NAME:-cftp}
 
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "20m"
+    max-file: "3"
+
 x-bff-base: &bff-base
   restart: unless-stopped
+  logging: *default-logging
   env_file:
     - ${PORTAL_ENV_FILE:-.env.dev}
   networks:
@@ -66,6 +73,7 @@ services:
     image: ${IMAGE_REGISTRY:-localhost}/candweb:${IMAGE_TAG:-dev-latest}
     container_name: ${COMPOSE_PROJECT_NAME:-cftp}-candweb
     restart: unless-stopped
+    logging: *default-logging
     environment:
       PORT: 8080
     networks:
@@ -86,6 +94,7 @@ services:
     image: ${IMAGE_REGISTRY:-localhost}/adminweb:${IMAGE_TAG:-dev-latest}
     container_name: ${COMPOSE_PROJECT_NAME:-cftp}-adminweb
     restart: unless-stopped
+    logging: *default-logging
     environment:
       PORT: 8081
     networks:
