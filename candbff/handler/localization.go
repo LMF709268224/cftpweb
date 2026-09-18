@@ -292,7 +292,6 @@ func (h *Handler) localizedPipeline(ctx context.Context, pipeline *gccpb.Pipelin
 
 	if pipelineTranslation != nil {
 		localized.Name = translatedText(localized.GetName(), pipelineTranslation.GetName())
-		localized.CategoryTips = translatedText(localized.GetCategoryTips(), pipelineTranslation.GetCategoryTips())
 		localized.Description = translatedText(localized.GetDescription(), pipelineTranslation.GetDescription())
 	}
 	for stageIndex, stage := range localized.GetStages() {

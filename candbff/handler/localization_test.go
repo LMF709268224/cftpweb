@@ -276,7 +276,7 @@ func TestLocalizedPipelineOverlaysConfiguredTranslations(t *testing.T) {
 
 	localized := handler.localizedPipeline(context.Background(), base, "zh-CN")
 	if localized.GetName() != "认证名称" ||
-		localized.GetCategoryTips() != "分类提示" ||
+		localized.GetCategoryTips() != "Category" ||
 		localized.GetDescription() != "认证描述" {
 		t.Fatalf("pipeline translation was not applied: %#v", localized)
 	}
