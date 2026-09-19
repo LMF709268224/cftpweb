@@ -7,11 +7,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 cd "${SCRIPT_DIR}"
 
-if [ -z "${VITE_CREDENTIAL_VERIFY_BASE_URL:-}" ]; then
-  echo "ERROR: VITE_CREDENTIAL_VERIFY_BASE_URL must be set before building candweb."
-  exit 1
-fi
-
 echo "Building candidate frontend..."
 cd vue-web
 npm ci

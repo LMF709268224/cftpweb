@@ -69,10 +69,6 @@ for service in "${SERVICES[@]}"; do
       ;;
     candweb|adminweb)
       echo ">>> Building frontend assets for ${service}..."
-      if [ "$service" = "candweb" ] && [ -z "${VITE_CREDENTIAL_VERIFY_BASE_URL:-}" ]; then
-        echo "ERROR: VITE_CREDENTIAL_VERIFY_BASE_URL must be set before building candweb."
-        exit 1
-      fi
       (cd "${ROOT_DIR}/${service}/vue-web" && npm ci && npm run build)
       ;;
     *)

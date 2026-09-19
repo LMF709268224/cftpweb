@@ -1,4 +1,5 @@
 const ULID_PATTERN = /^[0-7][0-9A-HJKMNP-TV-Z]{25}$/i
+const VERIFICATION_API_BASE = "/api/public/test-verify-creds"
 
 export type VerificationStepId = "parse" | "digest" | "chain" | "certificate" | "signature" | "identity" | "lifecycle"
 export type VerificationStepStatus = "pending" | "running" | "success" | "failed"
@@ -55,9 +56,7 @@ let rootAnchorPromise: Promise<RootTrustAnchor> | null = null
 let rootCryptoKeyPromise: Promise<CryptoKey> | null = null
 
 function verificationUrl(path: string) {
-  const configured = String(import.meta.env.VITE_CREDENTIAL_VERIFY_BASE_URL || "").trim()
-  if (!configured) throw new Error("证书验签服务未配置，请联系管理员")
-  return `${configured.replace(/\/$/, "")}${path}`
+  return `${VERIFICATION_API_BASE}${path}`
 }
 
 function hex(bytes: ArrayBuffer | Uint8Array) {
@@ -220,9 +219,10 @@ function importPEMPublicKey(pem: string, algorithm: string) {
 
 async function getRootAnchor() {
   if (!rootAnchorPromise) {
-    rootAnchorPromise = fetch(verificationUrl("/api/primary-key"), { headers: { Accept: "application/json" } }).then(async (response) => {
-      if (!response.ok) throw new Error(`无法获取根信任锚点 (HTTP ${response.status})`)
-      const anchor = await response.json() as RootTrustAnchor
+    rootAnchorPromise = fetch(verificationUrl("/api/primary-key"), { credentials: "include", headers: { Accept: "application/json" } }).then(async (response) => {
+      const payload = await response.json().catch(() => null) as { data?: RootTrustAnchor; message?: string } | null
+      if (!response.ok || !payload?.data) throw new Error(payload?.message || `无法获取根信任锚点 (HTTP ${response.status})`)
+      const anchor = payload.data
       if (!anchor.public_key_pem || !anchor.algorithm) throw new Error("根信任锚点响应缺少公钥或算法")
       return anchor
     }).catch((error) => {
@@ -365,9 +365,10 @@ export async function verifyCredentialPdf(file: File, progress?: VerificationPro
 
   step(progress, "lifecycle", "running", "在线核验文件指纹与证书生命周期...")
   const pdfHash = hex(await crypto.subtle.digest("SHA-256", asArrayBuffer(bytes)))
-  const response = await fetch(verificationUrl(`/api/check-validity?cred_ulid=${encodeURIComponent(ulid)}&pdf_hash=${encodeURIComponent(pdfHash)}`), { headers: { Accept: "application/json" } })
-  if (!response.ok) throw new Error(`在线生命周期查询失败 (HTTP ${response.status})`)
-  const lifecycle = await response.json() as LifecycleResponse
+  const response = await fetch(verificationUrl(`/api/check-validity?cred_ulid=${encodeURIComponent(ulid)}&pdf_hash=${encodeURIComponent(pdfHash)}`), { credentials: "include", headers: { Accept: "application/json" } })
+  const payload = await response.json().catch(() => null) as { data?: LifecycleResponse; message?: string } | null
+  if (!response.ok || !payload?.data) throw new Error(payload?.message || `在线生命周期查询失败 (HTTP ${response.status})`)
+  const lifecycle = payload.data
   step(progress, "lifecycle", "success", `状态: ${String(lifecycle.status)}`)
   return {
     lifecycle,

@@ -41,6 +41,14 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 	r.With(normalTimeout).Get("/api/public/config", h.GetPublicConfig)
 	r.With(normalTimeout).Get("/api/public/config/organization", h.GetOrganizationConfig)
 
+	// Public certificate verification. The browser performs PDF cryptography locally;
+	// these endpoints proxy only the trust anchor and the ULID/hash status lookup.
+	r.Route("/api/public/test-verify-creds/api", func(r chi.Router) {
+		r.Use(normalTimeout)
+		r.Get("/primary-key", h.GetCredentialVerificationTrustAnchor)
+		r.Get("/check-validity", h.CheckCredentialVerificationValidity)
+	})
+
 	r.Route("/api/auth", func(r chi.Router) {
 		r.Use(normalTimeout)
 		r.Get("/login-url", h.GetLoginURL)

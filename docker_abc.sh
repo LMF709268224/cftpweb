@@ -45,13 +45,6 @@ fi
 IMAGE_TAG=$(awk -F= '$1 == "IMAGE_TAG" { print substr($0, index($0, "=") + 1) }' "$ENV_FILE" | tail -n 1 | tr -d '\r')
 IMAGE_TAG="${IMAGE_TAG:-dev-latest}"
 
-VITE_CREDENTIAL_VERIFY_BASE_URL=$(awk -F= '$1 == "VITE_CREDENTIAL_VERIFY_BASE_URL" { print substr($0, index($0, "=") + 1) }' "$ENV_FILE" | tail -n 1 | tr -d '\r')
-if [ -z "$VITE_CREDENTIAL_VERIFY_BASE_URL" ]; then
-  echo "ERROR: VITE_CREDENTIAL_VERIFY_BASE_URL is required in ${ENV_FILE}"
-  exit 1
-fi
-export VITE_CREDENTIAL_VERIFY_BASE_URL
-
 echo ">>> Deploying ${DEPLOY_ENV} environment using ${ENV_FILE}..."
 echo ">>> Updating source code..."
 git -C "$ROOT_DIR" pull --ff-only

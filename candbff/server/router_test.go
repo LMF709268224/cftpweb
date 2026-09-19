@@ -41,6 +41,8 @@ var candidateRouteContract = []routeExpectation{
 	{method: http.MethodPost, path: "/api/public/telemetry/", access: routePublic},
 	{method: http.MethodGet, path: "/api/public/config", access: routePublic},
 	{method: http.MethodGet, path: "/api/public/config/organization", access: routePublic},
+	{method: http.MethodGet, path: "/api/public/test-verify-creds/api/primary-key", access: routePublic},
+	{method: http.MethodGet, path: "/api/public/test-verify-creds/api/check-validity", access: routePublic},
 	{method: http.MethodGet, path: "/api/auth/login-url", access: routePublic},
 	{method: http.MethodPost, path: "/api/auth/login", access: routePublic},
 	{method: http.MethodPost, path: "/api/auth/logout", access: routePublic},
