@@ -267,6 +267,15 @@ export function isExpiredLifecycleStatus(status: unknown) {
   return status === 3 || status === "Expired" || status === "CREDENTIAL_STATUS_EXPIRED"
 }
 
+export function lifecycleStatusLabel(status: unknown, exists?: boolean) {
+  if (exists === false) return "未登记或文件指纹不匹配"
+  if (isActiveLifecycleStatus(status)) return "有效"
+  if (isRevokedLifecycleStatus(status)) return "已撤销/作废"
+  if (isExpiredLifecycleStatus(status)) return "已过期"
+  if (status === 0 || status === "Unspecified" || status === "CREDENTIAL_STATUS_UNSPECIFIED") return "未指定"
+  return "未知状态"
+}
+
 export async function verifyCredentialPdf(file: File, progress?: VerificationProgress): Promise<CredentialVerificationResult> {
   if (file.type && file.type !== "application/pdf") throw new Error("请选择 PDF 文件")
   const bytes = new Uint8Array(await file.arrayBuffer())
@@ -375,7 +384,7 @@ export async function verifyCredentialPdf(file: File, progress?: VerificationPro
   const payload = await response.json().catch(() => null) as { data?: LifecycleResponse; message?: string } | null
   if (!response.ok || !payload?.data) throw new Error(payload?.message || `在线生命周期查询失败 (HTTP ${response.status})`)
   const lifecycle = payload.data
-  step(progress, "lifecycle", "success", `状态: ${String(lifecycle.status)}`)
+  step(progress, "lifecycle", "success", `状态: ${lifecycleStatusLabel(lifecycle.status, lifecycle.exists)}`)
   return {
     lifecycle,
     ulid,
