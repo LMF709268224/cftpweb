@@ -296,7 +296,14 @@ export async function verifyCredentialPdf(file: File, progress?: VerificationPro
   const signedData = contentInfo?.children[0]
   if (!signedData) throw new Error("无效的 PKCS#7 SignedData 容器")
   const certificates = signedData.children.find((child) => child.tag === 0xa0)
-  const signerInfos = signedData.children.find((child) => child.tag === 0x31)
+  // SignedData contains both digestAlgorithms (SET OF AlgorithmIdentifier) and
+  // signerInfos (SET OF SignerInfo). Select the latter by its signed attributes
+  // and signature fields instead of taking the first SET.
+  const signerInfos = signedData.children.find((child) => child.tag === 0x31 && child.children.some((signer) =>
+    signer.tag === 0x30
+      && signer.children.some((item) => item.tag === 0xa0)
+      && signer.children.some((item) => item.tag === 0x04),
+  ))
   const leafCertificate = certificates?.children.find((child) => child.tag === 0x30)
   const signerInfo = signerInfos?.children[0]
   if (!leafCertificate || !signerInfo) throw new Error("PKCS#7 中缺少工作证书或 SignerInfo")
