@@ -161,7 +161,7 @@ async function verify() {
   errorMessage.value = ""
   result.value = null
   try {
-    result.value = await verifyCredentialPdf(selectedFile.value, updateStep)
+    result.value = await verifyCredentialPdf(selectedFile.value, updateStep, lang.value)
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : String(error)
     const running = steps.value.find((step) => step.status === "running")

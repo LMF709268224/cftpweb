@@ -1,3 +1,5 @@
+import type { Lang } from "./language"
+
 const ULID_PATTERN = /^[0-7][0-9A-HJKMNP-TV-Z]{25}$/i
 const VERIFICATION_API_BASE = "/api/public/test-verify-creds"
 
@@ -267,16 +269,19 @@ export function isExpiredLifecycleStatus(status: unknown) {
   return status === 3 || status === "Expired" || status === "CREDENTIAL_STATUS_EXPIRED"
 }
 
-export function lifecycleStatusLabel(status: unknown, exists?: boolean) {
-  if (exists === false) return "未登记或文件指纹不匹配"
-  if (isActiveLifecycleStatus(status)) return "有效"
-  if (isRevokedLifecycleStatus(status)) return "已撤销/作废"
-  if (isExpiredLifecycleStatus(status)) return "已过期"
-  if (status === 0 || status === "Unspecified" || status === "CREDENTIAL_STATUS_UNSPECIFIED") return "未指定"
-  return "未知状态"
+export function lifecycleStatusLabel(status: unknown, exists?: boolean, locale: Lang = "zh") {
+  const labels = locale === "en"
+    ? { missing: "Not registered or PDF hash mismatch", active: "Active", revoked: "Revoked", expired: "Expired", unspecified: "Unspecified", unknown: "Unknown status" }
+    : { missing: "未登记或文件指纹不匹配", active: "有效", revoked: "已撤销/作废", expired: "已过期", unspecified: "未指定", unknown: "未知状态" }
+  if (exists === false) return labels.missing
+  if (isActiveLifecycleStatus(status)) return labels.active
+  if (isRevokedLifecycleStatus(status)) return labels.revoked
+  if (isExpiredLifecycleStatus(status)) return labels.expired
+  if (status === 0 || status === "Unspecified" || status === "CREDENTIAL_STATUS_UNSPECIFIED") return labels.unspecified
+  return labels.unknown
 }
 
-export async function verifyCredentialPdf(file: File, progress?: VerificationProgress): Promise<CredentialVerificationResult> {
+export async function verifyCredentialPdf(file: File, progress?: VerificationProgress, locale: Lang = "zh"): Promise<CredentialVerificationResult> {
   if (file.type && file.type !== "application/pdf") throw new Error("请选择 PDF 文件")
   const bytes = new Uint8Array(await file.arrayBuffer())
   if (bytes.length < 32) throw new Error("PDF 文件内容过短")
@@ -384,7 +389,9 @@ export async function verifyCredentialPdf(file: File, progress?: VerificationPro
   const payload = await response.json().catch(() => null) as { data?: LifecycleResponse; message?: string } | null
   if (!response.ok || !payload?.data) throw new Error(payload?.message || `在线生命周期查询失败 (HTTP ${response.status})`)
   const lifecycle = payload.data
-  step(progress, "lifecycle", "success", `状态: ${lifecycleStatusLabel(lifecycle.status, lifecycle.exists)}`)
+  step(progress, "lifecycle", "success", locale === "en"
+    ? `Status: ${lifecycleStatusLabel(lifecycle.status, lifecycle.exists, locale)}`
+    : `状态：${lifecycleStatusLabel(lifecycle.status, lifecycle.exists, locale)}`)
   return {
     lifecycle,
     ulid,
