@@ -1,4 +1,11 @@
-import type { Lang } from "./language"
+import type { CertificateVerificationTranslations } from "./locales/zh"
+
+type VerificationCopy = CertificateVerificationTranslations
+type VerificationErrors = VerificationCopy["errors"]
+
+function formatCopy(template: string, values: Record<string, string | number>) {
+  return template.replace(/\{\{(\w+)\}\}/g, (_, key: string) => String(values[key] ?? ""))
+}
 
 const ULID_PATTERN = /^[0-7][0-9A-HJKMNP-TV-Z]{25}$/i
 const VERIFICATION_API_BASE = "/api/public/test-verify-creds"
@@ -73,8 +80,8 @@ function asArrayBuffer(bytes: Uint8Array): ArrayBuffer {
   return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer
 }
 
-function parseASN1(bytes: Uint8Array, offset = 0, limit = bytes.length): ASN1Element {
-  if (offset + 2 > limit) throw new Error("ASN.1 数据不完整")
+function parseASN1(bytes: Uint8Array, errors: VerificationErrors, offset = 0, limit = bytes.length): ASN1Element {
+  if (offset + 2 > limit) throw new Error(errors.asn1Incomplete)
   const tag = bytes[offset]
   const firstLengthByte = bytes[offset + 1]
   let length = 0
@@ -84,14 +91,14 @@ function parseASN1(bytes: Uint8Array, offset = 0, limit = bytes.length): ASN1Ele
     length = firstLengthByte
   } else {
     const lengthBytes = firstLengthByte & 0x7f
-    if (lengthBytes === 0 || lengthBytes > 4 || offset + 2 + lengthBytes > limit) throw new Error("ASN.1 长度字段无效")
+    if (lengthBytes === 0 || lengthBytes > 4 || offset + 2 + lengthBytes > limit) throw new Error(errors.asn1LengthInvalid)
     headerLen += lengthBytes
     for (let index = 0; index < lengthBytes; index += 1) length = (length << 8) | bytes[offset + 2 + index]
   }
 
   const contentStart = offset + headerLen
   const contentEnd = contentStart + length
-  if (contentEnd > limit) throw new Error("ASN.1 内容超出边界")
+  if (contentEnd > limit) throw new Error(errors.asn1OutOfBounds)
   const rawBytes = bytes.slice(offset, contentEnd)
   const contentBytes = bytes.slice(contentStart, contentEnd)
   const element: ASN1Element = { tag, length, headerLen, rawBytes, contentBytes, children: [] }
@@ -99,7 +106,7 @@ function parseASN1(bytes: Uint8Array, offset = 0, limit = bytes.length): ASN1Ele
   if ((tag & 0x20) !== 0 || (tag >= 0xa0 && tag <= 0xbf)) {
     let childOffset = 0
     while (childOffset < contentBytes.length) {
-      const child = parseASN1(contentBytes, childOffset, contentBytes.length)
+      const child = parseASN1(contentBytes, errors, childOffset, contentBytes.length)
       element.children.push(child)
       childOffset += child.rawBytes.length
     }
@@ -127,20 +134,20 @@ function replaceImplicitSetTag(element: ASN1Element) {
   return output
 }
 
-function derSignatureToP1363(signature: Uint8Array, keySize: number) {
-  const parsed = parseASN1(signature)
-  if (parsed.tag !== 0x30 || parsed.children.length < 2) throw new Error("ECDSA 签名格式无效")
+function derSignatureToP1363(signature: Uint8Array, keySize: number, errors: VerificationErrors) {
+  const parsed = parseASN1(signature, errors)
+  if (parsed.tag !== 0x30 || parsed.children.length < 2) throw new Error(errors.ecdsaFormatInvalid)
   const output = new Uint8Array(keySize * 2)
   for (const [index, integer] of parsed.children.slice(0, 2).entries()) {
     let value = integer.contentBytes
     while (value.length > keySize && value[0] === 0) value = value.slice(1)
-    if (value.length > keySize) throw new Error("ECDSA 签名数值超出曲线长度")
+    if (value.length > keySize) throw new Error(errors.ecdsaValueTooLong)
     output.set(value, index * keySize + keySize - value.length)
   }
   return output
 }
 
-function decodeOID(bytes: Uint8Array) {
+function decodeOID(bytes: Uint8Array, errors: VerificationErrors) {
   if (!bytes.length) return ""
   const first = bytes[0]
   const parts = [Math.min(2, Math.floor(first / 40)), first >= 80 ? first - 80 : first % 40]
@@ -152,24 +159,24 @@ function decodeOID(bytes: Uint8Array) {
       value = 0
     }
   }
-  if (value !== 0) throw new Error("OID 数据不完整")
+  if (value !== 0) throw new Error(errors.oidIncomplete)
   return parts.join(".")
 }
 
-function hashNameForOID(oid: string) {
+function hashNameForOID(oid: string, errors: VerificationErrors) {
   if (oid === "2.16.840.1.101.3.4.2.2" || oid === "1.2.840.10045.4.3.3") return "SHA-384" as const
   if (oid === "2.16.840.1.101.3.4.2.3" || oid === "1.2.840.10045.4.3.4") return "SHA-512" as const
   if (oid === "2.16.840.1.101.3.4.2.1" || oid === "1.2.840.10045.4.3.2") return "SHA-256" as const
-  throw new Error(`不支持的摘要算法 OID: ${oid}`)
+  throw new Error(formatCopy(errors.unsupportedDigestOID, { oid }))
 }
 
-function curveForDigestOID(oid: string) {
+function curveForDigestOID(oid: string, errors: VerificationErrors) {
   // gcreds pairs the SignerInfo digest OID with the signing curve:
   // P-256 -> SHA-256, P-384 -> SHA-384, P-521 -> SHA-512.
   if (oid === "2.16.840.1.101.3.4.2.2") return { name: "P-384" as const, size: 48 }
   if (oid === "2.16.840.1.101.3.4.2.3") return { name: "P-521" as const, size: 66 }
   if (oid === "2.16.840.1.101.3.4.2.1") return { name: "P-256" as const, size: 32 }
-  throw new Error(`不支持的签名摘要算法 OID: ${oid}`)
+  throw new Error(formatCopy(errors.unsupportedCurveDigestOID, { oid }))
 }
 
 function findSubjectPublicKeyInfo(tbs: ASN1Element) {
@@ -180,17 +187,17 @@ function readASN1String(element: ASN1Element) {
   return decodeLatin1(element.contentBytes).replace(/\0/g, "").trim()
 }
 
-function subjectCommonName(tbs: ASN1Element) {
+function subjectCommonName(tbs: ASN1Element, errors: VerificationErrors) {
   for (const child of tbs.children) {
     if (child.tag !== 0x30) continue
     for (const rdn of child.children) {
       const attribute = rdn.children[0]
       if (!attribute || attribute.children.length < 2) continue
-      const oid = decodeOID(attribute.children[0].contentBytes)
+      const oid = decodeOID(attribute.children[0].contentBytes, errors)
       if (oid === "2.5.4.3") return readASN1String(attribute.children[1])
     }
   }
-  return "官方签名证书"
+  return ""
 }
 
 function parseCertificateTimes(tbs: ASN1Element) {
@@ -209,10 +216,10 @@ function parseCertificateTimes(tbs: ASN1Element) {
   return { from: parseTime(validity.children[0]), to: parseTime(validity.children[1]) }
 }
 
-function importPEMPublicKey(pem: string, algorithm: string) {
+function importPEMPublicKey(pem: string, algorithm: string, errors: VerificationErrors) {
   const clean = pem.replace(/-----[^\n]+-----/g, "").replace(/\s+/g, "")
   const der = Uint8Array.from(atob(clean), (char) => char.charCodeAt(0))
-  const parsed = parseASN1(der)
+  const parsed = parseASN1(der, errors)
   let spki = der
   if (parsed.tag === 0x30 && parsed.children.length === 3) {
     spki = (findSubjectPublicKeyInfo(parsed.children[0])?.rawBytes || der) as Uint8Array<ArrayBuffer>
@@ -221,13 +228,13 @@ function importPEMPublicKey(pem: string, algorithm: string) {
   return crypto.subtle.importKey("spki", asArrayBuffer(spki), { name: "ECDSA", namedCurve: curve }, false, ["verify"])
 }
 
-async function getRootAnchor() {
+async function getRootAnchor(copy: VerificationCopy) {
   if (!rootAnchorPromise) {
     rootAnchorPromise = fetch(verificationUrl("/api/primary-key"), { credentials: "include", headers: { Accept: "application/json" } }).then(async (response) => {
       const payload = await response.json().catch(() => null) as { data?: RootTrustAnchor; message?: string } | null
-      if (!response.ok || !payload?.data) throw new Error(payload?.message || `无法获取根信任锚点 (HTTP ${response.status})`)
+      if (!response.ok || !payload?.data) throw new Error(payload?.message || formatCopy(copy.errors.rootAnchorFetch, { status: response.status }))
       const anchor = payload.data
-      if (!anchor.public_key_pem || !anchor.algorithm) throw new Error("根信任锚点响应缺少公钥或算法")
+      if (!anchor.public_key_pem || !anchor.algorithm) throw new Error(copy.errors.rootAnchorFieldsMissing)
       return anchor
     }).catch((error) => {
       rootAnchorPromise = null
@@ -237,9 +244,9 @@ async function getRootAnchor() {
   return rootAnchorPromise
 }
 
-async function getRootKey(anchor: RootTrustAnchor) {
+async function getRootKey(anchor: RootTrustAnchor, errors: VerificationErrors) {
   if (!rootCryptoKeyPromise) {
-    rootCryptoKeyPromise = importPEMPublicKey(anchor.public_key_pem, anchor.algorithm).catch((error) => {
+    rootCryptoKeyPromise = importPEMPublicKey(anchor.public_key_pem, anchor.algorithm, errors).catch((error) => {
       rootCryptoKeyPromise = null
       throw error
     })
@@ -251,9 +258,9 @@ function step(progress: VerificationProgress | undefined, id: VerificationStepId
   progress?.({ id, status, detail })
 }
 
-function requireRange(bytes: Uint8Array, start: number, length: number) {
+function requireRange(bytes: Uint8Array, start: number, length: number, errors: VerificationErrors) {
   if (!Number.isSafeInteger(start) || !Number.isSafeInteger(length) || start < 0 || length < 0 || start + length > bytes.length) {
-    throw new Error("PDF ByteRange 超出文件边界")
+    throw new Error(errors.byteRangeOutOfBounds)
   }
 }
 
@@ -269,10 +276,7 @@ export function isExpiredLifecycleStatus(status: unknown) {
   return status === 3 || status === "Expired" || status === "CREDENTIAL_STATUS_EXPIRED"
 }
 
-export function lifecycleStatusLabel(status: unknown, exists?: boolean, locale: Lang = "zh") {
-  const labels = locale === "en"
-    ? { missing: "Not registered or PDF hash mismatch", active: "Active", revoked: "Revoked", expired: "Expired", unspecified: "Unspecified", unknown: "Unknown status" }
-    : { missing: "未登记或文件指纹不匹配", active: "有效", revoked: "已撤销/作废", expired: "已过期", unspecified: "未指定", unknown: "未知状态" }
+export function lifecycleStatusLabel(status: unknown, exists: boolean | undefined, labels: VerificationCopy["status"]) {
   if (exists === false) return labels.missing
   if (isActiveLifecycleStatus(status)) return labels.active
   if (isRevokedLifecycleStatus(status)) return labels.revoked
@@ -281,36 +285,37 @@ export function lifecycleStatusLabel(status: unknown, exists?: boolean, locale: 
   return labels.unknown
 }
 
-export async function verifyCredentialPdf(file: File, progress?: VerificationProgress, locale: Lang = "zh"): Promise<CredentialVerificationResult> {
-  if (file.type && file.type !== "application/pdf") throw new Error("请选择 PDF 文件")
+export async function verifyCredentialPdf(file: File, progress: VerificationProgress | undefined, copy: VerificationCopy): Promise<CredentialVerificationResult> {
+  const errors = copy.errors
+  if (file.type && file.type !== "application/pdf") throw new Error(errors.pdfRequired)
   const bytes = new Uint8Array(await file.arrayBuffer())
-  if (bytes.length < 32) throw new Error("PDF 文件内容过短")
-  const anchor = await getRootAnchor()
+  if (bytes.length < 32) throw new Error(errors.pdfTooShort)
+  const anchor = await getRootAnchor(copy)
 
-  step(progress, "parse", "running", "搜索 PDF 的 ByteRange 与签名容器...")
+  step(progress, "parse", "running", copy.progress.parseRunning)
   const pdfText = decodeLatin1(bytes)
-  if (!pdfText.startsWith("%PDF-")) throw new Error("文件不是有效的 PDF")
+  if (!pdfText.startsWith("%PDF-")) throw new Error(errors.invalidPdf)
   const rangeMatch = /\/ByteRange\s*\[\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s*\]/.exec(pdfText)
-  if (!rangeMatch) throw new Error("未找到 /ByteRange，该文档未经过 PAdES 数字签名")
+  if (!rangeMatch) throw new Error(errors.byteRangeMissing)
   const ranges = rangeMatch.slice(1).map(Number)
-  requireRange(bytes, ranges[0], ranges[1])
-  requireRange(bytes, ranges[2], ranges[3])
+  requireRange(bytes, ranges[0], ranges[1], errors)
+  requireRange(bytes, ranges[2], ranges[3], errors)
   const contentsMatch = /\/Contents\s*<([0-9A-Fa-f\s]+)>/.exec(pdfText)
-  if (!contentsMatch) throw new Error("未找到 /Contents 签名容器")
+  if (!contentsMatch) throw new Error(errors.contentsMissing)
   const signatureHex = contentsMatch[1].replace(/\s/g, "")
-  if (!signatureHex || signatureHex.length % 2 !== 0) throw new Error("/Contents 签名容器不是有效的十六进制数据")
+  if (!signatureHex || signatureHex.length % 2 !== 0) throw new Error(errors.contentsInvalid)
   const signatureContainer = Uint8Array.from((signatureHex.match(/.{2}/g) || []).map((value) => Number.parseInt(value, 16)))
-  const p7Root = parseASN1(signatureContainer)
-  step(progress, "parse", "success", `R1:[${ranges[0]}, ${ranges[1]}] R2:[${ranges[2]}, ${ranges[3]}]`)
+  const p7Root = parseASN1(signatureContainer, errors)
+  step(progress, "parse", "success", formatCopy(copy.progress.parseSuccess, { r1Start: ranges[0], r1Length: ranges[1], r2Start: ranges[2], r2Length: ranges[3] }))
 
-  step(progress, "digest", "running", "在浏览器内存中计算正文摘要...")
+  step(progress, "digest", "running", copy.progress.digestRunning)
   const contentBytes = new Uint8Array(ranges[1] + ranges[3])
   contentBytes.set(bytes.subarray(ranges[0], ranges[0] + ranges[1]), 0)
   contentBytes.set(bytes.subarray(ranges[2], ranges[2] + ranges[3]), ranges[1])
 
   const contentInfo = p7Root.children[1]
   const signedData = contentInfo?.children[0]
-  if (!signedData) throw new Error("无效的 PKCS#7 SignedData 容器")
+  if (!signedData) throw new Error(errors.signedDataInvalid)
   const certificates = signedData.children.find((child) => child.tag === 0xa0)
   // SignedData contains two SET fields: digestAlgorithms first and signerInfos
   // last. The golden verifier uses the CMS field order to select signerInfos.
@@ -320,83 +325,81 @@ export async function verifyCredentialPdf(file: File, progress?: VerificationPro
   }
   const leafCertificate = certificates?.children.find((child) => child.tag === 0x30)
   const signerInfo = signerInfos?.children[0]
-  if (!leafCertificate || !signerInfo) throw new Error("PKCS#7 中缺少工作证书或 SignerInfo")
+  if (!leafCertificate || !signerInfo) throw new Error(errors.signerMissing)
   const signerDigestAlgorithm = signerInfo.children.find((child) => child.tag === 0x30 && child.children[0]?.tag === 0x06)
   const authenticatedAttributes = signerInfo.children.find((child) => child.tag === 0xa0)
   const signature = signerInfo.children.find((child) => child.tag === 0x04)?.contentBytes
-  if (!signerDigestAlgorithm || !authenticatedAttributes || !signature) throw new Error("SignerInfo 缺少摘要算法、属性集或签名")
-  const digestOID = decodeOID(signerDigestAlgorithm.children[0].contentBytes)
-  const hashName = hashNameForOID(digestOID)
+  if (!signerDigestAlgorithm || !authenticatedAttributes || !signature) throw new Error(errors.signerFieldsMissing)
+  const digestOID = decodeOID(signerDigestAlgorithm.children[0].contentBytes, errors)
+  const hashName = hashNameForOID(digestOID, errors)
   const computedDigest = hex(await crypto.subtle.digest(hashName, contentBytes))
-  step(progress, "digest", "success", `${hashName}: ${computedDigest.slice(0, 16)}...`)
+  step(progress, "digest", "success", formatCopy(copy.progress.digestSuccess, { hashName, digest: computedDigest.slice(0, 16) }))
 
-  step(progress, "chain", "running", "检查二级工作证书指纹与有效期...")
+  step(progress, "chain", "running", copy.progress.chainRunning)
   const leafFingerprint = hex(await crypto.subtle.digest("SHA-256", asArrayBuffer(leafCertificate.rawBytes)))
   if ((anchor.revoked_leaf_fingerprints || []).some((item) => item.toLowerCase() === leafFingerprint.toLowerCase())) {
-    throw new Error(`二级签名证书已被吊销 (指纹: ${leafFingerprint})`)
+    throw new Error(formatCopy(errors.leafRevoked, { fingerprint: leafFingerprint }))
   }
   const leafTBS = leafCertificate.children[0]
   const leafSignatureAlgorithm = leafCertificate.children[1]
   const leafSignatureValue = leafCertificate.children[2]?.contentBytes.slice(1)
   const leafSPKI = findSubjectPublicKeyInfo(leafTBS)
-  if (!leafTBS || !leafSignatureAlgorithm || !leafSignatureValue || !leafSPKI) throw new Error("X.509 工作证书结构无效")
-  const curve = curveForDigestOID(digestOID)
-  const leafSignatureOID = decodeOID(leafSignatureAlgorithm.children[0].contentBytes)
-  const leafSignatureHash = hashNameForOID(leafSignatureOID)
+  if (!leafTBS || !leafSignatureAlgorithm || !leafSignatureValue || !leafSPKI) throw new Error(errors.certificateInvalid)
+  const curve = curveForDigestOID(digestOID, errors)
+  const leafSignatureOID = decodeOID(leafSignatureAlgorithm.children[0].contentBytes, errors)
+  const leafSignatureHash = hashNameForOID(leafSignatureOID, errors)
   const trusted = await crypto.subtle.verify(
     { name: "ECDSA", hash: leafSignatureHash },
-    await getRootKey(anchor),
-    derSignatureToP1363(leafSignatureValue, curve.size),
+    await getRootKey(anchor, errors),
+    derSignatureToP1363(leafSignatureValue, curve.size, errors),
     asArrayBuffer(leafTBS.rawBytes),
   )
-  if (!trusted) throw new Error("二级工作证书无法由官方根 CA 验证")
+  if (!trusted) throw new Error(errors.certificateUntrusted)
   const validity = parseCertificateTimes(leafTBS)
   const now = Date.now()
-  if (validity.from && now < validity.from.getTime()) throw new Error("二级工作证书尚未生效")
-  if (validity.to && now > validity.to.getTime()) throw new Error("二级工作证书已过期")
-  step(progress, "chain", "success", `证书指纹: ${leafFingerprint.slice(0, 16)}... (信任链有效)`)
+  if (validity.from && now < validity.from.getTime()) throw new Error(errors.certificateNotYetValid)
+  if (validity.to && now > validity.to.getTime()) throw new Error(errors.certificateExpired)
+  step(progress, "chain", "success", formatCopy(copy.progress.chainSuccess, { fingerprint: leafFingerprint.slice(0, 16) }))
 
-  step(progress, "certificate", "success", `${subjectCommonName(leafTBS)} / ${curve.name}`)
-  step(progress, "signature", "running", "验证 PKCS#7 受保护属性集签名...")
+  step(progress, "certificate", "success", formatCopy(copy.progress.certificateSuccess, { subject: subjectCommonName(leafTBS, errors), curve: curve.name }))
+  step(progress, "signature", "running", copy.progress.signatureRunning)
   const signedAttributes = replaceImplicitSetTag(authenticatedAttributes)
   const leafKey = await crypto.subtle.importKey("spki", asArrayBuffer(leafSPKI.rawBytes), { name: "ECDSA", namedCurve: curve.name }, false, ["verify"])
   const signatureValid = await crypto.subtle.verify(
     { name: "ECDSA", hash: hashName },
     leafKey,
-    derSignatureToP1363(signature, curve.size),
+    derSignatureToP1363(signature, curve.size, errors),
     asArrayBuffer(signedAttributes),
   )
-  if (!signatureValid) throw new Error("PKCS#7 数字签名核验失败，正文或属性可能已被修改")
+  if (!signatureValid) throw new Error(errors.signatureInvalid)
 
   let embeddedDigest = ""
   let ulid = ""
   for (const attribute of authenticatedAttributes.children) {
     if (attribute.children.length < 2 || attribute.children[0].tag !== 0x06) continue
-    const oid = decodeOID(attribute.children[0].contentBytes)
+    const oid = decodeOID(attribute.children[0].contentBytes, errors)
     const value = attribute.children[1].children[0]
     if (!value) continue
     if (oid === "1.2.840.113549.1.9.4") embeddedDigest = hex(value.contentBytes)
     if (oid === "1.3.6.1.4.1.99999.1") ulid = readASN1String(value).toUpperCase()
   }
-  if (embeddedDigest.toLowerCase() !== computedDigest.toLowerCase()) throw new Error("正文摘要与签名属性不一致，文件可能已被篡改")
-  step(progress, "signature", "success", "签名与正文摘要完全一致")
-  if (!ULID_PATTERN.test(ulid)) throw new Error("签名属性中未找到合法的 26 位证书 ULID")
-  step(progress, "identity", "success", `证书主键: ${ulid}`)
+  if (embeddedDigest.toLowerCase() !== computedDigest.toLowerCase()) throw new Error(errors.digestMismatch)
+  step(progress, "signature", "success", copy.progress.signatureSuccess)
+  if (!ULID_PATTERN.test(ulid)) throw new Error(errors.ulidMissing)
+  step(progress, "identity", "success", formatCopy(copy.progress.identitySuccess, { ulid }))
 
-  step(progress, "lifecycle", "running", "在线核验文件指纹与证书生命周期...")
+  step(progress, "lifecycle", "running", copy.progress.lifecycleRunning)
   const pdfHash = hex(await crypto.subtle.digest("SHA-256", asArrayBuffer(bytes)))
   const response = await fetch(verificationUrl(`/api/check-validity?cred_ulid=${encodeURIComponent(ulid)}&pdf_hash=${encodeURIComponent(pdfHash)}`), { credentials: "include", headers: { Accept: "application/json" } })
   const payload = await response.json().catch(() => null) as { data?: LifecycleResponse; message?: string } | null
-  if (!response.ok || !payload?.data) throw new Error(payload?.message || `在线生命周期查询失败 (HTTP ${response.status})`)
+  if (!response.ok || !payload?.data) throw new Error(payload?.message || formatCopy(errors.onlineCheckFailed, { status: response.status }))
   const lifecycle = payload.data
-  step(progress, "lifecycle", "success", locale === "en"
-    ? `Status: ${lifecycleStatusLabel(lifecycle.status, lifecycle.exists, locale)}`
-    : `状态：${lifecycleStatusLabel(lifecycle.status, lifecycle.exists, locale)}`)
+  step(progress, "lifecycle", "success", formatCopy(copy.progress.lifecycleSuccess, { status: lifecycleStatusLabel(lifecycle.status, lifecycle.exists, copy.status) }))
   return {
     lifecycle,
     ulid,
     pdfHash,
-    signerSubject: subjectCommonName(leafTBS),
+    signerSubject: subjectCommonName(leafTBS, errors),
     leafFingerprint,
     cryptoSuite: `${curve.name} / ${hashName}`,
     rootKeyId: anchor.key_id || "",

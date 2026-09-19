@@ -29,77 +29,8 @@ const steps = ref<VerificationStep[]>([
   { id: "lifecycle", status: "pending", detail: "" },
 ])
 
-const copy = computed(() => lang.value === "zh"
-  ? {
-      eyebrow: "证书服务",
-      title: "证书真伪在线查验",
-      subtitle: "上传官方 PDF 证书，查看签名、信任链和在线生命周期状态。",
-      privacy: "文件仅在当前浏览器内存中读取，不会上传至服务器。",
-      choose: "选择 PDF 文件",
-      drop: "将 PDF 拖放到此处",
-      browse: "或点击选择文件",
-      ready: "准备查验",
-      checking: "正在查验",
-      start: "开始查验",
-      reset: "重新选择",
-      stepsTitle: "查验进度",
-      active: "有效证书",
-      revoked: "证书已作废",
-      expired: "证书已过期",
-      invalid: "查验未通过",
-      activeDesc: "签名和正文完整性验证通过，在线档案显示证书处于有效状态。",
-      revokedDesc: "签名真实且文件未被篡改，但该证书已被官方作废。",
-      expiredDesc: "签名真实且文件未被篡改，但该证书已超过有效期。",
-      invalidDesc: "无法确认这份 PDF 的签名、正文完整性或在线档案。",
-      certificate: "证书名称",
-      ulid: "证书主键",
-      issued: "颁发日期",
-      validUntil: "有效期至",
-      signer: "签名主体",
-      fingerprint: "工作证书指纹",
-      crypto: "密码学套件",
-      root: "根信任锚点",
-      revokeReason: "作废原因",
-      noFile: "请选择 PDF 文件后开始查验。",
-      invalidFile: "请选择 PDF 文件。",
-    }
-  : {
-      eyebrow: "Certificate Services",
-      title: "Verify a Certificate",
-      subtitle: "Check the PDF signature, trust chain, and online lifecycle status of an official certificate.",
-      privacy: "The file is read in this browser only and is never uploaded to the server.",
-      choose: "Choose PDF file",
-      drop: "Drop a PDF here",
-      browse: "or choose a file",
-      ready: "Ready to verify",
-      checking: "Verifying",
-      start: "Verify certificate",
-      reset: "Choose another file",
-      stepsTitle: "Verification progress",
-      active: "Certificate is valid",
-      revoked: "Certificate revoked",
-      expired: "Certificate expired",
-      invalid: "Verification failed",
-      activeDesc: "The signature and document integrity checks passed, and the online record is active.",
-      revokedDesc: "The signature is authentic and the document is intact, but the certificate was revoked.",
-      expiredDesc: "The signature is authentic and the document is intact, but the certificate has expired.",
-      invalidDesc: "The PDF signature, document integrity, or online record could not be verified.",
-      certificate: "Certificate",
-      ulid: "Certificate ID",
-      issued: "Issued",
-      validUntil: "Valid until",
-      signer: "Signer subject",
-      fingerprint: "Leaf certificate fingerprint",
-      crypto: "Crypto suite",
-      root: "Root trust anchor",
-      revokeReason: "Revocation reason",
-      noFile: "Choose a PDF file before starting verification.",
-      invalidFile: "Please choose a PDF file.",
-    })
-
-const stepLabels = computed(() => lang.value === "zh"
-  ? { parse: "解析 PDF 签名结构", digest: "计算正文摘要", chain: "验证证书信任链", certificate: "检查工作证书", signature: "核验数字签名", identity: "提取证书主键", lifecycle: "查询在线生命周期" }
-  : { parse: "Parse PDF signature", digest: "Compute document digest", chain: "Verify trust chain", certificate: "Check work certificate", signature: "Verify digital signature", identity: "Read certificate ID", lifecycle: "Query online lifecycle" })
+const copy = computed(() => t.value.certificateVerificationPage)
+const stepLabels = computed(() => copy.value.steps)
 
 const verdict = computed(() => {
   if (!result.value) return null
@@ -161,7 +92,7 @@ async function verify() {
   errorMessage.value = ""
   result.value = null
   try {
-    result.value = await verifyCredentialPdf(selectedFile.value, updateStep, lang.value)
+    result.value = await verifyCredentialPdf(selectedFile.value, updateStep, copy.value)
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : String(error)
     const running = steps.value.find((step) => step.status === "running")
