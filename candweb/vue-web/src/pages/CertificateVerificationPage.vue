@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref } from "vue"
-import { AlertTriangle, CheckCircle2, FileCheck2, FileUp, Fingerprint, Loader2, RotateCcw, ShieldCheck, XCircle } from "lucide-vue-next"
+import { AlertTriangle, CheckCircle2, FileCheck2, FileUp, Fingerprint, Loader2, ShieldCheck, XCircle } from "lucide-vue-next"
 import GfiHeader from "@/components/GfiHeader.vue"
 import {
   isActiveLifecycleStatus,
@@ -54,11 +54,13 @@ function formatFileSize(value: number) {
 }
 
 function chooseFile() {
+  if (isVerifying.value) return
+  if (fileInput.value) fileInput.value.value = ""
   fileInput.value?.click()
 }
 
 function setFile(file?: File) {
-  if (!file) return
+  if (!file || isVerifying.value) return
   if (file.type && file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
     errorMessage.value = copy.value.invalidFile
     return
@@ -67,6 +69,7 @@ function setFile(file?: File) {
   errorMessage.value = ""
   result.value = null
   steps.value = steps.value.map((step) => ({ ...step, status: "pending", detail: "" }))
+  void verify(file)
 }
 
 function onFileChange(event: Event) {
@@ -83,16 +86,12 @@ function updateStep(update: VerificationStep) {
   if (index >= 0) steps.value[index] = update
 }
 
-async function verify() {
-  if (!selectedFile.value) {
-    errorMessage.value = copy.value.noFile
-    return
-  }
+async function verify(file: File) {
   isVerifying.value = true
   errorMessage.value = ""
   result.value = null
   try {
-    result.value = await verifyCredentialPdf(selectedFile.value, updateStep, copy.value)
+    result.value = await verifyCredentialPdf(file, updateStep, copy.value)
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : String(error)
     const running = steps.value.find((step) => step.status === "running")
@@ -100,14 +99,6 @@ async function verify() {
   } finally {
     isVerifying.value = false
   }
-}
-
-function reset() {
-  selectedFile.value = null
-  result.value = null
-  errorMessage.value = ""
-  steps.value = steps.value.map((step) => ({ ...step, status: "pending", detail: "" }))
-  if (fileInput.value) fileInput.value.value = ""
 }
 
 onBeforeUnmount(() => {
@@ -144,17 +135,6 @@ onBeforeUnmount(() => {
             <p v-else>{{ copy.browse }}</p>
           </div>
           <p class="verification-privacy"><Fingerprint class="h-4 w-4" /> {{ copy.privacy }}</p>
-          <div class="verification-actions">
-            <button v-if="selectedFile && !isVerifying" type="button" class="verification-button verification-button--primary" @click="verify">
-              <ShieldCheck class="h-4 w-4" /> {{ copy.start }}
-            </button>
-            <button v-else-if="isVerifying" type="button" class="verification-button verification-button--primary" disabled>
-              <Loader2 class="h-4 w-4 animate-spin" /> {{ copy.checking }}
-            </button>
-            <button v-if="selectedFile && !isVerifying" type="button" class="verification-button verification-button--secondary" @click="reset">
-              <RotateCcw class="h-4 w-4" /> {{ copy.reset }}
-            </button>
-          </div>
           <p v-if="errorMessage" class="verification-error" role="alert"><XCircle class="h-4 w-4 shrink-0" /> {{ errorMessage }}</p>
         </div>
 
@@ -205,13 +185,6 @@ onBeforeUnmount(() => {
 .verification-dropzone p { margin: 9px 0 0; color: #71809a; font-size: 14px; }
 .verification-file-meta { color: #277e58 !important; font-weight: 700; }
 .verification-privacy { display: flex; align-items: center; gap: 7px; margin: 17px 0 0; color: #6b7b95; font-size: 13px; line-height: 1.5; }
-.verification-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
-.verification-button { display: inline-flex; min-height: 42px; align-items: center; justify-content: center; gap: 8px; border: 0; padding: 0 17px; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
-.verification-button:disabled { cursor: wait; opacity: .7; }
-.verification-button--primary { background: #205cc7; color: #fff; }
-.verification-button--primary:hover:not(:disabled) { background: #164cae; }
-.verification-button--secondary { border: 1px solid #d7e0ed; background: #fff; color: #43536d; }
-.verification-button--secondary:hover { background: #f5f7fb; }
 .verification-error { display: flex; gap: 8px; margin: 17px 0 0; border-left: 3px solid #d84b4b; background: #fff5f5; padding: 12px 13px; color: #a73333; font-size: 13px; line-height: 1.55; }
 .verification-steps-panel { padding: 22px; }
 .verification-panel-heading { display: flex; align-items: center; justify-content: space-between; color: #223453; font-size: 15px; font-weight: 800; }
@@ -246,5 +219,5 @@ onBeforeUnmount(() => {
 .verification-result-wide { grid-column: 1 / -1; }
 .verification-mono { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px !important; }
 @media (max-width: 800px) { .verification-main { width: min(100% - 28px, 680px); padding: 48px 0 68px; } .verification-layout { grid-template-columns: 1fr; } .verification-dropzone { min-height: 260px; } }
-@media (max-width: 520px) { .verification-heading h1 { font-size: 2.25rem; } .verification-upload-panel, .verification-steps-panel, .verification-result { padding: 17px; } .verification-result-grid { grid-template-columns: 1fr; } .verification-result-wide { grid-column: auto; } .verification-button { width: 100%; } }
+@media (max-width: 520px) { .verification-heading h1 { font-size: 2.25rem; } .verification-upload-panel, .verification-steps-panel, .verification-result { padding: 17px; } .verification-result-grid { grid-template-columns: 1fr; } .verification-result-wide { grid-column: auto; } }
 </style>
