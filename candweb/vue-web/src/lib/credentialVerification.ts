@@ -161,11 +161,13 @@ function hashNameForOID(oid: string) {
   throw new Error(`不支持的摘要算法 OID: ${oid}`)
 }
 
-function curveForOID(oid: string) {
-  if (oid === "1.3.132.0.34" || oid === "1.2.840.10045.3.1.8") return { name: "P-384" as const, size: 48 }
-  if (oid === "1.3.132.0.35" || oid === "1.2.840.10045.3.1.9") return { name: "P-521" as const, size: 66 }
-  if (oid === "1.2.840.10045.3.1.7") return { name: "P-256" as const, size: 32 }
-  throw new Error(`不支持的椭圆曲线 OID: ${oid}`)
+function curveForDigestOID(oid: string) {
+  // gcreds pairs the SignerInfo digest OID with the signing curve:
+  // P-256 -> SHA-256, P-384 -> SHA-384, P-521 -> SHA-512.
+  if (oid === "2.16.840.1.101.3.4.2.2") return { name: "P-384" as const, size: 48 }
+  if (oid === "2.16.840.1.101.3.4.2.3") return { name: "P-521" as const, size: 66 }
+  if (oid === "2.16.840.1.101.3.4.2.1") return { name: "P-256" as const, size: 32 }
+  throw new Error(`不支持的签名摘要算法 OID: ${oid}`)
 }
 
 function findSubjectPublicKeyInfo(tbs: ASN1Element) {
@@ -324,8 +326,7 @@ export async function verifyCredentialPdf(file: File, progress?: VerificationPro
   const leafSignatureValue = leafCertificate.children[2]?.contentBytes.slice(1)
   const leafSPKI = findSubjectPublicKeyInfo(leafTBS)
   if (!leafTBS || !leafSignatureAlgorithm || !leafSignatureValue || !leafSPKI) throw new Error("X.509 工作证书结构无效")
-  const curveOID = decodeOID(leafSPKI.children[0].children.find((child) => child.tag === 0x06)?.contentBytes || new Uint8Array())
-  const curve = curveForOID(curveOID)
+  const curve = curveForDigestOID(digestOID)
   const leafSignatureOID = decodeOID(leafSignatureAlgorithm.children[0].contentBytes)
   const leafSignatureHash = hashNameForOID(leafSignatureOID)
   const trusted = await crypto.subtle.verify(
