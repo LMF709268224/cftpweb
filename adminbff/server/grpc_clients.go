@@ -55,9 +55,10 @@ type GrpcClientPool struct {
 }
 
 // dialGrpc 建立 gRPC 连接
-func dialGrpc(addr string, creds credentials.TransportCredentials) (*grpc.ClientConn, error) {
+func dialGrpc(addr string, creds credentials.TransportCredentials, serviceName string) (*grpc.ClientConn, error) {
 	conn, err := grpc.NewClient(addr,
 		grpc.WithTransportCredentials(creds),
+		grpc.WithDefaultServiceConfig(util.BuildServiceConfigWithHealth("", serviceName)),
 	)
 	if err != nil {
 		return nil, err
@@ -79,7 +80,7 @@ func NewGrpcClientPool(creds credentials.TransportCredentials) (*GrpcClientPool,
 
 	// --- mall ---
 	addr := grpcAddr(config.EnvMallGrpcAddr, "gmall")
-	pool.mallConn, err = dialGrpc(addr, creds)
+	pool.mallConn, err = dialGrpc(addr, creds, "gmall")
 	if err != nil {
 		slog.Error("Failed to create gRPC client", "service", "mall", "addr", addr, "error", err)
 		return nil, err
@@ -88,7 +89,7 @@ func NewGrpcClientPool(creds credentials.TransportCredentials) (*GrpcClientPool,
 
 	// --- glms ---
 	addr = grpcAddr(config.EnvLmsGrpcAddr, "glms")
-	pool.lmsConn, err = dialGrpc(addr, creds)
+	pool.lmsConn, err = dialGrpc(addr, creds, "glms")
 	if err != nil {
 		slog.Error("Failed to create gRPC client", "service", "glms", "addr", addr, "error", err)
 		return nil, err
@@ -97,7 +98,7 @@ func NewGrpcClientPool(creds credentials.TransportCredentials) (*GrpcClientPool,
 
 	// --- gcc ---
 	addr = grpcAddr(config.EnvGccGrpcAddr, "gcc")
-	pool.gccConn, err = dialGrpc(addr, creds)
+	pool.gccConn, err = dialGrpc(addr, creds, "gcc")
 	if err != nil {
 		slog.Error("Failed to create gRPC client", "service", "gcc", "addr", addr, "error", err)
 		return nil, err
@@ -106,7 +107,7 @@ func NewGrpcClientPool(creds credentials.TransportCredentials) (*GrpcClientPool,
 
 	// --- gprog ---
 	addr = grpcAddr(config.EnvGprogGrpcAddr, "gprog")
-	pool.gprogConn, err = dialGrpc(addr, creds)
+	pool.gprogConn, err = dialGrpc(addr, creds, "gprog")
 	if err != nil {
 		slog.Error("Failed to create gRPC client", "service", "gprog", "addr", addr, "error", err)
 		return nil, err
@@ -115,7 +116,7 @@ func NewGrpcClientPool(creds credentials.TransportCredentials) (*GrpcClientPool,
 
 	// --- gmsg ---
 	addr = grpcAddr(config.EnvGmsgGrpcAddr, "gmsg")
-	pool.gmsgConn, err = dialGrpc(addr, creds)
+	pool.gmsgConn, err = dialGrpc(addr, creds, "gmsg")
 	if err != nil {
 		slog.Error("Failed to create gRPC client", "service", "gmsg", "addr", addr, "error", err)
 		return nil, err
@@ -124,7 +125,7 @@ func NewGrpcClientPool(creds credentials.TransportCredentials) (*GrpcClientPool,
 
 	// --- gcreds ---
 	addr = grpcAddr(config.EnvGcredsGrpcAddr, "gcreds")
-	pool.credsConn, err = dialGrpc(addr, creds)
+	pool.credsConn, err = dialGrpc(addr, creds, "gcreds")
 	if err != nil {
 		slog.Error("Failed to create gRPC client", "service", "gcreds", "addr", addr, "error", err)
 		return nil, err
@@ -133,7 +134,7 @@ func NewGrpcClientPool(creds credentials.TransportCredentials) (*GrpcClientPool,
 
 	// --- gexam ---
 	addr = grpcAddr(config.EnvGexamGrpcAddr, "gexam")
-	pool.gexamConn, err = dialGrpc(addr, creds)
+	pool.gexamConn, err = dialGrpc(addr, creds, "gexam")
 	if err != nil {
 		slog.Error("Failed to create gRPC client", "service", "gexam", "addr", addr, "error", err)
 		return nil, err
@@ -142,7 +143,7 @@ func NewGrpcClientPool(creds credentials.TransportCredentials) (*GrpcClientPool,
 
 	// --- gmid ---
 	addr = grpcAddr(config.EnvGmidGrpcAddr, "gmid")
-	pool.gmidConn, err = dialGrpc(addr, creds)
+	pool.gmidConn, err = dialGrpc(addr, creds, "gmid")
 	if err != nil {
 		slog.Error("Failed to create gRPC client", "service", "gmid", "addr", addr, "error", err)
 		return nil, err
@@ -151,7 +152,7 @@ func NewGrpcClientPool(creds credentials.TransportCredentials) (*GrpcClientPool,
 
 	// --- gmail ---
 	addr = grpcAddr(config.EnvGmailGrpcAddr, "gmail")
-	pool.gmailConn, err = dialGrpc(addr, creds)
+	pool.gmailConn, err = dialGrpc(addr, creds, "gmail")
 	if err != nil {
 		slog.Error("Failed to create gRPC client", "service", "gmail", "addr", addr, "error", err)
 		return nil, err
@@ -160,7 +161,7 @@ func NewGrpcClientPool(creds credentials.TransportCredentials) (*GrpcClientPool,
 
 	// --- gpay ---
 	addr = grpcAddr(config.EnvGpayGrpcAddr, "gpay")
-	pool.gpayConn, err = dialGrpc(addr, creds)
+	pool.gpayConn, err = dialGrpc(addr, creds, "gpay")
 	if err != nil {
 		slog.Error("Failed to create gRPC client", "service", "gpay", "addr", addr, "error", err)
 		return nil, err
@@ -169,7 +170,7 @@ func NewGrpcClientPool(creds credentials.TransportCredentials) (*GrpcClientPool,
 
 	// --- gmbr ---
 	addr = grpcAddr(config.EnvGmbrGrpcAddr, "gmbr")
-	pool.gmbrConn, err = dialGrpc(addr, creds)
+	pool.gmbrConn, err = dialGrpc(addr, creds, "gmbr")
 	if err != nil {
 		slog.Error("Failed to create gRPC client", "service", "gmbr", "addr", addr, "error", err)
 		return nil, err
@@ -178,7 +179,7 @@ func NewGrpcClientPool(creds credentials.TransportCredentials) (*GrpcClientPool,
 
 	// --- gaudit ---
 	addr = grpcAddr(config.EnvGauditGrpcAddr, "gaudit")
-	pool.gauditConn, err = dialGrpc(addr, creds)
+	pool.gauditConn, err = dialGrpc(addr, creds, "gaudit")
 	if err != nil {
 		slog.Error("Failed to create gRPC client", "service", "gaudit", "addr", addr, "error", err)
 		return nil, err

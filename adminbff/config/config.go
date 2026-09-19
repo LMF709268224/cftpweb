@@ -69,7 +69,11 @@ func LoadConfig() (*Config, error) {
 		return nil, fmt.Errorf("load cfgserver transport credentials: %w", err)
 	}
 
-	conn, err := grpc.NewClient(address, grpc.WithTransportCredentials(transportCreds))
+	conn, err := grpc.NewClient(
+		address,
+		grpc.WithTransportCredentials(transportCreds),
+		grpc.WithDefaultServiceConfig(util.BuildServiceConfigWithHealth("", "cfgserver")),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("could not connect to cfgserver: %v", err)
 	}
