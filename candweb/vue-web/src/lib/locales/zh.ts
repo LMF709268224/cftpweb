@@ -155,6 +155,7 @@ export const zh = {
         videoPreview: "视频预览",
         credentials: "资格认证申请",
         certificates: "认证证书",
+        certificateVerification: "证书真伪查验",
         orders: "订单",
         messages: "消息",
         settings: "账户设置",
@@ -1259,6 +1260,9 @@ export const zh = {
         celebrationModalDesc: "您的学习成果已经正式转化为专业认证证书。现在可以下载您的荣誉证书。",
         celebrationModalDownload: "下载您的荣誉证书",
         celebrationModalDismiss: "稍后再说",
+    },
+    certificateVerificationPage: {
+        title: "证书真伪在线查验",
     },
     recordsPage: {
         title: "档案",

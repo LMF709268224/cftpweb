@@ -157,6 +157,7 @@ export const en: AppTranslations = {
         videoPreview: "Video Preview",
         credentials: "Exemptions & Applications",
         certificates: "Certificates",
+        certificateVerification: "Certificate Verification",
         orders: "Orders",
         messages: "Messages",
         settings: "Settings",
@@ -1261,6 +1262,9 @@ export const en: AppTranslations = {
         celebrationModalDesc: "Your learning achievement has officially become a professional certificate. You can now download your honor certificate.",
         celebrationModalDownload: "Download Your Honor Certificate",
         celebrationModalDismiss: "Maybe later",
+    },
+    certificateVerificationPage: {
+        title: "Certificate Verification",
     },
     recordsPage: {
         title: "Records",

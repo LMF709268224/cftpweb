@@ -105,6 +105,9 @@ watch(
             {{ lang === "zh" ? "注册" : "Register" }}
           </RouterLink>
         </template>
+        <RouterLink to="/verify-certificate" class="gfi-verify-link">
+          {{ lang === "zh" ? "证书查验" : "Verify Certificate" }}
+        </RouterLink>
       </div>
 
       <button class="gfi-menu-toggle" :aria-expanded="mobileOpen" :aria-label="mobileOpen ? 'Close menu' : 'Open menu'" @click="mobileOpen = !mobileOpen">
@@ -137,6 +140,9 @@ watch(
       >
         {{ authenticated ? (lang === "zh" ? "控制台" : "Dashboard") : (lang === "zh" ? "登录 / 注册" : "Log In / Register") }}
       </RouterLink>
+      <RouterLink to="/verify-certificate" class="gfi-mobile-login gfi-mobile-verify">
+        {{ lang === "zh" ? "证书查验" : "Verify Certificate" }}
+      </RouterLink>
     </nav>
   </header>
 </template>
@@ -164,6 +170,10 @@ watch(
 .gfi-console-link:focus-visible { outline:2px solid #9fc5ff; outline-offset:5px; border-radius:2px; }
 .gfi-header--light .gfi-console-link { color:#2058b5; }
 .gfi-header--light .gfi-console-link:hover { color:#174796; }
+.gfi-verify-link { color:#fff; font-weight:600; transition:color .2s ease; }
+.gfi-verify-link:hover { color:#9fc5ff; text-decoration:underline; text-underline-offset:4px; }
+.gfi-header--light .gfi-verify-link { color:#2058b5; }
+.gfi-header--light .gfi-verify-link:hover { color:#174796; }
 .gfi-language { position: relative; height: 100%; }
 .gfi-language > button { padding: 0; font-size: 15px; }
 .gfi-language svg:first-child { width: 16px; height: 16px; }
@@ -181,6 +191,7 @@ watch(
 .gfi-mobile-language button.selected { background: #fff !important; color: #101f47 !important; }
 .gfi-mobile-login { display:flex; width:100%; height:44px; align-items:center; justify-content:center; margin-top:10px; padding:0 13px; border:0; border-radius:4px; background:#2864ff; color:#fff; cursor:pointer; text-align:center; font:inherit; font-weight:600; }
 .gfi-mobile-login:disabled { cursor:wait; opacity:.75; }
+.gfi-mobile-verify { background:#fff; color:#101f47; }
 
 @media (max-width: 1180px) {
   .gfi-header-actions { right: 24px; }

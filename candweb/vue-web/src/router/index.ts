@@ -21,6 +21,7 @@ const ExamSignupPage = () => import("@/pages/ExamSignupPage.vue")
 const RecordsPage = () => import("@/pages/RecordsPage.vue")
 const CredentialsPage = () => import("@/pages/CredentialsPage.vue")
 const CertificatesPage = () => import("@/pages/CertificatesPage.vue")
+const CertificateVerificationPage = () => import("@/pages/CertificateVerificationPage.vue")
 const OrdersPage = () => import("@/pages/OrdersPage.vue")
 const MessagesPage = () => import("@/pages/MessagesPage.vue")
 const SettingsPage = () => import("@/pages/SettingsPage.vue")
@@ -146,6 +147,7 @@ export const router = createRouter({
         { path: "/video-preview/lessons/:lessonId", component: VideoPreviewPage, meta: { titleKey: "videoPreview", requiresAuth: true } },
         { path: "/credentials", component: CredentialsPage, meta: { titleKey: "credentials", requiresAuth: true } },
         { path: "/certificates", component: CertificatesPage, meta: { titleKey: "certificates", requiresAuth: true } },
+        { path: "/verify-certificate", component: CertificateVerificationPage, meta: { titleKey: "certificateVerification" } },
         { path: "/orders", component: OrdersPage, meta: { titleKey: "orders", requiresAuth: true } },
         { path: "/messages", component: MessagesPage, meta: { titleKey: "messages", requiresAuth: true } },
         { path: "/settings", component: SettingsPage, meta: { titleKey: "settings", requiresAuth: true } },
