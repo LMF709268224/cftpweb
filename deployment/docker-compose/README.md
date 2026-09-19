@@ -38,6 +38,8 @@ docker compose --env-file .env.dev ps
 docker compose --env-file .env.dev logs -f candbff
 ```
 
+`VITE_CREDENTIAL_VERIFY_BASE_URL` 必须配置在对应环境文件中，并在构建 `candweb` 镜像前生效。它是 Vite 的构建时变量，不是容器启动后的运行时变量；测试环境可配置为 `https://api.devcftp.llwan.top/test-verify-creds`，正式环境应配置正式验签服务地址。
+
 完成配置后，在仓库根目录执行 `./docker_abc.sh` 会使用 `.env.dev` 更新测试服；执行 `./docker_abc.sh --env prod` 会使用 `.env.prod` 更新正式服。两个命令都会一次完成 `git pull`、四个镜像构建、Compose 配置校验和服务启动。传入服务名时只更新指定容器，例如 `./docker_abc.sh candbff candweb` 或 `./docker_abc.sh --env prod candbff candweb`。
 
 Compose 会创建 `WEB_NETWORK_NAME` 指定的门户私有网络，并把两个 BFF 同时接入 `BACKEND_NETWORK_NAME` 指定的后端网络。四个门户容器还会接入现有的 `GATEWAY_NETWORK_NAME`，并使用 `PORTAL_CONTAINER_PREFIX` 创建供全局 Caddy 使用的网络别名。BFF 的 gRPC 地址默认按服务名解析，例如 `gexam:50051`，无需在环境文件中配置。

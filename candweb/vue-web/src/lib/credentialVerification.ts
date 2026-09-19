@@ -1,4 +1,3 @@
-const DEFAULT_VERIFY_BASE_URL = "https://api.devcftp.llwan.top/test-verify-creds"
 const ULID_PATTERN = /^[0-7][0-9A-HJKMNP-TV-Z]{25}$/i
 
 export type VerificationStepId = "parse" | "digest" | "chain" | "certificate" | "signature" | "identity" | "lifecycle"
@@ -56,7 +55,8 @@ let rootAnchorPromise: Promise<RootTrustAnchor> | null = null
 let rootCryptoKeyPromise: Promise<CryptoKey> | null = null
 
 function verificationUrl(path: string) {
-  const configured = String(import.meta.env.VITE_CREDENTIAL_VERIFY_BASE_URL || DEFAULT_VERIFY_BASE_URL).trim()
+  const configured = String(import.meta.env.VITE_CREDENTIAL_VERIFY_BASE_URL || "").trim()
+  if (!configured) throw new Error("证书验签服务未配置，请联系管理员")
   return `${configured.replace(/\/$/, "")}${path}`
 }
 
