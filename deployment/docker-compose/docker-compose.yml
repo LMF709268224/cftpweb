@@ -29,8 +29,9 @@ services:
           - ${PORTAL_CONTAINER_PREFIX:?PORTAL_CONTAINER_PREFIX is required}-candbff
     environment:
       HTTP_ADDRESS: 0.0.0.0:8080
-      CFGSERVER_ADDR: ${CFGSERVER_ADDR:?CFGSERVER_ADDR is required in the selected environment file}
-      CASDOOR_ENDPOINT: ${CASDOOR_ENDPOINT:-casdoor:8000}
+      COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:?COMPOSE_PROJECT_NAME is required in the selected environment file}
+      CFGSERVER_ADDR: ${CFGSERVER_ADDR:-}
+      CASDOOR_ENDPOINT: ${CASDOOR_ENDPOINT:-}
       CASDOOR_PUBLIC_ENDPOINT: ${CASDOOR_PUBLIC_ENDPOINT:?CASDOOR_PUBLIC_ENDPOINT is required in the selected environment file}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?CORS_ALLOWED_ORIGINS is required in the selected environment file}
       EXAM_CALLBACK_BASE_URL: ${EXAM_CALLBACK_BASE_URL:?EXAM_CALLBACK_BASE_URL is required in the selected environment file}
@@ -56,8 +57,9 @@ services:
           - ${PORTAL_CONTAINER_PREFIX:?PORTAL_CONTAINER_PREFIX is required}-adminbff
     environment:
       HTTP_ADDRESS: 0.0.0.0:8080
-      CFGSERVER_ADDR: ${CFGSERVER_ADDR:?CFGSERVER_ADDR is required in the selected environment file}
-      CASDOOR_ENDPOINT: ${CASDOOR_ENDPOINT:-casdoor:8000}
+      COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:?COMPOSE_PROJECT_NAME is required in the selected environment file}
+      CFGSERVER_ADDR: ${CFGSERVER_ADDR:-}
+      CASDOOR_ENDPOINT: ${CASDOOR_ENDPOINT:-}
       CASDOOR_PUBLIC_ENDPOINT: ${CASDOOR_PUBLIC_ENDPOINT:?CASDOOR_PUBLIC_ENDPOINT is required in the selected environment file}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?CORS_ALLOWED_ORIGINS is required in the selected environment file}
     expose:
