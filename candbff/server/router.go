@@ -16,7 +16,6 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
-	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(s.corsMiddleware)
 

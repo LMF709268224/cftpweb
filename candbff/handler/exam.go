@@ -1009,8 +1009,6 @@ func (h *Handler) ThirdPartyExamCallback(w http.ResponseWriter, r *http.Request)
 		"content_type", r.Header.Get("Content-Type"),
 		"content_length", r.ContentLength,
 	}
-	slog.Info("ThirdPartyExamCallback received", logAttrs...)
-
 	if examID == "" || !validURLType || urlType == "" {
 		slog.Warn("ThirdPartyExamCallback rejected invalid callback path", logAttrs...)
 		renderExamCallbackHTML(w, false, "invalid callback URL")
@@ -1023,20 +1021,12 @@ func (h *Handler) ThirdPartyExamCallback(w http.ResponseWriter, r *http.Request)
 		renderExamCallbackHTML(w, false, "invalid callback data")
 		return
 	}
-	slog.Info("ThirdPartyExamCallback form parsed", append(logAttrs, "form_keys", len(r.Form))...)
-
 	apptDataRaw := r.FormValue("apptdata")
 	if strings.TrimSpace(apptDataRaw) == "" {
 		slog.Warn("ThirdPartyExamCallback missing apptdata", logAttrs...)
 		renderExamCallbackHTML(w, false, "empty callback data")
 		return
 	}
-	slog.Info("ThirdPartyExamCallback apptdata extracted",
-		append(logAttrs,
-			"apptdata_length", len(apptDataRaw),
-		)...,
-	)
-
 	// gprog expects the provider payload wrapped in valid JSON.
 	bodyMap := map[string]string{"raw_xml": apptDataRaw}
 	bodyJson, err := json.Marshal(bodyMap)
@@ -1050,12 +1040,6 @@ func (h *Handler) ThirdPartyExamCallback(w http.ResponseWriter, r *http.Request)
 		renderExamCallbackHTML(w, false, "invalid callback data")
 		return
 	}
-	slog.Info("ThirdPartyExamCallback calling gprog",
-		append(logAttrs,
-			"callback_body_length", len(bodyJson),
-		)...,
-	)
-
 	_, err = h.Gprog.ExamUrlCallback(r.Context(), &gprog.ExamUrlCallbackReq{
 		ExamUlid:     examID,
 		UrlType:      urlType,

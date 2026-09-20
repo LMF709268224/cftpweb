@@ -179,7 +179,6 @@ func (c *CandidateProfileCache) refresh(ctx context.Context) error {
 	c.ready = true
 	c.mu.Unlock()
 
-	slog.Info("candidate profile cache refreshed", "count", len(names))
 	return nil
 }
 

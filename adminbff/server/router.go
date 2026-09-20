@@ -19,7 +19,6 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 	// ---------- 管理后台接口----------
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
-	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(requestTimeout))
 	r.Use(s.corsMiddleware)

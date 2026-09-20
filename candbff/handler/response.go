@@ -88,12 +88,12 @@ func handleGrpcError(w http.ResponseWriter, ctx context.Context, err error) {
 		return
 	}
 	if st.Code() == codes.Canceled && ctx != nil && ctx.Err() == context.Canceled {
-		slog.Info("Downstream gRPC request canceled by client", "grpc_code", st.Code())
+		slog.Debug("Downstream gRPC request canceled by client", "grpc_code", st.Code())
 		w.WriteHeader(statusClientClosedRequest)
 		return
 	}
 	if st.Code() == codes.Canceled {
-		slog.Info("Downstream gRPC request canceled", "grpc_code", st.Code(), "error", err)
+		slog.Debug("Downstream gRPC request canceled", "grpc_code", st.Code(), "error", err)
 		WriteError(w, http.StatusInternalServerError, ErrInternal, "internal server error")
 		return
 	}

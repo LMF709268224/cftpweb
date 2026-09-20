@@ -179,7 +179,6 @@ func (h *Handler) resolveCandidateUlid(r *http.Request, casdoorUserUlid string) 
 		return "", fmt.Errorf("casdoor user id is required")
 	}
 
-	slog.Info("resolveCandidateUlid: starting ID resolution", "casdoor_user_id", casdoorUserUlid)
 	resp, err := h.Gmid.GetUlidByUUID(r.Context(), &gmidpb.GetUlidByUUIDRequest{
 		UserUuid: casdoorUserUlid,
 	})
@@ -194,7 +193,6 @@ func (h *Handler) resolveCandidateUlid(r *http.Request, casdoorUserUlid string) 
 		return "", err
 	}
 
-	slog.Info("resolveCandidateUlid: found existing mapping in gmid", "casdoor_user_id", casdoorUserUlid, "candidate_id", resp.UserUlid)
 	return resp.UserUlid, nil
 }
 

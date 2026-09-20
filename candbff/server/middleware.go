@@ -95,8 +95,6 @@ func (s *Server) authMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		slog.Info("authMiddleware: token found, parsing JWT...", "path", r.URL.Path)
-
 		// 使用 Casdoor SDK 验证 JWT 签名和有效期
 		claims, err := casdoorsdk.ParseJwtToken(tokenStr)
 		if err != nil {
@@ -136,7 +134,6 @@ func (s *Server) authMiddleware(next http.Handler) http.Handler {
 		}
 
 		candidateID := resp.UserUlid
-		slog.Info("authMiddleware: Authentication successful", "candidate_id", candidateID, "user_name", claims.Name, "path", r.URL.Path)
 
 		// 注入 context
 		ctx := handler.WithCandidate(r.Context(), candidateID, claims.Email, claims.Name, tokenStr)
@@ -197,7 +194,7 @@ func (s *Server) optionalAuthMiddleware(next http.Handler) http.Handler {
 		}
 
 		candidateID := resp.UserUlid
-		
+
 		// 注入 context
 		ctx := handler.WithCandidate(r.Context(), candidateID, claims.Email, claims.Name, tokenStr)
 
