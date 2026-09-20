@@ -217,6 +217,7 @@
 @layer components {
   .btn {
     @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+    min-height: 2.5rem;
   }
 
   .btn-primary {
@@ -499,8 +500,13 @@
 
   .candidate-portal .page-panel > main {
     width: 100%;
-    max-width: 1280px;
+    max-width: 1120px;
     margin-inline: auto;
+  }
+
+  .candidate-portal .page-main h1 {
+    font-size: 1.875rem !important;
+    line-height: 1.2 !important;
   }
 
   .candidate-portal .page-main h1,
@@ -700,9 +706,26 @@
   .candidate-portal .resource-pack-card,
   .candidate-portal .certificate-card,
   .candidate-portal .checkout-card,
-  .candidate-portal .checkout-unit-card {
+  .candidate-portal .checkout-unit-card,
+  .candidate-portal .membership-current-card,
+  .candidate-portal .membership-tabs,
+  .candidate-portal .membership-overview-card,
+  .candidate-portal .membership-level-card,
+  .candidate-portal .membership-records-panel,
+  .candidate-portal .orders-panel {
     border: 1px solid rgba(0, 42, 102, 0.16);
-    border-radius: 0.5rem !important;
+    border-radius: var(--gfi-radius-lg) !important;
+    box-shadow: none !important;
+  }
+
+  .candidate-portal .membership-record-item {
+    border-radius: var(--gfi-radius-md) !important;
+    box-shadow: none !important;
+  }
+
+  .candidate-portal .membership-level-card:hover,
+  .candidate-portal .membership-record-item:hover {
+    transform: none !important;
     box-shadow: none !important;
   }
 
@@ -778,6 +801,11 @@
 
   :where(.candidate-portal .page-panel) > main {
     padding: var(--gfi-mobile-page-padding-block) var(--gfi-mobile-page-padding-inline);
+  }
+
+  .candidate-portal .page-main h1 {
+    font-size: 1.5rem !important;
+    line-height: 1.333 !important;
   }
 
   .candidate-portal .page-panel > main :is(
@@ -870,5 +898,16 @@
     .quiz-submit-bar
   ) {
     border: 1px solid var(--gfi-mobile-card-border);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .candidate-portal *,
+  .candidate-portal *::before,
+  .candidate-portal *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

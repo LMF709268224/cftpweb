@@ -214,49 +214,44 @@ const accountStatusGridClass = computed(() => {
 
 const cardStyles = {
   orange: {
-    panel: "from-[#fffdf2] to-[#fff3b8]",
-    border: "border-[#f4e6b8]",
-    hoverBorder: "hover:border-[#f6c85a]",
-    text: "text-[#c55a00]",
-    number: "text-[#934000]",
-    accent: "#f59e0b",
-    glow: "rgba(245, 158, 11, 0.22)",
+    panel: "bg-white",
+    border: "border-[#c9962e]",
+    hoverBorder: "hover:border-[#c9962e]",
+    text: "text-[#002a66]",
+    number: "text-[#002a66]",
+    accent: "#c9962e",
   },
   purple: {
-    panel: "from-[#f8f6ff] to-[#e9e4ff]",
-    border: "border-[#ded8f4]",
-    hoverBorder: "hover:border-[#8d7bd1]",
-    text: "text-[#5b46a8]",
-    number: "text-[#46358d]",
-    accent: "#7657c8",
-    glow: "rgba(118, 87, 200, 0.22)",
+    panel: "bg-white",
+    border: "border-[#c1cef6]",
+    hoverBorder: "hover:border-[#0957f9]",
+    text: "text-[#002a66]",
+    number: "text-[#002a66]",
+    accent: "#0957f9",
   },
   blue: {
-    panel: "from-[#f4f9ff] to-[#dbeafe]",
-    border: "border-[#dbe4f0]",
-    hoverBorder: "hover:border-[#93c5fd]",
-    text: "text-[#2563ff]",
-    number: "text-[#1e40af]",
-    accent: "#38bdf8",
-    glow: "rgba(56, 189, 248, 0.22)",
+    panel: "bg-white",
+    border: "border-[#c1cef6]",
+    hoverBorder: "hover:border-[#0957f9]",
+    text: "text-[#002a66]",
+    number: "text-[#002a66]",
+    accent: "#0957f9",
   },
   teal: {
-    panel: "from-[#effdfa] to-[#ccfbef]",
-    border: "border-[#cae9e3]",
-    hoverBorder: "hover:border-[#5eead4]",
-    text: "text-[#0f8d7e]",
-    number: "text-[#0f766e]",
-    accent: "#14b8a6",
-    glow: "rgba(20, 184, 166, 0.2)",
+    panel: "bg-white",
+    border: "border-[#c1cef6]",
+    hoverBorder: "hover:border-[#0957f9]",
+    text: "text-[#002a66]",
+    number: "text-[#002a66]",
+    accent: "#0957f9",
   },
   green: {
-    panel: "from-[#f0fdf4] to-[#dcfce7]",
-    border: "border-[#d7eadc]",
-    hoverBorder: "hover:border-[#86efac]",
-    text: "text-[#16a34a]",
-    number: "text-[#166534]",
-    accent: "#22c55e",
-    glow: "rgba(34, 197, 94, 0.2)",
+    panel: "bg-white",
+    border: "border-[#c1cef6]",
+    hoverBorder: "hover:border-[#0957f9]",
+    text: "text-[#002a66]",
+    number: "text-[#002a66]",
+    accent: "#0957f9",
   },
 } as const
 
@@ -328,8 +323,8 @@ onMounted(() => {
 
       <main class="px-5 py-10 md:px-8 lg:px-10">
         <section class="w-full text-center">
-          <h1 class="text-[36px] font-bold leading-tight tracking-tight text-[#0957f9]">{{ guideCopy.title }}</h1>
-          <p class="mx-auto mt-4 max-w-5xl text-lg leading-8 text-[#4a4f59]">{{ guideCopy.subtitle }}</p>
+          <h1 class="font-bold text-[#002a66]">{{ guideCopy.title }}</h1>
+          <p class="mx-auto mt-4 max-w-3xl text-[15px] leading-6 text-[#525e70]">{{ guideCopy.subtitle }}</p>
         </section>
 
         <section
@@ -354,7 +349,7 @@ onMounted(() => {
               :data-testid="`dashboard-account-status-${item.key}`"
               class="flex min-w-0 items-center gap-4 px-6 py-5 text-left sm:px-7"
             >
-              <div :class="['flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border', item.active ? 'border-emerald-100 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-500']">
+              <div :class="['flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border', item.active ? 'border-[#2f7d4f]/25 bg-[#ecf5f0] text-[#2f7d4f]' : 'border-slate-200 bg-slate-50 text-slate-500']">
                 <component :is="item.icon" class="h-5 w-5" />
               </div>
               <div class="min-w-0">
@@ -365,7 +360,7 @@ onMounted(() => {
           </div>
         </section>
 
-        <section class="portal-card-section mx-auto mt-12 w-full max-w-[1380px]">
+        <section class="portal-card-section mx-auto mt-12 w-full max-w-[1120px]">
           <PageFeedback
             v-if="dashboardLoadFailed"
             kind="error"
@@ -412,16 +407,16 @@ onMounted(() => {
           <div v-else class="flex flex-col gap-8">
             <div
               v-if="dashboardPartialLoadFailed"
-              class="flex flex-col items-start justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-left sm:flex-row sm:items-center"
+              class="flex flex-col items-start justify-between gap-3 rounded-lg border border-[#c9962e]/40 bg-[#fdf6ec] px-4 py-3 text-left sm:flex-row sm:items-center"
               role="alert"
             >
-              <div class="flex items-start gap-2 text-sm text-amber-900">
+              <div class="flex items-start gap-2 text-sm text-[#a6600c]">
                 <AlertCircle class="mt-0.5 h-4 w-4 shrink-0" />
                 <span>{{ t.home.statsPartialLoadFailed }}</span>
               </div>
               <button
                 type="button"
-                class="btn btn-outline h-10 shrink-0 border-amber-300 bg-white px-4 text-amber-900 hover:bg-amber-100"
+                class="btn btn-outline h-10 shrink-0 border-[#c9962e] bg-white px-4 text-[#a6600c] hover:bg-[#fdf6ec]"
                 :disabled="dashboardLoading"
                 @click="loadDashboardStats"
               >
@@ -437,16 +432,16 @@ onMounted(() => {
                 :data-testid="`dashboard-card-${card.key}`"
                 :to="card.href"
                 :class="[
-                  'portal-stat-card portal-card-featured group relative flex h-[214px] w-full flex-col items-center justify-center overflow-hidden rounded-[16px] border bg-gradient-to-b p-8 text-center shadow-[0_2px_8px_rgba(15,23,42,0.12)] transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-[1.015] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 lg:basis-[34%] lg:grow-0 lg:shrink-0',
+                  'portal-stat-card portal-card-featured group relative flex h-[214px] w-full flex-col items-center justify-center overflow-hidden rounded-[14px] border p-8 text-center transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 lg:basis-[34%] lg:grow-0 lg:shrink-0',
                   cardStyles[card.color].panel,
                   cardStyles[card.color].border,
                   cardStyles[card.color].hoverBorder,
                 ]"
-                :style="{ '--portal-card-accent': cardStyles[card.color].accent, '--portal-card-glow': cardStyles[card.color].glow }"
+                :style="{ '--portal-card-accent': cardStyles[card.color].accent }"
               >
                 <span class="portal-card-sheen pointer-events-none absolute left-0 top-0 h-1 w-full" />
-                <div class="portal-card-icon relative flex h-12 w-12 items-center justify-center rounded-xl bg-white/60 shadow-sm ring-1 ring-white/70 transition-transform duration-300 group-hover:scale-105">
-                  <component :is="card.icon" :class="['h-9 w-9', cardStyles[card.color].text]" :stroke-width="2.1" />
+                <div class="portal-card-icon relative flex h-11 w-11 items-center justify-center rounded-lg bg-[#edeef2]">
+                  <component :is="card.icon" :class="['h-6 w-6', cardStyles[card.color].text]" :stroke-width="1.5" />
                 </div>
                 <h2 :class="['relative mt-6 text-lg font-semibold', cardStyles[card.color].text]">{{ card.title }}</h2>
                 <p :class="['relative mt-12 text-5xl font-bold tracking-tight', cardStyles[card.color].number]">
@@ -463,16 +458,16 @@ onMounted(() => {
                 :data-testid="`dashboard-card-${card.key}`"
                 :to="card.href"
                 :class="[
-                  'portal-stat-card portal-card-secondary group relative flex h-[214px] w-full flex-col items-center justify-center overflow-hidden rounded-[16px] border bg-gradient-to-b p-8 text-center shadow-[0_2px_8px_rgba(15,23,42,0.12)] transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-[1.015] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 lg:basis-[29%] lg:grow-0 lg:shrink-0',
+                  'portal-stat-card portal-card-secondary group relative flex h-[214px] w-full flex-col items-center justify-center overflow-hidden rounded-[14px] border p-8 text-center transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 lg:basis-[29%] lg:grow-0 lg:shrink-0',
                   cardStyles[card.color].panel,
                   cardStyles[card.color].border,
                   cardStyles[card.color].hoverBorder,
                 ]"
-                :style="{ '--portal-card-accent': cardStyles[card.color].accent, '--portal-card-glow': cardStyles[card.color].glow }"
+                :style="{ '--portal-card-accent': cardStyles[card.color].accent }"
               >
                 <span class="portal-card-sheen pointer-events-none absolute left-0 top-0 h-1 w-full" />
-                <div class="portal-card-icon relative flex h-12 w-12 items-center justify-center rounded-xl bg-white/60 shadow-sm ring-1 ring-white/70 transition-transform duration-300 group-hover:scale-105">
-                  <component :is="card.icon" :class="['h-9 w-9', cardStyles[card.color].text]" :stroke-width="2.1" />
+                <div class="portal-card-icon relative flex h-11 w-11 items-center justify-center rounded-lg bg-[#edeef2]">
+                  <component :is="card.icon" :class="['h-6 w-6', cardStyles[card.color].text]" :stroke-width="1.5" />
                 </div>
                 <h2 :class="['relative mt-6 text-lg font-semibold', cardStyles[card.color].text]">{{ card.title }}</h2>
                 <p :class="['relative mt-12 text-5xl font-bold tracking-tight', cardStyles[card.color].number]">
@@ -513,27 +508,15 @@ onMounted(() => {
 }
 
 .portal-stat-card {
-  --portal-card-accent: #38bdf8;
-  --portal-card-glow: rgba(56, 189, 248, 0.18);
-}
-
-.portal-stat-card:hover {
-  box-shadow: 0 18px 34px -18px var(--portal-card-glow), 0 12px 28px rgba(15, 23, 42, 0.12);
+  --portal-card-accent: #0957f9;
 }
 
 .portal-card-sheen {
-  background: linear-gradient(90deg, transparent, var(--portal-card-accent), transparent);
-  opacity: 0.78;
-  transform: translateX(-105%);
-  transition: transform 0.65s ease;
-}
-
-.portal-stat-card:hover .portal-card-sheen {
-  transform: translateX(105%);
+  background: var(--portal-card-accent);
 }
 
 .portal-card-icon {
-  box-shadow: 0 8px 18px -12px var(--portal-card-glow);
+  box-shadow: none;
 }
 
 .portal-card-skeleton {
@@ -541,20 +524,7 @@ onMounted(() => {
   position: relative;
 }
 
-.portal-card-skeleton::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  transform: translateX(-100%);
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.72), transparent);
-  animation: portal-card-skeleton-shimmer 1.25s ease-in-out infinite;
-}
-
-@keyframes portal-card-skeleton-shimmer {
-  100% {
-    transform: translateX(100%);
-  }
-}
+.portal-card-skeleton::after { content: none; }
 
 @media (max-width: 767px) {
   .portal-card-section {

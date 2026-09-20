@@ -148,54 +148,50 @@ watch(
 </template>
 
 <style scoped>
-.gfi-header { position: relative; z-index: 80; height: 94px; background: #101f47; color: #fff; font-family: Inter, "PingFang SC", "Microsoft YaHei", Arial, sans-serif; }
-.gfi-header--light { border-bottom: 1px solid #eef1f6; background: #fff; color: #0e1b3d; }
+.gfi-header { position: relative; z-index: 80; height: 80px; background: #002a66; color: #fff; font-family: "DM Sans GFI", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif; }
+.gfi-header--light { border-bottom: 1px solid rgba(0, 42, 102, .14); background: #fff; color: #002a66; }
 .gfi-header * { box-sizing: border-box; }
 .gfi-header a { color: inherit; text-decoration: none; }
-.gfi-header-inner { width: min(1288px, calc(100% - 64px)); height: 100%; margin: 0 auto; display: flex; align-items: center; }
-.gfi-brand { display: flex; width: 124px; flex: 0 0 124px; }
+.gfi-header-inner { width: min(1120px, calc(100% - 64px)); height: 100%; margin: 0 auto; display: flex; align-items: center; }
+.gfi-brand { display: flex; width: 112px; flex: 0 0 112px; }
 .gfi-brand img { width: 100%; filter: brightness(0) invert(1); }
 .gfi-header--light .gfi-brand img { filter: none; }
 .gfi-language > button { display: inline-flex; height: 100%; align-items: center; gap: 8px; padding: 0 17px; border: 0; background: transparent; color: #fff; font-size: 16px; }
-.gfi-header--light .gfi-language > button { color: #0e1b3d; }
+.gfi-header--light .gfi-language > button { color: #002a66; }
 .gfi-language svg:last-child { width: 15px; height: 15px; transition: transform .2s ease; }
 .rotated { transform: rotate(180deg); }
-.gfi-header-actions { position: absolute; top: 0; right: 40px; display: flex; height: 94px; align-items: center; gap: 13px; font-size: 15px; white-space: nowrap; }
+.gfi-header-actions { margin-left: auto; display: flex; height: 80px; align-items: center; gap: 12px; font-size: 15px; white-space: nowrap; }
 .gfi-header-actions > span { width: 1px; height: 18px; background: rgba(255,255,255,.4); }
 .gfi-header--light .gfi-header-actions > span { background: #cbd2df; }
 .gfi-auth-link { padding:0; border:0; background:transparent; color:inherit; cursor:pointer; font:inherit; }
 .gfi-auth-link:disabled { cursor:wait; opacity:.65; }
-.gfi-console-link { color:#9fc5ff; font-weight:600; transition:color .2s ease; }
+.gfi-console-link { color:#c1cef6; font-weight:600; transition:color 160ms ease; }
 .gfi-console-link:hover { color:#fff; text-decoration:underline; text-underline-offset:4px; }
-.gfi-console-link:focus-visible { outline:2px solid #9fc5ff; outline-offset:5px; border-radius:2px; }
-.gfi-header--light .gfi-console-link { color:#2058b5; }
-.gfi-header--light .gfi-console-link:hover { color:#174796; }
-.gfi-verify-link { color:#fff; font-weight:600; transition:color .2s ease; }
-.gfi-verify-link:hover { color:#9fc5ff; text-decoration:underline; text-underline-offset:4px; }
-.gfi-header--light .gfi-verify-link { color:#2058b5; }
-.gfi-header--light .gfi-verify-link:hover { color:#174796; }
+.gfi-console-link:focus-visible { outline:2px solid #0957f9; outline-offset:4px; border-radius:4px; }
+.gfi-header--light .gfi-console-link { color:#0957f9; }
+.gfi-header--light .gfi-console-link:hover { color:#002a66; }
+.gfi-verify-link { color:#fff; font-weight:600; transition:color 160ms ease; }
+.gfi-verify-link:hover { color:#c1cef6; text-decoration:underline; text-underline-offset:4px; }
+.gfi-header--light .gfi-verify-link { color:#0957f9; }
+.gfi-header--light .gfi-verify-link:hover { color:#002a66; }
 .gfi-language { position: relative; height: 100%; }
 .gfi-language > button { padding: 0; font-size: 15px; }
 .gfi-language svg:first-child { width: 16px; height: 16px; }
-.gfi-language-menu { position: absolute; top: calc(100% + 10px); right: -15px; width: 128px; padding: 10px; border-radius: 5px; background: #fff; box-shadow: 0 16px 45px rgba(9,21,51,.2); }
+.gfi-language-menu { position: absolute; top: calc(100% + 8px); right: -15px; width: 128px; padding: 8px; border: 1px solid rgba(0,42,102,.14); border-radius: 8px; background: #fff; box-shadow: 0 12px 28px rgba(0,42,102,.12); }
 .gfi-language-menu::before { content: ""; position: absolute; top: -12px; left: 0; right: 0; height: 12px; }
-.gfi-language-menu button { width: 100%; padding: 11px; border: 0; border-radius: 3px; background: #fff; color: #243047; font-size: 15px; }
-.gfi-language-menu button:hover { background: #f1f5ff; color: #225edf; }
+.gfi-language-menu button { width: 100%; min-height: 40px; padding: 8px; border: 0; border-radius: 4px; background: #fff; color: #002a66; font-size: 15px; }
+.gfi-language-menu button:hover { background: #edeef2; color: #0957f9; }
 .gfi-menu-toggle { display: none; width: 42px; height: 42px; flex: 0 0 42px; align-items: center; justify-content: center; border: 0; background: transparent; color: #fff; }
-.gfi-header--light .gfi-menu-toggle { color: #0e1b3d; }
+.gfi-header--light .gfi-menu-toggle { color: #002a66; }
 .gfi-menu-toggle svg { width: 26px; height: 26px; }
-.gfi-mobile-nav { position: absolute; top: calc(78px + var(--app-safe-area-top)); left: 0; right: 0; max-height: calc(var(--app-viewport-height) - 78px - var(--app-safe-area-top)); overflow-y: auto; padding-top: 10px; padding-right: calc(20px + var(--app-safe-area-right)); padding-bottom: calc(24px + var(--app-safe-area-bottom)); padding-left: calc(20px + var(--app-safe-area-left)); background: #101f47; border-top: 1px solid rgba(255,255,255,.1); }
+.gfi-mobile-nav { position: absolute; top: calc(78px + var(--app-safe-area-top)); left: 0; right: 0; max-height: calc(var(--app-viewport-height) - 78px - var(--app-safe-area-top)); overflow-y: auto; padding-top: 10px; padding-right: calc(20px + var(--app-safe-area-right)); padding-bottom: calc(24px + var(--app-safe-area-bottom)); padding-left: calc(20px + var(--app-safe-area-left)); background: #002a66; border-top: 1px solid rgba(255,255,255,.14); }
 .gfi-mobile-nav > div > button { display: flex; width: 100%; align-items: center; justify-content: space-between; padding: 14px 0; border: 0; border-bottom: 1px solid rgba(255,255,255,.09); background: transparent; color: #fff; }
 .gfi-mobile-language { display: flex !important; gap: 8px; padding: 18px 0 10px; }
-.gfi-mobile-language button { width: auto !important; padding: 8px 14px !important; border: 1px solid rgba(255,255,255,.22) !important; border-radius: 18px; }
-.gfi-mobile-language button.selected { background: #fff !important; color: #101f47 !important; }
-.gfi-mobile-login { display:flex; width:100%; height:44px; align-items:center; justify-content:center; margin-top:10px; padding:0 13px; border:0; border-radius:4px; background:#2864ff; color:#fff; cursor:pointer; text-align:center; font:inherit; font-weight:600; }
+.gfi-mobile-language button { width: auto !important; padding: 8px 14px !important; border: 1px solid rgba(255,255,255,.22) !important; border-radius: 999px; }
+.gfi-mobile-language button.selected { background: #fff !important; color: #002a66 !important; }
+.gfi-mobile-login { display:flex; width:100%; height:44px; align-items:center; justify-content:center; margin-top:10px; padding:0 16px; border:0; border-radius:999px; background:#0957f9; color:#fff; cursor:pointer; text-align:center; font:inherit; font-weight:600; }
 .gfi-mobile-login:disabled { cursor:wait; opacity:.75; }
-.gfi-mobile-verify { background:#fff; color:#101f47; }
-
-@media (max-width: 1180px) {
-  .gfi-header-actions { right: 24px; }
-}
+.gfi-mobile-verify { background:#fff; color:#002a66; }
 
 @media (max-width: 960px) {
   .gfi-header { height: calc(78px + var(--app-safe-area-top)); }
@@ -203,6 +199,14 @@ watch(
   .gfi-brand { width: 109px; flex-basis: 109px; }
   .gfi-header-actions { display: none; }
   .gfi-menu-toggle { position: absolute; top: calc(18px + var(--app-safe-area-top)); right: calc(16px + var(--app-safe-area-right)); z-index: 90; display: inline-flex !important; margin-left: auto; background: transparent; visibility: visible !important; opacity: 1 !important; }
-  .gfi-header--light .gfi-menu-toggle svg { display: block !important; color: #0e1b3d !important; stroke: #0e1b3d !important; }
+  .gfi-header--light .gfi-menu-toggle svg { display: block !important; color: #002a66 !important; stroke: #002a66 !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gfi-header *,
+  .gfi-header *::before,
+  .gfi-header *::after {
+    transition-duration: .01ms !important;
+  }
 }
 </style>

@@ -3325,8 +3325,8 @@ function closePaymentEditDialog() {
 }
 
 .checkout-heading h1 {
-  font-size: 28px;
-  line-height: 1.25;
+  font-size: 30px;
+  line-height: 1.2;
   letter-spacing: 0;
 }
 
@@ -3345,8 +3345,7 @@ function closePaymentEditDialog() {
   width: 112px;
   height: 14px;
   border-radius: 3px;
-  background: #e2e7ef;
-  animation: checkout-title-pulse 1.2s ease-in-out infinite;
+  background: #edeef2;
 }
 
 .checkout-title-skeleton {
@@ -3354,26 +3353,7 @@ function closePaymentEditDialog() {
   width: min(220px, 60vw);
   height: 35px;
   border-radius: 4px;
-  background: #e2e7ef;
-  animation: checkout-title-pulse 1.2s ease-in-out infinite;
-}
-
-@keyframes checkout-title-pulse {
-  0%,
-  100% {
-    opacity: 0.55;
-  }
-
-  50% {
-    opacity: 1;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .checkout-header-title-skeleton,
-  .checkout-title-skeleton {
-    animation: none;
-  }
+  background: #edeef2;
 }
 
 .checkout-progress {
@@ -3392,7 +3372,7 @@ function closePaymentEditDialog() {
   gap: 7px;
   padding: 0;
   border: 0;
-  color: #52617a;
+  color: #525e70;
   background: transparent;
   font: inherit;
 }
@@ -3402,7 +3382,7 @@ function closePaymentEditDialog() {
 }
 
 .checkout-progress-step.actionable:hover .checkout-progress-node {
-  background: #cbdcf8;
+  background: #c1cef6;
 }
 
 .checkout-progress-step.actionable:focus-visible {
@@ -3417,7 +3397,7 @@ function closePaymentEditDialog() {
   top: 14px;
   left: calc(50% + 19px);
   width: calc(100% - 38px);
-  border-top: 2px dotted #cbd8e9;
+  border-top: 2px dotted #c1cef6;
   content: "";
 }
 
@@ -3430,8 +3410,8 @@ function closePaymentEditDialog() {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  color: #52617a;
-  background: #e4ebf5;
+  color: #525e70;
+  background: #edeef2;
   font-size: 13px;
   font-weight: 700;
 }
@@ -3454,9 +3434,10 @@ function closePaymentEditDialog() {
 }
 
 .checkout-card {
-  padding: 26px;
-  border: 1px solid rgba(0, 42, 102, 0.16);
-  border-radius: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   box-shadow: none;
 }
 
@@ -3527,7 +3508,7 @@ function closePaymentEditDialog() {
 
 .checkout-unit-badge.bg-emerald-100 {
   color: #9a6500;
-  background: #fff3d8;
+  background: #fdf6ec;
 }
 
 .checkout-unit-badge.bg-emerald-100 svg {
@@ -3587,7 +3568,7 @@ function closePaymentEditDialog() {
 
 .cftp-exemption-choice:hover {
   border-color: #0957f9;
-  background: #f7faff;
+  background: #edeef2;
 }
 
 .cftp-exemption-choice.is-selected {
@@ -3676,7 +3657,7 @@ function closePaymentEditDialog() {
   padding: 3px 11px;
   border-radius: 999px;
   color: #078653;
-  background: #e2f5eb;
+  background: #ecf5f0;
   font-size: 15px;
   font-weight: 700;
 }
@@ -3780,7 +3761,7 @@ function closePaymentEditDialog() {
 }
 
 .checkout-next-button:hover {
-  background: #0045d8;
+  background: #002a66;
 }
 
 .checkout-form-actions {
@@ -3817,7 +3798,7 @@ function closePaymentEditDialog() {
 .checkout-back-button:hover {
   border-color: #0957f9;
   color: #0957f9;
-  background: #f3f7fc;
+  background: #edeef2;
 }
 
 .checkout-form-next-button {
@@ -3826,7 +3807,7 @@ function closePaymentEditDialog() {
 }
 
 .checkout-form-next-button:hover {
-  background: #0045d8;
+  background: #002a66;
 }
 
 @media (max-width: 767px) {

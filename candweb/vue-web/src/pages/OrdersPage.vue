@@ -201,7 +201,7 @@ function orderStatusBadgeClass(order: OrderItem) {
   }
   const status = displayOrderStatus(order)
   if (status === "COMPLETED" || status === "SUCCESS") {
-    return "border-[#6CE9A6] bg-[#ECFDF3] text-[#027A48]"
+    return "border-[#2f7d4f]/30 bg-[#ecf5f0] text-[#2f7d4f]"
   }
   return timelineStatusBadgeClassForStatus("MALL_ORDER", status)
 }
@@ -746,7 +746,7 @@ onBeforeUnmount(() => {
     <div v-if="cancelConfirmOpen" class="app-safe-area-overlay fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
       <div
         ref="cancelConfirmDialogRef"
-        class="w-full max-w-md overflow-hidden rounded-[16px] bg-white shadow-[0_24px_60px_rgba(15,23,42,0.24)]"
+        class="w-full max-w-md overflow-hidden rounded-[14px] border border-primary/15 bg-white shadow-[0_16px_40px_rgba(0,42,102,0.18)]"
         role="dialog"
         aria-modal="true"
         aria-labelledby="order-cancel-confirm-title"
@@ -797,7 +797,7 @@ onBeforeUnmount(() => {
     <div v-if="detailLoading || detailError || selectedOrderDetail" class="app-safe-area-overlay-order fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 backdrop-blur-[2px]">
       <div
         ref="orderDetailDialogRef"
-        class="app-dialog-viewport flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-[22px] bg-white shadow-[0_28px_90px_rgba(15,23,42,0.28)]"
+        class="order-detail-dialog app-dialog-viewport flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-[14px] border border-primary/15 bg-white shadow-[0_16px_40px_rgba(0,42,102,0.18)]"
         role="dialog"
         aria-modal="true"
         aria-labelledby="order-detail-dialog-title"
@@ -828,7 +828,7 @@ onBeforeUnmount(() => {
           </div>
           <div v-else-if="selectedOrderDetail" class="space-y-4">
             <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/60">
-              <div class="border-b border-primary/10 bg-[#f4f6fa] px-4 py-4 sm:px-5">
+              <div class="border-b border-primary/10 bg-[#edeef2] px-4 py-4 sm:px-5">
                 <div class="mb-4 flex items-start justify-between gap-3">
                   <h3 class="font-semibold text-slate-950">{{ t.orders.detailSummary }}</h3>
                   <span v-if="selectedOrderDetail.summary?.order_status" class="badge shrink-0 text-xs" :class="timelineStatusBadgeClassForStatus('MALL_ORDER', selectedOrderDetail.summary.order_status)">
@@ -937,7 +937,12 @@ onBeforeUnmount(() => {
 }
 
 .order-row:hover {
-  box-shadow: inset 3px 0 0 rgba(37, 99, 235, 0.55);
+  box-shadow: inset 3px 0 0 #0957f9;
+}
+
+.order-detail-dialog section {
+  border-radius: 8px !important;
+  box-shadow: none !important;
 }
 
 .order-title-mobile {

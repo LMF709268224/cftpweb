@@ -1052,28 +1052,36 @@ watch(lang, () => {
 
 <style scoped>
 .membership-refresh-btn {
-  border-color: #e2e8f0;
+  border-color: rgba(0, 42, 102, 0.26);
   background: #ffffff;
-  color: #334155;
-  box-shadow: 0 8px 18px -16px rgba(15, 23, 42, 0.35);
-  transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+  color: #002a66;
+  box-shadow: none;
+  transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
 }
 
 .membership-refresh-btn:hover {
-  border-color: rgba(37, 99, 235, 0.28);
-  background: rgba(37, 99, 235, 0.08);
-  color: #1d4ed8;
-  box-shadow: 0 14px 28px -18px rgba(37, 99, 235, 0.42);
-  transform: scale(1.02);
-}
-
-.membership-refresh-btn:active {
-  transform: scale(0.98);
+  border-color: #0957f9;
+  background: #edeef2;
+  color: #0957f9;
+  box-shadow: none;
 }
 
 .membership-refresh-btn:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16), 0 14px 28px -18px rgba(37, 99, 235, 0.42);
+  outline: 2px solid #0957f9;
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+.membership-tabs {
+  border: 0 !important;
+  border-bottom: 1px solid rgba(0, 42, 102, 0.14) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.membership-benefit-item {
+  border-radius: 8px !important;
+  box-shadow: none !important;
 }
 
 @media (max-width: 767px) {

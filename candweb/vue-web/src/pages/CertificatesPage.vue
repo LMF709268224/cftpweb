@@ -3,7 +3,6 @@ import { computed, onMounted, ref, watch } from "vue"
 import { RouterLink } from "vue-router"
 import { AlertCircle, Award, Calendar, CheckCircle2, ClipboardCheck, Download, Eye, Loader2, RefreshCw, ShieldCheck, Sparkles, X } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
-import rewGif from "@/assets/rew.gif"
 import { apiClient } from "@/lib/apiClient"
 import { useBodyScrollLock } from "@/lib/bodyScrollLock"
 import { useDialogAccessibility } from "@/lib/dialogAccessibility"
@@ -73,16 +72,16 @@ const SOURCE_CONFIG: Record<string, { labelKey: "sourceApplication" | "sourceSys
   application: {
     labelKey: "sourceApplication",
     icon: ClipboardCheck,
-    cls: "border-amber-200 text-amber-800",
-    iconCls: "bg-amber-100 text-amber-700",
-    accent: "bg-amber-300",
+    cls: "border-[#c9962e] text-[#a6600c]",
+    iconCls: "bg-[#fdf6ec] text-[#a6600c]",
+    accent: "bg-[#c9962e]",
   },
   pdf_cert: {
     labelKey: "sourceSystem",
     icon: ShieldCheck,
-    cls: "border-cyan-200 text-cyan-800",
-    iconCls: "bg-cyan-100 text-cyan-700",
-    accent: "bg-cyan-300",
+    cls: "border-[#c1cef6] text-[#002a66]",
+    iconCls: "bg-[#edeef2] text-[#0957f9]",
+    accent: "bg-[#0957f9]",
   },
 }
 
@@ -199,7 +198,7 @@ watch(lang, () => {
     >
       <div
         ref="celebrationDialogRef"
-        class="app-dialog-viewport relative flex w-full max-w-[560px] flex-col overflow-hidden rounded-[20px] bg-white shadow-[0_24px_60px_rgba(16,30,67,0.28)]"
+        class="app-dialog-viewport relative flex w-full max-w-[560px] flex-col overflow-hidden rounded-[14px] border border-primary/15 bg-white shadow-[0_16px_40px_rgba(0,42,102,0.18)]"
         role="dialog"
         aria-modal="true"
         aria-labelledby="certificate-celebration-title"
@@ -217,25 +216,24 @@ watch(lang, () => {
         </button>
 
         <div class="relative min-h-0 overflow-y-auto overscroll-contain px-6 pb-6 pt-7 text-center md:px-8 md:pb-8">
-          <div class="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[radial-gradient(circle_at_top,rgba(16,30,67,0.14),transparent_70%)]" />
-          <div class="pointer-events-none absolute inset-x-0 top-10 flex justify-center opacity-95">
-            <img :src="rewGif" alt="" class="h-[240px] w-[240px] object-contain md:h-[300px] md:w-[300px]" />
+          <div class="pointer-events-none mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#c9962e]/10 text-[#c9962e]">
+            <Award class="h-8 w-8" :stroke-width="1.5" />
           </div>
 
-          <div class="relative z-10 mt-2">
+          <div class="relative z-10 mt-4">
             <span class="inline-flex items-center gap-1 rounded-full bg-primary/8 px-3 py-1 text-sm font-semibold text-primary">
               <Sparkles class="h-4 w-4" />
               {{ t.certificatesPage.celebrationModalTitle }}
             </span>
 
-            <h2 id="certificate-celebration-title" class="mt-4 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
+            <h2 id="certificate-celebration-title" class="mt-4 text-2xl font-bold text-foreground">
               {{ t.certificatesPage.celebrationModalHeadline }}
             </h2>
             <p id="certificate-celebration-description" class="mx-auto mt-4 max-w-[420px] text-sm leading-7 text-muted-foreground md:text-base">
               {{ t.certificatesPage.celebrationModalDesc }}
             </p>
 
-            <div class="mt-6 rounded-[18px] border border-primary/15 bg-[linear-gradient(180deg,#f8fbff_0%,#edf6ff_100%)] px-5 py-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_28px_rgba(16,30,67,0.08)]">
+            <div class="mt-6 rounded-[14px] border border-primary/15 bg-[#edeef2] px-5 py-4 text-left">
               <div class="flex items-start gap-3">
                 <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary text-white shadow-[0_8px_18px_rgba(16,30,67,0.2)]">
                   <Award class="h-5 w-5" />
@@ -257,7 +255,7 @@ watch(lang, () => {
 
             <div class="mt-6">
               <button
-                class="certificate-modal-primary inline-flex w-full items-center justify-center gap-2 rounded-[14px] px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(16,30,67,0.24)] disabled:cursor-not-allowed disabled:opacity-50"
+                class="certificate-modal-primary inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-full px-5 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                 :disabled="!featuredCertificate.pdfAvailable || !featuredCertificate.credId"
                 @click="downloadFeaturedCertificate"
               >
@@ -291,8 +289,8 @@ watch(lang, () => {
       <span>{{ t.common.loading }}</span>
     </div>
     <div v-else-if="loadError" class="certificates-state flex flex-col items-center justify-center rounded-[16px] bg-white px-4 py-16 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-      <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-red-50">
-        <AlertCircle class="h-8 w-8 text-red-600" />
+      <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-lg bg-[#fbedeb]">
+        <AlertCircle class="h-8 w-8 text-[#b3372f]" />
       </div>
       <h3 class="mb-2 text-lg font-semibold text-foreground">{{ t.certificatesPage.loadFailed }}</h3>
       <p class="mb-5 max-w-md text-muted-foreground">{{ t.certificatesPage.loadFailedDesc }}</p>
@@ -305,10 +303,8 @@ watch(lang, () => {
       <div
         v-for="cert in certificates"
         :key="cert.id"
-        class="certificate-card group relative overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all duration-300 ease-out hover:-translate-y-1 focus-within:ring-2 focus-within:ring-primary/20"
+        class="certificate-card group relative overflow-hidden rounded-[14px] border border-primary/15 bg-white transition-colors duration-200 focus-within:ring-2 focus-within:ring-primary/20"
       >
-        <span class="certificate-card-sheen pointer-events-none absolute left-0 top-0 z-20 h-1 w-full" />
-        <span class="certificate-card-orb pointer-events-none absolute -right-12 -top-12 z-10 h-36 w-36 rounded-full opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
         <div class="absolute inset-x-0 top-0 z-10 h-1" :class="certificateSourceAccentClass(cert.source)" />
         <div class="certificate-card-hero relative bg-[#002a66] p-4 text-white">
           <div class="relative flex items-start justify-between">
@@ -373,68 +369,8 @@ watch(lang, () => {
 </template>
 
 <style scoped>
-.certificate-card {
-  --certificate-card-accent: var(--gfi-vivid, #0957f9);
-  --certificate-card-glow: rgba(9, 87, 249, 0.16);
-}
-
-.certificate-card:hover {
-  box-shadow: 0 18px 34px -18px var(--certificate-card-glow), 0 12px 28px rgba(15, 23, 42, 0.1);
-}
-
-.certificate-card-sheen {
-  background: linear-gradient(90deg, transparent, var(--certificate-card-accent), transparent);
-  opacity: 0.78;
-  transform: translateX(-105%);
-  transition: transform 0.65s ease;
-}
-
-.certificate-card:hover .certificate-card-sheen {
-  transform: translateX(105%);
-}
-
-.certificate-card-orb {
-  background: radial-gradient(circle, rgba(9, 87, 249, 0.16), transparent 68%);
-}
-
 .certificate-modal-primary {
-  position: relative;
-  overflow: hidden;
-  isolation: isolate;
-  background:
-    radial-gradient(circle at 18% 20%, rgba(255, 255, 255, 0.24), transparent 22%),
-    linear-gradient(120deg, rgba(16, 30, 67, 1) 0%, rgba(24, 46, 96, 1) 42%, rgba(39, 88, 182, 1) 58%, rgba(16, 30, 67, 1) 100%);
-}
-
-.certificate-modal-primary::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: linear-gradient(120deg, transparent 12%, rgba(255, 255, 255, 0.42) 36%, rgba(255, 255, 255, 0.16) 48%, transparent 68%);
-  transform: translateX(-140%);
-  animation: certificateShine 2.8s ease-in-out infinite;
-}
-
-.certificate-modal-primary::after {
-  content: "";
-  position: absolute;
-  inset: 1px;
-  border-radius: inherit;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), transparent 32%);
-  pointer-events: none;
-}
-
-@keyframes certificateShine {
-  0%,
-  22% {
-    transform: translateX(-140%);
-  }
-
-  44%,
-  100% {
-    transform: translateX(140%);
-  }
+  background: #002a66;
 }
 
 @media (max-width: 767px) {

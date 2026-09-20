@@ -65,24 +65,23 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="app-min-viewport-height app-safe-area-screen relative flex w-full flex-col items-center justify-center overflow-hidden bg-slate-950 text-slate-50">
-    <div class="pointer-events-none absolute left-1/2 top-1/2 h-[800px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-600/10 blur-[150px]" />
-    <div class="relative z-10 mx-4 flex w-full max-w-sm flex-col items-center rounded-2xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-xl">
+  <div class="candidate-portal app-min-viewport-height app-safe-area-screen flex w-full flex-col items-center justify-center bg-[#edeef2] text-[#1a2233]">
+    <div class="mx-4 flex w-full max-w-sm flex-col items-center rounded-[14px] border border-[#002a66]/15 bg-white p-8 text-center">
       <template v-if="status === 'loading'">
-        <Loader2 class="h-16 w-16 animate-spin text-indigo-400" />
-        <h2 class="mt-8 text-xl font-semibold tracking-tight text-white">{{ t.callbackPage.loadingTitle }}</h2>
-        <p class="mt-2 text-center text-sm text-slate-400">{{ t.callbackPage.loadingDesc }}</p>
+        <Loader2 class="h-8 w-8 animate-spin text-[#0957f9]" :stroke-width="1.5" />
+        <h2 class="mt-6 text-xl font-semibold text-[#002a66]">{{ t.callbackPage.loadingTitle }}</h2>
+        <p class="mt-2 text-sm text-[#525e70]">{{ t.callbackPage.loadingDesc }}</p>
       </template>
       <template v-else-if="status === 'success'">
-        <CheckCircle2 class="h-16 w-16 text-emerald-400" />
-        <h2 class="mt-8 text-xl font-semibold tracking-tight text-white">{{ t.callbackPage.successTitle }}</h2>
-        <p class="mt-2 text-sm text-slate-400">{{ t.callbackPage.successDesc }}</p>
+        <CheckCircle2 class="h-8 w-8 text-[#2f7d4f]" :stroke-width="1.5" />
+        <h2 class="mt-6 text-xl font-semibold text-[#002a66]">{{ t.callbackPage.successTitle }}</h2>
+        <p class="mt-2 text-sm text-[#525e70]">{{ t.callbackPage.successDesc }}</p>
       </template>
       <template v-else>
-        <ShieldAlert class="h-16 w-16 text-red-400" />
-        <h2 class="mt-8 text-xl font-semibold tracking-tight text-white">{{ t.callbackPage.errorTitle }}</h2>
-        <p class="mt-2 w-full rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-center text-sm text-red-300">{{ errorMsg }}</p>
-        <p class="mt-4 text-xs text-slate-500">{{ t.callbackPage.redirectLoginHint }}</p>
+        <ShieldAlert class="h-8 w-8 text-[#b3372f]" :stroke-width="1.5" />
+        <h2 class="mt-6 text-xl font-semibold text-[#002a66]">{{ t.callbackPage.errorTitle }}</h2>
+        <p class="mt-3 w-full rounded-lg border border-[#b3372f]/20 bg-[#fbedeb] p-3 text-sm text-[#b3372f]" role="alert">{{ errorMsg }}</p>
+        <p class="mt-4 text-xs text-[#5b6b87]">{{ t.callbackPage.redirectLoginHint }}</p>
       </template>
     </div>
   </div>
