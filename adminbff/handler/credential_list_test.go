@@ -20,15 +20,20 @@ type credentialListClient struct {
 
 func (s *credentialListClient) ListCredentials(_ context.Context, request *gcredspb.ListCredentialsRequest, _ ...grpc.CallOption) (*gcredspb.ListCredentialsResponse, error) {
 	s.listRequest = request
-	return &gcredspb.ListCredentialsResponse{Credentials: []*gcredspb.CredentialSummary{{
-		CredUlid:      "credential-current",
-		CandidateUlid: "candidate-current",
-		CredDefUlid:   "definition-current",
-		Status:        gcredspb.CredentialStatus_CREDENTIAL_STATUS_REVOKED,
-		AuditRemark:   "duplicate record",
-		IsCurrent:     true,
-		AuditTime:     "2026-09-20T08:00:00Z",
-	}}}, nil
+	return &gcredspb.ListCredentialsResponse{
+		Credentials: []*gcredspb.CredentialSummary{{
+			CredUlid:      "credential-current",
+			CandidateUlid: "candidate-current",
+			CredDefUlid:   "definition-current",
+			Status:        gcredspb.CredentialStatus_CREDENTIAL_STATUS_REVOKED,
+			AuditRemark:   "duplicate record",
+			IsCurrent:     true,
+			AuditTime:     "2026-09-20T08:00:00Z",
+		}},
+		HasMore:    true,
+		NextCursor: "next-page",
+		PrevCursor: "previous-page",
+	}, nil
 }
 
 func (s *credentialListClient) GetCredentialCount(_ context.Context, request *gcredspb.GetCredentialCountRequest, _ ...grpc.CallOption) (*gcredspb.GetCredentialCountResponse, error) {
@@ -84,6 +89,8 @@ func TestListCredentialsForwardsCurrentFilterAndReturnsLifecycleFields(t *testin
 				AuditTime      string `json:"audit_time"`
 				IsCurrent      bool   `json:"is_current"`
 			} `json:"credentials"`
+			NextCursor string `json:"next_cursor"`
+			PrevCursor string `json:"prev_cursor"`
 		} `json:"data"`
 	}
 	if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
@@ -95,6 +102,9 @@ func TestListCredentialsForwardsCurrentFilterAndReturnsLifecycleFields(t *testin
 	credential := payload.Data.Credentials[0]
 	if credential.CredentialName != "CFtP Certification" || credential.AuditRemark != "duplicate record" || credential.AuditTime != "2026-09-20T08:00:00Z" || !credential.IsCurrent {
 		t.Fatalf("credential payload = %+v", credential)
+	}
+	if payload.Data.NextCursor != "next-page" || payload.Data.PrevCursor != "previous-page" {
+		t.Fatalf("pagination cursors = next %q, prev %q", payload.Data.NextCursor, payload.Data.PrevCursor)
 	}
 }
 

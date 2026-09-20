@@ -22,9 +22,9 @@ const credentials = ref<JsonRecord[]>([])
 const selectedCredential = ref<JsonRecord | null>(null)
 const total = ref(0)
 const nextCursor = ref("")
-const hasMore = ref(false)
+const prevCursor = ref("")
+const currentPage = ref(1)
 const listLoading = ref(false)
-const loadingMore = ref(false)
 const detailLoading = ref(false)
 const detailOpen = ref(false)
 const reason = ref("")
@@ -35,6 +35,10 @@ let detailRequestSeq = 0
 
 const { t, isZh } = useAdminLanguage()
 const copy = computed(() => t.value.permissions)
+const pageSize = 10
+const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)))
+const canPrev = computed(() => Boolean(prevCursor.value) && currentPage.value > 1)
+const canNext = computed(() => Boolean(nextCursor.value) && currentPage.value < totalPages.value)
 const selectedStatus = computed(() => credentialStatus(selectedCredential.value))
 const canOperate = computed(() => Boolean(selectedCredential.value && selectedStatus.value === "active"))
 const actions = computed<PermissionActionItem[]>(() => [
@@ -150,42 +154,43 @@ function closeDetail() {
   }
 }
 
-async function loadCredentials(reset = true) {
-  if (reset) {
-    credentialsRequestSeq += 1
-    listLoading.value = true
-  } else {
-    loadingMore.value = true
-  }
-  const requestSeq = credentialsRequestSeq
+async function loadCredentials(cursor = "", requestedPage = 1) {
+  const requestSeq = ++credentialsRequestSeq
+  listLoading.value = true
   try {
-    const params = new URLSearchParams({ is_current: "true", page_size: "50" })
-    if (!reset && nextCursor.value) params.set("cursor", nextCursor.value)
+    const params = new URLSearchParams({ is_current: "true", page_size: String(pageSize) })
+    if (cursor) params.set("cursor", cursor)
     const data = await apiClient<JsonRecord>(`/api/credentials?${params.toString()}`)
-    if (reset && requestSeq !== credentialsRequestSeq) return
+    if (requestSeq !== credentialsRequestSeq) return
     const items = Array.isArray(data.credentials)
       ? data.credentials.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
       : []
-    credentials.value = reset ? items : [...credentials.value, ...items]
+    credentials.value = items
     total.value = Number(data.total || 0)
     nextCursor.value = String(data.next_cursor || "")
-    hasMore.value = Boolean(data.has_more) && Boolean(nextCursor.value)
-    if (selectedCredential.value) {
-      const selectedCandidate = candidateUlid(selectedCredential.value)
-      const selectedDefinition = credentialDefinitionUlid(selectedCredential.value)
-      selectedCredential.value = credentials.value.find((item) => candidateUlid(item) === selectedCandidate && credentialDefinitionUlid(item) === selectedDefinition) || null
-    }
+    prevCursor.value = String(data.prev_cursor || "")
+    currentPage.value = requestedPage
   } catch (err) {
+    if (requestSeq !== credentialsRequestSeq) return
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.credentialsLoadFailed))
   } finally {
-    if (reset) listLoading.value = false
-    else loadingMore.value = false
+    if (requestSeq === credentialsRequestSeq) listLoading.value = false
   }
 }
 
 function refreshPage() {
-  void loadCredentials()
+  void loadCredentials("", 1)
+}
+
+function previousPage() {
+  if (listLoading.value || !canPrev.value) return
+  void loadCredentials(prevCursor.value, currentPage.value - 1)
+}
+
+function nextPage() {
+  if (listLoading.value || !canNext.value) return
+  void loadCredentials(nextCursor.value, currentPage.value + 1)
 }
 
 function createPendingAction(action: PermissionActionItem) {
@@ -234,7 +239,9 @@ async function executeAction(action: PendingPermissionAction) {
     toast.success(copy.value.toasts.actionSuccess)
     pendingAction.value = null
     reason.value = ""
-    await loadCredentials(true)
+    detailOpen.value = false
+    selectedCredential.value = null
+    await loadCredentials("", 1)
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.actionFailed))
@@ -278,7 +285,7 @@ onMounted(() => {
             <tr><th class="px-4 py-3">{{ copy.columns.candidate }}</th><th class="px-4 py-3">{{ copy.columns.credential }}</th><th class="px-4 py-3">{{ copy.columns.status }}</th><th class="px-4 py-3">{{ copy.columns.version }}</th><th class="px-4 py-3">{{ copy.columns.auditTime }}</th><th class="px-4 py-3 text-right">{{ copy.columns.actions }}</th></tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
-            <tr v-for="credential in credentials" :key="credentialUlid(credential)" class="cursor-pointer transition hover:bg-sky-50" :class="credentialUlid(selectedCredential) === credentialUlid(credential) ? 'bg-sky-50' : ''" @click="selectCredential(credential)">
+            <tr v-for="credential in credentials" :key="credentialUlid(credential)" class="cursor-pointer transition hover:bg-sky-50" @click="openDetail(credential)">
               <td class="max-w-[220px] px-4 py-4"><div class="font-bold">{{ candidateName(credential) || copy.unknownCandidate }}</div><div class="mt-1 break-all text-xs text-slate-500">{{ candidateUlid(credential) || "-" }}</div></td>
               <td class="max-w-[220px] px-4 py-4"><div class="font-bold">{{ credentialDefinitionName(credential) }}</div><div class="mt-1 break-all text-xs text-slate-500">{{ credentialDefinitionUlid(credential) || "-" }}</div></td>
               <td class="px-4 py-4"><span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-black" :class="credentialStatusClass(credential)">{{ credentialStatusLabel(credential) }}</span><div v-if="auditRemark(credential) !== '-'" class="mt-2 max-w-[210px] truncate text-xs text-slate-500" :title="auditRemark(credential)">{{ auditRemark(credential) }}</div></td>
@@ -289,34 +296,46 @@ onMounted(() => {
           </tbody>
         </table>
       </div>
-      <button v-if="hasMore" class="mx-auto mt-4 flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-bold disabled:opacity-50" type="button" :disabled="loadingMore" @click="void loadCredentials(false)"><Loader2 v-if="loadingMore" class="h-4 w-4 animate-spin" />{{ copy.loadMore }}</button>
-    </section>
-
-    <section v-if="selectedCredential" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:rounded-3xl md:p-5">
-      <div class="flex flex-wrap items-start justify-between gap-4"><div><h2 class="text-xl font-black">{{ copy.detailTitle }}</h2><p class="mt-1 break-all text-sm text-slate-500">{{ credentialUlid(selectedCredential) }}</p></div><span class="inline-flex rounded-full border px-3 py-1 text-sm font-black" :class="credentialStatusClass(selectedCredential)">{{ credentialStatusLabel(selectedCredential) }}</span></div>
-      <div class="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <div class="rounded-xl bg-slate-50 p-4"><div class="text-xs font-black text-slate-400">{{ copy.fields.candidate }}</div><div class="mt-2 break-all font-bold">{{ candidateName(selectedCredential) || copy.unknownCandidate }}</div><div class="mt-1 break-all text-xs text-slate-500">{{ candidateUlid(selectedCredential) }}</div></div>
-        <div class="rounded-xl bg-slate-50 p-4"><div class="text-xs font-black text-slate-400">{{ copy.fields.credential }}</div><div class="mt-2 font-bold">{{ credentialDefinitionName(selectedCredential) }}</div><div class="mt-1 break-all text-xs text-slate-500">{{ credentialDefinitionUlid(selectedCredential) }}</div></div>
-        <div class="rounded-xl bg-slate-50 p-4"><div class="text-xs font-black text-slate-400">{{ copy.fields.auditTime }}</div><div class="mt-2 font-bold">{{ formatDate(selectedCredential.audit_time || selectedCredential.created_at) }}</div></div>
-        <div class="rounded-xl bg-slate-50 p-4"><div class="text-xs font-black text-slate-400">{{ copy.fields.current }}</div><div class="mt-2 font-bold">{{ selectedCredential.is_current === false ? copy.no : copy.yes }}</div></div>
-      </div>
-      <div class="mt-4 rounded-xl border border-slate-200 p-4"><div class="text-xs font-black text-slate-400">{{ copy.fields.reason }}</div><div class="mt-2 whitespace-pre-wrap text-sm text-slate-700">{{ auditRemark(selectedCredential) }}</div></div>
-
-      <div class="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <JsonPreview :title="copy.rawJson" :value="selectedCredential" :copy-label="copy.copyJson" :copied-label="copy.copiedJson" :copied-message="copy.toasts.jsonCopied" :copy-error-message="copy.toasts.jsonCopyFailed" />
-        <aside class="rounded-2xl border border-slate-200 p-4">
-          <h3 class="text-lg font-black">{{ copy.actionTitle }}</h3><p class="mt-1 text-sm text-slate-500">{{ canOperate ? copy.actionDescription : copy.operationUnavailable }}</p>
-          <label class="mt-4 grid gap-2 text-sm font-bold">{{ copy.reason }}<textarea v-model="reason" class="min-h-24 rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100" :disabled="!canOperate" maxlength="500" :placeholder="copy.reasonPlaceholder" /></label>
-          <div class="mt-4 grid gap-3"><button v-for="action in actions" :key="action.key" class="flex items-start gap-3 rounded-xl px-4 py-3 text-left font-bold text-white disabled:cursor-not-allowed disabled:opacity-50" :class="action.key === 'revoke-credential' ? 'bg-red-600' : 'bg-orange-600'" type="button" :disabled="!canOperate || !!activeAction" @click="requestAction(action)"><component :is="action.icon" class="mt-0.5 h-5 w-5 shrink-0" /><span><span class="block">{{ action.title }}</span><span class="mt-1 block text-xs font-normal text-white/80">{{ action.desc }}</span></span></button></div>
-        </aside>
+      <div v-if="credentials.length" class="mt-4 flex flex-col items-stretch justify-between gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center">
+        <span class="text-center text-sm font-bold text-slate-500 sm:text-left">{{ copy.pageText(currentPage, totalPages, total) }}</span>
+        <div class="flex gap-3">
+          <button class="flex-1 rounded-xl border px-4 py-2 font-bold disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none" type="button" :disabled="listLoading || !canPrev" @click="previousPage">{{ copy.prev }}</button>
+          <button class="flex-1 rounded-xl border px-4 py-2 font-bold disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none" type="button" :disabled="listLoading || !canNext" @click="nextPage">{{ copy.next }}</button>
+        </div>
       </div>
     </section>
 
-    <div v-if="detailOpen && selectedCredential" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4" @click.self="closeDetail">
-      <div class="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
-        <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4"><div><h2 class="text-xl font-black">{{ copy.detailTitle }}</h2><p class="mt-1 break-all text-xs text-slate-500">{{ credentialUlid(selectedCredential) }}</p></div><button class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200" type="button" :aria-label="copy.close" @click="closeDetail"><X class="h-5 w-5" /></button></div>
+    <div v-if="detailOpen && selectedCredential" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-0 md:p-6" @click.self="closeDetail">
+      <div v-modal-dialog="closeDetail" class="flex h-full max-h-none w-full max-w-[1180px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[90vh] md:rounded-2xl">
+        <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6">
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-3">
+              <h2 class="text-xl font-black md:text-2xl">{{ copy.detailTitle }}</h2>
+              <span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-black" :class="credentialStatusClass(selectedCredential)">{{ credentialStatusLabel(selectedCredential) }}</span>
+            </div>
+            <p class="mt-1 break-all text-xs text-slate-500">{{ credentialUlid(selectedCredential) }}</p>
+          </div>
+          <button class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200" type="button" :aria-label="copy.close" @click="closeDetail"><X class="h-5 w-5" /></button>
+        </div>
         <div v-if="detailLoading" class="p-12 text-center text-slate-500"><Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />{{ copy.loading }}</div>
-        <div v-else class="overflow-y-auto p-5"><div class="mb-5 text-lg font-black">{{ credentialDefinitionName(selectedCredential) }} <span class="ml-2 inline-flex rounded-full border px-2 py-1 text-xs" :class="credentialStatusClass(selectedCredential)">{{ credentialStatusLabel(selectedCredential) }}</span></div><div class="grid gap-3 md:grid-cols-2"><div><span class="text-xs text-slate-400">{{ copy.fields.candidate }}</span><div class="mt-1 break-all font-bold">{{ candidateUlid(selectedCredential) }}</div></div><div><span class="text-xs text-slate-400">{{ copy.fields.reason }}</span><div class="mt-1 whitespace-pre-wrap">{{ auditRemark(selectedCredential) }}</div></div></div><div class="mt-5"><JsonPreview :title="copy.rawJson" :value="selectedCredential" :copy-label="copy.copyJson" :copied-label="copy.copiedJson" :copied-message="copy.toasts.jsonCopied" :copy-error-message="copy.toasts.jsonCopyFailed" /></div></div>
+        <div v-else class="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
+          <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <div class="rounded-xl bg-slate-50 p-4"><div class="text-xs font-black text-slate-400">{{ copy.fields.candidate }}</div><div class="mt-2 break-all font-bold">{{ candidateName(selectedCredential) || copy.unknownCandidate }}</div><div class="mt-1 break-all text-xs text-slate-500">{{ candidateUlid(selectedCredential) }}</div></div>
+            <div class="rounded-xl bg-slate-50 p-4"><div class="text-xs font-black text-slate-400">{{ copy.fields.credential }}</div><div class="mt-2 font-bold">{{ credentialDefinitionName(selectedCredential) }}</div><div class="mt-1 break-all text-xs text-slate-500">{{ credentialDefinitionUlid(selectedCredential) }}</div></div>
+            <div class="rounded-xl bg-slate-50 p-4"><div class="text-xs font-black text-slate-400">{{ copy.fields.auditTime }}</div><div class="mt-2 font-bold">{{ formatDate(selectedCredential.audit_time || selectedCredential.created_at) }}</div></div>
+            <div class="rounded-xl bg-slate-50 p-4"><div class="text-xs font-black text-slate-400">{{ copy.fields.current }}</div><div class="mt-2 font-bold">{{ selectedCredential.is_current === false ? copy.no : copy.yes }}</div></div>
+          </div>
+          <div class="mt-4 rounded-xl border border-slate-200 p-4"><div class="text-xs font-black text-slate-400">{{ copy.fields.reason }}</div><div class="mt-2 whitespace-pre-wrap text-sm text-slate-700">{{ auditRemark(selectedCredential) }}</div></div>
+          <div class="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
+            <JsonPreview :title="copy.rawJson" :value="selectedCredential" :copy-label="copy.copyJson" :copied-label="copy.copiedJson" :copied-message="copy.toasts.jsonCopied" :copy-error-message="copy.toasts.jsonCopyFailed" />
+            <aside class="border-t border-slate-200 pt-5 xl:border-l xl:border-t-0 xl:pl-5 xl:pt-0">
+              <h3 class="text-lg font-black">{{ copy.actionTitle }}</h3>
+              <p class="mt-1 text-sm text-slate-500">{{ canOperate ? copy.actionDescription : copy.operationUnavailable }}</p>
+              <label class="mt-4 grid gap-2 text-sm font-bold">{{ copy.reason }}<textarea v-model="reason" class="min-h-24 rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100" :disabled="!canOperate" maxlength="500" :placeholder="copy.reasonPlaceholder" /></label>
+              <div class="mt-4 grid gap-3"><button v-for="action in actions" :key="action.key" class="flex items-start gap-3 rounded-xl px-4 py-3 text-left font-bold text-white disabled:cursor-not-allowed disabled:opacity-50" :class="action.key === 'revoke-credential' ? 'bg-red-600' : 'bg-orange-600'" type="button" :disabled="!canOperate || !!activeAction" @click="requestAction(action)"><component :is="action.icon" class="mt-0.5 h-5 w-5 shrink-0" /><span><span class="block">{{ action.title }}</span><span class="mt-1 block text-xs font-normal text-white/80">{{ action.desc }}</span></span></button></div>
+            </aside>
+          </div>
+        </div>
       </div>
     </div>
 

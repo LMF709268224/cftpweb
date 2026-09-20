@@ -262,6 +262,7 @@ func (h *Handler) ListCredentials(w http.ResponseWriter, r *http.Request) {
 		"total_label": total.Label(),
 		"total_exact": total.Exact,
 		"next_cursor": res.GetNextCursor(),
+		"prev_cursor": res.GetPrevCursor(),
 		"has_more":    res.GetHasMore(),
 	})
 }
