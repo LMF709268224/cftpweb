@@ -3434,10 +3434,10 @@ function closePaymentEditDialog() {
 }
 
 .checkout-card {
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
+  padding: 26px;
+  border: 1px solid rgba(0, 42, 102, 0.16);
+  border-radius: 8px;
+  background: #fff;
   box-shadow: none;
 }
 
