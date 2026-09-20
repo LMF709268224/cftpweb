@@ -203,6 +203,18 @@ func (h *Handler) ListCredentials(w http.ResponseWriter, r *http.Request) {
 		CredDefUlid:   strings.TrimSpace(r.URL.Query().Get("cred_def_ulid")),
 		Status:        strings.TrimSpace(r.URL.Query().Get("status")),
 	}
+	if rawValues, ok := r.URL.Query()["is_current"]; ok {
+		if len(rawValues) != 1 {
+			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "is_current must be true or false")
+			return
+		}
+		isCurrent, err := strconv.ParseBool(strings.TrimSpace(rawValues[0]))
+		if err != nil {
+			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "is_current must be true or false")
+			return
+		}
+		filters.IsCurrent = &isCurrent
+	}
 	res, err := h.Creds.ListCredentials(r.Context(), &gcredspb.ListCredentialsRequest{
 		Filters:   filters,
 		Cursor:    page.Cursor,
@@ -229,12 +241,17 @@ func (h *Handler) ListCredentials(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	credentialNames := h.credentialDefinitionNames(r)
 	credentials := make([]map[string]interface{}, 0, len(res.GetCredentials()))
 	for _, credential := range res.GetCredentials() {
 		if credential == nil {
 			continue
 		}
 		item := jsonPayloadObject(credential)
+		if name := credentialNames[credential.GetCredDefUlid()]; name != "" {
+			item["cred_def_name"] = name
+			item["credential_name"] = name
+		}
 		h.attachCandidateName(item, credential.GetCandidateUlid())
 		credentials = append(credentials, item)
 	}
@@ -247,6 +264,32 @@ func (h *Handler) ListCredentials(w http.ResponseWriter, r *http.Request) {
 		"next_cursor": res.GetNextCursor(),
 		"has_more":    res.GetHasMore(),
 	})
+}
+
+// GetCredentialDetail GET /api/credentials/{cred_ulid}
+func (h *Handler) GetCredentialDetail(w http.ResponseWriter, r *http.Request) {
+	credULID, ok := requiredURLParam(w, r, "cred_ulid")
+	if !ok {
+		return
+	}
+
+	credential, err := h.Creds.GetCredentialDetail(r.Context(), &gcredspb.GetCredentialDetailRequest{CredUlid: credULID})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	if credential == nil {
+		WriteError(w, http.StatusInternalServerError, ErrInternal, "credential service returned an empty detail")
+		return
+	}
+
+	payload := jsonPayloadObject(credential)
+	if name := h.credentialDefinitionNameByID(r, credential.GetCredDefUlid()); name != "" {
+		payload["cred_def_name"] = name
+		payload["credential_name"] = name
+	}
+	h.attachCandidateName(payload, credential.GetCandidateUlid())
+	WriteJSON(w, http.StatusOK, payload)
 }
 
 // IgnoreVersionFile POST /api/credentials/version-files/{file_id}/ignore

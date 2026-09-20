@@ -7,30 +7,6 @@ import (
 	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
 )
 
-// CheckCandidateQualification GET /api/permissions/check
-func (h *Handler) CheckCandidateQualification(w http.ResponseWriter, r *http.Request) {
-	candidateId := strings.TrimSpace(firstNonEmpty(r.URL.Query().Get("candidate_ulid"), r.URL.Query().Get("candidate_id")))
-	credDefId := strings.TrimSpace(firstNonEmpty(r.URL.Query().Get("cred_def_ulid"), r.URL.Query().Get("cred_def_id")))
-
-	if candidateId == "" || credDefId == "" {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "Missing required query params")
-		return
-	}
-
-	req := &gcredspb.CheckCandidateQualificationRequest{
-		CandidateUlid: candidateId,
-		CredDefUlid:   credDefId,
-	}
-
-	res, err := h.Creds.CheckCandidateQualification(r.Context(), req)
-	if err != nil {
-		HandleGrpcError(w, err)
-		return
-	}
-
-	WriteJSON(w, http.StatusOK, res)
-}
-
 type MarkExpiredReq struct {
 	CandidateUlid     string `json:"candidate_ulid"`
 	LegacyCandidateID string `json:"candidate_id,omitempty"`

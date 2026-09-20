@@ -347,6 +347,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Post("/definitions/{cred_def_ulid}/attachments/upload-url", h.RequestCredentialDefinitionAttachmentUploadURL)
 			r.Put("/definitions/{cred_def_ulid}/attachments", h.UpdateCredentialDefinitionAttachments)
 			r.Post("/definitions", h.CreateCredentialDefinition)
+			r.Get("/{cred_ulid}", h.GetCredentialDetail)
 		})
 
 		// ===== 应用 (Applications) =====
@@ -473,7 +474,6 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 
 		// ===== 权限管理 (Permissions) =====
 		r.Route("/permissions", func(r chi.Router) {
-			r.Get("/check", h.CheckCandidateQualification)
 			r.Post("/mark-expired", h.MarkExpired)
 			r.Post("/revoke-credential", h.RevokeCredential)
 		})

@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
 	gmidpb "github.com/afnandelfin620-star/cftptest/cftp/gmid"
 	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
 	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
@@ -47,20 +46,6 @@ func (s *adminReadPayClient) ListOrders(_ context.Context, request *gpaypb.ListO
 		Status:    gpaypb.OrderStatus_ORDER_STATUS_COMPLETED,
 		PaidAt:    time.Now().Unix(),
 	}}}, nil
-}
-
-type adminReadCredentialClient struct {
-	gcredspb.CredentialServiceClient
-	request *gcredspb.CheckCandidateQualificationRequest
-}
-
-func (s *adminReadCredentialClient) CheckCandidateQualification(_ context.Context, request *gcredspb.CheckCandidateQualificationRequest, _ ...grpc.CallOption) (*gcredspb.CheckCandidateQualificationResponse, error) {
-	s.request = request
-	return &gcredspb.CheckCandidateQualificationResponse{
-		Eligible:         true,
-		CredentialStatus: gcredspb.CredentialStatus_CREDENTIAL_STATUS_ACTIVE,
-		Message:          "qualification active",
-	}, nil
 }
 
 type adminReadProgClient struct {
@@ -113,44 +98,6 @@ func TestListPaySubscriptionsForwardsReadFiltersAndCursor(t *testing.T) {
 	}
 	if len(payload.Data.Subscriptions) != 1 || payload.Data.Subscriptions[0].OrderULID != "order-regression" || !payload.Data.HasMore || payload.Data.NextCursor != "next-subscriptions" {
 		t.Fatalf("subscription page = %+v", payload.Data)
-	}
-}
-
-func TestCheckCandidateQualificationForwardsReadTarget(t *testing.T) {
-	client := &adminReadCredentialClient{}
-	recorder := httptest.NewRecorder()
-	request := httptest.NewRequest(http.MethodGet, "/api/permissions/check?candidate_ulid=candidate-regression&cred_def_ulid=definition-regression", nil)
-
-	(&Handler{Creds: client}).CheckCandidateQualification(recorder, request)
-
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("status = %d, want %d; body=%s", recorder.Code, http.StatusOK, recorder.Body.String())
-	}
-	if client.request.GetCandidateUlid() != "candidate-regression" || client.request.GetCredDefUlid() != "definition-regression" {
-		t.Fatalf("qualification request = %+v", client.request)
-	}
-	var payload struct {
-		Data struct {
-			Eligible bool   `json:"eligible"`
-			Message  string `json:"message"`
-		} `json:"data"`
-	}
-	if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
-		t.Fatalf("decode response: %v", err)
-	}
-	if !payload.Data.Eligible || payload.Data.Message != "qualification active" {
-		t.Fatalf("qualification response = %+v", payload.Data)
-	}
-}
-
-func TestCheckCandidateQualificationRejectsMissingReadTarget(t *testing.T) {
-	recorder := httptest.NewRecorder()
-	request := httptest.NewRequest(http.MethodGet, "/api/permissions/check?candidate_ulid=candidate-regression", nil)
-
-	(&Handler{}).CheckCandidateQualification(recorder, request)
-
-	if recorder.Code != http.StatusBadRequest {
-		t.Fatalf("status = %d, want %d; body=%s", recorder.Code, http.StatusBadRequest, recorder.Body.String())
 	}
 }
 
