@@ -30,6 +30,11 @@ const (
 
 // GetLoginURL handles GET /api/auth/login-url.
 func (h *Handler) GetLoginURL(w http.ResponseWriter, r *http.Request) {
+	// The response contains a one-time OAuth state bound to a browser cookie.
+	// Reusing it from a browser/CDN cache makes the callback state invalid.
+	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("Pragma", "no-cache")
+
 	redirectSigninURL, err := validatedAuthCallback(r, r.URL.Query().Get("callback"))
 	if err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, err.Error())

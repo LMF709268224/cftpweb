@@ -1,12 +1,64 @@
 package handler
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"strings"
 	"testing"
 
 	"candbff/config"
+	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 )
+
+func TestGetLoginURLDisablesCaching(t *testing.T) {
+	casdoorsdk.InitConfig(
+		"https://casdoor.internal",
+		"client",
+		"secret",
+		"certificate",
+		"organization",
+		"candidate-app",
+	)
+	h := &Handler{CasdoorEndpoint: "https://login.example.com"}
+	req := httptest.NewRequest(
+		http.MethodGet,
+		"https://candidate.example/api/auth/login-url?callback=https%3A%2F%2Fcandidate.example%2Fcallback",
+		nil,
+	)
+	rec := httptest.NewRecorder()
+
+	h.GetLoginURL(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("GetLoginURL() status = %d, body = %s", rec.Code, rec.Body.String())
+	}
+	if got := rec.Header().Get("Cache-Control"); got != "no-store" {
+		t.Fatalf("Cache-Control = %q, want no-store", got)
+	}
+	if got := rec.Header().Get("Pragma"); got != "no-cache" {
+		t.Fatalf("Pragma = %q, want no-cache", got)
+	}
+
+	var response struct {
+		Data AuthURLRsp `json:"data"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+		t.Fatalf("decode login response: %v", err)
+	}
+	signinURL, err := url.Parse(response.Data.URL)
+	if err != nil {
+		t.Fatalf("parse signin URL: %v", err)
+	}
+	state := strings.TrimSpace(signinURL.Query().Get("state"))
+	if state == "" {
+		t.Fatal("signin URL does not contain state")
+	}
+	if cookies := rec.Result().Cookies(); len(cookies) != 1 || cookies[0].Name != oauthStateCookieName || cookies[0].Value != state {
+		t.Fatalf("OAuth state cookie = %+v, URL state = %q", cookies, state)
+	}
+}
 
 func TestLoginRejectsMissingAuthorizationResponse(t *testing.T) {
 	recorder := httptest.NewRecorder()
