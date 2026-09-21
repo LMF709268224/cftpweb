@@ -1,6 +1,8 @@
 package server
 
 import (
+	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -116,10 +118,7 @@ func (s *Server) authMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// 调用 gmid 服务进行 UID 解析
-		resp, err := s.grpcPool.Gmid.GetUlidByUUID(r.Context(), &gmidpb.GetUlidByUUIDRequest{
-			UserUuid: claims.User.Id,
-		})
+		candidateID, err := s.resolveCandidateULID(r.Context(), claims.User.Id)
 
 		if err != nil {
 			if status.Code(err) == codes.NotFound {
@@ -132,8 +131,6 @@ func (s *Server) authMiddleware(next http.Handler) http.Handler {
 			handler.WriteError(w, http.StatusInternalServerError, handler.ErrInternal, "internal error resolving id")
 			return
 		}
-
-		candidateID := resp.UserUlid
 
 		// 注入 context
 		ctx := handler.WithCandidate(r.Context(), candidateID, claims.Email, claims.Name, tokenStr)
@@ -182,10 +179,7 @@ func (s *Server) optionalAuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// 调用 gmid 服务进行 UID 解析
-		resp, err := s.grpcPool.Gmid.GetUlidByUUID(r.Context(), &gmidpb.GetUlidByUUIDRequest{
-			UserUuid: claims.User.Id,
-		})
+		candidateID, err := s.resolveCandidateULID(r.Context(), claims.User.Id)
 
 		if err != nil {
 			slog.Debug("optionalAuthMiddleware: gmid resolution failed, continuing as guest", "casdoor_user_id", claims.User.Id)
@@ -193,11 +187,31 @@ func (s *Server) optionalAuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		candidateID := resp.UserUlid
-
 		// 注入 context
 		ctx := handler.WithCandidate(r.Context(), candidateID, claims.Email, claims.Name, tokenStr)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func (s *Server) resolveCandidateULID(ctx context.Context, userUUID string) (string, error) {
+	s.identityCacheMu.Lock()
+	if s.identityCache == nil {
+		s.identityCache = newUserULIDCache(userULIDCacheTTL, userULIDCacheMaxEntries)
+	}
+	cache := s.identityCache
+	s.identityCacheMu.Unlock()
+
+	return cache.resolve(ctx, userUUID, func(ctx context.Context) (string, error) {
+		resp, err := s.grpcPool.Gmid.GetUlidByUUID(ctx, &gmidpb.GetUlidByUUIDRequest{
+			UserUuid: userUUID,
+		})
+		if err != nil {
+			return "", err
+		}
+		if resp == nil || resp.GetUserUlid() == "" {
+			return "", fmt.Errorf("gmid returned empty user_ulid for user_uuid %q", userUUID)
+		}
+		return resp.GetUserUlid(), nil
 	})
 }

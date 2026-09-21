@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"sync"
 
 	"candbff/config"
 	"candbff/handler"
@@ -13,14 +14,18 @@ import (
 
 // Server 是 candbff 的核心结构
 type Server struct {
-	config     *config.Config
-	grpcPool   *GrpcClientPool
-	httpServer *http.Server
-	casdoor    *CasdoorClient
+	config          *config.Config
+	grpcPool        *GrpcClientPool
+	httpServer      *http.Server
+	casdoor         *CasdoorClient
+	identityCache   *userULIDCache
+	identityCacheMu sync.Mutex
 }
 
 func NewServer() *Server {
-	return &Server{}
+	return &Server{
+		identityCache: newUserULIDCache(userULIDCacheTTL, userULIDCacheMaxEntries),
+	}
 }
 
 func (s *Server) Run(ctx context.Context) error {
