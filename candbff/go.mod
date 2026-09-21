@@ -3,7 +3,7 @@ module candbff
 go 1.27.1
 
 require (
-	github.com/afnandelfin620-star/cftptest/cftp v0.0.0-20260920110901-3288ac24e44d
+	github.com/afnandelfin620-star/cftptest/cftp v0.0.0-20260921020122-060db95c4339
 	github.com/casdoor/casdoor-go-sdk v1.46.0
 	github.com/go-chi/chi/v5 v5.2.5
 	github.com/oklog/ulid/v2 v2.1.2
