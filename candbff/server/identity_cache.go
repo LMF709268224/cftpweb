@@ -11,6 +11,9 @@ const (
 	userULIDCacheMaxEntries = 10000
 )
 
+// TODO: Use Redis for this cache when the shared cache infrastructure is available,
+// so multiple candbff instances can share identity mappings and TTLs.
+
 type userULIDCacheEntry struct {
 	value     string
 	expiresAt time.Time
