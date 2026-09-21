@@ -240,12 +240,12 @@ function itemId(item: JsonRecord | null | undefined, keys: string[]) {
   return String(pickFirst(item, keys) || "")
 }
 
-function courseId(course: JsonRecord | null | undefined) {
-  return String(pickFirst(course || {}, ["course_ulid", "course_id"]) || "")
+function courseGpath(course: JsonRecord | null | undefined) {
+  return String(pickFirst(course || {}, ["course_gpath"]) || "")
 }
 
 function courseTitle(course: JsonRecord | null | undefined) {
-  return String(pickFirst(course || {}, ["title", "name", "course_title"]) || courseId(course) || copy.value.fields.glmsCourse)
+  return String(pickFirst(course || {}, ["title", "name", "course_title"]) || courseGpath(course) || copy.value.fields.glmsCourse)
 }
 
 function courseStatusValue(course: JsonRecord | null | undefined) {
@@ -258,26 +258,26 @@ function courseCanBeConfigured(course: JsonRecord) {
 }
 
 function courseOptionLabel(course: JsonRecord) {
-  const id = courseId(course)
+  const id = courseGpath(course)
   const status = courseStatusValue(course)
   const statusText = status ? pipelineStatusLabel(status) : ""
   const version = course.version ? `v${course.version}` : ""
   return [courseTitle(course), version, statusText, id].filter(Boolean).join(" · ")
 }
 
-function courseById(id: string) {
-  return courseOptions.value.find((course) => courseId(course) === id) || null
+function courseByGpath(gpath: string) {
+  return courseOptions.value.find((course) => courseGpath(course) === gpath) || null
 }
 
-function unitCourseId(unit: JsonRecord | null | undefined) {
-  return String(pickFirst(unit || {}, ["glms_course_ulid", "glms_course_id"]) || "")
+function unitCourseGpath(unit: JsonRecord | null | undefined) {
+  return String(pickFirst(unit || {}, ["glms_course_gpath"]) || "")
 }
 
 function unitCourseLabel(unit: JsonRecord | null | undefined) {
-  const id = unitCourseId(unit)
-  if (!id) return copy.value.stageUnitSummaryCourseMissing
-  const course = courseById(id)
-  return course ? courseTitle(course) : id
+  const gpath = unitCourseGpath(unit)
+  if (!gpath) return copy.value.stageUnitSummaryCourseMissing
+  const course = courseByGpath(gpath)
+  return course ? courseTitle(course) : gpath
 }
 
 function credentialId(definition: JsonRecord | null | undefined) {
@@ -354,12 +354,13 @@ function normalizeQualificationRequirementShape(qual: JsonRecord) {
 function normalizeUnitShape(unit: JsonRecord) {
   const next = { ...unit }
   next.unit_ulid = String(pickFirst(next, ["unit_ulid", "unit_id"]) || "")
-  next.glms_course_ulid = String(pickFirst(next, ["glms_course_ulid", "glms_course_id"]) || "")
+  next.glms_course_gpath = String(pickFirst(next, ["glms_course_gpath"]) || "")
   next.exam_ulid = String(pickFirst(next, ["exam_ulid", "exam_id"]) || "")
   next.cert_qual_ulid = String(pickFirst(next, ["cert_qual_ulid", "cert_qual_id"]) || "")
   next.cert_pdf_template_ulid = String(pickFirst(next, ["cert_pdf_template_ulid", "cert_pdf_template_id"]) || "")
   next.exemption_quals = Array.isArray(next.exemption_quals) ? next.exemption_quals : []
   delete next.unit_id
+  delete next.glms_course_ulid
   delete next.glms_course_id
   delete next.exam_id
   delete next.cert_qual_id
@@ -526,14 +527,14 @@ function validateStructureForSave(next: JsonRecord) {
       return false
     }
     for (const [unitIndex, unit] of unitList.entries()) {
-      if (!unitCourseId(unit).trim()) {
+      if (!unitCourseGpath(unit).trim() && !String(unit.program || "").trim()) {
         toast.error(copy.value.toasts.structureUnitCourseRequired(stageIndex + 1, unitIndex + 1))
         selectedStageIndex.value = stageIndex
         selectedUnitPath.value = `${stageIndex}:${unitIndex}`
         activeLayer.value = "units"
         return false
       }
-      if (courseOptions.value.length && !courseById(unitCourseId(unit))) {
+      if (unitCourseGpath(unit).trim() && courseOptions.value.length && !courseByGpath(unitCourseGpath(unit))) {
         toast.error(copy.value.toasts.structureUnitCourseUnavailable(stageIndex + 1, unitIndex + 1))
         selectedStageIndex.value = stageIndex
         selectedUnitPath.value = `${stageIndex}:${unitIndex}`
@@ -608,7 +609,7 @@ function addUnit(stageIndex = selectedStageIndex.value) {
   const stage = stages.value[stageIndex] || stages.value[0]
   const list = asMutableArray(stage, "units")
   const maxSort = list.reduce((max, u) => Math.max(max, Number(u.sort_order) || 0), 0)
-  list.push({ unit_ulid: "", name: copy.value.defaults.unitName, sort_order: maxSort + 1, glms_course_ulid: "", exemption_quals: [], allow_exemption: false })
+  list.push({ unit_ulid: "", name: copy.value.defaults.unitName, sort_order: maxSort + 1, glms_course_gpath: "", exemption_quals: [], allow_exemption: false })
   selectedUnitPath.value = `${Math.max(0, stageIndex)}:${list.length - 1}`
   activeLayer.value = "units"
   syncStructureJson()
@@ -689,11 +690,12 @@ function removeConflictPipeline(index: number) {
   syncStructureJson()
 }
 
-function applyUnitCourse(unit: JsonRecord | null | undefined, courseUlid: string) {
+function applyUnitCourse(unit: JsonRecord | null | undefined, courseGpath: string) {
   if (!unit || isStructureLocked()) return
-  unit.glms_course_ulid = courseUlid
+  unit.glms_course_gpath = courseGpath
+  delete unit.glms_course_ulid
   delete unit.glms_course_id
-  const course = courseById(courseUlid)
+  const course = courseByGpath(courseGpath)
   const currentName = String(unit.name || "").trim()
   if (course && (!currentName || currentName === copy.value.defaults.unitName)) {
     unit.name = courseTitle(course)
@@ -1486,9 +1488,9 @@ onMounted(() => {
                   </label>
                   <label class="grid gap-2 text-sm font-bold md:col-span-2">
                     {{ copy.fields.glmsCourse }}
-                    <select :value="unitCourseId(selectedUnitItem.unit)" :disabled="isStructureLocked() || courseOptionsLoading" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @change="applyUnitCourse(selectedUnitItem?.unit, eventValue($event))">
+                    <select :value="unitCourseGpath(selectedUnitItem.unit)" :disabled="isStructureLocked() || courseOptionsLoading" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @change="applyUnitCourse(selectedUnitItem?.unit, eventValue($event))">
                       <option value="">{{ courseOptionsLoading ? copy.loadingCourses : copy.selectCourse }}</option>
-                      <option v-for="course in courseOptions" :key="courseId(course)" :value="courseId(course)">{{ courseOptionLabel(course) }}</option>
+                      <option v-for="course in courseOptions" :key="courseGpath(course)" :value="courseGpath(course)">{{ courseOptionLabel(course) }}</option>
                     </select>
                     <p class="text-xs font-semibold text-slate-500">{{ copy.glmsCourseHint }}</p>
                   </label>

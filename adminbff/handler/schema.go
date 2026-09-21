@@ -122,7 +122,7 @@ type UnitConfig struct {
 	ExemptionStripePriceId   string `json:"exemption_stripe_price_id,omitempty"`
 	RetakeStripeProductId    string `json:"retake_stripe_product_id,omitempty"`
 	RetakeStripePriceId      string `json:"retake_stripe_price_id,omitempty"`
-	GlmsCourseUlid           string `json:"glms_course_id,omitempty"`
+	GlmsCourseGpath          string `json:"glms_course_gpath,omitempty"`
 	UnitUlid                 string `json:"unit_id,omitempty"`          // 阶段单元(课程) ULID & GLMS ID [required]
 	Name                     string `json:"name,omitempty"`             // 阶段单元名称 [required]
 	HasLearning              bool   `json:"has_learning,omitempty"`     // 是否有学习[required]

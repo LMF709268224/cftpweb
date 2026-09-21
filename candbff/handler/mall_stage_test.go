@@ -372,8 +372,8 @@ func TestBuildPipelineNextStepReturnsRuntimeAndConfigStageIDs(t *testing.T) {
 			StageUlid: stageCcUlid,
 			Name:      "Level 2",
 			Units: []*gccpb.UnitConfig{{
-				UnitUlid:       "unit-config",
-				GlmsCourseUlid: "course",
+				UnitUlid:        "unit-config",
+				GlmsCourseGpath: protoString("/course/example"),
 			}},
 		}},
 	}
@@ -399,5 +399,17 @@ func TestBuildPipelineNextStepReturnsRuntimeAndConfigStageIDs(t *testing.T) {
 	}
 	if got.Action != "wait_candidate" {
 		t.Fatalf("next step action = %q, want wait_candidate", got.Action)
+	}
+}
+
+func TestBuildPipelineNextStepWithoutRuntimeDoesNotTreatCourseAsExamOnly(t *testing.T) {
+	config := &gccpb.PipelineConfig{Stages: []*gccpb.StageConfig{{Units: []*gccpb.UnitConfig{{
+		UnitUlid: "unit-config", GlmsCourseGpath: protoString("/course/example"),
+	}}}}}
+	for _, runtime := range []*gprogpb.GetPipelineDetailRsp{nil, {Pipeline: &gprogpb.PipelineDetail{}}} {
+		got := buildPipelineNextStep(runtime, config, nil)
+		if got.Action != "" || got.CourseUlid != "" {
+			t.Fatalf("unbound course next step = %+v, want no action or physical course ID", got)
+		}
 	}
 }

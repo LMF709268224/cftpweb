@@ -190,6 +190,7 @@ type UnitConfig struct {
 	ExemptionStripePriceId   string   `json:"exemption_stripe_price_id,omitempty"`
 	RetakeStripeProductId    string   `json:"retake_stripe_product_id,omitempty"`
 	RetakeStripePriceId      string   `json:"retake_stripe_price_id,omitempty"`
+	GlmsCourseGpath          string   `json:"glms_course_gpath,omitempty"`
 	GlmsCourseUlid           string   `json:"glms_course_id,omitempty"`
 	AllowExemption           bool     `json:"allow_exemption,omitempty"`
 	Program                  string   `json:"program,omitempty"`

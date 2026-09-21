@@ -148,17 +148,19 @@ func (h *Handler) ListMyPipelines(w http.ResponseWriter, r *http.Request) {
 			config = h.localizedPipeline(r.Context(), config, locale)
 			summary.PipelineName = strings.TrimSpace(config.GetName())
 			summary.Description = strings.TrimSpace(config.GetDescription())
-			if progress, ok := pipelineProgressFromCourseEnrollments(config, enrollmentProgress); ok {
-				summary.ProgressAvailable = true
-				summary.Progress = progress
-				summary.LmsProgress = uint32(progress + 0.5)
-			}
-			if strings.TrimSpace(summary.CurrentStageUlid) != "" {
-				if runtimeResp, runtimeErr := h.Gprog.GetPipelineDetail(r.Context(), &gprog.GetPipelineDetailReq{
-					PipelineUlid: summary.PipelineUlid,
-				}); runtimeErr == nil {
+			if runtimeResp, runtimeErr := h.Gprog.GetPipelineDetail(r.Context(), &gprog.GetPipelineDetailReq{
+				PipelineUlid: summary.PipelineUlid,
+			}); runtimeErr == nil {
+				if progress, ok := pipelineProgressFromCourseEnrollments(runtimeResp, enrollmentProgress); ok {
+					summary.ProgressAvailable = true
+					summary.Progress = progress
+					summary.LmsProgress = uint32(progress + 0.5)
+				}
+				if strings.TrimSpace(summary.CurrentStageUlid) != "" {
 					summary.CurrentStageName = currentStageNameFromRuntime(config, runtimeResp, summary.CurrentStageUlid)
 				}
+			} else {
+				slog.Warn("failed to load candidate pipeline runtime for progress", "error", runtimeErr, "pipeline_ulid", summary.PipelineUlid)
 			}
 		} else {
 			slog.Warn("failed to load candidate pipeline config for display", "error", configErr, "pipeline_cc_ulid", summary.PipelineCcUlid)
@@ -819,18 +821,18 @@ func toPipelineSummary(p *gprog.PipelineSummary) PipelineSummary {
 	}
 }
 
-func pipelineProgressFromCourseEnrollments(config *gccpb.PipelineConfig, enrollmentProgress map[string]uint32) (float64, bool) {
-	if config == nil || len(enrollmentProgress) == 0 {
+func pipelineProgressFromCourseEnrollments(runtime *gprog.GetPipelineDetailRsp, enrollmentProgress map[string]uint32) (float64, bool) {
+	if runtime == nil || len(enrollmentProgress) == 0 {
 		return 0, false
 	}
 
 	var total float64
 	var count int
-	for _, stage := range config.GetStages() {
+	for _, stage := range runtime.GetStages() {
 		if stage == nil {
 			continue
 		}
-		for _, unit := range stage.GetUnits() {
+		for _, unit := range stage.GetCourseUnits() {
 			if unit == nil {
 				continue
 			}
@@ -941,18 +943,18 @@ func (h *Handler) candidateCourseIDs(r *http.Request, candidateID string) ([]str
 	courseIDs := make([]string, 0)
 	seen := make(map[string]struct{})
 	for _, pipeline := range resp.GetPipelines() {
-		pipelineID := strings.TrimSpace(pipeline.GetPipelineCcUlid())
+		pipelineID := strings.TrimSpace(pipeline.GetPipelineUlid())
 		if pipelineID == "" {
 			continue
 		}
-		config, err := h.Gcc.GetPipeline(r.Context(), &gccpb.GetPipelineRequest{
-			Query: &gccpb.GetPipelineRequest_PipelineUlid{PipelineUlid: pipelineID},
+		runtime, err := h.Gprog.GetPipelineDetail(r.Context(), &gprog.GetPipelineDetailReq{
+			PipelineUlid: pipelineID,
 		})
 		if err != nil {
-			return nil, fmt.Errorf("get candidate pipeline config %q: %w", pipelineID, err)
+			return nil, fmt.Errorf("get candidate pipeline runtime %q: %w", pipelineID, err)
 		}
-		for _, stage := range config.GetStages() {
-			for _, unit := range stage.GetUnits() {
+		for _, stage := range runtime.GetStages() {
+			for _, unit := range stage.GetCourseUnits() {
 				courseID := strings.TrimSpace(unit.GetGlmsCourseUlid())
 				if courseID == "" {
 					continue

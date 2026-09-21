@@ -19,7 +19,33 @@ import (
 
 type mallRuntimeCCClientStub struct {
 	gccpb.CCServiceClient
-	pipeline *gccpb.PipelineConfig
+	pipeline      *gccpb.PipelineConfig
+	detailRequest *gccpb.GetPipelineDetailRequest
+}
+
+func (s *mallRuntimeCCClientStub) GetPipelineDetail(
+	_ context.Context,
+	req *gccpb.GetPipelineDetailRequest,
+	_ ...grpc.CallOption,
+) (*gccpb.PipelineConfig, error) {
+	s.detailRequest = req
+	return s.pipeline, nil
+}
+
+func TestEnrichBundleResolvesPipelineGpath(t *testing.T) {
+	gcc := &mallRuntimeCCClientStub{pipeline: &gccpb.PipelineConfig{
+		PipelineUlid:  "pipeline-config-2",
+		PipelineGpath: "/pipelines/cftp",
+		Status:        "Active",
+	}}
+	bundle := &mallpb.BundleInfo{ItemsJson: `[{"item_type":"pipeline","pipeline_gpath":"/pipelines/cftp"}]`}
+	result := (&Handler{Gcc: gcc}).enrichBundle(context.Background(), bundle, nil)
+	if got := gcc.detailRequest.GetPipelineGpath(); got != "/pipelines/cftp" {
+		t.Fatalf("GCC lookup gpath = %q", got)
+	}
+	if result["pipeline_id"] != "pipeline-config-2" || result["pipeline_gpath"] != "/pipelines/cftp" {
+		t.Fatalf("resolved bundle pipeline = %+v", result)
+	}
 }
 
 func (s *mallRuntimeCCClientStub) GetPipeline(
@@ -273,8 +299,8 @@ func TestGetPipelineRuntimeIncludesLearningAccessForCompletedEnrollment(t *testi
 			Stages: []*gccpb.StageConfig{{
 				StageUlid: "stage-config-1",
 				Units: []*gccpb.UnitConfig{
-					{UnitUlid: "unit-config-completed", GlmsCourseUlid: "course-completed"},
-					{UnitUlid: "unit-config-unavailable", GlmsCourseUlid: "course-unavailable"},
+					{UnitUlid: "unit-config-completed", GlmsCourseGpath: protoString("/course/completed")},
+					{UnitUlid: "unit-config-unavailable", GlmsCourseGpath: protoString("/course/unavailable")},
 				},
 			}},
 		}},
@@ -287,6 +313,10 @@ func TestGetPipelineRuntimeIncludesLearningAccessForCompletedEnrollment(t *testi
 				Stage: &gprogpb.StageSummary{
 					StageCcUlid: "stage-config-1",
 					Status:      gprogpb.StageStatus_STAGE_STATUS_COMPLETED,
+				},
+				CourseUnits: []*gprogpb.CourseUnitSummary{
+					{CourseUnitCcUlid: "unit-config-completed", GlmsCourseUlid: "course-version-completed"},
+					{CourseUnitCcUlid: "unit-config-unavailable", GlmsCourseUlid: "course-unavailable"},
 				},
 			}}},
 		},

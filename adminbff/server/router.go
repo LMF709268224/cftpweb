@@ -58,6 +58,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 		// ===== 课程与认证 (GCC) =====
 		r.Route("/pipelines", func(r chi.Router) {
 			r.Get("/", h.ListPipelines)
+			r.Get("/by-gpath", h.GetPipelineByGpath)
 			r.Get("/{pipeline_id}", h.GetPipeline)
 			r.Get("/{pipeline_id}/translations", h.GetPipelineTranslations)
 			r.Put("/{pipeline_id}/translations", h.SetPipelineTranslations)

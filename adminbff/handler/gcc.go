@@ -170,7 +170,8 @@ func (h *Handler) UpdatePipelineStructure(w http.ResponseWriter, r *http.Request
 			if unit.UnitUlid == "" {
 				unit.UnitUlid = newLmsID()
 			}
-			if !requireRequestField(w, unit.GlmsCourseUlid, "stages["+strconv.Itoa(i)+"].units["+strconv.Itoa(j)+"].glms_course_ulid") {
+			if unit.GetGlmsCourseGpath() == "" && unit.GetProgram() == "" {
+				WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "stages["+strconv.Itoa(i)+"].units["+strconv.Itoa(j)+"] requires glms_course_gpath or program")
 				return
 			}
 		}
@@ -200,7 +201,8 @@ func normalizePipelineStructureAliases(raw map[string]any) {
 				continue
 			}
 			copyAlias(unit, "unit_ulid", "unit_id")
-			copyAlias(unit, "glms_course_ulid", "glms_course_id")
+			// Course references are logical paths. The GCC contract deliberately
+			// rejects physical course ULIDs here, so do not translate legacy IDs.
 			copyAlias(unit, "exam_ulid", "exam_id")
 			copyAlias(unit, "cert_qual_ulid", "cert_qual_id")
 			copyAlias(unit, "cert_pdf_template_ulid", "cert_pdf_template_id")
@@ -327,6 +329,22 @@ func (h *Handler) GetPipeline(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+// GetPipelineByGpath GET /api/pipelines/by-gpath?pipeline_gpath=...
+func (h *Handler) GetPipelineByGpath(w http.ResponseWriter, r *http.Request) {
+	gpath := strings.TrimSpace(r.URL.Query().Get("pipeline_gpath"))
+	if !requireRequestField(w, gpath, "pipeline_gpath") {
+		return
+	}
+	resp, err := h.Gcc.GetPipeline(r.Context(), &gccpb.GetPipelineRequest{
+		Query: &gccpb.GetPipelineRequest_PipelineGpath{PipelineGpath: gpath},
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
 	WriteJSON(w, http.StatusOK, resp)
 }
 

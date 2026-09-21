@@ -29,6 +29,7 @@ type BundleItemType = "pipeline" | "membership"
 type CreateBundleItem = {
   key: number
   item_type: BundleItemType
+  pipeline_gpath: string
   ref_ulid: string
 }
 type SummaryField = {
@@ -159,10 +160,9 @@ const replacementMembershipOptions = computed<TargetOption[]>(() => membershipOp
   .map(membershipTargetOption)
   .filter((option) => hasTargetId(option) && option.id !== currentMembershipRef.value))
 const createItemsJson = computed(() => {
-  return JSON.stringify(createItems.value.map((item) => ({
-    item_type: item.item_type,
-    ref_ulid: item.ref_ulid.trim(),
-  })), null, 2)
+  return JSON.stringify(createItems.value.map((item) => item.item_type === "pipeline"
+    ? { item_type: item.item_type, pipeline_gpath: item.pipeline_gpath.trim() }
+    : { item_type: item.item_type, ref_ulid: item.ref_ulid.trim() }), null, 2)
 })
 const detailTabs = computed(() => [
   { key: "summary" as const, title: copy.value.tabs.summary, count: selected.value ? 1 : 0 },
@@ -185,7 +185,7 @@ const linkedItemsPreview = computed<LinkedItemView[]>(() => {
     .filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     .map((item) => ({
       type: String(pickFirst(item, ["item_type", "type"]) || "-"),
-      ref: String(pickFirst(item, ["ref_ulid", "ref_id", "ulid", "id"]) || "-"),
+      ref: String(pickFirst(item, ["pipeline_gpath", "ref_ulid", "ref_id", "ulid", "id"]) || "-"),
     }))
 })
 const currentPipelineRefs = computed(() => pipelineRefsFromItemsJson(form.value.items_json))
@@ -232,7 +232,7 @@ const pricingPreview = computed<PricingPreviewView | null>(() => {
       const pipeline = asRecord(value)
       const enrollmentFee = asRecord(pipeline?.enrollment_fee)
       return {
-        pipelineId: String(pipeline?.pipeline_id || "-"),
+        pipelineId: String(pipeline?.pipeline_gpath || "-"),
         priceId: String(enrollmentFee?.stripe_price_id || "-"),
         productId: String(enrollmentFee?.stripe_product_id || "-"),
       }
@@ -301,12 +301,13 @@ function linkedItemTypeLabel(value: unknown) {
 }
 
 function itemReference(record: JsonRecord) {
-  return String(pickFirst(record, ["ref_ulid", "ref_id", "ulid", "id", "item_id", "pipeline_id", "pipeline_cc_ulid", "membership_id"]) || "").trim()
+  if (isPipelineItem(record)) return String(record.pipeline_gpath || "").trim()
+  return String(pickFirst(record, ["ref_ulid", "membership_id"]) || "").trim()
 }
 
 function isPipelineItem(record: JsonRecord) {
   const type = normalizeItemType(pickFirst(record, ["item_type", "type", "itemType", "kind"]))
-  return type.includes("pipeline") || !!String(pickFirst(record, ["pipeline_id", "pipeline_cc_ulid"]) || "").trim()
+  return type.includes("pipeline") || !!String(record.pipeline_gpath || "").trim()
 }
 
 function isMembershipItem(record: JsonRecord) {
@@ -380,7 +381,7 @@ function bundleTargetSummary(bundle: JsonRecord | null | undefined) {
     const record = asRecord(item)
     if (!record) continue
     const itemType = String(record.item_type || record.type || record.itemType || record.kind || "").toLowerCase()
-    const ref = String(record.ref_ulid || record.item_id || record.id || record.pipeline_id || record.pipeline_cc_ulid || record.membership_id || "").trim()
+    const ref = String(record.pipeline_gpath || record.ref_ulid || record.item_id || record.id || record.pipeline_id || record.pipeline_cc_ulid || record.membership_id || "").trim()
     if (!ref) continue
     if (itemType.includes("pipeline")) summaries.push(`${copy.value.createItemTypes.pipeline} · ${ref}`)
     else if (itemType.includes("membership")) summaries.push(`${copy.value.createItemTypes.membership} · ${ref}`)
@@ -422,7 +423,7 @@ function targetSubtitle(parts: string[]) {
 }
 
 function pipelineTargetOption(target: JsonRecord): TargetOption {
-  const id = String(pickFirst(target, ["pipeline_ulid", "pipeline_id"]) || "")
+  const id = String(pickFirst(target, ["pipeline_gpath"]) || "")
   const title = String(pickFirst(target, ["name", "title", "category_tips"]) || id || copy.value.unnamedTarget)
   return {
     id,
@@ -447,13 +448,15 @@ function createTargetOptions(itemType: BundleItemType) {
 }
 
 function selectedCreateTarget(item: CreateBundleItem) {
-  return createTargetOptions(item.item_type).find((option) => option.id === item.ref_ulid) || null
+  const target = item.item_type === "pipeline" ? item.pipeline_gpath : item.ref_ulid
+  return createTargetOptions(item.item_type).find((option) => option.id === target) || null
 }
 
 function createBundleItem(itemType: BundleItemType = "pipeline"): CreateBundleItem {
   const item = {
     key: nextCreateItemKey,
     item_type: itemType,
+    pipeline_gpath: "",
     ref_ulid: "",
   }
   nextCreateItemKey += 1
@@ -472,7 +475,13 @@ function removeCreateItem(index: number) {
 }
 
 function changeCreateItemType(item: CreateBundleItem) {
+  item.pipeline_gpath = ""
   item.ref_ulid = ""
+}
+
+function setCreateItemTarget(item: CreateBundleItem, value: string) {
+  if (item.item_type === "pipeline") item.pipeline_gpath = value
+  else item.ref_ulid = value
 }
 
 function createItemTypeDisabled(item: CreateBundleItem, itemType: BundleItemType) {
@@ -542,12 +551,13 @@ function validateItemsJson() {
   let membershipCount = 0
   for (const [index, item] of parsed.entries()) {
     const record = asRecord(item)
-    if (!record || isBlank(record.item_type) || isBlank(record.ref_ulid)) {
+    const reference = record && normalizeItemType(record.item_type) === "pipeline" ? record.pipeline_gpath : record?.ref_ulid
+    if (!record || isBlank(record.item_type) || isBlank(reference)) {
       toast.error(copy.value.toasts.itemRequired(index + 1))
       return false
     }
     const itemType = normalizeItemType(record.item_type)
-    const ref = String(record.ref_ulid).trim()
+    const ref = String(reference).trim()
     if (itemType !== "pipeline" && itemType !== "membership") {
       toast.error(copy.value.toasts.itemTypeUnsupported(index + 1))
       return false
@@ -607,7 +617,7 @@ function validatePricingJson() {
   if (Array.isArray(pricing.pipelines)) {
     for (const [index, value] of pricing.pipelines.entries()) {
       const pipeline = asRecord(value)
-      const pipelineId = String(pipeline?.pipeline_id || "").trim()
+      const pipelineId = String(pipeline?.pipeline_gpath || "").trim()
       if (!pipeline || !pipelineId) {
         toast.error(copy.value.toasts.pipelinePricingRequired(index + 1))
         return false
@@ -771,7 +781,7 @@ async function loadPricingTargets() {
   pricingTargetsLoading.value = true
   try {
     const results = await Promise.allSettled(
-      pipelineRefs.map((pipelineId) => apiClient<JsonRecord>(`/api/pipelines/${encodeURIComponent(pipelineId)}`)),
+      pipelineRefs.map((pipelineGpath) => apiClient<JsonRecord>(`/api/pipelines/by-gpath?pipeline_gpath=${encodeURIComponent(pipelineGpath)}`)),
     )
     const options: PricingSelectOption[] = []
     results.forEach((result, index) => {
@@ -933,7 +943,7 @@ async function createBundle() {
     toast.error(copy.value.toasts.createRequired)
     return
   }
-  if (!createItems.value.length || createItems.value.some((item) => !item.ref_ulid.trim())) {
+  if (!createItems.value.length || createItems.value.some((item) => !(item.item_type === "pipeline" ? item.pipeline_gpath : item.ref_ulid).trim())) {
     toast.error(copy.value.toasts.targetRequired)
     return
   }
@@ -1076,7 +1086,7 @@ async function replacePipelineBindingInForm() {
   saving.value = true
   try {
     let changed = false
-    const refKeys = ["ref_ulid", "ref_id", "ulid", "id", "item_id", "pipeline_id", "pipeline_cc_ulid"]
+    const refKeys = ["pipeline_gpath"]
     for (const item of items) {
       const record = asRecord(item)
       if (!record) continue
@@ -1092,8 +1102,8 @@ async function replacePipelineBindingInForm() {
     if (Array.isArray(pricingRecord.pipelines)) {
       for (const value of pricingRecord.pipelines) {
         const pipeline = asRecord(value)
-        if (pipeline && String(pipeline.pipeline_id || "").trim() === fromId) {
-          pipeline.pipeline_id = toId
+        if (pipeline && String(pipeline.pipeline_gpath || "").trim() === fromId) {
+          pipeline.pipeline_gpath = toId
           changed = true
         }
       }
@@ -1101,31 +1111,14 @@ async function replacePipelineBindingInForm() {
 
     if (Array.isArray(pricingRecord.units) && pricingRecord.units.length > 0) {
       try {
-        const [oldRes, newRes] = await Promise.all([
-          apiClient<JsonRecord>(`/api/pipelines/${fromId}`),
-          apiClient<JsonRecord>(`/api/pipelines/${toId}`)
-        ])
-        const oldUnits = pipelineUnitIds(oldRes)
-        const newUnits = pipelineUnitIds(newRes)
-        
-        if (oldUnits.length > 0 && newUnits.length > 0) {
-          const mapping = new Map<string, string>()
-          for (let i = 0; i < Math.min(oldUnits.length, newUnits.length); i++) {
-            mapping.set(oldUnits[i], newUnits[i])
-          }
-          for (const value of pricingRecord.units) {
-            const u = asRecord(value)
-            if (u && typeof u.unit_id === "string" && mapping.has(u.unit_id)) {
-              u.unit_id = mapping.get(u.unit_id)
-              changed = true
-            }
-          }
-        } else {
+        const newRes = await apiClient<JsonRecord>(`/api/pipelines/by-gpath?pipeline_gpath=${encodeURIComponent(toId)}`)
+        const newUnits = new Set(pipelineUnitIds(newRes))
+        if (pricingRecord.units.some((value) => !newUnits.has(String(asRecord(value)?.unit_id || "")))) {
           toast.error(copy.value.toasts.relinkUnitMapFailed)
           return false
         }
       } catch (err) {
-        console.error("Failed to auto-map units:", err)
+        console.error("Failed to verify target pipeline units:", err)
         toast.error(copy.value.toasts.relinkUnitMapFailed)
         return false
       }
@@ -1472,7 +1465,7 @@ onMounted(load)
                     </label>
                     <label class="grid gap-2 text-sm font-bold">
                       <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.linkedTarget }}</span>
-                      <select v-model="item.ref_ulid" class="h-11 rounded-xl border border-slate-200 bg-white px-4" :disabled="targetOptionsLoading || !createTargetOptions(item.item_type).length">
+                      <select :value="item.item_type === 'pipeline' ? item.pipeline_gpath : item.ref_ulid" class="h-11 rounded-xl border border-slate-200 bg-white px-4" :disabled="targetOptionsLoading || !createTargetOptions(item.item_type).length" @change="setCreateItemTarget(item, ($event.target as HTMLSelectElement).value)">
                         <option value="" disabled>{{ targetOptionsLoading ? copy.loadingTargets : copy.selectLinkedTarget }}</option>
                         <option v-for="option in createTargetOptions(item.item_type)" :key="option.id" :value="option.id">{{ option.title }} · {{ option.subtitle }}</option>
                       </select>

@@ -14,8 +14,11 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+func protoString(value string) *string { return &value }
+
 type pipelineAccessProgClientStub struct {
 	gprogpb.ProgServiceClient
+	detailErr error
 }
 
 func (s *pipelineAccessProgClientStub) ListCandidatePipelines(
@@ -25,9 +28,23 @@ func (s *pipelineAccessProgClientStub) ListCandidatePipelines(
 ) (*gprogpb.ListCandidatePipelinesRsp, error) {
 	return &gprogpb.ListCandidatePipelinesRsp{
 		Pipelines: []*gprogpb.PipelineSummary{{
+			PipelineUlid:   "pipeline-instance-1",
 			PipelineCcUlid: "pipeline-config-1",
 		}},
 	}, nil
+}
+
+func (s *pipelineAccessProgClientStub) GetPipelineDetail(
+	_ context.Context,
+	_ *gprogpb.GetPipelineDetailReq,
+	_ ...grpc.CallOption,
+) (*gprogpb.GetPipelineDetailRsp, error) {
+	if s.detailErr != nil {
+		return nil, s.detailErr
+	}
+	return &gprogpb.GetPipelineDetailRsp{Stages: []*gprogpb.StageDetail{{
+		CourseUnits: []*gprogpb.CourseUnitSummary{{GlmsCourseUlid: "course-1"}},
+	}}}, nil
 }
 
 type pipelineAccessCCClientStub struct {
@@ -48,7 +65,7 @@ func (s *pipelineAccessCCClientStub) GetPipeline(
 		PipelineUlid: "pipeline-config-1",
 		Stages: []*gccpb.StageConfig{{
 			Units: []*gccpb.UnitConfig{{
-				GlmsCourseUlid: "course-1",
+				GlmsCourseGpath: protoString("/course/example"),
 			}},
 		}},
 	}, nil
@@ -137,11 +154,10 @@ func (s *pipelineAccessLMSClientStub) ListQuizAttemptsCandidate(
 	return &lmspb.ListQuizAttemptsResponse{}, nil
 }
 
-func TestCandidateCourseIDsPropagatesPipelineConfigError(t *testing.T) {
-	wantErr := status.Error(codes.Unavailable, "gcc unavailable")
+func TestCandidateCourseIDsPropagatesPipelineRuntimeError(t *testing.T) {
+	wantErr := status.Error(codes.Unavailable, "gprog unavailable")
 	h := &Handler{
-		Gprog: &pipelineAccessProgClientStub{},
-		Gcc:   &pipelineAccessCCClientStub{err: wantErr},
+		Gprog: &pipelineAccessProgClientStub{detailErr: wantErr},
 	}
 	req := httptest.NewRequest(http.MethodGet, "/api/pipeline/materials", nil)
 

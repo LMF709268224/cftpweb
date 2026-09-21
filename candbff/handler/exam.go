@@ -794,9 +794,10 @@ func (h *Handler) completedBundleOrdersByPipeline(r *http.Request, candidateID s
 	cursor := ""
 	guard := newCursorScanGuard()
 	for {
-		resp, err := h.Mall.ListBundleOrders(r.Context(), &mallpb.ListBundleOrdersRequest{
-			Filters: &mallpb.BundleOrderFilters{
+		resp, err := h.Mall.ListPipelineOrders(r.Context(), &mallpb.ListPipelineOrdersRequest{
+			Filters: &mallpb.PipelineOrderFilters{
 				CandidateUlid: candidateID,
+				OrderStatus:   "COMPLETED",
 			},
 			Cursor:   cursor,
 			PageSize: 100,
@@ -810,23 +811,13 @@ func (h *Handler) completedBundleOrdersByPipeline(r *http.Request, candidateID s
 			return out
 		}
 		for _, order := range resp.GetItems() {
-			if order == nil || strings.TrimSpace(order.GetBundleOrderUlid()) == "" {
+			if order == nil || strings.TrimSpace(order.GetBundleOrderUlid()) == "" || strings.TrimSpace(order.GetPipelineCcUlid()) == "" {
 				continue
 			}
 			if !isOrderCompleted(order.GetOrderStatus()) {
 				continue
 			}
-			bundle, err := h.Mall.GetBundle(r.Context(), &mallpb.GetBundleRequest{
-				Query: &mallpb.GetBundleRequest_BundleUlid{BundleUlid: order.GetBundleUlid()},
-			})
-			if err != nil {
-				slog.Warn("ListExams get bundle for order failed", "bundle_id", order.GetBundleUlid(), "bundle_order_ulid", order.GetBundleOrderUlid(), "error", err)
-				continue
-			}
-			pipelineCcUlid := h.extractPipelineID(bundle.GetBundle())
-			if pipelineCcUlid == "" {
-				continue
-			}
+			pipelineCcUlid := order.GetPipelineCcUlid()
 			if out[pipelineCcUlid] == "" || strings.Compare(order.GetCreatedAt(), createdAtByPipeline[pipelineCcUlid]) > 0 {
 				out[pipelineCcUlid] = order.GetBundleOrderUlid()
 				createdAtByPipeline[pipelineCcUlid] = order.GetCreatedAt()

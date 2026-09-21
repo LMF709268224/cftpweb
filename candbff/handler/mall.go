@@ -379,6 +379,9 @@ func mergeRuntimeStatuses(config *PipelineConfig, runtime *gprog.GetPipelineDeta
 			}
 			config.Stages[stageIndex].Units[unitIndex].RuntimeStatus = unit.GetStatus().String()
 			config.Stages[stageIndex].Units[unitIndex].CourseUnitUlid = unit.GetCourseUnitUlid()
+			// The runtime instance owns the physically bound GLMS course ULID.
+			// GCC only provides the logical course GPath for editable config.
+			config.Stages[stageIndex].Units[unitIndex].GlmsCourseUlid = unit.GetGlmsCourseUlid()
 		}
 	}
 }
@@ -613,61 +616,19 @@ func bundlePricingDetailRequest(r *http.Request, bundleID, candidateID string) *
 	}
 }
 
-func (h *Handler) extractPipelineID(bundle *mallpb.BundleInfo) string {
+func extractPipelineGPath(bundle *mallpb.BundleInfo) string {
 	if bundle == nil {
 		return ""
 	}
-	itemsJSON := bundle.GetItemsJson()
-	if itemsJSON != "" {
-		var list []map[string]interface{}
-		if err := json.Unmarshal([]byte(itemsJSON), &list); err == nil {
-			for _, item := range list {
-				hasPipelineType := isPipelineBundleItem(item)
-				for _, key := range []string{"pipeline_id", "pipeline_cc_ulid"} {
-					if idVal := mapString(item, key); looksLikeULID(idVal) {
-						return idVal
-					}
-				}
-				if !hasPipelineType {
-					continue
-				}
-				for _, key := range []string{"ref_ulid", "item_id", "id"} {
-					if idVal := mapString(item, key); looksLikeULID(idVal) {
-						return idVal
-					}
-				}
-			}
-		}
-
-		var obj map[string]interface{}
-		if err := json.Unmarshal([]byte(itemsJSON), &obj); err == nil {
-			if pps, ok := obj["pipelines"].([]interface{}); ok {
-				for _, p := range pps {
-					if idVal, ok := p.(string); ok && looksLikeULID(idVal) {
-						return idVal
-					}
-					if item, ok := p.(map[string]interface{}); ok {
-						for _, key := range []string{"ref_ulid", "item_id", "id", "pipeline_id", "pipeline_cc_ulid"} {
-							if idVal := mapString(item, key); looksLikeULID(idVal) {
-								return idVal
-							}
-						}
-					}
-				}
-			}
-			for _, key := range []string{"pipeline_id", "pipeline_cc_ulid", "pipeline"} {
-				if idVal := mapString(obj, key); looksLikeULID(idVal) {
-					return idVal
-				}
-			}
-		}
+	var items []map[string]interface{}
+	if err := json.Unmarshal([]byte(bundle.GetItemsJson()), &items); err != nil {
+		return ""
 	}
-
-	gpath := bundle.GetBundleGpath()
-	if strings.HasPrefix(gpath, "/pipeline/") {
-		parts := strings.Split(gpath, "/")
-		if len(parts) > 2 && looksLikeULID(parts[2]) {
-			return parts[2]
+	for _, item := range items {
+		if isPipelineBundleItem(item) {
+			if gpath := mapString(item, "pipeline_gpath"); gpath != "" {
+				return gpath
+			}
 		}
 	}
 	return ""
@@ -1463,7 +1424,8 @@ func eligibilityAllowsExemptionManagement(eligibility bundleEligibilitySummary) 
 }
 
 func (h *Handler) enrichBundle(ctx context.Context, b *mallpb.BundleInfo, state *bundleEnrichmentState) map[string]interface{} {
-	pipelineID := h.extractPipelineID(b)
+	pipelineGpath := extractPipelineGPath(b)
+	pipelineID := ""
 	membershipID := extractMembershipID(b)
 	itemTypes := bundleItemTypes(b)
 	eligibility := defaultBundleEligibility()
@@ -1501,10 +1463,11 @@ func (h *Handler) enrichBundle(ctx context.Context, b *mallpb.BundleInfo, state 
 		"award_certs":          []interface{}{},
 		"category_tips":        "",
 		"pipeline_id":          pipelineID,
+		"pipeline_gpath":       pipelineGpath,
 		"membership_id":        membershipID,
 		"membership_gpath":     "",
 		"bundle_item_types":    itemTypes,
-		"is_pipeline_bundle":   pipelineID != "",
+		"is_pipeline_bundle":   pipelineGpath != "",
 		"is_membership_bundle": membershipID != "",
 		"thumbnail_url":        h.bundleThumbnailURL(ctx, b.GetBundleUlid()),
 	}
@@ -1522,11 +1485,13 @@ func (h *Handler) enrichBundle(ctx context.Context, b *mallpb.BundleInfo, state 
 		}
 	}
 
-	if pipelineID != "" {
-		pipeline, err := h.Gcc.GetPipeline(ctx, &gccpb.GetPipelineRequest{
-			Query: &gccpb.GetPipelineRequest_PipelineUlid{PipelineUlid: pipelineID},
+	if pipelineGpath != "" {
+		pipeline, err := h.Gcc.GetPipelineDetail(ctx, &gccpb.GetPipelineDetailRequest{
+			Query: &gccpb.GetPipelineDetailRequest_PipelineGpath{PipelineGpath: pipelineGpath},
 		})
 		if err == nil && pipeline != nil {
+			pipelineID = pipeline.GetPipelineUlid()
+			m["pipeline_id"] = pipelineID
 			pipeline = h.localizedPipeline(ctx, pipeline, locale)
 			if purchasedPipelineID := ownedPipelineID(state, pipeline); purchasedPipelineID != "" {
 				m["owned_pipeline_id"] = purchasedPipelineID
@@ -1739,7 +1704,7 @@ func toUnits(units []*gccpb.UnitConfig) []UnitConfig {
 			ExemptionStripePriceId:   "",
 			RetakeStripeProductId:    "",
 			RetakeStripePriceId:      "",
-			GlmsCourseUlid:           unit.GetGlmsCourseUlid(),
+			GlmsCourseGpath:          unit.GetGlmsCourseGpath(),
 			Program:                  unit.GetProgram(),
 			ExamUlid:                 unit.GetExamUlid(),
 			FormCode:                 unit.GetFormCode(),
@@ -1776,11 +1741,8 @@ func buildPipelineNextStep(runtime *gprogpb.GetPipelineDetailRsp, config *gccpb.
 			fillCompletedPipelineNextStep(&out, issuesCertificate)
 			return out
 		}
-		fillNextStepFromUnit(&out, nil, firstUnit, "")
-		if strings.TrimSpace(firstUnit.GetGlmsCourseUlid()) != "" {
-			out.Action = "continue_learning"
-			out.Message = "continue learning this course"
-		} else {
+		fillNextStepFromUnit(&out, nil, firstUnit, "", "")
+		if firstUnit.GetGlmsCourseGpath() == "" {
 			out.Action = "signup_exam"
 			out.Message = "go to exams and sign up"
 		}
@@ -1797,7 +1759,7 @@ func buildPipelineNextStep(runtime *gprogpb.GetPipelineDetailRsp, config *gccpb.
 			if stage.GetStage().GetStatus() == gprog.StageStatus_STAGE_STATUS_WAIT_CANDIDATE {
 				out.StageCcUlid = stage.GetStage().GetStageCcUlid()
 				if firstUnit != nil {
-					fillNextStepFromUnit(&out, stage, firstUnit, stageConfigNameByID(config, stage.GetStage().GetStageCcUlid()))
+					fillNextStepFromUnit(&out, stage, firstUnit, stageConfigNameByID(config, stage.GetStage().GetStageCcUlid()), runtimeCourseIDForConfigUnit(stage, firstUnit))
 				} else {
 					out.StageUlid = stage.GetStage().GetStageUlid()
 					out.StageName = stageConfigNameByID(config, stage.GetStage().GetStageCcUlid())
@@ -1815,9 +1777,11 @@ func buildPipelineNextStep(runtime *gprogpb.GetPipelineDetailRsp, config *gccpb.
 			fillCompletedPipelineNextStep(&out, issuesCertificate)
 			return out
 		}
-		fillNextStepFromUnit(&out, nil, firstUnit, "")
-		out.Action = "continue_learning"
-		out.Message = "continue learning this course"
+		fillNextStepFromUnit(&out, nil, firstUnit, "", "")
+		if firstUnit.GetGlmsCourseGpath() == "" {
+			out.Action = "signup_exam"
+			out.Message = "go to exams and sign up"
+		}
 		return out
 	}
 
@@ -1865,7 +1829,7 @@ func buildPipelineNextStep(runtime *gprogpb.GetPipelineDetailRsp, config *gccpb.
 		} else {
 			firstUnit := firstConfigUnit(config)
 			if firstUnit != nil {
-				fillNextStepFromUnit(&out, nil, firstUnit, "")
+				fillNextStepFromUnit(&out, nil, firstUnit, "", "")
 			}
 			out.Action = "signup_exam"
 			out.Message = "go to exams and sign up"
@@ -1873,7 +1837,7 @@ func buildPipelineNextStep(runtime *gprogpb.GetPipelineDetailRsp, config *gccpb.
 		return out
 	}
 
-	fillNextStepFromUnit(&out, pickStage, configUnitByID(config, pickUnit.GetCourseUnitCcUlid()), stageConfigNameByID(config, pickStage.GetStage().GetStageCcUlid()))
+	fillNextStepFromUnit(&out, pickStage, configUnitByID(config, pickUnit.GetCourseUnitCcUlid()), stageConfigNameByID(config, pickStage.GetStage().GetStageCcUlid()), pickUnit.GetGlmsCourseUlid())
 	out.CourseUnitUlid = pickUnit.GetCourseUnitUlid()
 	out.CourseUnitCcUlid = pickUnit.GetCourseUnitCcUlid()
 	out.Status = pickUnit.GetStatus().String()
@@ -1974,12 +1938,12 @@ func pickNextRuntimeUnit(stage *gprogpb.StageDetail) *gprogpb.CourseUnitSummary 
 	return nil
 }
 
-func fillNextStepFromUnit(out *PipelineNextStep, stage *gprogpb.StageDetail, unit *gccpb.UnitConfig, stageName string) {
+func fillNextStepFromUnit(out *PipelineNextStep, stage *gprogpb.StageDetail, unit *gccpb.UnitConfig, stageName string, courseUlid string) {
 	if out == nil || unit == nil {
 		return
 	}
 	out.CourseUnitUlid = unit.GetUnitUlid()
-	out.CourseUlid = unit.GetGlmsCourseUlid()
+	out.CourseUlid = strings.TrimSpace(courseUlid)
 	out.AllowRetake = unit.GetExamUlid() != ""
 	out.AllowExemption = unit.GetAllowExemption()
 	out.Program = unit.GetProgram()
@@ -1990,6 +1954,18 @@ func fillNextStepFromUnit(out *PipelineNextStep, stage *gprogpb.StageDetail, uni
 		out.StageCcUlid = stage.GetStage().GetStageCcUlid()
 		out.StageName = stageName
 	}
+}
+
+func runtimeCourseIDForConfigUnit(stage *gprogpb.StageDetail, unit *gccpb.UnitConfig) string {
+	if stage == nil || unit == nil {
+		return ""
+	}
+	for _, runtimeUnit := range stage.GetCourseUnits() {
+		if runtimeUnit != nil && runtimeUnit.GetCourseUnitCcUlid() == unit.GetUnitUlid() {
+			return runtimeUnit.GetGlmsCourseUlid()
+		}
+	}
+	return ""
 }
 
 func stageConfigNameByID(config *gccpb.PipelineConfig, stageID string) string {

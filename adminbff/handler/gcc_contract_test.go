@@ -19,6 +19,28 @@ type pipelineStructureClientStub struct {
 	request *gccpb.UpdatePipelineStructureRequest
 }
 
+type pipelineGpathClientStub struct {
+	gccpb.CCServiceClient
+	request *gccpb.GetPipelineRequest
+}
+
+func (s *pipelineGpathClientStub) GetPipeline(_ context.Context, req *gccpb.GetPipelineRequest, _ ...grpc.CallOption) (*gccpb.PipelineConfig, error) {
+	s.request = req
+	return &gccpb.PipelineConfig{PipelineGpath: req.GetPipelineGpath()}, nil
+}
+
+func TestGetPipelineByGpathUsesLogicalLookup(t *testing.T) {
+	client := &pipelineGpathClientStub{}
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/api/pipelines/by-gpath?pipeline_gpath=%2Fpipelines%2Fcftp", nil)
+
+	(&Handler{Gcc: client}).GetPipelineByGpath(recorder, request)
+
+	if recorder.Code != http.StatusOK || client.request.GetPipelineGpath() != "/pipelines/cftp" {
+		t.Fatalf("status = %d, request = %+v; body=%s", recorder.Code, client.request, recorder.Body.String())
+	}
+}
+
 func (s *pipelineStructureClientStub) UpdatePipelineStructure(_ context.Context, req *gccpb.UpdatePipelineStructureRequest, _ ...grpc.CallOption) (*gccpb.PipelineConfig, error) {
 	s.request = req
 	return &gccpb.PipelineConfig{PipelineUlid: req.GetPipelineUlid()}, nil
@@ -69,7 +91,7 @@ func TestCatalogHandlersReportUnavailableContract(t *testing.T) {
 
 func TestUpdatePipelineStructureUsesSemanticQualificationAndCertificateFields(t *testing.T) {
 	const body = `{
-		"stages":[{"name":"Stage","units":[{"glms_course_ulid":"01KYN000000000000000000001"}]}],
+		"stages":[{"name":"Stage","units":[{"glms_course_gpath":"/glms/course/cfta"}]}],
 		"prerequisite_quals":[{"qual_ulid":"01KYN000000000000000000002","name_hint":"CFTA"}],
 		"final_audit_quals":[{"qual_ulid":"01KYN000000000000000000003","name_hint":"Work Experience"}],
 		"award_certs":[{"qual_ulid":"01KYN000000000000000000004","pdf_template_ulid":"01KYN000000000000000000005","name_hint":"CFTP"}],
@@ -91,6 +113,9 @@ func TestUpdatePipelineStructureUsesSemanticQualificationAndCertificateFields(t 
 	if client.request == nil {
 		t.Fatal("UpdatePipelineStructure was not called")
 	}
+	if got := client.request.GetStages()[0].GetUnits()[0].GetGlmsCourseGpath(); got != "/glms/course/cfta" {
+		t.Fatalf("course gpath = %q, want /glms/course/cfta", got)
+	}
 	if got := client.request.GetAwardCerts()[0]; got.GetPdfTemplateUlid() != "01KYN000000000000000000005" || got.GetNameHint() != "CFTP" {
 		t.Fatalf("award certificate fields were not preserved: %+v", got)
 	}
@@ -99,6 +124,19 @@ func TestUpdatePipelineStructureUsesSemanticQualificationAndCertificateFields(t 
 	}
 	if got := client.request.GetConflictPipelineGpaths(); len(got) != 1 || got[0] != "/gcc/pipeline/core/cfta" {
 		t.Fatalf("conflict pipeline gpaths = %v", got)
+	}
+}
+
+func TestUpdatePipelineStructureAllowsExamOnlyUnit(t *testing.T) {
+	client := &pipelineStructureClientStub{}
+	recorder := httptest.NewRecorder()
+	request := requestWithURLParam(http.MethodPut, "/api/pipelines/pipeline-1/structure", "pipeline_id", "pipeline-1")
+	request.Body = io.NopCloser(strings.NewReader(`{"stages":[{"name":"Exam","units":[{"program":"CFTP","exam_ulid":"exam-1","form_code":"A"}]}]}`))
+
+	(&Handler{Gcc: client}).UpdatePipelineStructure(recorder, request)
+
+	if recorder.Code != http.StatusOK || client.request == nil {
+		t.Fatalf("status = %d, request = %+v; body=%s", recorder.Code, client.request, recorder.Body.String())
 	}
 }
 

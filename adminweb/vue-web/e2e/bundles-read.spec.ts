@@ -29,10 +29,10 @@ async function installBundleReadMocks(page: Page, requests: string[]) {
           bundle: {
             ...bundleSummary,
             description: "Read-only bundle detail",
-            items_json: JSON.stringify([{ item_type: "pipeline", ref_ulid: "pipeline-1" }]),
+            items_json: JSON.stringify([{ item_type: "pipeline", pipeline_gpath: "/pipelines/regression" }]),
             pricing_json: JSON.stringify({
               pipelines: [{
-                pipeline_id: "pipeline-1",
+                pipeline_gpath: "/pipelines/regression",
                 enrollment_fee: {
                   stripe_product_id: "prod_enrollment",
                   stripe_price_id: "price_enrollment",
@@ -85,7 +85,7 @@ test("bundle detail reads summary and linked items without editing", async ({ pa
   await page.getByRole("button", { name: "查看详情" }).first().click()
   await expect(page.getByRole("heading", { name: "Regression Bundle" })).toBeVisible()
   await expect(page.getByText("Read-only bundle detail", { exact: true }).first()).toBeVisible()
-  await expect(page.getByText("pipeline-1", { exact: false })).toBeVisible()
+  await expect(page.getByText("/pipelines/regression", { exact: false }).first()).toBeVisible()
   await page.getByRole("button", { name: /结构与价格/ }).click()
   await expect(page.getByText("Pipeline 报名费", { exact: true }).first()).toBeVisible()
   await expect(page.getByText("price_enrollment", { exact: true })).toBeVisible()
@@ -95,6 +95,45 @@ test("bundle detail reads summary and linked items without editing", async ({ pa
   expect(requests).toContain("GET /api/mall/bundles/bundle-1")
   expect(requests.some((request) => request.includes("/publish") || request.includes("/deprecate") || request.includes("/sync-display-pricing") || request.startsWith("DELETE "))).toBe(false)
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
+})
+
+test("new bundle submits a pipeline GPath instead of a physical ULID", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  const captured = { createBody: null as Record<string, unknown> | null }
+  page.on("request", (request) => {
+    if (request.method() === "POST" && new URL(request.url()).pathname === "/api/mall/bundles") {
+      captured.createBody = request.postDataJSON() as Record<string, unknown>
+    }
+  })
+  await installAdminApiMocks(page, ({ method, pathname }) => {
+    if (method === "GET" && pathname === "/api/mall/bundles") {
+      return { data: { bundles: [], has_more: false, next_cursor: "" } }
+    }
+    if (method === "GET" && pathname === "/api/pipelines") {
+      return { data: { pipelines: [{ pipeline_ulid: "pipeline-physical", pipeline_gpath: "/pipelines/cftp", name: "CFtP", status: "Active" }], has_more: false } }
+    }
+    if (method === "GET" && pathname === "/api/memberships") {
+      return { data: { memberships: [], has_more: false } }
+    }
+    if (method === "POST" && pathname === "/api/mall/bundles") {
+      return { data: { bundle_ulid: "bundle-new" } }
+    }
+    return undefined
+  })
+
+  await page.goto("/bundles")
+  await page.getByRole("button", { name: "新建商品" }).click()
+  await page.getByRole("dialog").getByRole("combobox").nth(1).selectOption("/pipelines/cftp")
+  await page.getByLabel("名称").fill("CFtP Bundle")
+  await page.getByText("高级配置").click()
+  await page.getByLabel("商品路径").fill("/bundles/cftp")
+  await page.getByRole("button", { name: "创建草稿" }).click()
+
+  await expect.poll(() => captured.createBody).not.toBeNull()
+  expect(JSON.parse(String(captured.createBody?.items_json))).toEqual([{
+    item_type: "pipeline",
+    pipeline_gpath: "/pipelines/cftp",
+  }])
 })
 
 test("deprecating a bundle requires explicit confirmation", async ({ page }) => {
