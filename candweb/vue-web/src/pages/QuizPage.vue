@@ -9,6 +9,7 @@ import { ApiClientError, apiClient } from "@/lib/apiClient"
 import { useBodyScrollLock } from "@/lib/bodyScrollLock"
 import { useDialogAccessibility } from "@/lib/dialogAccessibility"
 import { useTranslation } from "@/lib/language"
+import { sanitizeCourseContent } from "@/lib/sanitizeHtml"
 
 const route = useRoute()
 const router = useRouter()
@@ -39,6 +40,10 @@ const pendingDraftSyncs = new Set<Promise<void>>()
 useBodyScrollLock(() => submitConfirmOpen.value)
 
 const questions = computed(() => paper.value?.questions || [])
+const renderedQuestions = computed(() => questions.value.map((question: any) => ({
+  ...question,
+  question_text_html: sanitizeCourseContent(question?.question_text),
+})))
 const answeredCount = computed(() => questions.value.filter((q: any) => (answers.value[questionIdOf(q)]?.length || 0) > 0).length)
 const allAnswered = computed(() => questions.value.every((q: any) => (answers.value[questionIdOf(q)]?.length || 0) > 0))
 const quizPassed = computed(() => {
@@ -441,13 +446,13 @@ onBeforeRouteLeave(() => {
       <!-- Detailed grading result block -->
       <div v-if="showDetail" class="quiz-detail-list mt-8 space-y-6 text-left">
         <h2 class="text-xl font-bold">{{ t.learning?.quizDetailTitle }}</h2>
-        <div v-for="(question, index) in questions" :key="question.question_id" class="quiz-detail-card overflow-hidden rounded-md bg-white shadow-sm border border-border">
+        <div v-for="(question, index) in renderedQuestions" :key="question.question_id" class="quiz-detail-card overflow-hidden rounded-md bg-white shadow-sm border border-border">
           <div class="quiz-card-header flex items-center justify-between border-b bg-muted/30 px-6 py-3 text-sm font-medium text-muted-foreground">
             <span>{{ formatQuizQuestionCount(Number(index) + 1, questions.length) }}</span>
             <span class="rounded border bg-background px-2 py-0.5 text-xs">{{ question.points || 0 }} {{ t.learning?.quizPts }}</span>
           </div>
           <div class="quiz-card-body p-6">
-            <h3 class="quiz-question-title mb-6 text-lg font-medium leading-relaxed text-foreground">{{ question.question_text }}</h3>
+            <div class="quiz-question-title quiz-rich-content mb-6 text-lg font-medium leading-relaxed text-foreground" v-html="question.question_text_html" />
             <div class="space-y-3">
               <div
                 v-for="option in question.options || []"
@@ -472,7 +477,7 @@ onBeforeRouteLeave(() => {
                   <span v-else-if="getAnswerDetail(question.question_id)?.selected_option_ids?.includes(option.option_id)" class="h-2.5 w-2.5 rounded-full bg-white" />
                 </div>
                 <div class="flex flex-col">
-                  <span :class="['text-sm', getAnswerDetail(question.question_id)?.correct_option_ids?.includes(option.option_id) ? 'font-medium text-emerald-800' : (getAnswerDetail(question.question_id)?.selected_option_ids?.includes(option.option_id) ? 'font-medium text-rose-800' : 'text-muted-foreground')]">
+                  <span :class="['quiz-option-text whitespace-pre-wrap break-words text-sm', getAnswerDetail(question.question_id)?.correct_option_ids?.includes(option.option_id) ? 'font-medium text-emerald-800' : (getAnswerDetail(question.question_id)?.selected_option_ids?.includes(option.option_id) ? 'font-medium text-rose-800' : 'text-muted-foreground')]">
                     {{ option.option_text }}
                   </span>
                   <span v-if="getAnswerDetail(question.question_id)?.correct_option_ids?.includes(option.option_id)" class="text-xs text-emerald-600 mt-1">{{ t.learning?.quizCorrectAnswer }}</span>
@@ -510,13 +515,13 @@ onBeforeRouteLeave(() => {
       </div>
 
       <div class="quiz-question-list space-y-6">
-        <div v-for="(question, index) in questions" :key="question.question_id" class="quiz-question-card overflow-hidden rounded-md bg-white">
+        <div v-for="(question, index) in renderedQuestions" :key="question.question_id" class="quiz-question-card overflow-hidden rounded-md bg-white">
           <div class="quiz-card-header flex items-center justify-between border-b bg-muted/30 px-6 py-3 text-sm font-medium text-muted-foreground">
             <span>{{ formatQuizQuestionCount(Number(index) + 1, questions.length) }}</span>
             <span class="rounded border bg-background px-2 py-0.5 text-xs">{{ question.points || 0 }} {{ t.learning?.quizPts }}</span>
           </div>
           <div class="quiz-card-body p-6">
-            <h3 class="quiz-question-title mb-6 text-lg font-medium leading-relaxed text-foreground">{{ question.question_text }}</h3>
+            <div class="quiz-question-title quiz-rich-content mb-6 text-lg font-medium leading-relaxed text-foreground" v-html="question.question_text_html" />
             <div class="space-y-3">
               <button
                 v-for="option in question.options || []"
@@ -539,7 +544,7 @@ onBeforeRouteLeave(() => {
                 ]">
                   <span v-if="(answers[question.question_id] || []).includes(option.option_id)" class="h-2.5 w-2.5 rounded-full bg-primary" />
                 </div>
-                <span :class="['text-sm', (answers[question.question_id] || []).includes(option.option_id) ? 'font-medium text-foreground' : 'text-muted-foreground']">{{ option.option_text }}</span>
+                <span :class="['quiz-option-text whitespace-pre-wrap break-words text-sm', (answers[question.question_id] || []).includes(option.option_id) ? 'font-medium text-foreground' : 'text-muted-foreground']">{{ option.option_text }}</span>
               </button>
             </div>
           </div>
@@ -670,10 +675,16 @@ onBeforeRouteLeave(() => {
     padding: 12px;
   }
 
-  .quiz-question-title {
+.quiz-question-title {
     margin-bottom: 12px;
     font-size: 16px;
     line-height: 24px;
+  }
+
+  .quiz-rich-content :deep(pre) {
+    max-width: 100%;
+    overflow-x: auto;
+    white-space: pre;
   }
 
   .quiz-card-body > .space-y-3 {
@@ -746,5 +757,70 @@ onBeforeRouteLeave(() => {
     padding-right: 16px;
     padding-left: 16px;
   }
+}
+
+.quiz-rich-content {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.quiz-rich-content :deep(p) {
+  margin: 0 0 0.75rem;
+}
+
+.quiz-rich-content :deep(p:last-child) {
+  margin-bottom: 0;
+}
+
+.quiz-rich-content :deep(pre) {
+  margin: 0.75rem 0;
+  max-width: 100%;
+  overflow-x: auto;
+  border-radius: 0.375rem;
+  background: rgb(248 250 252);
+  padding: 0.75rem;
+  white-space: pre;
+}
+
+.quiz-rich-content :deep(code) {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.875em;
+}
+
+.quiz-rich-content :deep(ul),
+.quiz-rich-content :deep(ol) {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+  white-space: normal;
+}
+
+.quiz-rich-content :deep(ul) {
+  list-style: disc;
+}
+
+.quiz-rich-content :deep(ol) {
+  list-style: decimal;
+}
+
+.quiz-rich-content :deep(table) {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 0.75rem 0;
+  border-collapse: collapse;
+  white-space: normal;
+}
+
+.quiz-rich-content :deep(th),
+.quiz-rich-content :deep(td) {
+  border: 1px solid rgb(203 213 225);
+  padding: 0.375rem 0.5rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.quiz-rich-content :deep(th) {
+  background: rgb(248 250 252);
+  font-weight: 600;
 }
 </style>
