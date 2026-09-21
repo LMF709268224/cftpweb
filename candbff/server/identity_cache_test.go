@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"errors"
-	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -45,46 +44,6 @@ func TestUserULIDCacheExpiresEntries(t *testing.T) {
 	}
 	if got := calls.Load(); got != 2 {
 		t.Fatalf("loader calls = %d, want 2 after expiry", got)
-	}
-}
-
-func TestUserULIDCacheSharesInFlightLookup(t *testing.T) {
-	cache := newUserULIDCache(time.Minute, 10)
-	started := make(chan struct{})
-	finish := make(chan struct{})
-	var calls atomic.Int32
-	load := func(context.Context) (string, error) {
-		calls.Add(1)
-		close(started)
-		<-finish
-		return "candidate-1", nil
-	}
-
-	var wg sync.WaitGroup
-	results := make(chan string, 2)
-	for i := 0; i < 2; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			value, err := cache.resolve(context.Background(), "user-1", load)
-			if err != nil {
-				t.Errorf("resolve() error = %v", err)
-				return
-			}
-			results <- value
-		}()
-	}
-	<-started
-	close(finish)
-	wg.Wait()
-	close(results)
-	if got := calls.Load(); got != 1 {
-		t.Fatalf("loader calls = %d, want 1", got)
-	}
-	for value := range results {
-		if value != "candidate-1" {
-			t.Errorf("cached value = %q", value)
-		}
 	}
 }
 

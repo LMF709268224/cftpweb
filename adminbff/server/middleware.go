@@ -143,14 +143,7 @@ func (s *Server) authMiddleware(next http.Handler) http.Handler {
 }
 
 func (s *Server) resolveCandidateULID(ctx context.Context, userUUID string) (string, error) {
-	s.identityCacheMu.Lock()
-	if s.identityCache == nil {
-		s.identityCache = newUserULIDCache(userULIDCacheTTL, userULIDCacheMaxEntries)
-	}
-	cache := s.identityCache
-	s.identityCacheMu.Unlock()
-
-	return cache.resolve(ctx, userUUID, func(ctx context.Context) (string, error) {
+	return s.identityCache.resolve(ctx, userUUID, func(ctx context.Context) (string, error) {
 		resp, err := s.grpcPool.Gmid.GetUlidByUUID(ctx, &gmidpb.GetUlidByUUIDRequest{
 			UserUuid: userUUID,
 		})

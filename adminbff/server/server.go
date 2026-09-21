@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"sync"
 
 	"adminbff/config"
 	"adminbff/handler"
@@ -14,13 +13,12 @@ import (
 
 // Server 是 adminserver 的核心结构
 type Server struct {
-	config          *config.Config
-	grpcPool        *GrpcClientPool
-	httpServer      *http.Server
-	casdoor         *CasdoorClient
-	auditPublisher  auditEventPublisher
-	identityCache   *userULIDCache
-	identityCacheMu sync.Mutex
+	config         *config.Config
+	grpcPool       *GrpcClientPool
+	httpServer     *http.Server
+	casdoor        *CasdoorClient
+	auditPublisher auditEventPublisher
+	identityCache  *userULIDCache
 }
 
 func NewServer() *Server {
