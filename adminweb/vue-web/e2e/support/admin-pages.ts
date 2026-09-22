@@ -19,6 +19,6 @@ export const adminPageChecks = [
   { path: "/admin-ops", endpoint: "/api/pay/subscriptions" },
   { path: "/audit/logs", endpoint: "/api/audit/logs" },
   { path: "/audit/webhooks", endpoint: "/api/audit/webhooks" },
-  { path: "/permissions", endpoint: "/api/credentials/definitions" },
+  { path: "/permissions", endpoint: "/api/credentials" },
   { path: "/settings", endpoint: "/api/user/me" },
 ] as const
