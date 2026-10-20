@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { Activity, BarChart3, CreditCard, Loader2, Mail, RefreshCw, Search, Shield, UserCheck, Users, X } from "lucide-vue-next"
+import { Activity, BarChart3, Check, CreditCard, Loader2, Mail, RefreshCw, Search, Shield, UserCheck, Users, X } from "lucide-vue-next"
 import { computed, onMounted, onUnmounted, ref, watch } from "vue"
 import { RouterLink } from "vue-router"
 import { toast } from "vue-sonner"
+import CandidateEnrollmentsDialog from "@/components/CandidateEnrollmentsDialog.vue"
 import { apiClient } from "@/lib/apiClient"
 import { formatMinorAmount } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
@@ -67,6 +68,8 @@ type DashboardData = {
 
 const loading = ref(false)
 const data = ref<DashboardData | null>(null)
+const selectedUser = ref<DashboardUser | null>(null)
+const enrollmentUser = ref<DashboardUser | null>(null)
 const keyword = ref("")
 const roleFilter = ref("all")
 const statusFilter = ref("all")
@@ -144,6 +147,24 @@ function formatDate(raw: string) {
   const parsed = new Date(raw)
   if (Number.isNaN(parsed.getTime())) return raw.slice(0, 10)
   return parsed.toLocaleDateString(lang.value === "zh" ? "zh-CN" : "en-US")
+}
+
+const userDetailFields = computed(() => {
+  const user = selectedUser.value
+  if (!user) return []
+  return [
+    { label: copy.value.table.user, value: user.name || "-" },
+    { label: copy.value.table.email, value: user.email || "-" },
+    { label: copy.value.phone, value: user.phone || "-" },
+    { label: copy.value.table.role, value: roleLabel(user.role_label) },
+    { label: copy.value.table.status, value: userStatusLabel(user.status) },
+    { label: copy.value.table.emailVerified, value: user.email_verified ? copy.value.verified : copy.value.unverified },
+    { label: copy.value.table.created, value: formatDate(user.created_at) },
+  ]
+})
+
+function closeUserDetail() {
+  selectedUser.value = null
 }
 
 let dashboardRequestId = 0
@@ -298,25 +319,26 @@ onUnmounted(() => {
                 <div class="break-words font-bold text-slate-950">{{ user.name || "-" }}</div>
                 <div class="mt-1 break-all text-xs text-slate-500">{{ user.candidate_ulid || "-" }}</div>
               </div>
-              <span class="inline-flex shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold" :class="userStatusClass(user.status)">{{ userStatusLabel(user.status) }}</span>
             </div>
             <div class="mt-3 grid gap-2 text-sm">
               <div class="flex items-start justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
                 <span class="text-xs font-black text-slate-400">{{ copy.table.email }}</span>
                 <span class="break-all text-right text-slate-700">{{ user.email || "-" }}</span>
               </div>
-              <div class="flex items-start justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
-                <span class="text-xs font-black text-slate-400">{{ copy.table.location }}</span>
-                <span class="break-words text-right text-slate-700">{{ user.location || "-" }}</span>
-              </div>
               <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
                 <span class="text-xs font-black text-slate-400">{{ copy.table.role }}</span>
                 <span class="inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold" :class="roleBadgeClass(user.role_label)">{{ roleLabel(user.role_label) }}</span>
               </div>
               <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
+                <span class="text-xs font-black text-slate-400">{{ copy.table.status }}</span>
+                <span class="inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold" :class="userStatusClass(user.status)">{{ userStatusLabel(user.status) }}</span>
+              </div>
+              <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
                 <span class="text-xs font-black text-slate-400">{{ copy.table.emailVerified }}</span>
-                <span :class="['inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold', user.email_verified ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700']">
-                  {{ user.email_verified ? copy.verified : copy.unverified }}
+                <span :title="user.email_verified ? copy.verified : copy.unverified" :class="['inline-flex rounded-full p-1 text-xs font-bold', user.email_verified ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700']">
+                  <Check v-if="user.email_verified" class="h-4 w-4" aria-hidden="true" />
+                  <X v-else class="h-4 w-4" aria-hidden="true" />
+                  <span class="sr-only">{{ user.email_verified ? copy.verified : copy.unverified }}</span>
                 </span>
               </div>
               <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
@@ -324,21 +346,27 @@ onUnmounted(() => {
                 <span class="text-right text-slate-700">{{ formatDate(user.created_at) }}</span>
               </div>
             </div>
+            <button class="mt-3 inline-flex min-h-11 items-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 hover:underline" type="button" @click="selectedUser = user">
+              {{ copy.viewDetails }}
+            </button>
+            <button v-if="user.candidate_ulid" class="ml-3 mt-3 inline-flex min-h-11 items-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 hover:underline" type="button" @click="enrollmentUser = user">
+              {{ copy.enrollments.view }}
+            </button>
           </article>
         </div>
       </div>
 
       <div class="hidden overflow-x-auto md:block">
-        <table class="w-full min-w-[1120px] text-left text-sm">
+        <table class="w-full min-w-[960px] text-left text-sm">
           <thead class="border-b border-slate-100 bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500">
             <tr>
               <th class="px-6 py-4">{{ copy.table.user }}</th>
               <th class="px-6 py-4">{{ copy.table.email }}</th>
-              <th class="px-6 py-4">{{ copy.table.location }}</th>
               <th class="w-24 whitespace-nowrap px-6 py-4">{{ copy.table.role }}</th>
               <th class="w-24 whitespace-nowrap px-6 py-4">{{ copy.table.status }}</th>
               <th class="w-28 whitespace-nowrap px-6 py-4">{{ copy.table.emailVerified }}</th>
               <th class="w-28 whitespace-nowrap px-6 py-4">{{ copy.table.created }}</th>
+              <th class="w-28 whitespace-nowrap px-6 py-4">{{ copy.table.actions }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -358,7 +386,6 @@ onUnmounted(() => {
                   <div class="text-xs text-slate-500">{{ user.candidate_ulid || "-" }}</div>
                 </td>
                 <td class="whitespace-nowrap px-6 py-4 text-slate-700">{{ user.email || "-" }}</td>
-                <td class="px-6 py-4 text-slate-700">{{ user.location || "-" }}</td>
                 <td class="w-24 whitespace-nowrap px-6 py-4">
                   <span class="inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold" :class="roleBadgeClass(user.role_label)">{{ roleLabel(user.role_label) }}</span>
                 </td>
@@ -366,11 +393,17 @@ onUnmounted(() => {
                   <span class="inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold" :class="userStatusClass(user.status)">{{ userStatusLabel(user.status) }}</span>
                 </td>
                 <td class="w-28 whitespace-nowrap px-6 py-4">
-                  <span :class="['inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold', user.email_verified ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700']">
-                    {{ user.email_verified ? copy.verified : copy.unverified }}
+                  <span :title="user.email_verified ? copy.verified : copy.unverified" :class="['inline-flex rounded-full p-1 text-xs font-bold', user.email_verified ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700']">
+                    <Check v-if="user.email_verified" class="h-4 w-4" aria-hidden="true" />
+                    <X v-else class="h-4 w-4" aria-hidden="true" />
+                    <span class="sr-only">{{ user.email_verified ? copy.verified : copy.unverified }}</span>
                   </span>
                 </td>
                 <td class="w-28 whitespace-nowrap px-6 py-4 text-slate-700">{{ formatDate(user.created_at) }}</td>
+                <td class="w-28 whitespace-nowrap px-6 py-4">
+                  <button class="text-sm font-bold text-blue-700 hover:underline" type="button" @click="selectedUser = user">{{ copy.viewDetails }}</button>
+                  <button v-if="user.candidate_ulid" class="mt-2 block text-sm font-bold text-blue-700 hover:underline" type="button" @click="enrollmentUser = user">{{ copy.enrollments.view }}</button>
+                </td>
               </tr>
             </template>
           </tbody>
@@ -448,5 +481,24 @@ onUnmounted(() => {
         </div>
       </article>
     </section>
+    <CandidateEnrollmentsDialog v-if="enrollmentUser?.candidate_ulid" :key="enrollmentUser.candidate_ulid" :candidate-id="enrollmentUser.candidate_ulid" :candidate-name="enrollmentUser.name" @close="enrollmentUser = null" />
+    <Teleport to="body">
+      <div v-if="selectedUser" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4" @click.self="closeUserDetail">
+        <section v-modal-dialog="closeUserDetail" class="flex max-h-[90dvh] w-full max-w-xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl" aria-labelledby="dashboard-user-detail-title">
+          <header class="flex shrink-0 items-center justify-between gap-4 border-b border-slate-100 px-5 py-4">
+            <h2 id="dashboard-user-detail-title" class="text-xl font-black text-slate-950">{{ copy.userDetailTitle }}</h2>
+            <button data-dialog-initial-focus class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100" type="button" :aria-label="copy.close" @click="closeUserDetail">
+              <X class="h-5 w-5" aria-hidden="true" />
+            </button>
+          </header>
+          <dl class="divide-y divide-slate-100 overflow-y-auto px-5">
+            <div v-for="field in userDetailFields" :key="field.label" class="grid gap-1 py-4 sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-4">
+              <dt class="text-sm font-bold text-slate-500">{{ field.label }}</dt>
+              <dd class="min-w-0 break-words text-sm text-slate-950 [overflow-wrap:anywhere]">{{ field.value }}</dd>
+            </div>
+          </dl>
+        </section>
+      </div>
+    </Teleport>
   </main>
 </template>
