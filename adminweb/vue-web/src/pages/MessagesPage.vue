@@ -3,6 +3,8 @@ import { FileText, List, Loader2, Plus, RefreshCw, Send, X } from "lucide-vue-ne
 import { computed, nextTick, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import ReadonlyField from "@/components/ReadonlyField.vue"
+import NotificationParameters from "@/components/NotificationParameters.vue"
+import { initialTemplatePayload } from "@/lib/notificationTemplate"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
@@ -23,6 +25,10 @@ const selectedTemplate = ref<JsonRecord | null>(null)
 const selectedUserIds = ref<string[]>([])
 const templatePath = ref("")
 const payload = ref("{\n}")
+const sendTemplate = ref<JsonRecord | null>(null)
+const parametersRef = ref<InstanceType<typeof NotificationParameters> | null>(null)
+const payloadLoading = ref(false)
+const payloadLoadError = ref("")
 const msgType = ref(1)
 const sending = ref(false)
 
@@ -60,7 +66,7 @@ const templateTitleInputRef = ref<HTMLInputElement | null>(null)
 let templateDetailRequestId = 0
 let templateEditRequestId = 0
 let templatePayloadRequestId = 0
-const { t } = useAdminLanguage()
+const { t, isZh } = useAdminLanguage()
 const copy = computed(() => t.value.messagesAdmin)
 
 const tabs = computed(() => [
@@ -144,22 +150,6 @@ function titleOf(template: JsonRecord | null | undefined) {
 
 function messageId(message: JsonRecord | null | undefined) {
   return String(pickFirst(message || {}, ["message_id", "msg_id", "id"]) || "")
-}
-
-function extractPayloadTemplate(...texts: unknown[]) {
-  const vars = new Set<string>()
-  const regex = /\{\{([^}]+)\}\}/g
-  for (const text of texts) {
-    if (typeof text !== "string") continue
-    let match: RegExpExecArray | null
-    while ((match = regex.exec(text))) {
-      vars.add(match[1].trim().replace(/^\./, ""))
-    }
-  }
-  if (!vars.size) return "{\n}"
-  const result: Record<string, string> = {}
-  for (const key of vars) result[key] = ""
-  return JSON.stringify(result, null, 2)
 }
 
 function normalizeParameterSchema(value: string) {
@@ -412,7 +402,7 @@ async function sendMessage() {
     toast.error(copy.value.toasts.templateRequired)
     return
   }
-  if (!validatePayload()) return
+  if (payloadLoading.value || payloadLoadError.value || !validatePayload() || !parametersRef.value?.validate()) return
 
   sending.value = true
   try {
@@ -527,22 +517,28 @@ async function saveTemplate() {
   }
 }
 
-watch(templatePath, async (path) => {
+async function loadSendTemplate(path: string) {
   const requestId = ++templatePayloadRequestId
+  sendTemplate.value = null
+  payloadLoadError.value = ""
+  payloadLoading.value = !!path
   if (!path) {
     payload.value = "{\n}"
     return
   }
-  const template = templates.value.find((item) => pathOf(item) === path)
-  payload.value = extractPayloadTemplate(template?.title_tpl, template?.content_tpl)
   try {
     const detail = await loadTemplateDetail(path)
     if (requestId !== templatePayloadRequestId || templatePath.value !== path) return
-    payload.value = extractPayloadTemplate(detail?.title_tpl, detail?.content_tpl)
-  } catch {
-    // Keep the best-effort payload generated from the list response.
+    sendTemplate.value = detail
+    payload.value = initialTemplatePayload(String(detail?.parameter_schema ?? ""), [String(detail?.title_tpl ?? ""), String(detail?.content_tpl ?? "")])
+  } catch (err) {
+    if (requestId !== templatePayloadRequestId || templatePath.value !== path) return
+    payloadLoadError.value = apiErrorMessage(err, copy.value.toasts.templateDetailLoadFailed)
+  } finally {
+    if (requestId === templatePayloadRequestId) payloadLoading.value = false
   }
-})
+}
+watch(templatePath, (path) => { void loadSendTemplate(path) })
 
 watch(statusFilter, () => {
   messagePage.value = 1
@@ -667,12 +663,14 @@ onMounted(async () => {
                 </select>
               </label>
 
-              <label class="block">
-                <span class="font-bold">{{ copy.send.payload }}</span>
-                <textarea v-model="payload" class="mt-2 min-h-52 w-full rounded-xl border border-slate-200 p-4 font-mono text-sm" />
-              </label>
+              <p v-if="payloadLoading" role="status" class="text-sm text-slate-500">{{ isZh ? '正在加载模板参数...' : 'Loading template parameters...' }}</p>
+              <div v-if="payloadLoadError" role="alert" class="text-sm text-red-600">
+                {{ payloadLoadError }}
+                <button type="button" class="ml-2 underline" @click="loadSendTemplate(templatePath)">{{ copy.refreshTemplates }}</button>
+              </div>
+              <NotificationParameters ref="parametersRef" v-model="payload" :schema="String(sendTemplate?.parameter_schema ?? '')" :texts="[String(sendTemplate?.title_tpl ?? ''), String(sendTemplate?.content_tpl ?? '')]" :raw-label="copy.send.payload" :disabled="payloadLoading || sending || !!payloadLoadError" />
 
-              <button class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50 sm:w-auto" :disabled="sending" type="button" @click="sendMessage">
+              <button class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50 sm:w-auto" :disabled="sending || payloadLoading || !!payloadLoadError" type="button" @click="sendMessage">
                 <Loader2 v-if="sending" class="h-4 w-4 animate-spin" />
                 <Send v-else class="h-4 w-4" />
                 {{ sending ? copy.send.sending : copy.send.sendButton }}

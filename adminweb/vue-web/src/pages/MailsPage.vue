@@ -4,6 +4,8 @@ import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import JsonPreview from "@/components/JsonPreview.vue"
 import ReadonlyField from "@/components/ReadonlyField.vue"
+import NotificationParameters from "@/components/NotificationParameters.vue"
+import { initialTemplatePayload } from "@/lib/notificationTemplate"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
@@ -25,6 +27,14 @@ const selectedUserIds = ref<string[]>([])
 const templatePath = ref("")
 const subject = ref("")
 const payload = ref("{\n}")
+const sendTemplate = ref<JsonRecord | null>(null)
+const parametersRef = ref<InstanceType<typeof NotificationParameters> | null>(null)
+const payloadLoading = ref(false)
+const payloadLoadError = ref("")
+const previewLoading = ref(false)
+const previewError = ref("")
+const previewCloseRef = ref<HTMLButtonElement | null>(null)
+let previewRequestId = 0
 const sending = ref(false)
 const previewOpen = ref(false)
 const previewSubject = ref("")
@@ -188,20 +198,6 @@ function stripHtml(value: string) {
   return value.replace(/<[^>]+>/g, "")
 }
 
-function extractPayloadTemplate(...texts: unknown[]) {
-  const vars = new Set<string>()
-  const regex = /\{\{([^}]+)\}\}/g
-  for (const text of texts) {
-    if (typeof text !== "string") continue
-    let match: RegExpExecArray | null
-    while ((match = regex.exec(text))) vars.add(match[1].trim().replace(/^\./, ""))
-  }
-  if (!vars.size) return "{\n}"
-  const result: Record<string, string> = {}
-  for (const key of vars) result[key] = ""
-  return JSON.stringify(result, null, 2)
-}
-
 function normalizeParameterSchema(value: string) {
   const trimmed = value.trim()
   if (!trimmed) return "{}"
@@ -225,11 +221,38 @@ function validateTemplatePayload() {
 }
 
 function closePreview() {
+  previewRequestId += 1
+  previewLoading.value = false
   previewOpen.value = false
 }
 
-function openPreview() {
-  if (templatePath.value) return
+async function openPreview() {
+  if (templatePath.value) {
+    if (payloadLoading.value || payloadLoadError.value || !validateTemplatePayload() || !parametersRef.value?.validate()) return
+    if (previewOpen.value) previewCloseRef.value?.focus()
+    const requestId = ++previewRequestId
+    previewHtml.value = ""
+    previewSubject.value = ""
+    previewError.value = ""
+    previewOpen.value = true
+    previewLoading.value = true
+    try {
+      const rendered = await apiClient<JsonRecord>("/api/mails/templates/render", {
+        method: "POST",
+        body: JSON.stringify({ template_path: templatePath.value, template_params_json: payload.value, subject_params_json: payload.value }),
+      })
+      if (requestId !== previewRequestId) return
+      if (typeof rendered.html_body !== "string") throw new Error(isZh.value ? "渲染接口未返回邮件 HTML 正文。" : "The renderer did not return an HTML body.")
+      previewSubject.value = subject.value || String(rendered.subject ?? "")
+      previewHtml.value = rendered.html_body
+    } catch (err) {
+      if (requestId !== previewRequestId) return
+      previewError.value = apiErrorMessage(err, isZh.value ? "邮件预览失败，请重试。" : "Email preview failed. Please retry.")
+    } finally {
+      if (requestId === previewRequestId) previewLoading.value = false
+    }
+    return
+  }
   if (!payload.value.trim()) {
     toast.error(copy.value.toasts.bodyRequired)
     return
@@ -391,7 +414,7 @@ async function sendMail() {
     toast.error(copy.value.toasts.bodyRequired)
     return
   }
-  if (!validateTemplatePayload()) return
+  if (payloadLoading.value || payloadLoadError.value || !validateTemplatePayload() || (templatePath.value && !parametersRef.value?.validate())) return
 
   sending.value = true
   let count = 0
@@ -614,22 +637,30 @@ async function cancelMail() {
   }
 }
 
-watch(templatePath, async (path) => {
+async function loadSendTemplate(path: string) {
   const requestId = ++templatePayloadRequestId
+  closePreview()
+  sendTemplate.value = null
+  payloadLoadError.value = ""
+  payloadLoading.value = !!path
   if (!path) {
     payload.value = "{\n}"
     return
   }
-  const template = templates.value.find((item) => pathOf(item) === path)
-  payload.value = extractPayloadTemplate(subjectOf(template), bodyOf(template || {}))
   try {
     const detail = await loadTemplateDetail(path)
     if (requestId !== templatePayloadRequestId || templatePath.value !== path) return
-    payload.value = extractPayloadTemplate(subjectOf(detail), bodyOf(detail))
-  } catch {
-    // Keep the best-effort payload generated from the list response.
+    sendTemplate.value = resolvedTemplate(detail)
+    payload.value = initialTemplatePayload(String(sendTemplate.value.parameter_schema ?? ""), [subjectOf(detail), bodyOf(detail)])
+  } catch (err) {
+    if (requestId !== templatePayloadRequestId || templatePath.value !== path) return
+    payloadLoadError.value = apiErrorMessage(err, copy.value.toasts.templateDetailLoadFailed)
+  } finally {
+    if (requestId === templatePayloadRequestId) payloadLoading.value = false
   }
-})
+}
+watch(templatePath, (path) => { void loadSendTemplate(path) })
+watch([payload, subject], () => { if (previewOpen.value) closePreview() })
 
 watch(statusFilter, () => {
   mailPage.value = 1
@@ -747,17 +778,23 @@ onMounted(async () => {
                 <span class="font-bold">{{ copy.subject }}</span>
                 <input v-model="subject" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-4" :placeholder="copy.subjectPlaceholder" />
               </label>
-              <label class="block">
+              <p v-if="payloadLoading" role="status" class="text-sm text-slate-500">{{ isZh ? '正在加载模板参数...' : 'Loading template parameters...' }}</p>
+              <div v-if="payloadLoadError" role="alert" class="text-sm text-red-600">
+                {{ payloadLoadError }}
+                <button type="button" class="ml-2 underline" @click="loadSendTemplate(templatePath)">{{ copy.refreshTemplates }}</button>
+              </div>
+              <NotificationParameters v-if="templatePath" ref="parametersRef" v-model="payload" :schema="String(sendTemplate?.parameter_schema ?? '')" :texts="[subjectOf(sendTemplate), bodyOf(sendTemplate)]" :raw-label="copy.payloadLabel" :disabled="payloadLoading || sending || !!payloadLoadError" />
+              <label v-else class="block">
                 <span class="font-bold">{{ templatePath ? copy.payloadLabel : copy.bodyLabel }}</span>
                 <textarea v-model="payload" class="mt-2 min-h-52 w-full rounded-xl border border-slate-200 p-4 font-mono text-sm" />
               </label>
               <div class="flex flex-col gap-3 sm:flex-row">
-                <button class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50 sm:w-auto" :disabled="sending" type="button" @click="sendMail">
+                <button class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50 sm:w-auto" :disabled="sending || payloadLoading || !!payloadLoadError || previewLoading" type="button" @click="sendMail">
                   <Loader2 v-if="sending" class="h-4 w-4 animate-spin" />
                   <Mail v-else class="h-4 w-4" />
                   {{ sending ? copy.sending : copy.sendMail }}
                 </button>
-                <button v-if="!templatePath" class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 font-bold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50 sm:w-auto" :disabled="sending" type="button" @click="openPreview">
+                <button class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 font-bold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50 sm:w-auto" :disabled="sending || payloadLoading || !!payloadLoadError || previewLoading" type="button" @click="openPreview">
                   <Eye class="h-4 w-4" />
                   {{ copy.previewMail }}
                 </button>
@@ -985,6 +1022,7 @@ onMounted(async () => {
               <p v-if="previewSubject" class="mt-1 break-words text-sm font-semibold text-slate-500">{{ copy.previewSubject }}: {{ previewSubject }}</p>
             </div>
             <button
+              ref="previewCloseRef"
               class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
               type="button"
               :aria-label="copy.close"
@@ -994,8 +1032,13 @@ onMounted(async () => {
             </button>
           </div>
           <div class="min-h-0 flex-1 bg-slate-100 p-3 md:p-5">
+            <p v-if="previewLoading" role="status" class="p-5 text-slate-500">{{ isZh ? '正在生成预览...' : 'Rendering preview...' }}</p>
+            <div v-else-if="previewError" role="alert" class="p-5 text-red-600">
+              {{ previewError }}
+              <button type="button" class="ml-2 underline" @click="openPreview">{{ isZh ? '重试' : 'Retry' }}</button>
+            </div>
             <iframe
-              v-if="previewHtml"
+              v-else-if="previewHtml"
               class="h-full min-h-[480px] w-full rounded-xl border border-slate-200 bg-white"
               sandbox=""
               referrerpolicy="no-referrer"
