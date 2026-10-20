@@ -50,7 +50,6 @@ export const zh = {
         refresh: "刷新",
         loading: "加载中",
         loadFailed: "工作台加载失败",
-        profileCompletion: "资料完整度",
         noRevenue: "暂无收款",
         summary: {
             totalUsers: "用户总数",

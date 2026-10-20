@@ -52,7 +52,6 @@ export const en: AdminTranslations = {
         refresh: "Refresh",
         loading: "Loading",
         loadFailed: "Dashboard failed to load",
-        profileCompletion: "Profile Completion",
         noRevenue: "No payments today",
         summary: {
             totalUsers: "Total Users",

@@ -53,7 +53,6 @@ type DashboardData = {
   candidate_total: number
   user_stats: UserStats
   user_role_stats: RoleStat[]
-  profile_completion_percent: number
   users: DashboardUser[]
   user_total: number
   user_page: number
@@ -80,7 +79,6 @@ const copy = computed(() => t.value.dashboard)
 const userStats = computed<UserStats>(() => data.value?.user_stats || { total: 0, active: 0, inactive: 0, admins: 0, members: 0, email_verified: 0 })
 const totalPipelines = computed(() => data.value?.stage_buckets.reduce((sum, item) => sum + Number(item.count || 0), 0) || 0)
 const totalPaidOrders = computed(() => data.value?.today_revenue.reduce((sum, item) => sum + Number(item.order_count || 0), 0) || 0)
-const profileCompletion = computed(() => Math.max(0, Math.min(100, Number(data.value?.profile_completion_percent || 0))))
 const userTotal = computed(() => Number(data.value?.user_total || data.value?.users.length || 0))
 const canPrevUsers = computed(() => userPage.value > 1)
 const canNextUsers = computed(() => userPage.value * userPageSize < userTotal.value)
@@ -231,16 +229,6 @@ onUnmounted(() => {
         </button>
       </div>
     </header>
-
-    <section class="mb-5 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm md:px-5">
-      <div class="mb-2 flex items-center justify-between text-sm font-black text-slate-700">
-        <span>{{ copy.profileCompletion }}</span>
-        <span class="text-blue-700">{{ profileCompletion }}%</span>
-      </div>
-      <div class="h-2 overflow-hidden rounded-full bg-slate-100">
-        <div class="h-full rounded-full bg-blue-700 transition-all" :style="{ width: `${profileCompletion}%` }" />
-      </div>
-    </section>
 
     <section class="mb-4 grid grid-cols-2 gap-3 md:grid-cols-2 md:gap-4 xl:grid-cols-5">
       <article v-for="card in summaryCards" :key="card.label" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
