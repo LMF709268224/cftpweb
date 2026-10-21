@@ -9,6 +9,8 @@ import (
 
 	"candbff/config"
 	"candbff/handler"
+	"github.com/afnandelfin620-star/cftptest/cftp/util"
+	"github.com/redis/go-redis/v9"
 )
 
 // Server 是 candbff 的核心结构
@@ -18,6 +20,7 @@ type Server struct {
 	httpServer    *http.Server
 	casdoor       *CasdoorClient
 	identityCache *userULIDCache
+	rdb           *redis.Client
 }
 
 func NewServer() *Server {
@@ -45,6 +48,10 @@ func (s *Server) Run(ctx context.Context) error {
 		return err
 	}
 	s.grpcPool = pool
+	s.rdb = redis.NewClient(&redis.Options{
+		Addr:     util.GetEndpointAddress("REDIS_ADDR", "redis-external", "6379"),
+		Password: s.config.SecretConfig.RedisPassword,
+	})
 
 	h := handler.New(
 		pool.Lms,
@@ -63,6 +70,7 @@ func (s *Server) Run(ctx context.Context) error {
 		s.config.SecretConfig.Casdoor.AppName,
 		s.config.SecretConfig.Casdoor.OrgName,
 	)
+	h.Rdb = s.rdb
 	serverErr := s.serveHTTP(s.buildRouter(h))
 
 	select {
@@ -84,5 +92,9 @@ func (s *Server) gracefulShutdown() {
 		s.grpcPool.Close()
 		slog.Info("gRPC client connections closed")
 		s.grpcPool = nil
+	}
+	if s.rdb != nil {
+		_ = s.rdb.Close()
+		s.rdb = nil
 	}
 }

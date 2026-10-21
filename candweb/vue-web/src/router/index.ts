@@ -7,6 +7,7 @@ import { useUser } from "@/lib/user"
 
 const PublicMarketplacePage = () => import("@/pages/PublicMarketplacePage.vue")
 const CallbackPage = () => import("@/pages/CallbackPage.vue")
+const EmailConfirmPage = () => import("@/pages/EmailConfirmPage.vue")
 const HomePage = () => import("@/pages/HomePage.vue")
 const CoursesPage = () => import("@/pages/CoursesPage.vue")
 const MyCertificationsPage = () => import("@/pages/MyCertificationsPage.vue")
@@ -115,6 +116,7 @@ export const router = createRouter({
         { path: "/marketplace", component: PublicMarketplacePage, meta: { titleKey: "marketplace" } },
         { path: "/login", component: PublicMarketplacePage, meta: { titleKey: "login" } },
         { path: "/callback", component: CallbackPage, meta: { titleKey: "callback" } },
+        { path: "/email-confirm", component: EmailConfirmPage, meta: { titleKey: "settings" } },
         { path: "/dashboard", component: HomePage, meta: { titleKey: "home", requiresAuth: true } },
         { path: "/certifications", component: CoursesPage, meta: { titleKey: "marketplace" } },
         { path: "/my-certifications", component: MyCertificationsPage, meta: { titleKey: "myCertifications", requiresAuth: true } },

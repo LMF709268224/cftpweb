@@ -29,7 +29,8 @@ type CasdoorConfig struct {
 }
 
 type SecretConfig struct {
-	Casdoor CasdoorConfig `json:"Casdoor"`
+	Casdoor       CasdoorConfig `json:"Casdoor"`
+	RedisPassword string        `json:"RedisPassword"`
 }
 
 type Config struct {

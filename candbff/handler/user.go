@@ -1,9 +1,17 @@
 package handler
 
 import (
+	"bytes"
 	"context"
+	"crypto/rand"
+	"encoding/hex"
+	"image"
+	_ "image/jpeg"
+	_ "image/png"
+	"io"
 	"log/slog"
 	"net/http"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -16,8 +24,11 @@ import (
 
 type profileUserStore interface {
 	GetUser(name string) (*casdoorsdk.User, error)
+	GetUserByEmail(email string) (*casdoorsdk.User, error)
 	GetUserByPhone(phone string) (*casdoorsdk.User, error)
 	UpdateUser(user *casdoorsdk.User) (bool, error)
+	UploadResource(user, tag, parent, path string, data []byte) (string, string, error)
+	SendEmail(title, content, sender string, receivers ...string) error
 }
 
 type casdoorProfileUserStore struct{}
@@ -26,12 +37,24 @@ func (casdoorProfileUserStore) GetUser(name string) (*casdoorsdk.User, error) {
 	return casdoorsdk.GetUser(name)
 }
 
+func (casdoorProfileUserStore) GetUserByEmail(email string) (*casdoorsdk.User, error) {
+	return casdoorsdk.GetUserByEmail(email)
+}
+
 func (casdoorProfileUserStore) GetUserByPhone(phone string) (*casdoorsdk.User, error) {
 	return casdoorsdk.GetUserByPhone(phone)
 }
 
 func (casdoorProfileUserStore) UpdateUser(user *casdoorsdk.User) (bool, error) {
 	return casdoorsdk.UpdateUser(user)
+}
+
+func (casdoorProfileUserStore) UploadResource(user, tag, parent, path string, data []byte) (string, string, error) {
+	return casdoorsdk.UploadResource(user, tag, parent, path, data)
+}
+
+func (casdoorProfileUserStore) SendEmail(title, content, sender string, receivers ...string) error {
+	return casdoorsdk.SendEmail(title, content, sender, receivers...)
 }
 
 func (h *Handler) getProfileUserStore() profileUserStore {
@@ -69,6 +92,8 @@ func (h *Handler) GetUserMe(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, UserMeRsp{
 		Name:             fullUser.Name,
 		Email:            fullUser.Email,
+		Avatar:           fullUser.Avatar,
+		Language:         fullUser.Language,
 		DisplayName:      fullUser.DisplayName,
 		FirstName:        fullUser.FirstName,
 		LastName:         fullUser.LastName,
@@ -266,7 +291,6 @@ func (h *Handler) UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
 	// We no longer update email through this general profile endpoint.
 	// Email updates have a dedicated endpoint with verification.
 
-	fullUser.DisplayName = input.DisplayName
 	fullUser.FirstName = input.FirstName
 	fullUser.LastName = input.LastName
 	fullUser.CountryCode = input.PhoneCountryCode
@@ -276,7 +300,6 @@ func (h *Handler) UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
 	fullUser.Address = addressFromProfile(input.Address, input.Province)
 	fullUser.Affiliation = input.Affiliation
 	fullUser.Title = input.Title
-	fullUser.RealName = input.RealName
 	fullUser.Bio = input.Bio
 	fullUser.Gender = input.Gender
 	fullUser.Birthday = input.Birthday
@@ -284,16 +307,94 @@ func (h *Handler) UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
 
 	setUserProperty(fullUser, userPropProvince, input.Province)
 	setUserProperty(fullUser, userPropPostalCode, input.PostalCode)
-	setUserProperty(fullUser, userPropRealName, input.RealName)
-	setUserProperty(fullUser, userPropRealNameV2, input.RealName)
-
-	if _, err := users.UpdateUser(fullUser); err != nil {
+	if updated, err := users.UpdateUser(fullUser); err != nil || !updated {
 		slog.Error("Failed to update user", "error", err)
 		WriteError(w, http.StatusInternalServerError, ErrProfileUpdateFailed, "failed to update user profile")
 		return
 	}
 
 	WriteJSON(w, http.StatusOK, BaseRsp{Code: 0, Msg: "success"})
+}
+
+// UpdateUserLanguage PUT /api/user/language
+func (h *Handler) UpdateUserLanguage(w http.ResponseWriter, r *http.Request) {
+	var input UserLanguageInput
+	if err := ReadJSON(r, &input); err != nil || (input.Language != "zh" && input.Language != "en") {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "language must be zh or en")
+		return
+	}
+	users := h.getProfileUserStore()
+	fullUser, err := users.GetUser(CandidateName(r))
+	if err != nil || fullUser == nil {
+		WriteError(w, http.StatusServiceUnavailable, ErrServiceUnavailable, "failed to load user")
+		return
+	}
+	fullUser.Language = input.Language
+	if updated, err := users.UpdateUser(fullUser); err != nil || !updated {
+		WriteError(w, http.StatusBadGateway, ErrProfileUpdateFailed, "failed to update language")
+		return
+	}
+	WriteJSON(w, http.StatusOK, BaseRsp{Code: 0, Msg: "success"})
+}
+
+const maxAvatarBytes = 2 << 20
+
+// UploadUserAvatar POST /api/user/avatar
+func (h *Handler) UploadUserAvatar(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, maxAvatarBytes+1024)
+	if err := r.ParseMultipartForm(maxAvatarBytes); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "avatar must be a JPEG or PNG under 2 MB")
+		return
+	}
+	file, _, err := r.FormFile("avatar")
+	if err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "avatar file is required")
+		return
+	}
+	defer file.Close()
+	data, err := io.ReadAll(io.LimitReader(file, maxAvatarBytes+1))
+	if err != nil || len(data) == 0 || len(data) > maxAvatarBytes {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "avatar must be under 2 MB")
+		return
+	}
+	contentType := http.DetectContentType(data)
+	if contentType != "image/jpeg" && contentType != "image/png" {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "avatar must be a JPEG or PNG")
+		return
+	}
+	config, format, err := image.DecodeConfig(bytes.NewReader(data))
+	if err != nil || config.Width < 1 || config.Height < 1 || config.Width > 4096 || config.Height > 4096 || (format != "jpeg" && format != "png") {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid avatar image")
+		return
+	}
+	users := h.getProfileUserStore()
+	fullUser, err := users.GetUser(CandidateName(r))
+	if err != nil || fullUser == nil {
+		WriteError(w, http.StatusServiceUnavailable, ErrServiceUnavailable, "failed to load user")
+		return
+	}
+	random := make([]byte, 12)
+	if _, err := rand.Read(random); err != nil {
+		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to prepare avatar")
+		return
+	}
+	extension := ".jpg"
+	if format == "png" {
+		extension = ".png"
+	}
+	path := filepath.ToSlash(filepath.Join("avatars", hex.EncodeToString(random)+extension))
+	avatarURL, _, err := users.UploadResource(fullUser.Name, "avatar", "", path, data)
+	if err != nil || avatarURL == "" {
+		slog.Error("Failed to upload avatar", "error", err)
+		WriteError(w, http.StatusBadGateway, ErrProfileUpdateFailed, "failed to upload avatar")
+		return
+	}
+	fullUser.Avatar = avatarURL
+	if updated, err := users.UpdateUser(fullUser); err != nil || !updated {
+		WriteError(w, http.StatusBadGateway, ErrProfileUpdateFailed, "failed to update avatar")
+		return
+	}
+	WriteJSON(w, http.StatusOK, map[string]string{"avatar": avatarURL})
 }
 
 // UpdateUserPassword PUT /api/user/password

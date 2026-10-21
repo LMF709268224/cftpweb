@@ -12,15 +12,23 @@ import (
 
 type fakeProfileUserStore struct {
 	current          *casdoorsdk.User
+	emailUser        *casdoorsdk.User
 	phoneUser        *casdoorsdk.User
 	phoneLookupError error
 	lookupPhone      string
 	phoneLookupCalls int
 	updateCalls      int
+	sentEmails       []string
+	sentContents     []string
+	avatarUploads    int
 }
 
 func (store *fakeProfileUserStore) GetUser(string) (*casdoorsdk.User, error) {
 	return store.current, nil
+}
+
+func (store *fakeProfileUserStore) GetUserByEmail(string) (*casdoorsdk.User, error) {
+	return store.emailUser, nil
 }
 
 func (store *fakeProfileUserStore) GetUserByPhone(phone string) (*casdoorsdk.User, error) {
@@ -32,6 +40,17 @@ func (store *fakeProfileUserStore) GetUserByPhone(phone string) (*casdoorsdk.Use
 func (store *fakeProfileUserStore) UpdateUser(*casdoorsdk.User) (bool, error) {
 	store.updateCalls++
 	return true, nil
+}
+
+func (store *fakeProfileUserStore) UploadResource(_, _, _, _ string, _ []byte) (string, string, error) {
+	store.avatarUploads++
+	return "https://example.com/avatar.png", "avatar.png", nil
+}
+
+func (store *fakeProfileUserStore) SendEmail(_, content, _ string, receivers ...string) error {
+	store.sentEmails = append(store.sentEmails, receivers...)
+	store.sentContents = append(store.sentContents, content)
+	return nil
 }
 
 func updateProfileRequest(body string) *http.Request {

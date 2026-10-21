@@ -54,6 +54,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 		r.Post("/login", h.Login)
 		r.Post("/logout", h.Logout)
 		r.Post("/refresh", h.RefreshToken)
+		r.Post("/email/confirm", h.ConfirmEmailChange)
 	})
 
 	r.With(s.authMiddleware, pdfPreviewTimeout).Get("/api/pipeline/resource-preview", h.PreviewResourceURL)
@@ -97,6 +98,10 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Route("/user", func(r chi.Router) {
 				r.Get("/me", h.GetUserMe)
 				r.Put("/profile", h.UpdateUserProfile)
+				r.Put("/language", h.UpdateUserLanguage)
+				r.Post("/avatar", h.UploadUserAvatar)
+				r.Post("/email/send-code", h.SendEmailChangeCode)
+				r.Post("/email/request", h.RequestEmailChange)
 				r.Put("/password", h.UpdateUserPassword)
 			})
 

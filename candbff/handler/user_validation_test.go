@@ -42,19 +42,19 @@ func TestUserHandlersRejectInvalidRequestsBeforeCallingCasdoor(t *testing.T) {
 
 func TestNormalizeAndValidateUserProfileInput(t *testing.T) {
 	input := UserProfileInput{
-		DisplayName: "  Candidate Name  ",
-		Phone:       " +65 9123-4567 ",
-		HomePhone:   " +65 6123 4567 ",
-		PostalCode:  " 123 456 ",
-		Gender:      " Female ",
-		Province:    " Singapore ",
+		FirstName:  "  Candidate Name  ",
+		Phone:      " +65 9123-4567 ",
+		HomePhone:  " +65 6123 4567 ",
+		PostalCode: " 123 456 ",
+		Gender:     " Female ",
+		Province:   " Singapore ",
 	}
 
 	if err := normalizeAndValidateUserProfileInput(&input); err != nil {
 		t.Fatalf("normalize profile: %v", err)
 	}
-	if input.DisplayName != "Candidate Name" {
-		t.Fatalf("display_name = %q", input.DisplayName)
+	if input.FirstName != "Candidate Name" {
+		t.Fatalf("first_name = %q", input.FirstName)
 	}
 	if input.Phone != "+6591234567" || input.HomePhone != "+6561234567" {
 		t.Fatalf("phones = (%q, %q)", input.Phone, input.HomePhone)
@@ -84,8 +84,8 @@ func TestNormalizeAndValidateUserProfileInputRejectsInvalidAndOversizedValues(t 
 			input: UserProfileInput{PostalCode: "***"},
 		},
 		{
-			name:  "oversized display name",
-			input: UserProfileInput{DisplayName: strings.Repeat("a", profileNameTextMax+1)},
+			name:  "oversized first name",
+			input: UserProfileInput{FirstName: strings.Repeat("a", profileNameTextMax+1)},
 		},
 	}
 

@@ -27,6 +27,8 @@ type UserInfo struct {
 type UserMeRsp struct {
 	Name             string               `json:"name"`
 	Email            string               `json:"email"`
+	Avatar           string               `json:"avatar"`
+	Language         string               `json:"language"`
 	DisplayName      string               `json:"display_name"`
 	FirstName        string               `json:"first_name"`
 	LastName         string               `json:"last_name"`
@@ -91,8 +93,6 @@ type UserQualificationStatusRsp struct {
 }
 
 type UserProfileInput struct {
-	Email            string `json:"email"`
-	DisplayName      string `json:"display_name"`
 	FirstName        string `json:"first_name"`
 	LastName         string `json:"last_name"`
 	PhoneCountryCode string `json:"phone_country_code"`
@@ -105,7 +105,6 @@ type UserProfileInput struct {
 	PostalCode       string `json:"postal_code"`
 	Affiliation      string `json:"affiliation"`
 	Title            string `json:"title"`
-	RealName         string `json:"real_name"`
 	Bio              string `json:"bio"`
 	Gender           string `json:"gender"`
 	Birthday         string `json:"birthday"`
@@ -115,6 +114,10 @@ type UserProfileInput struct {
 type UserPasswordInput struct {
 	OldPassword string `json:"old_password"`
 	NewPassword string `json:"new_password"`
+}
+
+type UserLanguageInput struct {
+	Language string `json:"language"`
 }
 
 type BaseRsp struct {

@@ -1,6 +1,7 @@
 import { ref } from "vue"
 import { apiClient } from "./apiClient"
 import { isAuthenticated } from "./authStorage"
+import { applyAccountLanguage } from "./language"
 
 export interface UserProfile {
   id: string
@@ -11,6 +12,7 @@ export interface UserProfile {
   work_phone_country_code?: string
   work_phone?: string
   avatar: string
+  language?: string
   account_status?: UserAccountStatus
   [key: string]: any
 }
@@ -73,6 +75,7 @@ export function useUser() {
         // /api/user/me returns the candidate info from casdoor
         const res = await apiClient("/api/user/me")
         currentUser.value = res as UserProfile
+        if (!hasLoaded.value) applyAccountLanguage(currentUser.value.language)
         hasLoaded.value = true
         return currentUser.value
       } catch (err) {

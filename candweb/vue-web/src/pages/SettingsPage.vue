@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from "vue"
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
 import { Loader2, Settings } from "lucide-vue-next"
@@ -31,13 +31,12 @@ import { useUser } from "@/lib/user"
 
 const route = useRoute()
 const router = useRouter()
-const { t, lang } = useTranslation()
+const { t, lang, changeLanguage } = useTranslation()
 const { fetchUser } = useUser()
 const activeTab = ref(String(route.query.tab || "profile"))
 const profile = reactive({
-  name: "",
-  displayName: "",
   email: "",
+  avatar: "",
   firstName: "",
   lastName: "",
   homePhone: "",
@@ -52,13 +51,103 @@ const profile = reactive({
   postalCode: "",
   affiliation: "",
   title: "",
-  realName: "",
   bio: "",
   education: "",
 })
 const password = reactive({ oldPassword: "", newPassword: "", confirmPassword: "" })
+const emailChange = reactive({ newEmail: "", code: "", codeSent: false, linksSent: false })
+const isEmailCodeLoading = ref(false)
+const isEmailRequestLoading = ref(false)
 const isProfileLoading = ref(false)
 const isPasswordLoading = ref(false)
+const avatarInput = ref<HTMLInputElement | null>(null)
+const avatarFile = ref<File | null>(null)
+const avatarCanvas = ref<HTMLCanvasElement | null>(null)
+const avatarImage = ref<HTMLImageElement | null>(null)
+const avatarPreviewURL = ref("")
+const avatarZoom = ref(1)
+const avatarX = ref(50)
+const avatarY = ref(50)
+const isAvatarUploading = ref(false)
+
+function renderAvatarCrop() {
+  const image = avatarImage.value
+  const canvas = avatarCanvas.value
+  if (!image || !canvas) return
+  const ctx = canvas.getContext("2d")
+  if (!ctx) return
+  const side = Math.min(image.naturalWidth, image.naturalHeight) / avatarZoom.value
+  const left = (image.naturalWidth - side) * avatarX.value / 100
+  const top = (image.naturalHeight - side) * avatarY.value / 100
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+  ctx.drawImage(image, left, top, side, side, 0, 0, canvas.width, canvas.height)
+}
+
+function resetAvatarSelection() {
+  if (avatarPreviewURL.value) URL.revokeObjectURL(avatarPreviewURL.value)
+  avatarPreviewURL.value = ""
+  avatarFile.value = null
+  avatarImage.value = null
+  if (avatarInput.value) avatarInput.value.value = ""
+}
+
+function selectAvatar(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  if (!["image/jpeg", "image/png"].includes(file.type) || file.size > 2 * 1024 * 1024) {
+    toast.error(t.value.settings.avatarInvalid)
+    resetAvatarSelection()
+    return
+  }
+  resetAvatarSelection()
+  avatarFile.value = file
+  avatarPreviewURL.value = URL.createObjectURL(file)
+  avatarZoom.value = 1
+  avatarX.value = 50
+  avatarY.value = 50
+  const image = new Image()
+  const previewURL = avatarPreviewURL.value
+  image.onload = () => {
+    if (avatarPreviewURL.value !== previewURL) return
+    avatarImage.value = image
+    renderAvatarCrop()
+  }
+  image.onerror = () => {
+    if (avatarPreviewURL.value !== previewURL) return
+    toast.error(t.value.settings.avatarInvalid)
+    resetAvatarSelection()
+  }
+  image.src = previewURL
+}
+
+async function uploadAvatar() {
+  if (!avatarFile.value || isAvatarUploading.value) return
+  isAvatarUploading.value = true
+  try {
+    const canvas = avatarCanvas.value
+    if (!canvas || !avatarImage.value) return
+    const cropped = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"))
+    if (!cropped) throw new Error("failed to crop avatar")
+    const body = new FormData()
+    body.append("avatar", cropped, "avatar.png")
+    const result = await apiClient("/api/user/avatar", { method: "POST", body })
+    profile.avatar = String(result.avatar || "")
+    await fetchUser(true)
+    resetAvatarSelection()
+    toast.success(t.value.settings.avatarUpdated)
+  } catch {
+    // apiClient displays the error.
+  } finally {
+    isAvatarUploading.value = false
+  }
+}
+
+function updatePreferredLanguage(event: Event) {
+  const value = (event.target as HTMLSelectElement).value
+  if (value === "zh" || value === "en") changeLanguage(value)
+}
+
+onBeforeUnmount(resetAvatarSelection)
 
 const selectedCountryCode = ref("")
 const selectedProvinceCode = ref("")
@@ -210,8 +299,6 @@ function handleProvinceChange() {
 }
 
 function sanitizeProfileForm() {
-  profile.displayName = trimToMax(profile.displayName, PROFILE_TEXT_LIMITS.name)
-  profile.realName = trimToMax(profile.realName, PROFILE_TEXT_LIMITS.name)
   profile.firstName = trimToMax(profile.firstName, PROFILE_TEXT_LIMITS.name)
   profile.lastName = trimToMax(profile.lastName, PROFILE_TEXT_LIMITS.name)
   profile.gender = normalizeGender(profile.gender)
@@ -254,9 +341,8 @@ onMounted(async () => {
   try {
     const payload = await apiClient("/api/user/me")
     if (payload) {
-      profile.name = payload.name || ""
-      profile.displayName = payload.display_name || ""
       profile.email = payload.email || ""
+      profile.avatar = payload.avatar || ""
       profile.firstName = payload.first_name || ""
       profile.lastName = payload.last_name || ""
       profile.homePhone = payload.home_phone || payload.phone || ""
@@ -271,7 +357,6 @@ onMounted(async () => {
       profile.postalCode = payload.postal_code || ""
       profile.affiliation = payload.affiliation || ""
       profile.title = payload.title || ""
-      profile.realName = payload.real_name || ""
       profile.bio = payload.bio || ""
       profile.education = payload.education || ""
       await locationReady
@@ -313,7 +398,6 @@ async function handleUpdateProfile() {
   ))
 
   const requiredFields = [
-    [profile.email, t.value.settings.email],
     [profile.firstName, t.value.settings.firstName],
     [profile.lastName, t.value.settings.lastName],
     [profile.gender, t.value.settings.gender],
@@ -343,8 +427,6 @@ async function handleUpdateProfile() {
     await apiClient("/api/user/profile", {
       method: "PUT",
       body: JSON.stringify({
-        display_name: profile.displayName,
-        email: profile.email,
         first_name: profile.firstName,
         last_name: profile.lastName,
         home_phone: profile.homePhone,
@@ -359,17 +441,12 @@ async function handleUpdateProfile() {
         postal_code: profile.postalCode,
         affiliation: profile.affiliation,
         title: profile.title,
-        real_name: profile.realName,
         bio: profile.bio,
         education: profile.education,
       }),
     })
     await fetchUser(true)
     toast.success(getMessage("PROFILE_UPDATE_SUCCESS", lang.value))
-    if (profile.displayName) {
-      localStorage.setItem("user_name", profile.displayName)
-      window.dispatchEvent(new Event("storage"))
-    }
   } catch (e) {
     // Error is handled by apiClient toast
   } finally {
@@ -406,6 +483,42 @@ async function handleUpdatePassword() {
     // Error is handled by apiClient toast
   } finally {
     isPasswordLoading.value = false
+  }
+}
+
+async function sendEmailChangeCode() {
+  if (isEmailCodeLoading.value) return
+  isEmailCodeLoading.value = true
+  try {
+    await apiClient("/api/user/email/send-code", { method: "POST" })
+    emailChange.codeSent = true
+    toast.success(t.value.settings.emailCodeSent)
+  } catch {
+    // apiClient displays the error.
+  } finally {
+    isEmailCodeLoading.value = false
+  }
+}
+
+async function requestEmailChange() {
+  if (isEmailRequestLoading.value) return
+  if (!emailChange.newEmail.trim() || !/^\d{6}$/.test(emailChange.code)) {
+    toast.error(t.value.settings.emailChangeInvalid)
+    return
+  }
+  isEmailRequestLoading.value = true
+  try {
+    await apiClient("/api/user/email/request", {
+      method: "POST",
+      body: JSON.stringify({ new_email: emailChange.newEmail.trim(), code: emailChange.code }),
+    })
+    emailChange.linksSent = true
+    emailChange.code = ""
+    toast.success(t.value.settings.emailLinksSent)
+  } catch {
+    // apiClient displays the error.
+  } finally {
+    isEmailRequestLoading.value = false
   }
 }
 
@@ -447,18 +560,39 @@ async function handleUpdatePassword() {
           <h2 class="text-xl font-semibold leading-none tracking-tight">{{ t.settings.profileTab }}</h2>
           <p class="text-sm text-muted-foreground">{{ t.settings.profileDesc }}</p>
         </div>
-        <div class="settings-section-content p-6 pt-0">
+    <div class="settings-section-content p-6 pt-0">
+        <div class="mb-6 flex flex-wrap items-center gap-4 border-b border-border pb-6">
+          <div class="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-2xl font-semibold text-primary">
+            <img v-if="profile.avatar" :src="profile.avatar" class="h-full w-full object-cover" :alt="t.settings.avatar" />
+            <span v-else>{{ (profile.firstName || profile.lastName || '?').charAt(0).toUpperCase() }}</span>
+          </div>
+          <div class="flex min-w-0 flex-col gap-2">
+            <span class="text-sm font-medium">{{ t.settings.avatar }}</span>
+            <input ref="avatarInput" class="sr-only" type="file" accept="image/png,image/jpeg" :aria-label="t.settings.avatar" @change="selectAvatar" />
+            <div class="flex flex-wrap gap-2">
+              <button type="button" class="btn btn-outline" @click="avatarInput?.click()">{{ t.settings.chooseAvatar }}</button>
+              <button v-if="avatarFile" type="button" class="btn btn-primary" :disabled="isAvatarUploading || !avatarImage" @click="uploadAvatar">
+                <Loader2 v-if="isAvatarUploading" class="h-4 w-4 animate-spin" />{{ t.settings.saveAvatar }}
+              </button>
+            </div>
+            <span class="text-xs text-muted-foreground">{{ t.settings.avatarHint }}</span>
+          </div>
+        </div>
+        <div v-show="avatarFile" class="mb-6 max-w-sm space-y-3 border-b border-border pb-6">
+          <canvas ref="avatarCanvas" width="256" height="256" class="aspect-square w-48 border border-border object-contain" :aria-label="t.settings.avatarCropPreview" />
+          <label class="block space-y-1 text-sm"><span>{{ t.settings.avatarZoom }}</span><input v-model.number="avatarZoom" class="w-full accent-primary" type="range" min="1" max="3" step="0.05" @input="renderAvatarCrop" /></label>
+          <label class="block space-y-1 text-sm"><span>{{ t.settings.avatarHorizontal }}</span><input v-model.number="avatarX" class="w-full accent-primary" type="range" min="0" max="100" step="1" @input="renderAvatarCrop" /></label>
+          <label class="block space-y-1 text-sm"><span>{{ t.settings.avatarVertical }}</span><input v-model.number="avatarY" class="w-full accent-primary" type="range" min="0" max="100" step="1" @input="renderAvatarCrop" /></label>
+        </div>
         <form class="settings-form max-w-2xl space-y-4" novalidate @submit.prevent="handleUpdateProfile">
           <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.loginId }}</span><input v-model="profile.name" class="input bg-muted" disabled /></label>
-            <label class="space-y-2">
-              <span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.email }}</span>
-              <input v-model="profile.email" class="input bg-muted" disabled required />
-            </label>
-            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.displayName }}</span><input v-model="profile.displayName" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" :placeholder="t.settings.displayNamePlaceholder" /></label>
-            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.realName }}</span><input v-model="profile.realName" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" :placeholder="t.settings.realNamePlaceholder" /></label>
             <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.firstName }}</span><input v-model="profile.firstName" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" :placeholder="t.settings.firstNamePlaceholder" required /></label>
             <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.lastName }}</span><input v-model="profile.lastName" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" :placeholder="t.settings.lastNamePlaceholder" required /></label>
+            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.languagePreference }}</span>
+              <select class="input cursor-pointer" :value="lang" @change="updatePreferredLanguage">
+                <option value="zh">中文</option><option value="en">English</option>
+              </select>
+            </label>
             <label class="space-y-2">
               <span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.gender }}</span>
               <select v-model="profile.gender" class="input cursor-pointer" required>
@@ -529,6 +663,25 @@ async function handleUpdatePassword() {
         </div>
       </div>
       <div v-if="activeTab === 'account'" class="settings-panel rounded-md bg-white text-card-foreground">
+        <div class="settings-section-header flex flex-col space-y-1.5 p-6">
+          <h2 class="text-xl font-semibold leading-none tracking-tight">{{ t.settings.email }}</h2>
+          <p class="text-sm text-muted-foreground">{{ profile.email || '-' }}</p>
+        </div>
+        <div class="settings-section-header flex flex-col space-y-1.5 p-6">
+          <h2 class="text-xl font-semibold leading-none">{{ t.settings.changeEmail }}</h2>
+          <p class="text-sm text-muted-foreground">{{ t.settings.changeEmailDesc }}</p>
+        </div>
+        <div class="settings-section-content p-6 pt-0">
+          <form class="settings-form max-w-xl space-y-4" @submit.prevent="requestEmailChange">
+            <label class="block space-y-2"><span class="text-sm font-medium">{{ t.settings.newEmail }}</span><input v-model="emailChange.newEmail" class="input" type="email" autocomplete="email" required /></label>
+            <div class="flex flex-wrap items-end gap-3">
+              <label class="min-w-[180px] flex-1 space-y-2"><span class="text-sm font-medium">{{ t.settings.oldEmailCode }}</span><input v-model="emailChange.code" class="input" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required /></label>
+              <button type="button" class="btn btn-outline" :disabled="isEmailCodeLoading" @click="sendEmailChangeCode"><Loader2 v-if="isEmailCodeLoading" class="mr-2 h-4 w-4 animate-spin" />{{ t.settings.sendOldEmailCode }}</button>
+            </div>
+            <button class="btn btn-primary" :disabled="isEmailRequestLoading || !emailChange.codeSent"><Loader2 v-if="isEmailRequestLoading" class="mr-2 h-4 w-4 animate-spin" />{{ t.settings.sendEmailLinks }}</button>
+            <p v-if="emailChange.linksSent" class="text-sm text-muted-foreground" role="status">{{ t.settings.emailLinksSent }}</p>
+          </form>
+        </div>
         <div class="settings-section-header flex flex-col space-y-1.5 p-6">
           <h2 class="text-xl font-semibold leading-none tracking-tight">{{ t.settings.updatePassword }}</h2>
           <p class="text-sm text-muted-foreground">{{ t.settings.updatePasswordDesc }}</p>

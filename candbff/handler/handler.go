@@ -14,6 +14,7 @@ import (
 	gmsgpb "github.com/afnandelfin620-star/cftptest/cftp/gmsg"
 	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
 	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
+	"github.com/redis/go-redis/v9"
 )
 
 // ── Context 键 ──
@@ -45,6 +46,7 @@ type Handler struct {
 	CasdoorClientSecret string
 	CasdoorAppName      string
 	CasdoorOrgName      string
+	Rdb                 *redis.Client
 	profileUsers        profileUserStore
 }
 
