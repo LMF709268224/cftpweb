@@ -55,9 +55,10 @@ const profile = reactive({
   education: "",
 })
 const password = reactive({ oldPassword: "", newPassword: "", confirmPassword: "" })
-const emailChange = reactive({ newEmail: "", code: "", codeSent: false, linksSent: false })
+const emailChange = reactive({ newEmail: "", oldCode: "", newCode: "", oldCodeSent: false, newCodeSent: false })
 const isEmailCodeLoading = ref(false)
-const isEmailRequestLoading = ref(false)
+const isNewEmailCodeLoading = ref(false)
+const isEmailConfirmLoading = ref(false)
 const isProfileLoading = ref(false)
 const isPasswordLoading = ref(false)
 const avatarInput = ref<HTMLInputElement | null>(null)
@@ -491,7 +492,7 @@ async function sendEmailChangeCode() {
   isEmailCodeLoading.value = true
   try {
     await apiClient("/api/user/email/send-code", { method: "POST" })
-    emailChange.codeSent = true
+    emailChange.oldCodeSent = true
     toast.success(t.value.settings.emailCodeSent)
   } catch {
     // apiClient displays the error.
@@ -500,25 +501,51 @@ async function sendEmailChangeCode() {
   }
 }
 
-async function requestEmailChange() {
-  if (isEmailRequestLoading.value) return
-  if (!emailChange.newEmail.trim() || !/^\d{6}$/.test(emailChange.code)) {
+async function sendNewEmailCode() {
+  if (isNewEmailCodeLoading.value) return
+  if (!emailChange.newEmail.trim()) {
     toast.error(t.value.settings.emailChangeInvalid)
     return
   }
-  isEmailRequestLoading.value = true
+  isNewEmailCodeLoading.value = true
   try {
-    await apiClient("/api/user/email/request", {
+    await apiClient("/api/user/email/send-new-code", {
       method: "POST",
-      body: JSON.stringify({ new_email: emailChange.newEmail.trim(), code: emailChange.code }),
+      body: JSON.stringify({ new_email: emailChange.newEmail.trim() }),
     })
-    emailChange.linksSent = true
-    emailChange.code = ""
-    toast.success(t.value.settings.emailLinksSent)
+    emailChange.newCodeSent = true
+    toast.success(t.value.settings.newEmailCodeSent)
   } catch {
     // apiClient displays the error.
   } finally {
-    isEmailRequestLoading.value = false
+    isNewEmailCodeLoading.value = false
+  }
+}
+
+watch(() => emailChange.newEmail, () => {
+  emailChange.newCode = ""
+  emailChange.newCodeSent = false
+})
+
+async function confirmEmailChange() {
+  if (isEmailConfirmLoading.value) return
+  if (!emailChange.newEmail.trim() || !/^\d{6}$/.test(emailChange.oldCode) || !/^\d{6}$/.test(emailChange.newCode)) {
+    toast.error(t.value.settings.emailChangeInvalid)
+    return
+  }
+  isEmailConfirmLoading.value = true
+  try {
+    await apiClient("/api/user/email/confirm", {
+      method: "POST",
+      body: JSON.stringify({ new_email: emailChange.newEmail.trim(), old_code: emailChange.oldCode, new_code: emailChange.newCode }),
+    })
+    clearAuthSession()
+    toast.success(t.value.settings.emailChanged)
+    await router.replace("/login")
+  } catch {
+    // apiClient displays the error.
+  } finally {
+    isEmailConfirmLoading.value = false
   }
 }
 
@@ -672,14 +699,17 @@ async function requestEmailChange() {
           <p class="text-sm text-muted-foreground">{{ t.settings.changeEmailDesc }}</p>
         </div>
         <div class="settings-section-content p-6 pt-0">
-          <form class="settings-form max-w-xl space-y-4" @submit.prevent="requestEmailChange">
+          <form class="settings-form max-w-xl space-y-4" @submit.prevent="confirmEmailChange">
             <label class="block space-y-2"><span class="text-sm font-medium">{{ t.settings.newEmail }}</span><input v-model="emailChange.newEmail" class="input" type="email" autocomplete="email" required /></label>
             <div class="flex flex-wrap items-end gap-3">
-              <label class="min-w-[180px] flex-1 space-y-2"><span class="text-sm font-medium">{{ t.settings.oldEmailCode }}</span><input v-model="emailChange.code" class="input" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required /></label>
+              <label class="min-w-[180px] flex-1 space-y-2"><span class="text-sm font-medium">{{ t.settings.oldEmailCode }}</span><input v-model="emailChange.oldCode" class="input" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required /></label>
               <button type="button" class="btn btn-outline" :disabled="isEmailCodeLoading" @click="sendEmailChangeCode"><Loader2 v-if="isEmailCodeLoading" class="mr-2 h-4 w-4 animate-spin" />{{ t.settings.sendOldEmailCode }}</button>
             </div>
-            <button class="btn btn-primary" :disabled="isEmailRequestLoading || !emailChange.codeSent"><Loader2 v-if="isEmailRequestLoading" class="mr-2 h-4 w-4 animate-spin" />{{ t.settings.sendEmailLinks }}</button>
-            <p v-if="emailChange.linksSent" class="text-sm text-muted-foreground" role="status">{{ t.settings.emailLinksSent }}</p>
+            <div class="flex flex-wrap items-end gap-3">
+              <label class="min-w-[180px] flex-1 space-y-2"><span class="text-sm font-medium">{{ t.settings.newEmailCode }}</span><input v-model="emailChange.newCode" class="input" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required /></label>
+              <button type="button" class="btn btn-outline" :disabled="isNewEmailCodeLoading || !emailChange.newEmail.trim()" @click="sendNewEmailCode"><Loader2 v-if="isNewEmailCodeLoading" class="mr-2 h-4 w-4 animate-spin" />{{ t.settings.sendNewEmailCode }}</button>
+            </div>
+            <button class="btn btn-primary" :disabled="isEmailConfirmLoading || !emailChange.oldCodeSent || !emailChange.newCodeSent"><Loader2 v-if="isEmailConfirmLoading" class="mr-2 h-4 w-4 animate-spin" />{{ t.settings.confirmEmailChange }}</button>
           </form>
         </div>
         <div class="settings-section-header flex flex-col space-y-1.5 p-6">

@@ -66,10 +66,6 @@ const (
 	// ── CORS ──
 	// CORS_ALLOWED_ORIGINS  允许的跨域来源，逗号分隔，默认 "*" 允许所有
 	EnvCORSOrigins = "CORS_ALLOWED_ORIGINS"
-	// CANDIDATE_PORTAL_ORIGIN is the public origin used in email confirmation links.
-	EnvCandidatePortalOrigin = "CANDIDATE_PORTAL_ORIGIN"
-	// EMAIL_SENDER is the verified address configured on the Casdoor email provider.
-	EnvEmailSender = "EMAIL_SENDER"
 
 	// ── 日志 ──
 	// LOG_LEVEL  日志级别: debug / info / warn / error，默认 info

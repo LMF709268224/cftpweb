@@ -14,7 +14,6 @@ import (
 	gmsgpb "github.com/afnandelfin620-star/cftptest/cftp/gmsg"
 	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
 	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
-	"github.com/redis/go-redis/v9"
 )
 
 // ── Context 键 ──
@@ -31,23 +30,25 @@ const (
 // ── Handler 容器 ──
 
 type Handler struct {
-	Lms                 lmspb.LmsServiceClient
-	Mall                mallpb.MallServiceClient
-	Gcc                 gccpb.CCServiceClient
-	Gprog               gprogpb.ProgServiceClient
-	Gmsg                gmsgpb.MessageServiceClient
-	Creds               gcredspb.CredentialServiceClient
-	Gexam               gexampb.GExamServiceClient
-	Gmid                gmidpb.MidServiceClient
-	Gpay                gpaypb.PayServiceClient
-	Gmbr                gmbrpb.GmbrServiceClient
-	CasdoorEndpoint     string
-	CasdoorClientId     string
-	CasdoorClientSecret string
-	CasdoorAppName      string
-	CasdoorOrgName      string
-	Rdb                 *redis.Client
-	profileUsers        profileUserStore
+	Lms                    lmspb.LmsServiceClient
+	Mall                   mallpb.MallServiceClient
+	Gcc                    gccpb.CCServiceClient
+	Gprog                  gprogpb.ProgServiceClient
+	Gmsg                   gmsgpb.MessageServiceClient
+	Creds                  gcredspb.CredentialServiceClient
+	Gexam                  gexampb.GExamServiceClient
+	Gmid                   gmidpb.MidServiceClient
+	Gpay                   gpaypb.PayServiceClient
+	Gmbr                   gmbrpb.GmbrServiceClient
+	CasdoorEndpoint        string
+	CasdoorClientId        string
+	CasdoorClientSecret    string
+	CasdoorAppName         string
+	CasdoorOrgName         string
+	CasdoorAPIEndpoint     string
+	CasdoorApplicationID   string
+	CasdoorEmailHTTPClient *http.Client
+	profileUsers           profileUserStore
 }
 
 func New(
