@@ -26,7 +26,7 @@ import {
   type CountryOption,
   resolvePhoneCountryCode,
 } from "@/lib/locationOptions"
-import { GENDER_OPTIONS, PROFILE_TEXT_LIMITS, isValidInternationalPhone, isValidPostalCode, normalizeGender, normalizeInternationalPhone, normalizePostalCode, trimToMax } from "@/lib/profileFormValidation"
+import { GENDER_OPTIONS, PROFILE_TEXT_LIMITS, isValidInternationalPhone, isValidPostalCode, normalizeGender, normalizeInternationalPhone, normalizePostalCode, trimToMax, validateAdultBirthdate } from "@/lib/profileFormValidation"
 import { useUser } from "@/lib/user"
 
 const route = useRoute()
@@ -435,6 +435,15 @@ async function handleUpdateProfile() {
       toast.error(t.value.settings.validationRequired.replace("{{field}}", label))
       return
     }
+  }
+  const birthdateError = validateAdultBirthdate(profile.birthday)
+  if (birthdateError) {
+    toast.error(t.value.settings[{
+      invalid: "validationInvalidBirthdate",
+      future: "validationFutureBirthdate",
+      underage: "validationUnderage",
+    }[birthdateError] as "validationInvalidBirthdate" | "validationFutureBirthdate" | "validationUnderage"])
+    return
   }
   if (!isValidInternationalPhone(profile.phone)) {
     toast.error(t.value.settings.validationInvalidPhone.replace("{{field}}", t.value.settings.workPhone))

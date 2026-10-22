@@ -298,6 +298,7 @@ test("折扣码默认收起且无效原因根据界面语言本地化", async ({
     product_name: "CFtP Invalid Promotion Code Bundle",
   })
 
+  const paymentCodes: string[][] = []
   await installStripeCheckoutMock(page)
   await installCandidateApiMocks(page, ({ pathname, body }) => {
     if (pathname === "/api/orders") return orderListResponse([order])
@@ -306,16 +307,17 @@ test("折扣码默认收起且无效原因根据界面语言本地化", async ({
       return {
         data: {
           subtotal: 63000,
-          total: 63000,
+          total: promotionCodes.includes("SAVE10") ? 53000 : 63000,
           currency: "USD",
-          invalid: promotionCodes.length > 0
+          invalid: promotionCodes.length > 0 && !promotionCodes.includes("SAVE10")
             ? [{ code: "", reason: "Promotion code not found" }]
             : [],
-          discounts: [],
+          discounts: promotionCodes.includes("SAVE10") ? [{ code: "SAVE10", amount: 10000 }] : [],
         },
       }
     }
     if (pathname === "/api/mall/payments/initiate") {
+      paymentCodes.push((body as { promo_codes?: string[] } | null)?.promo_codes || [])
       return { data: { payment_key: "cs_test_playwright_secret" } }
     }
     return undefined
@@ -324,6 +326,7 @@ test("折扣码默认收起且无效原因根据界面语言本地化", async ({
   await page.goto("/orders", { waitUntil: "domcontentloaded" })
   const row = page.locator(".order-row").filter({ hasText: order.product_name })
   await row.getByRole("button", { name: "继续支付" }).click()
+  await expect(page.getByTestId("fake-stripe-complete")).toBeVisible()
 
   const couponInput = page.locator("#purchase-coupon-input")
   await expect(couponInput).toHaveCount(0)
@@ -332,6 +335,7 @@ test("折扣码默认收起且无效原因根据界面语言本地化", async ({
   await page.getByRole("button", { name: "应用折扣码" }).click()
   await expect(page.getByText("未知折扣码", { exact: true })).toBeVisible()
   await expect(page.getByText("Promotion code not found", { exact: true })).toHaveCount(0)
+  await expect(page.getByTestId("fake-stripe-complete")).toBeVisible()
 
   await page.evaluate(() => {
     localStorage.setItem("app_lang", "en")
@@ -340,6 +344,16 @@ test("折扣码默认收起且无效原因根据界面语言本地化", async ({
   await page.getByRole("button", { name: "Apply discount code" }).click()
   await expect(page.getByText("Unknown discount code", { exact: true })).toBeVisible()
   await expect(page.getByText("Promotion code not found", { exact: true })).toHaveCount(0)
+  await expect(page.getByTestId("fake-stripe-complete")).toBeVisible()
+
+  await couponInput.fill("SAVE10")
+  await page.getByRole("button", { name: "Apply discount code" }).click()
+  await expect.poll(() => paymentCodes).toContainEqual(["SAVE10"])
+  await expect(page.getByTestId("fake-stripe-complete")).toBeVisible()
+
+  await page.getByRole("button", { name: "Clear", exact: true }).click()
+  await expect.poll(() => paymentCodes[paymentCodes.length - 1]).toEqual([])
+  await expect(page.getByTestId("fake-stripe-complete")).toBeVisible()
 })
 
 test("取消未支付订单后刷新列表并隐藏该订单", async ({ page }) => {

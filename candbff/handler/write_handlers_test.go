@@ -139,7 +139,6 @@ func TestSignupExamNormalizesCandidateProfileAndUsesRouteUnit(t *testing.T) {
 		`{
 			"course_unit_ulid":"course-unit-body",
 			"first_name":" Jane ",
-			"middle_name":" Q ",
 			"last_name":" Candidate ",
 			"email":" jane@example.test ",
 			"home_phone":"+65 6123 4567",
@@ -168,7 +167,7 @@ func TestSignupExamNormalizesCandidateProfileAndUsesRouteUnit(t *testing.T) {
 	if client.signupReq.GetCourseUnitUlid() != "course-unit-route" ||
 		client.signupReq.GetCandidateUlid() != "candidate-1" ||
 		client.signupReq.GetCandidateFirstName() != "Jane" ||
-		client.signupReq.GetCandidateMiddleName() != "Q" ||
+		client.signupReq.GetCandidateMiddleName() != "" ||
 		client.signupReq.GetCandidateLastName() != "Candidate" ||
 		client.signupReq.GetCandidateEmail() != "jane@example.test" ||
 		client.signupReq.GetCandidateHomePhone() != "+6561234567" ||

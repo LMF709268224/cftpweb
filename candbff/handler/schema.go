@@ -312,7 +312,6 @@ type GetAccessURLRsp struct {
 type SignupExamInput struct {
 	CourseUnitULID   string `json:"course_unit_ulid"`
 	FirstName        string `json:"first_name"`
-	MiddleName       string `json:"middle_name"`
 	LastName         string `json:"last_name"`
 	Email            string `json:"email"`
 	HomePhone        string `json:"home_phone"`

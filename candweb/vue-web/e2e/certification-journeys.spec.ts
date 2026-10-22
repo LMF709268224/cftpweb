@@ -1665,6 +1665,7 @@ test("资格申请页允许 PendingUpload 申请上传", async ({ page }) => {
 test("资格申请记录详情显示完整审核备注和已上传文件", async ({ page }) => {
     const auditRemark = "材料清晰，审核已通过。\n请在后续认证流程中继续使用该资格；如资格信息发生变化，请及时联系管理员更新。"
     const fileURL = "https://files.example.com/application/evidence.pdf?signature=test"
+    let auditAt = "2026-08-30T12:34:56Z"
     await installCandidateApiMocks(page, ({ pathname }) => {
         if (pathname === "/api/credentials/definitions") return { data: { definitions: [] } }
         if (pathname === "/api/credentials/applications") {
@@ -1699,7 +1700,7 @@ test("资格申请记录详情显示完整审核备注和已上传文件", async
                     app_ulid: "application-with-audit-remark",
                     status: "APPLICATION_STATUS_APPROVED",
                     audit_remark: "",
-                    audit_at: "2026-08-30T12:34:56Z",
+                    audit_at: auditAt,
                     created_at: "2026-08-29T12:23:45Z",
                     files: [{
                         file_hash: "evidence-file-hash",
@@ -1744,6 +1745,10 @@ test("资格申请记录详情显示完整审核备注和已上传文件", async
     await applicationDetailDialog.getByTestId("application-detail-close").click()
     await expect(applicationDetailDialog).toBeHidden()
     await expect(viewDetailsButton).toBeFocused()
+    auditAt = "null"
+    await viewDetailsButton.click()
+    await expect(applicationDetailDialog.getByTestId("application-admin-action-at")).toHaveText("未记录")
+    await applicationDetailDialog.getByTestId("application-detail-close").click()
     await page.getByRole("button", { name: "中文 / EN" }).click()
     await expect(page.getByText("Created At", { exact: true })).toBeVisible()
     await expect(pendingUploadRow).toContainText("29 Aug 2026")
@@ -2677,7 +2682,7 @@ test("认证从商城下单、Stripe 支付到已购认证完整闭环", async (
     })
 })
 
-test("购买流程手机号已被使用时提示错误并停留在注册步骤", async ({ page }) => {
+test("购买流程从只读个人资料继续且不回写资料", async ({ page }) => {
     let profileUpdates = 0
 
     await installCandidateApiMocks(page, ({ pathname, method }) => {
@@ -2698,13 +2703,13 @@ test("购买流程手机号已被使用时提示错误并停留在注册步骤",
     await page.goto(`/checkout/${bundleID}`, { waitUntil: "domcontentloaded" })
     await expect(page.getByTestId("checkout-step-registration")).toBeVisible()
     await waitForCheckoutProfile(page)
+    await expect(page.getByTestId("checkout-step-registration").locator("input[required]").first()).toBeDisabled()
+    await expect(page.getByRole("link", { name: /编辑个人资料|Edit in Profile/ })).toBeVisible()
     await page.getByTestId("checkout-agreement").check()
     await page.getByTestId("checkout-next").click()
 
-    await expect(page.getByText("该手机号已被其他账号使用，请更换手机号后重试。", { exact: true })).toBeVisible()
-    await expect(page.getByTestId("checkout-step-registration")).toBeVisible()
-    await expect(page.getByTestId("checkout-step-review")).toHaveCount(0)
-    expect(profileUpdates).toBe(1)
+    await expect(page.getByTestId("checkout-step-review")).toBeVisible()
+    expect(profileUpdates).toBe(0)
 })
 
 test("支付步骤说明锁定原因并允许取消订单后返回修改", async ({ page }) => {

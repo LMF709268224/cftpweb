@@ -74,6 +74,36 @@ test("profile saves Casdoor links without changing social login identities", asy
   await expect(page.getByLabel("X", { exact: true })).toHaveValue("https://x.com/new")
 })
 
+test("profile rejects future and underage birthdates before saving", async ({ page }) => {
+  let profileUpdates = 0
+  await seedAuthenticatedCandidate(page)
+  await installCandidateApiMocks(page, ({ pathname, method }) => {
+    if (pathname === "/api/user/me") return { data: { ...candidateUser, language: "en", province: "Singapore" } }
+    if (pathname === "/api/user/profile" && method === "PUT") {
+      profileUpdates += 1
+      return { data: { success: true } }
+    }
+    return undefined
+  })
+
+  await page.goto("/settings")
+  const birthday = page.locator(".localized-date-picker input").first()
+  const save = page.locator("form.settings-form").first().getByRole("button", { name: "Save Changes" })
+  const today = new Date()
+  const dates = [
+    { date: new Date(Date.UTC(today.getUTCFullYear() - 17, today.getUTCMonth(), today.getUTCDate())), message: "You must be at least 18 years old" },
+    { date: new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() + 1)), message: "Date of birth cannot be in the future" },
+  ]
+  for (const { date, message } of dates) {
+    const inputDate = `${String(date.getUTCDate()).padStart(2, "0")}/${String(date.getUTCMonth() + 1).padStart(2, "0")}/${date.getUTCFullYear()}`
+    await birthday.fill(inputDate)
+    await birthday.press("Enter")
+    await save.click()
+    await expect(page.getByText(message, { exact: true })).toBeVisible()
+    expect(profileUpdates).toBe(0)
+  }
+})
+
 test("security settings starts email verification and confirmation clears the session", async ({ page }) => {
   const emailRequests: unknown[] = []
   await seedAuthenticatedCandidate(page)

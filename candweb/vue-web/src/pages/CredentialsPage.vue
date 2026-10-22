@@ -17,6 +17,14 @@ import { useTranslation } from "@/lib/language"
 import { toast } from "vue-sonner"
 
 const { t, lang } = useTranslation()
+
+function adminActionAtLabel(value: unknown) {
+  const text = String(value ?? "").trim()
+  if (!text || /^(null|unset|undefined|0001-01-01.*)$/i.test(text)) return t.value.credentialsPage.noAdminActionAt
+  const formatted = formatBackendDate(text, lang.value)
+  return formatted && formatted !== text ? formatted : t.value.credentialsPage.noAdminActionAt
+}
+
 const route = useRoute()
 const definitions = ref<any[]>([])
 const applications = ref<any[]>([])
@@ -674,9 +682,9 @@ watch(
                 <div class="text-xs font-medium text-slate-500">{{ t.credentialsPage.applicationSubmittedAt }}</div>
                 <div class="mt-1 text-sm font-semibold text-slate-900" data-testid="application-submitted-at">{{ formatBackendDate(selectedApplicationDetail?.created_at, lang) || t.common.na }}</div>
               </div>
-              <div v-if="selectedApplicationDetail?.audit_at" class="rounded-lg bg-slate-50 px-4 py-3 sm:col-span-2">
+              <div class="rounded-lg bg-slate-50 px-4 py-3 sm:col-span-2">
                 <div class="text-xs font-medium text-slate-500">{{ t.credentialsPage.applicationAdminActionAt }}</div>
-                <div class="mt-1 text-sm font-semibold text-slate-900" data-testid="application-admin-action-at">{{ formatBackendDate(selectedApplicationDetail.audit_at, lang) }}</div>
+                <div class="mt-1 text-sm font-semibold text-slate-900" data-testid="application-admin-action-at">{{ adminActionAtLabel(selectedApplicationDetail?.audit_at) }}</div>
               </div>
             </div>
 

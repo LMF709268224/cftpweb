@@ -558,6 +558,8 @@ test("考试报名首次提交会等待地区数据并补全国家级地区参�
     releaseLocationData = resolve
   })
   let signupBody: unknown
+  let profileWrites = 0
+  let profileFirstName = candidateUser.first_name
 
   await page.route(/country-state-city.*\.js/, async (route) => {
     await locationDataReady
@@ -568,6 +570,7 @@ test("考试报名首次提交会等待地区数据并补全国家级地区参�
       return {
         data: {
           ...candidateUser,
+          first_name: profileFirstName,
           country: "Singapore",
           region: "Singapore",
           province: "",
@@ -576,6 +579,7 @@ test("考试报名首次提交会等待地区数据并补全国家级地区参�
       }
     }
     if (pathname === "/api/user/profile" && method === "PUT") {
+      profileWrites += 1
       return { data: { success: true } }
     }
     if (pathname === "/api/exams/units/course-unit-1/signup" && method === "POST") {
@@ -587,6 +591,11 @@ test("考试报名首次提交会等待地区数据并补全国家级地区参�
 
   await page.goto("/exams/signup?unitId=course-unit-1&returnTo=%2Fexams", { waitUntil: "domcontentloaded" })
   await expect(page.getByTestId("exam-signup-first-name")).toHaveValue(candidateUser.first_name)
+  await expect(page.getByTestId("exam-signup-first-name")).toBeDisabled()
+  await expect(page.getByRole("link", { name: /编辑个人资料|Edit in Profile/ })).toHaveAttribute("target", "_blank")
+  profileFirstName = "Updated"
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")))
+  await expect(page.getByTestId("exam-signup-first-name")).toHaveValue("Updated")
 
   await page.getByTestId("exam-signup-submit").click()
   await page.waitForTimeout(100)
@@ -594,10 +603,13 @@ test("考试报名首次提交会等待地区数据并补全国家级地区参�
 
   releaseLocationData?.()
   await expect.poll(() => signupBody).toMatchObject({
+    first_name: "Updated",
     country: "Singapore",
     province: "Singapore",
     city: "Singapore",
   })
+  expect(signupBody).not.toHaveProperty("middle_name")
+  expect(profileWrites).toBe(0)
 })
 
 test("等待教授批卷的考试不显示为不合格或开放成绩入口", async ({ page }) => {

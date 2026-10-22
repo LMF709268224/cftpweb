@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 )
@@ -67,6 +68,29 @@ func TestNormalizeAndValidateUserProfileInput(t *testing.T) {
 	}
 	if input.Province != "Singapore" {
 		t.Fatalf("province = %q", input.Province)
+	}
+}
+
+func TestValidateAdultBirthdate(t *testing.T) {
+	today := time.Date(2026, time.October, 22, 12, 0, 0, 0, time.UTC)
+	tests := []struct {
+		name      string
+		birthdate string
+		valid     bool
+	}{
+		{"eighteenth birthday", "2008-10-22", true},
+		{"one day underage", "2008-10-23", false},
+		{"future date", "2026-10-23", false},
+		{"invalid calendar date", "2000-02-30", false},
+		{"missing date", "", false},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := validateAdultBirthdate(test.birthdate, "birthday", today)
+			if (err == nil) != test.valid {
+				t.Fatalf("validateAdultBirthdate(%q) error = %v, valid = %t", test.birthdate, err, test.valid)
+			}
+		})
 	}
 }
 

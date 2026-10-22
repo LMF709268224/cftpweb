@@ -70,7 +70,6 @@ func (h *Handler) SignupExam(w http.ResponseWriter, r *http.Request) {
 		CourseUnitUlid:      input.CourseUnitULID,
 		CandidateUlid:       candidateID,
 		CandidateFirstName:  input.FirstName,
-		CandidateMiddleName: input.MiddleName,
 		CandidateLastName:   input.LastName,
 		CandidateEmail:      input.Email,
 		CandidateHomePhone:  input.HomePhone,

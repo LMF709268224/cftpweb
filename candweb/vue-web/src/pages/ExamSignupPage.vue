@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from "vue"
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue"
 import { RouterLink, useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
-import { ArrowLeft, ClipboardList, Loader2, Send } from "lucide-vue-next"
+import { ArrowLeft, ClipboardList, ExternalLink, Loader2, Send } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import LocalizedDatePicker from "@/components/LocalizedDatePicker.vue"
 import { apiClient } from "@/lib/apiClient"
@@ -26,7 +26,7 @@ import {
   type CountryOption,
   resolvePhoneCountryCode,
 } from "@/lib/locationOptions"
-import { GENDER_OPTIONS, PROFILE_TEXT_LIMITS, isValidEmail, isValidInternationalPhone, isValidPostalCode, normalizeGender, normalizeInternationalPhone, normalizePostalCode, trimToMax } from "@/lib/profileFormValidation"
+import { GENDER_OPTIONS, PROFILE_TEXT_LIMITS, isValidEmail, isValidInternationalPhone, isValidPostalCode, normalizeGender, validateAdultBirthdate } from "@/lib/profileFormValidation"
 
 const route = useRoute()
 const router = useRouter()
@@ -41,7 +41,6 @@ const selectedProvinceCode = ref("")
 const countryOptions = ref<CountryOption[]>([])
 const provinceOptions = ref<any[]>([])
 const cityOptions = ref<any[]>([])
-let profileInitializationPromise: Promise<void> | null = null
 let locationInitializationPromise: Promise<void> | null = null
 const showProvinceField = computed(() => !selectedCountryCode.value || countryUsesProvinceField(selectedCountryCode.value))
 const showCityField = computed(() => !selectedCountryCode.value || countryUsesCityField(selectedCountryCode.value))
@@ -58,7 +57,6 @@ const orgPhonePrefixes = computed(() => getOrganizationPhonePrefixes(
 const genderOptions = GENDER_OPTIONS
 const formData = reactive({
   first_name: "",
-  middle_name: "",
   last_name: "",
   email: "",
   gender: "",
@@ -210,20 +208,6 @@ function handleProvinceChange() {
   refreshCityOptions()
 }
 
-function sanitizeSignupForm() {
-  formData.first_name = trimToMax(formData.first_name, PROFILE_TEXT_LIMITS.name)
-  formData.middle_name = trimToMax(formData.middle_name, PROFILE_TEXT_LIMITS.name)
-  formData.last_name = trimToMax(formData.last_name, PROFILE_TEXT_LIMITS.name)
-  formData.email = trimToMax(formData.email, PROFILE_TEXT_LIMITS.short)
-  formData.gender = normalizeGender(formData.gender)
-  formData.country = trimToMax(formData.country, PROFILE_TEXT_LIMITS.short)
-  formData.province = trimToMax(formData.province, PROFILE_TEXT_LIMITS.short)
-  formData.city = trimToMax(formData.city, PROFILE_TEXT_LIMITS.short)
-  formData.address = trimToMax(formData.address, PROFILE_TEXT_LIMITS.address)
-  formData.postal_code = normalizePostalCode(formData.postal_code)
-  formData.phone = normalizeInternationalPhone(formData.phone)
-}
-
 function normalizeDate(value: unknown) {
   return typeof value === "string" ? value.split("T")[0] : ""
 }
@@ -247,57 +231,19 @@ function splitRealName(value: unknown) {
 
 function applyProfileToForm(profile: any) {
   const realName = splitRealName(profile.real_name)
-  formData.email = profile.email || formData.email
-  formData.gender = normalizeGender(profile.gender) || formData.gender
-  formData.birthdate = normalizeDate(profile.birthday) || formData.birthdate
-  formData.first_name = profile.first_name || realName.firstName || formData.first_name
-  formData.middle_name = profile.middle_name || formData.middle_name
-  formData.last_name = profile.last_name || realName.lastName || formData.last_name
-  formData.phone_country_code = profile.phone_country_code || formData.phone_country_code
-  formData.phone = profile.phone || formData.phone
-  formData.country = profile.country || profile.region || formData.country
-  formData.province = profile.province || formData.province
-  formData.city = profile.city || profile.location || formData.city
-  formData.address = normalizeAddress(profile.address_text, profile.address) || formData.address
-  formData.postal_code = profile.postal_code || formData.postal_code
+  formData.email = profile.email || ""
+  formData.gender = normalizeGender(profile.gender)
+  formData.birthdate = normalizeDate(profile.birthday)
+  formData.first_name = profile.first_name || realName.firstName
+  formData.last_name = profile.last_name || realName.lastName
+  formData.phone_country_code = profile.phone_country_code || ""
+  formData.phone = profile.phone || ""
+  formData.country = profile.country || profile.region || ""
+  formData.province = profile.province || ""
+  formData.city = profile.city || profile.location || ""
+  formData.address = normalizeAddress(profile.address_text, profile.address)
+  formData.postal_code = profile.postal_code || ""
   syncLocationSelectionFromForm()
-}
-
-function firstFilled(...values: unknown[]) {
-  for (const value of values) {
-    if (typeof value === "string" && value.trim()) return value.trim()
-  }
-  return ""
-}
-
-function takeFormValue(current: unknown, formValue: unknown) {
-  const fv = firstFilled(formValue)
-  return fv || firstFilled(current)
-}
-
-function buildProfilePayload(current: any) {
-  const currentAddress = normalizeAddress(current.address_text, current.address)
-  return {
-    display_name: firstFilled(current.display_name),
-    email: takeFormValue(current.email, formData.email),
-    first_name: takeFormValue(current.first_name, formData.first_name),
-    last_name: takeFormValue(current.last_name, formData.last_name),
-    home_phone: current.home_phone || current.phone || "",
-    phone_country_code: takeFormValue(current.phone_country_code, formData.phone_country_code),
-    phone: takeFormValue(current.phone, formData.phone),
-    gender: takeFormValue(current.gender, formData.gender),
-    birthday: takeFormValue(normalizeDate(current.birthday), formData.birthdate),
-    country: takeFormValue(current.country || current.region, formData.country),
-    province: takeFormValue(current.province, formData.province),
-    city: takeFormValue(current.city || current.location, formData.city),
-    address: takeFormValue(currentAddress, formData.address),
-    postal_code: takeFormValue(current.postal_code, formData.postal_code),
-    affiliation: current.affiliation || "",
-    title: current.title || "",
-    real_name: current.real_name || "",
-    bio: current.bio || "",
-    education: current.education || "",
-  }
 }
 
 async function loadProfile() {
@@ -311,11 +257,14 @@ async function loadProfile() {
   }
 }
 
-function initializeProfile() {
-  if (!profileInitializationPromise) {
-    profileInitializationPromise = loadProfile()
-  }
-  return profileInitializationPromise
+async function refreshProfile() {
+  const profile = await fetchUser(true)
+  if (!profile) throw new Error("Unable to load the current profile")
+  applyProfileToForm(profile)
+}
+
+function handleProfileWindowFocus() {
+  void refreshProfile().catch((error) => console.error("Failed to refresh user profile", error))
 }
 
 function initializeLocationData() {
@@ -352,13 +301,16 @@ async function fetchOrgConfig() {
 }
 
 onMounted(() => {
-  void initializeProfile()
+  void loadProfile()
+  window.addEventListener("focus", handleProfileWindowFocus)
   void initializeLocationData()
     .then(() => {
       void fetchOrgConfig()
     })
     .catch(() => undefined)
 })
+
+onUnmounted(() => window.removeEventListener("focus", handleProfileWindowFocus))
 
 watch(lang, () => {
   const previousCity = formData.city
@@ -377,16 +329,6 @@ watch(lang, () => {
   ensureCurrentCityOption()
 })
 
-async function syncSignupToProfile() {
-  const current = await fetchUser(true)
-  if (!current) throw new Error("Unable to load the current profile")
-  await apiClient("/api/user/profile", {
-    method: "PUT",
-    body: JSON.stringify(buildProfilePayload(current)),
-  })
-  await fetchUser(true)
-}
-
 async function handleSubmit() {
   if (!unitId) {
     toast.error(t.value.common.error)
@@ -394,7 +336,7 @@ async function handleSubmit() {
   }
   loading.value = true
   try {
-    await Promise.all([initializeProfile(), initializeLocationData()])
+    await Promise.all([refreshProfile(), initializeLocationData()])
     syncLocationSelectionFromForm()
   } catch (err) {
     console.error("Exam signup initialization failed", err)
@@ -402,7 +344,6 @@ async function handleSubmit() {
   } finally {
     loading.value = false
   }
-  sanitizeSignupForm()
   Object.assign(formData, normalizeLocationForSubmission(
     selectedCountryCode.value,
     formData.country,
@@ -423,12 +364,21 @@ async function handleSubmit() {
   ] as const
   for (const [key, label] of requiredFields) {
     if (!String(formData[key]).trim()) {
-      toast.error(t.value.examSignup.validationRequired.replace("{{field}}", label))
+      toast.error(t.value.examSignup.validationProfileRequired.replace("{{field}}", label))
       return
     }
   }
   if (!isValidEmail(formData.email)) {
     toast.error(t.value.examSignup.validationInvalidEmail)
+    return
+  }
+  const birthdateError = validateAdultBirthdate(formData.birthdate)
+  if (birthdateError) {
+    toast.error(t.value.examSignup[{
+      invalid: "validationInvalidBirthdate",
+      future: "validationFutureBirthdate",
+      underage: "validationUnderage",
+    }[birthdateError] as "validationInvalidBirthdate" | "validationFutureBirthdate" | "validationUnderage"])
     return
   }
   if (!isValidInternationalPhone(formData.phone)) {
@@ -441,7 +391,6 @@ async function handleSubmit() {
   }
   loading.value = true
   try {
-    await syncSignupToProfile()
     await apiClient(`/api/exams/units/${encodeURIComponent(unitId)}/signup`, { method: "POST", body: JSON.stringify(formData) })
     toast.success(t.value.examSignup.success, {
       description: t.value.examSignup.successDescription,
@@ -475,11 +424,14 @@ async function handleSubmit() {
         </div>
         <div class="exam-signup-card max-w-2xl rounded-[16px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <form data-testid="exam-signup-form" class="exam-signup-form space-y-6" novalidate @submit.prevent="handleSubmit">
+        <a :href="router.resolve('/settings?tab=profile').href" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
+          <ExternalLink class="h-4 w-4" /> {{ t.examSignup.editInProfile }}
+        </a>
+        <fieldset disabled class="space-y-6">
         <div class="exam-signup-grid grid gap-4 sm:grid-cols-2">
           <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formFirstName }}</span><input v-model="formData.first_name" data-testid="exam-signup-first-name" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" required /></label>
           <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formLastName }}</span><input v-model="formData.last_name" data-testid="exam-signup-last-name" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" required /></label>
         </div>
-        <label class="block space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formMiddleName }}</span><input v-model="formData.middle_name" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" /></label>
         <div class="grid gap-4 sm:grid-cols-2">
           <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formEmail }}</span><input v-model="formData.email" data-testid="exam-signup-email" class="input" type="email" :maxlength="PROFILE_TEXT_LIMITS.short" required /></label>
           <label class="space-y-2">
@@ -498,6 +450,7 @@ async function handleSubmit() {
             :language="lang"
             :placeholder="lang === 'zh' ? '日/月/年' : 'DD/MM/YYYY'"
             :aria-label="t.examSignup.formBirthdate"
+            disabled
           />
         </label>
         <div class="exam-signup-grid grid gap-4" :class="locationGridClass">
@@ -526,7 +479,7 @@ async function handleSubmit() {
           </label>
         </div>
         <label class="block space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formAddress }}</span><input v-model="formData.address" data-testid="exam-signup-address" class="input" :maxlength="PROFILE_TEXT_LIMITS.address" required /></label>
-        <label class="block space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formPostalCode }}</span><input v-model="formData.postal_code" data-testid="exam-signup-postal-code" class="input" :maxlength="PROFILE_TEXT_LIMITS.postalCode" pattern="[A-Za-z0-9][A-Za-z0-9 -]*[A-Za-z0-9]" required @blur="formData.postal_code = normalizePostalCode(formData.postal_code)" /></label>
+        <label class="block space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formPostalCode }}</span><input v-model="formData.postal_code" data-testid="exam-signup-postal-code" class="input" :maxlength="PROFILE_TEXT_LIMITS.postalCode" pattern="[A-Za-z0-9][A-Za-z0-9 -]*[A-Za-z0-9]" required /></label>
         <div class="grid gap-4 sm:grid-cols-1">
           <label class="space-y-2">
             <span class="text-sm font-medium">{{ t.examSignup.formWorkPhone }}</span>
@@ -547,6 +500,7 @@ async function handleSubmit() {
             </div>
           </label>
         </div>
+        </fieldset>
         <div class="flex justify-end pt-2">
           <button type="submit" data-testid="exam-signup-submit" class="btn btn-primary w-full sm:w-auto" :disabled="loading">
             <template v-if="loading"><Loader2 class="h-4 w-4 animate-spin" /> {{ t.examSignup.submitting }}</template>

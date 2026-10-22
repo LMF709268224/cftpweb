@@ -39,22 +39,24 @@
     />
 
     <!-- Stripe Embedded Checkout -->
-    <PaymentSessionPanel
-      v-if="bizRefUlid && paymentPreview && !couponPreviewLoading && !couponError && !hasInvalidCouponCodes"
-      :biz-type="bizType"
-      :biz-ref-ulid="bizRefUlid"
-      :order-id="orderId"
-      :source="source"
-      :return-path="returnPath"
-      :extra-return-params="extraReturnParams"
-      :redirect-on-complete="redirectOnComplete"
-      :auto-start="autoStart"
-      :min-height-class="minHeightClass"
-      :coupon-codes="activeCouponCodes"
-      @complete="emit('complete')"
-      @error="emit('error', $event)"
-      @status-change="emit('status-change', $event)"
-    />
+    <div :class="paymentBlocked ? 'pointer-events-none opacity-60' : ''" :inert="paymentBlocked || undefined" :aria-busy="couponPreviewLoading">
+      <PaymentSessionPanel
+        v-if="bizRefUlid && paymentPreview"
+        :biz-type="bizType"
+        :biz-ref-ulid="bizRefUlid"
+        :order-id="orderId"
+        :source="source"
+        :return-path="returnPath"
+        :extra-return-params="extraReturnParams"
+        :redirect-on-complete="redirectOnComplete"
+        :auto-start="autoStart"
+        :min-height-class="minHeightClass"
+        :coupon-codes="activeCouponCodes"
+        @complete="emit('complete')"
+        @error="emit('error', $event)"
+        @status-change="emit('status-change', $event)"
+      />
+    </div>
   </div>
 </template>
 
@@ -101,6 +103,7 @@ const couponError = ref("")
 let paymentPreviewRequestToken = 0
 
 const hasInvalidCouponCodes = computed(() => Boolean(paymentPreview.value?.invalid?.length))
+const paymentBlocked = computed(() => couponPreviewLoading.value || Boolean(couponError.value) || hasInvalidCouponCodes.value)
 const cannotPayReason = computed(() => hasInvalidCouponCodes.value ? t.value.purchaseDialog.couponInvalidPaymentBlocked : "")
 
 function formatMoney(amount?: number, currency = "usd") {

@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+	"time"
 	"unicode/utf8"
 )
 
@@ -173,6 +174,29 @@ func normalizeAndValidateUserProfileInput(input *UserProfileInput) error {
 	if !validProfilePostalCode(input.PostalCode, false) {
 		return fmt.Errorf("postal_code is invalid")
 	}
+	if input.Birthday != "" {
+		if err := validateAdultBirthdate(input.Birthday, "birthday", time.Now().UTC()); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func validateAdultBirthdate(value, field string, today time.Time) error {
+	if len(value) != len("2006-01-02") {
+		return fmt.Errorf("%s must be a valid YYYY-MM-DD date", field)
+	}
+	birthdate, err := time.Parse("2006-01-02", value)
+	if err != nil || birthdate.Format("2006-01-02") != value {
+		return fmt.Errorf("%s must be a valid YYYY-MM-DD date", field)
+	}
+	day := time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, time.UTC)
+	if birthdate.After(day) {
+		return fmt.Errorf("%s cannot be in the future", field)
+	}
+	if birthdate.After(day.AddDate(-18, 0, 0)) {
+		return fmt.Errorf("%s requires age 18 or older", field)
+	}
 	return nil
 }
 
@@ -209,7 +233,6 @@ func normalizeAndValidateSignupExamInput(input *SignupExamInput) error {
 		max   int
 	}{
 		{"first_name", input.FirstName, profileNameTextMax},
-		{"middle_name", input.MiddleName, profileNameTextMax},
 		{"last_name", input.LastName, profileNameTextMax},
 		{"email", input.Email, profileShortTextMax},
 		{"country", input.Country, profileShortTextMax},
@@ -223,7 +246,6 @@ func normalizeAndValidateSignupExamInput(input *SignupExamInput) error {
 		}
 	}
 	input.FirstName = trimProfileText(input.FirstName, profileNameTextMax)
-	input.MiddleName = trimProfileText(input.MiddleName, profileNameTextMax)
 	input.LastName = trimProfileText(input.LastName, profileNameTextMax)
 	input.Email = trimProfileText(input.Email, profileShortTextMax)
 	input.HomePhone = normalizeProfilePhone(input.HomePhone)
@@ -247,6 +269,9 @@ func normalizeAndValidateSignupExamInput(input *SignupExamInput) error {
 	}
 	if !validProfilePostalCode(input.PostalCode, true) {
 		return fmt.Errorf("postal_code is invalid")
+	}
+	if err := validateAdultBirthdate(input.Birthdate, "birthdate", time.Now().UTC()); err != nil {
+		return err
 	}
 	return nil
 }
