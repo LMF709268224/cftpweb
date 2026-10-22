@@ -184,8 +184,13 @@ function isPaidPaymentStatus(value: unknown) {
 
 function displayOrderStatus(order: OrderItem) {
   const orderStatus = normalizedStatus(order.order_status)
-  if (actionableOrderStatuses.has(orderStatus) && isPaidPaymentStatus(order.payment_status)) {
-    return "PAID"
+  if (actionableOrderStatuses.has(orderStatus)) {
+    const paymentStatus = normalizedStatus(order.payment_status)
+    if (paymentStatus === "FAILED") return "PAYMENT_FAILED"
+    if (isPaidPaymentStatus(paymentStatus)) return "PAID"
+    if (orderStatus === "PENDING" && (paymentStatus === "UNPAID" || paymentStatus === "WAIT_PAY")) {
+      return "WAIT_PAYMENT"
+    }
   }
   return orderStatus
 }
@@ -831,8 +836,8 @@ onBeforeUnmount(() => {
               <div class="border-b border-primary/10 bg-[#edeef2] px-4 py-4 sm:px-5">
                 <div class="mb-4 flex items-start justify-between gap-3">
                   <h3 class="font-semibold text-slate-950">{{ t.orders.detailSummary }}</h3>
-                  <span v-if="selectedOrderDetail.summary?.order_status" class="badge shrink-0 text-xs" :class="timelineStatusBadgeClassForStatus('MALL_ORDER', selectedOrderDetail.summary.order_status)">
-                    {{ timelineStatusLabelWithDiagnostics(t, 'MALL_ORDER', selectedOrderDetail.summary.order_status) }}
+                  <span v-if="selectedOrderItem && selectedOrderDetail.summary?.order_status" class="badge shrink-0 text-xs" :class="orderStatusBadgeClass(orderFromDetail(selectedOrderItem, selectedOrderDetail))">
+                    {{ orderStatusLabel(orderFromDetail(selectedOrderItem, selectedOrderDetail)) }}
                   </span>
                 </div>
                 <div class="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">

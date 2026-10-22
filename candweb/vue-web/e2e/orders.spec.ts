@@ -106,10 +106,25 @@ test("订单状态与可执行按钮保持一致", async ({ page }) => {
     order_status: "WAIT_PAYMENT",
     payment_status: "PAID",
   })
+  const checkoutPendingOrder = orderFixture({
+    order_id: "order-checkout-pending",
+    product_name: "CFtP Checkout Pending Bundle",
+    order_status: "PENDING",
+    payment_status: "WAIT_PAY",
+  })
+  const failedPaymentOrder = orderFixture({
+    order_id: "order-payment-failed",
+    product_name: "CFtP Failed Payment Bundle",
+    order_status: "PENDING",
+    payment_status: "FAILED",
+  })
 
   await installCandidateApiMocks(page, ({ pathname }) => {
     if (pathname === "/api/orders") {
-      return orderListResponse([pendingOrder, completedOrder, paidPendingOrder])
+      return orderListResponse([pendingOrder, completedOrder, paidPendingOrder, checkoutPendingOrder, failedPaymentOrder])
+    }
+    if (pathname === `/api/orders/${failedPaymentOrder.order_id}`) {
+      return { data: { found: true, summary: { ...failedPaymentOrder, meta: { product_name: failedPaymentOrder.product_name } } } }
     }
     return undefined
   })
@@ -129,6 +144,22 @@ test("订单状态与可执行按钮保持一致", async ({ page }) => {
   await expect(paidPendingRow.getByText("已支付，处理中", { exact: true })).toBeVisible()
   await expect(paidPendingRow.getByRole("button", { name: "继续支付" })).toHaveCount(0)
   await expect(paidPendingRow.getByRole("button", { name: "取消支付" })).toHaveCount(0)
+
+  const checkoutPendingRow = page.locator(".order-row").filter({ hasText: checkoutPendingOrder.product_name })
+  await expect(checkoutPendingRow.getByText("待支付", { exact: true })).toBeVisible()
+
+  const failedPaymentRow = page.locator(".order-row").filter({ hasText: failedPaymentOrder.product_name })
+  await expect(failedPaymentRow.getByText("支付失败", { exact: true })).toBeVisible()
+
+  await page.evaluate(() => {
+    localStorage.setItem("app_lang", "en")
+    window.dispatchEvent(new Event("lang_change"))
+  })
+  await expect(page.getByRole("heading", { name: "Purchase History", level: 1 })).toBeVisible()
+  await expect(pendingRow.getByText("Awaiting payment", { exact: true })).toBeVisible()
+  await expect(failedPaymentRow.getByText("Payment failed", { exact: true })).toBeVisible()
+  await failedPaymentRow.locator("button").first().click()
+  await expect(page.getByRole("dialog", { name: "Order Details" }).getByText("Payment failed", { exact: true })).toBeVisible()
 })
 
 test("订单详情展示商品明细", async ({ page }) => {

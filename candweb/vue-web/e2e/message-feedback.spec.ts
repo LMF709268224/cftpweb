@@ -14,6 +14,46 @@ test.beforeEach(async ({ page }) => {
   await seedAuthenticatedCandidate(page)
 })
 
+test("通知列表使用相对时间并保留绝对时间", async ({ page }) => {
+  const now = Date.now()
+  const messages = [
+    { ...baseMessage, message_id: "recent-hours", title: "两小时前通知", status: 1, created_at: new Date(now - 2 * 60 * 60 * 1000).toISOString() },
+    { ...baseMessage, message_id: "recent-day", title: "一天前通知", status: 1, created_at: new Date(now - 24 * 60 * 60 * 1000).toISOString() },
+    { ...baseMessage, message_id: "older", title: "八天前通知", status: 1, created_at: new Date(now - 8 * 24 * 60 * 60 * 1000).toISOString() },
+  ]
+
+  await installCandidateApiMocks(page, ({ pathname }) => {
+    if (pathname === "/api/messages") return { data: { messages, has_more: false } }
+    if (pathname === "/api/messages/unread-count") return { data: { unread_count: 0 } }
+    if (pathname === "/api/messages/read-count") return { data: { read_count: messages.length } }
+    if (pathname === "/api/messages/recent-hours") return { data: messages[0] }
+    return undefined
+  })
+
+  await page.goto("/messages", { waitUntil: "domcontentloaded" })
+  await expect(page.getByRole("heading", { name: "通知", level: 1 })).toBeVisible()
+  const hoursTime = page.locator(".message-row").filter({ hasText: "两小时前通知" }).locator("time")
+  const dayTime = page.locator(".message-row").filter({ hasText: "一天前通知" }).locator("time")
+  const olderTime = page.locator(".message-row").filter({ hasText: "八天前通知" }).locator("time")
+  await expect(hoursTime).toHaveText(/2\s*小时前/)
+  await expect(dayTime).toHaveText(/1\s*天前/)
+  const currentYear = String(new Date(now).getFullYear())
+  await expect(olderTime).toContainText(currentYear)
+  await expect(hoursTime).toHaveAttribute("title", new RegExp(currentYear))
+
+  await page.evaluate(() => {
+    localStorage.setItem("app_lang", "en")
+    window.dispatchEvent(new Event("lang_change"))
+  })
+  await expect(page.getByRole("heading", { name: "Notifications", level: 1 })).toBeVisible()
+  await expect(hoursTime).toHaveText("2 hours ago")
+  await expect(dayTime).toHaveText("1 day ago")
+
+  const absoluteTime = await hoursTime.getAttribute("title")
+  await page.locator(".message-row").filter({ hasText: "两小时前通知" }).click()
+  await expect(page.getByRole("dialog")).toContainText(absoluteTime || "not-a-date")
+})
+
 test("单条消息操作失败后可以在当前行重试", async ({ page }) => {
   let readAttempts = 0
 
@@ -61,7 +101,7 @@ test("消息详情加载失败后可以在弹层内重试", async ({ page }) => 
   await page.getByText(baseMessage.title).click()
 
   const dialog = page.getByRole("dialog")
-  await expect(dialog.getByRole("heading", { name: "消息详情加载失败" })).toBeVisible()
+  await expect(dialog.getByRole("heading", { name: "通知详情加载失败" })).toBeVisible()
   await dialog.getByRole("button", { name: "重新加载" }).click()
   await expect(dialog.getByText("重试后加载的消息详情")).toBeVisible()
   expect(detailAttempts).toBe(2)

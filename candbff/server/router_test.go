@@ -138,6 +138,7 @@ var candidateRouteContract = []routeExpectation{
 	{method: http.MethodGet, path: "/api/invoices/{orderId}/pdf", access: routeProtected},
 	{method: http.MethodGet, path: "/api/messages/", access: routeProtected},
 	{method: http.MethodGet, path: "/api/messages/unread-count", access: routeProtected},
+	{method: http.MethodGet, path: "/api/messages/read-count", access: routeProtected},
 	{method: http.MethodPut, path: "/api/messages/read", access: routeProtected},
 	{method: http.MethodPost, path: "/api/messages/delete", access: routeProtected},
 	{method: http.MethodGet, path: "/api/messages/{messageId}", access: routeProtected},

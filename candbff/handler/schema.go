@@ -801,6 +801,10 @@ type MessageUnreadCountRsp struct {
 	UnreadCount uint32 `json:"unread_count"`
 }
 
+type MessageReadCountRsp struct {
+	ReadCount uint32 `json:"read_count"`
+}
+
 type MessageOperationInput struct {
 	MessageIDs []string `json:"message_ids"`
 }

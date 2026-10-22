@@ -79,6 +79,9 @@ test("消息可以批量标记已读并删除", async ({ page }) => {
     if (pathname === "/api/messages/unread-count") {
       return { data: { unread_count: messages.filter((message) => message.status === 0).length } }
     }
+    if (pathname === "/api/messages/read-count") {
+      return { data: { read_count: messages.filter((message) => message.status === 1).length } }
+    }
     if (pathname === "/api/messages/read" && method === "PUT") {
       readBodies.push(body)
       const ids = new Set((body as { message_ids?: string[] })?.message_ids || [])
@@ -100,10 +103,13 @@ test("消息可以批量标记已读并删除", async ({ page }) => {
 
   await page.goto("/messages", { waitUntil: "domcontentloaded" })
   await expect(page.getByText("回归测试未读消息")).toBeVisible()
+  const readTab = page.locator(".message-tab").filter({ hasText: "已读" })
+  await expect(readTab).toContainText("1")
 
   await page.getByRole("button", { name: "全部标为已读" }).click()
   await expect.poll(() => readBodies).toEqual([{ message_ids: ["message-unread"] }])
   await expect(page.getByRole("button", { name: "全部标为已读" })).toHaveCount(0)
+  await expect(readTab).toContainText("2")
 
   const readMessageRow = page.locator(".group").filter({ hasText: "回归测试已读消息" })
   await readMessageRow.getByRole("button", { name: "更多操作" }).click()
@@ -111,6 +117,7 @@ test("消息可以批量标记已读并删除", async ({ page }) => {
 
   await expect.poll(() => deleteBodies).toEqual([{ message_ids: ["message-read"] }])
   await expect(page.getByText("回归测试已读消息")).toHaveCount(0)
+  await expect(readTab).toContainText("1")
 })
 
 test("会员取消续费后刷新为已取消状态", async ({ page }) => {

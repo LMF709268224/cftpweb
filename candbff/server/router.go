@@ -214,6 +214,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Route("/messages", func(r chi.Router) {
 				r.Get("/", h.ListMessages)
 				r.Get("/unread-count", h.GetUnreadMessageCount)
+				r.Get("/read-count", h.GetReadMessageCount)
 				r.Put("/read", h.MarkMessagesRead)
 				r.Post("/delete", h.DeleteMessage)
 				r.Get("/{messageId}", h.GetMessage)

@@ -168,6 +168,24 @@ func TestMessageHandlersKeepCandidateScope(t *testing.T) {
 		t.Fatalf("count request = %#v", client.countRequest)
 	}
 
+	readCountRecorder := httptest.NewRecorder()
+	handler.GetReadMessageCount(
+		readCountRecorder,
+		newCandidateHandlerRequest(http.MethodGet, "/api/messages/read-count", "", "candidate-1", nil),
+	)
+	var readCountResponse struct {
+		Data MessageReadCountRsp `json:"data"`
+	}
+	if err := json.NewDecoder(readCountRecorder.Body).Decode(&readCountResponse); err != nil ||
+		readCountRecorder.Code != http.StatusOK || readCountResponse.Data.ReadCount != 12 {
+		t.Fatalf("read count response = %d %+v, decode error = %v", readCountRecorder.Code, readCountResponse, err)
+	}
+	if client.countRequest.GetFilters().GetUserUlid() != "candidate-1" ||
+		client.countRequest.GetFilters().GetStatus() != gmsgpb.MessageStatus_READ ||
+		client.countRequest.GetLimit() != 99 {
+		t.Fatalf("read count request = %#v", client.countRequest)
+	}
+
 	markRecorder := httptest.NewRecorder()
 	handler.MarkMessagesRead(
 		markRecorder,

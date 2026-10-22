@@ -7,7 +7,7 @@ import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useBodyScrollLock } from "@/lib/bodyScrollLock"
 import { useDialogAccessibility } from "@/lib/dialogAccessibility"
-import { formatBackendDate } from "@/lib/utils"
+import { formatBackendDate, formatNotificationDate } from "@/lib/utils"
 import { fetchUnreadCount } from "@/lib/unreadCountCache"
 import { useTranslation } from "@/lib/language"
 import { hasLocalizedMessageSections, messageMarkdownToHtml, selectLocalizedMessageText } from "@/lib/messageContent"
@@ -34,6 +34,7 @@ const detailLoadingId = ref<string | null>(null)
 const detailLoadError = ref(false)
 const detailSourceMessage = ref<Message | null>(null)
 const totalUnreadCount = ref(0)
+const totalReadCount = ref<number | null>(null)
 let messagesRequestId = 0
 let detailRequestId = 0
 
@@ -97,6 +98,20 @@ async function syncUnreadCount(suppressErrorToast = true) {
   }
 }
 
+async function syncReadCount() {
+  try {
+    const response = await apiClient("/api/messages/read-count", { suppressErrorToast: true })
+    if (typeof response?.read_count !== "number") throw new Error("MESSAGES_READ_COUNT_INVALID_RESPONSE")
+    totalReadCount.value = response.read_count
+  } catch {
+    totalReadCount.value = null
+  }
+}
+
+async function syncMessageCounts() {
+  await Promise.all([syncUnreadCount(), syncReadCount()])
+}
+
 function configFor(type: string) {
   return typeConfig.value[type as keyof typeof typeConfig.value] || typeConfig.value.system
 }
@@ -107,6 +122,10 @@ function unreadCountText() {
 
 function unreadCountBadgeLabel() {
   return totalUnreadCount.value >= 99 ? "99+" : String(totalUnreadCount.value)
+}
+
+function readCountBadgeLabel() {
+  return totalReadCount.value !== null && totalReadCount.value >= 99 ? "99+" : String(totalReadCount.value)
 }
 
 function countBadgeClass(active: boolean) {
@@ -310,7 +329,7 @@ async function markAllAsRead() {
     messagesRequestId += 1
     await apiClient("/api/messages/read", { method: "PUT", body: JSON.stringify({ message_ids: unreadIds }), suppressErrorToast: true })
     messageList.value = messageList.value.map((m) => (m.isUnread ? { ...m, isRead: true, isUnread: false } : m))
-    await syncUnreadCount()
+    await syncMessageCounts()
     toast.success(t.value.messagesPage.markReadSuccess)
   } catch {
     toast.error(t.value.messagesPage.markAllFailed)
@@ -327,7 +346,7 @@ async function markAsRead(id: string, showToast = true) {
     messagesRequestId += 1
     await apiClient("/api/messages/read", { method: "PUT", body: JSON.stringify({ message_ids: [id] }), suppressErrorToast: true })
     messageList.value = messageList.value.map((m) => (m.id === id ? { ...m, isRead: true, isUnread: false } : m))
-    await syncUnreadCount()
+    await syncMessageCounts()
     openMenuId.value = null
     if (showToast) toast.success(t.value.messagesPage.markReadSuccess)
   } catch {
@@ -346,7 +365,7 @@ async function deleteMessage(id: string) {
     messagesRequestId += 1
     await apiClient("/api/messages/delete", { method: "POST", body: JSON.stringify({ message_ids: [id] }), suppressErrorToast: true })
     messageList.value = messageList.value.filter((m) => m.id !== id)
-    await syncUnreadCount()
+    await syncMessageCounts()
     openMenuId.value = null
     toast.success(t.value.messagesPage.deleteSuccess)
   } catch {
@@ -410,14 +429,14 @@ useDialogAccessibility(() => detailModalOpen.value, messageDetailDialogRef, clos
 const messagesPolling = usePolling(
   async () => {
     await fetchMessages(false, true)
-    await syncUnreadCount()
+    await syncMessageCounts()
   },
   { shouldPoll: () => !loading.value && !detailModalOpen.value && !markAllLoading.value && !messageActionLoadingId.value && !detailLoadingId.value },
 )
 
 onMounted(() => {
   void fetchMessages()
-  void syncUnreadCount()
+  void syncMessageCounts()
   messagesPolling.start()
 })
 </script>
@@ -457,6 +476,7 @@ onMounted(() => {
             <component :is="tab.icon" class="h-4 w-4" />
             {{ tab.label }}
             <span v-if="tab.value === 'unread'" :class="['rounded-full px-2 py-0.5 text-xs font-bold', countBadgeClass(selectedStatus === tab.value)]">{{ unreadCountBadgeLabel() }}</span>
+            <span v-if="tab.value === 'read' && totalReadCount !== null" :class="['rounded-full px-2 py-0.5 text-xs font-bold', countBadgeClass(selectedStatus === tab.value)]">{{ readCountBadgeLabel() }}</span>
             <span v-if="selectedStatus === tab.value" class="absolute bottom-[-1px] left-0 hidden h-0.5 w-full rounded-full bg-primary md:block" />
           </button>
         </div>
@@ -500,7 +520,7 @@ onMounted(() => {
               <h3 :class="['line-clamp-2 text-sm leading-snug text-card-foreground md:text-base', message.isUnread ? 'font-bold' : 'font-semibold']">{{ localizedMessageTitle(message.rawTitle, configFor(message.type).label) }}</h3>
               <span class="message-type-badge badge">{{ configFor(message.type).label }}</span>
             </div>
-            <span class="text-xs text-muted-foreground">{{ formatBackendDate(message.createdAt, lang) }}</span>
+            <time :datetime="message.createdAt" :title="formatBackendDate(message.createdAt, lang)" class="text-xs text-muted-foreground">{{ formatNotificationDate(message.createdAt, lang) }}</time>
             <div
               v-if="messageActionError?.id === message.id"
               class="message-row-feedback mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-red-200 bg-red-50 px-2.5 py-2 text-xs text-red-700"

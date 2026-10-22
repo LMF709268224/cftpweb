@@ -135,6 +135,24 @@ func (h *Handler) GetUnreadMessageCount(w http.ResponseWriter, r *http.Request) 
 	})
 }
 
+func (h *Handler) GetReadMessageCount(w http.ResponseWriter, r *http.Request) {
+	candidateID := CandidateID(r)
+
+	rsp, err := h.Gmsg.GetMessageCount(r.Context(), &gmsgpb.GetMessageCountRequest{
+		Filters: &gmsgpb.MessageFilters{
+			UserUlid: candidateID,
+			Status:   gmsgpb.MessageStatus_READ.Enum(),
+		},
+		Limit: 99,
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, MessageReadCountRsp{ReadCount: rsp.GetCount()})
+}
+
 func (h *Handler) MarkMessagesRead(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
 
