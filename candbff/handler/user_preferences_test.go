@@ -2,6 +2,7 @@ package handler
 
 import (
 	"bytes"
+	"encoding/json"
 	"image"
 	"image/png"
 	"mime/multipart"
@@ -70,5 +71,66 @@ func TestUpdateUserProfilePreservesIdentityFields(t *testing.T) {
 	h.UpdateUserProfile(response, updateProfileRequest(`{"email":"other@example.com","display_name":"Other","real_name":"Other","first_name":"New"}`))
 	if response.Code != http.StatusOK || store.current.Email != "original@example.com" || store.current.DisplayName != "Existing display" || store.current.RealName != "Existing real" {
 		t.Fatalf("identity fields changed: status=%d user=%+v", response.Code, store.current)
+	}
+}
+
+func TestUpdateUserProfilePersistsCasdoorLinks(t *testing.T) {
+	store := &fakeProfileUserStore{current: &casdoorsdk.User{
+		Name: "candidate", Homepage: "https://old.example.com", LinkedIn: "linkedin-oauth-id", Twitter: "twitter-oauth-id",
+		Properties: map[string]string{"unrelated": "keep", userPropProfileLinkedIn: "https://www.linkedin.com/in/old", userPropProfileX: "https://x.com/old"},
+	}}
+	h := &Handler{profileUsers: store}
+	response := httptest.NewRecorder()
+	h.UpdateUserProfile(response, updateProfileRequest(`{"homepage":" https://example.com/me ","linkedin":"https://www.linkedin.com/in/new","twitter":""}`))
+	if response.Code != http.StatusOK || store.updateCalls != 1 {
+		t.Fatalf("status=%d updates=%d body=%s", response.Code, store.updateCalls, response.Body.String())
+	}
+	if store.current.Homepage != "https://example.com/me" || store.current.LinkedIn != "linkedin-oauth-id" || store.current.Twitter != "twitter-oauth-id" ||
+		store.current.Properties[userPropProfileLinkedIn] != "https://www.linkedin.com/in/new" || store.current.Properties[userPropProfileX] != "" ||
+		store.current.Properties["unrelated"] != "keep" {
+		t.Fatalf("links or properties not preserved: %+v", store.current)
+	}
+	response = httptest.NewRecorder()
+	h.UpdateUserProfile(response, updateProfileRequest(`{"first_name":"New"}`))
+	if response.Code != http.StatusOK || store.current.Homepage != "https://example.com/me" || store.current.Properties[userPropProfileLinkedIn] != "https://www.linkedin.com/in/new" {
+		t.Fatalf("omitted links changed: %+v", store.current)
+	}
+}
+
+func TestUpdateUserProfileRejectsInvalidLinks(t *testing.T) {
+	for _, body := range []string{
+		`{"homepage":"javascript:alert(1)"}`,
+		`{"linkedin":"https://linkedin.com.evil.example/in/user"}`,
+		`{"twitter":"https://example.com/user"}`,
+		`{"homepage":"https://user:password@example.com"}`,
+	} {
+		store := &fakeProfileUserStore{current: &casdoorsdk.User{Name: "candidate"}}
+		response := httptest.NewRecorder()
+		(&Handler{profileUsers: store}).UpdateUserProfile(response, updateProfileRequest(body))
+		if response.Code != http.StatusBadRequest || store.updateCalls != 0 {
+			t.Fatalf("body=%s status=%d updates=%d", body, response.Code, store.updateCalls)
+		}
+	}
+}
+
+func TestGetUserMeIncludesCasdoorLinks(t *testing.T) {
+	store := &fakeProfileUserStore{current: &casdoorsdk.User{
+		Name: "candidate", Homepage: "https://example.com", LinkedIn: "linkedin-oauth-id", Twitter: "twitter-oauth-id",
+		Properties: map[string]string{userPropProfileLinkedIn: "https://linkedin.com/in/candidate", userPropProfileX: "https://x.com/candidate"},
+	}}
+	h := &Handler{profileUsers: store}
+	response := httptest.NewRecorder()
+	h.GetUserMe(response, updateProfileRequest(`{}`))
+	if response.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", response.Code, response.Body.String())
+	}
+	var result struct {
+		Data UserMeRsp `json:"data"`
+	}
+	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
+		t.Fatal(err)
+	}
+	if result.Data.Homepage != "https://example.com" || result.Data.LinkedIn != "https://linkedin.com/in/candidate" || result.Data.Twitter != "https://x.com/candidate" {
+		t.Fatalf("user profile response=%+v", result.Data)
 	}
 }

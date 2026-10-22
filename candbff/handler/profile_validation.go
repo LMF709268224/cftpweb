@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	"net/url"
 	"regexp"
 	"strings"
 	"unicode/utf8"
@@ -13,6 +14,7 @@ const (
 	profileAddressMax    = 160
 	profileBioMax        = 500
 	profilePostalCodeMax = 16
+	profileLinkMax       = 100
 )
 
 var postalCodePattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9 -]*[A-Za-z0-9]$`)
@@ -140,6 +142,24 @@ func normalizeAndValidateUserProfileInput(input *UserProfileInput) error {
 	rawGender := strings.TrimSpace(input.Gender)
 	input.Gender = normalizeProfileGender(input.Gender)
 	input.Education = trimProfileText(input.Education, profileShortTextMax)
+	for _, link := range []struct {
+		field string
+		value **string
+		hosts []string
+	}{
+		{"homepage", &input.Homepage, nil},
+		{"linkedin", &input.LinkedIn, []string{"linkedin.com"}},
+		{"twitter", &input.Twitter, []string{"x.com", "twitter.com"}},
+	} {
+		if *link.value == nil {
+			continue
+		}
+		value := strings.TrimSpace(**link.value)
+		if err := validateProfileLink(link.field, value, link.hosts); err != nil {
+			return err
+		}
+		*link.value = &value
+	}
 
 	if rawGender != "" && input.Gender == "" {
 		return fmt.Errorf("gender is invalid")
@@ -152,6 +172,29 @@ func normalizeAndValidateUserProfileInput(input *UserProfileInput) error {
 	}
 	if !validProfilePostalCode(input.PostalCode, false) {
 		return fmt.Errorf("postal_code is invalid")
+	}
+	return nil
+}
+
+func validateProfileLink(field, value string, allowedHosts []string) error {
+	if value == "" {
+		return nil
+	}
+	if err := validateProfileTextLength(field, value, profileLinkMax); err != nil {
+		return err
+	}
+	parsed, err := url.Parse(value)
+	if err != nil || (!strings.EqualFold(parsed.Scheme, "https") && !strings.EqualFold(parsed.Scheme, "http")) || parsed.Hostname() == "" || parsed.User != nil {
+		return fmt.Errorf("%s must be an HTTP or HTTPS URL", field)
+	}
+	if len(allowedHosts) > 0 {
+		host := strings.ToLower(parsed.Hostname())
+		for _, allowed := range allowedHosts {
+			if host == allowed || strings.HasSuffix(host, "."+allowed) {
+				return nil
+			}
+		}
+		return fmt.Errorf("%s has an invalid domain", field)
 	}
 	return nil
 }

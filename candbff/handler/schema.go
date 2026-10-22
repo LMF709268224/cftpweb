@@ -50,6 +50,9 @@ type UserMeRsp struct {
 	Gender           string               `json:"gender"`
 	Birthday         string               `json:"birthday"`
 	Education        string               `json:"education"`
+	Homepage         string               `json:"homepage"`
+	LinkedIn         string               `json:"linkedin"`
+	Twitter          string               `json:"twitter"`
 	AccountStatus    UserAccountStatusRsp `json:"account_status"`
 }
 
@@ -93,22 +96,25 @@ type UserQualificationStatusRsp struct {
 }
 
 type UserProfileInput struct {
-	FirstName        string `json:"first_name"`
-	LastName         string `json:"last_name"`
-	PhoneCountryCode string `json:"phone_country_code"`
-	Phone            string `json:"phone"`
-	HomePhone        string `json:"home_phone"`
-	Country          string `json:"country"`
-	Province         string `json:"province"`
-	City             string `json:"city"`
-	Address          string `json:"address"`
-	PostalCode       string `json:"postal_code"`
-	Affiliation      string `json:"affiliation"`
-	Title            string `json:"title"`
-	Bio              string `json:"bio"`
-	Gender           string `json:"gender"`
-	Birthday         string `json:"birthday"`
-	Education        string `json:"education"`
+	FirstName        string  `json:"first_name"`
+	LastName         string  `json:"last_name"`
+	PhoneCountryCode string  `json:"phone_country_code"`
+	Phone            string  `json:"phone"`
+	HomePhone        string  `json:"home_phone"`
+	Country          string  `json:"country"`
+	Province         string  `json:"province"`
+	City             string  `json:"city"`
+	Address          string  `json:"address"`
+	PostalCode       string  `json:"postal_code"`
+	Affiliation      string  `json:"affiliation"`
+	Title            string  `json:"title"`
+	Bio              string  `json:"bio"`
+	Gender           string  `json:"gender"`
+	Birthday         string  `json:"birthday"`
+	Education        string  `json:"education"`
+	Homepage         *string `json:"homepage"`
+	LinkedIn         *string `json:"linkedin"`
+	Twitter          *string `json:"twitter"`
 }
 
 type UserPasswordInput struct {

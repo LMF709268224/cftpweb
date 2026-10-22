@@ -14,6 +14,9 @@ export interface UserProfile {
   work_phone_country_code?: string
   work_phone?: string
   avatar: string
+  homepage?: string
+  linkedin?: string
+  twitter?: string
   language?: string
   account_status?: UserAccountStatus
   [key: string]: any

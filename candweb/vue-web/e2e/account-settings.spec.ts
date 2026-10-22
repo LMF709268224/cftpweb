@@ -22,6 +22,58 @@ test("profile keeps identity fields read-only and saves the preferred language",
   await expect(page.getByRole("heading", { name: "设置", exact: true }).first()).toBeVisible()
 })
 
+test("profile saves Casdoor links without changing social login identities", async ({ page }) => {
+  const profileRequests: Record<string, unknown>[] = []
+  const user = {
+    ...candidateUser,
+    language: "en",
+    gender: "male",
+    birthday: "1990-01-01",
+    address_text: "1 Main Street",
+    postal_code: "123456",
+    homepage: "https://old.example.com",
+    linkedin: "https://www.linkedin.com/in/old",
+    twitter: "https://x.com/old",
+  }
+  await seedAuthenticatedCandidate(page)
+  await installCandidateApiMocks(page, ({ pathname, method, body }) => {
+    if (pathname === "/api/user/me") return { data: user }
+    if (pathname === "/api/user/profile" && method === "PUT") {
+      const values = body as Record<string, unknown>
+      profileRequests.push(values)
+      Object.assign(user, values)
+      return { data: { success: true } }
+    }
+    return undefined
+  })
+
+  await page.goto("/settings")
+  await expect(page.getByLabel("Website")).toHaveValue("https://old.example.com")
+  await expect(page.getByLabel("LinkedIn")).toHaveValue("https://www.linkedin.com/in/old")
+  await expect(page.getByLabel("X", { exact: true })).toHaveValue("https://x.com/old")
+  await page.getByLabel("Website").fill("https://example.com")
+  await page.getByLabel("LinkedIn").fill("https://not-linkedin.example/in/user")
+  await page.locator("form.settings-form").first().getByRole("button", { name: "Save Changes" }).click()
+  expect(profileRequests).toHaveLength(0)
+
+  await page.getByLabel("LinkedIn").fill("https://www.linkedin.com/in/new")
+  await page.getByLabel("X", { exact: true }).fill("https://x.com/new")
+  const invalidFields = await page.locator("form.settings-form").first().evaluate((form) =>
+    Array.from(form.querySelectorAll<HTMLInputElement | HTMLSelectElement>("input, select"))
+      .filter((input) => !input.checkValidity())
+      .map((input) => `${input.getAttribute("placeholder") || input.getAttribute("name") || input.tagName}: ${input.validationMessage}`),
+  )
+  expect(invalidFields).toEqual([])
+  await page.locator("form.settings-form").first().getByRole("button", { name: "Save Changes" }).click()
+  await expect.poll(() => profileRequests.length).toBe(1)
+  expect(profileRequests[0]).toMatchObject({ homepage: "https://example.com", linkedin: "https://www.linkedin.com/in/new", twitter: "https://x.com/new" })
+
+  await page.reload()
+  await expect(page.getByLabel("Website")).toHaveValue("https://example.com")
+  await expect(page.getByLabel("LinkedIn")).toHaveValue("https://www.linkedin.com/in/new")
+  await expect(page.getByLabel("X", { exact: true })).toHaveValue("https://x.com/new")
+})
+
 test("security settings starts email verification and confirmation clears the session", async ({ page }) => {
   const emailRequests: unknown[] = []
   await seedAuthenticatedCandidate(page)

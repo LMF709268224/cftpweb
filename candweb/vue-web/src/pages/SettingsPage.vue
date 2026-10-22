@@ -53,6 +53,9 @@ const profile = reactive({
   title: "",
   bio: "",
   education: "",
+  homepage: "",
+  linkedin: "",
+  twitter: "",
 })
 const password = reactive({ oldPassword: "", newPassword: "", confirmPassword: "" })
 const emailChange = reactive({ newEmail: "", oldCode: "", newCode: "", oldCodeSent: false, newCodeSent: false })
@@ -314,6 +317,21 @@ function sanitizeProfileForm() {
   profile.bio = trimToMax(profile.bio, PROFILE_TEXT_LIMITS.bio)
   profile.homePhone = normalizeInternationalPhone(profile.homePhone)
   profile.phone = normalizeInternationalPhone(profile.phone)
+  profile.homepage = profile.homepage.trim()
+  profile.linkedin = profile.linkedin.trim()
+  profile.twitter = profile.twitter.trim()
+}
+
+function validProfileLink(value: string, domains: string[] = []) {
+  if (!value) return true
+  if (value.length > 100) return false
+  try {
+    const parsed = new URL(value)
+    if (!["http:", "https:"].includes(parsed.protocol) || !parsed.hostname || parsed.username || parsed.password) return false
+    return domains.length === 0 || domains.some((domain) => parsed.hostname === domain || parsed.hostname.endsWith(`.${domain}`))
+  } catch {
+    return false
+  }
 }
 
 watch(
@@ -360,6 +378,9 @@ onMounted(async () => {
       profile.title = payload.title || ""
       profile.bio = payload.bio || ""
       profile.education = payload.education || ""
+      profile.homepage = payload.homepage || ""
+      profile.linkedin = payload.linkedin || ""
+      profile.twitter = payload.twitter || ""
       await locationReady
       syncLocationSelectionFromProfile()
       
@@ -423,6 +444,16 @@ async function handleUpdateProfile() {
     toast.error(t.value.settings.validationInvalidPostalCode)
     return
   }
+  for (const link of [
+    { label: t.value.settings.website, value: profile.homepage, domains: [] },
+    { label: t.value.settings.linkedin, value: profile.linkedin, domains: ["linkedin.com"] },
+    { label: t.value.settings.xProfile, value: profile.twitter, domains: ["x.com", "twitter.com"] },
+  ]) {
+    if (!validProfileLink(link.value, link.domains)) {
+      toast.error(t.value.settings.validationInvalidLink.replace("{{field}}", link.label))
+      return
+    }
+  }
   isProfileLoading.value = true
   try {
     await apiClient("/api/user/profile", {
@@ -444,6 +475,9 @@ async function handleUpdateProfile() {
         title: profile.title,
         bio: profile.bio,
         education: profile.education,
+        homepage: profile.homepage,
+        linkedin: profile.linkedin,
+        twitter: profile.twitter,
       }),
     })
     await fetchUser(true)
@@ -684,6 +718,12 @@ async function confirmEmailChange() {
             <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.jobTitle }}</span><input v-model="profile.title" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" :placeholder="t.settings.jobTitlePlaceholder" /></label>
             <label class="space-y-2 md:col-span-2"><span class="text-sm font-medium">{{ t.settings.education }}</span><input v-model="profile.education" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" :placeholder="t.settings.educationPlaceholder" /></label>
             <label class="space-y-2 md:col-span-2"><span class="text-sm font-medium">{{ t.settings.bio }}</span><textarea v-model="profile.bio" class="textarea" :maxlength="PROFILE_TEXT_LIMITS.bio" :placeholder="t.settings.bioPlaceholder" rows="3" /></label>
+            <div class="md:col-span-2 border-t border-border pt-5">
+              <h3 class="text-base font-semibold">{{ t.settings.personalLinks }}</h3>
+            </div>
+            <label class="space-y-2 md:col-span-2"><span class="text-sm font-medium">{{ t.settings.website }}</span><input v-model="profile.homepage" class="input" type="url" maxlength="100" placeholder="https://example.com" autocomplete="url" /></label>
+            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.linkedin }}</span><input v-model="profile.linkedin" class="input" type="url" maxlength="100" placeholder="https://www.linkedin.com/in/" /></label>
+            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.xProfile }}</span><input v-model="profile.twitter" class="input" type="url" maxlength="100" placeholder="https://x.com/" /></label>
           </div>
           <button class="btn btn-primary" :disabled="isProfileLoading"><Loader2 v-if="isProfileLoading" class="h-4 w-4 animate-spin" /> {{ t.common.save }}</button>
         </form>

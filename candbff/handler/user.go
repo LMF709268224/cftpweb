@@ -65,10 +65,12 @@ func (h *Handler) getProfileUserStore() profileUserStore {
 }
 
 const (
-	userPropProvince   = "province"
-	userPropPostalCode = "postal_code"
-	userPropRealName   = "realName"
-	userPropRealNameV2 = "real_name"
+	userPropProvince        = "province"
+	userPropPostalCode      = "postal_code"
+	userPropRealName        = "realName"
+	userPropRealNameV2      = "real_name"
+	userPropProfileLinkedIn = "gfi_profile_linkedin_url"
+	userPropProfileX        = "gfi_profile_x_url"
 )
 
 // GetUserMe GET /api/user/me
@@ -115,6 +117,9 @@ func (h *Handler) GetUserMe(w http.ResponseWriter, r *http.Request) {
 		Gender:           fullUser.Gender,
 		Birthday:         fullUser.Birthday,
 		Education:        fullUser.Education,
+		Homepage:         fullUser.Homepage,
+		LinkedIn:         getUserProperty(fullUser, userPropProfileLinkedIn),
+		Twitter:          getUserProperty(fullUser, userPropProfileX),
 		AccountStatus:    accountStatus,
 	})
 }
@@ -304,6 +309,15 @@ func (h *Handler) UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
 	fullUser.Gender = input.Gender
 	fullUser.Birthday = input.Birthday
 	fullUser.Education = input.Education
+	if input.Homepage != nil {
+		fullUser.Homepage = *input.Homepage
+	}
+	if input.LinkedIn != nil {
+		setUserProperty(fullUser, userPropProfileLinkedIn, *input.LinkedIn)
+	}
+	if input.Twitter != nil {
+		setUserProperty(fullUser, userPropProfileX, *input.Twitter)
+	}
 
 	setUserProperty(fullUser, userPropProvince, input.Province)
 	setUserProperty(fullUser, userPropPostalCode, input.PostalCode)
