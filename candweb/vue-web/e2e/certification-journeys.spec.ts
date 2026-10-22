@@ -2577,6 +2577,13 @@ test("Token 外部课件使用考生凭证打开并保留手动完成流程", as
                                 quizzes: [],
                             }],
                             quizzes: [],
+                        }, {
+                            chapter: { chapter_id: "chapter-completed", title: "Completed Content" },
+                            lessons: [{
+                                lesson: { lesson_id: "lesson-already-completed", title: "Completed Lesson", lesson_type: 3 },
+                                quizzes: [],
+                            }],
+                            quizzes: [],
                         }],
                         materials: [],
                         quizzes: [],
@@ -2586,10 +2593,10 @@ test("Token 外部课件使用考生凭证打开并保留手动完成流程", as
             }
         }
         if (pathname === "/api/progress") {
-            return { data: { records: lessonCompleted ? [{ material_id: tokenLessonID }] : [] } }
+            return { data: { records: [{ material_id: "lesson-already-completed" }, ...(lessonCompleted ? [{ material_id: tokenLessonID }] : [])] } }
         }
         if (pathname === `/api/progress/courses/${courseID}/sync` && method === "POST") {
-            return { data: { progress_percentage: lessonCompleted ? 100 : 0 } }
+            return { data: { progress_percentage: lessonCompleted ? 100 : 50 } }
         }
         if (pathname === `/api/pipeline/lessons/${tokenLessonID}/access-url` && method === "POST") {
             accessURLRequested = true
@@ -2608,6 +2615,13 @@ test("Token 外部课件使用考生凭证打开并保留手动完成流程", as
     })
 
     await page.goto(`/certifications/${pipelineID}/learn/${courseID}`, { waitUntil: "domcontentloaded" })
+    await expect(page.getByTestId("course-journey-panel")).toBeVisible()
+    await expect(page.getByTestId("journey-progress")).toHaveText("50%")
+    await expect(page.getByTestId("course-chapter")).toHaveCount(2)
+    await expect(page.getByTestId("course-chapter").filter({ hasText: "External Content" })).toContainText("0/1")
+    await expect(page.getByTestId("course-chapter").filter({ hasText: "Completed Content" })).toContainText("1/1")
+    await page.getByTestId("journey-next-action").click()
+    await expect(page).toHaveURL(new RegExp(`/learn/${courseID}/lessons/${tokenLessonID}`))
     const popupPromise = page.waitForEvent("popup")
     await page.getByRole("button", { name: /打开外部课件/ }).click()
     const popup = await popupPromise
@@ -2616,6 +2630,13 @@ test("Token 外部课件使用考生凭证打开并保留手动完成流程", as
 
     await page.getByTestId("complete-lesson").click()
     await expect(page.locator(`[data-testid="course-lesson"][data-lesson-id="${tokenLessonID}"]`)).toHaveAttribute("data-completed", "true")
+    await expect(page.getByTestId("journey-progress")).toHaveText("100%")
+    await expect(page.getByTestId("course-chapter").filter({ hasText: "External Content" })).toContainText("1/1")
+    await expect(page.getByTestId("journey-next-action")).toBeVisible()
+    await page.setViewportSize({ width: 390, height: 844 })
+    await expect(page.getByTestId("course-chapter-list")).toBeHidden()
+    await page.getByRole("button", { name: "课程目录" }).click()
+    await expect(page.getByTestId("course-chapter-list")).toBeVisible()
     expect(lessonCompleted).toBe(true)
 })
 
