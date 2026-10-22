@@ -7,6 +7,8 @@ export interface UserProfile {
   id: string
   name: string
   display_name: string
+  first_name?: string
+  real_name?: string
   email: string
   phone: string
   work_phone_country_code?: string

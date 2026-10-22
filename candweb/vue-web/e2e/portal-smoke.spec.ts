@@ -1,13 +1,14 @@
 import { expect, test } from "@playwright/test";
 import {
+  candidateUser,
   installCandidateApiMocks,
   seedAuthenticatedCandidate,
   type ApiMockContext,
 } from "./support/candidate";
 
 const portalPages = [
-  { path: "/dashboard", heading: "欢迎来到门户" },
-  { path: "/certifications", heading: "学习与专业认证服务" },
+  { path: "/dashboard", heading: "欢迎回来，Regression" },
+  { path: "/certifications", heading: "认证与课程" },
   { path: "/my-certifications", heading: "我的专业认证考试" },
   { path: "/exams", heading: "考试" },
   { path: "/records", heading: "档案" },
@@ -221,7 +222,42 @@ test("首页不展示微服务未能确认的用户状态", async ({ page }) => 
   await expect(page.getByTestId("dashboard-account-status")).toHaveCount(0);
 });
 
-test("公开商城按商品类型区分报名与成为会员文案", async ({ page }) => {
+for (const scenario of [
+  { name: "已购课程优先学习", purchaseCount: 1, isMember: false, label: "开始学习", href: "/my-certifications" },
+  { name: "无课程时引导入会", purchaseCount: 0, isMember: false, label: "成为会员", href: "/membership" },
+  { name: "已有会员时浏览商品", purchaseCount: 0, isMember: true, label: "探索课程与认证", href: "/certifications" },
+]) {
+  test(`首页下一步：${scenario.name}`, async ({ page }) => {
+    await seedAuthenticatedCandidate(page);
+    await installCandidateApiMocks(page, ({ pathname }) => {
+      if (pathname === "/api/user/me") {
+        return { data: {
+          ...candidateUser,
+          account_status: {
+            certification: { available: true, is_candidate: scenario.purchaseCount > 0, purchase_count: scenario.purchaseCount, programs: [] },
+            membership: { available: true, is_member: scenario.isMember },
+          },
+        } };
+      }
+      return emptyPortalResponse({ pathname } as ApiMockContext);
+    });
+    await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("heading", { name: "欢迎回来，Regression" })).toBeVisible();
+    await expect(page.getByTestId("dashboard-next-step")).toHaveText(new RegExp(scenario.label));
+    await expect(page.getByTestId("dashboard-next-step")).toHaveAttribute("href", scenario.href);
+  });
+}
+
+test("首页没有姓名时使用通用问候", async ({ page }) => {
+  await seedAuthenticatedCandidate(page);
+  await installCandidateApiMocks(page, ({ pathname }) => pathname === "/api/user/me"
+    ? { data: { ...candidateUser, first_name: "", display_name: "", real_name: "" } }
+    : emptyPortalResponse({ pathname } as ApiMockContext));
+  await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("heading", { name: "欢迎回来", exact: true })).toBeVisible();
+});
+
+test("公开商城分开展示课程认证与会员入口，并显示最低价", async ({ page }) => {
   await seedAuthenticatedCandidate(page);
   await installCandidateApiMocks(page, ({ pathname }) => {
     if (pathname !== "/api/mall/bundles") return undefined;
@@ -233,6 +269,20 @@ test("公开商城按商品类型区分报名与成为会员文案", async ({ pa
             pipeline_id: "public-pipeline",
             is_pipeline_bundle: true,
             name: "公开认证项目",
+            category_tips: "Certification",
+            display_amount_min: 12000,
+            display_amount_max: 18000,
+            display_currency: "USD",
+          },
+          {
+            bundle_id: "public-course",
+            pipeline_id: "public-course-pipeline",
+            is_pipeline_bundle: true,
+            name: "公开课程",
+            category_tips: "Course",
+            display_amount_min: 5000,
+            display_amount_max: 5000,
+            display_currency: "USD",
           },
           {
             bundle_id: "public-membership",
@@ -248,21 +298,39 @@ test("公开商城按商品类型区分报名与成为会员文案", async ({ pa
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
   const certificationCard = page.locator("article.product-card").filter({ hasText: "公开认证项目" });
+  const courseCard = page.locator("article.product-card").filter({ hasText: "公开课程" });
   const membershipCard = page.locator("article.product-card").filter({ hasText: "公开会员服务" });
-  await expect(page.getByRole("button", { name: "课程", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "全部", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "课程", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "会员方案" })).toHaveAttribute("href", "/membership");
   await expect(certificationCard.getByRole("button")).toContainText("去报名");
-  await expect(membershipCard.getByRole("button")).toContainText("成为会员");
+  await expect(certificationCard.locator(".product-price strong")).toContainText("起价");
+  await expect(certificationCard.locator(".product-price strong")).toContainText("120");
+  await expect(courseCard.locator(".product-price strong")).toContainText("50");
+  await expect(courseCard.locator(".product-price strong")).not.toContainText("起价");
+  await expect(membershipCard).toHaveCount(0);
+  await page.getByRole("button", { name: "课程", exact: true }).click();
+  await expect(certificationCard).toHaveCount(0);
+  await expect(courseCard).toBeVisible();
+  await page.getByRole("button", { name: "课程", exact: true }).click();
+  await expect(certificationCard).toBeVisible();
 
   await page.evaluate(() => {
     localStorage.setItem("app_lang", "en");
     window.dispatchEvent(new Event("lang_change"));
   });
-  await expect(page.getByRole("button", { name: "Courses", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Course", exact: true })).toBeVisible();
   await expect(certificationCard.getByRole("button")).toContainText("Enroll Now");
-  await expect(membershipCard.getByRole("button")).toContainText("Become a Member");
+  await expect(certificationCard.locator(".product-price strong")).toContainText("From");
+  await expect(page.getByRole("link", { name: "Memberships" })).toHaveAttribute("href", "/membership");
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByRole("button", { name: "Certification", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Memberships" })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);
 });
 
-test("登录后商城区分认证报名与会员加入文案", async ({ page }) => {
+test("登录后认证目录和会员购买入口分开，购买状态保持可用", async ({ page }) => {
   await seedAuthenticatedCandidate(page);
   let releaseEligibilityCheck: (() => void) | undefined;
   const eligibilityCheckPending = new Promise<void>((resolve) => {
@@ -336,7 +404,8 @@ test("登录后商城区分认证报名与会员加入文案", async ({ page }) 
 
   await page.goto("/certifications", { waitUntil: "domcontentloaded" });
 
-  await expect(page.getByRole("button", { name: "课程", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "课程", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "会员方案" })).toHaveAttribute("href", "/membership");
   const certificationCard = page.locator('[data-bundle-id="candidate-certification"]');
   const membershipCard = page.locator('[data-bundle-id="candidate-membership"]');
   const pendingCertificationCard = page.locator('[data-bundle-id="candidate-certification-pending"]');
@@ -345,12 +414,9 @@ test("登录后商城区分认证报名与会员加入文案", async ({ page }) 
   const failedCertificationCard = page.locator('[data-bundle-id="candidate-certification-failed"]');
   await expect(certificationCard).toContainText("可报名专业认证考试");
   await expect(certificationCard).toContainText("去报名");
-  await expect(membershipCard).toContainText("可成为会员");
-  await expect(membershipCard).toContainText("成为会员");
+  await expect(membershipCard).toHaveCount(0);
   await expect(pendingCertificationCard).toContainText("待确认报考资格");
   await expect(pendingCertificationCard).toContainText("查看报考资格");
-  await expect(pendingMembershipCard).toContainText("待确认会员报考资格");
-  await expect(pendingMembershipCard).toContainText("查看会员报考资格");
 
   await loadingCertificationCard.click();
   await expect(loadingCertificationCard).toHaveAttribute("aria-busy", "true");
@@ -368,18 +434,52 @@ test("登录后商城区分认证报名与会员加入文案", async ({ page }) 
     localStorage.setItem("app_lang", "en");
     window.dispatchEvent(new Event("lang_change"));
   });
-  await expect(page.getByRole("button", { name: "Courses", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Course", exact: true })).toBeVisible();
   await expect(certificationCard).toContainText("Ready to enroll in a certification exam");
   await expect(certificationCard).toContainText("Enroll Now");
-  await expect(membershipCard).toContainText("Eligible for membership");
-  await expect(membershipCard).toContainText("Become a Member");
   await expect(pendingCertificationCard).toContainText("Enrollment eligibility pending");
   await expect(pendingCertificationCard).toContainText("Check Enrollment Eligibility");
-  await expect(pendingMembershipCard).toContainText("Membership eligibility pending");
-  await expect(pendingMembershipCard).toContainText("Check Membership Eligibility");
   await expect(loadingCertificationCard).toContainText("Enrollment unavailable");
   await expect(failedCertificationCard).toContainText("Failed to load enrollment eligibility");
   await expect(failedCertificationCard).toContainText("Retry Enrollment Check");
+
+  await page.goto("/certifications?category=membership", { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("heading", { name: "会员方案商品" })).toBeVisible();
+  await expect(certificationCard).toHaveCount(0);
+  await page.evaluate(() => {
+    localStorage.setItem("app_lang", "en");
+    window.dispatchEvent(new Event("lang_change"));
+  });
+  await expect(page.getByRole("heading", { name: "Membership offers" })).toBeVisible();
+  await expect(membershipCard).toContainText("Eligible for membership");
+  await expect(membershipCard).toContainText("Become a Member");
+  await expect(pendingMembershipCard).toContainText("Membership eligibility pending");
+  await expect(pendingMembershipCard).toContainText("Check Membership Eligibility");
+});
+
+test("会员页购买按钮进入会员方案商品", async ({ page }) => {
+  await seedAuthenticatedCandidate(page);
+  await installCandidateApiMocks(page, ({ pathname }) => {
+    if (pathname === "/api/membership/plans") {
+      return { data: { plans: [{ membership_ulid: "plan-1", name: "CFtP Member", tier_level: 1 }] } };
+    }
+    if (pathname === "/api/mall/bundles") {
+      return { data: { bundles: [{
+        bundle_id: "membership-offer",
+        membership_id: "plan-1",
+        is_membership_bundle: true,
+        name: "CFtP Member 方案",
+        eligibility: { can_purchase: true, blockers: [] },
+      }] } };
+    }
+    return emptyPortalResponse({ pathname } as ApiMockContext);
+  });
+
+  await page.goto("/membership", { waitUntil: "domcontentloaded" });
+  await page.getByRole("button", { name: "会员等级" }).click();
+  await page.getByRole("link", { name: "查看会员方案商品" }).click();
+  await expect(page).toHaveURL(/\/certifications\?category=membership$/);
+  await expect(page.locator('[data-bundle-id="membership-offer"]')).toContainText("成为会员");
 });
 
 test("首页统计卡片可以跳转到对应页面", async ({ page }) => {
@@ -420,7 +520,7 @@ test("支付成功页在移动端不会因长 ID 横向溢出", async ({ page })
 
   await expect(card).toBeVisible();
   await expect(page.getByRole("link", { name: "查看我的专业认证" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "返回学习与专业认证服务" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "返回认证与课程" })).toBeVisible();
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await expect.poll(() => orderId.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
 

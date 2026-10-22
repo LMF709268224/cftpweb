@@ -132,7 +132,7 @@ export const router = createRouter({
         { path: "/courses/learn", redirect: redirectCertificationLearn },
         { path: "/courses/supplementary", redirect: redirectCertificationSupplementary },
         { path: "/courses/timeline", redirect: redirectCertificationTimeline },
-        { path: "/membership", component: MembershipPage, meta: { titleKey: "membership" } },
+        { path: "/membership", component: MembershipPage, meta: { titleKey: "membership", requiresAuth: true } },
         { path: "/exams", component: ExamsPage, meta: { titleKey: "exams", requiresAuth: true } },
         { path: "/checkout/success/:orderId", component: CheckoutSuccessPage, meta: { titleKey: "checkoutSuccess", requiresAuth: true } },
         { path: "/checkout/:bundleId", component: CheckoutWizardPage, meta: { titleKey: "checkout", requiresAuth: true } },

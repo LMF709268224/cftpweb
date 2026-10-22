@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
-import { useRouter } from "vue-router"
+import { RouterLink, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
-import { AlertCircle, ArrowRight, BookOpen, Clock, LoaderCircle, Search } from "lucide-vue-next"
+import { AlertCircle, ArrowRight, BookOpen, Clock, Crown, LoaderCircle, Search } from "lucide-vue-next"
 import GfiHeader from "@/components/GfiHeader.vue"
 import { apiClient } from "@/lib/apiClient"
 import { isAuthenticated } from "@/lib/authStorage"
-import { formatCurrencyMinorAmount } from "@/lib/display"
+import { bundleDisplayPriceLabel } from "@/lib/bundleDisplayPrice"
 import { startGfiLogin } from "@/lib/gfiLogin"
 import { useTranslation } from "@/lib/language"
 
-type ProductCategory = "all" | "Certification" | "Course" | "membership"
+type ProductCategory = "catalog" | "Certification" | "Course"
 
 type PublicCourse = {
   id: string
@@ -21,13 +21,12 @@ type PublicCourse = {
   priceLabel: string
   categoryTips: string
   isPipelineBundle: boolean
-  isMembershipBundle: boolean
 }
 
 const router = useRouter()
 const { t, lang } = useTranslation()
 const searchQuery = ref("")
-const activeCategory = ref<ProductCategory>("all")
+const activeCategory = ref<ProductCategory>("catalog")
 const allCourses = ref<PublicCourse[]>([])
 const loading = ref(false)
 const loadError = ref(false)
@@ -39,43 +38,43 @@ const pageCopy = computed(() => lang.value === "zh"
       eyebrow: "GFI 专业认证",
       title: "通过专业认证，迈向职业新高度",
       subtitle: "获得全球认可的金融科技认证，展现您的专业能力。",
-      oneTimeFee: "认证及相关服务费用",
+      oneTimeFee: "未计折扣和税费",
       loginAction: "登录后报名",
       memberAction: "去报名",
-      membershipAction: "成为会员",
       searchPlaceholder: "搜索...",
       loadErrorTitle: "相关内容暂时无法加载",
-      loadErrorDesc: "请稍后重试，或登录后进入学习与专业认证服务查看。",
+      loadErrorDesc: "请稍后重试，或登录后进入认证与课程查看。",
       retry: "重新加载",
     }
   : {
       eyebrow: "GFI Professional Credentials",
       title: "Advance Your Career with Professional Certifications",
       subtitle: "Earn globally recognized fintech credentials and demonstrate your expertise.",
-      oneTimeFee: "Certification and related service fee",
+      oneTimeFee: "Before discounts and taxes",
       loginAction: "Log In to Enroll",
       memberAction: "Enroll Now",
-      membershipAction: "Become a Member",
       searchPlaceholder: "Search...",
       loadErrorTitle: "Content is temporarily unavailable",
-      loadErrorDesc: "Please try again shortly or log in to view Learning & Certification Services.",
+      loadErrorDesc: "Please try again shortly or log in to view Certifications & Courses.",
       retry: "Reload",
     })
 
 const categoryOptions = computed<Array<{ key: ProductCategory; label: string }>>(() => [
-  { key: "all", label: t.value.courses.categoryAll },
   { key: "Certification", label: t.value.courses.categoryTipsCertification },
   { key: "Course", label: t.value.courses.categoryTipsCourse },
-  { key: "membership", label: t.value.courses.categoryMembership },
 ])
+
+function selectCategory(category: ProductCategory) {
+  activeCategory.value = activeCategory.value === category ? "catalog" : category
+}
 
 function normalizedCategoryTips(value: unknown) {
   return String(value || "").trim().toLowerCase()
 }
 
 function matchesCourseCategory(course: PublicCourse, category: ProductCategory) {
-  if (category === "all") return true
-  if (category === "membership") return course.isMembershipBundle
+  if (!course.isPipelineBundle) return false
+  if (category === "catalog") return true
   return course.isPipelineBundle && normalizedCategoryTips(course.categoryTips) === normalizedCategoryTips(category)
 }
 
@@ -85,7 +84,6 @@ function categoryLabel(course: PublicCourse) {
     if (category === "certification") return t.value.courses.categoryTipsCertification
     if (category === "course") return t.value.courses.categoryTipsCourse
   }
-  if (course.isMembershipBundle) return t.value.courses.categoryMembership
   return course.provider
 }
 
@@ -100,25 +98,6 @@ const filteredCourses = computed(() => {
 
 function certificationDisplayName(value?: string) {
   return String(value || "").replace(/\bPipeline\b/g, "Certification").replace(/管线/g, "专业认证")
-}
-
-function formatDisplayAmount(amount: number, currency = "USD") {
-  return formatCurrencyMinorAmount(amount, currency) || ""
-}
-
-function authenticatedActionLabel(course: PublicCourse) {
-  return course.isMembershipBundle && !course.isPipelineBundle
-    ? pageCopy.value.membershipAction
-    : pageCopy.value.memberAction
-}
-
-function bundlePriceLabel(bundle: any) {
-  const min = Number(bundle?.display_amount_min || 0)
-  const max = Number(bundle?.display_amount_max || 0)
-  const currency = String(bundle?.display_currency || "USD").trim()
-  if (min <= 0 && max <= 0) return ""
-  if (max > 0 && max !== min) return `${formatDisplayAmount(min, currency)} - ${formatDisplayAmount(max, currency)}`
-  return formatDisplayAmount(min || max, currency)
 }
 
 function normalizeBundleItemType(value: unknown) {
@@ -154,11 +133,6 @@ function isPipelineBundle(bundle: any, itemTypes: string[]) {
   return itemTypes.some((type) => type.includes("pipeline"))
 }
 
-function isMembershipBundle(bundle: any, itemTypes: string[]) {
-  if (bundle?.is_membership_bundle === true) return true
-  return itemTypes.some((type) => type.includes("membership"))
-}
-
 async function fetchData() {
   loading.value = true
   loadError.value = false
@@ -169,7 +143,6 @@ async function fetchData() {
       const stages = Array.isArray(bundle?.stages) ? bundle.stages : []
       const itemTypes = bundleItemTypes(bundle)
       const pipelineBundle = isPipelineBundle(bundle, itemTypes)
-      const membershipBundle = isMembershipBundle(bundle, itemTypes)
       const unitCount = stages.reduce((total: number, stage: any) => total + (Array.isArray(stage?.units) ? stage.units.length : 0), 0)
       const firstStageNames = stages.slice(0, 2).map((stage: any) => stage?.name).filter(Boolean).join(" / ")
       return {
@@ -178,10 +151,9 @@ async function fetchData() {
         description: String(bundle.description || "").trim() || firstStageNames || `${stages.length} ${t.value.courses.stages} / ${unitCount} ${t.value.courses.units}`,
         provider: bundle.category_tips || t.value.courses.certificationPath,
         image: typeof bundle?.thumbnail_url === "string" ? bundle.thumbnail_url : "",
-        priceLabel: bundlePriceLabel(bundle),
+        priceLabel: bundleDisplayPriceLabel(bundle, t.value.courseCard.fromPrice),
         categoryTips: String(bundle.category_tips || "").trim(),
         isPipelineBundle: pipelineBundle,
-        isMembershipBundle: membershipBundle,
       }
     })
   } catch (error) {
@@ -249,16 +221,23 @@ onBeforeUnmount(() => {
 
       <section class="marketplace-catalog" :aria-label="t.courses.title">
         <div class="catalog-toolbar">
-          <div class="category-filter" role="group" :aria-label="t.courses.title">
-            <button
-              v-for="option in categoryOptions"
-              :key="option.key"
-              type="button"
-              :class="{ active: activeCategory === option.key }"
-              @click="activeCategory = option.key"
-            >
-              {{ option.label }}
-            </button>
+          <div class="catalog-filters">
+            <div class="category-filter" role="group" :aria-label="t.courses.title">
+              <button
+                v-for="option in categoryOptions"
+                :key="option.key"
+                type="button"
+                :class="{ active: activeCategory === option.key }"
+                :aria-pressed="activeCategory === option.key"
+                @click="selectCategory(option.key)"
+              >
+                {{ option.label }}
+              </button>
+            </div>
+            <RouterLink to="/membership" class="membership-link">
+              <Crown aria-hidden="true" />
+              {{ t.courses.membershipsLink }}
+            </RouterLink>
           </div>
 
           <label class="catalog-search">
@@ -324,7 +303,7 @@ onBeforeUnmount(() => {
                     loginProductId === course.id
                       ? t.loginPage.loading
                       : authenticated
-                        ? authenticatedActionLabel(course)
+                        ? pageCopy.memberAction
                         : pageCopy.loginAction
                   }}
                 </span>
@@ -337,10 +316,10 @@ onBeforeUnmount(() => {
         <div v-else class="catalog-state catalog-state--empty">
           <span class="catalog-state-icon"><Search /></span>
           <div>
-            <h2>{{ searchQuery.trim() || activeCategory !== "all" ? t.courses.noSearchTitle : t.courses.noAvailableTitle }}</h2>
-            <p>{{ searchQuery.trim() || activeCategory !== "all" ? t.courses.noSearchDesc : t.courses.noAvailableDesc }}</p>
+            <h2>{{ searchQuery.trim() || activeCategory !== "catalog" ? t.courses.noSearchTitle : t.courses.noAvailableTitle }}</h2>
+            <p>{{ searchQuery.trim() || activeCategory !== "catalog" ? t.courses.noSearchDesc : t.courses.noAvailableDesc }}</p>
           </div>
-          <button v-if="searchQuery.trim() || activeCategory !== 'all'" type="button" @click="searchQuery = ''; activeCategory = 'all'">
+          <button v-if="searchQuery.trim() || activeCategory !== 'catalog'" type="button" @click="searchQuery = ''; activeCategory = 'catalog'">
             {{ t.courses.clearSearch }}
           </button>
         </div>
@@ -427,6 +406,33 @@ onBeforeUnmount(() => {
   gap: 20px;
   border-bottom: 1px solid var(--marketplace-border);
 }
+
+.catalog-filters {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+}
+
+.membership-link {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 14px;
+  border: 1px solid var(--marketplace-border);
+  border-radius: 8px;
+  color: var(--marketplace-navy);
+  background: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.membership-link:hover { border-color: var(--marketplace-vivid); color: var(--marketplace-vivid); }
+.membership-link svg { width: 17px; height: 17px; }
 
 .category-filter {
   display: inline-flex;
@@ -796,9 +802,11 @@ onBeforeUnmount(() => {
     width: 100%;
   }
 
+  .catalog-filters { flex-direction: column; align-items: stretch; }
+
   :global(html[lang="en"] .public-marketplace .category-filter) {
     display: grid;
-    grid-template-columns: .55fr 1.45fr .9fr 1.1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     overflow-x: hidden;
   }
 

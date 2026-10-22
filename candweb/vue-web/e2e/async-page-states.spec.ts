@@ -18,10 +18,10 @@ type AsyncPageCase = {
 
 const asyncPageCases: AsyncPageCase[] = [
   {
-    name: "学习与专业认证服务",
+    name: "认证与课程",
     path: "/certifications",
     endpoint: "/api/mall/bundles",
-    errorTitle: "学习与专业认证服务加载失败",
+    errorTitle: "认证与课程加载失败",
     successTitle: "暂无相关内容",
     successData: { bundles: [] },
   },

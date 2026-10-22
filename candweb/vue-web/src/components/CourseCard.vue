@@ -399,10 +399,7 @@ async function handleCardClick() {
 
         <div class="course-card-detail-slot min-h-[52px]">
           <div v-if="priceLabel" class="space-y-0.5">
-            <div class="text-sm font-medium leading-5 text-muted-foreground">
-              {{ cardCopy.estimatedPrice }}
-            </div>
-            <div class="whitespace-nowrap text-[22px] font-bold leading-tight text-[#002a66] xl:text-[24px] 2xl:text-[26px]">
+            <div class="break-words text-[22px] font-bold leading-tight text-[#002a66] xl:text-[24px] 2xl:text-[26px]">
               {{ priceLabel }}
             </div>
           </div>

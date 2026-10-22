@@ -1,20 +1,26 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
+import { RouterLink, useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
-import { GraduationCap, Search } from "lucide-vue-next"
+import { Crown, GraduationCap, Search } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import CourseCard from "@/components/CourseCard.vue"
 import PageFeedback from "@/components/PageFeedback.vue"
 import { apiClient } from "@/lib/apiClient"
-import { formatCurrencyMinorAmount } from "@/lib/display"
+import { bundleDisplayPriceLabel } from "@/lib/bundleDisplayPrice"
 import { useTranslation } from "@/lib/language"
 import { preloadCheckoutWizard } from "@/router"
 
 const { t, lang } = useTranslation()
-type CourseCategoryFilter = "all" | "Certification" | "Course" | "membership"
+const route = useRoute()
+const router = useRouter()
+type CourseCategoryFilter = "catalog" | "Certification" | "Course" | "membership"
 
 const searchQuery = ref("")
-const activeCategory = ref<CourseCategoryFilter>("all")
+const activeCategory = computed<CourseCategoryFilter>(() => {
+  const category = route.query.category
+  return category === "Certification" || category === "Course" || category === "membership" ? category : "catalog"
+})
 const refreshKey = ref(0)
 const allCourses = ref<any[]>([])
 const loading = ref(false)
@@ -30,19 +36,22 @@ function clearPaymentPollInterval() {
 
 const emptyCopy = computed(() => t.value.courses)
 const categoryOptions = computed<Array<{ key: CourseCategoryFilter; label: string }>>(() => [
-  { key: "all", label: t.value.courses.categoryAll },
   { key: "Certification", label: t.value.courses.categoryTipsCertification },
   { key: "Course", label: t.value.courses.categoryTipsCourse },
-  { key: "membership", label: t.value.courses.categoryMembership },
 ])
+
+function selectCategory(category: CourseCategoryFilter) {
+  void router.replace({ query: { ...route.query, category: activeCategory.value === category ? undefined : category } })
+}
 
 function normalizedCategoryTips(value: unknown) {
   return String(value || "").trim().toLowerCase()
 }
 
 function matchesCourseCategory(course: any, category: CourseCategoryFilter) {
-  if (category === "all") return true
   if (category === "membership") return Boolean(course.isMembershipBundle)
+  if (!course.isPipelineBundle) return false
+  if (category === "catalog") return true
   return Boolean(course.isPipelineBundle) && normalizedCategoryTips(course.categoryTips) === normalizedCategoryTips(category)
 }
 
@@ -59,19 +68,6 @@ const filteredCourses = computed(() => {
 
 function certificationDisplayName(value?: string) {
   return String(value || "").replace(/\bPipeline\b/g, "Certification").replace(/管线/g, "专业认证")
-}
-
-function formatDisplayAmount(amount: number, currency = "USD") {
-  return formatCurrencyMinorAmount(amount, currency) || ""
-}
-
-function bundlePriceLabel(bundle: any) {
-  const min = Number(bundle?.display_amount_min || 0)
-  const max = Number(bundle?.display_amount_max || 0)
-  const currency = String(bundle?.display_currency || "USD").trim()
-  if (min <= 0 && max <= 0) return ""
-  if (max > 0 && max !== min) return `${formatDisplayAmount(min, currency)} - ${formatDisplayAmount(max, currency)}`
-  return formatDisplayAmount(min || max, currency)
 }
 
 function normalizeBundleItemType(value: unknown) {
@@ -145,7 +141,7 @@ async function fetchData() {
         provider: b.category_tips || t.value.courses.certificationPath,
         isPurchased: false,
         image: typeof b?.thumbnail_url === "string" ? b.thumbnail_url : "",
-        priceLabel: bundlePriceLabel(b),
+        priceLabel: bundleDisplayPriceLabel(b, t.value.courseCard.fromPrice),
         categoryTips: String(b.category_tips || "").trim(),
         students: typeof b.purchase_count === "number" ? b.purchase_count : undefined,
         versionLabel: `${t.value.courses.version} ${b.version || 0}`,
@@ -248,8 +244,8 @@ onBeforeUnmount(() => {
 
       <main class="px-5 py-8 md:px-8 lg:px-10">
         <div class="courses-page-intro mb-6">
-          <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.courses.title }}</h1>
-          <p class="mt-2 text-muted-foreground">{{ t.courses.subtitle }}</p>
+          <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ activeCategory === 'membership' ? t.courses.membershipOffersTitle : t.courses.title }}</h1>
+          <p class="mt-2 text-muted-foreground">{{ activeCategory === 'membership' ? t.courses.membershipOffersSubtitle : t.courses.subtitle }}</p>
         </div>
 
         <div class="courses-page-controls mb-4 flex flex-col gap-3 rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] lg:flex-row lg:items-center lg:justify-between">
@@ -263,12 +259,18 @@ onBeforeUnmount(() => {
                   'courses-category-option h-9 rounded-md px-3 text-sm font-semibold transition-colors',
                   activeCategory === option.key ? 'bg-primary text-white shadow-sm shadow-primary/20' : 'text-muted-foreground hover:bg-white hover:text-foreground',
                 ]"
-                @click="activeCategory = option.key"
+                :aria-pressed="activeCategory === option.key"
+                @click="selectCategory(option.key)"
               >
                 {{ option.label }}
               </button>
             </div>
           </div>
+
+          <RouterLink to="/membership" class="inline-flex min-h-9 shrink-0 items-center justify-center gap-2 rounded-md border border-slate-200 px-3 text-sm font-semibold text-[#002a66] hover:bg-slate-50">
+            <Crown class="h-4 w-4" aria-hidden="true" />
+            {{ t.courses.membershipsLink }}
+          </RouterLink>
 
           <div class="courses-search relative w-full lg:ml-auto lg:max-w-md">
             <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -294,12 +296,12 @@ onBeforeUnmount(() => {
         <PageFeedback
           v-else
           kind="empty"
-          :title="searchQuery.trim() || activeCategory !== 'all' ? emptyCopy.noSearchTitle : emptyCopy.noAvailableTitle"
-          :description="searchQuery.trim() || activeCategory !== 'all' ? emptyCopy.noSearchDesc : emptyCopy.noAvailableDesc"
+          :title="searchQuery.trim() || activeCategory !== 'catalog' ? emptyCopy.noSearchTitle : emptyCopy.noAvailableTitle"
+          :description="searchQuery.trim() || activeCategory !== 'catalog' ? emptyCopy.noSearchDesc : emptyCopy.noAvailableDesc"
         >
           <template #icon><Search class="h-8 w-8" /></template>
-          <template v-if="searchQuery.trim() || activeCategory !== 'all'" #action>
-            <button class="btn btn-primary mt-5 rounded-lg shadow-sm shadow-primary/20" @click="searchQuery = ''; activeCategory = 'all'">
+          <template v-if="searchQuery.trim() || activeCategory !== 'catalog'" #action>
+            <button class="btn btn-primary mt-5 rounded-lg shadow-sm shadow-primary/20" @click="searchQuery = ''; selectCategory(activeCategory)">
               {{ emptyCopy.clearSearch }}
             </button>
           </template>
@@ -364,7 +366,7 @@ onBeforeUnmount(() => {
 
   .courses-category-filter {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     width: 100%;
     min-width: 0;
   }

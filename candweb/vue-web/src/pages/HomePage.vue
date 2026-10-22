@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from "vue"
 import type { Component } from "vue"
 import { RouterLink } from "vue-router"
-import { AlertCircle, Award, BookOpen, CheckCircle2, ClipboardList, Crown, GraduationCap, Loader2, PackageOpen, PanelLeft, Receipt, RefreshCw, ShieldCheck } from "lucide-vue-next"
+import { AlertCircle, ArrowRight, Award, BookOpen, CheckCircle2, ClipboardList, Crown, GraduationCap, Loader2, PackageOpen, PanelLeft, Receipt, RefreshCw, ShieldCheck } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import PageFeedback from "@/components/PageFeedback.vue"
 import { apiClient } from "@/lib/apiClient"
@@ -32,10 +32,33 @@ const countErrors = ref<Record<DashboardCountKey, boolean>>({
 })
 
 
+const greetingName = computed(() => [
+  currentUser.value?.first_name,
+  currentUser.value?.display_name,
+  currentUser.value?.real_name,
+].map((value) => String(value || "").trim()).find(Boolean) || "")
+
 const guideCopy = computed(() => ({
-  title: t.value.home.portalTitle,
+  title: greetingName.value
+    ? t.value.home.portalTitleNamed.replace("{name}", greetingName.value)
+    : t.value.home.portalTitle,
   subtitle: t.value.home.portalSubtitle,
 }))
+
+const nextStep = computed(() => {
+  const status = currentUser.value?.account_status
+  if (!currentUser.value) return null
+
+  const courseCountKnown = Boolean(status?.certification?.available) || (dashboardLoaded.value && !countErrors.value.certifications)
+  const hasCourse = status?.certification?.available
+    ? status.certification.is_candidate
+    : dashboardLoaded.value && !countErrors.value.certifications && counts.value.certifications > 0
+  if (hasCourse) return { label: t.value.home.startYourLearning, href: "/my-certifications" }
+  if (courseCountKnown && status?.membership?.available && !status.membership.is_member) {
+    return { label: t.value.home.becomeMember, href: "/membership" }
+  }
+  return { label: t.value.home.exploreOptions, href: "/certifications" }
+})
 
 type CardColor = "orange" | "purple" | "blue" | "teal" | "green"
 type PortalCard = {
@@ -325,6 +348,10 @@ onMounted(() => {
         <section class="w-full text-center">
           <h1 class="font-bold text-[#002a66]">{{ guideCopy.title }}</h1>
           <p class="mx-auto mt-4 max-w-3xl text-[15px] leading-6 text-[#525e70]">{{ guideCopy.subtitle }}</p>
+          <RouterLink v-if="nextStep" data-testid="dashboard-next-step" :to="nextStep.href" class="btn btn-primary mx-auto mt-6 inline-flex min-h-11 items-center justify-center gap-2 px-5">
+            {{ nextStep.label }}
+            <ArrowRight class="h-4 w-4" aria-hidden="true" />
+          </RouterLink>
         </section>
 
         <section
