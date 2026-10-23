@@ -1131,6 +1131,7 @@ export const en: AppTranslations = {
         newEmailCodeInvalid: "The new email code is incorrect or expired. Check it and try again.",
         emailCodeRateLimited: "Codes are being requested too often. Try again shortly.",
         emailCodeCooldown: "You can request another code in {seconds} seconds",
+        emailCodeSwitchCooldown: "Code requests must be at least 60 seconds apart. You can send to the new email in {seconds} seconds",
         emailCodeSendFailed: "Could not send the code. Try again shortly.",
         emailChanged: "Email updated. Sign in again with your new address.",
         avatar: "Profile photo",

@@ -634,7 +634,7 @@ async function sendNewEmailCode() {
     return
   }
   if (emailCodeCooldownSeconds.value > 0) {
-    emailChange.newError = t.value.settings.emailCodeCooldown.replace("{seconds}", String(emailCodeCooldownSeconds.value))
+    emailChange.newError = t.value.settings.emailCodeSwitchCooldown.replace("{seconds}", String(emailCodeCooldownSeconds.value))
     return
   }
   isNewEmailCodeLoading.value = true
@@ -889,7 +889,7 @@ async function confirmEmailChange() {
                   <button type="button" class="btn btn-outline" :disabled="isNewEmailCodeLoading || emailCodeCooldownSeconds > 0" @click="sendNewEmailCode"><Loader2 v-if="isNewEmailCodeLoading" class="mr-2 h-4 w-4 animate-spin" />{{ t.settings.sendNewEmailCode }}</button>
                 </div>
                 <p v-if="emailChange.newError" class="mt-2 text-sm text-red-600" role="alert">{{ emailChange.newError }}</p>
-                <p v-if="emailCodeCooldownSeconds > 0" class="mt-2 text-sm text-muted-foreground">{{ t.settings.emailCodeCooldown.replace('{seconds}', String(emailCodeCooldownSeconds)) }}</p>
+                <p v-if="emailCodeCooldownSeconds > 0" class="mt-2 text-sm text-muted-foreground">{{ t.settings.emailCodeSwitchCooldown.replace('{seconds}', String(emailCodeCooldownSeconds)) }}</p>
               </div>
               <button class="btn btn-primary" :disabled="isEmailConfirmLoading"><Loader2 v-if="isEmailConfirmLoading" class="mr-2 h-4 w-4 animate-spin" />{{ t.settings.confirmEmailChange }}</button>
             </template>

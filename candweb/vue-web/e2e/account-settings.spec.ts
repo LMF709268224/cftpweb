@@ -153,6 +153,7 @@ test("email change verifies the current address first and allows retrying a wron
   await expect(page.getByLabel("新邮箱", { exact: true })).toBeVisible()
   await expect(page.getByLabel("新邮箱验证码")).toBeVisible()
   await expect(page.getByRole("button", { name: "发送到新邮箱" })).toBeDisabled()
+  await expect(page.getByText(/两次发送验证码至少间隔 60 秒，\d+ 秒后可发送到新邮箱/)).toBeVisible()
   await page.clock.fastForward(61_000)
   await page.getByRole("button", { name: "发送到新邮箱" }).click()
   await expect(page.getByText("请输入有效的新邮箱地址")).toBeVisible()

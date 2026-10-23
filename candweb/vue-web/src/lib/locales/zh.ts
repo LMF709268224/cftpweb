@@ -1129,6 +1129,7 @@ export const zh = {
         newEmailCodeInvalid: "新邮箱验证码错误或已过期，请核对后重试",
         emailCodeRateLimited: "验证码发送过于频繁，请稍后重试",
         emailCodeCooldown: "{seconds} 秒后可再次发送验证码",
+        emailCodeSwitchCooldown: "两次发送验证码至少间隔 60 秒，{seconds} 秒后可发送到新邮箱",
         emailCodeSendFailed: "发送验证码失败，请稍后重试",
         emailChanged: "邮箱修改完成，请使用新邮箱重新登录。",
         avatar: "个人头像",
