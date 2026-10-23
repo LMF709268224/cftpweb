@@ -151,11 +151,11 @@ async function fetchData() {
         exemptionOptions: b?.purchase_state?.exemption_options || b?.exemption_options || null,
         activeMembership: b?.active_membership || null,
         stages,
-        stats: [
+        stats: pipelineBundle ? [
           { label: t.value.courses.stages, value: stages.length },
           { label: t.value.courses.units, value: unitCount },
           { label: t.value.courses.awardedCertificates, value: awardCertCount },
-        ],
+        ] : [],
       }
     }))
     loadError.value = false

@@ -414,6 +414,7 @@ test("登录后认证目录和会员购买入口分开，购买状态保持可�
   const failedCertificationCard = page.locator('[data-bundle-id="candidate-certification-failed"]');
   await expect(certificationCard).toContainText("可报名专业认证考试");
   await expect(certificationCard).toContainText("去报名");
+  await expect(certificationCard.locator(".course-card-stats")).toBeVisible();
   await expect(membershipCard).toHaveCount(0);
   await expect(pendingCertificationCard).toContainText("待确认报考资格");
   await expect(pendingCertificationCard).toContainText("查看报考资格");
@@ -453,6 +454,7 @@ test("登录后认证目录和会员购买入口分开，购买状态保持可�
   await expect(page.getByRole("heading", { name: "Membership offers" })).toBeVisible();
   await expect(membershipCard).toContainText("Eligible for membership");
   await expect(membershipCard).toContainText("Become a Member");
+  await expect(membershipCard.locator(".course-card-stats")).toHaveCount(0);
   await expect(pendingMembershipCard).toContainText("Membership eligibility pending");
   await expect(pendingMembershipCard).toContainText("Check Membership Eligibility");
 });
