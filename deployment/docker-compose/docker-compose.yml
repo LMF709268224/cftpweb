@@ -17,6 +17,10 @@ x-bff-base: &bff-base
     gateway-net:
 
 services:
+  casdoor:
+    volumes:
+      - casdoor-files:/files
+
   candbff:
     image: ${IMAGE_REGISTRY:-localhost}/candbff:${IMAGE_TAG:-dev-latest}
     container_name: ${COMPOSE_PROJECT_NAME:-cftp}-candbff
@@ -112,6 +116,9 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+
+volumes:
+  casdoor-files:
 
 networks:
   web-net:
