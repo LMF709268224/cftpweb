@@ -104,30 +104,66 @@ test("profile rejects future and underage birthdates before saving", async ({ pa
   }
 })
 
-test("security settings starts email verification and confirmation clears the session", async ({ page }) => {
-  const emailRequests: unknown[] = []
+test("email change verifies the current address first and allows retrying a wrong new code", async ({ page }) => {
+  const emailRequests: { path: string, body: unknown }[] = []
+  let oldAttempts = 0
+  let newAttempts = 0
+  let loginStarts = 0
+  await page.clock.install()
   await seedAuthenticatedCandidate(page)
   await installCandidateApiMocks(page, ({ pathname, method, body }) => {
+    if (pathname === "/api/auth/login-url") loginStarts += 1
     if (pathname === "/api/user/email/send-code" && method === "POST") return { data: { email: candidateUser.email } }
-    if (pathname === "/api/user/email/request" && method === "POST") {
-      emailRequests.push(body)
-      return { data: { status: "sent" } }
+    if (pathname === "/api/user/email/verify-current" && method === "POST") {
+      emailRequests.push({ path: pathname, body })
+      oldAttempts += 1
+      return oldAttempts === 1
+        ? { status: 400, errorCode: "INVALID_REQUEST", message: "current email verification code is incorrect or expired" }
+        : { data: { proof: "signed-old-email-proof", expires_in: 600 } }
     }
-    if (pathname === "/api/auth/email/confirm" && method === "POST") return { data: { status: "updated" } }
+    if (pathname === "/api/user/email/send-new-code" && method === "POST") {
+      emailRequests.push({ path: pathname, body })
+      return { data: { email: "new@example.test" } }
+    }
+    if (pathname === "/api/user/email/confirm" && method === "POST") {
+      emailRequests.push({ path: pathname, body })
+      newAttempts += 1
+      return newAttempts === 1
+        ? { status: 400, errorCode: "INVALID_REQUEST", message: "请在 10 分钟内输入正确验证码" }
+        : { data: { status: "updated" } }
+    }
     return undefined
   })
   await page.goto("/settings?tab=account")
   await expect(page.getByText(candidateUser.email)).toBeVisible()
-  await page.getByRole("button", { name: "发送验证码" }).click()
   await page.getByLabel("新邮箱").fill("new@example.test")
+  await expect(page.getByLabel("新邮箱验证码")).toHaveCount(0)
+  await page.getByRole("button", { name: "验证当前邮箱" }).click()
+  await expect(page.getByText("请先获取并输入当前邮箱收到的 6 位验证码")).toBeVisible()
+  await page.getByRole("button", { name: "发送验证码" }).click()
+  await page.getByLabel("当前邮箱验证码").fill("111111")
+  await page.getByRole("button", { name: "验证当前邮箱" }).click()
+  await expect(page.getByText("当前邮箱验证码错误或已过期，请核对后重试")).toBeVisible()
   await page.getByLabel("当前邮箱验证码").fill("123456")
-  await page.getByRole("button", { name: "发送确认链接" }).click()
-  await expect.poll(() => emailRequests).toContainEqual({ new_email: "new@example.test", code: "123456" })
-
-  await page.goto("/email-confirm?id=test-request&side=new&token=test-token")
-  await expect(page.getByText("邮箱修改完成，请使用新邮箱重新登录。")).toBeVisible()
-  await expect(page).toHaveURL(/\/email-confirm$/)
+  await page.getByRole("button", { name: "验证当前邮箱" }).click()
+  await expect(page.getByText("当前邮箱已验证")).toBeVisible()
+  await expect(page.getByLabel("当前邮箱验证码")).toHaveCount(0)
+  await expect(page.getByLabel("新邮箱验证码")).toBeVisible()
+  await expect(page.getByRole("button", { name: "发送到新邮箱" })).toBeDisabled()
+  await page.clock.fastForward(61_000)
+  await page.getByRole("button", { name: "发送到新邮箱" }).click()
+  await expect.poll(() => emailRequests).toContainEqual({
+    path: "/api/user/email/send-new-code", body: { new_email: "new@example.test", proof: "signed-old-email-proof" },
+  })
+  await page.getByLabel("新邮箱验证码").fill("111111")
+  await page.getByRole("button", { name: "确认修改邮箱" }).click()
+  await expect(page.getByText("新邮箱验证码错误或已过期，请核对后重试")).toBeVisible()
+  await page.getByLabel("新邮箱验证码").fill("654321")
+  await page.getByRole("button", { name: "确认修改邮箱" }).click()
+  await expect.poll(() => emailRequests.filter((request) => request.path === "/api/user/email/confirm").length).toBe(2)
+  await expect(page).toHaveURL(/\/$/)
   await expect.poll(() => page.evaluate(() => localStorage.getItem("is_authenticated"))).toBeNull()
+  expect(loginStarts).toBe(0)
 })
 
 test("profile photo crop previews pixels and uploads the cropped PNG", async ({ page }) => {

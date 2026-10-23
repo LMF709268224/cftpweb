@@ -100,6 +100,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 				r.Put("/language", h.UpdateUserLanguage)
 				r.Post("/avatar", h.UploadUserAvatar)
 				r.Post("/email/send-code", h.SendEmailChangeCode)
+				r.Post("/email/verify-current", h.VerifyCurrentEmailChangeCode)
 				r.Post("/email/send-new-code", h.SendNewEmailChangeCode)
 				r.Post("/email/confirm", h.ConfirmEmailChange)
 				r.Put("/password", h.UpdateUserPassword)

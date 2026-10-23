@@ -2,6 +2,7 @@ package handler
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -14,9 +15,20 @@ import (
 	"time"
 
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 var casdoorEmailHTTPClient = &http.Client{Timeout: 10 * time.Second}
+
+const emailChangeProofTTL = 10 * time.Minute
+
+type emailChangeProofClaims struct {
+	Owner        string `json:"owner"`
+	Name         string `json:"name"`
+	CurrentEmail string `json:"current_email"`
+	NewEmail     string `json:"new_email"`
+	jwt.StandardClaims
+}
 
 type casdoorEmailResponse struct {
 	Status string `json:"status"`
@@ -30,6 +42,50 @@ func (e casdoorEmailError) Error() string { return e.message }
 func validEmailAddress(value string) bool {
 	address, err := mail.ParseAddress(value)
 	return err == nil && address.Address == value && len(value) <= 254
+}
+
+func (h *Handler) emailChangeProofKey() ([]byte, error) {
+	if h.CasdoorClientSecret == "" {
+		return nil, errors.New("Casdoor client secret is unavailable")
+	}
+	key := sha256.Sum256([]byte("candbff:email-change-proof:v1:" + h.CasdoorClientSecret))
+	return key[:], nil
+}
+
+func (h *Handler) issueEmailChangeProof(r *http.Request, user *casdoorsdk.User, newEmail string) (string, error) {
+	key, err := h.emailChangeProofKey()
+	if err != nil {
+		return "", err
+	}
+	now := time.Now()
+	claims := emailChangeProofClaims{
+		Owner: user.Owner, Name: user.Name, CurrentEmail: user.Email, NewEmail: newEmail,
+		StandardClaims: jwt.StandardClaims{
+			Issuer: "candbff-email-change", Subject: CandidateID(r),
+			IssuedAt: now.Unix(), ExpiresAt: now.Add(emailChangeProofTTL).Unix(),
+		},
+	}
+	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(key)
+}
+
+func (h *Handler) validEmailChangeProof(r *http.Request, user *casdoorsdk.User, newEmail, proof string) (bool, error) {
+	key, err := h.emailChangeProofKey()
+	if err != nil {
+		return false, err
+	}
+	claims := &emailChangeProofClaims{}
+	token, err := jwt.ParseWithClaims(proof, claims, func(token *jwt.Token) (interface{}, error) {
+		if token.Method != jwt.SigningMethodHS256 {
+			return nil, errors.New("unexpected email proof algorithm")
+		}
+		return key, nil
+	})
+	if err != nil || !token.Valid {
+		return false, nil
+	}
+	return claims.Issuer == "candbff-email-change" && claims.Subject == CandidateID(r) &&
+		claims.Owner == user.Owner && claims.Name == user.Name &&
+		strings.EqualFold(claims.CurrentEmail, user.Email) && claims.NewEmail == newEmail, nil
 }
 
 func (h *Handler) emailApplicationID() (string, error) {
@@ -124,18 +180,19 @@ func (h *Handler) SendEmailChangeCode(w http.ResponseWriter, r *http.Request) {
 	h.sendEmailVerificationCode(w, r, user.Email)
 }
 
-// SendNewEmailChangeCode sends a Casdoor code to the proposed address.
-func (h *Handler) SendNewEmailChangeCode(w http.ResponseWriter, r *http.Request) {
+// VerifyCurrentEmailChangeCode consumes the old code and issues a short-lived proof for one new address.
+func (h *Handler) VerifyCurrentEmailChangeCode(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		NewEmail string `json:"new_email"`
+		OldCode  string `json:"old_code"`
 	}
 	if err := ReadJSON(r, &input); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
 	newEmail := strings.ToLower(strings.TrimSpace(input.NewEmail))
-	if !validEmailAddress(newEmail) {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "valid new email is required")
+	if !validEmailAddress(newEmail) || !sixDigitCode(input.OldCode) {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "a new email and six-digit current email code are required")
 		return
 	}
 	users := h.getProfileUserStore()
@@ -157,22 +214,94 @@ func (h *Handler) SendNewEmailChangeCode(w http.ResponseWriter, r *http.Request)
 		WriteError(w, http.StatusConflict, ErrPrecondition, "new email is unavailable")
 		return
 	}
-	h.sendEmailVerificationCode(w, r, newEmail)
+	oldCode, err := json.Marshal(map[string]string{
+		"organization": user.Owner,
+		"name":         user.Name,
+		"username":     user.Email,
+		"code":         input.OldCode,
+	})
+	if err != nil {
+		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to verify current email")
+		return
+	}
+	if err := h.callCasdoorEmailAPI(r, "/api/verify-code", bytes.NewReader(oldCode), "application/json"); err != nil {
+		var rejected casdoorEmailError
+		if errors.As(err, &rejected) {
+			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "current email verification code is incorrect or expired")
+			return
+		}
+		slog.Error("Failed to verify current email with Casdoor", "error", err)
+		WriteError(w, http.StatusBadGateway, ErrServiceUnavailable, "failed to verify current email")
+		return
+	}
+	proof, err := h.issueEmailChangeProof(r, user, newEmail)
+	if err != nil {
+		slog.Error("Failed to issue current email proof", "error", err)
+		WriteError(w, http.StatusServiceUnavailable, ErrServiceUnavailable, "email verification is unavailable")
+		return
+	}
+	WriteJSON(w, http.StatusOK, map[string]interface{}{"proof": proof, "expires_in": int(emailChangeProofTTL.Seconds())})
 }
 
-func (h *Handler) ConfirmEmailChange(w http.ResponseWriter, r *http.Request) {
+// SendNewEmailChangeCode sends a Casdoor code to the proposed address.
+func (h *Handler) SendNewEmailChangeCode(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		NewEmail string `json:"new_email"`
-		OldCode  string `json:"old_code"`
-		NewCode  string `json:"new_code"`
+		Proof    string `json:"proof"`
 	}
 	if err := ReadJSON(r, &input); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
 	newEmail := strings.ToLower(strings.TrimSpace(input.NewEmail))
-	if !validEmailAddress(newEmail) || !sixDigitCode(input.OldCode) || !sixDigitCode(input.NewCode) {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "valid email and two six-digit codes are required")
+	if !validEmailAddress(newEmail) {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "valid new email is required")
+		return
+	}
+	users := h.getProfileUserStore()
+	user, err := users.GetUser(CandidateName(r))
+	if err != nil || user == nil || !validEmailAddress(user.Email) {
+		WriteError(w, http.StatusServiceUnavailable, ErrServiceUnavailable, "current email is unavailable")
+		return
+	}
+	if strings.EqualFold(newEmail, user.Email) {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "new email must differ from current email")
+		return
+	}
+	valid, err := h.validEmailChangeProof(r, user, newEmail, input.Proof)
+	if err != nil {
+		WriteError(w, http.StatusServiceUnavailable, ErrServiceUnavailable, "email verification is unavailable")
+		return
+	}
+	if !valid {
+		WriteError(w, http.StatusBadRequest, ErrPrecondition, "current email verification is missing or expired")
+		return
+	}
+	existing, err := users.GetUserByEmail(newEmail)
+	if err != nil {
+		WriteError(w, http.StatusServiceUnavailable, ErrServiceUnavailable, "failed to check new email")
+		return
+	}
+	if existing != nil {
+		WriteError(w, http.StatusConflict, ErrPrecondition, "new email is unavailable")
+		return
+	}
+	h.sendEmailVerificationCode(w, r, newEmail)
+}
+
+func (h *Handler) ConfirmEmailChange(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		NewEmail string `json:"new_email"`
+		NewCode  string `json:"new_code"`
+		Proof    string `json:"proof"`
+	}
+	if err := ReadJSON(r, &input); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
+		return
+	}
+	newEmail := strings.ToLower(strings.TrimSpace(input.NewEmail))
+	if !validEmailAddress(newEmail) || !sixDigitCode(input.NewCode) {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "a new email and six-digit new email code are required")
 		return
 	}
 	user, err := h.getProfileUserStore().GetUser(CandidateName(r))
@@ -184,18 +313,13 @@ func (h *Handler) ConfirmEmailChange(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "new email must differ from current email")
 		return
 	}
-	oldProof, err := json.Marshal(map[string]string{
-		"organization": user.Owner,
-		"name":         user.Name,
-		"username":     user.Email,
-		"code":         input.OldCode,
-	})
+	valid, err := h.validEmailChangeProof(r, user, newEmail, input.Proof)
 	if err != nil {
-		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to verify current email")
+		WriteError(w, http.StatusServiceUnavailable, ErrServiceUnavailable, "email verification is unavailable")
 		return
 	}
-	if err := h.callCasdoorEmailAPI(r, "/api/verify-code", bytes.NewReader(oldProof), "application/json"); err != nil {
-		h.writeEmailVerificationError(w, err, "failed to verify current email")
+	if !valid {
+		WriteError(w, http.StatusBadRequest, ErrPrecondition, "current email verification is missing or expired")
 		return
 	}
 	form := url.Values{"type": {"email"}, "dest": {newEmail}, "code": {input.NewCode}}

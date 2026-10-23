@@ -67,6 +67,7 @@ var candidateRouteContract = []routeExpectation{
 	{method: http.MethodPut, path: "/api/user/language", access: routeProtected},
 	{method: http.MethodPost, path: "/api/user/avatar", access: routeProtected},
 	{method: http.MethodPost, path: "/api/user/email/send-code", access: routeProtected},
+	{method: http.MethodPost, path: "/api/user/email/verify-current", access: routeProtected},
 	{method: http.MethodPost, path: "/api/user/email/send-new-code", access: routeProtected},
 	{method: http.MethodPost, path: "/api/user/email/confirm", access: routeProtected},
 	{method: http.MethodPut, path: "/api/user/password", access: routeProtected},

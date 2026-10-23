@@ -5,7 +5,7 @@ import { toast } from "vue-sonner"
 import { Loader2, Settings } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import LocalizedDatePicker from "@/components/LocalizedDatePicker.vue"
-import { apiClient } from "@/lib/apiClient"
+import { ApiClientError, apiClient } from "@/lib/apiClient"
 import { clearAuthSession } from "@/lib/authStorage"
 import { getMessage } from "@/lib/messages"
 import { useTranslation } from "@/lib/language"
@@ -26,13 +26,13 @@ import {
   type CountryOption,
   resolvePhoneCountryCode,
 } from "@/lib/locationOptions"
-import { GENDER_OPTIONS, PROFILE_TEXT_LIMITS, isValidInternationalPhone, isValidPostalCode, normalizeGender, normalizeInternationalPhone, normalizePostalCode, trimToMax, validateAdultBirthdate } from "@/lib/profileFormValidation"
+import { GENDER_OPTIONS, PROFILE_TEXT_LIMITS, isValidEmail, isValidInternationalPhone, isValidPostalCode, normalizeGender, normalizeInternationalPhone, normalizePostalCode, trimToMax, validateAdultBirthdate } from "@/lib/profileFormValidation"
 import { useUser } from "@/lib/user"
 
 const route = useRoute()
 const router = useRouter()
 const { t, lang, changeLanguage } = useTranslation()
-const { fetchUser } = useUser()
+const { fetchUser, clearUser } = useUser()
 const activeTab = ref(String(route.query.tab || "profile"))
 const profile = reactive({
   email: "",
@@ -58,10 +58,49 @@ const profile = reactive({
   twitter: "",
 })
 const password = reactive({ oldPassword: "", newPassword: "", confirmPassword: "" })
-const emailChange = reactive({ newEmail: "", oldCode: "", newCode: "", oldCodeSent: false, newCodeSent: false })
+const emailChange = reactive({ newEmail: "", oldCode: "", newCode: "", oldCodeSent: false, newCodeSent: false, proof: "", emailError: "", oldError: "", newError: "" })
 const isEmailCodeLoading = ref(false)
+const isOldEmailVerifyLoading = ref(false)
 const isNewEmailCodeLoading = ref(false)
 const isEmailConfirmLoading = ref(false)
+const emailCodeNow = ref(Date.now())
+const emailCodeCooldownUntil = ref(0)
+const emailProofExpiresAt = ref(0)
+const emailCodeCooldownSeconds = computed(() => Math.max(0, Math.ceil((emailCodeCooldownUntil.value - emailCodeNow.value) / 1000)))
+let emailCodeTimer: number | undefined
+
+function startEmailCodeTimer() {
+  if (emailCodeTimer !== undefined) return
+  emailCodeTimer = window.setInterval(() => {
+    emailCodeNow.value = Date.now()
+    if (emailChange.proof && emailProofExpiresAt.value <= emailCodeNow.value) {
+      resetOldEmailVerification(t.value.settings.oldEmailCodeExpired)
+    }
+    if (emailCodeCooldownSeconds.value === 0 && !emailChange.proof) {
+      window.clearInterval(emailCodeTimer)
+      emailCodeTimer = undefined
+    }
+  }, 1000)
+}
+
+function resetOldEmailVerification(message = "") {
+  emailChange.proof = ""
+  emailChange.oldCode = ""
+  emailChange.oldCodeSent = false
+  emailChange.newCode = ""
+  emailChange.newCodeSent = false
+  emailChange.oldError = message
+  emailChange.newError = ""
+  emailProofExpiresAt.value = 0
+}
+
+function isEmailCodeRateLimited(error: unknown) {
+  return error instanceof ApiClientError && /one code in 60s|60\s*秒/i.test(error.rawMessage || "")
+}
+
+onBeforeUnmount(() => {
+  if (emailCodeTimer !== undefined) window.clearInterval(emailCodeTimer)
+})
 const isProfileLoading = ref(false)
 const isPasswordLoading = ref(false)
 const avatarInput = ref<HTMLInputElement | null>(null)
@@ -532,61 +571,131 @@ async function handleUpdatePassword() {
 
 async function sendEmailChangeCode() {
   if (isEmailCodeLoading.value) return
+  emailChange.oldError = ""
   isEmailCodeLoading.value = true
   try {
-    await apiClient("/api/user/email/send-code", { method: "POST" })
+    await apiClient("/api/user/email/send-code", { method: "POST", suppressErrorToast: true })
+    emailChange.oldCode = ""
     emailChange.oldCodeSent = true
+    emailCodeCooldownUntil.value = Date.now() + 60_000
+    startEmailCodeTimer()
     toast.success(t.value.settings.emailCodeSent)
-  } catch {
-    // apiClient displays the error.
+  } catch (error) {
+    emailChange.oldError = isEmailCodeRateLimited(error) ? t.value.settings.emailCodeRateLimited : error instanceof Error ? error.message : t.value.settings.emailCodeSendFailed
   } finally {
     isEmailCodeLoading.value = false
   }
 }
 
+async function verifyOldEmailCode() {
+  if (isOldEmailVerifyLoading.value) return
+  emailChange.emailError = ""
+  emailChange.oldError = ""
+  if (!isValidEmail(emailChange.newEmail)) {
+    emailChange.emailError = t.value.settings.newEmailInvalid
+    return
+  }
+  if (!emailChange.oldCodeSent || !/^\d{6}$/.test(emailChange.oldCode)) {
+    emailChange.oldError = t.value.settings.oldEmailCodeRequired
+    return
+  }
+  isOldEmailVerifyLoading.value = true
+  try {
+    const result = await apiClient("/api/user/email/verify-current", {
+      method: "POST",
+      body: JSON.stringify({ new_email: emailChange.newEmail.trim(), old_code: emailChange.oldCode }),
+      suppressErrorToast: true,
+    })
+    emailChange.proof = result.proof
+    emailProofExpiresAt.value = Date.now() + result.expires_in * 1000
+    emailChange.oldCode = ""
+    startEmailCodeTimer()
+  } catch (error) {
+    if (error instanceof ApiClientError && error.status === 409) {
+      emailChange.emailError = t.value.settings.newEmailUnavailable
+    } else if (error instanceof ApiClientError && error.rawMessage === "current email verification code is incorrect or expired") {
+      emailChange.oldError = t.value.settings.oldEmailCodeInvalid
+    } else {
+      emailChange.oldError = error instanceof Error ? error.message : t.value.settings.oldEmailCodeInvalid
+    }
+  } finally {
+    isOldEmailVerifyLoading.value = false
+  }
+}
+
 async function sendNewEmailCode() {
   if (isNewEmailCodeLoading.value) return
-  if (!emailChange.newEmail.trim()) {
-    toast.error(t.value.settings.emailChangeInvalid)
+  emailChange.newError = ""
+  if (!emailChange.proof || emailProofExpiresAt.value <= Date.now()) {
+    resetOldEmailVerification(t.value.settings.oldEmailCodeExpired)
+    return
+  }
+  if (emailCodeCooldownSeconds.value > 0) {
+    emailChange.newError = t.value.settings.emailCodeCooldown.replace("{seconds}", String(emailCodeCooldownSeconds.value))
     return
   }
   isNewEmailCodeLoading.value = true
   try {
     await apiClient("/api/user/email/send-new-code", {
       method: "POST",
-      body: JSON.stringify({ new_email: emailChange.newEmail.trim() }),
+      body: JSON.stringify({ new_email: emailChange.newEmail.trim(), proof: emailChange.proof }),
+      suppressErrorToast: true,
     })
+    emailChange.newCode = ""
     emailChange.newCodeSent = true
+    emailCodeCooldownUntil.value = Date.now() + 60_000
+    startEmailCodeTimer()
     toast.success(t.value.settings.newEmailCodeSent)
-  } catch {
-    // apiClient displays the error.
+  } catch (error) {
+    if (error instanceof ApiClientError && error.rawMessage === "current email verification is missing or expired") {
+      resetOldEmailVerification(t.value.settings.oldEmailCodeExpired)
+    } else {
+      emailChange.newError = isEmailCodeRateLimited(error) ? t.value.settings.emailCodeRateLimited : error instanceof Error ? error.message : t.value.settings.emailCodeSendFailed
+    }
   } finally {
     isNewEmailCodeLoading.value = false
   }
 }
 
 watch(() => emailChange.newEmail, () => {
+  emailChange.emailError = ""
+  if (emailChange.proof) {
+    resetOldEmailVerification(t.value.settings.oldEmailCodeAddressChanged)
+  }
   emailChange.newCode = ""
   emailChange.newCodeSent = false
 })
 
 async function confirmEmailChange() {
   if (isEmailConfirmLoading.value) return
-  if (!emailChange.newEmail.trim() || !/^\d{6}$/.test(emailChange.oldCode) || !/^\d{6}$/.test(emailChange.newCode)) {
-    toast.error(t.value.settings.emailChangeInvalid)
+  emailChange.newError = ""
+  if (!emailChange.proof || emailProofExpiresAt.value <= Date.now()) {
+    resetOldEmailVerification(t.value.settings.oldEmailCodeExpired)
+    return
+  }
+  if (!emailChange.newCodeSent || !/^\d{6}$/.test(emailChange.newCode)) {
+    emailChange.newError = t.value.settings.newEmailCodeRequired
     return
   }
   isEmailConfirmLoading.value = true
   try {
     await apiClient("/api/user/email/confirm", {
       method: "POST",
-      body: JSON.stringify({ new_email: emailChange.newEmail.trim(), old_code: emailChange.oldCode, new_code: emailChange.newCode }),
+      body: JSON.stringify({ new_email: emailChange.newEmail.trim(), new_code: emailChange.newCode, proof: emailChange.proof }),
+      suppressErrorToast: true,
     })
     clearAuthSession()
+    clearUser()
     toast.success(t.value.settings.emailChanged)
-    await router.replace("/login")
-  } catch {
-    // apiClient displays the error.
+    await router.replace("/")
+  } catch (error) {
+    if (error instanceof ApiClientError && error.rawMessage === "current email verification is missing or expired") {
+      resetOldEmailVerification(t.value.settings.oldEmailCodeExpired)
+    } else if (error instanceof ApiClientError && /验证码|verification code/i.test(error.rawMessage || "")) {
+      emailChange.newError = t.value.settings.newEmailCodeInvalid
+    } else {
+      emailChange.newError = error instanceof Error ? error.message : t.value.settings.newEmailCodeInvalid
+    }
   } finally {
     isEmailConfirmLoading.value = false
   }
@@ -748,17 +857,34 @@ async function confirmEmailChange() {
           <p class="text-sm text-muted-foreground">{{ t.settings.changeEmailDesc }}</p>
         </div>
         <div class="settings-section-content p-6 pt-0">
-          <form class="settings-form max-w-xl space-y-4" @submit.prevent="confirmEmailChange">
-            <label class="block space-y-2"><span class="text-sm font-medium">{{ t.settings.newEmail }}</span><input v-model="emailChange.newEmail" class="input" type="email" autocomplete="email" required /></label>
-            <div class="flex flex-wrap items-end gap-3">
-              <label class="min-w-[180px] flex-1 space-y-2"><span class="text-sm font-medium">{{ t.settings.oldEmailCode }}</span><input v-model="emailChange.oldCode" class="input" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required /></label>
-              <button type="button" class="btn btn-outline" :disabled="isEmailCodeLoading" @click="sendEmailChangeCode"><Loader2 v-if="isEmailCodeLoading" class="mr-2 h-4 w-4 animate-spin" />{{ t.settings.sendOldEmailCode }}</button>
+          <form class="settings-form max-w-xl space-y-4" novalidate @submit.prevent="confirmEmailChange">
+            <div>
+              <label class="block space-y-2"><span class="text-sm font-medium">{{ t.settings.newEmail }}</span><input v-model="emailChange.newEmail" class="input" type="email" autocomplete="email" /></label>
+              <p v-if="emailChange.emailError" class="mt-2 text-sm text-red-600" role="alert">{{ emailChange.emailError }}</p>
             </div>
-            <div class="flex flex-wrap items-end gap-3">
-              <label class="min-w-[180px] flex-1 space-y-2"><span class="text-sm font-medium">{{ t.settings.newEmailCode }}</span><input v-model="emailChange.newCode" class="input" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required /></label>
-              <button type="button" class="btn btn-outline" :disabled="isNewEmailCodeLoading || !emailChange.newEmail.trim()" @click="sendNewEmailCode"><Loader2 v-if="isNewEmailCodeLoading" class="mr-2 h-4 w-4 animate-spin" />{{ t.settings.sendNewEmailCode }}</button>
-            </div>
-            <button class="btn btn-primary" :disabled="isEmailConfirmLoading || !emailChange.oldCodeSent || !emailChange.newCodeSent"><Loader2 v-if="isEmailConfirmLoading" class="mr-2 h-4 w-4 animate-spin" />{{ t.settings.confirmEmailChange }}</button>
+            <template v-if="!emailChange.proof">
+              <div>
+                <div class="flex flex-wrap items-end gap-3">
+                  <label class="min-w-[180px] flex-1 space-y-2"><span class="text-sm font-medium">{{ t.settings.oldEmailCode }}</span><input v-model="emailChange.oldCode" class="input" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" @input="emailChange.oldError = ''" /></label>
+                  <button type="button" class="btn btn-outline" :disabled="isEmailCodeLoading || emailCodeCooldownSeconds > 0" @click="sendEmailChangeCode"><Loader2 v-if="isEmailCodeLoading" class="mr-2 h-4 w-4 animate-spin" />{{ t.settings.sendOldEmailCode }}</button>
+                  <button type="button" class="btn btn-primary" :disabled="isOldEmailVerifyLoading" @click="verifyOldEmailCode"><Loader2 v-if="isOldEmailVerifyLoading" class="mr-2 h-4 w-4 animate-spin" />{{ t.settings.verifyOldEmailCode }}</button>
+                </div>
+                <p v-if="emailChange.oldError" class="mt-2 text-sm text-red-600" role="alert">{{ emailChange.oldError }}</p>
+                <p v-if="emailCodeCooldownSeconds > 0" class="mt-2 text-sm text-muted-foreground">{{ t.settings.emailCodeCooldown.replace('{seconds}', String(emailCodeCooldownSeconds)) }}</p>
+              </div>
+            </template>
+            <template v-else>
+              <p class="text-sm text-emerald-700">{{ t.settings.oldEmailVerified }}</p>
+              <div>
+                <div class="flex flex-wrap items-end gap-3">
+                  <label class="min-w-[180px] flex-1 space-y-2"><span class="text-sm font-medium">{{ t.settings.newEmailCode }}</span><input v-model="emailChange.newCode" class="input" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" @input="emailChange.newError = ''" /></label>
+                  <button type="button" class="btn btn-outline" :disabled="isNewEmailCodeLoading || emailCodeCooldownSeconds > 0" @click="sendNewEmailCode"><Loader2 v-if="isNewEmailCodeLoading" class="mr-2 h-4 w-4 animate-spin" />{{ t.settings.sendNewEmailCode }}</button>
+                </div>
+                <p v-if="emailChange.newError" class="mt-2 text-sm text-red-600" role="alert">{{ emailChange.newError }}</p>
+                <p v-if="emailCodeCooldownSeconds > 0" class="mt-2 text-sm text-muted-foreground">{{ t.settings.emailCodeCooldown.replace('{seconds}', String(emailCodeCooldownSeconds)) }}</p>
+              </div>
+              <button class="btn btn-primary" :disabled="isEmailConfirmLoading"><Loader2 v-if="isEmailConfirmLoading" class="mr-2 h-4 w-4 animate-spin" />{{ t.settings.confirmEmailChange }}</button>
+            </template>
           </form>
         </div>
         <div class="settings-section-header flex flex-col space-y-1.5 p-6">
