@@ -1,36 +1,66 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue"
-import type { Component } from "vue"
+import { computed, onMounted, ref, watch } from "vue"
 import { RouterLink } from "vue-router"
-import { AlertCircle, ArrowRight, Award, BookOpen, CheckCircle2, ClipboardList, Crown, GraduationCap, Loader2, PackageOpen, PanelLeft, Receipt, RefreshCw, ShieldCheck } from "lucide-vue-next"
+import { ArrowRight, BookOpen, FileText, GraduationCap, PanelLeft, Play } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import PageFeedback from "@/components/PageFeedback.vue"
 import { apiClient } from "@/lib/apiClient"
 import { isAuthenticated } from "@/lib/authStorage"
 import { useTranslation } from "@/lib/language"
+import { formatBackendDateOnly } from "@/lib/utils"
 import { useUser } from "@/lib/user"
 
-const { t } = useTranslation()
-const { currentUser, isLoading: userLoading } = useUser()
-const dashboardLoading = ref(false)
-const dashboardLoaded = ref(false)
-const counts = ref({
-  certifications: 0,
-  certificates: 0,
-  courses: 0,
-  exams: 0,
-  resourcePacks: 0,
-  orders: 0,
-})
-type DashboardCountKey = "certifications" | "certificates" | "exams" | "resourcePacks" | "orders"
-const countErrors = ref<Record<DashboardCountKey, boolean>>({
-  certifications: false,
-  certificates: false,
-  exams: false,
-  resourcePacks: false,
-  orders: false,
-})
+type Pipeline = {
+  pipeline_ulid?: string
+  pipeline_cc_ulid?: string
+  pipeline_name?: string
+  current_stage_name?: string
+  progress?: number
+  progress_available?: boolean
+  status?: string | number
+  started_at?: string
+  completed_at?: string
+  created_at?: string
+}
 
+type ResourcePack = {
+  pack_id?: string
+  title?: string
+  description?: string
+  respath?: string
+}
+
+type ResourceFile = {
+  file_id?: string
+  title?: string
+  description?: string
+  file_type?: number | string
+  created_at?: string
+}
+
+type Bundle = {
+  bundle_id?: string
+  pipeline_id?: string
+  name?: string
+  description?: string
+  thumbnail_url?: string
+  is_pipeline_bundle?: boolean
+  bundle_item_types?: string[]
+}
+
+const { t, lang } = useTranslation()
+const { currentUser } = useUser()
+const pipelines = ref<Pipeline[]>([])
+const pipelinesLoaded = ref(false)
+const pipelinesLoading = ref(false)
+const pipelinesError = ref(false)
+const insights = ref<ResourceFile[]>([])
+const insightsPack = ref<ResourcePack | null>(null)
+const insightsLoading = ref(false)
+const insightsError = ref(false)
+const products = ref<Bundle[]>([])
+const productsLoading = ref(false)
+const productsError = ref(false)
 
 const greetingName = computed(() => [
   currentUser.value?.first_name,
@@ -38,301 +68,178 @@ const greetingName = computed(() => [
   currentUser.value?.real_name,
 ].map((value) => String(value || "").trim()).find(Boolean) || "")
 
-const guideCopy = computed(() => ({
-  title: greetingName.value
-    ? t.value.home.portalTitleNamed.replace("{name}", greetingName.value)
-    : t.value.home.portalTitle,
-  subtitle: t.value.home.portalSubtitle,
-}))
+const greeting = computed(() => greetingName.value
+  ? t.value.home.portalTitleNamed.replace("{name}", greetingName.value)
+  : t.value.home.portalTitle)
 
 const nextStep = computed(() => {
   const status = currentUser.value?.account_status
   if (!currentUser.value) return null
-
-  const courseCountKnown = Boolean(status?.certification?.available) || (dashboardLoaded.value && !countErrors.value.certifications)
+  const courseKnown = Boolean(status?.certification?.available) || (pipelinesLoaded.value && !pipelinesError.value)
   const hasCourse = status?.certification?.available
     ? status.certification.is_candidate
-    : dashboardLoaded.value && !countErrors.value.certifications && counts.value.certifications > 0
+    : pipelinesLoaded.value && !pipelinesError.value && pipelines.value.length > 0
   if (hasCourse) return { label: t.value.home.startYourLearning, href: "/my-certifications" }
-  if (courseCountKnown && status?.membership?.available && !status.membership.is_member) {
+  if (courseKnown && status?.membership?.available && !status.membership.is_member) {
     return { label: t.value.home.becomeMember, href: "/membership" }
   }
   return { label: t.value.home.exploreOptions, href: "/certifications" }
 })
 
-type CardColor = "orange" | "purple" | "blue" | "teal" | "green"
-type PortalCard = {
-  key: string
-  title: string
-  value: number
-  action: string
-  href: string
-  icon: Component
-  color: CardColor
-  featured: boolean
-  unavailable: boolean
+const continuingPipelines = computed(() => pipelines.value
+  .filter((pipeline) => {
+    const status = String(pipeline.status || "").toUpperCase()
+    return !pipeline.completed_at && status === "PIPELINE_STATUS_RUNNING"
+  })
+  .sort((a, b) => (Date.parse(b.started_at || b.created_at || "") || 0) - (Date.parse(a.started_at || a.created_at || "") || 0))
+  .slice(0, 2))
+
+function pipelineHref(pipeline: Pipeline) {
+  const id = pipeline.pipeline_cc_ulid || pipeline.pipeline_ulid
+  return id ? `/certifications/${encodeURIComponent(id)}` : "/my-certifications"
 }
 
-const portalCards = computed<PortalCard[]>(() => {
-  const cards: PortalCard[] = [
-    {
-      key: "certifications",
-      title: t.value.home.completedCertifications,
-      value: counts.value.certifications,
-      action: t.value.home.viewCertifications,
-      href: "/certifications",
-      icon: Award,
-      color: "orange",
-      featured: true,
-      unavailable: countErrors.value.certifications,
-    },
-    {
-      key: "courses",
-      title: t.value.home.coursesInProgress,
-      value: counts.value.courses,
-      action: t.value.home.viewCourses,
-      href: "/certifications",
-      icon: BookOpen,
-      color: "purple",
-      featured: true,
-      unavailable: false,
-    },
-    {
-      key: "exams",
-      title: t.value.home.examCount,
-      value: counts.value.exams,
-      action: t.value.home.viewExams,
-      href: "/exams",
-      icon: ClipboardList,
-      color: "blue",
-      featured: false,
-      unavailable: countErrors.value.exams,
-    },
-    {
-      key: "resourcePacks",
-      title: t.value.home.resourcePackCount,
-      value: counts.value.resourcePacks,
-      action: t.value.home.viewResourcePacks,
-      href: "/resource-packs",
-      icon: PackageOpen,
-      color: "teal",
-      featured: false,
-      unavailable: countErrors.value.resourcePacks,
-    },
-    {
-      key: "orders",
-      title: t.value.home.orderCount,
-      value: counts.value.orders,
-      action: t.value.home.viewOrders,
-      href: "/orders",
-      icon: Receipt,
-      color: "green",
-      featured: false,
-      unavailable: countErrors.value.orders,
-    },
-  ]
-
-  const visibleCards = cards
-    .filter((card) => card.key !== "courses")
-    .map((card) => {
-      switch (card.key) {
-        case "certifications":
-          return { ...card, title: t.value.home.purchasedCertifications, action: t.value.home.viewCertifications, href: "/my-certifications" }
-        case "exams":
-          return { ...card, title: t.value.home.examCount, action: t.value.home.viewExams }
-        case "resourcePacks":
-          return { ...card, title: t.value.home.resourcePackCount, action: t.value.home.viewResourcePacks }
-        case "orders":
-          return { ...card, title: t.value.home.orderCount, action: t.value.home.viewOrders }
-        default:
-          return card
-      }
-    })
-
-  return [
-    visibleCards[0],
-    {
-      key: "certificates",
-      title: t.value.home.earnedCertificates,
-      value: counts.value.certificates,
-      action: t.value.home.viewCertificates,
-      href: "/certificates",
-      icon: CheckCircle2,
-      color: "purple",
-      featured: true,
-      unavailable: countErrors.value.certificates,
-    },
-    ...visibleCards.slice(1),
-  ]
-})
-const featuredCards = computed(() => portalCards.value.filter((card) => card.featured))
-const secondaryCards = computed(() => portalCards.value.filter((card) => !card.featured))
-const showDashboardSkeleton = computed(() => dashboardLoading.value && !dashboardLoaded.value)
-const dashboardErrorCount = computed(() => Object.values(countErrors.value).filter(Boolean).length)
-const dashboardLoadFailed = computed(() => dashboardLoaded.value && dashboardErrorCount.value === 5)
-const dashboardPartialLoadFailed = computed(() => dashboardLoaded.value && dashboardErrorCount.value > 0 && !dashboardLoadFailed.value)
-
-type AccountStatusItem = {
-  key: string
-  label: string
-  value: string
-  active: boolean
-  icon: Component
+function productHref(product: Bundle) {
+  return product.pipeline_id
+    ? `/certifications/${encodeURIComponent(product.pipeline_id)}`
+    : "/certifications"
 }
 
-function countLabel(template: string, count: number) {
-  return template.replace("{count}", String(count))
+function fileHref(file: ResourceFile) {
+  if (!file.file_id) return insightsPack.value?.pack_id
+    ? `/resource-packs/${encodeURIComponent(insightsPack.value.pack_id)}`
+    : "/resource-packs"
+  if (Number(file.file_type) === 2) return `/resource-pack-files/${encodeURIComponent(file.file_id)}/preview`
+  if (Number(file.file_type) === 1) return `/video-preview/resource-pack-files/${encodeURIComponent(file.file_id)}`
+  return insightsPack.value?.pack_id
+    ? `/resource-packs/${encodeURIComponent(insightsPack.value.pack_id)}`
+    : "/resource-packs"
 }
 
-const accountStatusItems = computed<AccountStatusItem[]>(() => {
-  const status = currentUser.value?.account_status
-  const items: AccountStatusItem[] = []
+function opensPreview(file: ResourceFile) {
+  return Boolean(file.file_id && [1, 2].includes(Number(file.file_type)))
+}
 
-  if (status?.membership?.available) {
-    items.push({
-      key: "membership",
-      label: t.value.home.accountMembership,
-      value: status.membership.is_member
-        ? status.membership.plan_name || t.value.home.accountActiveMember
-        : t.value.home.accountNotMember,
-      active: status.membership.is_member,
-      icon: Crown,
-    })
+function rememberInsightsPack() {
+  const pack = insightsPack.value
+  if (!pack?.pack_id) return
+  sessionStorage.setItem(`resource-pack-title:${pack.pack_id}`, pack.title || "")
+  sessionStorage.setItem(`resource-pack-description:${pack.pack_id}`, pack.description || "")
+  sessionStorage.setItem(`resource-pack-respath:${pack.pack_id}`, pack.respath || "")
+}
+
+function rememberFileTitle(file: ResourceFile) {
+  if (file.file_id && file.title) {
+    sessionStorage.setItem(`resource-pack-file-preview-title:${file.file_id}`, file.title)
   }
+  rememberInsightsPack()
+}
 
-  if (status?.certification?.available) {
-    const programNames = status.certification.programs
-      .map((program) => String(program.name || "").trim())
-      .filter(Boolean)
-    items.push({
-      key: "certification",
-      label: t.value.home.accountCertification,
-      value: status.certification.is_candidate
-        ? programNames.join(" · ") || countLabel(t.value.home.accountPurchasedPrograms, status.certification.purchase_count)
-        : t.value.home.accountNoCertification,
-      active: status.certification.is_candidate,
-      icon: GraduationCap,
-    })
-  }
-
-  if (status?.qualification?.available) {
-    items.push({
-      key: "qualification",
-      label: t.value.home.accountQualification,
-      value: status.qualification.has_qualification
-        ? countLabel(t.value.home.accountQualificationsHeld, status.qualification.credential_count)
-        : t.value.home.accountNoQualification,
-      active: status.qualification.has_qualification,
-      icon: ShieldCheck,
-    })
-  }
-
-  return items
-})
-const accountStatusGridClass = computed(() => {
-  if (accountStatusItems.value.length >= 3) return "md:grid-cols-3"
-  if (accountStatusItems.value.length === 2) return "md:grid-cols-2"
-  return "md:grid-cols-1"
-})
-
-const cardStyles = {
-  orange: {
-    panel: "bg-white",
-    border: "border-[#c9962e]",
-    hoverBorder: "hover:border-[#c9962e]",
-    text: "text-[#002a66]",
-    number: "text-[#002a66]",
-    accent: "#c9962e",
-  },
-  purple: {
-    panel: "bg-white",
-    border: "border-[#c1cef6]",
-    hoverBorder: "hover:border-[#0957f9]",
-    text: "text-[#002a66]",
-    number: "text-[#002a66]",
-    accent: "#0957f9",
-  },
-  blue: {
-    panel: "bg-white",
-    border: "border-[#c1cef6]",
-    hoverBorder: "hover:border-[#0957f9]",
-    text: "text-[#002a66]",
-    number: "text-[#002a66]",
-    accent: "#0957f9",
-  },
-  teal: {
-    panel: "bg-white",
-    border: "border-[#c1cef6]",
-    hoverBorder: "hover:border-[#0957f9]",
-    text: "text-[#002a66]",
-    number: "text-[#002a66]",
-    accent: "#0957f9",
-  },
-  green: {
-    panel: "bg-white",
-    border: "border-[#c1cef6]",
-    hoverBorder: "hover:border-[#0957f9]",
-    text: "text-[#002a66]",
-    number: "text-[#002a66]",
-    accent: "#0957f9",
-  },
-} as const
-
-async function countFromRequest(endpoint: string, listKey: string, totalKey?: string): Promise<number | null> {
+async function loadPipelines() {
+  pipelinesLoading.value = true
+  pipelinesError.value = false
   try {
-    const res = await apiClient(endpoint, { suppressErrorToast: true })
-    const list = res?.[listKey]
-    if (!Array.isArray(list)) {
-      console.error(`Invalid dashboard response from ${endpoint}: expected array at ${listKey}`)
-      return null
-    }
-    if (totalKey && res?.[totalKey] !== null && res?.[totalKey] !== undefined) {
-      const total = Number(res[totalKey])
-      if (Number.isFinite(total) && total >= 0) return total
-    }
-    return list.length
-  } catch (err) {
-    console.error(`Failed to load ${endpoint}:`, err)
-    return null
-  }
-}
-
-async function loadDashboardStats() {
-  if (dashboardLoading.value) return
-  dashboardLoading.value = true
-  try {
-    const [certifications, certificates, exams, resourcePacks, orders] = await Promise.all([
-      countFromRequest("/api/pipeline", "list"),
-      countFromRequest("/api/certificates", "certificates"),
-      countFromRequest("/api/exams?page=1&page_size=50", "exams", "total"),
-      countFromRequest("/api/resource-packs?page_size=20", "packs"),
-      countFromRequest("/api/orders?page=1&page_size=50", "orders", "total_orders"),
-    ])
-
-    countErrors.value = {
-      certifications: certifications === null,
-      certificates: certificates === null,
-      exams: exams === null,
-      resourcePacks: resourcePacks === null,
-      orders: orders === null,
-    }
-    counts.value = {
-      certifications: certifications ?? counts.value.certifications,
-      certificates: certificates ?? counts.value.certificates,
-      courses: counts.value.courses,
-      exams: exams ?? counts.value.exams,
-      resourcePacks: resourcePacks ?? counts.value.resourcePacks,
-      orders: orders ?? counts.value.orders,
-    }
+    const response = await apiClient("/api/pipeline", { suppressErrorToast: true })
+    if (!Array.isArray(response?.list)) throw new Error("PIPELINE_LIST_INVALID_RESPONSE")
+    pipelines.value = response.list
+  } catch (error) {
+    console.error("Failed to load dashboard learning", error)
+    pipelinesError.value = true
   } finally {
-    dashboardLoaded.value = true
-    dashboardLoading.value = false
+    pipelinesLoaded.value = true
+    pipelinesLoading.value = false
   }
+}
+
+async function loadInsights() {
+  insightsLoading.value = true
+  insightsError.value = false
+  try {
+    let pack: ResourcePack | undefined
+    let cursor = ""
+    const seen = new Set<string>()
+    for (let page = 0; page < 100; page += 1) {
+      const params = new URLSearchParams({ page_size: "50" })
+      if (cursor) params.set("page_token", cursor)
+      const response = await apiClient(`/api/resource-packs?${params}`, { suppressErrorToast: true })
+      if (!Array.isArray(response?.packs)) throw new Error("RESOURCE_PACKS_INVALID_RESPONSE")
+      pack = response.packs.find((item: ResourcePack) =>
+        `${item.respath || ""} ${item.title || ""}`.toLowerCase().includes("insight"))
+      if (pack) break
+      const next = String(response.next_page_token || "")
+      if (!next) break
+      if (seen.has(next)) throw new Error("RESOURCE_PACK_CURSOR_LOOP")
+      seen.add(next)
+      cursor = next
+    }
+    insightsPack.value = pack || null
+    if (!pack?.pack_id) {
+      insights.value = []
+      return
+    }
+
+    const files: ResourceFile[] = []
+    cursor = ""
+    seen.clear()
+    let complete = false
+    for (let page = 0; page < 100; page += 1) {
+      const params = new URLSearchParams({ page_size: "50" })
+      if (cursor) params.set("page_token", cursor)
+      const response = await apiClient(
+        `/api/resource-packs/${encodeURIComponent(pack.pack_id)}/files?${params}`,
+        { suppressErrorToast: true },
+      )
+      if (!Array.isArray(response?.files)) throw new Error("RESOURCE_FILES_INVALID_RESPONSE")
+      files.push(...response.files)
+      const next = String(response.next_page_token || "")
+      if (!next) {
+        complete = true
+        break
+      }
+      if (seen.has(next)) throw new Error("RESOURCE_FILE_CURSOR_LOOP")
+      seen.add(next)
+      cursor = next
+    }
+    if (!complete) throw new Error("RESOURCE_FILE_PAGE_LIMIT")
+    insights.value = files
+      .filter((file) => Boolean(file.file_id))
+      .sort((a, b) => (Date.parse(b.created_at || "") || 0) - (Date.parse(a.created_at || "") || 0))
+      .slice(0, 2)
+  } catch (error) {
+    console.error("Failed to load dashboard insights", error)
+    insightsError.value = true
+  } finally {
+    insightsLoading.value = false
+  }
+}
+
+async function loadProducts() {
+  productsLoading.value = true
+  productsError.value = false
+  try {
+    const response = await apiClient("/api/mall/bundles", { suppressErrorToast: true })
+    if (!Array.isArray(response?.bundles)) throw new Error("MALL_BUNDLES_INVALID_RESPONSE")
+    products.value = response.bundles
+      .filter((bundle: Bundle) => bundle.is_pipeline_bundle
+        || bundle.bundle_item_types?.some((type) => String(type).toLowerCase().includes("pipeline")))
+      .slice(0, 3)
+  } catch (error) {
+    console.error("Failed to load dashboard products", error)
+    productsError.value = true
+  } finally {
+    productsLoading.value = false
+  }
+}
+
+function reloadDashboard() {
+  void Promise.all([loadPipelines(), loadInsights(), loadProducts()])
 }
 
 onMounted(() => {
-  if (!isAuthenticated()) return
-  void loadDashboardStats()
+  if (isAuthenticated()) reloadDashboard()
+})
+watch(lang, () => {
+  if (isAuthenticated()) reloadDashboard()
 })
 </script>
 
@@ -344,166 +251,138 @@ onMounted(() => {
         <span class="text-sm font-medium text-foreground">{{ t.sidebar.home }}</span>
       </header>
 
-      <main class="px-5 py-10 md:px-8 lg:px-10">
-        <section class="w-full text-center">
-          <h1 class="font-bold text-[#002a66]">{{ guideCopy.title }}</h1>
-          <p class="mx-auto mt-4 max-w-3xl text-[15px] leading-6 text-[#525e70]">{{ guideCopy.subtitle }}</p>
-          <RouterLink v-if="nextStep" data-testid="dashboard-next-step" :to="nextStep.href" class="btn btn-primary mx-auto mt-6 inline-flex min-h-11 items-center justify-center gap-2 px-5">
+      <main class="dashboard-main mx-auto w-full max-w-[1180px] px-5 py-8 md:px-8 lg:px-10">
+        <div class="dashboard-intro">
+          <h1 class="text-3xl font-bold text-[#002a66]">{{ greeting }}</h1>
+          <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600">{{ t.home.portalSubtitle }}</p>
+          <RouterLink v-if="nextStep" data-testid="dashboard-next-step" :to="nextStep.href" class="btn btn-primary mt-5 inline-flex min-h-10 items-center gap-2 px-4">
             {{ nextStep.label }}
             <ArrowRight class="h-4 w-4" aria-hidden="true" />
           </RouterLink>
+        </div>
+
+        <section class="dashboard-section mt-9 border-t border-slate-200 pt-6" :aria-label="t.home.continueLearning">
+          <div class="mb-4 flex items-center justify-between gap-4">
+            <h2 class="text-lg font-semibold text-[#002a66]">{{ t.home.continueLearning }}</h2>
+            <RouterLink to="/my-certifications" class="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
+              {{ t.home.viewLearning }} <ArrowRight class="h-4 w-4" aria-hidden="true" />
+            </RouterLink>
+          </div>
+          <PageFeedback v-if="pipelinesError" kind="error" :title="t.home.learningLoadFailed" :action-label="t.home.retry" @action="loadPipelines" />
+          <div v-else-if="pipelinesLoading && !pipelinesLoaded" class="h-32 animate-pulse rounded-md bg-white" role="status" :aria-label="t.common.loading" />
+          <div v-else-if="continuingPipelines.length" class="grid gap-3 md:grid-cols-2">
+            <RouterLink
+              v-for="pipeline in continuingPipelines"
+              :key="pipeline.pipeline_ulid || pipeline.pipeline_cc_ulid"
+              data-testid="dashboard-learning-card"
+              :to="pipelineHref(pipeline)"
+              class="dashboard-item flex min-w-0 flex-col rounded-md border border-slate-200 bg-white p-4 hover:border-primary"
+            >
+              <div class="flex items-start gap-3">
+                <BookOpen class="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+                <div class="min-w-0 flex-1">
+                  <h3 class="break-words text-base font-semibold text-[#002a66]">{{ pipeline.pipeline_name || t.common.unknownCourse }}</h3>
+                  <p v-if="pipeline.current_stage_name" class="mt-1 text-sm text-slate-600">{{ pipeline.current_stage_name }}</p>
+                </div>
+                <ArrowRight class="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+              </div>
+              <div v-if="pipeline.progress_available && Number.isFinite(Number(pipeline.progress))" class="mt-5">
+                <div class="mb-1.5 flex justify-between text-xs text-slate-600">
+                  <span>{{ t.home.learningProgress }}</span>
+                  <span>{{ Math.round(Math.max(0, Math.min(100, Number(pipeline.progress)))) }}%</span>
+                </div>
+                <div class="h-2 overflow-hidden rounded-full bg-slate-100">
+                  <div class="h-full rounded-full bg-primary" :style="{ width: `${Math.max(0, Math.min(100, Number(pipeline.progress)))}%` }" />
+                </div>
+              </div>
+            </RouterLink>
+          </div>
+          <div v-else class="flex flex-col items-start gap-3 border-l-2 border-primary bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 class="text-sm font-semibold text-[#002a66]">{{ pipelines.length ? t.home.learningCompleteTitle : t.home.noLearningTitle }}</h3>
+              <p class="mt-1 text-sm text-slate-600">{{ pipelines.length ? t.home.learningCompleteDesc : t.home.noLearningDesc }}</p>
+            </div>
+            <RouterLink to="/certifications" class="inline-flex min-h-9 shrink-0 items-center gap-1 text-sm font-semibold text-primary hover:underline">
+              {{ t.home.exploreLearning }} <ArrowRight class="h-4 w-4" aria-hidden="true" />
+            </RouterLink>
+          </div>
         </section>
 
-        <section
-          v-if="userLoading || accountStatusItems.length > 0"
-          data-testid="dashboard-account-status"
-          class="mx-auto mt-8 w-full max-w-[1120px] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.06)]"
-          :aria-label="t.home.accountStatusTitle"
-        >
-          <div v-if="userLoading && accountStatusItems.length === 0" class="grid min-h-[112px] grid-cols-1 divide-y divide-slate-200 md:grid-cols-3 md:divide-x md:divide-y-0" role="status">
-            <div v-for="item in 3" :key="`account-status-skeleton-${item}`" class="flex items-center gap-4 px-6 py-5 sm:px-7">
-              <div class="h-11 w-11 shrink-0 animate-pulse rounded-lg bg-slate-100" />
-              <div class="min-w-0 flex-1 space-y-2">
-                <div class="h-3 w-20 animate-pulse rounded bg-slate-100" />
-                <div class="h-4 w-32 animate-pulse rounded bg-slate-100" />
-              </div>
-            </div>
-          </div>
-          <div v-else :class="['grid min-h-[112px] grid-cols-1 divide-y divide-slate-200 md:divide-x md:divide-y-0', accountStatusGridClass]">
-            <div
-              v-for="item in accountStatusItems"
-              :key="item.key"
-              :data-testid="`dashboard-account-status-${item.key}`"
-              class="flex min-w-0 items-center gap-4 px-6 py-5 text-left sm:px-7"
+        <section class="dashboard-section mt-9 border-t border-slate-200 pt-6" :aria-label="t.home.latestInsights">
+          <div class="mb-4 flex items-center justify-between gap-4">
+            <h2 class="text-lg font-semibold text-[#002a66]">{{ t.home.latestInsights }}</h2>
+            <RouterLink
+              v-if="insightsPack?.pack_id"
+              :to="`/resource-packs/${encodeURIComponent(insightsPack.pack_id)}`"
+              class="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+              @click="rememberInsightsPack"
             >
-              <div :class="['flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border', item.active ? 'border-[#2f7d4f]/25 bg-[#ecf5f0] text-[#2f7d4f]' : 'border-slate-200 bg-slate-50 text-slate-500']">
-                <component :is="item.icon" class="h-5 w-5" />
-              </div>
-              <div class="min-w-0">
-                <div class="text-xs font-medium leading-5 text-slate-500">{{ item.label }}</div>
-                <div class="mt-0.5 break-words text-sm font-semibold leading-6 text-slate-900">{{ item.value }}</div>
-              </div>
-            </div>
+              {{ t.home.viewAll }} <ArrowRight class="h-4 w-4" aria-hidden="true" />
+            </RouterLink>
           </div>
+          <PageFeedback v-if="insightsError" kind="error" :title="t.home.insightsLoadFailed" :action-label="t.home.retry" @action="loadInsights" />
+          <div v-else-if="insightsLoading" class="h-28 animate-pulse rounded-md bg-white" role="status" :aria-label="t.common.loading" />
+          <div v-else-if="insights.length" class="grid gap-3 md:grid-cols-2">
+            <a
+              v-for="file in insights"
+              :key="file.file_id"
+              data-testid="dashboard-insight-card"
+              :href="fileHref(file)"
+              :target="opensPreview(file) ? '_blank' : undefined"
+              :rel="opensPreview(file) ? 'noopener noreferrer' : undefined"
+              class="dashboard-item flex min-w-0 flex-col rounded-md border border-slate-200 bg-white p-4 hover:border-primary"
+              @click="rememberFileTitle(file)"
+            >
+              <div class="flex items-start gap-3">
+                <component :is="Number(file.file_type) === 1 ? Play : FileText" class="mt-0.5 h-5 w-5 shrink-0 text-[#2f7d4f]" aria-hidden="true" />
+                <div class="min-w-0 flex-1">
+                  <h3 class="break-words text-base font-semibold text-[#002a66]">{{ file.title || t.home.untitledInsight }}</h3>
+                  <p v-if="file.description" class="mt-1 line-clamp-2 text-sm leading-5 text-slate-600">{{ file.description }}</p>
+                </div>
+              </div>
+              <div class="mt-auto flex items-center justify-between gap-3 pt-4 text-xs text-slate-500">
+                <span>{{ file.created_at ? formatBackendDateOnly(file.created_at, lang) : "" }}</span>
+                <span class="inline-flex items-center gap-1 font-semibold text-primary">
+                  {{ Number(file.file_type) === 1 ? t.home.watchInsight : t.home.readInsight }}
+                  <ArrowRight class="h-4 w-4" aria-hidden="true" />
+                </span>
+              </div>
+            </a>
+          </div>
+          <p v-else class="py-5 text-sm text-slate-600">{{ t.home.noInsights }}</p>
         </section>
 
-        <section class="portal-card-section mx-auto mt-12 w-full max-w-[1120px]">
-          <PageFeedback
-            v-if="dashboardLoadFailed"
-            kind="error"
-            :title="t.home.statsLoadFailed"
-            :description="t.home.statsLoadFailedDesc"
-          >
-            <template #action>
-              <button type="button" class="btn btn-primary mt-5 min-w-32 justify-center" :disabled="dashboardLoading" @click="loadDashboardStats">
-                <Loader2 v-if="dashboardLoading" class="h-4 w-4 animate-spin" />
-                <RefreshCw v-else class="h-4 w-4" />
-                {{ t.home.statsRetry }}
-              </button>
-            </template>
-          </PageFeedback>
-
-          <div v-else-if="showDashboardSkeleton" class="flex flex-col gap-8" role="status" :aria-label="t.common.loading" aria-live="polite">
-            <div class="portal-card-row portal-card-featured-row flex flex-col items-center justify-center gap-6 lg:flex-row">
-              <div
-                v-for="item in 2"
-                :key="`featured-skeleton-${item}`"
-                class="portal-stat-card portal-card-featured portal-card-skeleton h-[214px] w-full rounded-[16px] border border-slate-100 bg-white p-8 shadow-[0_2px_8px_rgba(15,23,42,0.08)] lg:basis-[34%] lg:grow-0 lg:shrink-0"
-              >
-                <div class="mx-auto h-9 w-9 rounded-full bg-slate-100" />
-                <div class="portal-card-skeleton-title mx-auto mt-6 h-5 w-32 rounded-full bg-slate-100" />
-                <div class="portal-card-skeleton-value mx-auto mt-12 h-9 w-16 rounded-full bg-slate-100" />
-                <div class="portal-card-skeleton-action mx-auto mt-4 h-4 w-28 rounded-full bg-slate-100" />
-              </div>
-            </div>
-
-            <div class="portal-card-row portal-card-secondary-row flex flex-col items-center justify-center gap-6 lg:flex-row">
-              <div
-                v-for="item in 3"
-                :key="`secondary-skeleton-${item}`"
-                class="portal-stat-card portal-card-secondary portal-card-skeleton h-[214px] w-full rounded-[16px] border border-slate-100 bg-white p-8 shadow-[0_2px_8px_rgba(15,23,42,0.08)] lg:basis-[29%] lg:grow-0 lg:shrink-0"
-              >
-                <div class="mx-auto h-9 w-9 rounded-full bg-slate-100" />
-                <div class="portal-card-skeleton-title mx-auto mt-6 h-5 w-28 rounded-full bg-slate-100" />
-                <div class="portal-card-skeleton-value mx-auto mt-12 h-9 w-14 rounded-full bg-slate-100" />
-                <div class="portal-card-skeleton-action mx-auto mt-4 h-4 w-24 rounded-full bg-slate-100" />
-              </div>
-            </div>
+        <section class="dashboard-section mt-9 border-t border-slate-200 pt-6" :aria-label="t.home.featuredLearning">
+          <div class="mb-4 flex items-center justify-between gap-4">
+            <h2 class="text-lg font-semibold text-[#002a66]">{{ t.home.featuredLearning }}</h2>
+            <RouterLink to="/certifications" class="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
+              {{ t.home.viewAll }} <ArrowRight class="h-4 w-4" aria-hidden="true" />
+            </RouterLink>
           </div>
-
-          <div v-else class="flex flex-col gap-8">
-            <div
-              v-if="dashboardPartialLoadFailed"
-              class="flex flex-col items-start justify-between gap-3 rounded-lg border border-[#c9962e]/40 bg-[#fdf6ec] px-4 py-3 text-left sm:flex-row sm:items-center"
-              role="alert"
+          <PageFeedback v-if="productsError" kind="error" :title="t.home.productsLoadFailed" :action-label="t.home.retry" @action="loadProducts" />
+          <div v-else-if="productsLoading" class="h-40 animate-pulse rounded-md bg-white" role="status" :aria-label="t.common.loading" />
+          <div v-else-if="products.length" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <RouterLink
+              v-for="product in products"
+              :key="product.bundle_id"
+              data-testid="dashboard-product-card"
+              :to="productHref(product)"
+              class="dashboard-item flex min-w-0 flex-col overflow-hidden rounded-md border border-slate-200 bg-white hover:border-primary"
             >
-              <div class="flex items-start gap-2 text-sm text-[#a6600c]">
-                <AlertCircle class="mt-0.5 h-4 w-4 shrink-0" />
-                <span>{{ t.home.statsPartialLoadFailed }}</span>
+              <div class="flex aspect-[16/7] items-center justify-center bg-slate-50">
+                <img v-if="product.thumbnail_url" :src="product.thumbnail_url" :alt="product.name || ''" class="h-full w-full object-contain p-3" />
+                <GraduationCap v-else class="h-8 w-8 text-primary" aria-hidden="true" />
               </div>
-              <button
-                type="button"
-                class="btn btn-outline h-10 shrink-0 border-[#c9962e] bg-white px-4 text-[#a6600c] hover:bg-[#fdf6ec]"
-                :disabled="dashboardLoading"
-                @click="loadDashboardStats"
-              >
-                <Loader2 v-if="dashboardLoading" class="h-4 w-4 animate-spin" />
-                <RefreshCw v-else class="h-4 w-4" />
-                {{ t.home.statsRetry }}
-              </button>
-            </div>
-            <div class="portal-card-row portal-card-featured-row flex flex-col items-center justify-center gap-6 lg:flex-row">
-              <RouterLink
-                v-for="card in featuredCards"
-                :key="card.key"
-                :data-testid="`dashboard-card-${card.key}`"
-                :to="card.href"
-                :class="[
-                  'portal-stat-card portal-card-featured group relative flex h-[214px] w-full flex-col items-center justify-center overflow-hidden rounded-[14px] border p-8 text-center transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 lg:basis-[34%] lg:grow-0 lg:shrink-0',
-                  cardStyles[card.color].panel,
-                  cardStyles[card.color].border,
-                  cardStyles[card.color].hoverBorder,
-                ]"
-                :style="{ '--portal-card-accent': cardStyles[card.color].accent }"
-              >
-                <span class="portal-card-sheen pointer-events-none absolute left-0 top-0 h-1 w-full" />
-                <div class="portal-card-icon relative flex h-11 w-11 items-center justify-center rounded-lg bg-[#edeef2]">
-                  <component :is="card.icon" :class="['h-6 w-6', cardStyles[card.color].text]" :stroke-width="1.5" />
-                </div>
-                <h2 :class="['relative mt-6 text-lg font-semibold', cardStyles[card.color].text]">{{ card.title }}</h2>
-                <p :class="['relative mt-12 text-5xl font-bold tracking-tight', cardStyles[card.color].number]">
-                  <span>{{ card.unavailable ? "--" : card.value }}</span>
-                </p>
-                <p :class="['relative mt-3 text-base', cardStyles[card.color].text]">{{ card.action }}</p>
-              </RouterLink>
-            </div>
-
-            <div class="portal-card-row portal-card-secondary-row flex flex-col items-center justify-center gap-6 lg:flex-row">
-              <RouterLink
-                v-for="card in secondaryCards"
-                :key="card.key"
-                :data-testid="`dashboard-card-${card.key}`"
-                :to="card.href"
-                :class="[
-                  'portal-stat-card portal-card-secondary group relative flex h-[214px] w-full flex-col items-center justify-center overflow-hidden rounded-[14px] border p-8 text-center transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 lg:basis-[29%] lg:grow-0 lg:shrink-0',
-                  cardStyles[card.color].panel,
-                  cardStyles[card.color].border,
-                  cardStyles[card.color].hoverBorder,
-                ]"
-                :style="{ '--portal-card-accent': cardStyles[card.color].accent }"
-              >
-                <span class="portal-card-sheen pointer-events-none absolute left-0 top-0 h-1 w-full" />
-                <div class="portal-card-icon relative flex h-11 w-11 items-center justify-center rounded-lg bg-[#edeef2]">
-                  <component :is="card.icon" :class="['h-6 w-6', cardStyles[card.color].text]" :stroke-width="1.5" />
-                </div>
-                <h2 :class="['relative mt-6 text-lg font-semibold', cardStyles[card.color].text]">{{ card.title }}</h2>
-                <p :class="['relative mt-12 text-5xl font-bold tracking-tight', cardStyles[card.color].number]">
-                  <span>{{ card.unavailable ? "--" : card.value }}</span>
-                </p>
-                <p :class="['relative mt-3 text-base', cardStyles[card.color].text]">{{ card.action }}</p>
-              </RouterLink>
-            </div>
+              <div class="flex flex-1 flex-col p-4">
+                <h3 class="break-words text-base font-semibold text-[#002a66]">{{ product.name || t.common.unknownCourse }}</h3>
+                <p v-if="product.description" class="mt-1 line-clamp-2 text-sm leading-5 text-slate-600">{{ product.description }}</p>
+                <span class="mt-auto inline-flex items-center gap-1 pt-4 text-sm font-semibold text-primary">
+                  {{ t.home.viewCourse }} <ArrowRight class="h-4 w-4" aria-hidden="true" />
+                </span>
+              </div>
+            </RouterLink>
           </div>
+          <p v-else class="py-5 text-sm text-slate-600">{{ t.home.noProducts }}</p>
         </section>
       </main>
     </div>
@@ -511,94 +390,17 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.portal-stat-card :deep(svg) {
-  height: 24px !important;
-  width: 24px !important;
+.dashboard-item {
+  transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 
-.portal-stat-card h2 {
-  margin-top: 16px;
-  font-size: 14px;
-  line-height: 20px;
+.dashboard-item:hover {
+  box-shadow: 0 4px 14px rgb(0 42 102 / 7%);
 }
 
-.portal-stat-card p:first-of-type {
-  margin-top: 36px;
-  font-size: 30px;
-  line-height: 1;
-}
-
-.portal-stat-card p:last-of-type {
-  margin-top: 12px;
-  font-size: 12px;
-  line-height: 16px;
-}
-
-.portal-stat-card {
-  --portal-card-accent: #0957f9;
-}
-
-.portal-card-sheen {
-  background: var(--portal-card-accent);
-}
-
-.portal-card-icon {
-  box-shadow: none;
-}
-
-.portal-card-skeleton {
-  overflow: hidden;
-  position: relative;
-}
-
-.portal-card-skeleton::after { content: none; }
-
-@media (max-width: 767px) {
-  .portal-card-section {
-    margin-top: 24px;
-  }
-
-  .portal-card-section > div {
-    gap: 16px;
-  }
-
-  .portal-card-row {
-    gap: 16px;
-  }
-
-  .portal-stat-card {
-    height: 184px;
-    padding: 20px;
-  }
-
-  .portal-card-icon {
-    height: 40px;
-    width: 40px;
-  }
-
-  .portal-stat-card h2 {
-    margin-top: 10px;
-  }
-
-  .portal-stat-card p:first-of-type {
-    margin-top: 18px;
-  }
-
-  .portal-stat-card p:last-of-type {
-    margin-top: 8px;
-  }
-
-  .portal-card-skeleton-title {
-    margin-top: 10px;
-  }
-
-  .portal-card-skeleton-value {
-    margin-top: 18px;
-  }
-
-  .portal-card-skeleton-action {
-    margin-top: 8px;
+@media (max-width: 640px) {
+  .dashboard-main {
+    padding-bottom: 40px;
   }
 }
-
 </style>

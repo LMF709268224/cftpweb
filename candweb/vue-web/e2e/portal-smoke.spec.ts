@@ -16,8 +16,8 @@ const portalPages = [
   { path: "/credentials", heading: "资格认证申请" },
   { path: "/certificates", heading: "认证证书" },
   { path: "/membership", heading: "会员资格" },
-  { path: "/orders", heading: "订单" },
-  { path: "/messages", heading: "消息" },
+  { path: "/orders", heading: "购买记录" },
+  { path: "/messages", heading: "通知" },
   { path: "/settings", heading: "设置" },
 ];
 
@@ -130,72 +130,55 @@ for (const portalPage of portalPages) {
   });
 }
 
-test("首页展示由当前用户接口返回的会员和认证状态", async ({ page }) => {
+test("首页展示学习进度、最新 Insights 和现有认证课程", async ({ page }) => {
   await seedAuthenticatedCandidate(page);
   await installCandidateApiMocks(page, ({ pathname }) => {
-    if (pathname === "/api/user/me") {
-      return {
-        data: {
-          name: "Regression Candidate",
-          account_status: {
-            membership: {
-              available: true,
-              is_member: true,
-              plan_name: "CFtP Fellow",
-            },
-            certification: {
-              available: true,
-              is_candidate: true,
-              purchase_count: 1,
-              programs: [{
-                pipeline_ulid: "pipeline-1",
-                pipeline_config_ulid: "pipeline-config-1",
-                pipeline_gpath: "/pipelines/cftp",
-                name: "CFtP",
-                status: "PIPELINE_STATUS_RUNNING",
-              }],
-            },
-            qualification: {
-              available: true,
-              has_qualification: true,
-              credential_count: 2,
-            },
-          },
-        },
-      };
-    }
+    if (pathname === "/api/pipeline") return { data: { list: [
+      { pipeline_ulid: "owned-1", pipeline_cc_ulid: "config-1", pipeline_name: "CFtP", status: "PIPELINE_STATUS_RUNNING", current_stage_name: "Level 1", progress_available: true, progress: 68, started_at: "2026-10-18T00:00:00Z" },
+      { pipeline_ulid: "owned-done", pipeline_cc_ulid: "config-done", pipeline_name: "Completed", status: "PIPELINE_STATUS_COMPLETED", progress_available: true, progress: 100 },
+    ] } };
+    if (pathname === "/api/resource-packs") return { data: { packs: [
+      { pack_id: "insights-pack", title: "Insights", respath: "/insights" },
+    ], next_page_token: "" } };
+    if (pathname === "/api/resource-packs/insights-pack/files") return { data: { files: [
+      { file_id: "older", title: "Older report", file_type: 2, created_at: "2026-10-01T00:00:00Z" },
+      { file_id: "newer", title: "New report", file_type: 2, created_at: "2026-10-21T00:00:00Z" },
+      { file_id: "middle", title: "Middle report", file_type: 2, created_at: "2026-10-12T00:00:00Z" },
+    ], next_page_token: "" } };
+    if (pathname === "/api/mall/bundles") return { data: { bundles: [
+      { bundle_id: "cert-1", pipeline_id: "config-1", is_pipeline_bundle: true, name: "CFtP" },
+      { bundle_id: "member-1", is_membership_bundle: true, name: "Membership" },
+      { bundle_id: "cert-2", pipeline_id: "config-2", is_pipeline_bundle: true, name: "CFtA" },
+      { bundle_id: "course-1", pipeline_id: "config-3", is_pipeline_bundle: true, name: "Course" },
+    ] } };
     return emptyPortalResponse({ pathname } as ApiMockContext);
   });
 
   await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
 
-  const accountStatus = page.getByTestId("dashboard-account-status");
-  await expect(accountStatus).toBeVisible();
-  await expect(page.getByTestId("dashboard-account-status-membership")).toContainText("CFtP Fellow");
-  await expect(page.getByTestId("dashboard-account-status-certification")).toContainText("CFtP");
-  await expect(page.getByTestId("dashboard-account-status-qualification")).toContainText("已持有 2 项有效资格");
+  await expect(page.getByTestId("dashboard-learning-card")).toContainText("68%");
+  await expect(page.getByTestId("dashboard-learning-card")).toHaveCount(1);
+  await expect(page.getByTestId("dashboard-learning-card")).toHaveAttribute("href", "/certifications/config-1");
+  await expect(page.getByTestId("dashboard-insight-card")).toHaveCount(2);
+  await expect(page.getByTestId("dashboard-insight-card").first()).toContainText("New report");
+  await expect(page.getByTestId("dashboard-insight-card").first()).toHaveAttribute("href", "/resource-pack-files/newer/preview");
+  await expect(page.getByTestId("dashboard-product-card")).toHaveCount(3);
+  await expect(page.getByTestId("dashboard-product-card").last()).toHaveAttribute("href", "/certifications/config-3");
+  await expect(page.getByText("Membership", { exact: true })).toHaveCount(0);
+  await expect(page.getByTestId("dashboard-account-status")).toHaveCount(0);
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(accountStatus).toBeVisible();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 });
 
-test("首页统计使用接口返回的总数而不是当前分页数量", async ({ page }) => {
+test("首页没有学习记录时显示开始学习入口", async ({ page }) => {
   await seedAuthenticatedCandidate(page);
-  await installCandidateApiMocks(page, (context) => {
-    if (context.pathname === "/api/exams") {
-      return { data: { exams: Array.from({ length: 50 }, () => ({})), total: 60 } };
-    }
-    if (context.pathname === "/api/orders") {
-      return { data: { orders: Array.from({ length: 50 }, () => ({})), total_orders: 74 } };
-    }
-    return emptyPortalResponse(context);
-  });
+  await installCandidateApiMocks(page, emptyPortalResponse);
 
   await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
 
-  await expect(page.getByTestId("dashboard-card-exams")).toContainText("60");
-  await expect(page.getByTestId("dashboard-card-orders")).toContainText("74");
+  await expect(page.getByText("还没有开始学习")).toBeVisible();
+  await expect(page.getByRole("link", { name: "开始学习", exact: true })).toHaveAttribute("href", "/certifications");
 });
 
 test("首页不展示微服务未能确认的用户状态", async ({ page }) => {
@@ -218,7 +201,6 @@ test("首页不展示微服务未能确认的用户状态", async ({ page }) => 
 
   await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
 
-  await expect(page.getByTestId("dashboard-card-certifications")).toBeVisible();
   await expect(page.getByTestId("dashboard-account-status")).toHaveCount(0);
 });
 
@@ -484,24 +466,17 @@ test("会员页购买按钮进入会员方案商品", async ({ page }) => {
   await expect(page.locator('[data-bundle-id="membership-offer"]')).toContainText("成为会员");
 });
 
-test("首页统计卡片可以跳转到对应页面", async ({ page }) => {
+test("首页仅在接口提供进度时显示进度条", async ({ page }) => {
   await seedAuthenticatedCandidate(page);
-  await installCandidateApiMocks(page, emptyPortalResponse);
+  await installCandidateApiMocks(page, ({ pathname }) => {
+    if (pathname === "/api/pipeline") return { data: { list: [
+      { pipeline_ulid: "owned-2", pipeline_cc_ulid: "config-2", pipeline_name: "CFtA", status: "PIPELINE_STATUS_RUNNING", progress: 0, progress_available: false },
+    ] } };
+    return emptyPortalResponse({ pathname } as ApiMockContext);
+  });
   await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-
-  const dashboardCards = [
-    { key: "certificates", path: "/certificates" },
-    { key: "exams", path: "/exams" },
-    { key: "resourcePacks", path: "/resource-packs" },
-  ];
-
-  for (const card of dashboardCards) {
-    await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-    const link = page.getByTestId(`dashboard-card-${card.key}`);
-    await expect(link).toHaveAttribute("href", card.path);
-    await link.click();
-    await expect(page).toHaveURL(new RegExp(`${card.path.replaceAll("/", "\\/")}$`));
-  }
+  await expect(page.getByTestId("dashboard-learning-card")).toBeVisible();
+  await expect(page.getByTestId("dashboard-learning-card")).not.toContainText("0%");
 });
 
 test("支付成功页在移动端不会因长 ID 横向溢出", async ({ page }) => {
