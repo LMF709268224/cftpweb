@@ -21,6 +21,8 @@ export type VerificationStep = {
 
 export type VerificationProgress = (step: VerificationStep) => void
 
+export class VerificationUnavailableError extends Error {}
+
 export type RootTrustAnchor = {
   public_key_pem: string
   algorithm: string
@@ -238,7 +240,7 @@ async function getRootAnchor(copy: VerificationCopy) {
       return anchor
     }).catch((error) => {
       rootAnchorPromise = null
-      throw error
+      throw new VerificationUnavailableError(error instanceof Error ? error.message : String(error))
     })
   }
   return rootAnchorPromise
@@ -248,7 +250,7 @@ async function getRootKey(anchor: RootTrustAnchor, errors: VerificationErrors) {
   if (!rootCryptoKeyPromise) {
     rootCryptoKeyPromise = importPEMPublicKey(anchor.public_key_pem, anchor.algorithm, errors).catch((error) => {
       rootCryptoKeyPromise = null
-      throw error
+      throw new VerificationUnavailableError(error instanceof Error ? error.message : String(error))
     })
   }
   return rootCryptoKeyPromise
@@ -390,9 +392,11 @@ export async function verifyCredentialPdf(file: File, progress: VerificationProg
 
   step(progress, "lifecycle", "running", copy.progress.lifecycleRunning)
   const pdfHash = hex(await crypto.subtle.digest("SHA-256", asArrayBuffer(bytes)))
-  const response = await fetch(verificationUrl(`/api/check-validity?cred_ulid=${encodeURIComponent(ulid)}&pdf_hash=${encodeURIComponent(pdfHash)}`), { credentials: "include", headers: { Accept: "application/json" } })
+  const response = await fetch(verificationUrl(`/api/check-validity?cred_ulid=${encodeURIComponent(ulid)}&pdf_hash=${encodeURIComponent(pdfHash)}`), { credentials: "include", headers: { Accept: "application/json" } }).catch((error) => {
+    throw new VerificationUnavailableError(error instanceof Error ? error.message : String(error))
+  })
   const payload = await response.json().catch(() => null) as { data?: LifecycleResponse; message?: string } | null
-  if (!response.ok || !payload?.data) throw new Error(payload?.message || formatCopy(errors.onlineCheckFailed, { status: response.status }))
+  if (!response.ok || !payload?.data) throw new VerificationUnavailableError(payload?.message || formatCopy(errors.onlineCheckFailed, { status: response.status }))
   const lifecycle = payload.data
   step(progress, "lifecycle", "success", formatCopy(copy.progress.lifecycleSuccess, { status: lifecycleStatusLabel(lifecycle.status, lifecycle.exists, copy.status) }))
   return {
