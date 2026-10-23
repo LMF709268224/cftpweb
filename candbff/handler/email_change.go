@@ -26,7 +26,6 @@ type emailChangeProofClaims struct {
 	Owner        string `json:"owner"`
 	Name         string `json:"name"`
 	CurrentEmail string `json:"current_email"`
-	NewEmail     string `json:"new_email"`
 	jwt.StandardClaims
 }
 
@@ -52,14 +51,14 @@ func (h *Handler) emailChangeProofKey() ([]byte, error) {
 	return key[:], nil
 }
 
-func (h *Handler) issueEmailChangeProof(r *http.Request, user *casdoorsdk.User, newEmail string) (string, error) {
+func (h *Handler) issueEmailChangeProof(r *http.Request, user *casdoorsdk.User) (string, error) {
 	key, err := h.emailChangeProofKey()
 	if err != nil {
 		return "", err
 	}
 	now := time.Now()
 	claims := emailChangeProofClaims{
-		Owner: user.Owner, Name: user.Name, CurrentEmail: user.Email, NewEmail: newEmail,
+		Owner: user.Owner, Name: user.Name, CurrentEmail: user.Email,
 		StandardClaims: jwt.StandardClaims{
 			Issuer: "candbff-email-change", Subject: CandidateID(r),
 			IssuedAt: now.Unix(), ExpiresAt: now.Add(emailChangeProofTTL).Unix(),
@@ -68,7 +67,7 @@ func (h *Handler) issueEmailChangeProof(r *http.Request, user *casdoorsdk.User, 
 	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(key)
 }
 
-func (h *Handler) validEmailChangeProof(r *http.Request, user *casdoorsdk.User, newEmail, proof string) (bool, error) {
+func (h *Handler) validEmailChangeProof(r *http.Request, user *casdoorsdk.User, proof string) (bool, error) {
 	key, err := h.emailChangeProofKey()
 	if err != nil {
 		return false, err
@@ -85,7 +84,7 @@ func (h *Handler) validEmailChangeProof(r *http.Request, user *casdoorsdk.User, 
 	}
 	return claims.Issuer == "candbff-email-change" && claims.Subject == CandidateID(r) &&
 		claims.Owner == user.Owner && claims.Name == user.Name &&
-		strings.EqualFold(claims.CurrentEmail, user.Email) && claims.NewEmail == newEmail, nil
+		strings.EqualFold(claims.CurrentEmail, user.Email), nil
 }
 
 func (h *Handler) emailApplicationID() (string, error) {
@@ -180,38 +179,22 @@ func (h *Handler) SendEmailChangeCode(w http.ResponseWriter, r *http.Request) {
 	h.sendEmailVerificationCode(w, r, user.Email)
 }
 
-// VerifyCurrentEmailChangeCode consumes the old code and issues a short-lived proof for one new address.
+// VerifyCurrentEmailChangeCode consumes the old code and issues a short-lived proof of ownership.
 func (h *Handler) VerifyCurrentEmailChangeCode(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		NewEmail string `json:"new_email"`
-		OldCode  string `json:"old_code"`
+		OldCode string `json:"old_code"`
 	}
 	if err := ReadJSON(r, &input); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-	newEmail := strings.ToLower(strings.TrimSpace(input.NewEmail))
-	if !validEmailAddress(newEmail) || !sixDigitCode(input.OldCode) {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "a new email and six-digit current email code are required")
+	if !sixDigitCode(input.OldCode) {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "a six-digit current email code is required")
 		return
 	}
-	users := h.getProfileUserStore()
-	user, err := users.GetUser(CandidateName(r))
+	user, err := h.getProfileUserStore().GetUser(CandidateName(r))
 	if err != nil || user == nil || !validEmailAddress(user.Email) {
 		WriteError(w, http.StatusServiceUnavailable, ErrServiceUnavailable, "current email is unavailable")
-		return
-	}
-	if strings.EqualFold(newEmail, user.Email) {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "new email must differ from current email")
-		return
-	}
-	existing, err := users.GetUserByEmail(newEmail)
-	if err != nil {
-		WriteError(w, http.StatusServiceUnavailable, ErrServiceUnavailable, "failed to check new email")
-		return
-	}
-	if existing != nil {
-		WriteError(w, http.StatusConflict, ErrPrecondition, "new email is unavailable")
 		return
 	}
 	oldCode, err := json.Marshal(map[string]string{
@@ -234,7 +217,7 @@ func (h *Handler) VerifyCurrentEmailChangeCode(w http.ResponseWriter, r *http.Re
 		WriteError(w, http.StatusBadGateway, ErrServiceUnavailable, "failed to verify current email")
 		return
 	}
-	proof, err := h.issueEmailChangeProof(r, user, newEmail)
+	proof, err := h.issueEmailChangeProof(r, user)
 	if err != nil {
 		slog.Error("Failed to issue current email proof", "error", err)
 		WriteError(w, http.StatusServiceUnavailable, ErrServiceUnavailable, "email verification is unavailable")
@@ -268,7 +251,7 @@ func (h *Handler) SendNewEmailChangeCode(w http.ResponseWriter, r *http.Request)
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "new email must differ from current email")
 		return
 	}
-	valid, err := h.validEmailChangeProof(r, user, newEmail, input.Proof)
+	valid, err := h.validEmailChangeProof(r, user, input.Proof)
 	if err != nil {
 		WriteError(w, http.StatusServiceUnavailable, ErrServiceUnavailable, "email verification is unavailable")
 		return
@@ -313,7 +296,7 @@ func (h *Handler) ConfirmEmailChange(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "new email must differ from current email")
 		return
 	}
-	valid, err := h.validEmailChangeProof(r, user, newEmail, input.Proof)
+	valid, err := h.validEmailChangeProof(r, user, input.Proof)
 	if err != nil {
 		WriteError(w, http.StatusServiceUnavailable, ErrServiceUnavailable, "email verification is unavailable")
 		return

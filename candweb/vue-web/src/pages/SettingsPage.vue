@@ -572,10 +572,10 @@ async function handleUpdatePassword() {
 async function sendEmailChangeCode() {
   if (isEmailCodeLoading.value) return
   emailChange.oldError = ""
+  emailChange.oldCode = ""
   isEmailCodeLoading.value = true
   try {
     await apiClient("/api/user/email/send-code", { method: "POST", suppressErrorToast: true })
-    emailChange.oldCode = ""
     emailChange.oldCodeSent = true
     emailCodeCooldownUntil.value = Date.now() + 60_000
     startEmailCodeTimer()
@@ -589,12 +589,7 @@ async function sendEmailChangeCode() {
 
 async function verifyOldEmailCode() {
   if (isOldEmailVerifyLoading.value) return
-  emailChange.emailError = ""
   emailChange.oldError = ""
-  if (!isValidEmail(emailChange.newEmail)) {
-    emailChange.emailError = t.value.settings.newEmailInvalid
-    return
-  }
   if (!emailChange.oldCodeSent || !/^\d{6}$/.test(emailChange.oldCode)) {
     emailChange.oldError = t.value.settings.oldEmailCodeRequired
     return
@@ -603,7 +598,7 @@ async function verifyOldEmailCode() {
   try {
     const result = await apiClient("/api/user/email/verify-current", {
       method: "POST",
-      body: JSON.stringify({ new_email: emailChange.newEmail.trim(), old_code: emailChange.oldCode }),
+      body: JSON.stringify({ old_code: emailChange.oldCode }),
       suppressErrorToast: true,
     })
     emailChange.proof = result.proof
@@ -611,9 +606,7 @@ async function verifyOldEmailCode() {
     emailChange.oldCode = ""
     startEmailCodeTimer()
   } catch (error) {
-    if (error instanceof ApiClientError && error.status === 409) {
-      emailChange.emailError = t.value.settings.newEmailUnavailable
-    } else if (error instanceof ApiClientError && error.rawMessage === "current email verification code is incorrect or expired") {
+    if (error instanceof ApiClientError && error.rawMessage === "current email verification code is incorrect or expired") {
       emailChange.oldError = t.value.settings.oldEmailCodeInvalid
     } else {
       emailChange.oldError = error instanceof Error ? error.message : t.value.settings.oldEmailCodeInvalid
@@ -625,9 +618,19 @@ async function verifyOldEmailCode() {
 
 async function sendNewEmailCode() {
   if (isNewEmailCodeLoading.value) return
+  emailChange.emailError = ""
   emailChange.newError = ""
   if (!emailChange.proof || emailProofExpiresAt.value <= Date.now()) {
     resetOldEmailVerification(t.value.settings.oldEmailCodeExpired)
+    return
+  }
+  const newEmail = emailChange.newEmail.trim().toLowerCase()
+  if (!isValidEmail(newEmail)) {
+    emailChange.emailError = t.value.settings.newEmailInvalid
+    return
+  }
+  if (newEmail === profile.email.trim().toLowerCase()) {
+    emailChange.emailError = t.value.settings.newEmailSame
     return
   }
   if (emailCodeCooldownSeconds.value > 0) {
@@ -635,13 +638,14 @@ async function sendNewEmailCode() {
     return
   }
   isNewEmailCodeLoading.value = true
+  emailChange.newCode = ""
   try {
     await apiClient("/api/user/email/send-new-code", {
       method: "POST",
-      body: JSON.stringify({ new_email: emailChange.newEmail.trim(), proof: emailChange.proof }),
+      body: JSON.stringify({ new_email: newEmail, proof: emailChange.proof }),
       suppressErrorToast: true,
     })
-    emailChange.newCode = ""
+    if (emailChange.newEmail.trim().toLowerCase() !== newEmail) return
     emailChange.newCodeSent = true
     emailCodeCooldownUntil.value = Date.now() + 60_000
     startEmailCodeTimer()
@@ -649,6 +653,8 @@ async function sendNewEmailCode() {
   } catch (error) {
     if (error instanceof ApiClientError && error.rawMessage === "current email verification is missing or expired") {
       resetOldEmailVerification(t.value.settings.oldEmailCodeExpired)
+    } else if (error instanceof ApiClientError && error.status === 409) {
+      emailChange.emailError = t.value.settings.newEmailUnavailable
     } else {
       emailChange.newError = isEmailCodeRateLimited(error) ? t.value.settings.emailCodeRateLimited : error instanceof Error ? error.message : t.value.settings.emailCodeSendFailed
     }
@@ -659,9 +665,7 @@ async function sendNewEmailCode() {
 
 watch(() => emailChange.newEmail, () => {
   emailChange.emailError = ""
-  if (emailChange.proof) {
-    resetOldEmailVerification(t.value.settings.oldEmailCodeAddressChanged)
-  }
+  emailChange.newError = ""
   emailChange.newCode = ""
   emailChange.newCodeSent = false
 })
@@ -671,6 +675,10 @@ async function confirmEmailChange() {
   emailChange.newError = ""
   if (!emailChange.proof || emailProofExpiresAt.value <= Date.now()) {
     resetOldEmailVerification(t.value.settings.oldEmailCodeExpired)
+    return
+  }
+  if (!isValidEmail(emailChange.newEmail.trim())) {
+    emailChange.emailError = t.value.settings.newEmailInvalid
     return
   }
   if (!emailChange.newCodeSent || !/^\d{6}$/.test(emailChange.newCode)) {
@@ -857,11 +865,7 @@ async function confirmEmailChange() {
           <p class="text-sm text-muted-foreground">{{ t.settings.changeEmailDesc }}</p>
         </div>
         <div class="settings-section-content p-6 pt-0">
-          <form class="settings-form max-w-xl space-y-4" novalidate @submit.prevent="confirmEmailChange">
-            <div>
-              <label class="block space-y-2"><span class="text-sm font-medium">{{ t.settings.newEmail }}</span><input v-model="emailChange.newEmail" class="input" type="email" autocomplete="email" /></label>
-              <p v-if="emailChange.emailError" class="mt-2 text-sm text-red-600" role="alert">{{ emailChange.emailError }}</p>
-            </div>
+          <form class="settings-form max-w-xl space-y-4" novalidate @submit.prevent="emailChange.proof ? confirmEmailChange() : verifyOldEmailCode()">
             <template v-if="!emailChange.proof">
               <div>
                 <div class="flex flex-wrap items-end gap-3">
@@ -875,6 +879,10 @@ async function confirmEmailChange() {
             </template>
             <template v-else>
               <p class="text-sm text-emerald-700">{{ t.settings.oldEmailVerified }}</p>
+              <div>
+                <label class="block space-y-2"><span class="text-sm font-medium">{{ t.settings.newEmail }}</span><input v-model="emailChange.newEmail" class="input" type="email" autocomplete="email" :disabled="isNewEmailCodeLoading || isEmailConfirmLoading" /></label>
+                <p v-if="emailChange.emailError" class="mt-2 text-sm text-red-600" role="alert">{{ emailChange.emailError }}</p>
+              </div>
               <div>
                 <div class="flex flex-wrap items-end gap-3">
                   <label class="min-w-[180px] flex-1 space-y-2"><span class="text-sm font-medium">{{ t.settings.newEmailCode }}</span><input v-model="emailChange.newCode" class="input" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" @input="emailChange.newError = ''" /></label>

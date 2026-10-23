@@ -78,7 +78,7 @@ func TestEmailChangeUsesCasdoorCodesInOrder(t *testing.T) {
 		t.Fatalf("send old code: %d %s", old.Code, old.Body.String())
 	}
 	verified := httptest.NewRecorder()
-	h.VerifyCurrentEmailChangeCode(verified, request("/api/user/email/verify-current", `{"new_email":"new@example.com","old_code":"123456"}`))
+	h.VerifyCurrentEmailChangeCode(verified, request("/api/user/email/verify-current", `{"old_code":"123456"}`))
 	if verified.Code != http.StatusOK {
 		t.Fatalf("verify old code: %d %s", verified.Code, verified.Body.String())
 	}
@@ -144,7 +144,7 @@ func TestEmailChangeRejectsOldCodeBeforeReset(t *testing.T) {
 	}))
 	defer casdoor.Close()
 	h := &Handler{CasdoorAPIEndpoint: casdoor.URL, CasdoorClientSecret: "test-email-proof-secret", profileUsers: &fakeProfileUserStore{current: &casdoorsdk.User{Owner: "gfi", Name: "candidate", Email: "old@example.com"}}}
-	req := httptest.NewRequest(http.MethodPost, "/api/user/email/verify-current", strings.NewReader(`{"new_email":"new@example.com","old_code":"123456"}`))
+	req := httptest.NewRequest(http.MethodPost, "/api/user/email/verify-current", strings.NewReader(`{"old_code":"123456"}`))
 	req = req.WithContext(WithCandidate(req.Context(), "candidate-id", "old@example.com", "candidate", "candidate-token"))
 	response := httptest.NewRecorder()
 	h.VerifyCurrentEmailChangeCode(response, req)
@@ -181,28 +181,27 @@ func TestEmailChangeRequiresCurrentEmailProof(t *testing.T) {
 	}
 }
 
-func TestEmailChangeProofIsBoundToUserAddressAndExpiry(t *testing.T) {
+func TestEmailChangeProofIsBoundToUserAndCurrentAddress(t *testing.T) {
 	user := &casdoorsdk.User{Owner: "gfi", Name: "candidate", Email: "old@example.com"}
 	h := &Handler{CasdoorClientSecret: "test-email-proof-secret"}
 	req := httptest.NewRequest(http.MethodPost, "/api/user/email/send-new-code", nil)
 	req = req.WithContext(WithCandidate(req.Context(), "candidate-id", user.Email, user.Name, "candidate-token"))
-	proof, err := h.issueEmailChangeProof(req, user, "new@example.com")
+	proof, err := h.issueEmailChangeProof(req, user)
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, tc := range []struct {
-		name            string
-		user            *casdoorsdk.User
-		newEmail, proof string
+		name  string
+		user  *casdoorsdk.User
+		proof string
 	}{
-		{"valid", user, "new@example.com", proof},
-		{"different address", user, "other@example.com", proof},
-		{"different user", &casdoorsdk.User{Owner: "gfi", Name: "other", Email: user.Email}, "new@example.com", proof},
-		{"changed current email", &casdoorsdk.User{Owner: "gfi", Name: user.Name, Email: "changed@example.com"}, "new@example.com", proof},
-		{"tampered", user, "new@example.com", proof + "x"},
+		{"valid", user, proof},
+		{"different user", &casdoorsdk.User{Owner: "gfi", Name: "other", Email: user.Email}, proof},
+		{"changed current email", &casdoorsdk.User{Owner: "gfi", Name: user.Name, Email: "changed@example.com"}, proof},
+		{"tampered", user, proof + "x"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			valid, err := h.validEmailChangeProof(req, tc.user, tc.newEmail, tc.proof)
+			valid, err := h.validEmailChangeProof(req, tc.user, tc.proof)
 			if err != nil || valid != (tc.name == "valid") {
 				t.Fatalf("valid=%v err=%v", valid, err)
 			}
@@ -210,10 +209,10 @@ func TestEmailChangeProofIsBoundToUserAddressAndExpiry(t *testing.T) {
 	}
 	key, _ := h.emailChangeProofKey()
 	expired, _ := jwt.NewWithClaims(jwt.SigningMethodHS256, emailChangeProofClaims{
-		Owner: user.Owner, Name: user.Name, CurrentEmail: user.Email, NewEmail: "new@example.com",
+		Owner: user.Owner, Name: user.Name, CurrentEmail: user.Email,
 		StandardClaims: jwt.StandardClaims{Issuer: "candbff-email-change", Subject: "candidate-id", ExpiresAt: time.Now().Add(-time.Minute).Unix()},
 	}).SignedString(key)
-	if valid, _ := h.validEmailChangeProof(req, user, "new@example.com", expired); valid {
+	if valid, _ := h.validEmailChangeProof(req, user, expired); valid {
 		t.Fatal("expired proof accepted")
 	}
 }
