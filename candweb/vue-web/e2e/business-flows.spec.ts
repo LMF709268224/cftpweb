@@ -152,9 +152,6 @@ test("会员取消续费后刷新为已取消状态", async ({ page }) => {
     if (pathname === "/api/membership/history") {
       return { data: { user_memberships: [activeRecord()], total: 1 } }
     }
-    if (pathname === "/api/membership/billings") {
-      return { data: { billings: [], total: 0 } }
-    }
     if (pathname === "/api/membership/active") {
       return { data: { membership: activeRecord() } }
     }
@@ -218,7 +215,6 @@ test("会员升级先预览分摊费用并以幂等请求确认", async ({ page 
     if (pathname === "/api/membership/history") {
       return { data: { user_memberships: [activeRecord()], total: 1 } }
     }
-    if (pathname === "/api/membership/billings") return { data: { billings: [], total: 0 } }
     if (pathname === "/api/membership/active") return { data: { membership: activeRecord() } }
     if (pathname === "/api/membership/upgrade/preview" && method === "POST") {
       previewBody = body
@@ -326,7 +322,6 @@ test("会员升级等待支付或3DS验证时不会提前提示成功", async ({
   await installCandidateApiMocks(page, ({ pathname, method }) => {
     if (pathname === "/api/membership/plans") return { data: { memberships: plans } }
     if (pathname === "/api/membership/history") return { data: { user_memberships: [activeRecord], total: 1 } }
-    if (pathname === "/api/membership/billings") return { data: { billings: [], total: 0 } }
     if (pathname === "/api/membership/active") return { data: { membership: activeRecord } }
     if (pathname === "/api/membership/upgrade/preview" && method === "POST") {
       return {
@@ -399,17 +394,7 @@ test("会员刷新只应用最后一次请求返回的记录", async ({ page }) 
     started_at: "2026-01-01T00:00:00Z",
     expires_at: "2027-01-01T00:00:00Z",
   })
-  const billingRecord = (id: string, type: string) => ({
-    billing_record_ulid: id,
-    billing_type: type,
-    status: "PAID",
-    amount_minor: 1000,
-    currency: "USD",
-    period_start: "2026-01-01T00:00:00Z",
-    period_end: "2026-02-01T00:00:00Z",
-  })
   let historyRequests = 0
-  let billingRequests = 0
 
   await installCandidateApiMocks(page, async ({ pathname }: ApiMockContext) => {
     if (pathname === "/api/membership/plans") {
@@ -433,16 +418,6 @@ test("会员刷新只应用最后一次请求返回的记录", async ({ page }) 
           : membershipRecord("membership-latest", "LATEST-MEMBERSHIP")
       return { data: { user_memberships: [record], total: 1 } }
     }
-    if (pathname === "/api/membership/billings") {
-      const requestNumber = ++billingRequests
-      if (requestNumber === 2) await new Promise((resolve) => setTimeout(resolve, 1_000))
-      const record = requestNumber === 1
-        ? billingRecord("billing-initial", "INITIAL-BILLING")
-        : requestNumber === 2
-          ? billingRecord("billing-stale", "STALE-BILLING")
-          : billingRecord("billing-latest", "LATEST-BILLING")
-      return { data: { billings: [record], total: 1 } }
-    }
     if (pathname === "/api/membership/active") {
       const name = historyRequests >= 3 ? "LATEST-MEMBERSHIP" : "INITIAL-MEMBERSHIP"
       return { data: { membership: membershipRecord("membership-active", name) } }
@@ -457,19 +432,13 @@ test("会员刷新只应用最后一次请求返回的记录", async ({ page }) 
   const refreshButton = page.locator(".membership-refresh-btn")
   await refreshButton.dispatchEvent("click")
   await expect.poll(() => historyRequests).toBe(2)
-  await expect.poll(() => billingRequests).toBe(2)
   await refreshButton.dispatchEvent("click")
 
   await expect.poll(() => historyRequests).toBe(3)
-  await expect.poll(() => billingRequests).toBe(3)
   await expect(page.getByText("LATEST-MEMBERSHIP", { exact: true })).toBeVisible()
-  await page.getByRole("button", { name: "账单与付款", exact: true }).click()
-  await expect(page.getByText("LATEST-BILLING", { exact: true })).toBeVisible()
 
   await page.waitForTimeout(1_100)
   await expect(page.getByText("STALE-MEMBERSHIP", { exact: true })).toHaveCount(0)
-  await expect(page.getByText("STALE-BILLING", { exact: true })).toHaveCount(0)
-  await expect(page.getByText("LATEST-BILLING", { exact: true })).toBeVisible()
 })
 
 test("测验选择答案后同步草稿并提交结果", async ({ page }) => {

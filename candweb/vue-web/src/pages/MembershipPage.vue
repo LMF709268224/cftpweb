@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { RouterLink, useRoute } from "vue-router"
-import { AlertCircle, ArrowUpCircle, Check, ChevronDown, Crown, Loader2, PanelLeft, Percent, RefreshCw, ShoppingBag, Star, X, XCircle } from "lucide-vue-next"
+import { AlertCircle, ArrowUpCircle, Check, ChevronDown, Crown, ExternalLink, Loader2, PanelLeft, Percent, RefreshCw, ShoppingBag, Star, X, XCircle } from "lucide-vue-next"
 import { toast } from "vue-sonner"
 import AppShell from "@/components/AppShell.vue"
 import AppPagination from "@/components/AppPagination.vue"
@@ -36,7 +36,6 @@ useBodyScrollLock(() => cancelRenewConfirmOpen.value || upgradeDialogOpen.value)
 const activeMembership = ref<RecordData | null>(null)
 const plans = ref<RecordData[]>([])
 const history = ref<RecordData[]>([])
-const billings = ref<RecordData[]>([])
 const historyPage = ref(1)
 const historyPageSize = ref(10)
 const historyTotal = ref(0)
@@ -46,20 +45,10 @@ const historyPrevCursor = ref("")
 const lastHistoryPage = ref(1)
 const historyNextCursor = ref("")
 const historyHasMore = ref(false)
-const billingPage = ref(1)
-const billingPageSize = ref(10)
-const billingTotal = ref(0)
-const billingTotalPages = ref(0)
-const lastBillingPageSize = ref(billingPageSize.value)
-const billingPrevCursor = ref("")
-const lastBillingPage = ref(1)
-const billingNextCursor = ref("")
-const billingHasMore = ref(false)
 const pageSizeOptions = [10, 30, 50, 100]
 let membershipRequestId = 0
 let membershipPlansRequestId = 0
 let membershipHistoryRequestId = 0
-let membershipBillingsRequestId = 0
 let upgradePollGeneration = 0
 let requestedUpgradeTarget = ""
 const upgradeOrderPollAttempts = 8
@@ -69,7 +58,6 @@ const tabs = computed(() => [
   { id: "overview", label: t.value.membership.tabsOverview },
   { id: "levels", label: t.value.membership.tabs.levels },
   { id: "history", label: t.value.membership.tabsHistory },
-  { id: "billings", label: t.value.membership.tabsBillings },
 ])
 
 const currentRecord = computed(() => {
@@ -203,13 +191,6 @@ function membershipRecordSummary(record: RecordData) {
   return parts.join(" · ") || t.value.membership.membershipRecord
 }
 
-function billingTitle(item: RecordData) {
-  const type = String(item?.billing_type || "").trim()
-  if (type) return formatSource(type)
-  if (item?.stripe_invoice_id) return t.value.membership.stripeInvoice
-  return t.value.membership.membershipBilling
-}
-
 function statusLabel(status: unknown) {
   const value = String(status || "").toUpperCase()
   if (!value) return "-"
@@ -302,35 +283,6 @@ async function loadMembershipHistory(suppressErrorToast = false) {
   return nextHistory
 }
 
-async function loadMembershipBillings(suppressErrorToast = false) {
-  const requestId = ++membershipBillingsRequestId
-  const requestedPage = billingPage.value
-  const requestedLastPage = lastBillingPage.value
-  const requestedPageSize = billingPageSize.value
-  const params = new URLSearchParams({ page_size: String(requestedPageSize) })
-  
-  let cursor = ""
-  if (requestedPage > requestedLastPage) {
-    cursor = billingNextCursor.value
-  } else if (requestedPage < requestedLastPage) {
-    cursor = billingPrevCursor.value
-  }
-  
-  if (cursor) params.set("cursor", cursor)
-  const billingData = await apiClient(`/api/membership/billings?${params.toString()}`, { suppressErrorToast })
-  if (requestId !== membershipBillingsRequestId) return null
-
-  const nextBillings = listFrom(billingData, ["billings", "records", "items"])
-  billings.value = nextBillings
-  billingTotal.value = totalFrom(billingData, nextBillings)
-  billingTotalPages.value = totalPagesFrom(billingData, billingTotal.value, requestedPageSize)
-  billingHasMore.value = Boolean(billingData?.has_more)
-  billingNextCursor.value = String(billingData?.next_cursor || "")
-  billingPrevCursor.value = String(billingData?.prev_cursor || "")
-  lastBillingPage.value = requestedPage
-  return nextBillings
-}
-
 async function loadMembershipPlans(suppressErrorToast = false) {
   const requestId = ++membershipPlansRequestId
   const planData = await apiClient("/api/membership/plans?page=1&page_size=50", { suppressErrorToast })
@@ -360,7 +312,6 @@ async function loadMembership() {
     const [, nextHistory] = await Promise.all([
       loadMembershipPlans(true),
       loadMembershipHistory(true),
-      loadMembershipBillings(true),
     ])
     if (requestId !== membershipRequestId || nextHistory === null) return
 
@@ -601,14 +552,6 @@ function resetHistoryPagination() {
   historyHasMore.value = false
 }
 
-function resetBillingPagination() {
-  billingPage.value = 1
-  lastBillingPage.value = 1
-  billingPrevCursor.value = ""
-  billingNextCursor.value = ""
-  billingHasMore.value = false
-}
-
 function handleHistoryPaginationChange() {
   if (loading.value) return
   if (historyPageSize.value !== lastHistoryPageSize.value) {
@@ -616,16 +559,6 @@ function handleHistoryPaginationChange() {
     resetHistoryPagination()
   }
   void loadMembershipHistory()
-  window.scrollTo({ top: 0, behavior: "smooth" })
-}
-
-function handleBillingPaginationChange() {
-  if (loading.value) return
-  if (billingPageSize.value !== lastBillingPageSize.value) {
-    lastBillingPageSize.value = billingPageSize.value
-    resetBillingPagination()
-  }
-  void loadMembershipBillings()
   window.scrollTo({ top: 0, behavior: "smooth" })
 }
 
@@ -638,7 +571,6 @@ onBeforeUnmount(() => {
   membershipRequestId += 1
   membershipPlansRequestId += 1
   membershipHistoryRequestId += 1
-  membershipBillingsRequestId += 1
   upgradePollGeneration += 1
 })
 
@@ -698,7 +630,7 @@ watch(lang, () => {
                 </p>
               </div>
             </div>
-            <div class="membership-summary-grid grid gap-3 p-5 md:grid-cols-4">
+            <div v-if="hasActiveMembership" class="membership-summary-grid grid gap-3 p-5 md:grid-cols-4">
               <div class="membership-summary-item rounded-2xl bg-slate-50 p-4">
                 <div class="text-xs font-bold text-slate-500">{{ t.membership.started }}</div>
                 <div class="membership-summary-value mt-2 text-sm font-black text-slate-900">{{ formatDate(currentRecord.started_at) }}</div>
@@ -745,8 +677,21 @@ watch(lang, () => {
             </div>
           </div>
 
-          <section v-if="activeTab === 'overview'" class="membership-overview-grid grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
-            <div class="membership-overview-card rounded-[16px] bg-white p-5 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+          <section v-if="activeTab === 'overview'" class="membership-overview-grid grid gap-5" :class="hasActiveMembership ? 'lg:grid-cols-[1.1fr_0.9fr]' : ''">
+            <div v-if="!hasActiveMembership" class="membership-overview-card rounded-[16px] bg-white p-5 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+              <h2 class="membership-section-heading mb-2 text-lg font-semibold text-card-foreground">{{ t.membership.notYetMember }}</h2>
+              <p class="text-sm leading-6 text-slate-600">{{ t.membership.affiliateInvitation }}</p>
+              <div class="mt-5 flex flex-wrap gap-3">
+                <RouterLink to="/certifications?category=membership" class="btn btn-primary rounded-lg">
+                  <ShoppingBag class="h-4 w-4" />
+                  {{ t.membership.joinAffiliate }}
+                </RouterLink>
+                <button type="button" class="btn rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50" @click="activeTab = 'levels'">
+                  {{ t.membership.comparePlans }}
+                </button>
+              </div>
+            </div>
+            <div v-else class="membership-overview-card rounded-[16px] bg-white p-5 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
               <h2 class="membership-section-heading mb-4 text-lg font-semibold text-card-foreground">{{ t.membership.benefits }}</h2>
               <div v-if="currentPlan && parseFeatures(currentPlan).length" class="membership-benefits-grid grid gap-3 sm:grid-cols-2">
                 <div v-for="feature in parseFeatures(currentPlan)" :key="feature" class="membership-benefit-item flex gap-3 rounded-xl border border-emerald-100 bg-emerald-50/70 p-4">
@@ -760,7 +705,7 @@ watch(lang, () => {
               </div>
             </div>
 
-            <div class="membership-overview-card rounded-[16px] bg-white p-5 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+            <div v-if="hasActiveMembership" class="membership-overview-card rounded-[16px] bg-white p-5 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
               <h2 class="membership-section-heading mb-4 text-lg font-semibold text-card-foreground">{{ t.membership.actions }}</h2>
               <div class="space-y-3 text-sm text-slate-600">
                 <div class="flex justify-between gap-4"><span>{{ t.membership.membershipName }}</span><span class="text-right font-semibold text-slate-800">{{ currentMembershipName }}</span></div>
@@ -795,12 +740,8 @@ watch(lang, () => {
                   <Crown v-else class="h-6 w-6" />
                 </div>
               </div>
-              <div class="mb-4 grid grid-cols-2 gap-3 text-sm">
-                <div class="rounded-xl bg-slate-50 p-3">
-                  <div class="text-xs text-slate-500">{{ t.membership.tier }}</div>
-                  <div class="font-black">{{ plan.tier_level || "-" }}</div>
-                </div>
-                <div class="rounded-xl bg-slate-50 p-3">
+              <div class="mb-4 text-sm">
+                <div class="rounded-lg bg-slate-50 p-3">
                   <div class="text-xs text-slate-500">{{ t.membership.duration }}</div>
                   <div class="font-black">{{ plan.duration_in_months || "-" }} {{ t.membership.months }}</div>
                 </div>
@@ -815,26 +756,32 @@ watch(lang, () => {
                   <span class="text-card-foreground">{{ feature }}</span>
                 </li>
               </ul>
-              <button
-                v-if="canUpgradeToPlan(plan)"
-                type="button"
-                class="btn btn-primary mt-5 w-full rounded-xl"
-                :disabled="upgradePreviewLoading || upgrading"
-                @click="openUpgradePreview(plan)"
-              >
-                <Loader2 v-if="upgradePreviewLoading && upgradeTargetPlan?.membership_ulid === plan.membership_ulid" class="h-4 w-4 animate-spin" />
-                <ArrowUpCircle v-else class="h-4 w-4" />
-                {{ t.membership.upgrade }}
-              </button>
-              <button v-else-if="hasActiveMembership" type="button" class="btn mt-5 w-full cursor-not-allowed rounded-xl border-slate-200 bg-slate-100 text-slate-500" disabled>
-                <Check v-if="isCurrentPlan(plan)" class="h-4 w-4" />
-                <XCircle v-else class="h-4 w-4" />
-                {{ isCurrentPlan(plan) ? t.membership.currentPlan : t.membership.upgradeUnavailable }}
-              </button>
-              <RouterLink v-else to="/certifications?category=membership" class="btn btn-primary mt-5 w-full rounded-xl">
-                <ShoppingBag class="h-4 w-4" />
-                {{ t.membership.purchase }}
-              </RouterLink>
+              <div class="mt-5 space-y-2">
+                <button
+                  v-if="canUpgradeToPlan(plan)"
+                  type="button"
+                  class="btn btn-primary w-full rounded-lg"
+                  :disabled="upgradePreviewLoading || upgrading"
+                  @click="openUpgradePreview(plan)"
+                >
+                  <Loader2 v-if="upgradePreviewLoading && upgradeTargetPlan?.membership_ulid === plan.membership_ulid" class="h-4 w-4 animate-spin" />
+                  <ArrowUpCircle v-else class="h-4 w-4" />
+                  {{ t.membership.upgrade }}
+                </button>
+                <button v-else-if="hasActiveMembership" type="button" class="btn w-full cursor-not-allowed rounded-lg border-slate-200 bg-slate-100 text-slate-500" disabled>
+                  <Check v-if="isCurrentPlan(plan)" class="h-4 w-4" />
+                  <XCircle v-else class="h-4 w-4" />
+                  {{ isCurrentPlan(plan) ? t.membership.currentPlan : t.membership.upgradeUnavailable }}
+                </button>
+                <RouterLink v-else to="/certifications?category=membership" class="btn btn-primary w-full rounded-lg">
+                  <ShoppingBag class="h-4 w-4" />
+                  {{ t.membership.joinNow }}
+                </RouterLink>
+                <a href="https://globalfintechinstitute.org/membership/benefits/" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg text-sm font-semibold text-primary hover:underline">
+                  {{ t.membership.learnMore }}
+                  <ExternalLink class="h-4 w-4" />
+                </a>
+              </div>
             </div>
             <div v-if="!plans.length" class="rounded-[16px] bg-white p-8 text-center text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)] md:col-span-2 xl:col-span-3">
               {{ t.membership.noPlans }}
@@ -865,28 +812,6 @@ watch(lang, () => {
             />
           </section>
 
-          <section v-if="activeTab === 'billings'" class="membership-records-panel overflow-hidden rounded-[16px] border border-slate-100 bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-            <div v-for="item in billings" :key="item.billing_record_ulid || item.gpay_order_ulid" class="membership-record-item mb-3 grid gap-4 rounded-[14px] border border-slate-100 bg-slate-50/70 p-4 transition-all last:mb-0 hover:-translate-y-0.5 hover:border-primary/20 hover:bg-white hover:shadow-[0_12px_28px_rgba(15,74,82,0.08)] md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
-              <div>
-                <div class="break-words text-base font-black leading-6 text-slate-950 md:truncate" :title="billingTitle(item)">{{ billingTitle(item) }}</div>
-                <div class="mt-1 text-sm text-slate-500">{{ formatMoney(item.amount_minor, item.currency || "USD") }} · {{ formatDate(item.period_start) }} - {{ formatDate(item.period_end) }}</div>
-              </div>
-              <span class="inline-flex h-fit min-w-[76px] items-center justify-center justify-self-start rounded-full border px-3 py-1 text-xs font-black md:justify-self-end" :class="badgeClass(item.status)">{{ statusLabel(item.status) }}</span>
-            </div>
-            <div v-if="!billings.length" class="p-8 text-center text-muted-foreground">{{ t.membership.noBillings }}</div>
-            <AppPagination
-              v-if="billingTotal > 0"
-              v-model:page="billingPage"
-              v-model:page-size="billingPageSize"
-              :total="billingTotal"
-              :total-pages="billingTotalPages"
-              :page-size-options="pageSizeOptions"
-              :disabled="loading"
-              cursor-mode
-              :has-more="billingHasMore"
-              @page-change="handleBillingPaginationChange"
-            />
-          </section>
         </template>
       </main>
     </div>

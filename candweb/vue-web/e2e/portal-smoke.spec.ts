@@ -92,18 +92,6 @@ function emptyPortalResponse({ pathname }: ApiMockContext) {
       },
     };
   }
-  if (pathname === "/api/membership/billings") {
-    return {
-      data: {
-        billings: [],
-        total: 0,
-        total_pages: 0,
-        has_more: false,
-        next_cursor: "",
-        prev_cursor: "",
-      },
-    };
-  }
   return undefined;
 }
 
@@ -441,7 +429,7 @@ test("登录后认证目录和会员购买入口分开，购买状态保持可�
   await expect(pendingMembershipCard).toContainText("Check Membership Eligibility");
 });
 
-test("会员页购买按钮进入会员方案商品", async ({ page }) => {
+test("非会员可加入会员并比较方案，会员卡隐藏等级", async ({ page }) => {
   await seedAuthenticatedCandidate(page);
   await installCandidateApiMocks(page, ({ pathname }) => {
     if (pathname === "/api/membership/plans") {
@@ -460,8 +448,17 @@ test("会员页购买按钮进入会员方案商品", async ({ page }) => {
   });
 
   await page.goto("/membership", { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "会员等级" }).click();
-  await page.getByRole("link", { name: "查看会员方案商品" }).click();
+  await expect(page.getByText("您的方案", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("您还不是会员", { exact: true })).toBeVisible();
+  await expect(page.getByText("暂无权益", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "账单与付款" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "加入 Affiliate 会员" })).toHaveAttribute("href", "/certifications?category=membership");
+  await page.getByRole("button", { name: "比较会员方案" }).click();
+  const plan = page.locator(".membership-level-card");
+  await expect(plan).toContainText("CFtP Member");
+  await expect(plan).not.toContainText("等级");
+  await expect(plan.getByRole("link", { name: "了解更多" })).toHaveAttribute("href", "https://globalfintechinstitute.org/membership/benefits/");
+  await plan.getByRole("link", { name: "立即加入" }).click();
   await expect(page).toHaveURL(/\/certifications\?category=membership$/);
   await expect(page.locator('[data-bundle-id="membership-offer"]')).toContainText("成为会员");
 });
