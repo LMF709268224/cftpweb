@@ -1550,6 +1550,8 @@ export const en: AdminTranslations = {
             deleted: "Product deleted",
             deleteFailed: "Failed to delete",
             displayPricingSynced: "Display pricing synced",
+            displayPricingSyncFailed: "Display pricing sync failed. Check the product pricing configuration.",
+            selectBundleToSync: "Select a product to sync first",
             jsonCopied: "JSON copied",
             jsonCopyFailed: "Copy failed",
             thumbnailStateInvalid: "The product state changed. Refresh the page and try again.",

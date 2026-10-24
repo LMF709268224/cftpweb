@@ -26,6 +26,11 @@ type BundleForm = {
 type DetailTab = "summary" | "meta" | "pricing" | "schema" | "actions"
 type Mode = "detail" | "create"
 type BundleItemType = "pipeline" | "membership"
+type DisplayPricingSyncResponse = {
+  total_processed?: number
+  total_updated?: number
+  failed_bundle_ulids?: string[]
+}
 type CreateBundleItem = {
   key: number
   item_type: BundleItemType
@@ -1273,14 +1278,19 @@ async function refreshSelectedBundleDetail(bundleId = selectedId.value) {
 }
 
 async function syncBundleDisplayPricing(bundleId = selectedId.value) {
-  await apiClient("/api/mall/bundles/sync-display-pricing", {
+  if (!bundleId) throw new Error(copy.value.toasts.selectBundleToSync)
+  const result = await apiClient<DisplayPricingSyncResponse>("/api/mall/bundles/sync-display-pricing", {
     method: "POST",
-    body: JSON.stringify({ bundle_ulid: bundleId || undefined }),
+    body: JSON.stringify({ bundle_ulid: bundleId }),
   })
+  if (result?.total_processed !== 1 || result.total_updated !== 1 || result.failed_bundle_ulids?.length) {
+    console.error("Display pricing sync did not update the selected product", result)
+    throw new Error(copy.value.toasts.displayPricingSyncFailed)
+  }
 }
 
 async function syncDisplayPricing() {
-  if (syncingDisplayPricing.value) return
+  if (syncingDisplayPricing.value || !selectedId.value) return
 
   syncingDisplayPricing.value = true
   try {
@@ -1288,6 +1298,9 @@ async function syncDisplayPricing() {
     toast.success(copy.value.toasts.displayPricingSynced)
     await load()
     await refreshSelectedBundleDetail()
+  } catch (err) {
+    console.error(err)
+    toast.error(apiErrorMessage(err, copy.value.toasts.displayPricingSyncFailed))
   } finally {
     syncingDisplayPricing.value = false
   }
@@ -1340,7 +1353,8 @@ onMounted(load)
         <button
           class="inline-flex h-10 items-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
           type="button"
-          :disabled="syncingDisplayPricing"
+          :disabled="syncingDisplayPricing || !selectedId || selectedStatusKey === 'deprecated'"
+          :title="!selectedId ? copy.toasts.selectBundleToSync : undefined"
           @click="syncDisplayPricing"
         >
           <RefreshCw class="h-4 w-4" :class="syncingDisplayPricing ? 'animate-spin' : ''" />

@@ -1548,6 +1548,8 @@ export const zh = {
             deleted: "商品已删除",
             deleteFailed: "删除失败",
             displayPricingSynced: "展示价格已同步",
+            displayPricingSyncFailed: "展示价格同步失败，请检查商品价格配置",
+            selectBundleToSync: "请先选择要同步的商品",
             jsonCopied: "JSON 已复制",
             jsonCopyFailed: "复制失败",
             thumbnailStateInvalid: "当前商品状态已变化，请刷新页面后重试",
