@@ -70,7 +70,10 @@ export const en: AdminTranslations = {
             clearInput: "Clear input",
         },
         userManagement: "User Management",
-        userManagementHint: "Search and filter users to review account status and roles.",
+        userManagementHint: "Review staff and candidates separately; membership appears on candidate profiles.",
+        groups: { all: "All accounts", staff: "Internal Staff", candidate: "Candidates" },
+        membership: "Membership",
+        notMember: "Not a member",
         viewDetails: "View Details",
         userDetailTitle: "User Details",
         enrollments: {

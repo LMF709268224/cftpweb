@@ -68,7 +68,10 @@ export const zh = {
             clearInput: "清除输入",
         },
         userManagement: "用户管理",
-        userManagementHint: "搜索和筛选用户，查看账号状态与角色。",
+        userManagementHint: "按员工或候选人查看账号，会员身份显示在候选人资料中。",
+        groups: { all: "全部账号", staff: "内部员工", candidate: "候选人" },
+        membership: "会员身份",
+        notMember: "非会员",
         viewDetails: "查看详情",
         userDetailTitle: "用户详情",
         enrollments: {

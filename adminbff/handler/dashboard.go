@@ -32,20 +32,19 @@ const (
 )
 
 type opsDashboardResponse struct {
-	CandidateTotal           int64                     `json:"candidate_total"`
-	UserStats                opsDashboardUserStats     `json:"user_stats"`
-	UserRoleStats            []opsDashboardRoleStat    `json:"user_role_stats"`
-	ProfileCompletionPercent int64                     `json:"profile_completion_percent"`
-	Users                    []opsDashboardUser        `json:"users"`
-	UserTotal                int                       `json:"user_total"`
-	UserPage                 int                       `json:"user_page"`
-	UserPageSize             int                       `json:"user_page_size"`
-	StageBuckets             []opsDashboardStageBucket `json:"stage_buckets"`
-	StageBucketsExact        bool                      `json:"stage_buckets_exact"`
-	TodayRevenue             []opsDashboardRevenue     `json:"today_revenue"`
-	TodayRevenueExact        bool                      `json:"today_revenue_exact"`
-	AggregationSampleLimit   int                       `json:"aggregation_sample_limit"`
-	GeneratedAt              string                    `json:"generated_at"`
+	CandidateTotal         int64                     `json:"candidate_total"`
+	UserStats              opsDashboardUserStats     `json:"user_stats"`
+	UserRoleStats          []opsDashboardRoleStat    `json:"user_role_stats"`
+	Users                  []opsDashboardUser        `json:"users"`
+	UserTotal              int                       `json:"user_total"`
+	UserPage               int                       `json:"user_page"`
+	UserPageSize           int                       `json:"user_page_size"`
+	StageBuckets           []opsDashboardStageBucket `json:"stage_buckets"`
+	StageBucketsExact      bool                      `json:"stage_buckets_exact"`
+	TodayRevenue           []opsDashboardRevenue     `json:"today_revenue"`
+	TodayRevenueExact      bool                      `json:"today_revenue_exact"`
+	AggregationSampleLimit int                       `json:"aggregation_sample_limit"`
+	GeneratedAt            string                    `json:"generated_at"`
 }
 
 type opsDashboardUserStats struct {
@@ -72,6 +71,8 @@ type opsDashboardUser struct {
 	Location      string   `json:"location"`
 	Roles         []string `json:"roles"`
 	RoleLabel     string   `json:"role_label"`
+	UserGroup     string   `json:"user_group"`
+	IsMember      bool     `json:"is_member"`
 	Status        string   `json:"status"`
 	EmailVerified bool     `json:"email_verified"`
 	CreatedAt     string   `json:"created_at"`
@@ -188,20 +189,19 @@ func (h *Handler) OpsDashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	WriteJSON(w, http.StatusOK, opsDashboardResponse{
-		CandidateTotal:           userSummary.candidateTotal,
-		UserStats:                userSummary.stats,
-		UserRoleStats:            userSummary.roleStats,
-		ProfileCompletionPercent: userSummary.profileCompletionPercent,
-		Users:                    userSummary.users,
-		UserTotal:                len(filteredUsers),
-		UserPage:                 userPage,
-		UserPageSize:             userPageSize,
-		StageBuckets:             stageBuckets,
-		StageBucketsExact:        stageBucketsExact,
-		TodayRevenue:             revenue,
-		TodayRevenueExact:        todayRevenueExact,
-		AggregationSampleLimit:   adminDashboardSampleLimit,
-		GeneratedAt:              now.Format(time.RFC3339),
+		CandidateTotal:         userSummary.candidateTotal,
+		UserStats:              userSummary.stats,
+		UserRoleStats:          userSummary.roleStats,
+		Users:                  userSummary.users,
+		UserTotal:              len(filteredUsers),
+		UserPage:               userPage,
+		UserPageSize:           userPageSize,
+		StageBuckets:           stageBuckets,
+		StageBucketsExact:      stageBucketsExact,
+		TodayRevenue:           revenue,
+		TodayRevenueExact:      todayRevenueExact,
+		AggregationSampleLimit: adminDashboardSampleLimit,
+		GeneratedAt:            now.Format(time.RFC3339),
 	})
 }
 
@@ -290,16 +290,16 @@ func (h *Handler) listDashboardPaidOrders(ctx context.Context) ([]*gpaypb.OrderS
 }
 
 type opsDashboardUserSummary struct {
-	candidateTotal           int64
-	stats                    opsDashboardUserStats
-	roleStats                []opsDashboardRoleStat
-	profileCompletionPercent int64
-	users                    []opsDashboardUser
+	candidateTotal int64
+	stats          opsDashboardUserStats
+	roleStats      []opsDashboardRoleStat
+	users          []opsDashboardUser
 }
 
 type opsDashboardUserFilter struct {
 	keyword string
 	role    string
+	group   string
 	status  string
 }
 
@@ -307,6 +307,7 @@ func opsDashboardUserFilterFromRequest(r *http.Request) opsDashboardUserFilter {
 	return opsDashboardUserFilter{
 		keyword: strings.ToLower(strings.TrimSpace(r.URL.Query().Get("user_keyword"))),
 		role:    strings.ToLower(strings.TrimSpace(r.URL.Query().Get("user_role"))),
+		group:   strings.ToLower(strings.TrimSpace(r.URL.Query().Get("user_group"))),
 		status:  strings.ToLower(strings.TrimSpace(r.URL.Query().Get("user_status"))),
 	}
 }
@@ -340,7 +341,7 @@ func filterCFTPDashboardUsers(
 		}
 		roles := roleNames(user)
 		roleFlags := dashboardRoleFlags(user, roles, roleConfig, roleDefinitions)
-		if roleFlags["admin"] || roleFlags["student"] {
+		if roleFlags["staff"] || roleFlags["candidate"] {
 			filtered = append(filtered, user)
 		}
 	}
@@ -364,11 +365,20 @@ func filterOpsDashboardUsers(
 		roleFlags := dashboardRoleFlags(user, roles, roleConfig, roleDefinitions)
 		roleLabel := dashboardPrimaryRole(roles, roleFlags)
 		status := strings.ToLower(dashboardUserStatus(user))
+		if filter.group != "" && filter.group != "all" && !roleFlags[filter.group] {
+			continue
+		}
 		if filter.status != "" && filter.status != "all" && status != filter.status {
 			continue
 		}
 		if filter.role != "" && filter.role != "all" {
-			if !roleFlags[strings.ToLower(filter.role)] {
+			matchesRole := roleFlags[filter.role]
+			if filter.role == "student" {
+				matchesRole = roleFlags["candidate"]
+			} else if filter.role == "member" {
+				matchesRole = roleFlags["candidate"] && roleFlags["member"]
+			}
+			if !matchesRole {
 				continue
 			}
 		}
@@ -423,7 +433,6 @@ func (h *Handler) buildOpsUserSummary(
 		"member":  0,
 	}
 	stats := opsDashboardUserStats{}
-	var profileScore int64
 
 	for _, user := range users {
 		if user == nil || user.Id == "" {
@@ -440,10 +449,16 @@ func (h *Handler) buildOpsUserSummary(
 		}
 
 		roles := roleNames(user)
-		for key := range dashboardRoleFlags(user, roles, roleConfig, roleDefinitions) {
-			roleCounts[key]++
+		roleFlags := dashboardRoleFlags(user, roles, roleConfig, roleDefinitions)
+		if roleFlags["staff"] {
+			roleCounts["admin"]++
 		}
-		profileScore += int64(profileCompletionPercent(user))
+		if roleFlags["candidate"] {
+			roleCounts["student"]++
+			if roleFlags["member"] {
+				roleCounts["member"]++
+			}
+		}
 	}
 	stats.Admins = roleCounts["admin"]
 	stats.Members = roleCounts["member"]
@@ -465,15 +480,12 @@ func (h *Handler) buildOpsUserSummary(
 			Location:      dashboardLocation(user),
 			Roles:         roles,
 			RoleLabel:     dashboardPrimaryRole(roles, roleFlags),
+			UserGroup:     dashboardUserGroup(roleFlags),
+			IsMember:      roleFlags["candidate"] && roleFlags["member"],
 			Status:        dashboardUserStatus(user),
 			EmailVerified: user.EmailVerified,
 			CreatedAt:     user.CreatedTime,
 		})
-	}
-
-	var completion int64
-	if stats.Total > 0 {
-		completion = profileScore / stats.Total
 	}
 
 	return opsDashboardUserSummary{
@@ -484,8 +496,7 @@ func (h *Handler) buildOpsUserSummary(
 			{Key: "student", Label: "Student", Count: roleCounts["student"]},
 			{Key: "member", Label: "Member", Count: roleCounts["member"]},
 		},
-		profileCompletionPercent: completion,
-		users:                    pageItems,
+		users: pageItems,
 	}
 }
 
@@ -543,16 +554,20 @@ func dashboardPrimaryRole(roles []string, roleFlags map[string]bool) string {
 	if roleFlags["admin"] {
 		return "admin"
 	}
-	if roleFlags["member"] {
-		return "member"
-	}
-	if roleFlags["student"] {
+	if roleFlags["candidate"] {
 		return "student"
 	}
 	if len(roles) > 0 {
 		return roles[0]
 	}
-	return "member"
+	return ""
+}
+
+func dashboardUserGroup(roleFlags map[string]bool) string {
+	if roleFlags["staff"] {
+		return "staff"
+	}
+	return "candidate"
 }
 
 func dashboardRoleConfigFromEnv() opsDashboardRoleConfig {
@@ -591,7 +606,7 @@ func dashboardRoleDefinitions(roleConfig opsDashboardRoleConfig) map[string]*cas
 }
 
 func dashboardRoleFlags(user *casdoorsdk.User, roles []string, roleConfig opsDashboardRoleConfig, roleDefinitions map[string]*casdoorsdk.Role) map[string]bool {
-	flags := make(map[string]bool, 3)
+	flags := make(map[string]bool, 5)
 	if dashboardUserMatchesRole(user, roles, roleConfig.admin, roleDefinitions) {
 		flags["admin"] = true
 	}
@@ -604,6 +619,8 @@ func dashboardRoleFlags(user *casdoorsdk.User, roles []string, roleConfig opsDas
 			break
 		}
 	}
+	flags["staff"] = flags["admin"]
+	flags["candidate"] = !flags["admin"] && (flags["student"] || flags["member"])
 	return flags
 }
 
@@ -729,33 +746,6 @@ func dashboardUserStatus(user *casdoorsdk.User) string {
 		return "Inactive"
 	}
 	return "Active"
-}
-
-func profileCompletionPercent(user *casdoorsdk.User) int {
-	fields := []string{
-		user.Name,
-		user.DisplayName,
-		user.Email,
-		user.Phone,
-		user.Region,
-		user.Location,
-		user.RealName,
-		user.Gender,
-		user.Birthday,
-		user.Education,
-		user.Affiliation,
-		user.Title,
-	}
-	completed := 0
-	for _, field := range fields {
-		if strings.TrimSpace(field) != "" {
-			completed++
-		}
-	}
-	if len(fields) == 0 {
-		return 0
-	}
-	return completed * 100 / len(fields)
 }
 
 func isSameUnixLocalDay(unixSeconds int64, startOfDay time.Time) bool {

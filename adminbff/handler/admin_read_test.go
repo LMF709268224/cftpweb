@@ -211,3 +211,34 @@ func TestOpsDashboardReturnsFilteredReadOnlyOverview(t *testing.T) {
 		t.Fatalf("dashboard exactness metadata = %+v", payload.Data)
 	}
 }
+
+func TestOpsDashboardSeparatesStaffAndCandidates(t *testing.T) {
+	roleConfig := dashboardRoleConfigFromEnv()
+	users := []*casdoorsdk.User{
+		{Id: "staff", Roles: []*casdoorsdk.Role{{Name: roleConfig.admin}, {Name: roleConfig.student}, {Name: roleConfig.memberships[0]}}},
+		{Id: "student-member", Roles: []*casdoorsdk.Role{{Name: roleConfig.student}, {Name: roleConfig.memberships[0]}}},
+		{Id: "member-only", Roles: []*casdoorsdk.Role{{Name: roleConfig.memberships[0]}}},
+		{Id: "unrelated", Roles: []*casdoorsdk.Role{{Name: "other"}}},
+	}
+	cftpUsers := filterCFTPDashboardUsers(users, roleConfig, nil)
+	if len(cftpUsers) != 3 {
+		t.Fatalf("CFTP users = %d, want 3", len(cftpUsers))
+	}
+	staff := filterOpsDashboardUsers(cftpUsers, nil, roleConfig, nil, opsDashboardUserFilter{group: "staff"})
+	candidates := filterOpsDashboardUsers(cftpUsers, nil, roleConfig, nil, opsDashboardUserFilter{group: "candidate"})
+	if len(staff) != 1 || staff[0].Id != "staff" || len(candidates) != 2 || candidates[0].Id != "student-member" || candidates[1].Id != "member-only" {
+		t.Fatalf("staff = %+v, candidates = %+v", staff, candidates)
+	}
+	studentRole := filterOpsDashboardUsers(cftpUsers, nil, roleConfig, nil, opsDashboardUserFilter{role: "student"})
+	memberRole := filterOpsDashboardUsers(cftpUsers, nil, roleConfig, nil, opsDashboardUserFilter{role: "member"})
+	if len(studentRole) != 2 || len(memberRole) != 2 {
+		t.Fatalf("student role = %+v, member role = %+v", studentRole, memberRole)
+	}
+	summary := (&Handler{}).buildOpsUserSummary(cftpUsers, cftpUsers, nil, roleConfig, nil)
+	if summary.candidateTotal != 2 || summary.stats.Admins != 1 || summary.stats.Members != 2 {
+		t.Fatalf("dashboard counts = %+v", summary)
+	}
+	if summary.users[0].UserGroup != "staff" || summary.users[0].IsMember || summary.users[1].UserGroup != "candidate" || !summary.users[1].IsMember || summary.users[1].RoleLabel != "student" || summary.users[2].UserGroup != "candidate" {
+		t.Fatalf("dashboard users = %+v", summary.users)
+	}
+}

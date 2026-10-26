@@ -6,7 +6,6 @@ function dashboardData(name: string, overrides: Record<string, unknown> = {}) {
     candidate_total: 3,
     user_stats: { total: 8, active: 6, inactive: 2, admins: 2, members: 3, email_verified: 7 },
     user_role_stats: [{ role: "admin", count: 2 }],
-    profile_completion_percent: 75,
     users: [{
       id: `user-${name}`,
       candidate_ulid: `candidate-${name}`,
@@ -14,6 +13,8 @@ function dashboardData(name: string, overrides: Record<string, unknown> = {}) {
       email: `${name.toLowerCase().replaceAll(" ", ".")}@example.test`,
       location: "Shanghai",
       role_label: "admin",
+      user_group: "staff",
+      is_member: false,
       status: "active",
       email_verified: true,
       created_at: "2026-08-11T00:00:00Z",
@@ -43,8 +44,8 @@ for (const lang of ["zh", "en"] as const) {
         if (pathname === "/api/dashboard/ops") {
           return { data: dashboardData("Candidate A", {
             users: [
-              { ...dashboardData("Candidate A").users[0], id: "casdoor-user-a", candidate_ulid: "candidate-a", role_label: "member" },
-              { ...dashboardData("Candidate B").users[0], id: "casdoor-user-b", candidate_ulid: "candidate-b", role_label: "student" },
+              { ...dashboardData("Candidate A").users[0], id: "casdoor-user-a", candidate_ulid: "candidate-a", role_label: "student", user_group: "candidate", is_member: true },
+              { ...dashboardData("Candidate B").users[0], id: "casdoor-user-b", candidate_ulid: "candidate-b", role_label: "student", user_group: "candidate" },
               { ...dashboardData("Staff").users[0], candidate_ulid: "" },
             ],
           }) }
@@ -167,8 +168,34 @@ test("dashboard summary opens the matching user list and revenue links to orders
   })
   await page.goto("/dashboard")
   await page.getByRole("button", { name: "管理员 2" }).click()
-  await expect.poll(() => queries.at(-1)?.get("user_role")).toBe("admin")
+  await expect.poll(() => queries.at(-1)?.get("user_group")).toBe("staff")
   await expect(page.getByRole("link", { name: "查看订单" })).toHaveAttribute("href", "/orders")
+})
+
+test("user groups keep staff and candidates separate while showing membership on candidates", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  const queries: URLSearchParams[] = []
+  await installAdminApiMocks(page, ({ pathname, url }) => {
+    if (pathname !== "/api/dashboard/ops") return undefined
+    queries.push(new URLSearchParams(url.search))
+    const group = url.searchParams.get("user_group")
+    const staff = { ...dashboardData("Staff").users[0], candidate_ulid: "" }
+    const candidate = { ...dashboardData("Candidate").users[0], role_label: "student", user_group: "candidate", is_member: true }
+    const users = group === "staff" ? [staff] : group === "candidate" ? [candidate] : [staff, candidate]
+    return { data: dashboardData("Staff", { users, user_total: users.length }) }
+  })
+
+  await page.goto("/dashboard")
+  const table = page.locator("table")
+  await page.getByRole("button", { name: "候选人", exact: true }).click()
+  await expect.poll(() => queries.at(-1)?.get("user_group")).toBe("candidate")
+  await expect(table.getByText("Candidate", { exact: true })).toBeVisible()
+  await expect(table.getByText("Staff", { exact: true })).toHaveCount(0)
+  await expect(table.getByText("会员", { exact: true })).toBeVisible()
+  await page.getByRole("button", { name: "内部员工", exact: true }).click()
+  await expect.poll(() => queries.at(-1)?.get("user_group")).toBe("staff")
+  await expect(table.getByText("Staff", { exact: true })).toBeVisible()
+  await expect(table.getByText("Candidate", { exact: true })).toHaveCount(0)
 })
 
 test("dashboard labels truncated aggregates instead of presenting them as exact", async ({ page }) => {
@@ -248,9 +275,11 @@ for (const lang of ["zh", "en"] as const) {
         requests.push(`${method} ${pathname}`)
         if (pathname !== "/api/dashboard/ops") return undefined
         queries.push(url.searchParams)
-        const users = ["admin", "student", "member"].map((role, index) => ({
+        const users = ["admin", "student", "student"].map((role, index) => ({
           ...dashboardData(`User ${index}`).users[0],
           role_label: role,
+          user_group: index === 0 ? "staff" : "candidate",
+          is_member: index === 2,
           phone: index === 1 ? "" : `+861380000000${index}`,
           status: index === 1 ? "inactive" : "active",
           email_verified: index !== 1,
@@ -259,7 +288,7 @@ for (const lang of ["zh", "en"] as const) {
       })
       await page.goto("/dashboard")
       const section = page.locator("section").filter({ has: page.getByRole("heading", { name: lang === "zh" ? "用户管理" : "User Management", exact: true }) })
-      const roles = lang === "zh" ? ["管理员", "学生", "会员"] : ["admin", "student", "member"]
+      const roles = lang === "zh" ? ["管理员", "学生", "学生"] : ["admin", "student", "student"]
       const verified = lang === "zh" ? "已验证" : "Verified"
       const unverified = lang === "zh" ? "未验证" : "Unverified"
       const columns = lang === "zh" ? ["用户", "邮箱", "角色", "状态", "邮箱验证", "创建时间"] : ["User", "Email", "Role", "Status", "Email Verified", "Created"]
@@ -271,6 +300,7 @@ for (const lang of ["zh", "en"] as const) {
       for (const [index, role] of roles.entries()) {
         await expect(rows.nth(index).getByText(role, { exact: true })).toBeVisible()
         await expect(section.getByRole("option", { name: role, exact: true })).toHaveCount(1)
+        if (index === 2) await expect(rows.nth(index).getByText(lang === "zh" ? "会员" : "member", { exact: true })).toBeVisible()
         const mark = rows.nth(index).locator(`[title="${index === 1 ? unverified : verified}"]`)
         await expect(mark).toBeVisible()
         await expect(mark.locator(index === 1 ? "svg.lucide-x" : "svg.lucide-check")).toBeVisible()
@@ -285,16 +315,19 @@ for (const lang of ["zh", "en"] as const) {
         await trigger.click()
         const dialog = page.getByRole("dialog", { name: lang === "zh" ? "用户详情" : "User Details", exact: true })
         await expect(dialog).toBeVisible()
-        await expect(dialog.locator("dt")).toHaveText([columns[0], columns[1], lang === "zh" ? "电话" : "Phone", lang === "zh" ? "地区" : "Location", ...columns.slice(2)])
+        const detailLabels = [columns[0], columns[1], lang === "zh" ? "电话" : "Phone", lang === "zh" ? "地区" : "Location", columns[2], ...(index === 0 ? [] : [lang === "zh" ? "会员身份" : "Membership"]), ...columns.slice(3)]
+        await expect(dialog.locator("dt")).toHaveText(detailLabels)
         const values = dialog.locator("dd")
         await expect(values.nth(0)).toHaveText(`User ${index}`)
         await expect(values.nth(1)).toHaveText(`user.${index}@example.test`)
         await expect(values.nth(2)).toHaveText(index === 1 ? "-" : `+861380000000${index}`)
         await expect(values.nth(3)).toHaveText("Shanghai")
         await expect(values.nth(4)).toHaveText(role)
-        await expect(values.nth(5)).toHaveText(lang === "zh" ? (index === 1 ? "停用" : "活跃") : (index === 1 ? "Inactive" : "Active"))
-        await expect(values.nth(6)).toHaveText(index === 1 ? unverified : verified)
-        await expect(values.nth(7)).not.toHaveText("-")
+        const detailOffset = index === 0 ? 0 : 1
+        if (detailOffset) await expect(values.nth(5)).toHaveText(lang === "zh" ? (index === 2 ? "会员" : "非会员") : (index === 2 ? "member" : "Not a member"))
+        await expect(values.nth(5 + detailOffset)).toHaveText(lang === "zh" ? (index === 1 ? "停用" : "活跃") : (index === 1 ? "Inactive" : "Active"))
+        await expect(values.nth(6 + detailOffset)).toHaveText(index === 1 ? unverified : verified)
+        await expect(values.nth(7 + detailOffset)).not.toHaveText("-")
         await expect(dialog.locator("input, select, textarea")).toHaveCount(0)
         const close = dialog.getByRole("button", { name: lang === "zh" ? "关闭" : "Close", exact: true })
         await expect(close).toBeFocused()

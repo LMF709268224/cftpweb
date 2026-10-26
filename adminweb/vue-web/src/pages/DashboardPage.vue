@@ -45,6 +45,8 @@ type DashboardUser = {
   location: string
   roles: string[]
   role_label: string
+  user_group: "staff" | "candidate"
+  is_member: boolean
   status: string
   email_verified: boolean
   created_at: string
@@ -72,6 +74,8 @@ const selectedUser = ref<DashboardUser | null>(null)
 const enrollmentUser = ref<DashboardUser | null>(null)
 const userManagementRef = ref<HTMLElement | null>(null)
 const keyword = ref("")
+const userGroup = ref<"all" | "staff" | "candidate">("all")
+const userGroups = ["all", "staff", "candidate"] as const
 const roleFilter = ref("all")
 const statusFilter = ref("all")
 const userPage = ref(1)
@@ -91,12 +95,12 @@ const revenueText = computed(() => {
   if (!items.length) return copy.value.noRevenue
   return items.map((item) => `${item.currency} ${formatMinorAmount(item.amount_minor) ?? "-"}`).join(" / ")
 })
-const roleOptions = computed(() => [
-  { value: "all", label: copy.value.filters.allRoles },
-  { value: "admin", label: copy.value.roles.admin },
-  { value: "student", label: copy.value.roles.student },
-  { value: "member", label: copy.value.roles.member },
-])
+const roleOptions = computed(() => {
+  const options = [{ value: "all", label: copy.value.filters.allRoles }]
+  if (userGroup.value === "all") options.push({ value: "admin", label: copy.value.roles.admin }, { value: "student", label: copy.value.roles.student })
+  if (userGroup.value !== "staff") options.push({ value: "member", label: copy.value.roles.member })
+  return options
+})
 const filteredUsers = computed(() => {
   return data.value?.users || []
 })
@@ -110,9 +114,15 @@ const summaryCards = computed(() => [
 ])
 
 function showUsers(role: string, status: string) {
-  roleFilter.value = role
+  userGroup.value = role === "admin" ? "staff" : role === "student" || role === "member" ? "candidate" : "all"
+  roleFilter.value = role === "member" ? "member" : "all"
   statusFilter.value = status
   userManagementRef.value?.scrollIntoView({ behavior: "smooth", block: "start" })
+}
+
+function selectUserGroup(group: "all" | "staff" | "candidate") {
+  userGroup.value = group
+  roleFilter.value = "all"
 }
 
 function stageLabel(stageId: string) {
@@ -165,6 +175,7 @@ const userDetailFields = computed(() => {
     { label: copy.value.phone, value: user.phone || "-" },
     { label: copy.value.location, value: user.location || "-" },
     { label: copy.value.table.role, value: roleLabel(user.role_label) },
+    ...(user.user_group === "candidate" ? [{ label: copy.value.membership, value: user.is_member ? copy.value.roles.member : copy.value.notMember }] : []),
     { label: copy.value.table.status, value: userStatusLabel(user.status) },
     { label: copy.value.table.emailVerified, value: user.email_verified ? copy.value.verified : copy.value.unverified },
     { label: copy.value.table.created, value: formatDate(user.created_at) },
@@ -187,6 +198,7 @@ async function loadDashboard(page = userPage.value) {
     })
     const normalizedKeyword = keyword.value.trim()
     if (normalizedKeyword) params.set("user_keyword", normalizedKeyword)
+    if (userGroup.value !== "all") params.set("user_group", userGroup.value)
     if (roleFilter.value !== "all") params.set("user_role", roleFilter.value)
     if (statusFilter.value !== "all") params.set("user_status", statusFilter.value)
     const response = await apiClient<DashboardData>(`/api/dashboard/ops?${params}`)
@@ -214,7 +226,7 @@ function clearUserKeyword() {
 
 onMounted(loadDashboard)
 
-watch([keyword, roleFilter, statusFilter], () => {
+watch([keyword, userGroup, roleFilter, statusFilter], () => {
   if (filterReloadTimer) window.clearTimeout(filterReloadTimer)
   filterReloadTimer = window.setTimeout(() => {
     filterReloadTimer = undefined
@@ -278,6 +290,11 @@ onUnmounted(() => {
           </div>
           <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">{{ copy.userPageText(userPage, userTotal) }}</span>
         </div>
+        <div class="mt-4 inline-flex max-w-full gap-1 overflow-x-auto rounded-lg border border-slate-200 bg-slate-50 p-1" :aria-label="copy.userManagement">
+          <button v-for="group in userGroups" :key="group" type="button" class="whitespace-nowrap rounded-md px-3 py-2 text-sm font-bold" :class="userGroup === group ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-600 hover:text-slate-950'" :aria-pressed="userGroup === group" @click="selectUserGroup(group)">
+            {{ copy.groups[group] }}
+          </button>
+        </div>
         <div class="mt-4 grid gap-4 lg:grid-cols-[minmax(0,2fr)_1fr_1fr]">
           <label class="grid gap-2 text-sm font-bold">
             {{ copy.table.user }}
@@ -335,7 +352,10 @@ onUnmounted(() => {
               </div>
               <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
                 <span class="text-xs font-black text-slate-400">{{ copy.table.role }}</span>
-                <span class="inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold" :class="roleBadgeClass(user.role_label)">{{ roleLabel(user.role_label) }}</span>
+                <span class="flex flex-wrap justify-end gap-1">
+                  <span class="inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold" :class="roleBadgeClass(user.role_label)">{{ roleLabel(user.role_label) }}</span>
+                  <span v-if="user.is_member" class="inline-flex whitespace-nowrap rounded-full bg-cyan-100 px-2.5 py-1 text-xs font-bold text-cyan-800">{{ copy.roles.member }}</span>
+                </span>
               </div>
               <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
                 <span class="text-xs font-black text-slate-400">{{ copy.table.status }}</span>
@@ -396,6 +416,7 @@ onUnmounted(() => {
                 <td class="whitespace-nowrap px-6 py-4 text-slate-700">{{ user.email || "-" }}</td>
                 <td class="w-24 whitespace-nowrap px-6 py-4">
                   <span class="inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold" :class="roleBadgeClass(user.role_label)">{{ roleLabel(user.role_label) }}</span>
+                  <span v-if="user.is_member" class="ml-1 inline-flex whitespace-nowrap rounded-full bg-cyan-100 px-2.5 py-1 text-xs font-bold text-cyan-800">{{ copy.roles.member }}</span>
                 </td>
                 <td class="w-24 whitespace-nowrap px-6 py-4">
                   <span class="inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold" :class="userStatusClass(user.status)">{{ userStatusLabel(user.status) }}</span>
