@@ -141,7 +141,7 @@ func (h *Handler) GetPdfRequestDetail(w http.ResponseWriter, r *http.Request) {
 		HandleGrpcError(w, err)
 		return
 	}
-	WriteJSON(w, http.StatusOK, res)
+	WriteJSON(w, http.StatusOK, h.candidateAwarePayload(res, "candidate_ulid"))
 }
 
 // CreateProgPdfRequest POST /api/prog/pipelines/{pipeline_ulid}/pdf-requests
@@ -189,8 +189,8 @@ func (h *Handler) ListPdfRequests(w http.ResponseWriter, r *http.Request) {
 	page := parseCursorPage(r, 20)
 
 	req := &gcredspb.ListPdfRequestsRequest{
-		Cursor:   page.Cursor,
-		PageSize: page.PageSize,
+		Cursor:    page.Cursor,
+		PageSize:  page.PageSize,
 		SortOrder: gcredspb.SortOrder(page.Sort),
 	}
 
@@ -200,5 +200,5 @@ func (h *Handler) ListPdfRequests(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	WriteJSON(w, http.StatusOK, res)
+	WriteJSON(w, http.StatusOK, h.candidateAwarePayload(res, "candidate_ulid"))
 }

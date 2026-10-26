@@ -4,7 +4,7 @@ import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
-import { formatDate, getDisplayTitle, humanizeKey, isPrimitive, type JsonRecord } from "@/lib/display"
+import { formatDate, humanizeKey, isPrimitive, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 import { pickFirst } from "@/lib/status"
 
@@ -26,15 +26,37 @@ const copy = computed(() => t.value.pdfRequests)
 let detailRequestId = 0
 
 
-const detailFields = computed(() => {
+const primaryFieldKeys = ["degree_no", "cert_no", "candidate_name", "status", "error_msg", "error_message", "issue_date", "created_at", "updated_at"]
+const primaryFields = computed(() => {
   if (!selected.value) return []
-  return Object.entries(selected.value)
-    .filter(([, value]) => isPrimitive(value))
-    .map(([key, value]) => ({
+  return primaryFieldKeys
+    .filter((key) => selected.value?.[key] !== undefined && selected.value?.[key] !== null && selected.value?.[key] !== "")
+    .map((key) => ({
       key,
       label: fieldLabel(key),
-      value: formatFieldValue(key, value),
+      value: formatFieldValue(key, selected.value?.[key]),
     }))
+})
+const templateFields = computed(() => {
+  const raw = selected.value?.template_params
+  if (typeof raw !== "string" || !raw.trim()) return []
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return []
+    return Object.entries(parsed).map(([key, value]) => ({
+      key,
+      label: humanizeKey(key),
+      value: value && typeof value === "object" ? JSON.stringify(value, null, 2) : String(value ?? "-"),
+    }))
+  } catch {
+    return []
+  }
+})
+const technicalFields = computed(() => {
+  if (!selected.value) return []
+  return Object.entries(selected.value)
+    .filter(([key, value]) => isPrimitive(value) && !primaryFieldKeys.includes(key) && (key !== "template_params" || !templateFields.value.length))
+    .map(([key, value]) => ({ key, label: fieldLabel(key), value: formatFieldValue(key, value) }))
 })
 
 function fieldLabel(key: string) {
@@ -43,6 +65,14 @@ function fieldLabel(key: string) {
 
 function requestUlid(request: JsonRecord) {
   return String(pickFirst(request, ["request_ulid", "request_id", "id", "pdf_request_ulid"]) || "")
+}
+
+function certificateNumber(request: JsonRecord) {
+  return String(pickFirst(request, ["degree_no", "cert_no"]) || "").trim()
+}
+
+function candidateName(request: JsonRecord) {
+  return String(request.candidate_name || "").trim()
 }
 
 function isCurrentDetailRequest(requestId: number, id: string) {
@@ -220,8 +250,9 @@ onMounted(() => load(1))
           :class="detailOpen && requestUlid(selected || {}) === requestUlid(request) ? 'bg-sky-50' : ''"
         >
           <div class="min-w-0">
-            <div class="break-words text-base font-black md:truncate">{{ getDisplayTitle(request) }}</div>
-            <div class="mt-1 break-all text-sm font-bold text-slate-600 md:truncate">{{ requestUlid(request) || "-" }}</div>
+            <div class="break-words text-base font-black md:truncate">{{ certificateNumber(request) || requestUlid(request) || "-" }}</div>
+            <div v-if="candidateName(request)" class="mt-1 break-words text-sm font-semibold text-slate-700 md:truncate">{{ candidateName(request) }}</div>
+            <div class="mt-1 break-all text-xs text-slate-500 md:truncate">{{ requestUlid(request) || "-" }}</div>
           </div>
           <div class="min-w-0 md:text-center">
             <span class="inline-flex max-w-full truncate rounded-full border px-3 py-1 text-xs font-black" :class="statusBadgeClass(request.status)">
@@ -295,18 +326,32 @@ onMounted(() => load(1))
           <div v-else class="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 md:p-5">
             <div class="rounded-2xl border border-blue-100 bg-blue-50 p-4">
               <div class="text-sm font-black text-blue-700">{{ copy.currentRequest }}</div>
-              <div class="mt-1 break-all text-lg font-black text-slate-950">{{ requestUlid(selected) || "-" }}</div>
+              <div class="mt-1 break-all text-lg font-black text-slate-950">{{ certificateNumber(selected) || requestUlid(selected) || "-" }}</div>
+              <div v-if="candidateName(selected)" class="mt-1 text-sm font-semibold text-slate-700">{{ candidateName(selected) }}</div>
+              <div class="mt-1 break-all text-xs text-slate-500">{{ requestUlid(selected) || "-" }}</div>
               <div class="mt-2 inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="statusBadgeClass(selected.status)">
                 {{ statusLabel(selected.status) }}
               </div>
             </div>
 
-            <div class="grid gap-4 md:grid-cols-2">
-              <label v-for="field in detailFields" :key="field.key" class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <span class="text-xs font-black uppercase tracking-wide text-slate-400">{{ field.label }}</span>
-                <input class="mt-2 w-full rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm font-bold text-slate-700" :value="field.value" disabled />
-              </label>
-            </div>
+            <section v-if="primaryFields.length || templateFields.length">
+              <h3 class="border-b border-slate-200 pb-2 text-sm font-black text-slate-900">{{ copy.certificateDetails }}</h3>
+              <dl class="divide-y divide-slate-100">
+                <div v-for="field in [...primaryFields, ...templateFields]" :key="field.key" class="grid gap-1 py-3 text-sm md:grid-cols-[180px_minmax(0,1fr)] md:gap-4">
+                  <dt class="font-bold text-slate-500">{{ field.label }}</dt>
+                  <dd class="min-w-0 whitespace-pre-wrap break-words font-semibold text-slate-900">{{ field.value }}</dd>
+                </div>
+              </dl>
+            </section>
+            <details v-if="technicalFields.length" class="border-t border-slate-200 pt-3">
+              <summary class="cursor-pointer text-sm font-bold text-slate-700">{{ copy.technicalDetails }}</summary>
+              <dl class="mt-2 divide-y divide-slate-100">
+                <div v-for="field in technicalFields" :key="field.key" class="grid gap-1 py-3 text-sm md:grid-cols-[180px_minmax(0,1fr)] md:gap-4">
+                  <dt class="font-bold text-slate-500">{{ field.label }}</dt>
+                  <dd class="min-w-0 whitespace-pre-wrap break-all font-semibold text-slate-700">{{ field.value }}</dd>
+                </div>
+              </dl>
+            </details>
 
           </div>
         </section>

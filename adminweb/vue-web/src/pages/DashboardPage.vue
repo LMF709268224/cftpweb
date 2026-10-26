@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Activity, BarChart3, Check, CreditCard, Loader2, Mail, RefreshCw, Search, Shield, UserCheck, Users, X } from "lucide-vue-next"
+import { Activity, ArrowUpRight, BarChart3, Check, CreditCard, Loader2, Mail, RefreshCw, Search, Shield, UserCheck, Users, X } from "lucide-vue-next"
 import { computed, onMounted, onUnmounted, ref, watch } from "vue"
 import { RouterLink } from "vue-router"
 import { toast } from "vue-sonner"
@@ -70,6 +70,7 @@ const loading = ref(false)
 const data = ref<DashboardData | null>(null)
 const selectedUser = ref<DashboardUser | null>(null)
 const enrollmentUser = ref<DashboardUser | null>(null)
+const userManagementRef = ref<HTMLElement | null>(null)
 const keyword = ref("")
 const roleFilter = ref("all")
 const statusFilter = ref("all")
@@ -101,12 +102,18 @@ const filteredUsers = computed(() => {
 })
 
 const summaryCards = computed(() => [
-  { label: copy.value.summary.totalUsers, value: userStats.value.total, tone: "text-slate-950", icon: Users },
-  { label: copy.value.summary.activeUsers, value: userStats.value.active, tone: "text-emerald-600", icon: UserCheck },
-  { label: copy.value.summary.admins, value: userStats.value.admins, tone: "text-blue-600", icon: Shield },
-  { label: copy.value.summary.students, value: data.value?.candidate_total ?? 0, tone: "text-blue-700", icon: Users },
-  { label: copy.value.summary.members, value: userStats.value.members, tone: "text-cyan-600", icon: Users },
+  { label: copy.value.summary.totalUsers, value: userStats.value.total, tone: "text-slate-950", icon: Users, role: "all", status: "all" },
+  { label: copy.value.summary.activeUsers, value: userStats.value.active, tone: "text-emerald-600", icon: UserCheck, role: "all", status: "active" },
+  { label: copy.value.summary.admins, value: userStats.value.admins, tone: "text-blue-600", icon: Shield, role: "admin", status: "all" },
+  { label: copy.value.summary.students, value: data.value?.candidate_total ?? 0, tone: "text-blue-700", icon: Users, role: "student", status: "all" },
+  { label: copy.value.summary.members, value: userStats.value.members, tone: "text-cyan-600", icon: Users, role: "member", status: "all" },
 ])
+
+function showUsers(role: string, status: string) {
+  roleFilter.value = role
+  statusFilter.value = status
+  userManagementRef.value?.scrollIntoView({ behavior: "smooth", block: "start" })
+}
 
 function stageLabel(stageId: string) {
   return stageId === copy.value.noStage ? copy.value.noStage : stageId
@@ -156,6 +163,7 @@ const userDetailFields = computed(() => {
     { label: copy.value.table.user, value: user.name || "-" },
     { label: copy.value.table.email, value: user.email || "-" },
     { label: copy.value.phone, value: user.phone || "-" },
+    { label: copy.value.location, value: user.location || "-" },
     { label: copy.value.table.role, value: roleLabel(user.role_label) },
     { label: copy.value.table.status, value: userStatusLabel(user.status) },
     { label: copy.value.table.emailVerified, value: user.email_verified ? copy.value.verified : copy.value.unverified },
@@ -252,16 +260,16 @@ onUnmounted(() => {
     </header>
 
     <section class="mb-4 grid grid-cols-2 gap-3 md:grid-cols-2 md:gap-4 xl:grid-cols-5">
-      <article v-for="card in summaryCards" :key="card.label" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
+      <button v-for="card in summaryCards" :key="card.label" class="rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-slate-400 hover:shadow-md md:p-5" type="button" @click="showUsers(card.role, card.status)">
         <div class="flex items-center justify-between">
           <p class="text-sm font-bold text-slate-600">{{ card.label }}</p>
-          <component :is="card.icon" class="h-5 w-5 text-slate-300" />
+          <component :is="card.icon" class="h-5 w-5 text-slate-400" />
         </div>
         <p class="mt-4 text-3xl font-black md:mt-5 md:text-4xl" :class="card.tone">{{ card.value }}</p>
-      </article>
+      </button>
     </section>
 
-    <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <section ref="userManagementRef" class="scroll-mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div class="border-b border-slate-100 px-4 py-4 md:px-6 md:py-5">
         <div class="flex flex-wrap items-end justify-between gap-4">
           <div class="min-w-0">
@@ -461,15 +469,8 @@ onUnmounted(() => {
           </div>
           <BarChart3 class="h-6 w-6 text-slate-400" />
         </div>
-        <div class="mt-6 grid gap-4 sm:grid-cols-2">
-          <div class="rounded-2xl bg-slate-50 p-5">
-            <div class="flex items-center gap-2 text-slate-500">
-              <Users class="h-4 w-4" />
-              <span class="text-sm font-bold">{{ copy.candidatesTotal }}</span>
-            </div>
-            <p class="mt-4 text-3xl font-black">{{ data?.candidate_total ?? "-" }}</p>
-          </div>
-          <div class="rounded-2xl bg-slate-50 p-5">
+        <div class="mt-6">
+          <div class="bg-slate-50 p-5">
             <div class="flex items-center gap-2 text-slate-500">
               <CreditCard class="h-4 w-4" />
               <span class="text-sm font-bold">{{ copy.todayRevenue }}</span>
@@ -477,6 +478,9 @@ onUnmounted(() => {
             <p class="mt-4 text-2xl font-black">{{ revenueText }}</p>
             <p class="mt-2 text-sm text-slate-500">{{ copy.paidOrders(totalPaidOrders) }}</p>
             <p v-if="data && !data.today_revenue_exact" class="mt-2 text-xs font-bold text-amber-700">{{ copy.sampledAggregation(data.aggregation_sample_limit) }}</p>
+            <RouterLink to="/orders" class="mt-3 inline-flex items-center gap-1 text-sm font-bold text-blue-700 hover:underline">
+              {{ copy.viewOrders }} <ArrowUpRight class="h-4 w-4" />
+            </RouterLink>
           </div>
         </div>
       </article>

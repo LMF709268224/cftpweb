@@ -52,7 +52,9 @@ func (s *pdfRequestReadClientStub) GetPdfRequestDetail(_ context.Context, req *g
 
 func TestListPdfRequestsReturnsReadOnlyPage(t *testing.T) {
 	client := &pdfRequestReadClientStub{}
-	h := &Handler{Creds: client}
+	profiles := NewCandidateProfileCache(nil)
+	profiles.names["candidate-1"] = "Regression Candidate"
+	h := &Handler{Creds: client, CandidateProfiles: profiles}
 	recorder := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/api/pdf-requests?cursor=current-page&page_size=10&sort=1", nil)
 
@@ -67,9 +69,10 @@ func TestListPdfRequestsReturnsReadOnlyPage(t *testing.T) {
 	var payload struct {
 		Data struct {
 			Requests []struct {
-				RequestULID string `json:"request_ulid"`
-				DegreeNo    string `json:"degree_no"`
-				Status      int32  `json:"status"`
+				RequestULID   string `json:"request_ulid"`
+				DegreeNo      string `json:"degree_no"`
+				CandidateName string `json:"candidate_name"`
+				Status        int32  `json:"status"`
 			} `json:"requests"`
 			HasMore    bool   `json:"has_more"`
 			NextCursor string `json:"next_cursor"`
@@ -78,14 +81,16 @@ func TestListPdfRequestsReturnsReadOnlyPage(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
 		t.Fatalf("decode response: %v", err)
 	}
-	if len(payload.Data.Requests) != 1 || payload.Data.Requests[0].RequestULID != "pdf-request-1" || payload.Data.Requests[0].DegreeNo != "CERT-2026-001" || payload.Data.Requests[0].Status != 3 || !payload.Data.HasMore || payload.Data.NextCursor != "next-page" {
+	if len(payload.Data.Requests) != 1 || payload.Data.Requests[0].RequestULID != "pdf-request-1" || payload.Data.Requests[0].DegreeNo != "CERT-2026-001" || payload.Data.Requests[0].CandidateName != "Regression Candidate" || payload.Data.Requests[0].Status != 3 || !payload.Data.HasMore || payload.Data.NextCursor != "next-page" {
 		t.Fatalf("PDF request page = %+v", payload.Data)
 	}
 }
 
 func TestGetPdfRequestDetailReturnsReadOnlyDetail(t *testing.T) {
 	client := &pdfRequestReadClientStub{}
-	h := &Handler{Creds: client}
+	profiles := NewCandidateProfileCache(nil)
+	profiles.names["candidate-1"] = "Regression Candidate"
+	h := &Handler{Creds: client, CandidateProfiles: profiles}
 	recorder := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/api/pdf-requests/pdf-request-1/detail", nil)
 	routeContext := chi.NewRouteContext()
@@ -104,13 +109,14 @@ func TestGetPdfRequestDetailReturnsReadOnlyDetail(t *testing.T) {
 		Data struct {
 			RequestULID    string `json:"request_ulid"`
 			TemplateParams string `json:"template_params"`
+			CandidateName  string `json:"candidate_name"`
 			PdfFileHash    string `json:"pdf_file_hash"`
 		} `json:"data"`
 	}
 	if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
 		t.Fatalf("decode response: %v", err)
 	}
-	if payload.Data.RequestULID != "pdf-request-1" || payload.Data.TemplateParams == "" || payload.Data.PdfFileHash != "sha256-regression" {
+	if payload.Data.RequestULID != "pdf-request-1" || payload.Data.CandidateName != "Regression Candidate" || payload.Data.TemplateParams == "" || payload.Data.PdfFileHash != "sha256-regression" {
 		t.Fatalf("PDF request detail = %+v", payload.Data)
 	}
 }

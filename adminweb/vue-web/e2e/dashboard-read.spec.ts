@@ -155,6 +155,22 @@ test("dashboard renders populated user and summary data with read-only requests"
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
 })
 
+test("dashboard summary opens the matching user list and revenue links to orders", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  const queries: URLSearchParams[] = []
+  await installAdminApiMocks(page, ({ pathname, url }) => {
+    if (pathname === "/api/dashboard/ops") {
+      queries.push(new URLSearchParams(url.search))
+      return { data: dashboardData("Regression Admin") }
+    }
+    return undefined
+  })
+  await page.goto("/dashboard")
+  await page.getByRole("button", { name: "管理员 2" }).click()
+  await expect.poll(() => queries.at(-1)?.get("user_role")).toBe("admin")
+  await expect(page.getByRole("link", { name: "查看订单" })).toHaveAttribute("href", "/orders")
+})
+
 test("dashboard labels truncated aggregates instead of presenting them as exact", async ({ page }) => {
 	await seedAuthenticatedAdmin(page)
 	await installAdminApiMocks(page, ({ pathname }) => {
@@ -269,15 +285,16 @@ for (const lang of ["zh", "en"] as const) {
         await trigger.click()
         const dialog = page.getByRole("dialog", { name: lang === "zh" ? "用户详情" : "User Details", exact: true })
         await expect(dialog).toBeVisible()
-        await expect(dialog.locator("dt")).toHaveText([columns[0], columns[1], lang === "zh" ? "电话" : "Phone", ...columns.slice(2)])
+        await expect(dialog.locator("dt")).toHaveText([columns[0], columns[1], lang === "zh" ? "电话" : "Phone", lang === "zh" ? "地区" : "Location", ...columns.slice(2)])
         const values = dialog.locator("dd")
         await expect(values.nth(0)).toHaveText(`User ${index}`)
         await expect(values.nth(1)).toHaveText(`user.${index}@example.test`)
         await expect(values.nth(2)).toHaveText(index === 1 ? "-" : `+861380000000${index}`)
-        await expect(values.nth(3)).toHaveText(role)
-        await expect(values.nth(4)).toHaveText(lang === "zh" ? (index === 1 ? "停用" : "活跃") : (index === 1 ? "Inactive" : "Active"))
-        await expect(values.nth(5)).toHaveText(index === 1 ? unverified : verified)
-        await expect(values.nth(6)).not.toHaveText("-")
+        await expect(values.nth(3)).toHaveText("Shanghai")
+        await expect(values.nth(4)).toHaveText(role)
+        await expect(values.nth(5)).toHaveText(lang === "zh" ? (index === 1 ? "停用" : "活跃") : (index === 1 ? "Inactive" : "Active"))
+        await expect(values.nth(6)).toHaveText(index === 1 ? unverified : verified)
+        await expect(values.nth(7)).not.toHaveText("-")
         await expect(dialog.locator("input, select, textarea")).toHaveCount(0)
         const close = dialog.getByRole("button", { name: lang === "zh" ? "关闭" : "Close", exact: true })
         await expect(close).toBeFocused()

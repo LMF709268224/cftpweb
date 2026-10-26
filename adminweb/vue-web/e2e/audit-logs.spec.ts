@@ -47,6 +47,7 @@ test("audit list renders the returned read-only operation summary", async ({ pag
   await page.goto("/audit/logs")
 
   await expect(page.getByText("Viewed credential application", { exact: true })).toBeVisible()
+  await expect(page.getByText("证书与资格", { exact: true }).first()).toBeVisible()
   await expect(page.getByText("Regression Admin", { exact: true }).last()).toBeVisible()
   await expect(page.getByText("SUCCESS", { exact: true })).toBeVisible()
   expect(requests).toContain("GET /api/audit/logs")
@@ -89,11 +90,15 @@ test("audit filters use canonical options and preserve exact query values", asyn
   await page.goto("/audit/logs")
   await expect(page.getByText("Viewed credential application", { exact: true })).toBeVisible()
 
+  await expect(page.getByLabel("来源服务")).toBeHidden()
+  await page.getByRole("button", { name: "高级筛选" }).click()
+
   const sourceFilter = page.getByLabel("来源服务")
   const statusFilter = page.getByLabel("状态")
   await expect(sourceFilter).toHaveValue("")
   await expect(statusFilter).toHaveValue("")
   await sourceFilter.selectOption("adminbff")
+  await expect(page.locator("#audit-action-options option")).toHaveCount(0)
   await statusFilter.selectOption("FAILED")
   await page.getByLabel("动作").fill("publish_course")
   await page.getByLabel("资源类型").fill("course")
@@ -105,4 +110,11 @@ test("audit filters use canonical options and preserve exact query values", asyn
   expect(query?.get("status")).toBe("FAILED")
   expect(query?.get("action")).toBe("publish_course")
   expect(query?.get("resource_type")).toBe("course")
+
+  await page.getByRole("button", { name: "高级筛选" }).click()
+  await expect(page.getByText("来源服务: 管理后台", { exact: true })).toBeVisible()
+  await page.getByRole("button", { name: "清除筛选" }).click()
+  await expect.poll(() => listQueries.length).toBe(3)
+  expect(listQueries.at(-1)?.has("source_service")).toBe(false)
+  expect(listQueries.at(-1)?.has("action")).toBe(false)
 })

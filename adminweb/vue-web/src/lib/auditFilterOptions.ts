@@ -15,6 +15,21 @@ export const AUDIT_SOURCE_SERVICE_OPTIONS = [
   "gprog",
 ] as const
 
+export const AUDIT_SOURCE_SERVICE_LABELS: Record<(typeof AUDIT_SOURCE_SERVICE_OPTIONS)[number], { en: string; zh: string }> = {
+  adminbff: { en: "Admin Portal", zh: "管理后台" },
+  gcc: { en: "Certification Catalog", zh: "认证配置" },
+  gcreds: { en: "Credentials", zh: "证书与资格" },
+  gexam: { en: "Exams", zh: "考试" },
+  glms: { en: "Learning", zh: "课程学习" },
+  gmail: { en: "Email", zh: "邮件" },
+  gmall: { en: "Commerce", zh: "商品与订单" },
+  gmbr: { en: "Membership", zh: "会员" },
+  gmid: { en: "Identity", zh: "身份账号" },
+  gmsg: { en: "Messages", zh: "站内信" },
+  gpay: { en: "Payments", zh: "支付" },
+  gprog: { en: "Certification Progress", zh: "认证进度" },
+}
+
 // Actions and resource types are producer-defined strings, so these are suggestions rather than closed enums.
 export const AUDIT_ACTION_SUGGESTIONS = [
   "approve_application",

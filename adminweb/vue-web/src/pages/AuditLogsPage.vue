@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { FileText, Loader2, RefreshCw, Search, X } from "lucide-vue-next"
+import { ChevronDown, FileText, Loader2, RefreshCw, Search, SlidersHorizontal, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
 import {
   AUDIT_ACTION_SUGGESTIONS,
   AUDIT_RESOURCE_TYPE_SUGGESTIONS,
+  AUDIT_SOURCE_SERVICE_LABELS,
   AUDIT_SOURCE_SERVICE_OPTIONS,
   AUDIT_STATUS_OPTIONS,
 } from "@/lib/auditFilterOptions"
@@ -22,6 +23,7 @@ const detail = ref<JsonRecord | null>(null)
 const loading = ref(false)
 const detailLoading = ref(false)
 const detailOpen = ref(false)
+const advancedOpen = ref(false)
 const page = ref(1)
 const total = ref(0)
 const hasMore = ref(false)
@@ -38,6 +40,31 @@ const filters = ref({
   resource_id: "",
   start_time: "",
   end_time: "",
+})
+
+const advancedFilterKeys = ["source_service", "action", "status", "operator_id", "resource_type", "resource_id", "start_time", "end_time"] as const
+const filterNames = computed(() => ({
+  source_service: copy.value.filters.sourceService,
+  action: copy.value.filters.action,
+  status: copy.value.filters.status,
+  operator_id: copy.value.filters.operator,
+  resource_type: copy.value.filters.resourceType,
+  resource_id: copy.value.filters.resourceId,
+  start_time: copy.value.filters.startTime,
+  end_time: copy.value.filters.endTime,
+}))
+const activeAdvancedFilters = computed(() => advancedFilterKeys.flatMap((key) => {
+  const value = filters.value[key].trim()
+  if (!value) return []
+  return [{ key, label: filterNames.value[key], value: key === "source_service" ? sourceServiceLabel(value) : value }]
+}))
+const actionSuggestions = computed(() => {
+  const source = filters.value.source_service
+  if (!source) return AUDIT_ACTION_SUGGESTIONS
+  return [...new Set(logs.value
+    .filter((log) => String(log.source_service || "") === source)
+    .map((log) => String(log.action || "").trim())
+    .filter(Boolean))].sort()
 })
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)))
@@ -62,6 +89,12 @@ function fieldText(record: JsonRecord | null, keys: string[], fallback = "-") {
 
 function auditId(record: JsonRecord | null) {
   return fieldText(record, ["audit_ulid", "auditUlid", "id"], "")
+}
+
+function sourceServiceLabel(value: unknown) {
+  const source = String(value || "").trim()
+  const labels = AUDIT_SOURCE_SERVICE_LABELS[source as keyof typeof AUDIT_SOURCE_SERVICE_LABELS]
+  return labels ? labels[isZh.value ? "zh" : "en"] : source || "-"
 }
 
 function toRFC3339Local(value: string) {
@@ -177,6 +210,17 @@ function resetAndLoad() {
   void load()
 }
 
+function removeAdvancedFilter(key: (typeof advancedFilterKeys)[number]) {
+  filters.value[key] = ""
+  resetAndLoad()
+}
+
+function clearFilters() {
+  for (const key of advancedFilterKeys) filters.value[key] = ""
+  filters.value.keyword = ""
+  resetAndLoad()
+}
+
 async function openDetail(record: JsonRecord) {
   const id = auditId(record)
   if (!id) return
@@ -237,23 +281,44 @@ onMounted(load)
     </header>
 
     <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
-      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        <label class="grid gap-2 text-sm font-bold">
+      <div class="flex flex-col gap-3 md:flex-row md:items-end">
+        <label class="grid min-w-0 flex-1 gap-2 text-sm font-bold">
           {{ copy.filters.keyword }}
           <input v-model="filters.keyword" class="h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.keyword" @keydown.enter="resetAndLoad" />
         </label>
+        <div class="flex gap-2">
+          <button class="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 text-sm font-bold md:flex-none" type="button" :aria-expanded="advancedOpen" aria-controls="audit-advanced-filters" @click="advancedOpen = !advancedOpen">
+            <SlidersHorizontal class="h-4 w-4" />
+            {{ copy.advancedFilters }}
+            <span v-if="activeAdvancedFilters.length" class="rounded-full bg-slate-100 px-1.5 text-xs">{{ activeAdvancedFilters.length }}</span>
+            <ChevronDown class="h-4 w-4 transition-transform" :class="advancedOpen ? 'rotate-180' : ''" />
+          </button>
+          <button class="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 text-sm font-black text-white md:flex-none" type="button" @click="resetAndLoad">
+            <Search class="h-4 w-4" />
+            {{ copy.search }}
+          </button>
+        </div>
+      </div>
+      <div v-if="activeAdvancedFilters.length" class="mt-3 flex flex-wrap items-center gap-2">
+        <button v-for="filter in activeAdvancedFilters" :key="filter.key" class="inline-flex max-w-full items-center gap-1.5 rounded border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-700" type="button" :title="copy.removeFilter" @click="removeAdvancedFilter(filter.key)">
+          <span class="truncate">{{ filter.label }}: {{ filter.value }}</span>
+          <X class="h-3.5 w-3.5 shrink-0" />
+        </button>
+        <button class="text-xs font-bold text-blue-700 hover:underline" type="button" @click="clearFilters">{{ copy.clearFilters }}</button>
+      </div>
+      <div v-if="advancedOpen" id="audit-advanced-filters" class="mt-4 grid gap-4 border-t border-slate-200 pt-4 md:grid-cols-2 xl:grid-cols-4">
         <label class="grid gap-2 text-sm font-bold">
           {{ copy.filters.sourceService }}
-          <select v-model="filters.source_service" class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3">
+          <select v-model="filters.source_service" class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3" @change="filters.action = ''">
             <option value="">{{ copy.options.allSources }}</option>
-            <option v-for="source in AUDIT_SOURCE_SERVICE_OPTIONS" :key="source" :value="source">{{ source }}</option>
+            <option v-for="source in AUDIT_SOURCE_SERVICE_OPTIONS" :key="source" :value="source">{{ sourceServiceLabel(source) }} ({{ source }})</option>
           </select>
         </label>
         <label class="grid gap-2 text-sm font-bold">
           {{ copy.filters.action }}
           <input v-model="filters.action" list="audit-action-options" class="h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.action" @keydown.enter="resetAndLoad" />
           <datalist id="audit-action-options">
-            <option v-for="action in AUDIT_ACTION_SUGGESTIONS" :key="action" :value="action" />
+            <option v-for="action in actionSuggestions" :key="action" :value="action" />
           </datalist>
         </label>
         <label class="grid gap-2 text-sm font-bold">
@@ -308,10 +373,6 @@ onMounted(load)
             </span>
           </span>
         </label>
-        <button class="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 text-sm font-black text-white shadow-sm md:mt-7" type="button" @click="resetAndLoad">
-          <Search class="h-4 w-4" />
-          {{ copy.search }}
-        </button>
       </div>
     </section>
 
@@ -346,7 +407,7 @@ onMounted(load)
           @click="openDetail(item)"
         >
           <span class="text-sm font-semibold text-slate-600">{{ formatDate(fieldText(item, ["created_at"])) }}</span>
-          <span class="font-mono text-xs font-black uppercase text-sky-700">{{ fieldText(item, ["source_service"]) }}</span>
+          <span class="text-xs font-black text-sky-700" :title="fieldText(item, ['source_service'])">{{ sourceServiceLabel(item.source_service) }}</span>
           <span class="min-w-0">
             <span class="block break-words text-base font-black text-slate-950 lg:truncate">{{ fieldText(item, ["summary_text", "action"]) }}</span>
             <span class="mt-1 block break-all text-xs font-semibold text-slate-500 lg:truncate">{{ fieldText(item, ["resource_display_name", "resource_id", "audit_ulid"]) }}</span>
@@ -385,7 +446,7 @@ onMounted(load)
           <div class="grid gap-4 md:grid-cols-3">
             <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <div class="text-xs font-black uppercase text-slate-400">{{ copy.summaryCards.service }}</div>
-              <div class="mt-2 break-words text-lg font-black text-slate-950">{{ fieldText(summary(detail), ["source_service"]) }}</div>
+              <div class="mt-2 break-words text-lg font-black text-slate-950" :title="fieldText(summary(detail), ['source_service'])">{{ sourceServiceLabel(summary(detail).source_service) }}</div>
             </div>
             <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <div class="text-xs font-black uppercase text-slate-400">{{ copy.summaryCards.action }}</div>
