@@ -313,7 +313,7 @@ export const en: AdminTranslations = {
         copiedJson: "Copied",
         fileTypePrefix: "Type:",
         fileTypes: {
-            any: "Any",
+            any: "Unspecified",
             image: "Image",
             pdf: "PDF Document",
             video: "Video",
@@ -349,6 +349,9 @@ export const en: AdminTranslations = {
             detailLoadFailed: "Failed to load credential definition details",
             listLoadFailed: "Failed to load credential definitions",
             requiredCreateFields: "Please enter name, category, resource path, and description",
+            fileConstraintsRequired: "Add at least one file requirement",
+            fileConstraintNameRequired: (index: number) => `Enter a name for file requirement ${index}`,
+            fileConstraintTypeRequired: (index: number) => `Select Image, PDF, Video, or Text for file requirement ${index}`,
             createSuccess: "Credential definition created",
             createFailed: "Create failed",
             jsonCopied: "JSON copied",

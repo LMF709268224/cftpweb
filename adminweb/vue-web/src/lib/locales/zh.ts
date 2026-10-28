@@ -311,7 +311,7 @@ export const zh = {
         copiedJson: "已复制",
         fileTypePrefix: "类型：",
         fileTypes: {
-            any: "不限 / Any",
+            any: "未指定",
             image: "图片 / Image",
             pdf: "PDF 文档 / PDF",
             video: "视频 / Video",
@@ -347,6 +347,9 @@ export const zh = {
             detailLoadFailed: "资格定义详情加载失败",
             listLoadFailed: "资格定义加载失败",
             requiredCreateFields: "请填写名称、分类、资源路径和描述",
+            fileConstraintsRequired: "请至少添加一项文件要求",
+            fileConstraintNameRequired: (index: number) => `请填写第 ${index} 项文件要求的名称`,
+            fileConstraintTypeRequired: (index: number) => `第 ${index} 项文件要求请选择图片、PDF、视频或文本类型`,
             createSuccess: "资格定义已创建",
             createFailed: "创建失败",
             jsonCopied: "JSON 已复制",

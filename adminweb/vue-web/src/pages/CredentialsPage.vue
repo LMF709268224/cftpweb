@@ -63,6 +63,7 @@ const fileTypes = computed(() => [
   { value: 4, label: copy.value.fileTypes.video },
   { value: 8, label: copy.value.fileTypes.text },
 ])
+const selectableFileTypes = computed(() => fileTypes.value.filter((item) => item.value !== 0))
 const categoryOptions = computed(() => [
   { value: "Certification", label: copy.value.categoryOptions.certification },
   { value: "Exemption", label: copy.value.categoryOptions.exemption },
@@ -362,12 +363,26 @@ async function load() {
 }
 
 function addConstraint() {
-  constraints.value.push({ name: "", type: 2, is_required: true })
+  constraints.value.push({ name: "", type: 1, is_required: true })
 }
 
 async function createDefinition() {
   if (!name.value.trim() || !categoryValues.value.has(category.value.trim()) || !respath.value.trim() || !description.value.trim()) {
     toast.error(copy.value.toasts.requiredCreateFields)
+    return
+  }
+  if (!constraints.value.length) {
+    toast.error(copy.value.toasts.fileConstraintsRequired)
+    return
+  }
+  const missingName = constraints.value.findIndex((constraint) => !constraint.name.trim())
+  if (missingName !== -1) {
+    toast.error(copy.value.toasts.fileConstraintNameRequired(missingName + 1))
+    return
+  }
+  const invalidType = constraints.value.findIndex((constraint) => !selectableFileTypes.value.some((type) => type.value === Number(constraint.type)))
+  if (invalidType !== -1) {
+    toast.error(copy.value.toasts.fileConstraintTypeRequired(invalidType + 1))
     return
   }
   creating.value = true
@@ -493,7 +508,7 @@ onMounted(load)
                 <div class="grid items-start gap-4 md:grid-cols-2">
                   <label class="grid gap-2 text-sm font-bold">
                     <span><span class="mr-1 text-red-500">*</span>{{ copy.labels.name }}</span>
-                    <input v-model="name" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="120" :placeholder="copy.placeholders.name" />
+                    <input v-model="name" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="100" :placeholder="copy.placeholders.name" />
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
                     <span><span class="mr-1 text-red-500">*</span>{{ copy.labels.category }}</span>
@@ -530,7 +545,7 @@ onMounted(load)
                   <div v-for="(constraint, index) in constraints" :key="index" class="mb-3 grid gap-3 rounded-xl bg-slate-50 p-3 md:grid-cols-[1fr_170px_100px_auto]">
                     <input v-model="constraint.name" class="rounded-lg border border-slate-200 px-3 py-2" maxlength="120" :placeholder="copy.placeholders.filePurpose" />
                     <select v-model.number="constraint.type" class="rounded-lg border border-slate-200 px-3 py-2">
-                      <option v-for="type in fileTypes" :key="type.value" :value="type.value">{{ type.label }}</option>
+                      <option v-for="type in selectableFileTypes" :key="type.value" :value="type.value">{{ type.label }}</option>
                     </select>
                     <label class="flex items-center gap-2 text-sm font-bold">
                       <input v-model="constraint.is_required" type="checkbox" />
@@ -626,7 +641,7 @@ onMounted(load)
                       {{ copy.attachments.fileType }}
                       <select v-model.number="attachmentFileType" class="rounded-lg border border-slate-200 bg-white px-3 py-2.5">
                         <option :value="0">{{ copy.attachments.selectFileType }}</option>
-                        <option v-for="option in fileTypes.filter((item) => item.value !== 0)" :key="option.value" :value="option.value">{{ option.label }}</option>
+                        <option v-for="option in selectableFileTypes" :key="option.value" :value="option.value">{{ option.label }}</option>
                       </select>
                     </label>
                     <label class="grid gap-2 text-sm font-bold md:col-span-2">

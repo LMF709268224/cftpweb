@@ -111,7 +111,19 @@ function friendlyDetail(message: string, status?: number): string {
   const text = message.trim()
   if (!text) return ""
   const lower = text.toLowerCase()
-  const { isZh } = useAdminLanguage()
+  const { isZh, t } = useAdminLanguage()
+
+  if (lower.includes("file_constraints must not be empty")) {
+    return t.value.credentials.toasts.fileConstraintsRequired
+  }
+  const constraintName = text.match(/file_constraints\[(\d+)\]\.name is required/i)
+  if (constraintName) {
+    return t.value.credentials.toasts.fileConstraintNameRequired(Number(constraintName[1]) + 1)
+  }
+  const constraintType = text.match(/file_constraints\[(\d+)\]\.type .*not a valid type/i)
+  if (constraintType) {
+    return t.value.credentials.toasts.fileConstraintTypeRequired(Number(constraintType[1]) + 1)
+  }
 
   if (lower.includes("thumbnail") && (lower.includes("required") || lower.includes("missing"))) {
     return "缺少封面，请先配置封面 Object Key 或封面 File Hash 后再操作"

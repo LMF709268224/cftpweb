@@ -66,6 +66,25 @@ func (h *Handler) CreateCredentialDefinition(w http.ResponseWriter, r *http.Requ
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "Invalid request body")
 		return
 	}
+	if len(body.FileConstraints) == 0 {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "file_constraints must not be empty")
+		return
+	}
+	for i, fc := range body.FileConstraints {
+		if strings.TrimSpace(fc.Name) == "" {
+			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, fmt.Sprintf("file_constraints[%d].name is required", i))
+			return
+		}
+		switch gcredspb.CredentialFileType(fc.Type) {
+		case gcredspb.CredentialFileType_CREDENTIAL_FILE_TYPE_IMAGE,
+			gcredspb.CredentialFileType_CREDENTIAL_FILE_TYPE_PDF,
+			gcredspb.CredentialFileType_CREDENTIAL_FILE_TYPE_VIDEO,
+			gcredspb.CredentialFileType_CREDENTIAL_FILE_TYPE_TEXT:
+		default:
+			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, fmt.Sprintf("file_constraints[%d].type %d is not a valid type", i, fc.Type))
+			return
+		}
+	}
 
 	credDefULID := strings.TrimSpace(firstNonEmpty(body.CredDefUlid, body.CredDefId))
 	if credDefULID == "" {

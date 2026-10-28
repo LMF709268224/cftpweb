@@ -51,6 +51,48 @@ async function installCredentialReadMocks(page: Page, requests: string[]) {
   })
 }
 
+test("credential creation only submits file types supported by the service", async ({ page }) => {
+  await seedAuthenticatedAdmin(page, "en")
+  let createBody: Record<string, unknown> | undefined
+  page.on("request", (request) => {
+    if (request.method() === "POST" && new URL(request.url()).pathname === "/api/credentials/definitions") {
+      createBody = request.postDataJSON()
+    }
+  })
+  await installAdminApiMocks(page, ({ method, pathname }) => {
+    if (method === "POST" && pathname === "/api/credentials/definitions") {
+      return { data: { cred_def_ulid: "credential-created" } }
+    }
+    return undefined
+  })
+
+  await page.goto("/credentials")
+  await page.getByRole("button", { name: "New Credential" }).click()
+  const dialog = page.getByRole("dialog", { name: "New Credential Definition" })
+  await dialog.getByRole("textbox", { name: "Name" }).fill("Finance Exemption")
+  await dialog.getByRole("combobox", { name: "Category" }).selectOption("Exemption")
+  await dialog.getByRole("textbox", { name: "Resource Path" }).fill("/gcc/credential/finance-exemption")
+  await dialog.getByRole("textbox", { name: "Description" }).fill("Finance exemption qualification")
+  await dialog.getByRole("button", { name: "Create", exact: true }).click()
+  await expect(page.getByText("Add at least one file requirement")).toBeVisible()
+  expect(createBody).toBeUndefined()
+
+  await dialog.getByRole("button", { name: "Add File" }).click()
+  const fileType = dialog.locator("select").nth(1)
+  await expect(fileType.locator("option")).toHaveText(["Image", "PDF Document", "Video", "Text"])
+  await expect(fileType).toHaveValue("1")
+  await dialog.getByRole("button", { name: "Create", exact: true }).click()
+  await expect(page.getByText("Enter a name for file requirement 1")).toBeVisible()
+  expect(createBody).toBeUndefined()
+
+  await dialog.getByPlaceholder("Tell candidates what this file is, e.g., Proof of Employment").fill("Signed Application Form")
+  await dialog.getByRole("button", { name: "Create", exact: true }).click()
+  await expect.poll(() => createBody).toMatchObject({
+    name: "Finance Exemption",
+    file_constraints: [{ name: "Signed Application Form", type: 1, is_required: true }],
+  })
+})
+
 test("credential definition list renders returned read-only data", async ({ page }) => {
   await seedAuthenticatedAdmin(page)
   const requests: string[] = []
