@@ -2823,7 +2823,11 @@ test("购买流程从只读个人资料继续且不回写资料", async ({ page 
     await expect(page.getByTestId("checkout-step-registration")).toBeVisible()
     await waitForCheckoutProfile(page)
     await expect(page.getByTestId("checkout-step-registration").locator("input[required]").first()).toBeDisabled()
+    await expect(page.getByTestId("checkout-step-registration").locator("input[required]").first()).toHaveCSS("background-color", "rgb(241, 243, 246)")
+    await expect(page.getByTestId("checkout-step-registration").locator("select[required]").first()).toBeDisabled()
+    await expect(page.getByTestId("checkout-step-registration").locator("select[required]").first()).toHaveCSS("appearance", "none")
     await expect(page.getByRole("link", { name: /编辑个人资料|Edit in Profile/ })).toBeVisible()
+    await expect(page.getByText("个人信息仅可在个人资料页面修改。如需补充或更新信息，请点击“编辑个人资料”。")).toBeVisible()
     await page.getByTestId("checkout-agreement").check()
     await page.getByTestId("checkout-next").click()
 

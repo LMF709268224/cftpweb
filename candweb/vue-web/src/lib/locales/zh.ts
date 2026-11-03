@@ -806,6 +806,7 @@ export const zh = {
         subtitle: "请核对个人资料后提交考试报名",
         formFirstName: "名 (First Name)",
         editInProfile: "编辑个人资料",
+        profileEditHint: "个人信息仅可在个人资料页面修改。如需补充或更新信息，请点击“编辑个人资料”。",
         formLastName: "姓 (Last Name)",
         formEmail: "常用邮箱",
         formGender: "性别",

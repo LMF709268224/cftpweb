@@ -568,7 +568,11 @@ test("考试报名首次提交会等待地区数据并补全国家级地区参�
   await page.goto("/exams/signup?unitId=course-unit-1&returnTo=%2Fexams", { waitUntil: "domcontentloaded" })
   await expect(page.getByTestId("exam-signup-first-name")).toHaveValue(candidateUser.first_name)
   await expect(page.getByTestId("exam-signup-first-name")).toBeDisabled()
+  await expect(page.getByTestId("exam-signup-first-name")).toHaveCSS("background-color", "rgb(241, 243, 246)")
+  await expect(page.getByTestId("exam-signup-gender")).toBeDisabled()
+  await expect(page.getByTestId("exam-signup-gender")).toHaveCSS("appearance", "none")
   await expect(page.getByRole("link", { name: /编辑个人资料|Edit in Profile/ })).toHaveAttribute("target", "_blank")
+  await expect(page.getByText("个人信息仅可在个人资料页面修改。如需补充或更新信息，请点击“编辑个人资料”。")).toBeVisible()
   profileFirstName = "Updated"
   await page.evaluate(() => window.dispatchEvent(new Event("focus")))
   await expect(page.getByTestId("exam-signup-first-name")).toHaveValue("Updated")

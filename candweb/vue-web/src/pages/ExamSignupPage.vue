@@ -424,10 +424,13 @@ async function handleSubmit() {
         </div>
         <div class="exam-signup-card max-w-2xl rounded-[16px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <form data-testid="exam-signup-form" class="exam-signup-form space-y-6" novalidate @submit.prevent="handleSubmit">
-        <a :href="router.resolve('/settings?tab=profile').href" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
-          <ExternalLink class="h-4 w-4" /> {{ t.examSignup.editInProfile }}
-        </a>
-        <fieldset disabled class="space-y-6">
+        <div class="space-y-1">
+          <a :href="router.resolve('/settings?tab=profile').href" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-base font-bold text-primary hover:underline">
+            <ExternalLink class="h-4 w-4" /> {{ t.examSignup.editInProfile }}
+          </a>
+          <p class="text-sm leading-6 text-muted-foreground">{{ t.examSignup.profileEditHint }}</p>
+        </div>
+        <fieldset disabled class="profile-readonly-fields space-y-6">
         <div class="exam-signup-grid grid gap-4 sm:grid-cols-2">
           <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formFirstName }}</span><input v-model="formData.first_name" data-testid="exam-signup-first-name" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" required /></label>
           <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formLastName }}</span><input v-model="formData.last_name" data-testid="exam-signup-last-name" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" required /></label>

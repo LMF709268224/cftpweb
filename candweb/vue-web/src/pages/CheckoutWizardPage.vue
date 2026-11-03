@@ -2782,10 +2782,13 @@ function closePaymentEditDialog() {
 
           <!-- Step 2: Registration -->
           <form id="checkout-registration-form" v-if="currentStep === 2" data-testid="checkout-step-registration" class="space-y-6" novalidate @submit.prevent="nextFromStep2">
-            <a :href="router.resolve('/settings?tab=profile').href" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
-              <ExternalLink class="h-4 w-4" /> {{ t.examSignup.editInProfile }}
-            </a>
-            <fieldset disabled class="space-y-6">
+            <div class="space-y-1">
+              <a :href="router.resolve('/settings?tab=profile').href" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-base font-bold text-primary hover:underline">
+                <ExternalLink class="h-4 w-4" /> {{ t.examSignup.editInProfile }}
+              </a>
+              <p class="text-sm leading-6 text-muted-foreground">{{ t.examSignup.profileEditHint }}</p>
+            </div>
+            <fieldset disabled class="profile-readonly-fields space-y-6">
             <div class="grid gap-4 sm:grid-cols-2">
               <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formFirstName }}</span><input v-model="formData.first_name" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" required /></label>
               <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formLastName }}</span><input v-model="formData.last_name" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" required /></label>

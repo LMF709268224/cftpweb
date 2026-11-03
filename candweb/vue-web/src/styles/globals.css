@@ -642,6 +642,23 @@
     box-shadow: none;
   }
 
+  .candidate-portal fieldset.profile-readonly-fields input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):disabled,
+  .candidate-portal fieldset.profile-readonly-fields select:disabled {
+    border-color: rgba(0, 42, 102, 0.16);
+    color: #52627d;
+    background-color: #f1f3f6;
+    opacity: 1;
+    cursor: default;
+  }
+
+  .candidate-portal fieldset.profile-readonly-fields select:disabled {
+    appearance: none;
+  }
+
+  .candidate-portal fieldset.profile-readonly-fields .date-picker-trigger {
+    display: none;
+  }
+
   .candidate-portal input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
   .candidate-portal select:focus,
   .candidate-portal textarea:focus {

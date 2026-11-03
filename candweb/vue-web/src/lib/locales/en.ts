@@ -808,6 +808,7 @@ export const en: AppTranslations = {
         subtitle: "Review your profile details before signing up for the exam",
         formFirstName: "First Name",
         editInProfile: "Edit in Profile",
+        profileEditHint: "Your personal information can only be updated in your Profile. Please click \"Edit in Profile\" to complete or update your details.",
         formLastName: "Last Name",
         formEmail: "Email",
         formGender: "Gender",
