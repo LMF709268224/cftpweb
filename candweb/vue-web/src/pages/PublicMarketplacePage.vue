@@ -38,7 +38,6 @@ const pageCopy = computed(() => lang.value === "zh"
       eyebrow: "GFI 专业认证",
       title: "通过专业认证，迈向职业新高度",
       subtitle: "获得全球认可的金融科技认证，展现您的专业能力。",
-      oneTimeFee: "未计折扣和税费",
       loginAction: "登录后报名",
       memberAction: "去报名",
       searchPlaceholder: "搜索...",
@@ -50,7 +49,6 @@ const pageCopy = computed(() => lang.value === "zh"
       eyebrow: "GFI Professional Credentials",
       title: "Advance Your Career with Professional Certifications",
       subtitle: "Earn globally recognized fintech credentials and demonstrate your expertise.",
-      oneTimeFee: "Before discounts and taxes",
       loginAction: "Log In to Enroll",
       memberAction: "Enroll Now",
       searchPlaceholder: "Search...",
@@ -288,7 +286,6 @@ onBeforeUnmount(() => {
               </div>
               <div class="product-price">
                 <strong>{{ course.priceLabel || t.courseCard.free }}</strong>
-                <span>{{ pageCopy.oneTimeFee }}</span>
               </div>
               <button
                 class="product-action"
@@ -612,22 +609,12 @@ onBeforeUnmount(() => {
   padding: 22px 0 18px;
 }
 
-.product-price strong,
-.product-price span {
-  display: block;
-}
-
 .product-price strong {
+  display: block;
   color: var(--marketplace-navy);
   font-size: 26px;
   line-height: 1.2;
   white-space: nowrap;
-}
-
-.product-price span {
-  margin-top: 4px;
-  color: var(--marketplace-slate);
-  font-size: 13px;
 }
 
 .product-action,
