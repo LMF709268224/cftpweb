@@ -9,13 +9,13 @@ import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
 import { useUser } from "@/lib/user"
 import {
-  CN_CITY_LABELS,
   CN_STATE_LABELS,
   countryUsesCityField,
   countryUsesProvinceField,
   getCachedCountries,
   getChinaCityOptions,
   getCountryCityOptions,
+  findCityOption,
   getCountryOptions,
   getOrganizationPhonePrefixes,
   getProvinceOptions,
@@ -91,7 +91,7 @@ function localizedProvinceName(province: any) {
 
 function localizedCityName(city: any) {
   if (typeof city?.localizedName === "string") return city.localizedName
-  return lang.value === "zh" && selectedCountryCode.value === "CN" ? CN_CITY_LABELS[selectedProvinceCode.value]?.[city.name] || city.name : city.name
+  return city.name
 }
 
 function normalizeLocationText(value: unknown) {
@@ -113,14 +113,17 @@ function provinceMatchValues(province: any) {
 }
 
 function ensureCurrentCityOption() {
-  const cityText = normalizeLocationText(formData.city)
-  if (!cityText) return
-  const exists = cityOptions.value.some((city) =>
-    [city.name, localizedCityName(city)].some((value) => normalizeLocationText(value) === cityText),
-  )
-  if (!exists) {
-    cityOptions.value = [{ name: formData.city, localizedName: formData.city }, ...cityOptions.value]
+  if (!normalizeLocationText(formData.city)) return
+  const city = findCityOption(cityOptions.value, formData.city)
+  if (city) {
+    formData.city = city.name
+    return
   }
+  if (selectedCountryCode.value === "CN" && selectedProvinceCode.value === "SH") {
+    formData.city = ""
+    return
+  }
+  cityOptions.value = [{ name: formData.city, localizedName: formData.city }, ...cityOptions.value]
 }
 
 function refreshCountryOptions() {
@@ -313,19 +316,12 @@ onMounted(() => {
 onUnmounted(() => window.removeEventListener("focus", handleProfileWindowFocus))
 
 watch(lang, () => {
-  const previousCity = formData.city
   refreshCountryOptions()
   const country = countryOptions.value.find((item) => item.code === selectedCountryCode.value)
   if (country) formData.country = country.name
   const province = provinceOptions.value.find((item) => item.isoCode === selectedProvinceCode.value)
   if (province) formData.province = localizedProvinceName(province)
   refreshCityOptions()
-  const city = cityOptions.value.find((item) => [item.name, localizedCityName(item)].includes(formData.city))
-  if (city) formData.city = localizedCityName(city)
-  else if (lang.value === "zh" && selectedCountryCode.value === "CN" && selectedProvinceCode.value) {
-    const mappedCity = Object.entries(CN_CITY_LABELS[selectedProvinceCode.value] || {}).find(([english, chinese]) => english === previousCity || chinese === previousCity)
-    if (mappedCity) formData.city = mappedCity[1]
-  }
   ensureCurrentCityOption()
 })
 
@@ -476,7 +472,7 @@ async function handleSubmit() {
             <span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formCity }}</span>
             <select v-if="cityOptions.length > 0" v-model="formData.city" class="input cursor-pointer" required>
               <option value="" disabled>{{ t.examSignup.formCity }}</option>
-              <option v-for="city in cityOptions" :key="`${city.name}-${city.latitude}-${city.longitude}`" :value="localizedCityName(city)">{{ localizedCityName(city) }}</option>
+              <option v-for="city in cityOptions" :key="`${city.name}-${city.latitude}-${city.longitude}`" :value="city.name">{{ localizedCityName(city) }}</option>
             </select>
             <input v-else v-model="formData.city" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" required />
           </label>

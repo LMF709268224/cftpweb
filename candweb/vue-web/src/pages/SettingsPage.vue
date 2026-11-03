@@ -16,6 +16,7 @@ import {
   getCachedCountries,
   getChinaCityOptions,
   getCountryCityOptions,
+  findCityOption,
   getCountryOptions,
   getOrganizationPhonePrefixes,
   getProvinceOptions,
@@ -246,14 +247,17 @@ function provinceMatchValues(province: any) {
 }
 
 function ensureCurrentCityOption() {
-  const cityText = normalizeLocationText(profile.city)
-  if (!cityText) return
-  const exists = cityOptions.value.some((city) =>
-    [city.name, localizedCityName(city)].some((value) => normalizeLocationText(value) === cityText),
-  )
-  if (!exists) {
-    cityOptions.value = [{ name: profile.city, localizedName: profile.city }, ...cityOptions.value]
+  if (!normalizeLocationText(profile.city)) return
+  const city = findCityOption(cityOptions.value, profile.city)
+  if (city) {
+    profile.city = city.name
+    return
   }
+  if (selectedCountryCode.value === "CN" && selectedProvinceCode.value === "SH") {
+    profile.city = ""
+    return
+  }
+  cityOptions.value = [{ name: profile.city, localizedName: profile.city }, ...cityOptions.value]
 }
 
 function refreshCountryOptions() {
@@ -832,11 +836,11 @@ async function confirmEmailChange() {
             </label>
             <label v-if="showCityField" class="space-y-2">
               <span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.city }}</span>
-              <select v-if="cityOptions.length > 0" v-model="profile.city" class="input cursor-pointer" required>
+              <select v-if="cityOptions.length > 0" v-model="profile.city" data-testid="settings-city" class="input cursor-pointer" required>
                 <option value="">{{ t.settings.cityPlaceholder }}</option>
-                <option v-for="city in cityOptions" :key="`${city.name}-${city.latitude}-${city.longitude}`" :value="localizedCityName(city)">{{ localizedCityName(city) }}</option>
+                <option v-for="city in cityOptions" :key="`${city.name}-${city.latitude}-${city.longitude}`" :value="city.name">{{ localizedCityName(city) }}</option>
               </select>
-              <input v-else v-model="profile.city" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" :placeholder="t.settings.cityPlaceholder" required />
+              <input v-else v-model="profile.city" data-testid="settings-city" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" :placeholder="t.settings.cityPlaceholder" required />
             </label>
             <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.postalCode }}</span><input v-model="profile.postalCode" class="input" :maxlength="PROFILE_TEXT_LIMITS.postalCode" pattern="[A-Za-z0-9][A-Za-z0-9 -]*[A-Za-z0-9]" :placeholder="t.settings.postalCodePlaceholder" required @blur="profile.postalCode = normalizePostalCode(profile.postalCode)" /></label>
             <label class="space-y-2 md:col-span-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.settings.address }}</span><input v-model="profile.address" class="input" :maxlength="PROFILE_TEXT_LIMITS.address" :placeholder="t.settings.addressPlaceholder" required /></label>

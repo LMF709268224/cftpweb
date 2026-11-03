@@ -22,6 +22,63 @@ test("profile keeps identity fields read-only and saves the preferred language",
   await expect(page.getByRole("heading", { name: "设置", exact: true }).first()).toBeVisible()
 })
 
+test("Shanghai district options stay aligned across languages and save one stable value", async ({ page }) => {
+  const profileRequests: Record<string, unknown>[] = []
+  await seedAuthenticatedCandidate(page)
+  await installCandidateApiMocks(page, ({ pathname, method, body }) => {
+    if (pathname === "/api/user/me") return { data: { ...candidateUser, language: "en", country: "China", province: "Shanghai", city: "Songjiang" } }
+    if (pathname === "/api/user/profile" && method === "PUT") {
+      profileRequests.push(body as Record<string, unknown>)
+      return { data: { success: true } }
+    }
+    return undefined
+  })
+
+  await page.goto("/settings")
+  const englishCity = page.getByTestId("settings-city")
+  await expect(englishCity).toHaveJSProperty("tagName", "SELECT")
+  await expect(englishCity).toHaveValue("松江")
+  await expect(englishCity.locator("option")).toHaveCount(17)
+  await expect(englishCity.locator('option[value="松江"]')).toHaveText("Songjiang")
+  await expect(englishCity.locator('option[value="静安"]')).toHaveText("Jing'an")
+  await expect(englishCity.locator('option[value="闵行"]')).toHaveText("Minhang")
+  await expect(englishCity.locator("option", { hasText: "Shanghai" })).toHaveCount(0)
+
+  await page.getByLabel("Language preference").selectOption("zh")
+  const chineseCity = page.getByTestId("settings-city")
+  await expect(chineseCity).toHaveValue("松江")
+  await expect(chineseCity.locator('option[value="松江"]')).toHaveText("松江")
+  await chineseCity.selectOption("黄浦")
+
+  await page.getByLabel("语言偏好").selectOption("en")
+  await expect(englishCity).toHaveValue("黄浦")
+  await expect(englishCity.locator('option[value="黄浦"]')).toHaveText("Huangpu")
+  await page.locator("form.settings-form").first().getByRole("button", { name: "Save Changes" }).click()
+  await expect.poll(() => profileRequests.at(-1)?.city).toBe("黄浦")
+})
+
+test("an old Shanghai city value requires selecting a district", async ({ page }) => {
+  let profileUpdates = 0
+  await seedAuthenticatedCandidate(page)
+  await installCandidateApiMocks(page, ({ pathname, method }) => {
+    if (pathname === "/api/user/me") return { data: { ...candidateUser, language: "en", country: "China", province: "Shanghai", city: "Shanghai" } }
+    if (pathname === "/api/user/profile" && method === "PUT") {
+      profileUpdates += 1
+      return { data: { success: true } }
+    }
+    return undefined
+  })
+
+  await page.goto("/settings")
+  const city = page.getByTestId("settings-city")
+  await expect(city).toHaveJSProperty("tagName", "SELECT")
+  await expect(city).toHaveValue("")
+  await expect(city.locator("option")).toHaveCount(17)
+  await expect(city.locator("option", { hasText: "Shanghai" })).toHaveCount(0)
+  await page.locator("form.settings-form").first().getByRole("button", { name: "Save Changes" }).click()
+  expect(profileUpdates).toBe(0)
+})
+
 test("profile saves Casdoor links without changing social login identities", async ({ page }) => {
   const profileRequests: Record<string, unknown>[] = []
   const user = {

@@ -20,17 +20,6 @@ export const CN_STATE_LABELS: Record<string, string> = {
   ZJ: "浙江", TW: "台湾",
 }
 
-export const CN_CITY_LABELS: Record<string, Record<string, string>> = {
-  BJ: { Beijing: "北京", Changping: "昌平", Daxing: "大兴", Fangshan: "房山", Liangxiang: "良乡", Mentougou: "门头沟", Shunyi: "顺义", Tongzhou: "通州" },
-  SH: { Shanghai: "上海", Baoshan: "宝山", Jiading: "嘉定", Minhang: "闵行", Pudong: "浦东", Songjiang: "松江" },
-  GD: { Guangzhou: "广州", Shenzhen: "深圳", Dongguan: "东莞", Foshan: "佛山", Zhuhai: "珠海", Huizhou: "惠州" },
-  ZJ: { Hangzhou: "杭州", Ningbo: "宁波", Wenzhou: "温州", Jiaxing: "嘉兴", Shaoxing: "绍兴", Jinhua: "金华" },
-  JS: { Nanjing: "南京", Suzhou: "苏州", Wuxi: "无锡", Changzhou: "常州", Nantong: "南通", Xuzhou: "徐州" },
-  SC: { Chengdu: "成都", Mianyang: "绵阳", Deyang: "德阳", Leshan: "乐山", Yibin: "宜宾" },
-  CQ: { Chongqing: "重庆" },
-  TJ: { Tianjin: "天津" },
-}
-
 export const CN_CITY_OPTIONS_BY_STATE: Record<string, string[]> = {
   AH: ["合肥", "芜湖", "蚌埠", "淮南", "马鞍山", "淮北", "铜陵", "安庆", "黄山", "滁州", "阜阳", "宿州", "六安", "亳州", "池州", "宣城"],
   BJ: ["北京", "东城", "西城", "朝阳", "海淀", "丰台", "石景山", "通州", "昌平", "大兴", "顺义", "房山", "门头沟", "怀柔", "平谷", "密云", "延庆"],
@@ -55,7 +44,7 @@ export const CN_CITY_OPTIONS_BY_STATE: Record<string, string[]> = {
   QH: ["西宁", "海东", "海北", "黄南", "海南", "果洛", "玉树", "海西"],
   SN: ["西安", "铜川", "宝鸡", "咸阳", "渭南", "延安", "汉中", "榆林", "安康", "商洛"],
   SD: ["济南", "青岛", "淄博", "枣庄", "东营", "烟台", "潍坊", "济宁", "泰安", "威海", "日照", "临沂", "德州", "聊城", "滨州", "菏泽"],
-  SH: ["上海", "黄浦", "徐汇", "长宁", "静安", "普陀", "虹口", "杨浦", "闵行", "宝山", "嘉定", "浦东", "金山", "松江", "青浦", "奉贤", "崇明"],
+  SH: ["黄浦", "徐汇", "长宁", "静安", "普陀", "虹口", "杨浦", "闵行", "宝山", "嘉定", "浦东", "金山", "松江", "青浦", "奉贤", "崇明"],
   SX: ["太原", "大同", "阳泉", "长治", "晋城", "朔州", "晋中", "运城", "忻州", "临汾", "吕梁"],
   SC: ["成都", "自贡", "攀枝花", "泸州", "德阳", "绵阳", "广元", "遂宁", "内江", "乐山", "南充", "眉山", "宜宾", "广安", "达州", "雅安", "巴中", "资阳", "阿坝", "甘孜", "凉山"],
   TJ: ["天津", "和平", "河东", "河西", "南开", "河北", "红桥", "东丽", "西青", "津南", "北辰", "武清", "宝坻", "滨海新区", "宁河", "静海", "蓟州"],
@@ -85,8 +74,14 @@ const CN_SPECIAL_REGION_CITY_OPTIONS: Record<string, Array<{ name: string; zhNam
   ],
 }
 
+const CN_CITY_EN_OVERRIDES: Record<string, string> = {
+  "静安": "Jing'an",
+  "闵行": "Minhang",
+}
+
 let locationApi: LocationApi | null = null
 let locationApiPromise: Promise<LocationApi> | null = null
+let cityPinyin: typeof import("pinyin-pro").pinyin | null = null
 let allCountriesCache: any[] = []
 
 const countryOptionsCache = new Map<string, CountryOption[]>()
@@ -131,12 +126,30 @@ export function getChinaCityOptions(provinceCode: string, locale: string) {
     return specialRegionOptions.map((item) => ({
       name: item.name,
       localizedName: useChinese ? item.zhName : item.name,
+      aliases: [item.zhName],
     }))
   }
 
-  if (!locale.toLowerCase().startsWith("zh")) return null
   const names = CN_CITY_OPTIONS_BY_STATE[provinceCode]
-  return names?.map((name) => ({ name, localizedName: name })) || null
+  if (!names) return null
+  const useChinese = locale.toLowerCase().startsWith("zh")
+  return names.map((name) => {
+    const syllables = cityPinyin?.(name, { toneType: "none", type: "array" })
+    const englishName = CN_CITY_EN_OVERRIDES[name] || (syllables?.length
+      ? syllables.join("").replace(/^./, (letter) => letter.toUpperCase())
+      : name)
+    return { name, localizedName: useChinese ? name : englishName, aliases: [englishName] }
+  })
+}
+
+export function findCityOption<T extends { name: string; localizedName?: string; aliases?: string[] }>(options: T[], value: string) {
+  const normalizedValue = value.trim().toLowerCase()
+  if (!normalizedValue) return undefined
+  return options.find((option) =>
+    [option.name, option.localizedName, ...(option.aliases || [])].some(
+      (name) => name?.trim().toLowerCase() === normalizedValue,
+    ),
+  )
 }
 
 export function normalizeLocationForSubmission(countryCode: string, country: string, province: string, city: string) {
@@ -157,15 +170,17 @@ export function normalizeLocationForSubmission(countryCode: string, country: str
 
 export async function loadLocationData() {
   if (!locationApiPromise) {
-    locationApiPromise = import("country-state-city")
-      .then((api) => {
+    locationApiPromise = Promise.all([import("country-state-city"), import("pinyin-pro")])
+      .then(([api, pinyinApi]) => {
         locationApi = api
+        cityPinyin = pinyinApi.pinyin
         allCountriesCache = api.Country.getAllCountries()
         countryOptionsCache.clear()
         return api
       })
       .catch((error) => {
         locationApi = null
+        cityPinyin = null
         locationApiPromise = null
         allCountriesCache = []
         throw error
