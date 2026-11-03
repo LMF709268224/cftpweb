@@ -87,24 +87,12 @@ watch(
         <RouterLink v-if="authenticated" to="/dashboard" class="gfi-console-link">
           {{ lang === "zh" ? "控制台" : "Dashboard" }}
         </RouterLink>
-        <template v-else-if="usesDirectThirdPartyLogin">
-          <button type="button" class="gfi-auth-link" :disabled="authStarting" :aria-busy="authStarting" @click="beginAuthentication">
-            {{ lang === "zh" ? "登录" : "Log In" }}
-          </button>
-          <span />
-          <button type="button" class="gfi-auth-link" :disabled="authStarting" :aria-busy="authStarting" @click="beginAuthentication">
-            {{ lang === "zh" ? "注册" : "Register" }}
-          </button>
-        </template>
-        <template v-else>
-          <RouterLink :to="props.authTarget" :target="props.authNewTab ? '_blank' : undefined" :rel="props.authNewTab ? 'noopener noreferrer' : undefined">
-            {{ lang === "zh" ? "登录" : "Log In" }}
-          </RouterLink>
-          <span />
-          <RouterLink :to="props.authTarget" :target="props.authNewTab ? '_blank' : undefined" :rel="props.authNewTab ? 'noopener noreferrer' : undefined">
-            {{ lang === "zh" ? "注册" : "Register" }}
-          </RouterLink>
-        </template>
+        <button v-else-if="usesDirectThirdPartyLogin" type="button" class="gfi-auth-link" :disabled="authStarting" :aria-busy="authStarting" @click="beginAuthentication">
+          {{ lang === "zh" ? "登录" : "Log In" }}
+        </button>
+        <RouterLink v-else :to="props.authTarget" :target="props.authNewTab ? '_blank' : undefined" :rel="props.authNewTab ? 'noopener noreferrer' : undefined">
+          {{ lang === "zh" ? "登录" : "Log In" }}
+        </RouterLink>
         <RouterLink to="/verify-certificate" class="gfi-verify-link">
           {{ lang === "zh" ? "证书查验" : "Verify Certificate" }}
         </RouterLink>
@@ -129,7 +117,7 @@ watch(
         :aria-busy="authStarting"
         @click="beginAuthentication"
       >
-        {{ lang === "zh" ? "登录 / 注册" : "Log In / Register" }}
+        {{ lang === "zh" ? "登录" : "Log In" }}
       </button>
       <RouterLink
         v-else
@@ -138,7 +126,7 @@ watch(
         :target="!authenticated && props.authNewTab ? '_blank' : undefined"
         :rel="!authenticated && props.authNewTab ? 'noopener noreferrer' : undefined"
       >
-        {{ authenticated ? (lang === "zh" ? "控制台" : "Dashboard") : (lang === "zh" ? "登录 / 注册" : "Log In / Register") }}
+        {{ authenticated ? (lang === "zh" ? "控制台" : "Dashboard") : (lang === "zh" ? "登录" : "Log In") }}
       </RouterLink>
       <RouterLink to="/verify-certificate" class="gfi-mobile-login gfi-mobile-verify">
         {{ lang === "zh" ? "证书查验" : "Verify Certificate" }}
