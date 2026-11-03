@@ -110,6 +110,45 @@ test.beforeEach(async ({ page }) => {
     await seedAuthenticatedCandidate(page)
 })
 
+test("认证报名成功页按订单商品显示项目名称", async ({ page }) => {
+    await installCandidateApiMocks(page, ({ pathname }) => {
+        const productNames: Record<string, string> = {
+            "/api/orders/order-cftp": "CFtP Pipeline Bundle",
+            "/api/orders/order-cfta": "CFtA Certification Bundle",
+            "/api/orders/order-membership": "Affiliate Membership Package",
+        }
+        if (pathname.startsWith("/api/orders/order-")) {
+            return {
+                data: {
+                    summary: { meta: { product_name: productNames[pathname] || "" } },
+                    items: [{ item_type: pathname === "/api/orders/order-membership" ? "membership" : "pipeline" }],
+                },
+            }
+        }
+        return undefined
+    })
+
+    await page.goto("/checkout/success/order-cftp?purchase_type=certification", { waitUntil: "domcontentloaded" })
+    await expect(page.getByRole("heading", { name: "认证报名成功" })).toBeVisible()
+    await expect(page.getByText("您已成功报名CFtP认证项目。", { exact: true })).toBeVisible()
+
+    await page.evaluate(() => {
+        window.localStorage.setItem("app_lang", "en")
+        window.dispatchEvent(new Event("lang_change"))
+    })
+    await expect(page.getByRole("heading", { name: "Certification Registration Successful" })).toBeVisible()
+    await expect(page.getByText("You have successfully registered for the CFtP programme.", { exact: true })).toBeVisible()
+
+    await page.goto("/checkout/success/order-cfta?purchase_type=certification", { waitUntil: "domcontentloaded" })
+    await expect(page.getByText("您已成功报名CFtA认证项目。", { exact: true })).toBeVisible()
+
+    await page.goto("/checkout/success/order-unknown?purchase_type=certification", { waitUntil: "domcontentloaded" })
+    await expect(page.getByText("您已成功报名认证项目。", { exact: true })).toBeVisible()
+
+    await page.goto("/checkout/success/order-membership?purchase_type=membership", { waitUntil: "domcontentloaded" })
+    await expect(page.getByRole("heading", { name: "会员资格购买成功" })).toBeVisible()
+})
+
 test("证书成功提示在名称前说明认证类型", async ({ page }) => {
     const completedPipelineID = "pipeline-completed-cfta"
     let english = false

@@ -9,6 +9,11 @@ import { useUser } from "@/lib/user"
 
 type PurchaseType = "membership" | "certification"
 type CheckoutOrderDetail = {
+  summary?: {
+    meta?: {
+      product_name?: string
+    }
+  }
   items?: Array<{
     item_type?: string
   }>
@@ -22,6 +27,7 @@ const orderId = computed(() => route.params.orderId as string)
 const candUlid = computed(() => currentUser.value?.cand_ulid || currentUser.value?.ulid || "")
 const purchaseType = ref<PurchaseType | null>(normalizePurchaseType(route.query.purchase_type))
 const resolvingPurchaseType = ref(!purchaseType.value)
+const certificationName = ref("")
 
 const pageTitle = computed(() => {
   if (purchaseType.value === "membership") return t.value.checkoutSuccess.membershipTitle
@@ -30,7 +36,9 @@ const pageTitle = computed(() => {
 })
 const pageDescription = computed(() => {
   if (purchaseType.value === "membership") return t.value.checkoutSuccess.membershipOrderPlaced
-  if (purchaseType.value === "certification") return t.value.checkoutSuccess.certificationOrderPlaced
+  if (purchaseType.value === "certification") return certificationName.value
+    ? t.value.checkoutSuccess.certificationRegisteredNamed.replace("{certification}", certificationName.value)
+    : t.value.checkoutSuccess.certificationOrderPlaced
   return t.value.checkoutSuccess.orderPlaced
 })
 const primaryAction = computed(() => {
@@ -61,15 +69,20 @@ function purchaseTypeFromOrder(detail: CheckoutOrderDetail | null | undefined): 
   return hasMembership ? "membership" : "certification"
 }
 
+function certificationNameFromOrder(detail: CheckoutOrderDetail | null | undefined) {
+  const productName = String(detail?.summary?.meta?.product_name || "").trim()
+  return /^([A-Za-z][A-Za-z0-9]{1,7})\s+(?:Pipeline|Certification)\s+Bundle$/i.exec(productName)?.[1] || ""
+}
+
 onMounted(async () => {
-  if (purchaseType.value) return
   try {
     const detail: CheckoutOrderDetail = await apiClient(`/api/orders/${encodeURIComponent(orderId.value)}`, {
       suppressErrorToast: true,
     })
-    purchaseType.value = purchaseTypeFromOrder(detail)
+    if (!purchaseType.value) purchaseType.value = purchaseTypeFromOrder(detail)
+    certificationName.value = certificationNameFromOrder(detail)
   } catch (error) {
-    console.warn("Unable to resolve checkout purchase type", error)
+    console.warn("Unable to load checkout order details", error)
   } finally {
     resolvingPurchaseType.value = false
   }
