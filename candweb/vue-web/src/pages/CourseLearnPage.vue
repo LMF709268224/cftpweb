@@ -2413,7 +2413,7 @@ watch(selectedMaterial, () => {
             <div class="mt-2 text-xs text-muted-foreground">{{ t.learning.materialsEmptyHint }}</div>
           </div>
           <div v-else class="space-y-4">
-            <div v-if="supplementaryMaterialItems.length > 0" class="rounded-md border border-slate-100 bg-slate-50 p-4">
+            <div v-if="supplementaryMaterialItems.length > 0" class="supplementary-table rounded-md border border-slate-100 bg-slate-50 p-4">
               <div class="border-b border-slate-100 pb-3">
                 <div class="flex items-center gap-2 text-sm font-semibold text-foreground">
                   <BookOpen class="h-4 w-4 text-primary" />
@@ -2423,7 +2423,7 @@ watch(selectedMaterial, () => {
                 <p class="mt-1 text-xs text-muted-foreground">{{ t.learning.supplementaryMaterialsDesc }}</p>
               </div>
 
-              <div class="hidden grid-cols-[minmax(160px,0.9fr)_120px_minmax(260px,1.4fr)_180px] border-b border-slate-100 px-3 py-3 text-sm font-medium text-muted-foreground md:grid">
+              <div class="supplementary-grid supplementary-table-header border-b border-slate-100 px-3 py-3 text-sm font-medium text-muted-foreground">
                 <div>{{ t.learning.supplementaryChapterHeader }}</div>
                 <div>{{ t.learning.supplementaryTypeHeader }}</div>
                 <div>{{ t.learning.supplementaryTitleDescHeader }}</div>
@@ -2434,31 +2434,31 @@ watch(selectedMaterial, () => {
                 <div
                   v-for="(item, index) in supplementaryMaterialItems"
                   :key="item.key"
-                  class="grid gap-3 px-3 py-4 text-sm md:grid-cols-[minmax(160px,0.9fr)_120px_minmax(260px,1.4fr)_180px]"
+                  class="supplementary-grid px-3 py-4 text-sm"
                 >
-                  <div class="font-medium text-foreground">
-                    <span class="md:hidden text-xs text-muted-foreground">{{ t.learning.supplementaryChapterPrefix }} </span>
+                  <div class="min-w-0 break-words font-medium text-foreground">
+                    <span class="supplementary-chapter-prefix text-xs text-muted-foreground">{{ t.learning.supplementaryChapterPrefix }} </span>
                     {{ supplementaryChapterLabel(item, index) }}
                   </div>
-                  <div>
+                  <div class="min-w-0">
                     <span class="badge gap-1 border text-xs" :class="supplementaryTypeClass(item.type)">
                       <component :is="supplementaryTypeIcon(item.type)" class="h-3 w-3" />
                       {{ supplementaryTypeLabel(item.type) }}
                     </span>
                   </div>
-                  <div>
+                  <div class="min-w-0 break-words">
                     <div class="font-semibold text-foreground">{{ item.title }}</div>
                     <p v-if="item.description" class="mt-1 text-xs leading-relaxed text-muted-foreground">{{ item.description }}</p>
                   </div>
                   <div class="min-w-0">
                     <button
                       v-if="item.url"
-                      class="inline-flex max-w-full items-center gap-1 rounded-lg border border-primary/20 bg-white px-3 py-2 text-left text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
+                      class="flex w-full min-w-0 items-center gap-1 rounded-lg border border-primary/20 bg-white px-3 py-2 text-left text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
                       :title="item.url"
                       @click="openSupplementaryPreview(item)"
                     >
                       <ExternalLink class="h-3.5 w-3.5 shrink-0" />
-                      <span class="truncate">{{ item.url }}</span>
+                      <span class="min-w-0 truncate">{{ item.url }}</span>
                     </button>
                     <span v-else class="text-xs text-muted-foreground">{{ t.learning.supplementaryNoResourceLink }}</span>
                   </div>
@@ -2600,6 +2600,27 @@ watch(selectedMaterial, () => {
 </template>
 
 <style scoped>
+.supplementary-table {
+  container: supplementary / inline-size;
+}
+.supplementary-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+.supplementary-table-header {
+  display: none;
+}
+@container supplementary (min-width: 550px) {
+  .supplementary-grid {
+    grid-template-columns: minmax(0, 1fr) 84px minmax(0, 1.55fr) minmax(0, 1.2fr);
+  }
+  .supplementary-table-header {
+    display: grid;
+  }
+  .supplementary-chapter-prefix {
+    display: none;
+  }
+}
 .course-content-nav {
   position: sticky;
   top: 0;

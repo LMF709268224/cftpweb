@@ -27,6 +27,7 @@ const props = defineProps<{
   itemTypes?: string[]
   isPipelineBundle?: boolean
   isMembershipBundle?: boolean
+  certificationNamesByGpath?: Record<string, string>
   title: string
   description: string
   image?: string
@@ -203,7 +204,13 @@ function blockerText(blocker?: EligibilityBlocker) {
   if (blocker.blocker_type === "MEMBERSHIP_ORDER_IN_PROGRESS") return blocker.description || cardCopy.value.membershipOrderInProgress
   if (blocker.blocker_type === "PIPELINE_NOT_FOUND") return cardCopy.value.pipelineNotFound
   if (blocker.blocker_type === "FORBIDDEN_QUALIFICATION") return cardCopy.value.forbiddenQualification
-  if (blocker.blocker_type === "CONFLICT_PIPELINE_IN_PROGRESS") return cardCopy.value.conflictPipelineInProgress
+  if (blocker.blocker_type === "CONFLICT_PIPELINE_IN_PROGRESS") {
+    const conflictingGpath = String(blocker.details?.[0] || "")
+    const certificationName = props.certificationNamesByGpath?.[conflictingGpath]
+    return certificationName
+      ? cardCopy.value.activeCertificationEnrollmentNamed.replace("{certification}", certificationName)
+      : cardCopy.value.activeCertificationEnrollment
+  }
   if (blocker.blocker_type === "CONFLICT_CHECK_UNAVAILABLE") return cardCopy.value.conflictCheckUnavailable
   if (blocker.blocker_type === "EXEMPTION_DOCUMENTS_PENDING_UPLOAD") return cardCopy.value.exemptionDocumentsPendingUpload
   if (blocker.blocker_type === "EXEMPTION_UNDER_REVIEW") return cardCopy.value.exemptionUnderReview
@@ -371,7 +378,7 @@ async function handleCardClick() {
 
       <span v-if="effectivePurchased" class="badge absolute right-3 top-3 gap-1 border-0 bg-emerald-500 text-white shadow-sm">
         <CheckCircle2 class="h-3 w-3" />
-        {{ t.courses.purchased }}
+        {{ isPipelineProduct ? cardCopy.enrolled : t.courses.purchased }}
       </span>
 
     </div>

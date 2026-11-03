@@ -180,15 +180,16 @@ test("商城已购认证在管理员发布新版本后进入用户购买的版�
 
     await page.goto("/certifications", { waitUntil: "domcontentloaded" })
     const card = page.locator(`[data-testid="certification-card"][data-bundle-id="${bundleID}"]`)
-    await expect(card.getByText("已购买", { exact: true })).toBeVisible()
+    await expect(card.getByText("已报名", { exact: true })).toBeVisible()
     await card.click()
 
     await expect(page).toHaveURL(new RegExp(`/certifications/${ownedPipelineID}$`))
 })
 
-test("已完成阶段仍可重新进入有学习权限的课程", async ({ page }) => {
+test("已完成阶段可重入课程且补充资料排版正确", async ({ page }) => {
     const completedCourseID = "course-completed-review"
     const unavailableCourseID = "course-without-access"
+    await page.setViewportSize({ width: 1800, height: 900 })
 
     await installCandidateApiMocks(page, ({ pathname, method }) => {
         if (pathname === `/api/mall/pipelines/${pipelineID}/runtime`) {
@@ -232,6 +233,15 @@ test("已完成阶段仍可重新进入有学习权限的课程", async ({ page 
                     complete_course: {
                         course: { course_id: completedCourseID, title: "Completed Review Course", duration_min: 30 },
                         chapters: [],
+                        supplementary_material: {
+                            data_json: JSON.stringify({ items: [{
+                                chapter: "Chapter 1: Overview of Fintech",
+                                type: "article",
+                                title: "What is fintech? 6 main types of fintech and how they work",
+                                description: "A long resource description for layout verification.",
+                                resource_link: "https://example.com/resources/fintech-overview-and-extended-reference",
+                            }] }),
+                        },
                     },
                 },
             }
@@ -252,6 +262,27 @@ test("已完成阶段仍可重新进入有学习权限的课程", async ({ page 
     await completedCourse.click()
     await expect(page).toHaveURL(new RegExp(`/certifications/${pipelineID}/learn/${completedCourseID}`))
     await expect(page.getByRole("heading", { name: "Completed Review Course", exact: true }).first()).toBeVisible()
+    await expect(page.getByTestId("supplementary-content-nav").getByText("补充资料", { exact: true })).toBeVisible()
+    await page.getByTestId("learning-tab").click()
+    const table = page.locator(".supplementary-table")
+    await expect(table.getByText("补充资料", { exact: true })).toBeVisible()
+    await expect(table.locator(".supplementary-table-header > div")).toHaveCount(4)
+    const aligned = await table.evaluate((element) => {
+        const header = [...element.querySelectorAll(".supplementary-table-header > div")]
+        const row = [...element.querySelectorAll(".supplementary-grid:not(.supplementary-table-header) > div")]
+        return header.every((cell, index) => Math.abs(cell.getBoundingClientRect().left - row[index].getBoundingClientRect().left) < 1)
+    })
+    expect(aligned).toBe(true)
+    await page.evaluate(() => {
+        window.localStorage.setItem("app_lang", "en")
+        window.dispatchEvent(new Event("lang_change"))
+    })
+    await expect(page.getByTestId("supplementary-content-nav").getByText("Supplementary Materials", { exact: true })).toBeVisible()
+    await expect(table.getByText("Supplementary Materials", { exact: true })).toBeVisible()
+    await page.setViewportSize({ width: 850, height: 900 })
+    await expect(table.locator(".supplementary-table-header")).toBeHidden()
+    const noOverflow = await table.evaluate((element) => element.scrollWidth <= element.clientWidth)
+    expect(noOverflow).toBe(true)
 })
 
 test("商城和结账页展示并拦截层级互斥资格", async ({ page }) => {
@@ -264,7 +295,7 @@ test("商城和结账页展示并拦截层级互斥资格", async ({ page }) => 
         {
             id: "bundle-conflict-in-progress",
             type: "CONFLICT_PIPELINE_IN_PROGRESS",
-            message: "有互斥专业认证正在进行",
+            message: "您目前已有进行中的 CFtP 认证项目。",
         },
         {
             id: "bundle-conflict-unavailable",
@@ -282,19 +313,31 @@ test("商城和结账页展示并拦截层级互斥资格", async ({ page }) => 
             message: "缺少会员资格所需的前置资格认证",
         },
     ]
+    const conflictingGpath = "/gcc/pipeline/core/cftp"
     const blockedBundles = blockerCases.map((blocker) => ({
         ...bundle,
         bundle_id: blocker.id,
-        name: `Blocked ${blocker.id}`,
-        eligibility: { can_purchase: false, can_unlock: false, blockers: [{ blocker_type: blocker.type, description: blocker.message }] },
+        name: blocker.type === "CONFLICT_PIPELINE_IN_PROGRESS" ? "CFtA Pipeline Bundle" : `Blocked ${blocker.id}`,
+        eligibility: { can_purchase: false, can_unlock: false, blockers: [{ blocker_type: blocker.type, description: blocker.message, details: blocker.type === "CONFLICT_PIPELINE_IN_PROGRESS" ? [conflictingGpath] : [] }] },
         purchase_state: {
             ...bundle.purchase_state,
-            eligibility: { can_purchase: false, can_unlock: false, blockers: [{ blocker_type: blocker.type, description: blocker.message }] },
+            eligibility: { can_purchase: false, can_unlock: false, blockers: [{ blocker_type: blocker.type, description: blocker.message, details: blocker.type === "CONFLICT_PIPELINE_IN_PROGRESS" ? [conflictingGpath] : [] }] },
         },
     }))
+    const enrolledBundle = {
+        ...bundle,
+        bundle_id: "bundle-cftp-enrolled",
+        name: "CFtP Pipeline Bundle",
+        pipeline_gpath: conflictingGpath,
+        eligibility: { can_purchase: false, can_unlock: false, blockers: [{ blocker_type: "ALREADY_PURCHASED", description: "pipeline already purchased" }] },
+        purchase_state: {
+            ...bundle.purchase_state,
+            eligibility: { can_purchase: false, can_unlock: false, blockers: [{ blocker_type: "ALREADY_PURCHASED", description: "pipeline already purchased" }] },
+        },
+    }
 
     await installCandidateApiMocks(page, ({ pathname, method }) => {
-        if (pathname === "/api/mall/bundles" && method === "GET") return { data: { bundles: blockedBundles } }
+        if (pathname === "/api/mall/bundles" && method === "GET") return { data: { bundles: [...blockedBundles, enrolledBundle] } }
         const blockedBundle = blockedBundles.find((item) => pathname === `/api/mall/bundles/${item.bundle_id}`)
         if (blockedBundle && method === "GET") return { data: blockedBundle }
         if (pathname.endsWith("/pricing-detail")) return { data: {} }
@@ -306,6 +349,22 @@ test("商城和结账页展示并拦截层级互斥资格", async ({ page }) => 
         const card = page.locator(`[data-testid="certification-card"][data-bundle-id="${blocker.id}"]`)
         await expect(card.getByText(blocker.message, { exact: true })).toBeVisible()
     }
+    const enrolledCard = page.locator('[data-testid="certification-card"][data-bundle-id="bundle-cftp-enrolled"]')
+    await expect(enrolledCard.getByText("已报名", { exact: true })).toBeVisible()
+    await expect(enrolledCard.getByText("进入我的认证", { exact: true })).toBeVisible()
+    await page.evaluate(() => {
+        window.localStorage.setItem("app_lang", "en")
+        window.dispatchEvent(new Event("lang_change"))
+    })
+    await expect(enrolledCard.getByText("Enrolled", { exact: true })).toBeVisible()
+    await expect(enrolledCard.getByText("Access My Certification", { exact: true })).toBeVisible()
+    const conflictCard = page.locator('[data-testid="certification-card"][data-bundle-id="bundle-conflict-in-progress"]')
+    await expect(conflictCard.getByText("You already have an active CFtP enrollment.", { exact: true })).toBeVisible()
+    await expect(conflictCard.getByText("Enrollment Unavailable", { exact: true }).first()).toBeVisible()
+    await page.evaluate(() => {
+        window.localStorage.setItem("app_lang", "zh")
+        window.dispatchEvent(new Event("lang_change"))
+    })
 
     await page.locator(`[data-testid="certification-card"][data-bundle-id="${blockerCases[0].id}"]`).click()
     await expect(page).toHaveURL(/\/certifications$/)

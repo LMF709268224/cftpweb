@@ -70,6 +70,10 @@ function certificationDisplayName(value?: string) {
   return String(value || "").replace(/\bPipeline\b/g, "Certification").replace(/管线/g, "专业认证")
 }
 
+function certificationShortName(value?: string) {
+  return /^([A-Za-z][A-Za-z0-9]{1,7})\s+(?:Pipeline|Certification)\s+Bundle$/i.exec(String(value || "").trim())?.[1] || ""
+}
+
 function normalizeBundleItemType(value: unknown) {
   return String(value || "").trim().toLowerCase().replace(/-/g, "_")
 }
@@ -116,6 +120,11 @@ async function fetchData() {
     const res = await apiClient("/api/mall/bundles")
     if (!Array.isArray(res?.bundles)) throw new Error("MALL_BUNDLES_INVALID_RESPONSE")
     const bundles = res.bundles
+    const certificationNamesByGpath = Object.fromEntries(
+      bundles
+        .filter((bundle: any) => typeof bundle?.pipeline_gpath === "string" && bundle.pipeline_gpath)
+        .map((bundle: any) => [bundle.pipeline_gpath, certificationShortName(bundle.name)]),
+    )
     allCourses.value = await Promise.all(bundles.map(async (b: any) => {
       const stages = Array.isArray(b?.stages) ? b.stages : []
       const itemTypes = bundleItemTypes(b)
@@ -136,6 +145,7 @@ async function fetchData() {
         itemTypes,
         isPipelineBundle: pipelineBundle,
         isMembershipBundle: membershipBundle,
+        certificationNamesByGpath,
         title: certificationDisplayName(b.name) || t.value.common.unknownCourse,
         description: String(b.description || "").trim() || firstStageNames || `${stages.length} ${t.value.courses.stages} / ${unitCount} ${t.value.courses.units}`,
         provider: b.category_tips || t.value.courses.certificationPath,
