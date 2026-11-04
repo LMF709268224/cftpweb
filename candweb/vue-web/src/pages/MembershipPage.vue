@@ -8,6 +8,7 @@ import AppPagination from "@/components/AppPagination.vue"
 import PageFeedback from "@/components/PageFeedback.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useBodyScrollLock } from "@/lib/bodyScrollLock"
+import { bundleDisplayPriceLabel } from "@/lib/bundleDisplayPrice"
 import { useDialogAccessibility } from "@/lib/dialogAccessibility"
 import { formatMinorAmount } from "@/lib/display"
 import { useTranslation } from "@/lib/language"
@@ -285,10 +286,24 @@ async function loadMembershipHistory(suppressErrorToast = false) {
 
 async function loadMembershipPlans(suppressErrorToast = false) {
   const requestId = ++membershipPlansRequestId
-  const planData = await apiClient("/api/membership/plans?page=1&page_size=50", { suppressErrorToast })
+  const [planData, bundleData] = await Promise.all([
+    apiClient("/api/membership/plans?page=1&page_size=50", { suppressErrorToast }),
+    apiClient("/api/mall/bundles?status=Active&page_size=100", { suppressErrorToast: true }).catch(() => null),
+  ])
   if (requestId !== membershipPlansRequestId) return null
 
-  const nextPlans = listFrom(planData, ["memberships", "plans", "items"])
+  const pricesByMembership = new Map<string, string>()
+  for (const bundle of listFrom(bundleData, ["bundles"])) {
+    if (!bundle?.is_current || !bundle?.is_membership_bundle) continue
+    const membershipId = String(bundle.membership_id || "").trim()
+    if (!membershipId || pricesByMembership.has(membershipId)) continue
+    const price = bundleDisplayPriceLabel(bundle, t.value.courseCard.fromPrice)
+    if (price) pricesByMembership.set(membershipId, price)
+  }
+  const nextPlans = listFrom(planData, ["memberships", "plans", "items"]).map((plan) => ({
+    ...plan,
+    display_price: pricesByMembership.get(String(plan.membership_ulid || "").trim()) || "",
+  }))
   plans.value = nextPlans
 
   if (activeMembership.value) {
@@ -757,6 +772,7 @@ watch(lang, () => {
                 </li>
               </ul>
               <div class="mt-5 space-y-2">
+                <div v-if="plan.display_price" class="text-xl font-bold text-card-foreground">{{ plan.display_price }}</div>
                 <button
                   v-if="canUpgradeToPlan(plan)"
                   type="button"
