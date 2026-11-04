@@ -97,6 +97,53 @@ test("bundle detail reads summary and linked items without editing", async ({ pa
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
 })
 
+test("pipeline enrollment fee keeps its GPath when saved", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  const pipelineGpath = "/pipelines/cftp"
+  const bundle = {
+    ...bundleSummary,
+    status: "Draft",
+    items_json: JSON.stringify([{ item_type: "pipeline", pipeline_gpath: pipelineGpath }]),
+    pricing_json: JSON.stringify({
+      pipelines: [{
+        pipeline_gpath: pipelineGpath,
+        enrollment_fee: { stripe_product_id: "prod_enrollment", stripe_price_id: "price_enrollment" },
+      }],
+    }),
+  }
+  const captured = { savedPricing: null as Record<string, unknown> | null }
+  page.on("request", (request) => {
+    if (request.method() === "PUT" && new URL(request.url()).pathname === "/api/mall/bundles/pricing") {
+      captured.savedPricing = request.postDataJSON() as Record<string, unknown>
+    }
+  })
+  await installAdminApiMocks(page, ({ method, pathname }) => {
+    if (method === "GET" && pathname === "/api/mall/bundles") return { data: { bundles: [bundle], total: 1, has_more: false } }
+    if (method === "GET" && pathname === "/api/mall/bundles/bundle-1") return { data: { bundle } }
+    if (method === "GET" && pathname === "/api/pipelines") {
+      return { data: { pipelines: [{ pipeline_gpath: pipelineGpath, name: "CFtP Certification Pathway", status: "Active" }], has_more: false } }
+    }
+    if (method === "GET" && pathname === "/api/pipelines/by-gpath") return { data: { stages: [] } }
+    if (method === "GET" && pathname === "/api/memberships") return { data: { memberships: [], has_more: false } }
+    if (method === "PUT" && pathname === "/api/mall/bundles/pricing") return { data: { bundle } }
+    if (method === "POST" && pathname === "/api/mall/bundles/sync-display-pricing") return { data: {} }
+    return undefined
+  })
+
+  await page.goto("/bundles")
+  await page.getByRole("button", { name: "查看详情" }).first().click()
+  await page.getByRole("button", { name: /结构与价格/ }).click()
+  const pipelineSelect = page.getByRole("combobox").filter({ has: page.locator(`option[value="${pipelineGpath}"]`) })
+  await expect(pipelineSelect).toHaveValue(pipelineGpath)
+  await page.getByRole("button", { name: "保存结构与价格" }).click()
+
+  await expect.poll(() => captured.savedPricing).not.toBeNull()
+  expect(JSON.parse(String(captured.savedPricing?.pricing_json)).pipelines).toEqual([{
+    pipeline_gpath: pipelineGpath,
+    enrollment_fee: { stripe_product_id: "prod_enrollment", stripe_price_id: "price_enrollment" },
+  }])
+})
+
 test("new bundle submits a pipeline GPath instead of a physical ULID", async ({ page }) => {
   await seedAuthenticatedAdmin(page)
   const captured = { createBody: null as Record<string, unknown> | null }

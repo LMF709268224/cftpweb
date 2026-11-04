@@ -25,7 +25,7 @@ type UnitPricing = {
 
 type PipelinePricing = {
   key: number
-  pipeline_id: string
+  pipeline_gpath: string
   enrollment_fee: StripeRef
 }
 
@@ -99,7 +99,7 @@ const availableUnitOptions = computed(() => {
   return props.unitOptions.filter((option) => !selected.has(option.id))
 })
 const availablePipelineOptions = computed(() => {
-  const selected = new Set(state.value.pipelines.map((pipeline) => pipeline.pipeline_id).filter(Boolean))
+  const selected = new Set(state.value.pipelines.map((pipeline) => pipeline.pipeline_gpath).filter(Boolean))
   return props.pipelineOptions.filter((option) => !selected.has(option.id))
 })
 
@@ -143,7 +143,7 @@ function parsePricing(value: string): PricingState {
           const pipeline = asRecord(value) || {}
           return {
             key: rowKey(),
-            pipeline_id: String(pipeline.pipeline_id || ""),
+            pipeline_gpath: String(pipeline.pipeline_gpath || ""),
             enrollment_fee: stripeRef(pipeline.enrollment_fee),
           }
         })
@@ -207,7 +207,7 @@ function serializePricing(value: PricingState) {
   if (value.pipelines.length) {
     out.pipelines = value.pipelines.map((pipeline) => {
       const serialized: Record<string, unknown> = {
-        pipeline_id: pipeline.pipeline_id.trim(),
+        pipeline_gpath: pipeline.pipeline_gpath.trim(),
       }
       const enrollmentFee = serializedStripeRef(pipeline.enrollment_fee)
       if (enrollmentFee) serialized.enrollment_fee = enrollmentFee
@@ -273,7 +273,7 @@ function addPipeline() {
   if (!option) return
   state.value.pipelines.push({
     key: rowKey(),
-    pipeline_id: option.id,
+    pipeline_gpath: option.id,
     enrollment_fee: emptyStripeRef(),
   })
 }
@@ -309,7 +309,7 @@ function unitOptionDisabled(optionId: string, currentKey: number) {
 }
 
 function pipelineOptionDisabled(optionId: string, currentKey: number) {
-  return state.value.pipelines.some((pipeline) => pipeline.key !== currentKey && pipeline.pipeline_id === optionId)
+  return state.value.pipelines.some((pipeline) => pipeline.key !== currentKey && pipeline.pipeline_gpath === optionId)
 }
 </script>
 
@@ -484,7 +484,7 @@ function pipelineOptionDisabled(optionId: string, currentKey: number) {
         <div v-for="(pipeline, index) in state.pipelines" :key="pipeline.key" class="grid gap-3 rounded-xl border border-blue-200 bg-white p-4 lg:grid-cols-[1fr_1fr_1fr_auto]">
           <label class="grid gap-2 text-sm font-bold">
             {{ copy.pipelineId }}
-            <select v-model="pipeline.pipeline_id" class="rounded-lg border border-slate-200 bg-white px-3 py-2 font-normal">
+            <select v-model="pipeline.pipeline_gpath" class="rounded-lg border border-slate-200 bg-white px-3 py-2 font-normal">
               <option value="">{{ copy.selectPipeline }}</option>
               <option v-for="option in pipelineOptions" :key="option.id" :value="option.id" :disabled="pipelineOptionDisabled(option.id, pipeline.key)">{{ option.label }}</option>
             </select>
