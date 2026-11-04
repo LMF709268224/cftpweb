@@ -2096,10 +2096,24 @@ test("免考选择完成后按资格创建独立订单，已拒绝资格仍可�
 
     const confirmDialog = page.getByTestId("checkout-qualification-order-confirm-dialog")
     await expect(confirmDialog).toBeVisible()
+    await expect(confirmDialog.getByText("请确认您要申请免考的科目。", { exact: true })).toBeVisible()
+    await expect(confirmDialog.getByText("所选科目", { exact: true })).toBeVisible()
     await expect(confirmDialog.getByText("Apply Exemption Course", { exact: true })).toBeVisible()
     await expect(confirmDialog.getByText("CFtP 金融课程模块（L1A）免考申请", { exact: true })).toBeVisible()
     await expect(confirmDialog.getByText("Waive Exemption Course", { exact: true })).toHaveCount(0)
-    await expect(confirmDialog.getByText("资格认证申请提交后不能修改", { exact: true })).toBeVisible()
+    await expect(confirmDialog.getByText("重要提示：免考申请确认后不可取消", { exact: true })).toBeVisible()
+    await expect(confirmDialog.getByText("确认后，您将无法取消或撤回该科目的免考申请。您仍可单独申请其他科目的免考。", { exact: true })).toBeVisible()
+    await expect(confirmDialog.getByText("您需要上传相关证明材料并等待审核。审核完成后，方可继续认证注册及付款流程。最终费用将根据审核结果确定。", { exact: true })).toBeVisible()
+    await page.setViewportSize({ width: 375, height: 667 })
+    await expect.poll(async () => {
+        const dialogBounds = await confirmDialog.boundingBox()
+        const footerBounds = await confirmDialog.locator("footer").boundingBox()
+        return Boolean(dialogBounds && footerBounds
+            && dialogBounds.y >= 0
+            && dialogBounds.y + dialogBounds.height <= 667
+            && footerBounds.y + footerBounds.height <= 667)
+    }).toBe(true)
+    await page.setViewportSize({ width: 1280, height: 720 })
     expect(applicationOrderBody).toBeUndefined()
 
     await page.getByTestId("checkout-cancel-qualification-order").click()
@@ -2337,6 +2351,8 @@ test("分阶段购买可先申请免考资格并支付审核费", async ({ page 
 
     const confirmDialog = page.getByTestId("stage-exemption-application-confirm")
     await expect(confirmDialog).toBeVisible()
+    await expect(confirmDialog.getByText("请确认您要申请免考的科目。", { exact: true })).toBeVisible()
+    await expect(confirmDialog.getByText("重要提示：免考申请确认后不可取消", { exact: true })).toBeVisible()
     await expect(confirmDialog.getByText("Qualification Application Course", { exact: true })).toBeVisible()
     await expect(confirmDialog.getByText("Stage Application Qualification", { exact: true })).toBeVisible()
     await page.getByTestId("stage-exemption-confirm-application").click()
