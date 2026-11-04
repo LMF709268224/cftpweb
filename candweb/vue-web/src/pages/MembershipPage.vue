@@ -292,18 +292,25 @@ async function loadMembershipPlans(suppressErrorToast = false) {
   ])
   if (requestId !== membershipPlansRequestId) return null
 
-  const pricesByMembership = new Map<string, string>()
+  const pricesByMembership = new Map<string, { amount: number; label: string }>()
   for (const bundle of listFrom(bundleData, ["bundles"])) {
     if (!bundle?.is_current || !bundle?.is_membership_bundle) continue
     const membershipId = String(bundle.membership_id || "").trim()
     if (!membershipId || pricesByMembership.has(membershipId)) continue
-    const price = bundleDisplayPriceLabel(bundle, t.value.courseCard.fromPrice)
-    if (price) pricesByMembership.set(membershipId, price)
+    const amount = Number(bundle.display_amount_min || bundle.display_amount_max || 0)
+    const label = bundleDisplayPriceLabel(bundle, t.value.courseCard.fromPrice)
+    if (amount > 0 && label) pricesByMembership.set(membershipId, { amount, label })
   }
   const nextPlans = listFrom(planData, ["memberships", "plans", "items"]).map((plan) => ({
     ...plan,
-    display_price: pricesByMembership.get(String(plan.membership_ulid || "").trim()) || "",
-  }))
+    display_price: pricesByMembership.get(String(plan.membership_ulid || "").trim())?.label || "",
+  })).sort((left, right) => {
+    const leftAmount = pricesByMembership.get(String(left.membership_ulid || "").trim())?.amount
+    const rightAmount = pricesByMembership.get(String(right.membership_ulid || "").trim())?.amount
+    if (leftAmount === undefined) return rightAmount === undefined ? 0 : 1
+    if (rightAmount === undefined) return -1
+    return leftAmount - rightAmount
+  })
   plans.value = nextPlans
 
   if (activeMembership.value) {
