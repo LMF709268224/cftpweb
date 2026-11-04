@@ -319,7 +319,7 @@ export const zh = {
         subtitle: "管理你的会员资格与权益",
         autoRenew: "自动续费",
         tabs: {
-            levels: "会员等级",
+            levels: "会员方案",
         },
         tabsOverview: "您的方案",
         tabsHistory: "会员资格历史",
