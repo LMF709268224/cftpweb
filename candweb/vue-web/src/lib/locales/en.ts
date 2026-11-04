@@ -943,6 +943,7 @@ export const en: AppTranslations = {
         paymentModeTitle: "Payment Mode",
         modeFullPipeline: "Pay in Full",
         modeFullPipelineDesc: "Pay all course fees upfront for uninterrupted learning.",
+        modeFullPipelineDiscountDesc: "Pay all course fees upfront for uninterrupted learning, plus an additional 10% discount.",
         modeByStage: "Pay by Stage",
         modeByStageDesc: "Pay only the first-stage fee now; unlock subsequent course stages as you progress.",
         yourLevel1Paper: "Module Exemptions",

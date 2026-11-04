@@ -311,6 +311,15 @@ const isMembershipBundle = computed(() => {
 const purchaseType = computed(() => isMembershipBundle.value ? "membership" : "certification")
 const CFTP_ENGLISH_REGISTRATION_TITLE = "Chartered Fintech Professional (CFtP®) Programme Registration"
 const isCftpRegistration = computed(() => /CFtP/i.test(String(bundleData.value?.name || "")))
+const hasCftpFullPaymentDiscount = computed(() => {
+  if (!isCftpRegistration.value || !pricingDetail.value) return false
+  try {
+    const detail = typeof pricingDetail.value === "string" ? JSON.parse(pricingDetail.value) : pricingDetail.value
+    return Boolean(String(detail?.package_coupon || "").trim())
+  } catch {
+    return false
+  }
+})
 
 const registrationTitle = computed(() => {
   if (!bundleData.value) return t.value.checkoutWizard.checkoutTitle
@@ -2909,7 +2918,7 @@ function closePaymentEditDialog() {
                 <input type="radio" v-model="paymentMode" value="FULL_PIPELINE" class="mt-1 h-4 w-4 text-emerald-600 focus:ring-emerald-500" />
                 <div>
                   <div class="font-medium text-slate-900">{{ t.checkoutWizard.modeFullPipeline }}</div>
-                  <div class="text-xs text-slate-500 mt-1">{{ t.checkoutWizard.modeFullPipelineDesc }}</div>
+                  <div class="text-xs text-slate-500 mt-1">{{ hasCftpFullPaymentDiscount ? t.checkoutWizard.modeFullPipelineDiscountDesc : t.checkoutWizard.modeFullPipelineDesc }}</div>
                 </div>
               </label>
 

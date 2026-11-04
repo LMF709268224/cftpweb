@@ -941,6 +941,7 @@ export const zh = {
         paymentModeTitle: "支付模式",
         modeFullPipeline: "一次性全额支付",
         modeFullPipelineDesc: "预先付清全部课程费用，学习全程不受中断。",
+        modeFullPipelineDiscountDesc: "预先付清全部课程费用，学习全程不受中断，并享受额外9折优惠。",
         modeByStage: "分阶段解锁",
         modeByStageDesc: "当前仅支付第一阶段费用；完成学习进度后解锁后续课程阶段。",
         yourLevel1Paper: "模块免考",
