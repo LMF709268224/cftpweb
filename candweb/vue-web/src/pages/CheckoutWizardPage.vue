@@ -192,14 +192,14 @@ const purchaseLineItems = computed<PurchaseLineItem[]>(() => {
     const items: PurchaseLineItem[] = []
     if (Array.isArray(detail?.pipelines)) {
       for (const pipeline of detail.pipelines) {
-        const configuredPipelineId = String(pipeline?.pipeline_id || "").trim()
+        const configuredPipelineGpath = String(pipeline?.pipeline_gpath || "").trim()
         const amount = pipeline?.enrollment_fee?.amount
-        if (!configuredPipelineId || typeof amount !== "number") continue
+        if (!configuredPipelineGpath || typeof amount !== "number") continue
         items.push({
-          key: `pipeline:${configuredPipelineId}`,
-          itemId: configuredPipelineId,
+          key: `pipeline:${configuredPipelineGpath}`,
+          itemId: configuredPipelineGpath,
           name: t.value.checkoutWizard.pipelineEnrollmentFee,
-          stageName: "",
+          stageName: t.value.checkoutWizard.oneTimeFee,
           amount,
           currency: String(pipeline?.enrollment_fee?.currency || "USD"),
           kind: "pipeline",

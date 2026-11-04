@@ -9,6 +9,7 @@ import { localizeApiErrorMessage } from "../src/lib/errorCodes"
 
 const bundleID = "bundle-regression"
 const pipelineID = "pipeline-regression"
+const pipelineGpath = "/gcc/pipeline/core/cftp"
 const pipelineInstanceID = "pipeline-instance-regression"
 const courseID = "course-regression"
 const lessonID = "lesson-regression"
@@ -1060,7 +1061,7 @@ test("已持有有效资格的课程自动免考且不可取消", async ({ page 
                     units_preview: [{ unit_cc_ulid: unitID, exemption_status: "GRANTED" }],
                     pricing_detail_json: JSON.stringify({
                         pipelines: [{
-                            pipeline_id: pipelineID,
+                            pipeline_gpath: pipelineGpath,
                             enrollment_fee: { amount: 20000, currency: "USD" },
                         }],
                         units: [
@@ -1142,9 +1143,9 @@ test("已持有有效资格的课程自动免考且不可取消", async ({ page 
     const exemptionItem = page.locator(`[data-testid="checkout-included-item"][data-item-id="${unitID}"]`)
     await expect(exemptionItem).toContainText("免考认定费")
     await expect(exemptionItem).toContainText("50")
-    const enrollmentFeeItem = page.locator(`[data-testid="checkout-included-item"][data-item-id="${pipelineID}"]`)
+    const enrollmentFeeItem = page.locator(`[data-testid="checkout-included-item"][data-item-id="${pipelineGpath}"]`)
     await expect(enrollmentFeeItem).toContainText("报名费")
-    await expect(enrollmentFeeItem.locator(".checkout-included-item-stage")).toHaveCount(0)
+    await expect(enrollmentFeeItem).toContainText("一次性费用")
     for (const unit of includedUnits) {
         const item = page.locator(`[data-testid="checkout-included-item"][data-item-id="${unit.unit_id}"]`)
         await expect(item).toContainText(unit.name)
@@ -1164,7 +1165,7 @@ test("已持有有效资格的课程自动免考且不可取消", async ({ page 
     await expect(page.locator(".checkout-step-one-title")).toContainText("Module Exemptions")
     await expect(qualificationCard.getByRole("button", { name: "View Supporting Documents", exact: true })).toBeVisible()
     await expect(enrollmentFeeItem).toContainText("Enrollment fee")
-    await expect(enrollmentFeeItem.locator(".checkout-included-item-stage")).toHaveCount(0)
+    await expect(enrollmentFeeItem).toContainText("One-time Fee")
     await expect(page.locator(`[data-testid="checkout-included-item"][data-item-id="unit-foundation"]`)).toContainText("CFtP Foundation Course")
     await expect(page.locator(`[data-testid="checkout-included-item"][data-item-id="unit-finance"]`)).toContainText("L1A Finance")
     await expect(page.locator(`[data-testid="checkout-included-item"][data-item-id="unit-fintech"]`)).toContainText("L1B Fintech")
@@ -1177,7 +1178,8 @@ test("已持有有效资格的课程自动免考且不可取消", async ({ page 
     await expect(page.getByTestId("checkout-step-review")).toBeVisible()
     const reviewLineItems = page.getByTestId("checkout-review-line-items")
     await expect(reviewLineItems.getByTestId("checkout-review-line-item")).toHaveCount(5)
-    await expect(reviewLineItems.locator(`[data-item-id="${pipelineID}"]`)).toContainText("Enrollment fee")
+    await expect(reviewLineItems.locator(`[data-item-id="${pipelineGpath}"]`)).toContainText("Enrollment fee")
+    await expect(reviewLineItems.locator(`[data-item-id="${pipelineGpath}"]`)).toContainText("One-time Fee")
     await expect(reviewLineItems.locator(`[data-item-id="${unitID}"]`)).toContainText("Exemption recognition fee")
     await expect(reviewLineItems.locator('[data-item-id="unit-fintech"]')).toContainText("L1B Fintech")
     const confirmPay = page.getByTestId("checkout-confirm-pay")
@@ -1562,7 +1564,7 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
                     preview_pay_amount: reviewGranted ? 115000 : 155000,
                     units_preview: [{ unit_cc_ulid: unitID, exemption_status: reviewGranted ? "GRANTED" : "IN_PROGRESS" }],
                     pricing_detail_json: JSON.stringify({
-                        pipelines: [{ pipeline_id: pipelineID, enrollment_fee: { amount: 20000, currency: "USD" } }],
+                        pipelines: [{ pipeline_gpath: pipelineGpath, enrollment_fee: { amount: 20000, currency: "USD" } }],
                         units: [
                             {
                                 unit_id: unitID,

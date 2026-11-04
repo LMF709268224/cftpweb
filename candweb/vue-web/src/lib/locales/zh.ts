@@ -847,6 +847,7 @@ export const zh = {
         step4: "4 支付",
         includedItems: "费用包含",
         pipelineEnrollmentFee: "报名费",
+        oneTimeFee: "一次性费用",
         exemptionRecognitionFee: "免考认定费",
         baseTotal: "总费用",
         back: "返回",

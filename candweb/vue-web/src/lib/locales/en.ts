@@ -849,6 +849,7 @@ export const en: AppTranslations = {
         step4: "4 Payment",
         includedItems: "Included items",
         pipelineEnrollmentFee: "Enrollment fee",
+        oneTimeFee: "One-time Fee",
         exemptionRecognitionFee: "Exemption recognition fee",
         baseTotal: "Total Fee",
         back: "Back",
