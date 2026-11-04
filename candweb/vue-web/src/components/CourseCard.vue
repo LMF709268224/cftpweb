@@ -167,9 +167,9 @@ const actionCopy = computed(() => {
   if (membershipOrderInProgressBlocker.value) return cardCopy.value.membershipOrderInProgress
   if (hasInProgressOrder.value) return cardCopy.value.continuePayment
   if (currentEligibility.value?.can_purchase) return isMembershipOnlyProduct.value ? cardCopy.value.becomeMember : cardCopy.value.enrollNow
+  if (credentialCenterBlocker.value?.blocker_type === "EXEMPTION_UNDER_REVIEW") return cardCopy.value.viewCertificationRegistration
   if (hasAdditionalExemptionOption.value) return cardCopy.value.continueExemptionSelection
   if (credentialCenterBlocker.value?.blocker_type === "EXEMPTION_DOCUMENTS_PENDING_UPLOAD") return cardCopy.value.uploadExemptionDocuments
-  if (credentialCenterBlocker.value?.blocker_type === "EXEMPTION_UNDER_REVIEW") return cardCopy.value.viewExemptionReview
   if (currentEligibility.value) return eligibilityCopy.value.unavailable
   return eligibilityCopy.value.check
 })
@@ -336,7 +336,7 @@ async function handleCardClick() {
     return
   }
   if (credentialCenterBlocker.value) {
-    if (hasAdditionalExemptionOption.value) {
+    if (credentialCenterBlocker.value.blocker_type === "EXEMPTION_UNDER_REVIEW" || hasAdditionalExemptionOption.value) {
       await router.push(`/checkout/${encodeURIComponent(props.id)}`)
       return
     }

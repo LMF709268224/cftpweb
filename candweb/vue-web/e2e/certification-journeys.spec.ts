@@ -612,7 +612,46 @@ test("免考材料待上传时显示本地化原因并进入对应资格申请",
     await expect(page).toHaveURL(new RegExp(`/credentials\\?qual_ids=${blockedQualificationID}$`))
 })
 
-test("商城同时存在审核中和待上传免考时进入全部对应资格", async ({ page }) => {
+test("商城一个免考审核中且仍可选择另一个免考时进入报名流程", async ({ page }) => {
+    const reviewBundleID = "bundle-one-exemption-under-review"
+    const reviewedUnitID = "unit-one-exemption-under-review"
+    const availableUnitID = "unit-another-exemption-available"
+    const reviewBlocker = { blocker_type: "EXEMPTION_UNDER_REVIEW", details: [reviewedUnitID] }
+    const reviewBundle = {
+        ...bundle,
+        bundle_id: reviewBundleID,
+        stages: [{
+            stage_id: "stage-one-exemption-under-review",
+            units: [
+                { unit_id: reviewedUnitID, allow_exemption: true, exemption_quals: ["qualification-under-review"] },
+                { unit_id: availableUnitID, allow_exemption: true, exemption_quals: ["qualification-available"] },
+            ],
+        }],
+        eligibility: { can_purchase: false, can_unlock: false, blockers: [reviewBlocker] },
+        purchase_state: {
+            ...bundle.purchase_state,
+            eligibility: { can_purchase: false, can_unlock: false, blockers: [reviewBlocker] },
+            exemption_options: { stages: [{ units: [
+                { unit_id: reviewedUnitID, exemption_quals: [{ qual_id: "qualification-under-review" }] },
+                { unit_id: availableUnitID, exemption_quals: [{ qual_id: "qualification-available" }] },
+            ] }] },
+        },
+    }
+
+    await installCandidateApiMocks(page, ({ pathname, method }) => {
+        if (pathname === "/api/mall/bundles" && method === "GET") return { data: { bundles: [reviewBundle] } }
+        if (pathname === `/api/mall/bundles/${reviewBundleID}` && method === "GET") return { data: reviewBundle }
+        return undefined
+    })
+
+    await page.goto("/certifications", { waitUntil: "domcontentloaded" })
+    const card = page.locator(`[data-testid="certification-card"][data-bundle-id="${reviewBundleID}"]`)
+    await expect(card.getByText("查看认证报名进度", { exact: true })).toBeVisible()
+    await card.click()
+    await expect(page).toHaveURL(new RegExp(`/checkout/${reviewBundleID}$`))
+})
+
+test("商城免考审核中时显示报名进度入口并进入报名流程", async ({ page }) => {
     const blockedBundleID = "bundle-mixed-exemption-review"
     const underReviewUnitID = "unit-exemption-under-review"
     const pendingUploadUnitID = "unit-exemption-pending-upload"
@@ -681,11 +720,18 @@ test("商城同时存在审核中和待上传免考时进入全部对应资格",
 
     await page.goto("/certifications", { waitUntil: "domcontentloaded" })
     const card = page.locator(`[data-testid="certification-card"][data-bundle-id="${blockedBundleID}"]`)
-    await expect(card.getByText("免考资格认证审核中", { exact: true })).toBeVisible()
+    await expect(card.getByText("免考申请审核中", { exact: true })).toBeVisible()
+    await expect(card.getByText("您的免考申请正在审核中。请等待所有相关免考申请审核完成后，再继续完成认证报名及付款流程。", { exact: true })).toBeVisible()
+    await expect(card.getByText("查看认证报名进度", { exact: true })).toBeVisible()
+    await page.evaluate(() => {
+        localStorage.setItem("app_lang", "en")
+        window.dispatchEvent(new Event("lang_change"))
+    })
+    await expect(card.getByText("Exemption Application Under Review", { exact: true })).toBeVisible()
+    await expect(card.getByText("Your exemption application is currently under review. Once all applicable exemption reviews are complete, you can proceed with your certification registration and payment.", { exact: true })).toBeVisible()
+    await expect(card.getByText("View Your Certification Registration", { exact: true })).toBeVisible()
     await card.click()
-    await expect(page).toHaveURL(new RegExp(
-        `/credentials\\?qual_ids=${underReviewQualificationID},${pendingUploadQualificationID}$`,
-    ))
+    await expect(page).toHaveURL(new RegExp(`/checkout/${blockedBundleID}$`))
 })
 
 test("已有免考待上传时仍可从商城为另一科目独立建单", async ({ page }) => {
