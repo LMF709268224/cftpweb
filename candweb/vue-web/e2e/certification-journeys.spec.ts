@@ -1714,11 +1714,11 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
     const initialApplicationOrderRequests = applicationOrderRequests
     await page.getByRole("button", { name: "提交审核", exact: true }).click()
     const submitConfirmDialog = page.getByTestId("checkout-qualification-submit-confirm-dialog")
-    await expect(submitConfirmDialog.getByText("提交后申请将进入审核，审核期间无法修改或删除已上传材料。请确认材料无误后再提交。", { exact: true })).toBeVisible()
+    await expect(submitConfirmDialog.getByText("您的免考申请即将正式提交审核。提交后，审核期间将无法修改或删除已上传的证明材料。请在提交前确认所有申请信息及证明材料完整、准确。", { exact: true })).toBeVisible()
     await submitConfirmDialog.getByRole("button", { name: "取消", exact: true }).click()
     expect(submitRequest).toBeUndefined()
     await page.getByRole("button", { name: "提交审核", exact: true }).click()
-    await submitConfirmDialog.getByRole("button", { name: "确认提交", exact: true }).click()
+    await submitConfirmDialog.getByRole("button", { name: "提交申请", exact: true }).click()
 
     expect(uploadRequest.file_usage).toBe("Employment Certificate")
     expect(submitRequest.files).toHaveLength(1)
