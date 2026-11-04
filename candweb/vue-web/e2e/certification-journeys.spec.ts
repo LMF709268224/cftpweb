@@ -1057,6 +1057,7 @@ test("已持有有效资格的课程自动免考且不可取消", async ({ page 
                 data: {
                     preview_pay_amount: 395000,
                     total_saved_amount: 5000,
+                    units_preview: [{ unit_cc_ulid: unitID, exemption_status: "GRANTED" }],
                     pricing_detail_json: JSON.stringify({
                         pipelines: [{
                             pipeline_id: pipelineID,
@@ -1315,6 +1316,10 @@ test("系统资格、自动免考和按原价购买以管线维度提交完整�
                     can_checkout: JSON.stringify(pricingSelections) === JSON.stringify(expectedSelections),
                     checkout_blocker_reason: "EXEMPTIONS_UNCONFIRMED_WAIVER",
                     preview_pay_amount: requestedPaymentMode === "BY_STAGE" ? 65000 : 145000,
+                    units_preview: [
+                        { unit_cc_ulid: systemUnitID, exemption_status: "GRANTED" },
+                        { unit_cc_ulid: grantedUnitID, exemption_status: "GRANTED" },
+                    ],
                     pricing_detail_json: JSON.stringify({
                         units: [
                             { unit_id: systemUnitID, access: { amount: 70000, currency: "USD" } },
@@ -1551,7 +1556,24 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
         }
         if (pathname === `/api/mall/bundles/${bundleID}/pricing-detail`) {
             pricingSelections = JSON.parse(url.searchParams.get("selected_exemptions_json") || "{}")
-            return { data: { units: [], memberships: [] } }
+            const reviewGranted = applicationStatus === "APPLICATION_STATUS_APPROVED"
+            return {
+                data: {
+                    preview_pay_amount: reviewGranted ? 115000 : 155000,
+                    units_preview: [{ unit_cc_ulid: unitID, exemption_status: reviewGranted ? "GRANTED" : "IN_PROGRESS" }],
+                    pricing_detail_json: JSON.stringify({
+                        pipelines: [{ pipeline_id: pipelineID, enrollment_fee: { amount: 20000, currency: "USD" } }],
+                        units: [
+                            {
+                                unit_id: unitID,
+                                access: { amount: 60000, currency: "USD" },
+                                exemption: { amount: 20000, currency: "USD" },
+                            },
+                            { unit_id: systemUnitID, access: { amount: 75000, currency: "USD" } },
+                        ],
+                    }),
+                },
+            }
         }
         if (pathname === "/api/credentials/definitions") {
             return {
@@ -1631,7 +1653,7 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
     const blockerPanel = page.getByTestId("checkout-eligibility-blockers")
     await expect(blockerPanel.getByRole("heading", { name: "流程暂未继续", exact: true })).toBeVisible()
     await expect(blockerPanel.getByText("您的免考申请材料尚未提交，请在下方或者前往【资格认证申请】上传并提交材料，待审核通过后，再完成认证报名支付。", { exact: true })).toBeVisible()
-    await expect(page.getByText("System Only Course", { exact: true })).toHaveCount(0)
+    await expect(page.locator(".checkout-unit-card").getByText("System Only Course", { exact: true })).toHaveCount(0)
     await expect.poll(() => pricingSelections).toEqual({
         [pipelineID]: {
             stages: [{
@@ -1705,13 +1727,26 @@ test("结账资格申请提供官方模板预览与下载", async ({ page }) => 
     await expect(qualificationCard).toContainText("免考申请已提交，目前正在审核中。")
     await expect(qualificationCard).toContainText("我们正在审核你的证明材料。审核结果确定后，我们会通知你。")
     await expect(qualificationCard).not.toContainText("资格认证申请已创建，请在下方上传材料。")
-    await expect(blockerPanel).toContainText("免考资格认证正在审核中")
+    await expect(blockerPanel.getByRole("heading", { name: "免考申请审核中" })).toBeVisible()
+    await expect(blockerPanel).toContainText("您的免考申请正在审核中。审核完成后，您即可继续完成认证考试报名与付款。")
     await expect(blockerPanel).not.toContainText("您的免考申请材料尚未提交")
     await expect(page.getByTestId("checkout-selection-next")).toBeDisabled()
+    const reviewItem = page.locator(`[data-testid="checkout-included-item"][data-item-id="${unitID}"]`)
+    await expect(reviewItem).toContainText("$600")
+    await expect(reviewItem).not.toContainText("免考认定费")
+    await expect(page.locator(".checkout-total")).toContainText("$1,550")
 
     await page.getByRole("button", { name: "中文 / EN" }).click()
+    await expect(blockerPanel.getByRole("heading", { name: "Exemption Application Under Review" })).toBeVisible()
+    await expect(blockerPanel).toContainText("Your exemption application is currently under review. You will be able to proceed with your certification registration and payment once the review is complete.")
     await expect(qualificationCard).toContainText("Your exemption application has been submitted and is currently under review.")
     await expect(qualificationCard).toContainText("We are reviewing your supporting documents. You will be notified once a decision has been made.")
+
+    applicationStatus = "APPLICATION_STATUS_APPROVED"
+    await page.reload({ waitUntil: "domcontentloaded" })
+    await expect(reviewItem).toContainText("免考认定费")
+    await expect(reviewItem).toContainText("$200")
+    await expect(page.locator(".checkout-total")).toContainText("$1,150")
 })
 
 test("资格申请页允许 PendingUpload 申请上传", async ({ page }) => {

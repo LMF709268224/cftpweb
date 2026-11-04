@@ -99,30 +99,19 @@ const qualificationFilesDialogTitle = ref("")
 const qualificationApplicationFiles = ref<any[]>([])
 const levelPlaceholder = "{" + "{level}}"
 
-function selectedExemptedUnitIds() {
-  const selectedUnitIds = new Set(
-    Object.entries(selectedExemptionUnitIds.value)
-      .filter(([, selected]) => selected)
-      .map(([unitId]) => unitId),
+function grantedExemptionUnitIds() {
+  return new Set<string>(
+    (pricingEvaluation.value?.units_preview || [])
+      .filter((unit: any) => unit?.exemption_status === "GRANTED")
+      .map((unit: any) => String(unit?.unit_cc_ulid || "").trim())
+      .filter(Boolean),
   )
-
-  // System-managed qualifications are hidden from the candidate decision UI and
-  // submitted as waivers for the service to resolve. Keep the service's qualified
-  // result in the display calculation so an automatic exemption is not charged.
-  for (const stage of rawExemptionStages.value) {
-    for (const unit of stage?.units || []) {
-      const unitId = String(unit?.unit_id || "").trim()
-      if (unitId && unit?.qualified) selectedUnitIds.add(unitId)
-    }
-  }
-
-  return selectedUnitIds
 }
 
 function includedPurchaseUnitIds() {
   const stages = [...(bundleData.value?.stages || [])]
     .sort((left: any, right: any) => Number(left?.sort_order || 0) - Number(right?.sort_order || 0))
-  const exemptedUnitIds = selectedExemptedUnitIds()
+  const exemptedUnitIds = grantedExemptionUnitIds()
   const firstActiveStageIndex = stages.findIndex((stage: any) =>
     (stage?.units || []).some((unit: any) => !exemptedUnitIds.has(String(unit?.unit_id || ""))),
   )
@@ -185,7 +174,7 @@ const purchaseLineItems = computed<PurchaseLineItem[]>(() => {
   try {
     const detail = typeof pricingDetail.value === "string" ? JSON.parse(pricingDetail.value) : pricingDetail.value
     const includedUnitIds = includedPurchaseUnitIds()
-    const exemptedUnitIds = selectedExemptedUnitIds()
+    const exemptedUnitIds = grantedExemptionUnitIds()
     const unitDetails = new Map<string, { name: string, stageName: string }>()
 
     for (const stage of bundleData.value?.stages || []) {
@@ -2150,6 +2139,8 @@ const hardEligibilityBlockers = computed<EligibilityBlocker[]>(() => {
 })
 
 const checkoutHardBlocked = computed(() => hardEligibilityBlockers.value.length > 0)
+const exemptionReviewOnlyBlocked = computed(() => checkoutHardBlocked.value
+  && hardEligibilityBlockers.value.every((blocker) => blocker.blocker_type === "EXEMPTION_UNDER_REVIEW"))
 const membershipUpgradeBlocker = computed(() => hardEligibilityBlockers.value.find((blocker) => blocker.blocker_type === "MEMBERSHIP_UPGRADE_REQUIRED"))
 
 function eligibilityBlockerMessage(blocker?: EligibilityBlocker) {
@@ -2370,7 +2361,7 @@ function closePaymentEditDialog() {
           >
             <CircleAlert class="mt-0.5 h-5 w-5 shrink-0" />
             <div class="min-w-0">
-              <h2 class="text-sm font-semibold">{{ t.purchaseDialog.blockersTitle }}</h2>
+              <h2 class="text-sm font-semibold">{{ exemptionReviewOnlyBlocked ? t.purchaseDialog.exemptionReviewTitle : t.purchaseDialog.blockersTitle }}</h2>
               <ul class="mt-2 space-y-1 text-sm">
                 <li v-for="(blocker, index) in hardEligibilityBlockers" :key="`${blocker.blocker_type || 'blocker'}-${index}`">
                   {{ eligibilityBlockerMessage(blocker) }}
