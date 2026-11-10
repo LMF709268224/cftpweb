@@ -227,7 +227,7 @@ test("首页没有姓名时使用通用问候", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "欢迎回来", exact: true })).toBeVisible();
 });
 
-test("公开商城分开展示课程认证与会员入口，并显示最低价", async ({ page }) => {
+test("公开商城仅展示课程和认证，并显示最低价", async ({ page }) => {
   await seedAuthenticatedCandidate(page);
   await installCandidateApiMocks(page, ({ pathname }) => {
     if (pathname !== "/api/mall/bundles") return undefined;
@@ -272,7 +272,7 @@ test("公开商城分开展示课程认证与会员入口，并显示最低价",
   const membershipCard = page.locator("article.product-card").filter({ hasText: "公开会员服务" });
   await expect(page.getByRole("button", { name: "全部", exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "课程", exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "会员方案" })).toHaveAttribute("href", "/membership");
+  await expect(page.getByRole("link", { name: "会员方案" })).toHaveCount(0);
   await expect(certificationCard.getByRole("button")).toContainText("去报名");
   await expect(certificationCard.locator(".product-price strong")).toContainText("起价");
   await expect(certificationCard.locator(".product-price strong")).toContainText("120");
@@ -292,11 +292,11 @@ test("公开商城分开展示课程认证与会员入口，并显示最低价",
   await expect(page.getByRole("button", { name: "Course", exact: true })).toBeVisible();
   await expect(certificationCard.getByRole("button")).toContainText("Enroll Now");
   await expect(certificationCard.locator(".product-price strong")).toContainText("From");
-  await expect(page.getByRole("link", { name: "Memberships" })).toHaveAttribute("href", "/membership");
+  await expect(page.getByRole("link", { name: "Memberships" })).toHaveCount(0);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.getByRole("button", { name: "Certification", exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Memberships" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Memberships" })).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);
 });
 
