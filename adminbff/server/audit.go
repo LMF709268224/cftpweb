@@ -181,6 +181,7 @@ var adminAuditOperations = map[auditRoute]auditSpec{
 	route(http.MethodPut, "/api/lms/chapters/{chapter_id}"):                                       operation("update_chapter", "chapter", "chapter_id"),
 	route(http.MethodDelete, "/api/lms/chapters/{chapter_id}"):                                    operation("delete_chapter", "chapter", "chapter_id"),
 	route(http.MethodPut, "/api/lms/lessons/{lesson_id}"):                                         operation("update_lesson", "lesson", "lesson_id"),
+	route(http.MethodPatch, "/api/lms/lessons/{lesson_id}/content"):                               operation("update_lesson", "lesson", "lesson_id"),
 	route(http.MethodDelete, "/api/lms/lessons/{lesson_id}"):                                      operation("delete_lesson", "lesson", "lesson_id"),
 
 	route(http.MethodPost, "/api/lms/external-coursewares/"):                              operation("create_external_courseware", "external_courseware", "", "courseware_id", "courseware_ulid"),

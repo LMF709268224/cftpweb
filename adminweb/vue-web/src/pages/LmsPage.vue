@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { ChevronDown, Copy, FileJson, Info, Loader2, Plus, RefreshCw, Save, Trash2, UploadCloud, X } from "lucide-vue-next"
-import { computed, onMounted, ref, watch } from "vue"
+import { computed, defineAsyncComponent, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import ReadonlyField from "@/components/ReadonlyField.vue"
+import CourseOutline from "@/components/CourseOutline.vue"
+import { useCourseAuthoringCopy } from "@/lib/courseAuthoringCopy"
+import { hasCourseBodyContent } from "@/lib/courseContentHtml"
 import LmsPrerequisitesTab from "@/components/LmsPrerequisitesTab.vue"
 import TranslationsEditor from "@/components/TranslationsEditor.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
@@ -12,6 +15,8 @@ import { isVideoFile, MAX_BASIC_VIDEO_UPLOAD_BYTES, sha256Hex, uploadToDirectURL
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 import { badgeClass, pickFirst } from "@/lib/status"
+
+const CourseBodyEditor = defineAsyncComponent(() => import("@/components/CourseBodyEditor.vue"))
 
 type CourseForm = {
   category_tips: string
@@ -185,6 +190,10 @@ type QuizListItem = {
 const pageSize = 20
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.lmsAdmin)
+const authoring = useCourseAuthoringCopy()
+const lessonBaseline = ref("")
+const lessonEditVersion = ref<number | null>(null)
+const lessonBodyAvailable = ref(false)
 const courseTranslationFields = computed(() => [
   { key: "title", label: copy.value.courseTitle, maxLength: 512 },
   { key: "description", label: copy.value.description, kind: "textarea" as const, maxLength: 2048 },
@@ -341,6 +350,9 @@ const selectedCourseStatusBadge = computed(() => courseStatusBadgeValue(selected
 const canDeleteSelectedCourse = computed(() => !!selectedCourseId.value && courseStatusKey(selectedCourse.value) === "draft")
 const canPublishSelectedCourse = computed(() => !!selectedCourseId.value && courseStatusKey(selectedCourse.value) === "draft")
 const canEditCourseContent = computed(() => !!selectedCourseId.value && courseStatusKey(selectedCourse.value) === "draft")
+const canCorrectCourseContent = computed(() => !!selectedCourseId.value && ["draft", "published"].includes(courseStatusKey(selectedCourse.value)))
+const isMinorFix = computed(() => courseStatusKey(selectedCourse.value) === "published")
+const lessonDirty = computed(() => lessonDialogOpen.value && lessonDialogMode.value !== "detail" && lessonBaseline.value !== JSON.stringify(lessonForm.value))
 const showCourseContentSections = computed(() => !!selectedCourseId.value)
 const selectedLesson = computed(() => lessons.value.find((item) => lessonId(item) === editingLessonId.value) || null)
 const selectedMaterialRecord = computed(() => materials.value.find((item) => materialId(item) === selectedMaterialId.value) || selectedMaterial.value)
@@ -628,17 +640,13 @@ function courseDescription(course: JsonRecord | null | undefined) {
 }
 
 function courseStatusValue(course: JsonRecord | null | undefined) {
-  const status = String(pickFirst(course || {}, ["status", "raw_status"]) || "").trim()
-  if (status) return status
-  return course?.is_published ? "Published" : "Draft"
+  return typeof course?.status === "string" ? course.status.trim() : ""
 }
 
 function courseStatusKey(course: JsonRecord | null | undefined) {
   const normalized = courseStatusValue(course).trim().toLowerCase()
-  if (normalized === "active" || normalized === "published") return "published"
-  if (normalized === "deprecated" || normalized === "deprecate") return "deprecated"
-  if (normalized === "draft" || normalized === "inactive") return "draft"
-  return normalized || "draft"
+  if (normalized === "active") return "published"
+  return normalized
 }
 
 function courseStatusLabel(course: JsonRecord | null | undefined) {
@@ -1814,17 +1822,20 @@ const cloningCourseId = ref("")
 async function cloneCourse(course: JsonRecord) {
   const id = courseId(course)
   if (!id || cloningCourseId.value) return
+  if (typeof course.title !== "string" || !course.title.trim()) { toast.error(authoring.value.missing); return }
   cloningCourseId.value = id
   try {
-    await apiClient<JsonRecord>("/api/lms/courses", {
+    const created = await apiClient<JsonRecord>("/api/lms/courses", {
       method: "POST",
       body: JSON.stringify({
-        title: courseTitle(course) + copy.value.courseCopySuffix,
+        title: course.title + copy.value.courseCopySuffix,
         from_course_id: id,
       })
     })
+    if (typeof created?.course_ulid !== "string" || !created.course_ulid || created.status !== "Draft") throw new Error(authoring.value.missing)
     toast.success(copy.value.toasts.courseCloneSuccess)
     await loadCourses()
+    await selectCourse(created)
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.courseCloneFailed))
@@ -1944,6 +1955,7 @@ function openChapterDetail(chapter: JsonRecord) {
 }
 
 function editChapter(chapter: JsonRecord) {
+  if (!canCorrectCourseContent.value || !positiveVersion(chapter.version) || !positiveVersion(chapter.sort_order)) { toast.error(authoring.value.missing); return }
   selectChapterForContext(chapter, true)
   chapterActiveTab.value = "basic"
   chapterDialogMode.value = "edit"
@@ -1968,12 +1980,15 @@ function closeChapterDialog() {
 }
 
 async function saveChapter() {
+  if (!canCorrectCourseContent.value || (!editingChapterId.value && !canEditCourseContent.value)) return
   if (!selectedCourseId.value || !chapterForm.value.title.trim()) {
     toast.error(copy.value.toasts.chapterRequired)
     return
   }
 
-  const targetSort = Number(chapterForm.value.sort_order || 1)
+  const targetSort = Number(chapterForm.value.sort_order)
+  if (!positiveVersion(targetSort) || (editingChapterId.value && !positiveVersion(selectedChapter.value?.version))) { toast.error(authoring.value.missing); return }
+  if (isMinorFix.value && targetSort !== selectedChapter.value?.sort_order) return
   const isConflict = chapters.value.some(c => Number(c.sort_order || 0) === targetSort && chapterId(c) !== editingChapterId.value)
   if (isConflict) {
     toast.error(copy.value.toasts.duplicateChapterSort)
@@ -1985,17 +2000,18 @@ async function saveChapter() {
     const body = JSON.stringify({
       course_id: selectedCourseId.value,
       title: chapterForm.value.title.trim(),
-      sort_order: Number(chapterForm.value.sort_order || 1),
-      version: selectedChapter.value?.version || 0,
+      sort_order: targetSort,
+      ...(editingChapterId.value ? { version: selectedChapter.value!.version } : {}),
     })
     if (editingChapterId.value) {
-      await apiClient(`/api/lms/chapters/${encodeURIComponent(editingChapterId.value)}`, { method: "PUT", body })
+      const result = await apiClient<{ success?: boolean }>(`/api/lms/chapters/${encodeURIComponent(editingChapterId.value)}`, { method: "PUT", body })
+      if (result?.success !== true) throw new Error(authoring.value.missing)
       toast.success(copy.value.toasts.chapterUpdated)
     } else {
       await apiClient(`/api/lms/courses/${encodeURIComponent(selectedCourseId.value)}/chapters`, { method: "POST", body })
       toast.success(copy.value.toasts.chapterCreated)
     }
-    await loadChapters()
+    await Promise.all([loadChapters(), loadCompleteCourse()])
     resetChapterState()
     closeChapterDialog()
   } catch (err) {
@@ -2072,7 +2088,10 @@ async function loadExternalCoursewares() {
 }
 
 function editLesson(lesson: JsonRecord, openDialog = true) {
+  if (openDialog && (!canCorrectCourseContent.value || !positiveVersion(lesson.version) || !positiveVersion(lesson.sort_order) || !positiveVersion(lesson.lesson_type))) { toast.error(authoring.value.missing); return }
   editingLessonId.value = lessonId(lesson)
+  lessonEditVersion.value = positiveVersion(lesson.version) ? lesson.version : null
+  lessonBodyAvailable.value = typeof lesson.body === "string"
   const ownerChapter = allLessonItems.value.find((item) => lessonId(item.lesson) === editingLessonId.value)?.chapter
   if (ownerChapter && chapterId(ownerChapter) !== selectedChapterId.value) {
     selectedChapter.value = ownerChapter
@@ -2098,10 +2117,33 @@ function editLesson(lesson: JsonRecord, openDialog = true) {
     lessonDialogMode.value = "edit"
     lessonDialogOpen.value = true
   }
+  lessonBaseline.value = JSON.stringify(lessonForm.value)
+}
+
+function positiveVersion(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value > 0
+}
+async function reloadOutline() {
+  await Promise.all([loadCompleteCourse(), loadChapters()])
+}
+function selectOutlineLesson(lesson: JsonRecord) {
+  if (lessonDirty.value && !window.confirm(authoring.value.discard)) return
+  if (canCorrectCourseContent.value) editLesson(lesson)
+  else openLessonDetail(lesson)
+  lessonActiveTab.value = "basic"
+}
+function selectOutlineChapter(chapter: JsonRecord) {
+  if (lessonDirty.value && !window.confirm(authoring.value.discard)) return
+  lessonBaseline.value = JSON.stringify(lessonForm.value)
+  closeLessonDialog()
+  if (canCorrectCourseContent.value) editChapter(chapter)
+  else openChapterDetail(chapter)
 }
 
 function newLesson() {
   editingLessonId.value = ""
+  lessonEditVersion.value = null
+  lessonBodyAvailable.value = true
   lessonForm.value = emptyLessonForm()
   lessonForm.value.chapter_id = selectedChapterId.value
   const targetChapterId = selectedChapterId.value
@@ -2127,14 +2169,23 @@ function openNewLesson() {
   lessonActiveTab.value = "basic"
   lessonDialogMode.value = "create"
   lessonDialogOpen.value = true
+  lessonBaseline.value = JSON.stringify(lessonForm.value)
 }
 
 function closeLessonDialog() {
+  if (savingLesson.value || uploadingLesson.value) return
+  if (lessonDirty.value && !window.confirm(authoring.value.discard)) return
+  resetLessonDialog()
+}
+
+function resetLessonDialog() {
   lessonDialogOpen.value = false
   lessonDialogMode.value = "detail"
   lessonActiveTab.value = "basic"
   editingLessonId.value = ""
   lessonForm.value = emptyLessonForm()
+  lessonEditVersion.value = null
+  lessonBaseline.value = ""
   if (lessonFileInput.value) lessonFileInput.value.value = ""
 }
 
@@ -2197,13 +2248,19 @@ async function handleLessonFileUpload(event: Event) {
 }
 
 async function saveLesson(): Promise<boolean> {
+  if (!canCorrectCourseContent.value || (!editingLessonId.value && !canEditCourseContent.value)) return false
+  if (editingLessonId.value && !positiveVersion(lessonEditVersion.value)) { toast.error(authoring.value.missing); return false }
+  const initialForm = lessonBaseline.value ? JSON.parse(lessonBaseline.value) as LessonForm : null
+  const contentOnly = !!editingLessonId.value && initialForm !== null && (Object.keys(lessonForm.value) as (keyof LessonForm)[]).filter((key) => key !== "title" && key !== "body").every((key) => key === "sort_order" ? Number(lessonForm.value[key]) === Number(initialForm[key]) : lessonForm.value[key] === initialForm[key])
+  if (editingLessonId.value && !lessonBodyAvailable.value && !isMinorFix.value && !contentOnly) { toast.error(authoring.value.missing); return false }
   const targetChapterId = lessonForm.value.chapter_id
-  const type = Number(lessonForm.value.lesson_type || 2)
+  const type = Number(lessonForm.value.lesson_type)
+  if (!positiveVersion(type) || !positiveVersion(Number(lessonForm.value.sort_order))) { toast.error(authoring.value.missing); return false }
   if (!targetChapterId || !lessonForm.value.title.trim()) {
     toast.error(copy.value.toasts.lessonRequired)
     return false
   }
-  if (type === 2 && !lessonForm.value.body.trim()) {
+  if (type === 2 && (!editingLessonId.value || lessonBodyAvailable.value) && !hasCourseBodyContent(lessonForm.value.body)) {
     toast.error(copy.value.toasts.lessonBodyRequired)
     return false
   }
@@ -2216,7 +2273,7 @@ async function saveLesson(): Promise<boolean> {
     return false
   }
 
-  const targetSort = Number(lessonForm.value.sort_order || 1)
+  const targetSort = Number(lessonForm.value.sort_order)
   const isConflict = allLessonItems.value.some(item => chapterId(item.chapter) === targetChapterId && Number(item.lesson.sort_order || 0) === targetSort && lessonId(item.lesson) !== editingLessonId.value)
   if (isConflict) {
     toast.error(copy.value.toasts.duplicateLessonSort)
@@ -2225,10 +2282,21 @@ async function saveLesson(): Promise<boolean> {
 
   savingLesson.value = true
   try {
+    if (isMinorFix.value || contentOnly) {
+      const result = await apiClient<{ success?: boolean }>(`/api/lms/lessons/${encodeURIComponent(editingLessonId.value)}/content`, {
+        method: "PATCH",
+        body: JSON.stringify({ title: lessonForm.value.title.trim(), ...(lessonBodyAvailable.value ? { body: lessonForm.value.body } : {}), version: lessonEditVersion.value }),
+      })
+      if (result?.success !== true) throw new Error(authoring.value.missing)
+      toast.success(copy.value.toasts.lessonUpdated)
+      await Promise.all([loadLessons(), loadCompleteCourse(), loadCourseDetail()])
+      resetLessonDialog()
+      return true
+    }
     const body = JSON.stringify({
       chapter_id: targetChapterId,
       title: lessonForm.value.title.trim(),
-      sort_order: Number(lessonForm.value.sort_order || 1),
+      sort_order: Number(lessonForm.value.sort_order),
       lesson_type: type,
       body: type === 8 ? "" : lessonForm.value.body,
       media_object_key: [1, 2, 7, 8].includes(type) ? "" : lessonForm.value.asset_object_key.trim(),
@@ -2237,14 +2305,14 @@ async function saveLesson(): Promise<boolean> {
       external_courseware_ulid: type === 8 ? lessonForm.value.external_courseware_ulid.trim() : "",
       video_provider: type === 1 && lessonForm.value.video_stream_uid.trim() ? "cloudflare" : "",
       video_stream_uid: type === 1 ? lessonForm.value.video_stream_uid.trim() : "",
-      version: selectedLessonRecord.value?.version || 0,
+      ...(editingLessonId.value ? { version: lessonEditVersion.value } : {}),
     })
     if (editingLessonId.value) {
-      await apiClient(`/api/lms/lessons/${encodeURIComponent(editingLessonId.value)}`, { method: "PUT", body })
+      const result = await apiClient<{ success?: boolean }>(`/api/lms/lessons/${encodeURIComponent(editingLessonId.value)}`, { method: "PUT", body })
+      if (result?.success !== true) throw new Error(authoring.value.missing)
       toast.success(copy.value.toasts.lessonUpdated)
       await Promise.all([loadLessons(), loadCompleteCourse(), loadCourseDetail()])
-      newLesson()
-      closeLessonDialog()
+      resetLessonDialog()
     } else {
       const res = await apiClient<JsonRecord>(`/api/lms/chapters/${encodeURIComponent(targetChapterId)}/lessons`, { method: "POST", body })
       toast.success(copy.value.toasts.lessonCreated)
@@ -2252,10 +2320,11 @@ async function saveLesson(): Promise<boolean> {
         editingLessonId.value = String(res.lesson_ulid)
         toast.info(copy.value.toasts.continueUploadLessonFile)
         await Promise.all([loadLessons(), loadCompleteCourse(), loadCourseDetail()])
+        lessonEditVersion.value = positiveVersion(selectedLessonRecord.value?.version) ? selectedLessonRecord.value!.version as number : null
+        lessonBaseline.value = JSON.stringify(lessonForm.value)
       } else {
         await Promise.all([loadLessons(), loadCompleteCourse(), loadCourseDetail()])
-        newLesson()
-        closeLessonDialog()
+        resetLessonDialog()
       }
     }
     return true
@@ -3977,7 +4046,7 @@ onMounted(() => {
               </button>
               <button class="inline-flex items-center justify-center rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-600 transition hover:underline xl:border-0 xl:bg-transparent xl:px-0 xl:py-0 disabled:opacity-50" type="button" :disabled="cloningCourseId === courseId(course)" @click.stop="cloneCourse(course)">
                 <Loader2 v-if="cloningCourseId === courseId(course)" class="mr-1 h-3 w-3 animate-spin xl:hidden" />
-                {{ copy.cloneCourse }}
+                {{ authoring.newVersion }}
               </button>
             </div>
           </div>
@@ -3990,7 +4059,13 @@ onMounted(() => {
       </div>
     </section>
 
-    <main v-else class="space-y-6">
+    <main v-else class="grid items-start gap-6 2xl:grid-cols-[280px_minmax(0,1fr)]">
+      <aside class="rounded-2xl border border-slate-200 bg-slate-50 2xl:sticky 2xl:top-4 2xl:max-h-[85vh] 2xl:overflow-y-auto">
+        <CourseOutline :course-id="selectedCourseId" :complete="completeCourseRecord" :editable="canEditCourseContent" :disabled="completeLoading" :reload="reloadOutline" @select="selectOutlineLesson" @chapter="selectOutlineChapter" />
+        <p class="px-4 pb-4 text-xs text-slate-500">{{ authoring.versionHint }}</p>
+      </aside>
+      <div class="min-w-0 space-y-6">
+      <p v-if="isMinorFix" class="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">{{ authoring.minor }}</p>
       <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-4 md:px-5">
           <div class="min-w-0">
@@ -4040,7 +4115,7 @@ onMounted(() => {
                       </span>
                     </span>
                   </span>
-                  <input v-model="courseForm.course_gpath" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
+                  <input v-model="courseForm.course_gpath" :disabled="!!selectedCourseId" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" placeholder="/gcc/pipeline/..." />
                   <p v-if="duplicateGpathWarning" class="mt-2 text-xs font-semibold text-red-500">{{ copy.duplicateGpathWarning }}</p>
                 </label>
               </div>
@@ -4058,7 +4133,7 @@ onMounted(() => {
               <input v-model="courseForm.thumbnail_file_hash" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" />
             </label>
             <div class="flex flex-col gap-3 sm:flex-row lg:col-span-2">
-              <button class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50 sm:w-auto" :disabled="savingCourse || courseStatusKey(selectedCourse) === 'deprecated'" type="submit">
+              <button class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50 sm:w-auto" :disabled="savingCourse || !canCorrectCourseContent" type="submit">
                 <Loader2 v-if="savingCourse" class="h-4 w-4 animate-spin" />
                 <Save v-else class="h-4 w-4" />
                 {{ savingCourse ? copy.saving : copy.saveCourse }}
@@ -4142,7 +4217,7 @@ onMounted(() => {
               <button class="text-sm font-bold text-blue-700 transition hover:underline" type="button" @click="openChapterDetail(chapter)">
                 {{ copy.viewDetails }}
               </button>
-              <button v-if="canEditCourseContent" class="text-sm font-bold text-amber-600 transition hover:underline" type="button" @click="editChapter(chapter)">
+              <button v-if="canCorrectCourseContent" class="text-sm font-bold text-amber-600 transition hover:underline" type="button" @click="editChapter(chapter)">
                 {{ copy.editChapter }}
               </button>
               <button v-if="canEditCourseContent" class="text-sm font-bold text-red-600 transition hover:underline" type="button" @click="deleteChapter(chapter)">
@@ -4188,7 +4263,7 @@ onMounted(() => {
                 </label>
                 <label class="grid gap-2 text-sm font-bold">
                   {{ copy.sort }}
-                  <input v-model="chapterForm.sort_order" class="h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.sort" type="number" min="1" />
+                  <input v-model="chapterForm.sort_order" :disabled="!canEditCourseContent" class="h-11 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :placeholder="copy.sort" type="number" min="1" />
                 </label>
               </form>
               </div>
@@ -4197,7 +4272,7 @@ onMounted(() => {
               </div>
             </div>
 
-            <div v-if="canEditCourseContent && chapterDialogMode !== 'detail' && chapterActiveTab === 'basic'" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-4 py-4 md:px-5">
+            <div v-if="canCorrectCourseContent && chapterDialogMode !== 'detail' && chapterActiveTab === 'basic'" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-4 py-4 md:px-5">
               <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingChapter" type="button" @click="saveChapter">
                 <Loader2 v-if="savingChapter" class="h-4 w-4 animate-spin" />
                 <Save v-else class="h-4 w-4" />
@@ -4278,7 +4353,7 @@ onMounted(() => {
               <button class="text-sm font-bold text-blue-700 transition hover:underline" type="button" @click="openLessonDetail(item.lesson)">
                 {{ copy.viewDetails }}
               </button>
-              <button v-if="canEditCourseContent" class="text-sm font-bold text-amber-600 transition hover:underline" type="button" @click="editLesson(item.lesson)">
+              <button v-if="canCorrectCourseContent" class="text-sm font-bold text-amber-600 transition hover:underline" type="button" @click="editLesson(item.lesson)">
                 {{ copy.editLesson }}
               </button>
               <button v-if="canEditCourseContent" class="text-sm font-bold text-red-600 transition hover:underline" type="button" @click="deleteLesson(item.lesson)">
@@ -4291,18 +4366,23 @@ onMounted(() => {
 
       <Teleport to="body">
         <section v-if="lessonDialogOpen" v-modal-dialog="closeLessonDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-0 md:p-6" role="dialog" aria-modal="true">
-          <div class="flex h-full max-h-none w-full max-w-[980px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
+          <div class="flex h-full max-h-none w-full max-w-[1600px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-[90vh] md:rounded-3xl">
             <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
               <div>
                 <h2 class="text-xl font-black">{{ lessonDialogMode === "create" ? copy.createLesson : lessonDialogMode === "edit" ? copy.editLesson : copy.lessonDetailTitle }}</h2>
-                <p class="mt-1 text-sm text-slate-500">{{ lessonDialogMode === "detail" ? lessonTitle(selectedLessonRecord) : copy.lessonDetailEmptyHint }}</p>
+                <p class="mt-1 text-sm text-slate-500">{{ lessonDialogMode === "detail" ? lessonTitle(selectedLessonRecord) : lessonDialogMode === "edit" ? lessonForm.title : copy.lessonDetailEmptyHint }}</p>
               </div>
               <button class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="copy.close" @click="closeLessonDialog">
                 <X class="h-5 w-5" />
               </button>
             </div>
 
-            <div class="min-h-0 flex-1 overflow-y-auto p-4 md:p-5">
+            <div class="grid min-h-0 flex-1 overflow-y-auto lg:grid-cols-[260px_minmax(0,1fr)]">
+              <aside class="border-b border-slate-200 bg-slate-50 lg:overflow-y-auto lg:border-r">
+                <CourseOutline :course-id="selectedCourseId" :complete="completeCourseRecord" :editable="canEditCourseContent && !lessonDirty" :selected-id="editingLessonId" :disabled="savingLesson || uploadingLesson || completeLoading" :reload="reloadOutline" @select="selectOutlineLesson" @chapter="selectOutlineChapter" />
+              </aside>
+              <div class="min-w-0 p-4 md:p-5 lg:overflow-y-auto">
+              <p v-if="isMinorFix && lessonDialogMode === 'edit'" class="mb-4 rounded-xl bg-blue-50 p-3 text-sm text-blue-900">{{ authoring.minor }}</p>
               <div v-if="lessonDialogMode !== 'create'" class="mb-4 flex gap-4 border-b border-slate-200">
                 <button :class="lessonActiveTab === 'basic' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="lessonActiveTab = 'basic'">{{ copy.basicInfo }}</button>
                 <button v-if="canEditCourseContent" :class="lessonActiveTab === 'prerequisites' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="lessonActiveTab = 'prerequisites'">{{ copy.prerequisites }}</button>
@@ -4330,7 +4410,7 @@ onMounted(() => {
                 </div>
                 <label class="block">
                   <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.ownerChapter }}</span>
-                  <select v-model="lessonForm.chapter_id" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3">
+                  <select v-model="lessonForm.chapter_id" :disabled="!!editingLessonId" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100">
                     <option value="">{{ copy.selectChapter }}</option>
                     <option v-for="chapter in chapters" :key="chapterId(chapter)" :value="chapterId(chapter)">{{ chapterTitle(chapter) }}</option>
                   </select>
@@ -4343,12 +4423,12 @@ onMounted(() => {
                 <div class="grid items-start gap-3 sm:grid-cols-2">
                   <label class="block">
                     <span class="text-sm font-bold">{{ copy.sort }}</span>
-                    <input v-model="lessonForm.sort_order" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" placeholder="1" type="number" min="1" />
+                    <input v-model="lessonForm.sort_order" :disabled="!canEditCourseContent" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" placeholder="1" type="number" min="1" />
                     <span class="mt-1 block text-xs text-slate-500">{{ copy.sortOrderHint }}</span>
                   </label>
                   <label class="block">
                     <span class="text-sm font-bold">{{ copy.lessonColumns.type }}</span>
-                    <select v-model="lessonForm.lesson_type" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3">
+                    <select v-model="lessonForm.lesson_type" :disabled="!canEditCourseContent" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100">
                       <option value="1">{{ copy.lessonTypes.video }}</option>
                       <option value="2">{{ copy.lessonTypes.text }}</option>
                       <option value="3">{{ copy.lessonTypes.pdf }}</option>
@@ -4361,16 +4441,17 @@ onMounted(() => {
                     <span class="mt-1 block text-xs text-transparent select-none">{{ copy.sortOrderHint }}</span>
                   </label>
                 </div>
-                <label v-if="lessonForm.lesson_type !== '8'" class="block">
+                <div v-if="lessonForm.lesson_type !== '8'" class="block">
                   <span class="text-sm font-bold">
                     <span v-if="lessonForm.lesson_type === '2'" class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.lessonFieldLabels.body }}
                   </span>
-                  <textarea v-model="lessonForm.body" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.lessonBodyPlaceholder" />
-                </label>
+                  <p v-if="editingLessonId && !lessonBodyAvailable" class="mt-2 text-sm text-amber-800">{{ authoring.missing }}</p>
+                  <CourseBodyEditor v-else :key="editingLessonId" v-model="lessonForm.body" class="mt-2" :disabled="savingLesson || uploadingLesson" />
+                </div>
                 <template v-if="lessonForm.lesson_type === '8'">
                   <label class="block">
                     <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.externalCourseware }}</span>
-                    <select v-model="lessonForm.external_courseware_ulid" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3">
+                    <select v-model="lessonForm.external_courseware_ulid" :disabled="!canEditCourseContent" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100">
                       <option value="">{{ copy.selectExternalCourseware }}</option>
                       <option v-for="item in externalCoursewares" :key="String(item.courseware_ulid)" :value="String(item.courseware_ulid)">{{ item.name }} · {{ item.courseware_ulid }}</option>
                     </select>
@@ -4380,13 +4461,13 @@ onMounted(() => {
                 <template v-else-if="lessonForm.lesson_type === '7'">
                   <label class="block">
                     <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.externalUrl }}</span>
-                    <input v-model="lessonForm.asset_object_key" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" placeholder="https://" />
+                    <input v-model="lessonForm.asset_object_key" :disabled="!canEditCourseContent" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" placeholder="https://" />
                   </label>
                 </template>
                 <template v-else-if="lessonForm.lesson_type === '1'">
                   <label class="block">
                     <span class="text-sm font-bold">{{ copy.lessonFieldLabels.video_stream_uid }}</span>
-                    <input v-model="lessonForm.video_stream_uid" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" placeholder="Cloudflare Stream UID" />
+                    <input v-model="lessonForm.video_stream_uid" :disabled="!canEditCourseContent" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" placeholder="Cloudflare Stream UID" />
                     <span class="mt-2 block text-xs font-semibold text-slate-500">
                       {{ editingLessonId ? copy.videoUploadLimitHint : copy.uploadAfterSaveHint }}
                     </span>
@@ -4395,7 +4476,7 @@ onMounted(() => {
                 <template v-else-if="lessonForm.lesson_type !== '2' && lessonForm.lesson_type !== '8'">
                   <label class="block">
                     <span class="text-sm font-bold">{{ copy.assetObjectKeyLabel }}</span>
-                    <input v-model="lessonForm.asset_object_key" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.assetObjectKeyPlaceholder" />
+                    <input v-model="lessonForm.asset_object_key" :disabled="!canEditCourseContent" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :placeholder="copy.assetObjectKeyPlaceholder" />
                     <span v-if="!editingLessonId" class="mt-2 block text-xs font-semibold text-amber-600">
                       {{ copy.uploadAfterSaveHint }}
                     </span>
@@ -4403,7 +4484,7 @@ onMounted(() => {
                   <label class="block">
                     <span class="text-sm font-bold">{{ copy.assetFileHash }}</span>
                     <span class="ml-2 cursor-help rounded-full border border-slate-300 px-2 py-0.5 text-xs text-slate-500" :title="copy.assetHashHint">?</span>
-                    <input v-model="lessonForm.asset_file_hash" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.assetFileHashPlaceholder" />
+                    <input v-model="lessonForm.asset_file_hash" :disabled="!canEditCourseContent" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :placeholder="copy.assetFileHashPlaceholder" />
                   </label>
                 </template>
               </form>
@@ -4411,10 +4492,11 @@ onMounted(() => {
               <div v-if="canEditCourseContent && lessonActiveTab === 'prerequisites' && lessonDialogMode !== 'create'" class="mt-2">
                 <LmsPrerequisitesTab :targetEntityType="1" :targetEntityId="editingLessonId" :course="completeCourseRecord" :copy="copy" />
               </div>
+              </div>
             </div>
 
-            <div v-if="canEditCourseContent && lessonDialogMode !== 'detail' && lessonActiveTab === 'basic'" class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-white px-4 py-4 md:px-5">
-                <div class="min-w-0 flex-1" v-if="editingLessonId && lessonForm.lesson_type !== '7' && lessonForm.lesson_type !== '2' && lessonForm.lesson_type !== '8'">
+            <div v-if="canCorrectCourseContent && lessonDialogMode !== 'detail' && lessonActiveTab === 'basic'" class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-white px-4 py-4 md:px-5">
+                <div class="min-w-0 flex-1" v-if="canEditCourseContent && editingLessonId && lessonForm.lesson_type !== '7' && lessonForm.lesson_type !== '2' && lessonForm.lesson_type !== '8'">
                 <input type="file" ref="lessonFileInput" class="hidden" @change="handleLessonFileUpload" />
                 <button type="button" class="flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50" :disabled="uploadingLesson" @click="lessonFileInput?.click()">
                   <Loader2 v-if="uploadingLesson" class="h-4 w-4 animate-spin" />
@@ -5257,6 +5339,7 @@ onMounted(() => {
         </section>
       </Teleport>
       </template>
+      </div>
     </main>
 
     <div v-if="importOpen" v-modal-dialog="closeImportDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-0 md:p-6" @click.self="closeImportDialog()">

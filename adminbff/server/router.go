@@ -210,6 +210,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 				r.Get("/{lesson_id}/progress", h.GetLmsLessonProgressDetail)
 				r.Get("/{lesson_id}", h.GetLmsLesson)
 				r.Put("/{lesson_id}", h.UpdateLmsLesson)
+				r.Patch("/{lesson_id}/content", h.UpdateLmsLessonContent)
 				r.Delete("/{lesson_id}", h.DeleteLmsLesson)
 			})
 
