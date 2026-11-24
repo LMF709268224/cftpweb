@@ -169,6 +169,60 @@ test("首页没有学习记录时显示开始学习入口", async ({ page }) => 
   await expect(page.getByRole("link", { name: "开始学习", exact: true })).toHaveAttribute("href", "/certifications");
 });
 
+test("首页身份标签支持会员等级、认证身份和中英文切换", async ({ page }) => {
+  await seedAuthenticatedCandidate(page);
+  await installCandidateApiMocks(page, async ({ pathname }) => {
+    if (pathname === "/api/user/me") {
+      const english = await page.evaluate(() => localStorage.getItem("app_lang") === "en");
+      return { data: {
+        ...candidateUser,
+        account_status: {
+          membership: { available: true, is_member: true, plan_name: english ? "CFtP Fellow" : "CFtP 资深会员" },
+          certification: { available: true, is_candidate: true, purchase_count: 4, programs: [
+            { pipeline_ulid: "cftp-1", pipeline_config_ulid: "cftp-v1", pipeline_gpath: "/pipelines/cftp", name: "CFtP", status: "PIPELINE_STATUS_RUNNING" },
+            { pipeline_ulid: "cftp-2", pipeline_config_ulid: "cftp-v2", pipeline_gpath: "/pipelines/cftp", name: "CFtP", status: "PIPELINE_STATUS_WAIT_FINAL_ELIG" },
+            { pipeline_ulid: "cfta-1", pipeline_config_ulid: "cfta-v1", name: "CFtA", status: "PIPELINE_STATUS_COMPLETED" },
+            { pipeline_ulid: "cctt-1", pipeline_config_ulid: "cctt-v1", name: "CCTT", status: "PIPELINE_STATUS_CANCELLED" },
+          ] },
+        },
+      } };
+    }
+    return emptyPortalResponse({ pathname } as ApiMockContext);
+  });
+  await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+  const badges = page.getByTestId("dashboard-account-status");
+  await expect(badges.getByRole("listitem")).toHaveText(["有效会员", "CFtP 资深会员", "CFtP 考生"]);
+  await expect(badges).toHaveAttribute("aria-label", "当前状态");
+  await page.getByRole("button", { name: "中文 / EN" }).click();
+  await expect(badges.getByRole("listitem")).toHaveText(["Active member", "CFtP Fellow", "CFtP Candidate"]);
+  await expect(badges).toHaveAttribute("aria-label", "Current status");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(badges).toBeVisible();
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+});
+
+test("首页非会员标签保留实际项目身份且不显示失效会员等级", async ({ page }) => {
+  await seedAuthenticatedCandidate(page);
+  await installCandidateApiMocks(page, ({ pathname }) => {
+    if (pathname === "/api/user/me") return { data: {
+      ...candidateUser,
+      account_status: {
+        membership: { available: true, is_member: false, plan_name: "CFtP Fellow" },
+        certification: { available: true, is_candidate: true, purchase_count: 1, programs: [
+          { pipeline_ulid: "cfta-1", pipeline_config_ulid: "cfta-config", name: "CFtA", status: "PIPELINE_STATUS_RUNNING" },
+        ] },
+        qualification: { available: true, has_qualification: true, credential_count: 3 },
+      },
+    } };
+    return emptyPortalResponse({ pathname } as ApiMockContext);
+  });
+  await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+  const badges = page.getByTestId("dashboard-account-status");
+  await expect(badges.getByRole("listitem")).toHaveText(["当前非会员", "CFtA 考生"]);
+  await page.getByRole("button", { name: "中文 / EN" }).click();
+  await expect(badges.getByRole("listitem")).toHaveText(["Not currently a member", "CFtA Candidate"]);
+});
+
 test("首页不展示微服务未能确认的用户状态", async ({ page }) => {
   await seedAuthenticatedCandidate(page);
   await installCandidateApiMocks(page, ({ pathname }) => {

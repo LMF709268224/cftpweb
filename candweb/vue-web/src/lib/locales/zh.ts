@@ -264,6 +264,7 @@ export const zh = {
         accountMembership: "会员身份",
         accountActiveMember: "有效会员",
         accountNotMember: "当前非会员",
+        accountProgramCandidate: "{program} 考生",
         accountCertification: "认证学习状态",
         accountPurchasedPrograms: "已购买 {count} 项认证",
         accountNoCertification: "暂未购买认证",

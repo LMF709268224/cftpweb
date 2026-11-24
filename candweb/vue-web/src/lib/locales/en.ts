@@ -266,6 +266,7 @@ export const en: AppTranslations = {
         accountMembership: "Membership",
         accountActiveMember: "Active member",
         accountNotMember: "Not currently a member",
+        accountProgramCandidate: "{program} Candidate",
         accountCertification: "Certification learning",
         accountPurchasedPrograms: "{count} certification(s) purchased",
         accountNoCertification: "No certification purchased",
