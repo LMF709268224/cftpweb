@@ -5,6 +5,7 @@ import { AlertCircle, ArrowUpCircle, Check, ChevronDown, Crown, ExternalLink, Lo
 import { toast } from "vue-sonner"
 import AppShell from "@/components/AppShell.vue"
 import AppPagination from "@/components/AppPagination.vue"
+import MembershipComparison from "@/components/MembershipComparison.vue"
 import PageFeedback from "@/components/PageFeedback.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useBodyScrollLock } from "@/lib/bodyScrollLock"
@@ -810,6 +811,8 @@ watch(lang, () => {
               {{ t.membership.noPlans }}
             </div>
           </section>
+
+          <MembershipComparison v-if="activeTab === 'levels'" />
 
           <section v-if="activeTab === 'history'" class="membership-records-panel overflow-hidden rounded-[16px] border border-slate-100 bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
             <div v-for="item in history" :key="item.membership_record_ulid || item.membership_order_ulid" class="membership-record-item mb-3 grid gap-4 rounded-[14px] border border-slate-100 bg-slate-50/70 p-4 transition-all last:mb-0 hover:-translate-y-0.5 hover:border-primary/20 hover:bg-white hover:shadow-[0_12px_28px_rgba(15,74,82,0.08)] md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
