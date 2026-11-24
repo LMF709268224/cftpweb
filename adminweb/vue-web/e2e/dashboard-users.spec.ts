@@ -42,7 +42,7 @@ for (const lang of ["zh", "en"] as const) {
       const rows = mobile ? users.locator("article") : users.locator("tbody tr")
       await expect(rows).toHaveCount(2)
       await expect(rows.first().getByText(lang === "zh" ? "附属会员" : "Affiliate Member", { exact: true })).toBeVisible()
-      await expect(rows.nth(1).getByText(lang === "zh" ? "无有效会员" : "No active membership", { exact: true })).toBeVisible()
+      await expect(rows.nth(1).getByText(lang === "zh" ? "暂时无法获取" : "Temporarily unavailable", { exact: true })).toBeVisible()
       expect(membershipIds.sort()).toEqual(["candidate-a", "candidate-b"])
       await expect(users.getByRole("button", { name: lang === "zh" ? "全部账号" : "All accounts", exact: true })).toHaveCount(0)
       expect(registrationQueries).toHaveLength(0)

@@ -92,15 +92,26 @@ const { lang, t } = useAdminLanguage()
 const copy = computed(() => t.value.dashboard)
 const memberships = useCandidateMemberships(() => data.value?.users || [])
 
-const userStats = computed<UserStats>(() => data.value?.user_stats || { total: 0, active: 0, inactive: 0, admins: 0, members: 0, email_verified: 0 })
-const totalPipelines = computed(() => data.value?.stage_buckets.reduce((sum, item) => sum + Number(item.count || 0), 0) || 0)
-const totalPaidOrders = computed(() => data.value?.today_revenue.reduce((sum, item) => sum + Number(item.order_count || 0), 0) || 0)
-const userTotal = computed(() => Number(data.value?.user_total || data.value?.users.length || 0))
+function isCount(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0
+}
+const totalPipelines = computed(() => {
+  const buckets = data.value?.stage_buckets
+  if (!Array.isArray(buckets) || typeof data.value?.stage_buckets_exact !== "boolean" || buckets.some((item) => !isCount(item.count))) return null
+  return buckets.reduce((sum, item) => sum + item.count, 0)
+})
+const totalPaidOrders = computed(() => {
+  const items = data.value?.today_revenue
+  if (!Array.isArray(items) || items.some((item) => !isCount(item.order_count))) return null
+  return items.reduce((sum, item) => sum + item.order_count, 0)
+})
+const userTotal = computed(() => data.value?.user_total)
 const canPrevUsers = computed(() => userPage.value > 1)
-const canNextUsers = computed(() => userPage.value * userPageSize < userTotal.value)
+const canNextUsers = computed(() => userTotal.value !== undefined && userPage.value * userPageSize < userTotal.value)
 const revenueText = computed(() => {
   if (!data.value) return copy.value.unavailable
-  const items = data.value?.today_revenue || []
+  const items = data.value.today_revenue
+  if (!Array.isArray(items) || typeof data.value.today_revenue_exact !== "boolean" || items.some((item) => typeof item.currency !== "string" || !item.currency || !Number.isSafeInteger(item.amount_minor))) return copy.value.unavailable
   if (!items.length) return copy.value.noRevenue
   return items.map((item) => `${item.currency} ${formatMinorAmount(item.amount_minor) ?? "-"}`).join(" / ")
 })
@@ -113,7 +124,12 @@ const mailCards = computed(() => [
   { status: "SCHEDULING", label: t.value.mailsAdmin.statusLabels.scheduling },
   { status: "FAILED", label: t.value.mailsAdmin.statusLabels.failed },
   { status: "CANCELLED", label: t.value.mailsAdmin.statusLabels.cancelled },
-].map((item) => ({ ...item, count: mailCounts.value?.[item.status] ?? 0 })))
+].map((item) => ({ ...item, count: mailCounts.value?.[item.status] })))
+
+function groupCount(group: "staff" | "candidate") {
+  const count = group === "staff" ? data.value?.user_stats?.admins : data.value?.candidate_total
+  return isCount(count) ? count : copy.value.unavailable
+}
 
 async function loadPendingReviews() {
   reviewsLoading.value = true
@@ -136,9 +152,8 @@ async function loadMailStats() {
   mailCounts.value = null
   try {
     const result = await apiClient<{ status_counts?: Record<string, number> }>("/api/mails/stats")
-    // The protobuf map is omitted by the BFF's JSON encoder when no mail exists.
-    const counts = result.status_counts ?? {}
-    if (typeof counts !== "object" || Array.isArray(counts) || Object.values(counts).some((count) => !Number.isSafeInteger(count) || count < 0)) {
+    const counts = result?.status_counts
+    if (!counts || typeof counts !== "object" || Array.isArray(counts) || Object.values(counts).some((count) => !isCount(count))) {
       throw new Error("Invalid mail statistics response")
     }
     mailCounts.value = counts
@@ -208,7 +223,8 @@ function formatDate(raw: string) {
 }
 
 function lastLoginLabel(user: DashboardUser) {
-  if (!user.last_login_at) return copy.value.noLoginRecord
+  if (typeof user.last_login_at !== "string") return copy.value.unavailable
+  if (user.last_login_at === "") return copy.value.noLoginRecord
   const parsed = new Date(user.last_login_at)
   return Number.isNaN(parsed.getTime()) ? copy.value.unavailable : parsed.toLocaleString(lang.value === "zh" ? "zh-CN" : "en-US")
 }
@@ -216,6 +232,11 @@ function lastLoginLabel(user: DashboardUser) {
 function mfaLabel(user: DashboardUser) {
   if (typeof user.mfa_enabled !== "boolean") return copy.value.unavailable
   return user.mfa_enabled ? copy.value.mfaEnabled : copy.value.mfaDisabled
+}
+
+function verificationLabel(user: DashboardUser) {
+  if (typeof user.email_verified !== "boolean") return copy.value.unavailable
+  return user.email_verified ? copy.value.verified : copy.value.unverified
 }
 
 const userDetailFields = computed(() => {
@@ -235,7 +256,7 @@ const userDetailFields = computed(() => {
       ] : []),
     ] : []),
     { label: copy.value.table.status, value: userStatusLabel(user.status) },
-    { label: copy.value.table.emailVerified, value: user.email_verified ? copy.value.verified : copy.value.unverified },
+    { label: copy.value.table.emailVerified, value: verificationLabel(user) },
     ...(user.user_group === "staff" ? [{ label: copy.value.mfa, value: mfaLabel(user) }] : []),
     { label: copy.value.lastLogin, value: lastLoginLabel(user) },
     { label: copy.value.table.created, value: formatDate(user.created_at) },
@@ -262,10 +283,12 @@ async function loadDashboard(page = userPage.value) {
     if (statusFilter.value !== "all") params.set("user_status", statusFilter.value)
     const response = await apiClient<DashboardData>(`/api/dashboard/ops?${params}`)
     if (requestId !== dashboardRequestId) return
+    if (!response || !Array.isArray(response.users) || !isCount(response.user_total) || !isCount(response.user_page) || response.user_page < 1 || response.user_page_size !== userPageSize) throw new Error("Incomplete dashboard user page")
     data.value = response
-    userPage.value = Number(response.user_page || page)
+    userPage.value = response.user_page
   } catch (err) {
     if (requestId !== dashboardRequestId) return
+    data.value = null
     console.error(err)
     toast.error(copy.value.loadFailed)
   } finally {
@@ -339,8 +362,8 @@ onUnmounted(() => {
             <CreditCard class="h-5 w-5 text-blue-600" />
           </div>
           <p class="mt-4 break-words text-3xl font-black">{{ loading ? copy.loading : revenueText }}</p>
-          <p v-if="data" class="mt-2 text-sm text-slate-500">{{ copy.paidOrders(totalPaidOrders) }}</p>
-          <p v-if="data && !data.today_revenue_exact" class="mt-2 text-xs font-bold text-amber-700">{{ copy.sampledAggregation(data.aggregation_sample_limit) }}</p>
+          <p v-if="totalPaidOrders !== null" class="mt-2 text-sm text-slate-500">{{ copy.paidOrders(totalPaidOrders) }}</p>
+          <p v-if="data?.today_revenue_exact === false && isCount(data.aggregation_sample_limit)" class="mt-2 text-xs font-bold text-amber-700">{{ copy.sampledAggregation(data.aggregation_sample_limit) }}</p>
           <span class="mt-4 inline-flex items-center gap-1 text-sm font-bold text-blue-700">{{ copy.viewOrders }} <ArrowUpRight class="h-4 w-4" /></span>
         </RouterLink>
         <RouterLink to="/applications" :aria-label="copy.viewReviews" class="rounded-2xl border bg-white p-5 shadow-sm transition hover:border-blue-400 hover:shadow-md" :class="pendingReviews && pendingReviews.total > 0 ? 'border-amber-300' : 'border-slate-200'" data-testid="dashboard-reviews">
@@ -363,12 +386,12 @@ onUnmounted(() => {
             <h2 class="text-xl font-black text-slate-950">{{ copy.userManagement }}</h2>
             <p class="mt-1 text-sm text-slate-500">{{ copy.userManagementHint }}</p>
           </div>
-          <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">{{ copy.userPageText(userPage, userTotal) }}</span>
+          <span v-if="data" class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">{{ copy.userPageText(userPage, data.user_total) }}</span>
         </div>
         <div class="mt-4 inline-flex max-w-full gap-1 overflow-x-auto rounded-lg border border-slate-200 bg-slate-50 p-1" :aria-label="copy.userManagement">
           <button v-for="group in userGroups" :key="group" type="button" class="whitespace-nowrap rounded-md px-3 py-2 text-sm font-bold" :class="userGroup === group ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-600 hover:text-slate-950'" :aria-label="copy.groups[group]" :aria-pressed="userGroup === group" @click="selectUserGroup(group)">
             {{ copy.groups[group] }}
-            <span v-if="data" aria-hidden="true" class="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs">{{ group === 'staff' ? userStats.admins : data.candidate_total }}</span>
+            <span v-if="data" aria-hidden="true" class="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs">{{ groupCount(group) }}</span>
           </button>
         </div>
         <div class="mt-4 grid gap-4 lg:grid-cols-[minmax(0,2fr)_1fr]">
@@ -406,6 +429,7 @@ onUnmounted(() => {
           <Loader2 class="mr-2 inline h-5 w-5 animate-spin" />
           {{ copy.loading }}
         </div>
+        <div v-else-if="!data" class="px-4 py-10 text-center text-slate-500" role="alert">{{ copy.loadFailed }}</div>
         <div v-else-if="filteredUsers.length === 0" class="px-4 py-10 text-center text-slate-400">{{ copy.noUsers }}</div>
         <div v-else class="divide-y divide-slate-100">
           <article v-for="user in filteredUsers" :key="user.id" class="px-4 py-4">
@@ -440,7 +464,8 @@ onUnmounted(() => {
               </div>
               <div v-else class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
                 <span class="text-xs font-black text-slate-400">{{ copy.table.emailVerified }}</span>
-                <span :title="user.email_verified ? copy.verified : copy.unverified" :class="['inline-flex rounded-full p-1 text-xs font-bold', user.email_verified ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700']">
+                <span v-if="typeof user.email_verified !== 'boolean'" class="text-slate-700">{{ copy.unavailable }}</span>
+                <span v-else :title="verificationLabel(user)" :class="['inline-flex rounded-full p-1 text-xs font-bold', user.email_verified ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700']">
                   <Check v-if="user.email_verified" class="h-4 w-4" aria-hidden="true" />
                   <X v-else class="h-4 w-4" aria-hidden="true" />
                   <span class="sr-only">{{ user.email_verified ? copy.verified : copy.unverified }}</span>
@@ -482,6 +507,9 @@ onUnmounted(() => {
                 {{ copy.loading }}
               </td>
             </tr>
+            <tr v-else-if="!data">
+              <td :colspan="userGroup === 'candidate' ? 9 : 8" class="px-6 py-10 text-center text-slate-500" role="alert">{{ copy.loadFailed }}</td>
+            </tr>
             <tr v-else-if="filteredUsers.length === 0">
               <td :colspan="userGroup === 'candidate' ? 9 : 8" class="px-6 py-10 text-center text-slate-400">{{ copy.noUsers }}</td>
             </tr>
@@ -501,7 +529,8 @@ onUnmounted(() => {
                 </td>
                 <td class="w-28 whitespace-nowrap px-6 py-4">
                   <span v-if="userGroup === 'staff'" class="text-slate-700">{{ mfaLabel(user) }}</span>
-                  <span v-else :title="user.email_verified ? copy.verified : copy.unverified" :class="['inline-flex rounded-full p-1 text-xs font-bold', user.email_verified ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700']">
+                  <span v-else-if="typeof user.email_verified !== 'boolean'" class="text-slate-700">{{ copy.unavailable }}</span>
+                  <span v-else :title="verificationLabel(user)" :class="['inline-flex rounded-full p-1 text-xs font-bold', user.email_verified ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700']">
                     <Check v-if="user.email_verified" class="h-4 w-4" aria-hidden="true" />
                     <X v-else class="h-4 w-4" aria-hidden="true" />
                     <span class="sr-only">{{ user.email_verified ? copy.verified : copy.unverified }}</span>
@@ -534,19 +563,20 @@ onUnmounted(() => {
           <div>
             <h2 class="text-xl font-black">{{ copy.stageDistribution }}</h2>
             <p class="mt-1 text-sm text-slate-500">{{ copy.stageDistributionHint }}</p>
-            <p v-if="data && !data.stage_buckets_exact" class="mt-1 text-xs font-bold text-amber-700">{{ copy.sampledAggregation(data.aggregation_sample_limit) }}</p>
+            <p v-if="data?.stage_buckets_exact === false && isCount(data.aggregation_sample_limit)" class="mt-1 text-xs font-bold text-amber-700">{{ copy.sampledAggregation(data.aggregation_sample_limit) }}</p>
           </div>
-          <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{{ totalPipelines }} {{ copy.pipelines }}</span>
+          <span v-if="totalPipelines !== null" class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{{ totalPipelines }} {{ copy.pipelines }}</span>
         </div>
         <div v-if="loading" class="flex h-48 items-center justify-center text-slate-400">
           <Loader2 class="mr-2 h-5 w-5 animate-spin" />
           {{ copy.loading }}
         </div>
-        <div v-else-if="!data?.stage_buckets.length" class="flex h-48 items-center justify-center text-slate-400">
+        <div v-else-if="totalPipelines === null" class="flex h-48 items-center justify-center text-slate-500">{{ copy.unavailable }}</div>
+        <div v-else-if="data?.stage_buckets.length === 0" class="flex h-48 items-center justify-center text-slate-400">
           {{ copy.noStageData }}
         </div>
         <div v-else class="divide-y divide-slate-100">
-          <div v-for="item in data.stage_buckets" :key="`${item.stage_id}-${item.status}`" class="flex items-center justify-between gap-4 p-5">
+          <div v-for="item in data?.stage_buckets" :key="`${item.stage_id}-${item.status}`" class="flex items-center justify-between gap-4 p-5">
             <div class="min-w-0">
               <p class="break-all text-base font-black">{{ stageLabel(item.stage_id) }}</p>
               <span class="mt-2 inline-flex rounded-full border px-3 py-1 text-xs font-bold" :class="badgeClass(item.status)">
@@ -575,9 +605,9 @@ onUnmounted(() => {
           <p v-if="mailStatsLoading" class="py-8 text-center text-slate-500">{{ copy.loading }}</p>
           <p v-else-if="!mailCounts" class="py-8 text-center text-slate-500">{{ copy.unavailable }}</p>
           <div v-else class="mt-4 grid grid-cols-2 gap-3">
-            <RouterLink v-for="card in mailCards" :key="card.status" :to="{ path: '/mails', query: { tab: 'sent', status: card.status } }" class="rounded-xl border p-4 transition hover:border-blue-400" :class="card.status === 'FAILED' && card.count > 0 ? 'border-red-200 bg-red-50 text-red-700' : 'border-slate-200 bg-slate-50'">
+            <RouterLink v-for="card in mailCards" :key="card.status" :to="{ path: '/mails', query: { tab: 'sent', status: card.status } }" class="rounded-xl border p-4 transition hover:border-blue-400" :class="card.status === 'FAILED' && card.count !== undefined && card.count > 0 ? 'border-red-200 bg-red-50 text-red-700' : 'border-slate-200 bg-slate-50'">
               <div class="flex items-center justify-between gap-2 text-sm font-bold">{{ card.label }} <ArrowUpRight class="h-4 w-4 shrink-0" /></div>
-              <p class="mt-2 text-2xl font-black">{{ card.count }}</p>
+              <p class="mt-2 text-2xl font-black">{{ card.count === undefined ? copy.unavailable : card.count }}</p>
             </RouterLink>
           </div>
           <p v-if="mailCounts && mailCounts.FAILED > 0" class="mt-4 flex items-start gap-2 rounded-xl bg-red-50 p-3 text-sm text-red-700">

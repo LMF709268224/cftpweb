@@ -167,3 +167,56 @@ func TestAdminAuditTaxonomyUsesStableSearchableNames(t *testing.T) {
 		}
 	}
 }
+
+func TestAuditMiddlewareRecordsUserManagementReadsWithoutCopyingData(t *testing.T) {
+	for _, tc := range []struct {
+		name, path, request, action, resourceID string
+		status                                  int
+	}{
+		{"profile", "/api/user/me", "/api/user/me", "view_own_profile", "01ADMINULID00000000000000", http.StatusOK},
+		{"users", "/api/user/list", "/api/user/list", "view_user_list", "", http.StatusOK},
+		{"staff", "/api/dashboard/ops", "/api/dashboard/ops?user_group=staff&user_keyword=private-search", "view_user_list", "", http.StatusOK},
+		{"candidates", "/api/dashboard/ops", "/api/dashboard/ops?user_group=candidate", "view_user_list", "", http.StatusOK},
+		{"audit list", "/api/audit/logs", "/api/audit/logs?keyword=private-search", "view_audit_logs", "", http.StatusOK},
+		{"audit detail", "/api/audit/logs/{audit_ulid}", "/api/audit/logs/audit-123", "view_audit_log", "audit-123", http.StatusOK},
+		{"failed read", "/api/user/list", "/api/user/list", "view_user_list", "", http.StatusServiceUnavailable},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			publisher := &recordingAuditPublisher{}
+			router := auditTestRouter(publisher, http.MethodGet, tc.path, func(w http.ResponseWriter, _ *http.Request) {
+				handler.WriteJSON(w, tc.status, map[string]any{"admin_user_id": "wrong-person", "audit_log_id": "wrong-log", "email": "private-response@example.test"})
+			})
+			recorder := httptest.NewRecorder()
+			router.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, tc.request, nil))
+			if recorder.Code != tc.status || len(publisher.events) != 1 {
+				t.Fatalf("status=%d events=%d", recorder.Code, len(publisher.events))
+			}
+			event := publisher.events[0]
+			if event.Action != tc.action || event.Resource.ID != tc.resourceID {
+				t.Fatalf("unexpected audit event: %+v", event)
+			}
+			if (tc.status >= 400) != (event.Status == "FAILED") {
+				t.Fatalf("incorrect audit outcome: %s", event.Status)
+			}
+			payload, _ := json.Marshal(event)
+			for _, forbidden := range []string{"private-search", "private-response", "wrong-person", "wrong-log"} {
+				if strings.Contains(string(payload), forbidden) {
+					t.Fatalf("audit copied read data: %s", forbidden)
+				}
+			}
+			if tc.name == "staff" || tc.name == "candidates" {
+				var details map[string]any
+				if err := json.Unmarshal([]byte(event.Details), &details); err != nil {
+					t.Fatal(err)
+				}
+				want := "staff"
+				if tc.name == "candidates" {
+					want = "candidate"
+				}
+				if details["user_group_filter"] != want {
+					t.Fatalf("group=%v", details["user_group_filter"])
+				}
+			}
+		})
+	}
+}

@@ -33,13 +33,10 @@ export function useCandidateMemberships(users: () => Candidate[]) {
     function planName(id: string) {
       if (!names.has(id)) {
         names.set(id, (async () => {
-          const [plan, translations] = await Promise.allSettled([
-            apiClient<{ name: string }>(`/api/memberships/${encodeURIComponent(id)}`, init),
-            apiClient<{ translations?: Record<string, { name?: string }> }>(`/api/memberships/${encodeURIComponent(id)}/translations?locale=${locale}`, init),
-          ])
-          if (translations.status === "fulfilled" && translations.value.translations?.[locale]?.name) return translations.value.translations[locale]!.name!
-          if (plan.status === "fulfilled" && plan.value.name) return plan.value.name
-          throw new Error("Membership plan name unavailable")
+          const translations = await apiClient<{ translations?: Record<string, { name?: string }> }>(`/api/memberships/${encodeURIComponent(id)}/translations?locale=${locale}`, init)
+          const name = translations.translations?.[locale]?.name
+          if (typeof name !== "string" || !name.trim()) throw new Error("Membership translation unavailable")
+          return name
         })())
       }
       return names.get(id)!
@@ -51,8 +48,10 @@ export function useCandidateMemberships(users: () => Candidate[]) {
       while (queue.length && !request.signal.aborted) {
         const id = queue.shift()!
         try {
-          const result = await apiClient<{ membership?: MembershipRecord }>(`/api/memberships/active?candidate_ulid=${encodeURIComponent(id)}`, init)
+          const result = await apiClient<{ membership?: MembershipRecord | null }>(`/api/memberships/active?candidate_ulid=${encodeURIComponent(id)}`, init)
+          if (!result || !Object.hasOwn(result, "membership")) throw new Error("Membership result missing")
           const record = result.membership
+          if (record !== null && (typeof record !== "object" || Array.isArray(record))) throw new Error("Invalid membership result")
           if (record && (record.candidate_ulid !== id || !record.membership_ulid)) throw new Error("Invalid candidate membership response")
           const expires = record ? Date.parse(record.expires_at || "") : 0
           const starts = record ? Date.parse(record.started_at || "") : 0

@@ -45,11 +45,12 @@ async function load(reset = false) {
     if (cursor.value) params.set("cursor", cursor.value)
     const result = await apiClient<{ pipelines?: Registration[]; has_more?: boolean; next_cursor?: string }>(`/api/prog/pipelines?${params}`, init)
     if (request.signal.aborted) return
+    if (!Array.isArray(result?.pipelines) || typeof result.has_more !== "boolean") throw new Error("Incomplete registration page")
     if (result.has_more && (!result.next_cursor || result.next_cursor === cursor.value)) throw new Error("Registration cursor did not advance")
-    const items = result.pipelines || []
+    const items = result.pipelines
     rows.value = [...rows.value, ...items]
     cursor.value = result.next_cursor || ""
-    hasMore.value = Boolean(result.has_more)
+    hasMore.value = result.has_more
     await Promise.all([...new Set(items.map((item) => item.pipeline_cc_ulid).filter((id) => id && !names.value[id]))].map(async (id) => {
       try {
         const config = await apiClient<{ name?: string }>(`/api/pipelines/${encodeURIComponent(id)}`, init)

@@ -17,7 +17,10 @@
 
 ## Interface Contract Discipline
 
+- Non-negotiable: do not implement fallback, placeholder business data, or inferred compatibility behavior. Only implement features backed by actual returned data and confirmed rules. Missing fields, unavailable interfaces, and ambiguous rules must be recorded in `docs/admin-feedback/` (or the task's agreed checklist), not made to appear functional.
+- Missing counts are not zero; missing status or role fields are not a default status or identity; a failed or incomplete list response is not an empty list. Do not substitute another field or language when the required field or translation is absent. Show an explicit unavailable/error state and document the gap.
+- When reviewing earlier changes, remove such fallbacks within the reviewed scope. Distinguish explicit zero/false/empty values returned under the API contract from fields that were not returned.
 - Do not add guessed fallback or auto-fill behavior just to make an API call pass. If an interface rejects a request, first determine whether our request shape is wrong, the contract changed, or the microservice has a bug.
 - Do not silently copy data between semantically different fields, especially persisted business JSON fields such as prices, IDs, status, or eligibility flags, unless the microservice contract explicitly requires that behavior.
 - If a contract mismatch is unclear, document the exact request, response, and observed state before changing behavior. Prefer asking the microservice owner with concrete examples over mutating stored data from the frontend or BFF.
-- Any compatibility fallback must be explicit, narrowly scoped, reviewed against the service contract, and called out in the final response with the reason it is safe.
+- Do not add compatibility fallbacks without an explicit user instruction approving that specific behavior; documenting a fallback does not authorize it.

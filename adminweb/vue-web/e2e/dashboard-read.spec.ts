@@ -195,7 +195,7 @@ test("user groups keep staff and candidates separate while showing membership on
   await expect(table.getByText("Candidate", { exact: true })).toBeVisible()
   await expect(table.getByText("Staff", { exact: true })).toHaveCount(0)
   await expect(table.getByRole("columnheader", { name: "会员等级", exact: true })).toBeVisible()
-  await expect(table.getByText("无有效会员", { exact: true })).toBeVisible()
+  await expect(table.locator("tbody tr td").nth(3)).toHaveText("暂时无法获取")
   await page.getByRole("button", { name: "内部员工", exact: true }).click()
   await expect.poll(() => queries.at(-1)?.get("user_group")).toBe("staff")
   await expect(table.getByText("Staff", { exact: true })).toBeVisible()
@@ -260,7 +260,7 @@ test("dashboard recovers after its initial read fails", async ({ page }) => {
   })
 
   await page.goto("/dashboard")
-  await expect(page.getByText("工作台加载失败", { exact: true })).toBeVisible()
+  await expect(page.locator("table").getByRole("alert")).toHaveText("工作台加载失败")
   await page.getByRole("button", { name: "刷新", exact: true }).click()
 
   await expect(page.locator("table").getByText("Recovered Administrator", { exact: true })).toBeVisible()
@@ -304,7 +304,7 @@ for (const lang of ["zh", "en"] as const) {
       for (const [index, role] of roles.entries()) {
         await expect(rows.nth(index).getByText(role, { exact: true })).toBeVisible()
         await expect(section.getByRole("option", { name: role, exact: true })).toHaveCount(0)
-        if (index === 2) await expect(rows.nth(index).getByText(lang === "zh" ? "无有效会员" : "No active membership", { exact: true })).toBeVisible()
+        if (index === 2) await expect(rows.nth(index).getByText(lang === "zh" ? "暂时无法获取" : "Temporarily unavailable", { exact: true }).first()).toBeVisible()
         const mark = rows.nth(index).locator(`[title="${index === 1 ? unverified : verified}"]`)
         await expect(mark).toBeVisible()
         await expect(mark.locator(index === 1 ? "svg.lucide-x" : "svg.lucide-check")).toBeVisible()
@@ -328,10 +328,10 @@ for (const lang of ["zh", "en"] as const) {
         await expect(values.nth(3)).toHaveText("Shanghai")
         await expect(values.nth(4)).toHaveText(role)
         const detailOffset = index === 0 ? 0 : 1
-        if (detailOffset) await expect(values.nth(5)).toHaveText(lang === "zh" ? "无有效会员" : "No active membership")
+        if (detailOffset) await expect(values.nth(5)).toHaveText(lang === "zh" ? "暂时无法获取" : "Temporarily unavailable")
         await expect(values.nth(5 + detailOffset)).toHaveText(lang === "zh" ? (index === 1 ? "停用" : "启用") : (index === 1 ? "Inactive" : "Enabled"))
         await expect(values.nth(6 + detailOffset)).toHaveText(index === 1 ? unverified : verified)
-        await expect(values.nth(7 + detailOffset + (index === 0 ? 1 : 0))).toHaveText(lang === "zh" ? "暂无登录记录" : "No login recorded")
+        await expect(values.nth(7 + detailOffset + (index === 0 ? 1 : 0))).toHaveText(lang === "zh" ? "暂时无法获取" : "Temporarily unavailable")
         await expect(values.last()).not.toHaveText("-")
         await expect(dialog.locator("input, textarea")).toHaveCount(0)
         const close = dialog.getByRole("button", { name: lang === "zh" ? "关闭" : "Close", exact: true })

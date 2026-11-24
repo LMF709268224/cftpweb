@@ -79,6 +79,8 @@ type auditSpec struct {
 	IDParam      string
 	IDKeys       []string
 	BoolAction   *boolAction
+	ReadOnly     bool
+	OwnProfile   bool
 }
 
 type boolAction struct {
@@ -89,6 +91,10 @@ type boolAction struct {
 
 func operation(action, resourceType, idParam string, idKeys ...string) auditSpec {
 	return auditSpec{Action: action, ResourceType: resourceType, IDParam: idParam, IDKeys: idKeys}
+}
+
+func readOperation(action, resourceType, idParam string) auditSpec {
+	return auditSpec{Action: action, ResourceType: resourceType, IDParam: idParam, ReadOnly: true}
 }
 
 func operationByBool(field, trueAction, falseAction, resourceType string, idKeys ...string) auditSpec {
@@ -112,12 +118,17 @@ func route(method, path string) auditRoute {
 	return auditRoute{Method: method, Path: path}
 }
 
-// adminAuditOperations is the searchable taxonomy for admin-side mutations.
+// adminAuditOperations is the searchable taxonomy for admin operations.
 // Actions are lower_snake_case verb-object names. Resource types are stable,
 // singular domain nouns. Renaming either value is a data-contract change.
 var adminAuditOperations = map[auditRoute]auditSpec{
-	route(http.MethodPut, "/api/user/profile"):  operation("update_own_profile", "admin_user", ""),
-	route(http.MethodPut, "/api/user/password"): operation("change_own_password", "admin_user", ""),
+	route(http.MethodGet, "/api/user/me"):                 {Action: "view_own_profile", ResourceType: "admin_user", ReadOnly: true, OwnProfile: true},
+	route(http.MethodGet, "/api/user/list"):               readOperation("view_user_list", "user_directory", ""),
+	route(http.MethodGet, "/api/dashboard/ops"):           readOperation("view_user_list", "user_directory", ""),
+	route(http.MethodGet, "/api/audit/logs"):              readOperation("view_audit_logs", "audit_log", ""),
+	route(http.MethodGet, "/api/audit/logs/{audit_ulid}"): readOperation("view_audit_log", "audit_log", "audit_ulid"),
+	route(http.MethodPut, "/api/user/profile"):            operation("update_own_profile", "admin_user", ""),
+	route(http.MethodPut, "/api/user/password"):           operation("change_own_password", "admin_user", ""),
 
 	route(http.MethodPut, "/api/pipelines/{pipeline_id}/translations"):    operation("update_pipeline_translations", "certification_pipeline", "pipeline_id"),
 	route(http.MethodPost, "/api/pipelines/"):                             operation("create_pipeline", "certification_pipeline", "", "pipeline_id", "pipeline_ulid"),
@@ -368,7 +379,12 @@ func buildAdminAuditEvent(r *http.Request, spec auditSpec, routePattern string, 
 	action := resolveAuditAction(spec, requestBody)
 	params := routeParams(r)
 	resourceID := params[spec.IDParam]
-	if resourceID == "" {
+	if spec.OwnProfile {
+		resourceID = handler.AdminID(r)
+	}
+	// List responses contain other people's records. They are never the target
+	// of the list operation, and profile/audit contents must not identify it.
+	if resourceID == "" && !spec.ReadOnly {
 		keys := append([]string{}, spec.IDKeys...)
 		keys = append(keys, spec.ResourceType+"_ulid", spec.ResourceType+"_id")
 		resourceID = findJSONText(responseBody, keys)
@@ -397,6 +413,12 @@ func buildAdminAuditEvent(r *http.Request, spec auditSpec, routePattern string, 
 	}
 	if len(params) > 0 {
 		details["path_params"] = params
+	}
+	if routePattern == "/api/dashboard/ops" && spec.ReadOnly {
+		group := r.URL.Query().Get("user_group")
+		if group == "staff" || group == "candidate" || group == "all" {
+			details["user_group_filter"] = group
+		}
 	}
 	if status == "FAILED" {
 		if errorCode := findJSONText(responseBody, []string{"error_code"}); errorCode != "" {

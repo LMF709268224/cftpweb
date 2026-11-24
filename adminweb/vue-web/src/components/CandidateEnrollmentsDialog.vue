@@ -56,11 +56,12 @@ async function loadPage() {
     if (cursor) params.set("cursor", cursor)
     const page = await apiClient<EnrollmentPage>(`/api/lms/enrollments?${params}`)
     if (currentRequest !== requestId) return
+    if (!Array.isArray(page?.enrollments) || typeof page.has_more !== "boolean") throw new Error("Incomplete enrollment page")
     const next = page.next_cursor || ""
     if (page.has_more && (!next || next === cursor)) throw new Error("Enrollment pagination cursor did not advance")
-    rows.value = [...rows.value, ...(page.enrollments || [])]
+    rows.value = [...rows.value, ...page.enrollments]
     nextCursor.value = next
-    hasMore.value = Boolean(page.has_more)
+    hasMore.value = page.has_more
   } catch (err) {
     if (currentRequest !== requestId) return
     console.error(err)
@@ -95,7 +96,7 @@ onUnmounted(() => { requestId += 1 })
                 <div><dt class="font-bold text-slate-500">{{ copy.courseId }}</dt><dd class="mt-1 break-all">{{ row.course_ulid || "-" }}</dd></div>
                 <div><dt class="font-bold text-slate-500">{{ copy.enrollmentId }}</dt><dd class="mt-1 break-all">{{ row.enrollment_id }}</dd></div>
                 <div><dt class="font-bold text-slate-500">{{ copy.status }}</dt><dd class="mt-1">{{ statusLabel(row.status) }}</dd></div>
-                <div><dt class="font-bold text-slate-500">{{ copy.progress }}</dt><dd class="mt-1">{{ row.progress_percentage ?? 0 }}%</dd></div>
+                <div><dt class="font-bold text-slate-500">{{ copy.progress }}</dt><dd class="mt-1">{{ typeof row.progress_percentage === 'number' && Number.isFinite(row.progress_percentage) && row.progress_percentage >= 0 && row.progress_percentage <= 100 ? `${row.progress_percentage}%` : t.dashboard.unavailable }}</dd></div>
                 <div><dt class="font-bold text-slate-500">{{ copy.joinedAt }}</dt><dd class="mt-1">{{ formatDate(row.joined_at) }}</dd></div>
                 <div><dt class="font-bold text-slate-500">{{ copy.completedAt }}</dt><dd class="mt-1">{{ formatDate(row.completed_at) }}</dd></div>
               </dl>

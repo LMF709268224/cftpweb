@@ -108,8 +108,7 @@ test("dashboard distinguishes a confirmed zero from malformed counts", async ({ 
     }
     if (pathname === "/api/mails/stats") {
       mailReads += 1
-      // encoding/json omits an empty protobuf map in a successful response.
-      return { data: mailReads === 1 ? {} : { status_counts: { FAILED: "unknown" } } }
+      return { data: mailReads === 1 ? { status_counts: { SENT: 0, FAILED: 0, SCHEDULING: 0, CANCELLED: 0 } } : { status_counts: { FAILED: "unknown" } } }
     }
     return undefined
   })

@@ -162,10 +162,15 @@ export const AUDIT_ACTION_SUGGESTIONS = [
   "update_resource_pack_file_translations",
   "update_resource_pack_translations",
   "update_supplementary_material",
+  "view_audit_log",
+  "view_audit_logs",
+  "view_own_profile",
+  "view_user_list",
 ] as const
 
 export const AUDIT_RESOURCE_TYPE_SUGGESTIONS = [
   "admin_user",
+  "audit_log",
   "bundle",
   "candidate_bundle",
   "candidate_course_unit",
@@ -207,5 +212,6 @@ export const AUDIT_RESOURCE_TYPE_SUGGESTIONS = [
   "resource_pack",
   "resource_pack_file",
   "supplementary_material",
+  "user_directory",
   "webhook_message",
 ] as const
