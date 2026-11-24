@@ -389,19 +389,9 @@ async function handleCardClick() {
         <p class="line-clamp-2 min-h-10 text-sm leading-5 text-muted-foreground">{{ description }}</p>
       </div>
 
-      <div class="course-card-purchase-details mb-3 flex min-h-[132px] flex-col justify-start space-y-2.5">
+      <div class="course-card-purchase-details mb-3 flex min-h-[70px] flex-col justify-start space-y-2.5">
         <div v-if="resolvedStatusLabel" class="flex flex-wrap gap-2">
           <span class="badge border-primary/20 bg-primary/10 text-primary">{{ resolvedStatusLabel }}</span>
-        </div>
-
-        <div class="course-card-detail-slot min-h-[52px]">
-          <div v-if="accessState" :class="['rounded-lg border px-3 py-2 text-xs', accessState.className]">
-            <div class="flex items-center gap-1.5 font-medium">
-              <component :is="accessState.icon" class="h-3.5 w-3.5" />
-              {{ accessState.label }}
-            </div>
-            <div v-if="accessState.hint" class="mt-1 text-[11px] opacity-80">{{ accessState.hint }}</div>
-          </div>
         </div>
 
         <div class="course-card-detail-slot min-h-[52px]">
@@ -452,6 +442,13 @@ async function handleCardClick() {
       </div>
 
       <div class="course-card-footer mt-auto border-t border-border pt-3">
+        <div v-if="accessState" :class="['course-card-access-state mb-3 rounded-lg border px-3 py-2 text-xs', accessState.className]">
+          <div class="flex items-center gap-1.5 font-medium">
+            <component :is="accessState.icon" class="h-3.5 w-3.5 shrink-0" />
+            {{ accessState.label }}
+          </div>
+          <div v-if="accessState.hint" class="mt-1 text-[11px] leading-relaxed opacity-80">{{ accessState.hint }}</div>
+        </div>
         <div
           :class="[
             'flex h-10 w-full items-center justify-center rounded-lg px-4 text-sm font-semibold transition-all duration-300',
