@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { Activity, AlertCircle, ArrowUpRight, BarChart3, Check, ClipboardList, CreditCard, Loader2, Mail, RefreshCw, Search, Shield, UserCheck, Users, X } from "lucide-vue-next"
+import { Activity, AlertCircle, ArrowUpRight, BarChart3, Check, ClipboardList, CreditCard, Loader2, Mail, RefreshCw, Search, X } from "lucide-vue-next"
 import { computed, onMounted, onUnmounted, ref, watch } from "vue"
 import { RouterLink } from "vue-router"
 import { toast } from "vue-sonner"
 import CandidateEnrollmentsDialog from "@/components/CandidateEnrollmentsDialog.vue"
+import CandidateRegistrations from "@/components/CandidateRegistrations.vue"
 import { apiClient } from "@/lib/apiClient"
 import { formatMinorAmount } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 import { badgeClass } from "@/lib/status"
+import { useCandidateMemberships } from "@/lib/useCandidateMemberships"
 
 type StageBucket = {
   stage_id: string
@@ -46,7 +48,6 @@ type DashboardUser = {
   roles: string[]
   role_label: string
   user_group: "staff" | "candidate"
-  is_member: boolean
   status: string
   email_verified: boolean
   created_at: string
@@ -77,17 +78,16 @@ const refreshing = computed(() => loading.value || reviewsLoading.value || mailS
 const data = ref<DashboardData | null>(null)
 const selectedUser = ref<DashboardUser | null>(null)
 const enrollmentUser = ref<DashboardUser | null>(null)
-const userManagementRef = ref<HTMLElement | null>(null)
 const keyword = ref("")
-const userGroup = ref<"all" | "staff" | "candidate">("all")
-const userGroups = ["all", "staff", "candidate"] as const
-const roleFilter = ref("all")
+const userGroup = ref<"staff" | "candidate">("candidate")
+const userGroups = ["candidate", "staff"] as const
 const statusFilter = ref("all")
 const userPage = ref(1)
 const userPageSize = 10
 let filterReloadTimer: number | undefined
 const { lang, t } = useAdminLanguage()
 const copy = computed(() => t.value.dashboard)
+const memberships = useCandidateMemberships(() => data.value?.users || [])
 
 const userStats = computed<UserStats>(() => data.value?.user_stats || { total: 0, active: 0, inactive: 0, admins: 0, members: 0, email_verified: 0 })
 const totalPipelines = computed(() => data.value?.stage_buckets.reduce((sum, item) => sum + Number(item.count || 0), 0) || 0)
@@ -101,23 +101,9 @@ const revenueText = computed(() => {
   if (!items.length) return copy.value.noRevenue
   return items.map((item) => `${item.currency} ${formatMinorAmount(item.amount_minor) ?? "-"}`).join(" / ")
 })
-const roleOptions = computed(() => {
-  const options = [{ value: "all", label: copy.value.filters.allRoles }]
-  if (userGroup.value === "all") options.push({ value: "admin", label: copy.value.roles.admin }, { value: "student", label: copy.value.roles.student })
-  if (userGroup.value !== "staff") options.push({ value: "member", label: copy.value.roles.member })
-  return options
-})
 const filteredUsers = computed(() => {
   return data.value?.users || []
 })
-
-const summaryCards = computed(() => [
-  { label: copy.value.summary.totalUsers, value: userStats.value.total, tone: "text-slate-950", icon: Users, role: "all", status: "all" },
-  { label: copy.value.summary.activeUsers, value: userStats.value.active, tone: "text-emerald-600", icon: UserCheck, role: "all", status: "active" },
-  { label: copy.value.summary.admins, value: userStats.value.admins, tone: "text-blue-600", icon: Shield, role: "admin", status: "all" },
-  { label: copy.value.summary.students, value: data.value?.candidate_total ?? 0, tone: "text-blue-700", icon: Users, role: "student", status: "all" },
-  { label: copy.value.summary.members, value: userStats.value.members, tone: "text-cyan-600", icon: Users, role: "member", status: "all" },
-])
 
 const mailCards = computed(() => [
   { status: "SENT", label: t.value.mailsAdmin.statusLabels.sent },
@@ -164,16 +150,18 @@ async function refreshDashboard() {
   await Promise.all([loadDashboard(), loadPendingReviews(), loadMailStats()])
 }
 
-function showUsers(role: string, status: string) {
-  userGroup.value = role === "admin" ? "staff" : role === "student" || role === "member" ? "candidate" : "all"
-  roleFilter.value = role === "member" ? "member" : "all"
-  statusFilter.value = status
-  userManagementRef.value?.scrollIntoView({ behavior: "smooth", block: "start" })
+function selectUserGroup(group: "staff" | "candidate") {
+  userGroup.value = group
 }
 
-function selectUserGroup(group: "all" | "staff" | "candidate") {
-  userGroup.value = group
-  roleFilter.value = "all"
+function membershipLabel(user: DashboardUser) {
+  if (user.user_group !== "candidate") return "—"
+  if (!user.candidate_ulid) return copy.value.identityMissing
+  const membership = memberships.value[user.candidate_ulid]
+  if (!membership || membership.state === "loading") return copy.value.loading
+  if (membership.state === "error") return copy.value.unavailable
+  if (membership.state === "none") return copy.value.noActiveMembership
+  return membership.name || copy.value.unavailable
 }
 
 function stageLabel(stageId: string) {
@@ -191,7 +179,6 @@ function roleLabel(role: string) {
   const normalized = role.toLowerCase()
   if (normalized.includes("student")) return copy.value.roles.student
   if (normalized.includes("admin")) return copy.value.roles.admin
-  if (normalized.includes("member")) return copy.value.roles.member
   return role || "-"
 }
 
@@ -226,7 +213,13 @@ const userDetailFields = computed(() => {
     { label: copy.value.phone, value: user.phone || "-" },
     { label: copy.value.location, value: user.location || "-" },
     { label: copy.value.table.role, value: roleLabel(user.role_label) },
-    ...(user.user_group === "candidate" ? [{ label: copy.value.membership, value: user.is_member ? copy.value.roles.member : copy.value.notMember }] : []),
+    ...(user.user_group === "candidate" ? [
+      { label: copy.value.membership, value: membershipLabel(user) },
+      ...((memberships.value[user.candidate_ulid || ""]?.state === "active") ? [
+        { label: copy.value.membershipStarts, value: formatDate(memberships.value[user.candidate_ulid || ""]?.record?.started_at || "") },
+        { label: copy.value.membershipExpires, value: formatDate(memberships.value[user.candidate_ulid || ""]?.record?.expires_at || "") },
+      ] : []),
+    ] : []),
     { label: copy.value.table.status, value: userStatusLabel(user.status) },
     { label: copy.value.table.emailVerified, value: user.email_verified ? copy.value.verified : copy.value.unverified },
     { label: copy.value.table.created, value: formatDate(user.created_at) },
@@ -249,8 +242,7 @@ async function loadDashboard(page = userPage.value) {
     })
     const normalizedKeyword = keyword.value.trim()
     if (normalizedKeyword) params.set("user_keyword", normalizedKeyword)
-    if (userGroup.value !== "all") params.set("user_group", userGroup.value)
-    if (roleFilter.value !== "all") params.set("user_role", roleFilter.value)
+    params.set("user_group", userGroup.value)
     if (statusFilter.value !== "all") params.set("user_status", statusFilter.value)
     const response = await apiClient<DashboardData>(`/api/dashboard/ops?${params}`)
     if (requestId !== dashboardRequestId) return
@@ -277,7 +269,7 @@ function clearUserKeyword() {
 
 onMounted(refreshDashboard)
 
-watch([keyword, userGroup, roleFilter, statusFilter], () => {
+watch([keyword, userGroup, statusFilter], () => {
   if (filterReloadTimer) window.clearTimeout(filterReloadTimer)
   filterReloadTimer = window.setTimeout(() => {
     filterReloadTimer = undefined
@@ -348,7 +340,7 @@ onUnmounted(() => {
       </div>
     </section>
 
-    <section ref="userManagementRef" class="scroll-mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div class="border-b border-slate-100 px-4 py-4 md:px-6 md:py-5">
         <div class="flex flex-wrap items-end justify-between gap-4">
           <div class="min-w-0">
@@ -357,21 +349,13 @@ onUnmounted(() => {
           </div>
           <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">{{ copy.userPageText(userPage, userTotal) }}</span>
         </div>
-        <div class="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
-          <button v-for="card in summaryCards" :key="card.label" class="rounded-xl border border-slate-200 bg-slate-50 p-3 text-left transition hover:border-slate-400" type="button" @click="showUsers(card.role, card.status)">
-            <div class="flex items-center justify-between gap-2">
-              <span class="text-xs font-bold text-slate-600">{{ card.label }}</span>
-              <component :is="card.icon" class="h-4 w-4 shrink-0 text-slate-400" />
-            </div>
-            <p class="mt-2 text-xl font-black" :class="card.tone">{{ data ? card.value : '—' }}</p>
-          </button>
-        </div>
         <div class="mt-4 inline-flex max-w-full gap-1 overflow-x-auto rounded-lg border border-slate-200 bg-slate-50 p-1" :aria-label="copy.userManagement">
-          <button v-for="group in userGroups" :key="group" type="button" class="whitespace-nowrap rounded-md px-3 py-2 text-sm font-bold" :class="userGroup === group ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-600 hover:text-slate-950'" :aria-pressed="userGroup === group" @click="selectUserGroup(group)">
+          <button v-for="group in userGroups" :key="group" type="button" class="whitespace-nowrap rounded-md px-3 py-2 text-sm font-bold" :class="userGroup === group ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-600 hover:text-slate-950'" :aria-label="copy.groups[group]" :aria-pressed="userGroup === group" @click="selectUserGroup(group)">
             {{ copy.groups[group] }}
+            <span v-if="data" aria-hidden="true" class="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs">{{ group === 'staff' ? userStats.admins : data.candidate_total }}</span>
           </button>
         </div>
-        <div class="mt-4 grid gap-4 lg:grid-cols-[minmax(0,2fr)_1fr_1fr]">
+        <div class="mt-4 grid gap-4 lg:grid-cols-[minmax(0,2fr)_1fr]">
           <label class="grid gap-2 text-sm font-bold">
             {{ copy.table.user }}
             <div class="relative">
@@ -388,12 +372,6 @@ onUnmounted(() => {
                 <X class="h-4 w-4" />
               </button>
             </div>
-          </label>
-          <label class="grid gap-2 text-sm font-bold">
-            {{ copy.table.role }}
-            <select v-model="roleFilter" class="h-11 rounded-xl border border-slate-200 bg-white px-3">
-              <option v-for="option in roleOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-            </select>
           </label>
           <label class="grid gap-2 text-sm font-bold">
             {{ copy.table.status }}
@@ -430,8 +408,11 @@ onUnmounted(() => {
                 <span class="text-xs font-black text-slate-400">{{ copy.table.role }}</span>
                 <span class="flex flex-wrap justify-end gap-1">
                   <span class="inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold" :class="roleBadgeClass(user.role_label)">{{ roleLabel(user.role_label) }}</span>
-                  <span v-if="user.is_member" class="inline-flex whitespace-nowrap rounded-full bg-cyan-100 px-2.5 py-1 text-xs font-bold text-cyan-800">{{ copy.roles.member }}</span>
                 </span>
+              </div>
+              <div v-if="userGroup === 'candidate'" class="flex items-start justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
+                <span class="text-xs font-black text-slate-400">{{ copy.membership }}</span>
+                <span class="text-right text-sm text-slate-700">{{ membershipLabel(user) }}</span>
               </div>
               <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
                 <span class="text-xs font-black text-slate-400">{{ copy.table.status }}</span>
@@ -453,7 +434,7 @@ onUnmounted(() => {
             <button class="mt-3 inline-flex min-h-11 items-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 hover:underline" type="button" @click="selectedUser = user">
               {{ copy.viewDetails }}
             </button>
-            <button v-if="user.candidate_ulid" class="ml-3 mt-3 inline-flex min-h-11 items-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 hover:underline" type="button" @click="enrollmentUser = user">
+            <button v-if="user.user_group === 'candidate' && user.candidate_ulid" class="ml-3 mt-3 inline-flex min-h-11 items-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 hover:underline" type="button" @click="enrollmentUser = user">
               {{ copy.enrollments.view }}
             </button>
           </article>
@@ -467,6 +448,7 @@ onUnmounted(() => {
               <th class="px-6 py-4">{{ copy.table.user }}</th>
               <th class="px-6 py-4">{{ copy.table.email }}</th>
               <th class="w-24 whitespace-nowrap px-6 py-4">{{ copy.table.role }}</th>
+              <th v-if="userGroup === 'candidate'" class="whitespace-nowrap px-6 py-4">{{ copy.membership }}</th>
               <th class="w-24 whitespace-nowrap px-6 py-4">{{ copy.table.status }}</th>
               <th class="w-28 whitespace-nowrap px-6 py-4">{{ copy.table.emailVerified }}</th>
               <th class="w-28 whitespace-nowrap px-6 py-4">{{ copy.table.created }}</th>
@@ -475,13 +457,13 @@ onUnmounted(() => {
           </thead>
           <tbody class="divide-y divide-slate-100">
             <tr v-if="loading">
-              <td colspan="7" class="px-6 py-10 text-center text-slate-400">
+              <td :colspan="userGroup === 'candidate' ? 8 : 7" class="px-6 py-10 text-center text-slate-400">
                 <Loader2 class="mr-2 inline h-5 w-5 animate-spin" />
                 {{ copy.loading }}
               </td>
             </tr>
             <tr v-else-if="filteredUsers.length === 0">
-              <td colspan="7" class="px-6 py-10 text-center text-slate-400">{{ copy.noUsers }}</td>
+              <td :colspan="userGroup === 'candidate' ? 8 : 7" class="px-6 py-10 text-center text-slate-400">{{ copy.noUsers }}</td>
             </tr>
             <template v-else>
               <tr v-for="user in filteredUsers" :key="user.id" class="transition hover:bg-sky-50/60">
@@ -492,8 +474,8 @@ onUnmounted(() => {
                 <td class="whitespace-nowrap px-6 py-4 text-slate-700">{{ user.email || "-" }}</td>
                 <td class="w-24 whitespace-nowrap px-6 py-4">
                   <span class="inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold" :class="roleBadgeClass(user.role_label)">{{ roleLabel(user.role_label) }}</span>
-                  <span v-if="user.is_member" class="ml-1 inline-flex whitespace-nowrap rounded-full bg-cyan-100 px-2.5 py-1 text-xs font-bold text-cyan-800">{{ copy.roles.member }}</span>
                 </td>
+                <td v-if="userGroup === 'candidate'" class="min-w-36 px-6 py-4 text-slate-700">{{ membershipLabel(user) }}</td>
                 <td class="w-24 whitespace-nowrap px-6 py-4">
                   <span class="inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold" :class="userStatusClass(user.status)">{{ userStatusLabel(user.status) }}</span>
                 </td>
@@ -507,7 +489,7 @@ onUnmounted(() => {
                 <td class="w-28 whitespace-nowrap px-6 py-4 text-slate-700">{{ formatDate(user.created_at) }}</td>
                 <td class="w-28 whitespace-nowrap px-6 py-4">
                   <button class="text-sm font-bold text-blue-700 hover:underline" type="button" @click="selectedUser = user">{{ copy.viewDetails }}</button>
-                  <button v-if="user.candidate_ulid" class="mt-2 block text-sm font-bold text-blue-700 hover:underline" type="button" @click="enrollmentUser = user">{{ copy.enrollments.view }}</button>
+                  <button v-if="user.user_group === 'candidate' && user.candidate_ulid" class="mt-2 block text-sm font-bold text-blue-700 hover:underline" type="button" @click="enrollmentUser = user">{{ copy.enrollments.view }}</button>
                 </td>
               </tr>
             </template>
@@ -586,19 +568,23 @@ onUnmounted(() => {
     <CandidateEnrollmentsDialog v-if="enrollmentUser?.candidate_ulid" :key="enrollmentUser.candidate_ulid" :candidate-id="enrollmentUser.candidate_ulid" :candidate-name="enrollmentUser.name" @close="enrollmentUser = null" />
     <Teleport to="body">
       <div v-if="selectedUser" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4" @click.self="closeUserDetail">
-        <section v-modal-dialog="closeUserDetail" class="flex max-h-[90dvh] w-full max-w-xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl" aria-labelledby="dashboard-user-detail-title">
+        <section v-modal-dialog="closeUserDetail" class="flex max-h-[90dvh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl" aria-labelledby="dashboard-user-detail-title">
           <header class="flex shrink-0 items-center justify-between gap-4 border-b border-slate-100 px-5 py-4">
             <h2 id="dashboard-user-detail-title" class="text-xl font-black text-slate-950">{{ copy.userDetailTitle }}</h2>
             <button data-dialog-initial-focus class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100" type="button" :aria-label="copy.close" @click="closeUserDetail">
               <X class="h-5 w-5" aria-hidden="true" />
             </button>
           </header>
-          <dl class="divide-y divide-slate-100 overflow-y-auto px-5">
-            <div v-for="field in userDetailFields" :key="field.label" class="grid gap-1 py-4 sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-4">
-              <dt class="text-sm font-bold text-slate-500">{{ field.label }}</dt>
-              <dd class="min-w-0 break-words text-sm text-slate-950 [overflow-wrap:anywhere]">{{ field.value }}</dd>
-            </div>
-          </dl>
+          <div class="overflow-y-auto px-5">
+            <dl class="divide-y divide-slate-100">
+              <div v-for="field in userDetailFields" :key="field.label" class="grid gap-1 py-4 sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-4">
+                <dt class="text-sm font-bold text-slate-500">{{ field.label }}</dt>
+                <dd class="min-w-0 break-words text-sm text-slate-950 [overflow-wrap:anywhere]">{{ field.value }}</dd>
+              </div>
+            </dl>
+            <CandidateRegistrations v-if="selectedUser.user_group === 'candidate' && selectedUser.candidate_ulid" :key="selectedUser.candidate_ulid" :candidate-id="selectedUser.candidate_ulid" />
+            <p v-else-if="selectedUser.user_group === 'candidate'" class="border-t py-4 text-sm text-slate-500">{{ copy.identityMissing }}</p>
+          </div>
         </section>
       </div>
     </Teleport>

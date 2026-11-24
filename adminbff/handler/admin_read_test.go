@@ -218,6 +218,7 @@ func TestOpsDashboardSeparatesStaffAndCandidates(t *testing.T) {
 		{Id: "staff", Roles: []*casdoorsdk.Role{{Name: roleConfig.admin}, {Name: roleConfig.student}, {Name: roleConfig.memberships[0]}}},
 		{Id: "student-member", Roles: []*casdoorsdk.Role{{Name: roleConfig.student}, {Name: roleConfig.memberships[0]}}},
 		{Id: "member-only", Roles: []*casdoorsdk.Role{{Name: roleConfig.memberships[0]}}},
+		{Id: "student-member", Roles: []*casdoorsdk.Role{{Name: roleConfig.student}, {Name: roleConfig.memberships[0]}}},
 		{Id: "unrelated", Roles: []*casdoorsdk.Role{{Name: "other"}}},
 	}
 	cftpUsers := filterCFTPDashboardUsers(users, roleConfig, nil)

@@ -335,14 +335,16 @@ func filterCFTPDashboardUsers(
 	roleDefinitions map[string]*casdoorsdk.Role,
 ) []*casdoorsdk.User {
 	filtered := make([]*casdoorsdk.User, 0, len(users))
+	seen := make(map[string]bool, len(users))
 	for _, user := range users {
-		if user == nil || strings.TrimSpace(user.Id) == "" {
+		if user == nil || strings.TrimSpace(user.Id) == "" || seen[user.Id] {
 			continue
 		}
 		roles := roleNames(user)
 		roleFlags := dashboardRoleFlags(user, roles, roleConfig, roleDefinitions)
 		if roleFlags["staff"] || roleFlags["candidate"] {
 			filtered = append(filtered, user)
+			seen[user.Id] = true
 		}
 	}
 	return filtered

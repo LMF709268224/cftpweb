@@ -101,7 +101,7 @@ test("candidate enrollments show errors, retry the same page and ignore closed r
   let reads = 0
   const cursors: string[] = []
   await installAdminApiMocks(page, ({ pathname, url }) => {
-    if (pathname === "/api/dashboard/ops") return { data: dashboardData("Candidate A") }
+    if (pathname === "/api/dashboard/ops") return { data: dashboardData("Candidate A", { users: [{ ...dashboardData("Candidate A").users[0], user_group: "candidate", role_label: "student" }] }) }
     if (pathname !== "/api/lms/enrollments") return undefined
     reads += 1
     cursors.push(url.searchParams.get("cursor") || "")
@@ -167,7 +167,7 @@ test("dashboard summary opens the matching user list and revenue links to orders
     return undefined
   })
   await page.goto("/dashboard")
-  await page.getByRole("button", { name: "管理员 2" }).click()
+  await page.getByRole("button", { name: "内部员工", exact: true }).click()
   await expect.poll(() => queries.at(-1)?.get("user_group")).toBe("staff")
   await expect(page.getByRole("link", { name: "查看订单" })).toHaveAttribute("href", "/orders")
 })
@@ -187,11 +187,12 @@ test("user groups keep staff and candidates separate while showing membership on
 
   await page.goto("/dashboard")
   const table = page.locator("table")
-  await page.getByRole("button", { name: "候选人", exact: true }).click()
+  await page.getByRole("button", { name: "学员／考生", exact: true }).click()
   await expect.poll(() => queries.at(-1)?.get("user_group")).toBe("candidate")
   await expect(table.getByText("Candidate", { exact: true })).toBeVisible()
   await expect(table.getByText("Staff", { exact: true })).toHaveCount(0)
-  await expect(table.getByText("会员", { exact: true })).toBeVisible()
+  await expect(table.getByRole("columnheader", { name: "会员等级", exact: true })).toBeVisible()
+  await expect(table.getByText("无有效会员", { exact: true })).toBeVisible()
   await page.getByRole("button", { name: "内部员工", exact: true }).click()
   await expect.poll(() => queries.at(-1)?.get("user_group")).toBe("staff")
   await expect(table.getByText("Staff", { exact: true })).toBeVisible()
@@ -288,10 +289,10 @@ for (const lang of ["zh", "en"] as const) {
       })
       await page.goto("/dashboard")
       const section = page.locator("section").filter({ has: page.getByRole("heading", { name: lang === "zh" ? "用户管理" : "User Management", exact: true }) })
-      const roles = lang === "zh" ? ["管理员", "学生", "学生"] : ["admin", "student", "student"]
+      const roles = lang === "zh" ? ["管理员", "考生", "考生"] : ["Administrator", "Candidate", "Candidate"]
       const verified = lang === "zh" ? "已验证" : "Verified"
       const unverified = lang === "zh" ? "未验证" : "Unverified"
-      const columns = lang === "zh" ? ["用户", "邮箱", "角色", "状态", "邮箱验证", "创建时间"] : ["User", "Email", "Role", "Status", "Email Verified", "Created"]
+      const columns = lang === "zh" ? ["用户", "邮箱", "用户类型", "会员等级", "账号状态", "邮箱验证", "创建时间"] : ["User", "Email", "User Type", "Membership Tier", "Account Status", "Email Verified", "Created"]
       const rows = mobile ? section.locator("article") : section.locator("tbody tr")
       await expect(rows.first()).toBeVisible()
       await expect(section.getByText("Shanghai", { exact: true })).toHaveCount(0)
@@ -299,8 +300,8 @@ for (const lang of ["zh", "en"] as const) {
       if (!mobile) await expect(section.getByRole("columnheader")).toHaveText([...columns, lang === "zh" ? "操作" : "Actions"])
       for (const [index, role] of roles.entries()) {
         await expect(rows.nth(index).getByText(role, { exact: true })).toBeVisible()
-        await expect(section.getByRole("option", { name: role, exact: true })).toHaveCount(1)
-        if (index === 2) await expect(rows.nth(index).getByText(lang === "zh" ? "会员" : "member", { exact: true })).toBeVisible()
+        await expect(section.getByRole("option", { name: role, exact: true })).toHaveCount(0)
+        if (index === 2) await expect(rows.nth(index).getByText(lang === "zh" ? "无有效会员" : "No active membership", { exact: true })).toBeVisible()
         const mark = rows.nth(index).locator(`[title="${index === 1 ? unverified : verified}"]`)
         await expect(mark).toBeVisible()
         await expect(mark.locator(index === 1 ? "svg.lucide-x" : "svg.lucide-check")).toBeVisible()
@@ -309,42 +310,41 @@ for (const lang of ["zh", "en"] as const) {
       if (mobile) {
         await expect(rows.first().locator(".mt-3 > div > span:first-child")).toHaveText(columns.slice(1))
       }
-      const initialRequests = [...requests]
       for (const [index, role] of roles.entries()) {
         const trigger = rows.nth(index).getByRole("button", { name: lang === "zh" ? "查看详情" : "View Details", exact: true })
         await trigger.click()
         const dialog = page.getByRole("dialog", { name: lang === "zh" ? "用户详情" : "User Details", exact: true })
         await expect(dialog).toBeVisible()
-        const detailLabels = [columns[0], columns[1], lang === "zh" ? "电话" : "Phone", lang === "zh" ? "地区" : "Location", columns[2], ...(index === 0 ? [] : [lang === "zh" ? "会员身份" : "Membership"]), ...columns.slice(3)]
-        await expect(dialog.locator("dt")).toHaveText(detailLabels)
-        const values = dialog.locator("dd")
+        const detailLabels = [columns[0], columns[1], lang === "zh" ? "电话" : "Phone", lang === "zh" ? "地区" : "Location", columns[2], ...(index === 0 ? [] : [columns[3]]), ...columns.slice(4)]
+        await expect(dialog.locator("dl").first().locator("dt")).toHaveText(detailLabels)
+        const values = dialog.locator("dl").first().locator("dd")
         await expect(values.nth(0)).toHaveText(`User ${index}`)
         await expect(values.nth(1)).toHaveText(`user.${index}@example.test`)
         await expect(values.nth(2)).toHaveText(index === 1 ? "-" : `+861380000000${index}`)
         await expect(values.nth(3)).toHaveText("Shanghai")
         await expect(values.nth(4)).toHaveText(role)
         const detailOffset = index === 0 ? 0 : 1
-        if (detailOffset) await expect(values.nth(5)).toHaveText(lang === "zh" ? (index === 2 ? "会员" : "非会员") : (index === 2 ? "member" : "Not a member"))
-        await expect(values.nth(5 + detailOffset)).toHaveText(lang === "zh" ? (index === 1 ? "停用" : "活跃") : (index === 1 ? "Inactive" : "Active"))
+        if (detailOffset) await expect(values.nth(5)).toHaveText(lang === "zh" ? "无有效会员" : "No active membership")
+        await expect(values.nth(5 + detailOffset)).toHaveText(lang === "zh" ? (index === 1 ? "停用" : "启用") : (index === 1 ? "Inactive" : "Enabled"))
         await expect(values.nth(6 + detailOffset)).toHaveText(index === 1 ? unverified : verified)
         await expect(values.nth(7 + detailOffset)).not.toHaveText("-")
-        await expect(dialog.locator("input, select, textarea")).toHaveCount(0)
+        await expect(dialog.locator("input, textarea")).toHaveCount(0)
         const close = dialog.getByRole("button", { name: lang === "zh" ? "关闭" : "Close", exact: true })
         await expect(close).toBeFocused()
         await page.keyboard.press("Tab")
-        await expect(close).toBeFocused()
+        await expect(index === 0 ? close : dialog.getByRole("combobox")).toBeFocused()
         if (index === 0) await page.keyboard.press("Escape")
         else await close.click()
         await expect(dialog).toHaveCount(0)
         await expect(trigger).toBeFocused()
       }
-      expect(requests).toEqual(initialRequests)
-      await section.getByRole("combobox").first().selectOption("student")
-      await expect.poll(() => queries.at(-1)?.get("user_role")).toBe("student")
+      await section.getByRole("combobox").selectOption("active")
+      await expect.poll(() => queries.at(-1)?.get("user_status")).toBe("active")
       await expect(rows.first()).toBeVisible()
       await section.getByRole("button", { name: lang === "zh" ? "下一页" : "Next", exact: true }).click()
       await expect.poll(() => queries.at(-1)?.get("user_page")).toBe("2")
-      expect(queries.at(-1)?.get("user_role")).toBe("student")
+      expect(queries.at(-1)?.get("user_status")).toBe("active")
+      expect(queries.at(-1)?.get("user_group")).toBe("candidate")
       expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
     })
   }
