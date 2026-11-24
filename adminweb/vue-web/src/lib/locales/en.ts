@@ -87,6 +87,11 @@ export const en: AdminTranslations = {
         membershipStarts: "Membership Starts",
         membershipExpires: "Membership Expires",
         identityMissing: "Candidate identity not linked",
+        lastLogin: "Last Login",
+        noLoginRecord: "No login recorded",
+        mfa: "MFA",
+        mfaEnabled: "Enabled",
+        mfaDisabled: "Not enabled",
         registrations: {
             title: "Certification Registrations",
             hint: "Each registration is a separate record. Filter by its business status.",

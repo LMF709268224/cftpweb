@@ -61,11 +61,12 @@ for (const lang of ["zh", "en"] as const) {
         } }
       })
       await page.goto("/dashboard")
-      const rows = mobile ? page.locator("section article").filter({ has: page.getByRole("button", { name: lang === "zh" ? "查看详情" : "View Details", exact: true }) }) : page.locator("tbody tr")
+      const rows = mobile ? page.locator("section article").filter({ has: page.locator("summary") }) : page.locator("tbody tr")
       const entryLabel = lang === "zh" ? "查看课程报读" : "View Course Enrollments"
       await expect(rows.nth(2)).toBeVisible()
       await expect(rows.nth(2).getByRole("button", { name: entryLabel, exact: true })).toHaveCount(0)
       expect(enrollmentQueries).toHaveLength(0)
+      await rows.first().locator("summary").click()
       const trigger = rows.first().getByRole("button", { name: entryLabel, exact: true })
       await trigger.click()
       const dialog = page.getByRole("dialog", { name: lang === "zh" ? "课程报读" : "Course Enrollments", exact: true })
@@ -85,6 +86,7 @@ for (const lang of ["zh", "en"] as const) {
       await page.keyboard.press("Escape")
       await expect(dialog).toHaveCount(0)
       await expect(trigger).toBeFocused()
+      await rows.nth(1).locator("summary").click()
       await rows.nth(1).getByRole("button", { name: entryLabel, exact: true }).click()
       await expect(dialog.getByText(lang === "zh" ? "暂无课程报读记录" : "No course enrollments", { exact: true })).toBeVisible()
       await expect(dialog.getByText("course-1", { exact: true })).toHaveCount(0)
@@ -111,6 +113,7 @@ test("candidate enrollments show errors, retry the same page and ignore closed r
     return { data: { enrollments: [{ enrollment_id: reads === 5 ? "stale-enrollment" : "fresh-enrollment" }], has_more: false }, delayMs: reads === 5 ? 700 : 0 }
   })
   await page.goto("/dashboard")
+  await page.locator("table summary").click()
   const trigger = page.locator("table").getByRole("button", { name: "查看课程报读", exact: true })
   const dialog = page.getByRole("dialog", { name: "课程报读", exact: true })
   await trigger.click()
@@ -292,7 +295,7 @@ for (const lang of ["zh", "en"] as const) {
       const roles = lang === "zh" ? ["管理员", "考生", "考生"] : ["Administrator", "Candidate", "Candidate"]
       const verified = lang === "zh" ? "已验证" : "Verified"
       const unverified = lang === "zh" ? "未验证" : "Unverified"
-      const columns = lang === "zh" ? ["用户", "邮箱", "用户类型", "会员等级", "账号状态", "邮箱验证", "创建时间"] : ["User", "Email", "User Type", "Membership Tier", "Account Status", "Email Verified", "Created"]
+      const columns = lang === "zh" ? ["用户", "邮箱", "用户类型", "会员等级", "账号状态", "邮箱验证", "最近登录", "创建时间"] : ["User", "Email", "User Type", "Membership Tier", "Account Status", "Email Verified", "Last Login", "Created"]
       const rows = mobile ? section.locator("article") : section.locator("tbody tr")
       await expect(rows.first()).toBeVisible()
       await expect(section.getByText("Shanghai", { exact: true })).toHaveCount(0)
@@ -311,11 +314,12 @@ for (const lang of ["zh", "en"] as const) {
         await expect(rows.first().locator(".mt-3 > div > span:first-child")).toHaveText(columns.slice(1))
       }
       for (const [index, role] of roles.entries()) {
+        await rows.nth(index).locator("summary").click()
         const trigger = rows.nth(index).getByRole("button", { name: lang === "zh" ? "查看详情" : "View Details", exact: true })
         await trigger.click()
         const dialog = page.getByRole("dialog", { name: lang === "zh" ? "用户详情" : "User Details", exact: true })
         await expect(dialog).toBeVisible()
-        const detailLabels = [columns[0], columns[1], lang === "zh" ? "电话" : "Phone", lang === "zh" ? "地区" : "Location", columns[2], ...(index === 0 ? [] : [columns[3]]), ...columns.slice(4)]
+        const detailLabels = [columns[0], columns[1], lang === "zh" ? "电话" : "Phone", lang === "zh" ? "地区" : "Location", columns[2], ...(index === 0 ? [] : [columns[3]]), ...columns.slice(4, 6), ...(index === 0 ? [lang === "zh" ? "多因素认证（MFA）" : "MFA"] : []), ...columns.slice(6)]
         await expect(dialog.locator("dl").first().locator("dt")).toHaveText(detailLabels)
         const values = dialog.locator("dl").first().locator("dd")
         await expect(values.nth(0)).toHaveText(`User ${index}`)
@@ -327,7 +331,8 @@ for (const lang of ["zh", "en"] as const) {
         if (detailOffset) await expect(values.nth(5)).toHaveText(lang === "zh" ? "无有效会员" : "No active membership")
         await expect(values.nth(5 + detailOffset)).toHaveText(lang === "zh" ? (index === 1 ? "停用" : "启用") : (index === 1 ? "Inactive" : "Enabled"))
         await expect(values.nth(6 + detailOffset)).toHaveText(index === 1 ? unverified : verified)
-        await expect(values.nth(7 + detailOffset)).not.toHaveText("-")
+        await expect(values.nth(7 + detailOffset + (index === 0 ? 1 : 0))).toHaveText(lang === "zh" ? "暂无登录记录" : "No login recorded")
+        await expect(values.last()).not.toHaveText("-")
         await expect(dialog.locator("input, textarea")).toHaveCount(0)
         const close = dialog.getByRole("button", { name: lang === "zh" ? "关闭" : "Close", exact: true })
         await expect(close).toBeFocused()

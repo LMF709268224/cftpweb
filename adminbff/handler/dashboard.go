@@ -75,6 +75,8 @@ type opsDashboardUser struct {
 	IsMember      bool     `json:"is_member"`
 	Status        string   `json:"status"`
 	EmailVerified bool     `json:"email_verified"`
+	MFAEnabled    bool     `json:"mfa_enabled"`
+	LastLoginAt   string   `json:"last_login_at"`
 	CreatedAt     string   `json:"created_at"`
 }
 
@@ -486,7 +488,10 @@ func (h *Handler) buildOpsUserSummary(
 			IsMember:      roleFlags["candidate"] && roleFlags["member"],
 			Status:        dashboardUserStatus(user),
 			EmailVerified: user.EmailVerified,
-			CreatedAt:     user.CreatedTime,
+			// Match Casdoor's IsMfaEnabled; never expose MFA secrets or recovery codes.
+			MFAEnabled:  user.PreferredMfaType != "",
+			LastLoginAt: user.LastSigninTime,
+			CreatedAt:   user.CreatedTime,
 		})
 	}
 

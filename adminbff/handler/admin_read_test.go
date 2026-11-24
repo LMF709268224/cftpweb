@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -154,13 +155,17 @@ func TestOpsDashboardReturnsFilteredReadOnlyOverview(t *testing.T) {
 	profiles := NewCandidateProfileCache(&adminReadMidClient{})
 	profiles.ready = true
 	profiles.users = []*casdoorsdk.User{{
-		Id:            "user-regression",
-		Name:          "regression-admin",
-		DisplayName:   "Regression Administrator",
-		Email:         "regression-admin@example.test",
-		EmailVerified: true,
-		Location:      "Shanghai",
-		Roles:         []*casdoorsdk.Role{{Name: roleConfig.admin}},
+		Id:               "user-regression",
+		Name:             "regression-admin",
+		DisplayName:      "Regression Administrator",
+		Email:            "regression-admin@example.test",
+		EmailVerified:    true,
+		Location:         "Shanghai",
+		Roles:            []*casdoorsdk.Role{{Name: roleConfig.admin}},
+		LastSigninTime:   "2026-11-23T09:30:00Z",
+		PreferredMfaType: "app",
+		TotpSecret:       "test-secret-must-not-leak",
+		RecoveryCodes:    []string{"test-recovery-must-not-leak"},
 	}}
 	profiles.ulidsByUUID["user-regression"] = "candidate-user-regression"
 	recorder := httptest.NewRecorder()
@@ -184,6 +189,8 @@ func TestOpsDashboardReturnsFilteredReadOnlyOverview(t *testing.T) {
 			Users                  []struct {
 				Name          string `json:"name"`
 				CandidateULID string `json:"candidate_ulid"`
+				MFAEnabled    bool   `json:"mfa_enabled"`
+				LastLoginAt   string `json:"last_login_at"`
 			} `json:"users"`
 			StageBuckets []struct {
 				StageID string `json:"stage_id"`
@@ -200,6 +207,14 @@ func TestOpsDashboardReturnsFilteredReadOnlyOverview(t *testing.T) {
 	}
 	if payload.Data.UserTotal != 1 || payload.Data.UserPageSize != 5 || len(payload.Data.Users) != 1 || payload.Data.Users[0].Name != "Regression Administrator" || payload.Data.Users[0].CandidateULID != "candidate-user-regression" {
 		t.Fatalf("dashboard users = %+v", payload.Data)
+	}
+	if !payload.Data.Users[0].MFAEnabled || payload.Data.Users[0].LastLoginAt != "2026-11-23T09:30:00Z" {
+		t.Fatalf("dashboard account metadata = %+v", payload.Data.Users[0])
+	}
+	for _, secret := range []string{"test-secret-must-not-leak", "test-recovery-must-not-leak", "totpSecret", "recoveryCodes"} {
+		if strings.Contains(recorder.Body.String(), secret) {
+			t.Fatal("dashboard exposed MFA secret fields")
+		}
 	}
 	if len(payload.Data.StageBuckets) != 1 || payload.Data.StageBuckets[0].StageID != "stage-regression" || payload.Data.StageBuckets[0].Count != 1 {
 		t.Fatalf("dashboard stages = %+v", payload.Data.StageBuckets)
@@ -241,5 +256,8 @@ func TestOpsDashboardSeparatesStaffAndCandidates(t *testing.T) {
 	}
 	if summary.users[0].UserGroup != "staff" || summary.users[0].IsMember || summary.users[1].UserGroup != "candidate" || !summary.users[1].IsMember || summary.users[1].RoleLabel != "student" || summary.users[2].UserGroup != "candidate" {
 		t.Fatalf("dashboard users = %+v", summary.users)
+	}
+	if summary.users[0].MFAEnabled || summary.users[0].LastLoginAt != "" {
+		t.Fatal("account without MFA or login history must retain its actual state")
 	}
 }

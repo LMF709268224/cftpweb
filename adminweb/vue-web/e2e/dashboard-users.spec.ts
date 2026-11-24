@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test"
 import { installAdminApiMocks, seedAuthenticatedAdmin } from "./support/admin"
 
-const candidate = { id: "user-a", candidate_ulid: "candidate-a", name: "Candidate A", email: "a@example.test", role_label: "student", user_group: "candidate", is_member: false, status: "Active", email_verified: true, created_at: "2026-01-01T00:00:00Z" }
-const staff = { ...candidate, id: "staff", name: "Staff A", candidate_ulid: "staff-candidate-id", user_group: "staff", role_label: "admin" }
+const candidate = { id: "user-a", candidate_ulid: "candidate-a", name: "Candidate A", email: "a@example.test", role_label: "student", user_group: "candidate", is_member: false, status: "Active", email_verified: true, mfa_enabled: false, last_login_at: "2026-11-23T09:30:00Z", created_at: "2026-01-01T00:00:00Z" }
+const staff = { ...candidate, id: "staff", name: "Staff A", candidate_ulid: "staff-candidate-id", user_group: "staff", role_label: "admin", mfa_enabled: true }
 const member = { candidate_ulid: "candidate-a", membership_ulid: "plan-a", started_at: "2000-01-01T00:00:00Z", expires_at: "2999-01-01T00:00:00Z" }
 function overview(users = [candidate]) {
   return { candidate_total: 2, user_stats: { total: 3, active: 3, admins: 1, members: 1 }, users, user_total: users.length, user_page: 1, user_page_size: 10, stage_buckets: [], stage_buckets_exact: true, today_revenue: [], today_revenue_exact: true }
@@ -46,6 +46,7 @@ for (const lang of ["zh", "en"] as const) {
       expect(membershipIds.sort()).toEqual(["candidate-a", "candidate-b"])
       await expect(users.getByRole("button", { name: lang === "zh" ? "全部账号" : "All accounts", exact: true })).toHaveCount(0)
       expect(registrationQueries).toHaveLength(0)
+      await rows.first().locator("summary").click()
       await rows.first().getByRole("button", { name: lang === "zh" ? "查看详情" : "View Details", exact: true }).click()
       const dialog = page.getByRole("dialog")
       await expect(dialog.getByText("first-registration", { exact: true })).toBeVisible()
@@ -66,6 +67,16 @@ for (const lang of ["zh", "en"] as const) {
       await expect(rows).toHaveCount(1)
       await expect(rows.first().getByText("Staff A", { exact: true })).toBeVisible()
       await expect(users.getByText(lang === "zh" ? "会员等级" : "Membership Tier", { exact: true })).toHaveCount(0)
+      await expect(rows.first().getByText(lang === "zh" ? "已启用" : "Enabled", { exact: true }).last()).toBeVisible()
+      await expect(rows.first()).toContainText("2026")
+      await rows.first().locator("summary").focus()
+      await page.keyboard.press("Enter")
+      await expect(rows.first().getByRole("button", { name: lang === "zh" ? "查看详情" : "View Details", exact: true })).toBeVisible()
+      await expect(rows.first().getByRole("button", { name: lang === "zh" ? "查看课程报读" : "View Course Enrollments", exact: true })).toHaveCount(0)
+      await page.keyboard.press("Escape")
+      await expect(rows.first().locator("details")).not.toHaveAttribute("open", "")
+      await expect(rows.first().locator("summary")).toBeFocused()
+      await page.screenshot({ path: testInfo.outputPath("staff-list.png"), fullPage: true })
       expect(membershipIds).not.toContain("staff-candidate-id")
       expect(methods.every((method) => method === "GET")).toBe(true)
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
@@ -114,6 +125,7 @@ test("registration errors retain loaded rows and retry the same cursor", async (
     return undefined
   })
   await page.goto("/dashboard")
+  await page.locator("table summary").click()
   await page.locator("table").getByRole("button", { name: "查看详情", exact: true }).click()
   const dialog = page.getByRole("dialog")
   await dialog.getByRole("button", { name: "加载更多", exact: true }).click()

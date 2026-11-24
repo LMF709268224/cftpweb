@@ -85,6 +85,11 @@ export const zh = {
         membershipStarts: "会员开始日期",
         membershipExpires: "会员到期日期",
         identityMissing: "尚未关联考生身份",
+        lastLogin: "最近登录",
+        noLoginRecord: "暂无登录记录",
+        mfa: "多因素认证（MFA）",
+        mfaEnabled: "已启用",
+        mfaDisabled: "未启用",
         registrations: {
             title: "认证报名记录",
             hint: "每次报名独立展示，可按该次报名的业务状态筛选。",

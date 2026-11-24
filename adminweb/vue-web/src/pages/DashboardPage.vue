@@ -5,6 +5,7 @@ import { RouterLink } from "vue-router"
 import { toast } from "vue-sonner"
 import CandidateEnrollmentsDialog from "@/components/CandidateEnrollmentsDialog.vue"
 import CandidateRegistrations from "@/components/CandidateRegistrations.vue"
+import DashboardUserActions from "@/components/DashboardUserActions.vue"
 import { apiClient } from "@/lib/apiClient"
 import { formatMinorAmount } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
@@ -50,6 +51,8 @@ type DashboardUser = {
   user_group: "staff" | "candidate"
   status: string
   email_verified: boolean
+  mfa_enabled?: boolean
+  last_login_at?: string
   created_at: string
 }
 
@@ -204,6 +207,17 @@ function formatDate(raw: string) {
   return parsed.toLocaleDateString(lang.value === "zh" ? "zh-CN" : "en-US")
 }
 
+function lastLoginLabel(user: DashboardUser) {
+  if (!user.last_login_at) return copy.value.noLoginRecord
+  const parsed = new Date(user.last_login_at)
+  return Number.isNaN(parsed.getTime()) ? copy.value.unavailable : parsed.toLocaleString(lang.value === "zh" ? "zh-CN" : "en-US")
+}
+
+function mfaLabel(user: DashboardUser) {
+  if (typeof user.mfa_enabled !== "boolean") return copy.value.unavailable
+  return user.mfa_enabled ? copy.value.mfaEnabled : copy.value.mfaDisabled
+}
+
 const userDetailFields = computed(() => {
   const user = selectedUser.value
   if (!user) return []
@@ -222,6 +236,8 @@ const userDetailFields = computed(() => {
     ] : []),
     { label: copy.value.table.status, value: userStatusLabel(user.status) },
     { label: copy.value.table.emailVerified, value: user.email_verified ? copy.value.verified : copy.value.unverified },
+    ...(user.user_group === "staff" ? [{ label: copy.value.mfa, value: mfaLabel(user) }] : []),
+    { label: copy.value.lastLogin, value: lastLoginLabel(user) },
     { label: copy.value.table.created, value: formatDate(user.created_at) },
   ]
 })
@@ -418,7 +434,11 @@ onUnmounted(() => {
                 <span class="text-xs font-black text-slate-400">{{ copy.table.status }}</span>
                 <span class="inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold" :class="userStatusClass(user.status)">{{ userStatusLabel(user.status) }}</span>
               </div>
-              <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
+              <div v-if="userGroup === 'staff'" class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
+                <span class="text-xs font-black text-slate-400">{{ copy.mfa }}</span>
+                <span class="text-right text-slate-700">{{ mfaLabel(user) }}</span>
+              </div>
+              <div v-else class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
                 <span class="text-xs font-black text-slate-400">{{ copy.table.emailVerified }}</span>
                 <span :title="user.email_verified ? copy.verified : copy.unverified" :class="['inline-flex rounded-full p-1 text-xs font-bold', user.email_verified ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700']">
                   <Check v-if="user.email_verified" class="h-4 w-4" aria-hidden="true" />
@@ -426,17 +446,16 @@ onUnmounted(() => {
                   <span class="sr-only">{{ user.email_verified ? copy.verified : copy.unverified }}</span>
                 </span>
               </div>
+              <div class="flex items-start justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
+                <span class="text-xs font-black text-slate-400">{{ copy.lastLogin }}</span>
+                <span class="text-right text-slate-700">{{ lastLoginLabel(user) }}</span>
+              </div>
               <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
                 <span class="text-xs font-black text-slate-400">{{ copy.table.created }}</span>
                 <span class="text-right text-slate-700">{{ formatDate(user.created_at) }}</span>
               </div>
             </div>
-            <button class="mt-3 inline-flex min-h-11 items-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 hover:underline" type="button" @click="selectedUser = user">
-              {{ copy.viewDetails }}
-            </button>
-            <button v-if="user.user_group === 'candidate' && user.candidate_ulid" class="ml-3 mt-3 inline-flex min-h-11 items-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 hover:underline" type="button" @click="enrollmentUser = user">
-              {{ copy.enrollments.view }}
-            </button>
+            <DashboardUserActions class="mt-3" :can-view-enrollments="user.user_group === 'candidate' && !!user.candidate_ulid" @details="selectedUser = user" @enrollments="enrollmentUser = user" />
           </article>
         </div>
       </div>
@@ -450,20 +469,21 @@ onUnmounted(() => {
               <th class="w-24 whitespace-nowrap px-6 py-4">{{ copy.table.role }}</th>
               <th v-if="userGroup === 'candidate'" class="whitespace-nowrap px-6 py-4">{{ copy.membership }}</th>
               <th class="w-24 whitespace-nowrap px-6 py-4">{{ copy.table.status }}</th>
-              <th class="w-28 whitespace-nowrap px-6 py-4">{{ copy.table.emailVerified }}</th>
+              <th class="w-28 whitespace-nowrap px-6 py-4">{{ userGroup === 'staff' ? copy.mfa : copy.table.emailVerified }}</th>
+              <th class="whitespace-nowrap px-6 py-4">{{ copy.lastLogin }}</th>
               <th class="w-28 whitespace-nowrap px-6 py-4">{{ copy.table.created }}</th>
               <th class="w-28 whitespace-nowrap px-6 py-4">{{ copy.table.actions }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
             <tr v-if="loading">
-              <td :colspan="userGroup === 'candidate' ? 8 : 7" class="px-6 py-10 text-center text-slate-400">
+              <td :colspan="userGroup === 'candidate' ? 9 : 8" class="px-6 py-10 text-center text-slate-400">
                 <Loader2 class="mr-2 inline h-5 w-5 animate-spin" />
                 {{ copy.loading }}
               </td>
             </tr>
             <tr v-else-if="filteredUsers.length === 0">
-              <td :colspan="userGroup === 'candidate' ? 8 : 7" class="px-6 py-10 text-center text-slate-400">{{ copy.noUsers }}</td>
+              <td :colspan="userGroup === 'candidate' ? 9 : 8" class="px-6 py-10 text-center text-slate-400">{{ copy.noUsers }}</td>
             </tr>
             <template v-else>
               <tr v-for="user in filteredUsers" :key="user.id" class="transition hover:bg-sky-50/60">
@@ -480,16 +500,17 @@ onUnmounted(() => {
                   <span class="inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold" :class="userStatusClass(user.status)">{{ userStatusLabel(user.status) }}</span>
                 </td>
                 <td class="w-28 whitespace-nowrap px-6 py-4">
-                  <span :title="user.email_verified ? copy.verified : copy.unverified" :class="['inline-flex rounded-full p-1 text-xs font-bold', user.email_verified ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700']">
+                  <span v-if="userGroup === 'staff'" class="text-slate-700">{{ mfaLabel(user) }}</span>
+                  <span v-else :title="user.email_verified ? copy.verified : copy.unverified" :class="['inline-flex rounded-full p-1 text-xs font-bold', user.email_verified ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700']">
                     <Check v-if="user.email_verified" class="h-4 w-4" aria-hidden="true" />
                     <X v-else class="h-4 w-4" aria-hidden="true" />
                     <span class="sr-only">{{ user.email_verified ? copy.verified : copy.unverified }}</span>
                   </span>
                 </td>
+                <td class="whitespace-nowrap px-6 py-4 text-slate-700">{{ lastLoginLabel(user) }}</td>
                 <td class="w-28 whitespace-nowrap px-6 py-4 text-slate-700">{{ formatDate(user.created_at) }}</td>
                 <td class="w-28 whitespace-nowrap px-6 py-4">
-                  <button class="text-sm font-bold text-blue-700 hover:underline" type="button" @click="selectedUser = user">{{ copy.viewDetails }}</button>
-                  <button v-if="user.user_group === 'candidate' && user.candidate_ulid" class="mt-2 block text-sm font-bold text-blue-700 hover:underline" type="button" @click="enrollmentUser = user">{{ copy.enrollments.view }}</button>
+                  <DashboardUserActions :can-view-enrollments="user.user_group === 'candidate' && !!user.candidate_ulid" @details="selectedUser = user" @enrollments="enrollmentUser = user" />
                 </td>
               </tr>
             </template>
