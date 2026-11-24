@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Eye, FileText, List, Loader2, Mail, Plus, RefreshCw, Send, X, XCircle } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
+import { useRoute } from "vue-router"
 import { toast } from "vue-sonner"
 import JsonPreview from "@/components/JsonPreview.vue"
 import ReadonlyField from "@/components/ReadonlyField.vue"
@@ -17,7 +18,8 @@ type TemplateMode = "detail" | "create" | "edit"
 
 const pageSize = 20
 const templatePageSize = 10
-const activeTab = ref<TabKey>("send")
+const route = useRoute()
+const activeTab = ref<TabKey>(route.query.tab === "sent" ? "sent" : "send")
 const templateMode = ref<TemplateMode>("detail")
 const users = ref<JsonRecord[]>([])
 const templates = ref<JsonRecord[]>([])
@@ -43,7 +45,8 @@ const previewHtml = ref("")
 const mails = ref<JsonRecord[]>([])
 const mailsLoading = ref(false)
 const mailPage = ref(1)
-const statusFilter = ref("")
+const initialStatus = typeof route.query.status === "string" ? route.query.status : ""
+const statusFilter = ref(["SCHEDULING", "SENT", "FAILED", "CANCELLED"].includes(initialStatus) ? initialStatus : "")
 const total = ref(0)
 const selectedMail = ref<JsonRecord | null>(null)
 const mailDetail = ref<JsonRecord | null>(null)
@@ -678,7 +681,7 @@ watch(templatePage, () => {
 })
 
 onMounted(async () => {
-  await Promise.all([loadUsers(), loadTemplates(), loadStats()])
+  await Promise.all([loadUsers(), loadTemplates(), loadStats(), ...(activeTab.value === "sent" ? [loadSentMails()] : [])])
 })
 </script>
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Activity, ArrowUpRight, BarChart3, Check, CreditCard, Loader2, Mail, RefreshCw, Search, Shield, UserCheck, Users, X } from "lucide-vue-next"
+import { Activity, AlertCircle, ArrowUpRight, BarChart3, Check, ClipboardList, CreditCard, Loader2, Mail, RefreshCw, Search, Shield, UserCheck, Users, X } from "lucide-vue-next"
 import { computed, onMounted, onUnmounted, ref, watch } from "vue"
 import { RouterLink } from "vue-router"
 import { toast } from "vue-sonner"
@@ -69,6 +69,11 @@ type DashboardData = {
 }
 
 const loading = ref(false)
+const reviewsLoading = ref(false)
+const mailStatsLoading = ref(false)
+const pendingReviews = ref<{ total: number; total_label: string; total_exact: boolean } | null>(null)
+const mailCounts = ref<Record<string, number> | null>(null)
+const refreshing = computed(() => loading.value || reviewsLoading.value || mailStatsLoading.value)
 const data = ref<DashboardData | null>(null)
 const selectedUser = ref<DashboardUser | null>(null)
 const enrollmentUser = ref<DashboardUser | null>(null)
@@ -91,6 +96,7 @@ const userTotal = computed(() => Number(data.value?.user_total || data.value?.us
 const canPrevUsers = computed(() => userPage.value > 1)
 const canNextUsers = computed(() => userPage.value * userPageSize < userTotal.value)
 const revenueText = computed(() => {
+  if (!data.value) return copy.value.unavailable
   const items = data.value?.today_revenue || []
   if (!items.length) return copy.value.noRevenue
   return items.map((item) => `${item.currency} ${formatMinorAmount(item.amount_minor) ?? "-"}`).join(" / ")
@@ -112,6 +118,51 @@ const summaryCards = computed(() => [
   { label: copy.value.summary.students, value: data.value?.candidate_total ?? 0, tone: "text-blue-700", icon: Users, role: "student", status: "all" },
   { label: copy.value.summary.members, value: userStats.value.members, tone: "text-cyan-600", icon: Users, role: "member", status: "all" },
 ])
+
+const mailCards = computed(() => [
+  { status: "SENT", label: t.value.mailsAdmin.statusLabels.sent },
+  { status: "SCHEDULING", label: t.value.mailsAdmin.statusLabels.scheduling },
+  { status: "FAILED", label: t.value.mailsAdmin.statusLabels.failed },
+  { status: "CANCELLED", label: t.value.mailsAdmin.statusLabels.cancelled },
+].map((item) => ({ ...item, count: mailCounts.value?.[item.status] ?? 0 })))
+
+async function loadPendingReviews() {
+  reviewsLoading.value = true
+  pendingReviews.value = null
+  try {
+    const result = await apiClient<{ total: number; total_label: string; total_exact: boolean }>("/api/applications?status=Pending&page_size=1&include_status_subtotals=false")
+    if (!Number.isSafeInteger(result.total) || result.total < 0 || typeof result.total_exact !== "boolean" || typeof result.total_label !== "string") {
+      throw new Error("Invalid application count response")
+    }
+    pendingReviews.value = result
+  } catch (err) {
+    console.error(err)
+  } finally {
+    reviewsLoading.value = false
+  }
+}
+
+async function loadMailStats() {
+  mailStatsLoading.value = true
+  mailCounts.value = null
+  try {
+    const result = await apiClient<{ status_counts?: Record<string, number> }>("/api/mails/stats")
+    // The protobuf map is omitted by the BFF's JSON encoder when no mail exists.
+    const counts = result.status_counts ?? {}
+    if (typeof counts !== "object" || Array.isArray(counts) || Object.values(counts).some((count) => !Number.isSafeInteger(count) || count < 0)) {
+      throw new Error("Invalid mail statistics response")
+    }
+    mailCounts.value = counts
+  } catch (err) {
+    console.error(err)
+  } finally {
+    mailStatsLoading.value = false
+  }
+}
+
+async function refreshDashboard() {
+  await Promise.all([loadDashboard(), loadPendingReviews(), loadMailStats()])
+}
 
 function showUsers(role: string, status: string) {
   userGroup.value = role === "admin" ? "staff" : role === "student" || role === "member" ? "candidate" : "all"
@@ -224,7 +275,7 @@ function clearUserKeyword() {
   keyword.value = ""
 }
 
-onMounted(loadDashboard)
+onMounted(refreshDashboard)
 
 watch([keyword, userGroup, roleFilter, statusFilter], () => {
   if (filterReloadTimer) window.clearTimeout(filterReloadTimer)
@@ -254,31 +305,47 @@ onUnmounted(() => {
           <Activity class="h-4 w-4" />
           {{ copy.auditLogs }}
         </RouterLink>
-        <RouterLink to="/mails" class="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold shadow-sm hover:border-slate-400">
+        <RouterLink to="/mails?tab=sent" class="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold shadow-sm hover:border-slate-400">
           <Mail class="h-4 w-4" />
           {{ copy.emailActivity }}
         </RouterLink>
         <button
           class="col-span-2 inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 font-bold shadow-sm transition hover:border-slate-500 disabled:opacity-50 sm:col-span-1"
           type="button"
-          :disabled="loading"
-          @click="loadDashboard(userPage)"
+          :disabled="refreshing"
+          @click="refreshDashboard"
         >
-          <Loader2 v-if="loading" class="h-4 w-4 animate-spin" />
+          <Loader2 v-if="refreshing" class="h-4 w-4 animate-spin" />
           <RefreshCw v-else class="h-4 w-4" />
           {{ copy.refresh }}
         </button>
       </div>
     </header>
 
-    <section class="mb-4 grid grid-cols-2 gap-3 md:grid-cols-2 md:gap-4 xl:grid-cols-5">
-      <button v-for="card in summaryCards" :key="card.label" class="rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-slate-400 hover:shadow-md md:p-5" type="button" @click="showUsers(card.role, card.status)">
-        <div class="flex items-center justify-between">
-          <p class="text-sm font-bold text-slate-600">{{ card.label }}</p>
-          <component :is="card.icon" class="h-5 w-5 text-slate-400" />
-        </div>
-        <p class="mt-4 text-3xl font-black md:mt-5 md:text-4xl" :class="card.tone">{{ card.value }}</p>
-      </button>
+    <section class="mb-5" :aria-label="copy.keyMetrics">
+      <h2 class="mb-3 text-lg font-black">{{ copy.keyMetrics }}</h2>
+      <div class="grid gap-4 md:grid-cols-2">
+        <RouterLink to="/orders" :aria-label="copy.viewOrders" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-blue-400 hover:shadow-md" data-testid="dashboard-revenue">
+          <div class="flex items-center justify-between gap-3">
+            <h3 class="text-sm font-bold text-slate-600">{{ copy.todayRevenue }}</h3>
+            <CreditCard class="h-5 w-5 text-blue-600" />
+          </div>
+          <p class="mt-4 break-words text-3xl font-black">{{ loading ? copy.loading : revenueText }}</p>
+          <p v-if="data" class="mt-2 text-sm text-slate-500">{{ copy.paidOrders(totalPaidOrders) }}</p>
+          <p v-if="data && !data.today_revenue_exact" class="mt-2 text-xs font-bold text-amber-700">{{ copy.sampledAggregation(data.aggregation_sample_limit) }}</p>
+          <span class="mt-4 inline-flex items-center gap-1 text-sm font-bold text-blue-700">{{ copy.viewOrders }} <ArrowUpRight class="h-4 w-4" /></span>
+        </RouterLink>
+        <RouterLink to="/applications" :aria-label="copy.viewReviews" class="rounded-2xl border bg-white p-5 shadow-sm transition hover:border-blue-400 hover:shadow-md" :class="pendingReviews && pendingReviews.total > 0 ? 'border-amber-300' : 'border-slate-200'" data-testid="dashboard-reviews">
+          <div class="flex items-center justify-between gap-3">
+            <h3 class="text-sm font-bold text-slate-600">{{ copy.pendingReviews }}</h3>
+            <ClipboardList class="h-5 w-5 text-amber-600" />
+          </div>
+          <p class="mt-4 text-3xl font-black">{{ reviewsLoading ? copy.loading : pendingReviews?.total_label ?? copy.unavailable }}</p>
+          <p v-if="pendingReviews" class="mt-2 text-sm" :class="pendingReviews.total > 0 ? 'text-amber-700' : 'text-slate-500'">{{ pendingReviews.total > 0 ? copy.reviewsWaiting : copy.noPendingReviews }}</p>
+          <p v-if="pendingReviews && !pendingReviews.total_exact" class="mt-2 text-xs font-bold text-amber-700">{{ copy.partialReviewCount }}</p>
+          <span class="mt-4 inline-flex items-center gap-1 text-sm font-bold text-blue-700">{{ copy.viewReviews }} <ArrowUpRight class="h-4 w-4" /></span>
+        </RouterLink>
+      </div>
     </section>
 
     <section ref="userManagementRef" class="scroll-mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -289,6 +356,15 @@ onUnmounted(() => {
             <p class="mt-1 text-sm text-slate-500">{{ copy.userManagementHint }}</p>
           </div>
           <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">{{ copy.userPageText(userPage, userTotal) }}</span>
+        </div>
+        <div class="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
+          <button v-for="card in summaryCards" :key="card.label" class="rounded-xl border border-slate-200 bg-slate-50 p-3 text-left transition hover:border-slate-400" type="button" @click="showUsers(card.role, card.status)">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs font-bold text-slate-600">{{ card.label }}</span>
+              <component :is="card.icon" class="h-4 w-4 shrink-0 text-slate-400" />
+            </div>
+            <p class="mt-2 text-xl font-black" :class="card.tone">{{ data ? card.value : '—' }}</p>
+          </button>
         </div>
         <div class="mt-4 inline-flex max-w-full gap-1 overflow-x-auto rounded-lg border border-slate-200 bg-slate-50 p-1" :aria-label="copy.userManagement">
           <button v-for="group in userGroups" :key="group" type="button" class="whitespace-nowrap rounded-md px-3 py-2 text-sm font-bold" :class="userGroup === group ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-600 hover:text-slate-950'" :aria-pressed="userGroup === group" @click="selectUserGroup(group)">
@@ -482,7 +558,7 @@ onUnmounted(() => {
         </div>
       </article>
 
-      <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm" data-testid="dashboard-business">
         <div class="flex items-center justify-between">
           <div>
             <h2 class="text-xl font-black">{{ copy.businessOverview }}</h2>
@@ -491,18 +567,19 @@ onUnmounted(() => {
           <BarChart3 class="h-6 w-6 text-slate-400" />
         </div>
         <div class="mt-6">
-          <div class="bg-slate-50 p-5">
-            <div class="flex items-center gap-2 text-slate-500">
-              <CreditCard class="h-4 w-4" />
-              <span class="text-sm font-bold">{{ copy.todayRevenue }}</span>
-            </div>
-            <p class="mt-4 text-2xl font-black">{{ revenueText }}</p>
-            <p class="mt-2 text-sm text-slate-500">{{ copy.paidOrders(totalPaidOrders) }}</p>
-            <p v-if="data && !data.today_revenue_exact" class="mt-2 text-xs font-bold text-amber-700">{{ copy.sampledAggregation(data.aggregation_sample_limit) }}</p>
-            <RouterLink to="/orders" class="mt-3 inline-flex items-center gap-1 text-sm font-bold text-blue-700 hover:underline">
-              {{ copy.viewOrders }} <ArrowUpRight class="h-4 w-4" />
+          <h3 class="font-bold">{{ copy.emailStatus }}</h3>
+          <p class="mt-1 text-xs text-slate-500">{{ copy.emailStatusHint }}</p>
+          <p v-if="mailStatsLoading" class="py-8 text-center text-slate-500">{{ copy.loading }}</p>
+          <p v-else-if="!mailCounts" class="py-8 text-center text-slate-500">{{ copy.unavailable }}</p>
+          <div v-else class="mt-4 grid grid-cols-2 gap-3">
+            <RouterLink v-for="card in mailCards" :key="card.status" :to="{ path: '/mails', query: { tab: 'sent', status: card.status } }" class="rounded-xl border p-4 transition hover:border-blue-400" :class="card.status === 'FAILED' && card.count > 0 ? 'border-red-200 bg-red-50 text-red-700' : 'border-slate-200 bg-slate-50'">
+              <div class="flex items-center justify-between gap-2 text-sm font-bold">{{ card.label }} <ArrowUpRight class="h-4 w-4 shrink-0" /></div>
+              <p class="mt-2 text-2xl font-black">{{ card.count }}</p>
             </RouterLink>
           </div>
+          <p v-if="mailCounts && mailCounts.FAILED > 0" class="mt-4 flex items-start gap-2 rounded-xl bg-red-50 p-3 text-sm text-red-700">
+            <AlertCircle class="mt-0.5 h-4 w-4 shrink-0" /> {{ copy.failedMailNotice }}
+          </p>
         </div>
       </article>
     </section>
