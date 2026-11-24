@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue"
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { RouterLink } from "vue-router"
-import { ArrowRight, Award, BookOpen, Crown, FileText, GraduationCap, LockKeyhole, PanelLeft, Play, UserRound } from "lucide-vue-next"
+import { ArrowRight, Award, BookOpen, Crown, FileText, GraduationCap, LockKeyhole, PanelLeft, Play } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import PageFeedback from "@/components/PageFeedback.vue"
 import { apiClient } from "@/lib/apiClient"
@@ -74,31 +74,38 @@ const greeting = computed(() => greetingName.value
   ? t.value.home.portalTitleNamed.replace("{name}", greetingName.value)
   : t.value.home.portalTitle)
 
+const identityNow = ref(Date.now())
+let identityClock: ReturnType<typeof setInterval> | undefined
+
 const accountBadges = computed(() => {
   const status = currentUser.value?.account_status
-  const badges: Array<{ key: string; label: string; icon: typeof Crown; className: string }> = []
-  const membership = status?.membership
-  if (membership?.available) {
-    badges.push({
-      key: "membership",
-      label: membership.is_member ? t.value.home.accountActiveMember : t.value.home.accountNotMember,
-      icon: membership.is_member ? Crown : UserRound,
-      className: membership.is_member ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-white text-slate-600",
-    })
-    if (membership.is_member && membership.plan_name?.trim()) {
-      badges.push({ key: "membership-plan", label: membership.plan_name.trim(), icon: Award, className: "border-amber-200 bg-amber-50 text-amber-800" })
-    }
-  }
-
+  const badges: Array<{ key: string; label: string; icon: typeof Crown }> = []
+  const candidates = new Set<string>()
   if (status?.certification?.available && status.certification.is_candidate) {
-    const seenPrograms = new Set<string>()
     for (const program of status.certification.programs) {
       const programStatus = statusEnumNameForStatus(CANDIDATE_PIPELINE_STATUS_ENUM_NAMES, program.status)
-      const name = program.name?.trim()
-      const key = program.pipeline_gpath || program.pipeline_config_ulid
-      if (!name || seenPrograms.has(key) || !["PIPELINE_STATUS_RUNNING", "PIPELINE_STATUS_WAIT_FINAL_ELIG", "PIPELINE_STATUS_ISSUING_CERT"].includes(programStatus)) continue
-      seenPrograms.add(key)
-      badges.push({ key: `candidate:${key}`, label: t.value.home.accountProgramCandidate.replace("{program}", name), icon: GraduationCap, className: "border-blue-200 bg-blue-50 text-blue-800" })
+      if (program.certification_code && ["PIPELINE_STATUS_RUNNING", "PIPELINE_STATUS_WAIT_FINAL_ELIG", "PIPELINE_STATUS_ISSUING_CERT"].includes(programStatus)) {
+        candidates.add(program.certification_code)
+      }
+    }
+  }
+  const holders = new Set(status?.qualification?.available ? status.qualification.charterholder_programs || [] : [])
+  // The customer's order is global across both certifications: display only the highest identity.
+  const highest = [
+    { key: "cftp_charterholder", active: holders.has("CFtP"), label: t.value.home.accountIdentities.cftpCharterholder, icon: Award },
+    { key: "cfta_charterholder", active: holders.has("CFtA"), label: t.value.home.accountIdentities.cftaCharterholder, icon: Award },
+    { key: "cftp_candidate", active: candidates.has("CFtP"), label: t.value.home.accountIdentities.cftpCandidate, icon: GraduationCap },
+    { key: "cfta_candidate", active: candidates.has("CFtA"), label: t.value.home.accountIdentities.cftaCandidate, icon: GraduationCap },
+  ].find(identity => identity.active)
+  if (highest) badges.push(highest)
+
+  const membership = status?.membership
+  const unexpired = !membership?.expires_at || Date.parse(membership.expires_at) > identityNow.value
+  if (membership?.available && membership.is_member && unexpired) {
+    if (membership.display_code === "affiliate_member") {
+      badges.push({ key: "membership", label: t.value.home.accountIdentities.affiliateMember, icon: Crown })
+    } else if (membership.display_code === "charterholder_member") {
+      badges.push({ key: "membership", label: t.value.home.accountIdentities.charterholderMember, icon: Crown })
     }
   }
   return badges
@@ -268,8 +275,11 @@ function reloadDashboard() {
 }
 
 onMounted(() => {
+  identityClock = setInterval(() => { identityNow.value = Date.now() }, 60_000)
   if (isAuthenticated()) reloadDashboard()
 })
+
+onBeforeUnmount(() => clearInterval(identityClock))
 watch(lang, () => {
   if (isAuthenticated()) reloadDashboard()
 })
@@ -286,12 +296,15 @@ watch(lang, () => {
       <main class="dashboard-main mx-auto w-full max-w-[1180px] px-5 py-8 md:px-8 lg:px-10">
         <div class="dashboard-intro">
           <h1 class="text-3xl font-bold text-[#002a66]">{{ greeting }}</h1>
-          <ul v-if="accountBadges.length" data-testid="dashboard-account-status" :aria-label="t.home.accountStatusTitle" class="mt-3 flex flex-wrap gap-2">
-            <li v-for="badge in accountBadges" :key="badge.key" :class="['inline-flex max-w-full items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold leading-5', badge.className]">
-              <component :is="badge.icon" class="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              <span class="min-w-0 break-words">{{ badge.label }}</span>
-            </li>
-          </ul>
+          <div v-if="accountBadges.length" class="mb-4 mt-4">
+            <p class="text-sm text-slate-500">{{ t.home.accountProfileTitle }}</p>
+            <ul data-testid="dashboard-account-status" :aria-label="t.home.accountProfileTitle" class="mt-3 flex flex-wrap gap-x-6 gap-y-3">
+              <li v-for="badge in accountBadges" :key="badge.key" class="inline-flex max-w-full items-center gap-2 text-sm font-semibold leading-6 text-[#002a66] sm:text-base">
+                <component :is="badge.icon" class="h-5 w-5 shrink-0" aria-hidden="true" />
+                <span class="min-w-0 break-words">{{ badge.label }}</span>
+              </li>
+            </ul>
+          </div>
           <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600">{{ t.home.portalSubtitle }}</p>
           <RouterLink v-if="nextStep" data-testid="dashboard-next-step" :to="nextStep.href" class="btn btn-primary mt-5 inline-flex min-h-10 items-center gap-2 px-4">
             {{ nextStep.label }}

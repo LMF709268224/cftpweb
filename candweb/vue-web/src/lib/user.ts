@@ -30,6 +30,7 @@ export interface UserAccountStatus {
     membership_ulid?: string
     membership_gpath?: string
     plan_name?: string
+    display_code?: "affiliate_member" | "charterholder_member"
     tier_level?: number
     status?: string
     expires_at?: string
@@ -42,6 +43,7 @@ export interface UserAccountStatus {
       pipeline_ulid: string
       pipeline_config_ulid: string
       pipeline_gpath?: string
+      certification_code?: "CFtA" | "CFtP"
       name?: string
       status: string
     }>
@@ -50,6 +52,7 @@ export interface UserAccountStatus {
     available: boolean
     has_qualification: boolean
     credential_count: number
+    charterholder_programs?: Array<"CFtA" | "CFtP">
   }
 }
 

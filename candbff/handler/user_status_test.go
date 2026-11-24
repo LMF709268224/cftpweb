@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 
 	gccpb "github.com/afnandelfin620-star/cftptest/cftp/gcc"
@@ -82,21 +83,43 @@ func (client *userStatusConfigClient) GetPipeline(
 
 type userStatusCredentialClient struct {
 	gcredspb.CredentialServiceClient
-	request *gcredspb.GetCandidateCredentialCountRequest
-	count   uint32
-	err     error
+	requests        []*gcredspb.ListCandidateCredentialsRequest
+	pages           map[string]*gcredspb.ListCandidateCredentialsResponse
+	definitions     map[string]*gcredspb.CredentialDefinition
+	definitionCalls map[string]int
+	err             error
+	failedCursor    string
 }
 
-func (client *userStatusCredentialClient) GetCandidateCredentialCount(
+func (client *userStatusCredentialClient) ListCandidateCredentials(
 	_ context.Context,
-	request *gcredspb.GetCandidateCredentialCountRequest,
+	request *gcredspb.ListCandidateCredentialsRequest,
 	_ ...grpc.CallOption,
-) (*gcredspb.GetCandidateCredentialCountResponse, error) {
-	client.request = request
-	if client.err != nil {
+) (*gcredspb.ListCandidateCredentialsResponse, error) {
+	client.requests = append(client.requests, request)
+	if client.err != nil && request.GetCursor() == client.failedCursor {
 		return nil, client.err
 	}
-	return &gcredspb.GetCandidateCredentialCountResponse{Count: client.count}, nil
+	if page, ok := client.pages[request.GetCursor()]; ok {
+		return page, nil
+	}
+	return &gcredspb.ListCandidateCredentialsResponse{}, nil
+}
+
+func (client *userStatusCredentialClient) GetCredentialDefinitionDetail(_ context.Context, request *gcredspb.GetCredentialDefinitionDetailRequest, _ ...grpc.CallOption) (*gcredspb.CredentialDefinition, error) {
+	if client.definitionCalls == nil {
+		client.definitionCalls = make(map[string]int)
+	}
+	client.definitionCalls[request.GetCredDefUlid()]++
+	definition := client.definitions[request.GetCredDefUlid()]
+	if definition == nil {
+		return nil, errors.New("definition unavailable")
+	}
+	return definition, nil
+}
+
+func currentIdentityCredential(definitionID string) *gcredspb.CredentialSummary {
+	return &gcredspb.CredentialSummary{CredDefUlid: definitionID, IsCurrent: true, Status: gcredspb.CredentialStatus_CREDENTIAL_STATUS_ACTIVE}
 }
 
 func userMeStatusRequest() *http.Request {
@@ -109,15 +132,15 @@ func TestGetUserMeAggregatesAccountStatusFromServices(t *testing.T) {
 		active: &gmbrpb.GetActiveMembershipResponse{Membership: &gmbrpb.UserMembership{
 			MembershipRecordUlid: "membership-record-1",
 			MembershipUlid:       "membership-plan-1",
-			MembershipGpath:      "/memberships/fellow",
+			MembershipGpath:      "/membership/gfi",
 			Status:               "active",
 			ExpiresAt:            "2027-09-09T00:00:00Z",
 		}},
 		plan: &gmbrpb.Membership{
 			MembershipUlid:  "membership-plan-1",
-			MembershipGpath: "/memberships/fellow",
-			Name:            "CFtP Fellow",
-			TierLevel:       3,
+			MembershipGpath: "/membership/gfi",
+			Name:            "Charterholder Membership",
+			TierLevel:       5,
 		},
 	}
 	progClient := &userStatusProgClient{pipelines: &gprogpb.ListCandidatePipelinesRsp{
@@ -129,10 +152,18 @@ func TestGetUserMeAggregatesAccountStatusFromServices(t *testing.T) {
 	}}
 	configClient := &userStatusConfigClient{config: &gccpb.PipelineConfig{
 		PipelineUlid:  "pipeline-config-1",
-		PipelineGpath: "/pipelines/cftp",
+		PipelineGpath: "/gcc/pipeline/core/cftp",
 		Name:          "CFtP",
 	}}
-	credentialClient := &userStatusCredentialClient{count: 2}
+	credentialClient := &userStatusCredentialClient{
+		pages: map[string]*gcredspb.ListCandidateCredentialsResponse{
+			"": {Credentials: []*gcredspb.CredentialSummary{currentIdentityCredential("cfta"), currentIdentityCredential("work")}},
+		},
+		definitions: map[string]*gcredspb.CredentialDefinition{
+			"cfta": {Respath: "/gcreds/core/cfta"},
+			"work": {Respath: "/gcreds/work-experience"},
+		},
+	}
 	handler := &Handler{
 		profileUsers: &fakeProfileUserStore{current: &casdoorsdk.User{Name: "candidate", Email: "candidate@example.com"}},
 		Gmbr:         membershipClient,
@@ -154,8 +185,8 @@ func TestGetUserMeAggregatesAccountStatusFromServices(t *testing.T) {
 	if progClient.request.GetCandidateUlid() != "candidate-1" || configClient.request.GetPipelineUlid() != "pipeline-config-1" {
 		t.Fatalf("certification requests = pipelines:%#v config:%#v", progClient.request, configClient.request)
 	}
-	if credentialClient.request.GetCandidateUlid() != "candidate-1" || credentialClient.request.GetLimit() != 1000 {
-		t.Fatalf("credential request = %#v", credentialClient.request)
+	if len(credentialClient.requests) != 1 || credentialClient.requests[0].GetCandidateUlid() != "candidate-1" || credentialClient.requests[0].GetPageSize() != 100 {
+		t.Fatalf("credential requests = %#v", credentialClient.requests)
 	}
 
 	var response struct {
@@ -166,16 +197,16 @@ func TestGetUserMeAggregatesAccountStatusFromServices(t *testing.T) {
 	}
 	status := response.Data.AccountStatus
 	if !status.Membership.Available || !status.Membership.IsMember ||
-		status.Membership.PlanName != "CFtP Fellow" || status.Membership.TierLevel != 3 {
+		status.Membership.PlanName != "Charterholder Membership" || status.Membership.DisplayCode != "charterholder_member" || status.Membership.TierLevel != 5 {
 		t.Fatalf("membership status = %#v", status.Membership)
 	}
 	if !status.Certification.Available || !status.Certification.IsCandidate ||
 		status.Certification.PurchaseCount != 1 || len(status.Certification.Programs) != 1 ||
 		status.Certification.Programs[0].Name != "CFtP" ||
-		status.Certification.Programs[0].PipelineGpath != "/pipelines/cftp" {
+		status.Certification.Programs[0].PipelineGpath != "/gcc/pipeline/core/cftp" || status.Certification.Programs[0].CertificationCode != "CFtP" {
 		t.Fatalf("certification status = %#v", status.Certification)
 	}
-	if !status.Qualification.Available || !status.Qualification.HasQualification || status.Qualification.CredentialCount != 2 {
+	if !status.Qualification.Available || !status.Qualification.HasQualification || status.Qualification.CredentialCount != 2 || !reflect.DeepEqual(status.Qualification.CharterholderPrograms, []string{"CFtA"}) {
 		t.Fatalf("qualification status = %#v", status.Qualification)
 	}
 }
@@ -186,7 +217,7 @@ func TestGetUserMeMarksFailedStatusSourcesUnavailable(t *testing.T) {
 		profileUsers: &fakeProfileUserStore{current: &casdoorsdk.User{Name: "candidate"}},
 		Gmbr:         &userStatusMembershipClient{err: serviceError},
 		Gprog:        &userStatusProgClient{err: serviceError},
-		Creds:        &userStatusCredentialClient{count: 0},
+		Creds:        &userStatusCredentialClient{},
 	}
 	recorder := httptest.NewRecorder()
 
@@ -215,7 +246,7 @@ func TestGetUserMeDistinguishesAvailableNegativeStatuses(t *testing.T) {
 		profileUsers: &fakeProfileUserStore{current: &casdoorsdk.User{Name: "candidate"}},
 		Gmbr:         membershipClient,
 		Gprog:        &userStatusProgClient{pipelines: &gprogpb.ListCandidatePipelinesRsp{}},
-		Creds:        &userStatusCredentialClient{count: 0},
+		Creds:        &userStatusCredentialClient{},
 	}
 	recorder := httptest.NewRecorder()
 

@@ -69,6 +69,7 @@ type UserMembershipStatusRsp struct {
 	MembershipULID       string `json:"membership_ulid,omitempty"`
 	MembershipGpath      string `json:"membership_gpath,omitempty"`
 	PlanName             string `json:"plan_name,omitempty"`
+	DisplayCode          string `json:"display_code,omitempty"`
 	TierLevel            int32  `json:"tier_level,omitempty"`
 	Status               string `json:"status,omitempty"`
 	ExpiresAt            string `json:"expires_at,omitempty"`
@@ -85,14 +86,16 @@ type UserCertificationProgram struct {
 	PipelineULID       string `json:"pipeline_ulid"`
 	PipelineConfigULID string `json:"pipeline_config_ulid"`
 	PipelineGpath      string `json:"pipeline_gpath,omitempty"`
+	CertificationCode  string `json:"certification_code,omitempty"`
 	Name               string `json:"name,omitempty"`
 	Status             string `json:"status"`
 }
 
 type UserQualificationStatusRsp struct {
-	Available        bool `json:"available"`
-	HasQualification bool `json:"has_qualification"`
-	CredentialCount  int  `json:"credential_count"`
+	Available             bool     `json:"available"`
+	HasQualification      bool     `json:"has_qualification"`
+	CredentialCount       int      `json:"credential_count"`
+	CharterholderPrograms []string `json:"charterholder_programs"`
 }
 
 type UserProfileInput struct {

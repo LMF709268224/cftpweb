@@ -16,7 +16,6 @@ import (
 	"sync"
 
 	gccpb "github.com/afnandelfin620-star/cftptest/cftp/gcc"
-	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
 	gmbrpb "github.com/afnandelfin620-star/cftptest/cftp/gmbr"
 	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
@@ -184,6 +183,7 @@ func (h *Handler) loadUserMembershipStatus(ctx context.Context, candidateID, loc
 		slog.Warn("failed to load current user membership plan", "candidate_id", candidateID, "membership_ulid", out.MembershipULID, "error", err)
 		return out
 	}
+	out.DisplayCode = membershipDisplayCode(plan.GetName())
 	plan = h.localizedMembership(ctx, plan, locale)
 	out.PlanName = strings.TrimSpace(plan.GetName())
 	out.TierLevel = plan.GetTierLevel()
@@ -224,6 +224,7 @@ func (h *Handler) loadUserCertificationStatus(ctx context.Context, candidateID, 
 			} else {
 				config = h.localizedPipeline(ctx, config, locale)
 				program.PipelineGpath = strings.TrimSpace(config.GetPipelineGpath())
+				program.CertificationCode = certificationCodeForPipeline(program.PipelineGpath)
 				program.Name = strings.TrimSpace(config.GetName())
 			}
 		}
@@ -231,26 +232,6 @@ func (h *Handler) loadUserCertificationStatus(ctx context.Context, candidateID, 
 	}
 	out.PurchaseCount = len(out.Programs)
 	out.IsCandidate = out.PurchaseCount > 0
-	return out
-}
-
-func (h *Handler) loadUserQualificationStatus(ctx context.Context, candidateID string) UserQualificationStatusRsp {
-	out := UserQualificationStatusRsp{}
-	if h.Creds == nil || strings.TrimSpace(candidateID) == "" {
-		return out
-	}
-
-	resp, err := h.Creds.GetCandidateCredentialCount(ctx, &gcredspb.GetCandidateCredentialCountRequest{
-		CandidateUlid: candidateID,
-		Limit:         1000,
-	})
-	if err != nil {
-		slog.Warn("failed to load current user qualification status", "candidate_id", candidateID, "error", err)
-		return out
-	}
-	out.Available = true
-	out.CredentialCount = int(resp.GetCount())
-	out.HasQualification = out.CredentialCount > 0
 	return out
 }
 
