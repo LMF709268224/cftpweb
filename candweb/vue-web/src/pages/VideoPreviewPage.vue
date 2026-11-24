@@ -2,13 +2,15 @@
 import { computed, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { AlertTriangle, ArrowLeft, Loader2, Play, RotateCw } from "lucide-vue-next"
-import { apiClient } from "@/lib/apiClient"
+import { apiClient, ApiClientError } from "@/lib/apiClient"
+import ResourceAccessNotice from "@/components/ResourceAccessNotice.vue"
 import { useTranslation } from "@/lib/language"
 
 const route = useRoute()
 const router = useRouter()
 const { t } = useTranslation()
 const loading = ref(false)
+const accessDenied = ref(false)
 const videoSrc = ref("")
 type VideoPreviewErrorKey = "videoNoResource" | "videoNoUrl" | "videoFailed"
 const errorMessageKey = ref<VideoPreviewErrorKey | "">("")
@@ -35,6 +37,7 @@ const courseReturnPath = computed(() => {
 })
 
 async function loadVideo() {
+  accessDenied.value = false
   videoSrc.value = ""
   errorMessageKey.value = ""
   frameLoaded.value = false
@@ -49,14 +52,15 @@ async function loadVideo() {
     const endpoint = isLessonPreview.value
       ? `/api/pipeline/lessons/${encodeURIComponent(lessonId.value)}/video-play-url`
       : `/api/resource-pack-files/${encodeURIComponent(fileId.value)}/view-url`
-    const resp = await apiClient(endpoint)
+    const resp = await apiClient(endpoint, { suppressErrorToast: !isLessonPreview.value })
     const viewUrl = String(resp?.url || resp?.view_url || "").trim()
     if (!viewUrl) {
       errorMessageKey.value = "videoNoUrl"
       return
     }
     videoSrc.value = viewUrl
-  } catch {
+  } catch (error) {
+    accessDenied.value = !isLessonPreview.value && error instanceof ApiClientError && error.status === 403
     errorMessageKey.value = "videoFailed"
   } finally {
     loading.value = false
@@ -114,6 +118,7 @@ watch([fileId, lessonId], loadVideo, { immediate: true })
           <Loader2 class="h-5 w-5 animate-spin text-primary" />
           {{ t.preview.videoPreviewLoading }}
         </div>
+        <ResourceAccessNotice v-else-if="accessDenied" class="m-4 max-w-lg" />
         <div v-else class="flex max-w-md flex-col items-center gap-3 text-center">
           <div class="rounded-full bg-rose-50 p-4 text-rose-500">
             <AlertTriangle class="h-8 w-8" />

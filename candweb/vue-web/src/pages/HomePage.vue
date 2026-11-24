@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue"
 import { RouterLink } from "vue-router"
-import { ArrowRight, Award, BookOpen, Crown, FileText, GraduationCap, PanelLeft, Play, UserRound } from "lucide-vue-next"
+import { ArrowRight, Award, BookOpen, Crown, FileText, GraduationCap, LockKeyhole, PanelLeft, Play, UserRound } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import PageFeedback from "@/components/PageFeedback.vue"
 import { apiClient } from "@/lib/apiClient"
@@ -32,6 +32,7 @@ type ResourcePack = {
 }
 
 type ResourceFile = {
+  can_access?: boolean
   file_id?: string
   title?: string
   description?: string
@@ -137,7 +138,7 @@ function productHref(product: Bundle) {
 }
 
 function fileHref(file: ResourceFile) {
-  if (!file.file_id) return insightsPack.value?.pack_id
+  if (!file.file_id || file.can_access !== true) return insightsPack.value?.pack_id
     ? `/resource-packs/${encodeURIComponent(insightsPack.value.pack_id)}`
     : "/resource-packs"
   if (Number(file.file_type) === 2) return `/resource-pack-files/${encodeURIComponent(file.file_id)}/preview`
@@ -148,7 +149,7 @@ function fileHref(file: ResourceFile) {
 }
 
 function opensPreview(file: ResourceFile) {
-  return Boolean(file.file_id && [1, 2].includes(Number(file.file_type)))
+  return Boolean(file.can_access === true && file.file_id && [1, 2].includes(Number(file.file_type)))
 }
 
 function rememberInsightsPack() {
@@ -197,7 +198,7 @@ async function loadInsights() {
       pack = response.packs.find((item: ResourcePack) =>
         `${item.respath || ""} ${item.title || ""}`.toLowerCase().includes("insight"))
       if (pack) break
-      const next = String(response.next_page_token || "")
+      const next = String(response.next_cursor || "")
       if (!next) break
       if (seen.has(next)) throw new Error("RESOURCE_PACK_CURSOR_LOOP")
       seen.add(next)
@@ -374,13 +375,16 @@ watch(lang, () => {
                 <component :is="Number(file.file_type) === 1 ? Play : FileText" class="mt-0.5 h-5 w-5 shrink-0 text-[#2f7d4f]" aria-hidden="true" />
                 <div class="min-w-0 flex-1">
                   <h3 class="break-words text-base font-semibold text-[#002a66]">{{ file.title || t.home.untitledInsight }}</h3>
+                  <span v-if="file.can_access !== true" class="mt-2 inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600">
+                    <LockKeyhole class="h-3 w-3" aria-hidden="true" />{{ t.resourceAccess.locked }}
+                  </span>
                   <p v-if="file.description" class="mt-1 line-clamp-2 text-sm leading-5 text-slate-600">{{ file.description }}</p>
                 </div>
               </div>
               <div class="mt-auto flex items-center justify-between gap-3 pt-4 text-xs text-slate-500">
                 <span>{{ file.created_at ? formatBackendDateOnly(file.created_at, lang) : "" }}</span>
                 <span class="inline-flex items-center gap-1 font-semibold text-primary">
-                  {{ Number(file.file_type) === 1 ? t.home.watchInsight : t.home.readInsight }}
+                  {{ file.can_access !== true ? t.resourceAccess.browse : Number(file.file_type) === 1 ? t.home.watchInsight : t.home.readInsight }}
                   <ArrowRight class="h-4 w-4" aria-hidden="true" />
                 </span>
               </div>

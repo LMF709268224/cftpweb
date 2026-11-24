@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { RouterLink } from "vue-router"
-import { ArrowRight, CalendarClock, PackageOpen, RefreshCw, Search } from "lucide-vue-next"
+import { ArrowRight, CalendarClock, LockKeyhole, PackageOpen, RefreshCw, Search } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import PageFeedback from "@/components/PageFeedback.vue"
 import { apiClient } from "@/lib/apiClient"
@@ -9,6 +9,7 @@ import { formatBackendDateOnly } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
 
 type ResourcePack = {
+  can_access?: boolean
   pack_id?: string
   title?: string
   description?: string
@@ -48,7 +49,7 @@ async function loadPacks(pageToken = "") {
     if (!Array.isArray(resp?.packs)) throw new Error("RESOURCE_PACKS_INVALID_RESPONSE")
     const list = resp.packs
     packs.value = pageToken ? packs.value.concat(list) : list
-    nextPageToken.value = resp?.next_page_token || ""
+    nextPageToken.value = resp?.next_cursor || ""
     loadError.value = false
   } catch (error) {
     if (requestId !== packsRequestId) return
@@ -116,6 +117,10 @@ onBeforeUnmount(() => {
         <span class="resource-pack-sheen pointer-events-none absolute left-0 top-0 z-20 h-1 w-full" />
         <span class="resource-pack-orb pointer-events-none absolute -right-12 -top-12 z-10 h-36 w-36 rounded-full opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
         <div class="resource-pack-visual relative flex h-24 items-end overflow-hidden bg-[#002a66] px-4 pb-3 text-white">
+          <span v-if="pack.can_access !== true" class="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-xs font-medium">
+            <LockKeyhole class="h-3.5 w-3.5" aria-hidden="true" />
+            {{ t.resourceAccess.locked }}
+          </span>
           <div class="absolute right-4 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-lg border border-white/20 bg-white/10">
             <PackageOpen class="h-7 w-7 text-white/70" />
           </div>
@@ -130,7 +135,7 @@ onBeforeUnmount(() => {
             </p>
           </div>
           <div class="resource-pack-action mt-4 flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white shadow-sm shadow-primary/20 transition-all duration-300 group-hover:bg-primary/90 group-hover:shadow-primary/30">
-            {{ copy.open }}
+            {{ pack.can_access === true ? copy.open : t.resourceAccess.browse }}
             <ArrowRight class="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
           </div>
         </div>

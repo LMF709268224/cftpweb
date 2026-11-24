@@ -2,7 +2,8 @@
 import { computed, defineAsyncComponent, onBeforeUnmount, onErrorCaptured, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { AlertTriangle, ArrowLeft, Calendar, FileText, Loader2, RotateCw } from "lucide-vue-next"
-import { apiClient } from "@/lib/apiClient"
+import { apiClient, ApiClientError } from "@/lib/apiClient"
+import ResourceAccessNotice from "@/components/ResourceAccessNotice.vue"
 import { useTranslation } from "@/lib/language"
 import { useUser } from "@/lib/user"
 import { formatBackendDate } from "@/lib/utils"
@@ -17,6 +18,7 @@ const { t, lang } = useTranslation()
 const { currentUser, fetchUser } = useUser()
 const viewerSrc = ref("")
 const loading = ref(false)
+const accessDenied = ref(false)
 const viewerReady = ref(false)
 const viewerFailed = ref(false)
 const slowPreview = ref(false)
@@ -264,6 +266,7 @@ function formatPreviewDate(value: string) {
 }
 
 async function loadPdf() {
+  accessDenied.value = false
   clearSlowPreviewTimer()
   cleanupAnnotationPersistence(true)
   viewerSrc.value = ""
@@ -285,7 +288,7 @@ async function loadPdf() {
       await fetchUser()
     }
 
-    const res = await apiClient(source.value, { timeoutMs: 60000 })
+    const res = await apiClient(source.value, { timeoutMs: 60000, suppressErrorToast: isResourcePackPreview.value })
     if (!res?.url) {
       errorMessageKey.value = "pdfNoResource"
       return
@@ -295,6 +298,7 @@ async function loadPdf() {
     viewerSrc.value = res.url
     startSlowPreviewTimer()
   } catch (err) {
+    accessDenied.value = isResourcePackPreview.value && err instanceof ApiClientError && err.status === 403
     errorMessageKey.value = "pdfFailed"
   } finally {
     loading.value = false
@@ -406,6 +410,7 @@ onErrorCaptured((err) => {
             <Loader2 class="h-5 w-5 animate-spin text-primary" />
             {{ t.preview.pdfPreviewLoading }}
           </div>
+          <ResourceAccessNotice v-else-if="accessDenied" class="m-4 max-w-lg" />
           <div v-else class="flex max-w-md flex-col items-center gap-3 px-6 text-center">
             <div class="rounded-full bg-rose-50 p-4 text-rose-500">
               <AlertTriangle class="h-8 w-8" />

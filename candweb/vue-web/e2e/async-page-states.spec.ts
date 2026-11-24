@@ -38,8 +38,8 @@ const asyncPageCases: AsyncPageCase[] = [
     path: "/resource-packs",
     endpoint: "/api/resource-packs",
     errorTitle: "专属合集加载失败",
-    successTitle: "暂无可访问的专属合集",
-    successData: { packs: [], next_page_token: "" },
+    successTitle: "暂无专属合集",
+    successData: { packs: [], next_cursor: "" },
   },
   {
     name: "专属合集详情",
@@ -143,13 +143,11 @@ for (const pageCase of asyncPageCases) {
   })
 }
 
-test("首页统计全部加载失败后可以重试", async ({ page }) => {
+test("首页各区域加载失败后可以独立重试", async ({ page }) => {
   const responses: Record<string, unknown> = {
     "/api/pipeline": { list: [] },
-    "/api/certificates": { certificates: [] },
-    "/api/exams": { exams: [] },
     "/api/resource-packs": { packs: [] },
-    "/api/orders": { orders: [] },
+    "/api/mall/bundles": { bundles: [] },
   }
   const requestCounts = new Map<string, number>()
 
@@ -164,9 +162,15 @@ test("首页统计全部加载失败后可以重试", async ({ page }) => {
   })
   await page.goto("/dashboard", { waitUntil: "domcontentloaded" })
 
-  await expect(page.getByRole("heading", { name: "首页统计加载失败" })).toBeVisible()
-  await page.getByRole("button", { name: "重新加载" }).click()
-  await expect(page.getByRole("heading", { name: "已购买专业认证" })).toBeVisible()
+  for (const title of ["暂时无法获取学习记录", "暂时无法获取 Insights", "暂时无法获取认证与课程"]) {
+    const section = page.locator("section").filter({ has: page.getByRole("heading", { name: title, exact: true }) })
+    await expect(section.getByRole("heading", { name: title, exact: true })).toBeVisible()
+    await section.getByRole("button", { name: "重试", exact: true }).click()
+    await expect(page.getByRole("heading", { name: title, exact: true })).toHaveCount(0)
+  }
+  await expect(page.getByRole("heading", { name: "还没有开始学习" })).toBeVisible()
+  await expect(page.getByText("目前没有可查看的 Insights。")).toBeVisible()
+  await expect(page.getByText("目前没有可报名的认证与课程。")).toBeVisible()
 
   for (const endpoint of Object.keys(responses)) {
     expect(requestCounts.get(endpoint)).toBe(2)

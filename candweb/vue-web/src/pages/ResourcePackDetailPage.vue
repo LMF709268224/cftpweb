@@ -2,14 +2,16 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { RouterLink, useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
-import { ArrowLeft, CalendarDays, Clock, Eye, FileArchive, Play, RefreshCw, Search } from "lucide-vue-next"
+import { ArrowLeft, CalendarDays, Clock, Eye, FileArchive, LockKeyhole, Play, RefreshCw, Search } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import PageFeedback from "@/components/PageFeedback.vue"
-import { apiClient } from "@/lib/apiClient"
+import ResourceAccessNotice from "@/components/ResourceAccessNotice.vue"
+import { apiClient, ApiClientError } from "@/lib/apiClient"
 import { formatBackendDateOnly } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
 
 type ResourcePackFile = {
+  can_access?: boolean
   file_id?: string
   pack_id?: string
   title?: string
@@ -202,7 +204,7 @@ async function loadFiles(pageToken = "") {
 }
 
 async function openFile(file: ResourcePackFile) {
-  if (!file.file_id) return
+  if (!file.file_id || file.can_access !== true) return
   openingFileId.value = file.file_id
   try {
     if (normalizedType(file.file_type) === 2) {
@@ -225,7 +227,8 @@ async function openFile(file: ResourcePackFile) {
       return
     }
     window.open(viewUrl, "_blank", "noopener,noreferrer")
-  } catch {
+  } catch (error) {
+    if (error instanceof ApiClientError && error.status === 403) file.can_access = false
     // apiClient already shows localized errors.
   } finally {
     window.setTimeout(() => {
@@ -291,6 +294,8 @@ onBeforeUnmount(() => {
       </div>
     </section>
 
+    <ResourceAccessNotice v-if="files.some(file => file.can_access !== true)" class="mb-5" />
+
     <section
       v-if="filteredFiles.length"
       :class="[
@@ -301,6 +306,8 @@ onBeforeUnmount(() => {
       <article
         v-for="file in filteredFiles"
         :key="file.file_id"
+        data-testid="resource-file-card"
+        :data-file-id="file.file_id"
         :class="[
           'resource-detail-card group overflow-hidden transition-all hover:-translate-y-0.5',
           normalizedType(file.file_type) === 2
@@ -311,7 +318,7 @@ onBeforeUnmount(() => {
         <button
           v-if="normalizedType(file.file_type) === 2"
           class="block w-full text-left"
-          :disabled="openingFileId === file.file_id"
+          :disabled="file.can_access !== true || openingFileId === file.file_id"
           @click="openFile(file)"
         >
           <div class="relative aspect-[0.72/1] overflow-hidden border border-border bg-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.14)]">
@@ -331,20 +338,21 @@ onBeforeUnmount(() => {
               ]"
               loading="lazy"
             />
-            <div v-else :class="['flex h-full w-full flex-col justify-end bg-gradient-to-br p-5 text-white', fallbackCoverClass(file.file_type)]">
-              <h2 class="line-clamp-4 text-2xl font-black leading-tight">{{ file.title || file.file_name || file.file_id }}</h2>
-            </div>
+            <div v-else :class="['h-full w-full bg-gradient-to-br', fallbackCoverClass(file.file_type)]" />
 
             <div class="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-slate-950/78 via-slate-950/32 to-transparent" />
 
-            <div class="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+            <span v-if="file.can_access !== true" class="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-slate-950/85 px-2.5 py-1 text-xs font-semibold text-white">
+              <LockKeyhole class="h-3.5 w-3.5" aria-hidden="true" />{{ t.resourceAccess.locked }}
+            </span>
+            <div v-else class="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100">
               <span class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-white/95 text-slate-950 shadow-lg backdrop-blur">
                 <Eye class="h-6 w-6" :stroke-width="2.5" />
               </span>
             </div>
 
             <div class="absolute bottom-6 left-5 right-5 text-white">
-              <p v-if="file.description || file.file_name" class="mt-2 line-clamp-2 text-sm font-semibold leading-5 text-white">{{ file.description || file.file_name }}</p>
+              <h2 :class="thumbnailFor(file) ? 'line-clamp-3 text-sm font-semibold leading-5' : 'line-clamp-4 text-2xl font-black leading-tight'">{{ file.title || file.file_name || file.file_id }}</h2>
             </div>
           </div>
 
@@ -355,7 +363,7 @@ onBeforeUnmount(() => {
         </button>
 
         <template v-else>
-          <button class="block w-full text-left" :disabled="openingFileId === file.file_id" @click="openFile(file)">
+          <button class="block w-full text-left" :disabled="file.can_access !== true || openingFileId === file.file_id" @click="openFile(file)">
             <div class="relative aspect-[2.2/1] overflow-hidden bg-slate-900">
               <div
                 v-if="isInsightsPack && thumbnailFor(file)"
@@ -386,7 +394,10 @@ onBeforeUnmount(() => {
                 {{ fileTypeLabel(file.file_type) }}
               </span>
 
-              <div class="absolute inset-0 flex items-center justify-center bg-slate-950/10 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+              <span v-if="file.can_access !== true" class="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-slate-950/85 px-2.5 py-1 text-xs font-semibold text-white">
+                <LockKeyhole class="h-3.5 w-3.5" aria-hidden="true" />{{ t.resourceAccess.locked }}
+              </span>
+              <div v-else class="absolute inset-0 flex items-center justify-center bg-slate-950/10 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                 <span
                   :class="[
                     'inline-flex items-center justify-center rounded-full bg-white/95 text-slate-950 shadow-lg backdrop-blur',
@@ -400,7 +411,7 @@ onBeforeUnmount(() => {
             </div>
           </button>
 
-          <button class="resource-detail-card-body block w-full px-4 py-4 text-left" :disabled="openingFileId === file.file_id" @click="openFile(file)">
+          <button class="resource-detail-card-body block w-full px-4 py-4 text-left" :disabled="file.can_access !== true || openingFileId === file.file_id" @click="openFile(file)">
             <h2 class="line-clamp-2 min-h-[2.75rem] text-base font-bold leading-snug text-foreground transition-colors group-hover:text-primary">{{ file.title || file.file_name || file.file_id }}</h2>
             <p v-if="file.description || file.file_name" class="mt-2 line-clamp-2 text-sm leading-5 text-muted-foreground">{{ file.description || file.file_name }}</p>
             <div class="mt-3 flex items-center justify-between gap-4 text-sm text-muted-foreground">

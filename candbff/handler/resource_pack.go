@@ -48,7 +48,14 @@ func (h *Handler) ListResourcePacks(w http.ResponseWriter, r *http.Request) {
 		}()
 	}
 	wg.Wait()
-	WriteJSON(w, http.StatusOK, resp)
+	// Keep empty catalogs as JSON arrays for the web client; protobuf uses omitempty.
+	WriteJSON(w, http.StatusOK, struct {
+		*lmspb.ListResourcePacksResponse
+		Packs []*lmspb.ResourcePack `json:"packs"`
+	}{
+		ListResourcePacksResponse: resp,
+		Packs:                     append([]*lmspb.ResourcePack{}, resp.GetPacks()...),
+	})
 }
 
 // ListResourcePackFiles GET /api/resource-packs/{pack_id}/files
@@ -103,7 +110,7 @@ func (h *Handler) ListResourcePackFiles(w http.ResponseWriter, r *http.Request) 
 	wg.Wait()
 
 	out := struct {
-		Files         []extFile `json:"files,omitempty"`
+		Files         []extFile `json:"files"`
 		NextPageToken string    `json:"next_page_token,omitempty"`
 		NextCursor    string    `json:"next_cursor,omitempty"`
 		HasMore       bool      `json:"has_more"`

@@ -129,9 +129,9 @@ test("首页展示学习进度、最新 Insights 和现有认证课程", async (
       { pack_id: "insights-pack", title: "Insights", respath: "/insights" },
     ], next_page_token: "" } };
     if (pathname === "/api/resource-packs/insights-pack/files") return { data: { files: [
-      { file_id: "older", title: "Older report", file_type: 2, created_at: "2026-10-01T00:00:00Z" },
-      { file_id: "newer", title: "New report", file_type: 2, created_at: "2026-10-21T00:00:00Z" },
-      { file_id: "middle", title: "Middle report", file_type: 2, created_at: "2026-10-12T00:00:00Z" },
+      { file_id: "older", title: "Older report", file_type: 2, can_access: true, created_at: "2026-10-01T00:00:00Z" },
+      { file_id: "newer", title: "New report", file_type: 2, can_access: true, created_at: "2026-10-21T00:00:00Z" },
+      { file_id: "middle", title: "Middle report", file_type: 2, can_access: true, created_at: "2026-10-12T00:00:00Z" },
     ], next_page_token: "" } };
     if (pathname === "/api/mall/bundles") return { data: { bundles: [
       { bundle_id: "cert-1", pipeline_id: "config-1", is_pipeline_bundle: true, name: "CFtP" },
@@ -464,7 +464,7 @@ test("登录后认证目录和会员购买入口分开，购买状态保持可�
   await expect(certificationCard).toContainText("Enroll Now");
   await expect(pendingCertificationCard).toContainText("Enrollment eligibility pending");
   await expect(pendingCertificationCard).toContainText("Check Enrollment Eligibility");
-  await expect(loadingCertificationCard).toContainText("Enrollment unavailable");
+  await expect(loadingCertificationCard).toContainText("Enrollment Unavailable");
   await expect(failedCertificationCard).toContainText("Failed to load enrollment eligibility");
   await expect(failedCertificationCard).toContainText("Retry Enrollment Check");
 

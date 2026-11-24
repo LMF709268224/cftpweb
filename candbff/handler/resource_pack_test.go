@@ -5,14 +5,19 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 
 	lmspb "github.com/afnandelfin620-star/cftptest/cftp/glms"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 type resourcePackRegressionClient struct {
 	lmspb.LmsServiceClient
+	mu sync.Mutex
 
 	packsRequest    *lmspb.ListResourcePacksCandidateRequest
 	filesRequests   []*lmspb.ListResourcePackFilesCandidateRequest
@@ -21,6 +26,7 @@ type resourcePackRegressionClient struct {
 	packsResponse   *lmspb.ListResourcePacksResponse
 	filesByPack     map[string]*lmspb.ListResourcePackFilesResponse
 	viewURLResponse *lmspb.GetResourcePackFileViewURLResponse
+	viewURLError    error
 }
 
 func (c *resourcePackRegressionClient) ListResourcePacks(
@@ -52,7 +58,9 @@ func (c *resourcePackRegressionClient) CreateViewURL(
 	request *lmspb.CreateViewURLCandidateRequest,
 	_ ...grpc.CallOption,
 ) (*lmspb.CreateViewURLResponse, error) {
+	c.mu.Lock()
 	c.createRequests = append(c.createRequests, request)
+	c.mu.Unlock()
 	return &lmspb.CreateViewURLResponse{
 		ObjectKey: request.GetObjectKey(),
 		ViewUrl:   "https://files.example.test/" + request.GetObjectKey(),
@@ -66,10 +74,129 @@ func (c *resourcePackRegressionClient) GetResourcePackFileViewURL(
 	_ ...grpc.CallOption,
 ) (*lmspb.GetResourcePackFileViewURLResponse, error) {
 	c.viewURLRequest = request
+	if c.viewURLError != nil {
+		return nil, c.viewURLError
+	}
 	if c.viewURLResponse != nil {
 		return c.viewURLResponse, nil
 	}
 	return &lmspb.GetResourcePackFileViewURLResponse{}, nil
+}
+
+func (c *resourcePackRegressionClient) GetResourcePackTranslations(context.Context, *lmspb.GetResourcePackTranslationsRequest, ...grpc.CallOption) (*lmspb.GetResourcePackTranslationsResponse, error) {
+	return &lmspb.GetResourcePackTranslationsResponse{Translations: map[string]*lmspb.ResourcePackTranslation{
+		"zh-CN": {Title: "本地化合集"},
+	}}, nil
+}
+
+func (c *resourcePackRegressionClient) GetResourcePackFileTranslations(context.Context, *lmspb.GetResourcePackFileTranslationsRequest, ...grpc.CallOption) (*lmspb.GetResourcePackFileTranslationsResponse, error) {
+	return &lmspb.GetResourcePackFileTranslationsResponse{Translations: map[string]*lmspb.ResourcePackFileTranslation{
+		"zh-CN": {Title: "本地化资源"},
+	}}, nil
+}
+
+func TestResourceCatalogPreservesAccessFlagsAndLockedThumbnails(t *testing.T) {
+	for _, access := range []struct {
+		name  string
+		value *bool
+	}{{"locked", proto.Bool(false)}, {"authorized", proto.Bool(true)}, {"unspecified", nil}} {
+		t.Run(access.name, func(t *testing.T) {
+			// Decode the wire response to verify the upgraded protocol retains optional false.
+			wire, err := proto.Marshal(&lmspb.ListResourcePacksResponse{Packs: []*lmspb.ResourcePack{{PackId: "pack-1", CanAccess: access.value}}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			packs := &lmspb.ListResourcePacksResponse{}
+			if err := proto.Unmarshal(wire, packs); err != nil {
+				t.Fatal(err)
+			}
+			client := &resourcePackRegressionClient{
+				packsResponse: packs,
+				filesByPack: map[string]*lmspb.ListResourcePackFilesResponse{
+					"pack-1": {Files: []*lmspb.ResourcePackFile{{FileId: "file-1", PackId: "pack-1", ThumbnailObjectKey: "thumb.png", CanAccess: access.value}}},
+				},
+			}
+			handler := &Handler{Lms: client}
+			for _, endpoint := range []struct {
+				path   string
+				key    string
+				title  string
+				handle http.HandlerFunc
+			}{{"/api/resource-packs", "packs", "本地化合集", handler.ListResourcePacks}, {"/api/resource-packs/pack-1/files", "files", "本地化资源", handler.ListResourcePackFiles}} {
+				recorder := httptest.NewRecorder()
+				request := newCandidateHandlerRequest(http.MethodGet, endpoint.path, "", "candidate-1", map[string]string{"pack_id": "pack-1"})
+				request.Header.Set("Accept-Language", "zh-CN")
+				endpoint.handle(recorder, request)
+				if recorder.Code != http.StatusOK {
+					t.Fatalf("status = %d; body=%s", recorder.Code, recorder.Body)
+				}
+				var response struct {
+					Data map[string]json.RawMessage `json:"data"`
+				}
+				if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+					t.Fatal(err)
+				}
+				var items []map[string]any
+				if err := json.Unmarshal(response.Data[endpoint.key], &items); err != nil {
+					t.Fatal(err)
+				}
+				if len(items) != 1 {
+					t.Fatalf("items = %#v", items)
+				}
+				value, present := items[0]["can_access"]
+				if (access.value == nil && present) || (access.value != nil && (!present || value != *access.value)) {
+					t.Fatalf("can_access = %#v, present = %v", value, present)
+				}
+				if items[0]["title"] != endpoint.title {
+					t.Fatalf("translation missing: %#v", items[0])
+				}
+				if endpoint.key == "files" && items[0]["thumbnail_url"] != "https://files.example.test/thumb.png" {
+					t.Fatalf("thumbnail missing: %#v", items[0])
+				}
+			}
+			if client.viewURLRequest != nil {
+				t.Fatal("catalog must not request full content URLs")
+			}
+		})
+	}
+}
+
+func TestEmptyResourceCatalogReturnsArrays(t *testing.T) {
+	handler := &Handler{Lms: &resourcePackRegressionClient{}}
+	for _, endpoint := range []struct {
+		key    string
+		handle http.HandlerFunc
+	}{{"packs", handler.ListResourcePacks}, {"files", handler.ListResourcePackFiles}} {
+		recorder := httptest.NewRecorder()
+		endpoint.handle(recorder, newCandidateHandlerRequest(http.MethodGet, "/api/resource-packs/pack-1/files", "", "candidate-1", map[string]string{"pack_id": "pack-1"}))
+		if recorder.Code != http.StatusOK {
+			t.Fatalf("status = %d; body=%s", recorder.Code, recorder.Body)
+		}
+		var response struct {
+			Data map[string]json.RawMessage `json:"data"`
+		}
+		if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+			t.Fatal(err)
+		}
+		if string(response.Data[endpoint.key]) != "[]" {
+			t.Fatalf("empty %s = %s", endpoint.key, response.Data[endpoint.key])
+		}
+	}
+}
+
+func TestResourceContentHandlersPreservePermissionDenied(t *testing.T) {
+	client := &resourcePackRegressionClient{viewURLError: status.Error(codes.PermissionDenied, "resource access denied")}
+	handler := &Handler{Lms: client}
+	for _, handle := range []http.HandlerFunc{handler.GetResourcePackFileViewURL, handler.GetResourcePackFilePreviewURL} {
+		recorder := httptest.NewRecorder()
+		handle(recorder, newCandidateHandlerRequest(http.MethodGet, "/api/resource-pack-files/file-1/view-url", "", "candidate-1", map[string]string{"file_id": "file-1"}))
+		if recorder.Code != http.StatusForbidden {
+			t.Fatalf("status = %d; body=%s", recorder.Code, recorder.Body)
+		}
+		if client.viewURLRequest.GetCandidateUlid() != "candidate-1" || client.viewURLRequest.GetFileId() != "file-1" {
+			t.Fatalf("content request lost its scope: %#v", client.viewURLRequest)
+		}
+	}
 }
 
 func TestListResourcePacksForwardsCandidatePagination(t *testing.T) {
