@@ -1,6 +1,6 @@
 # 考生端认证阶段列表：学习状态与考试预约
 
-## 本轮已完成（尚未部署）
+## 本轮已完成（2026-11-25 已部署 dev / prod）
 
 - 阶段和课程状态使用浅灰背景、常规字重及默认光标，与蓝色操作按钮区分。
 - 课程整行不再是链接；只有蓝色学习按钮进入学习页，点击状态不会跳转。
@@ -27,3 +27,15 @@
 - BFF：真实零进度与缺数据保持区别；当前考试实例选择；拒绝其他考生、其他单元、旧考试记录及查询失败的数据。
 - 浏览器：中文与英文；已完成学习但未预约考试；学习进行中且已预约；无考试课程；考试结束；缺失数据；状态不可点击；移动端布局。
 - 已通过 `go test ./handler`、Vue 类型检查、E2E TypeScript 检查及两项浏览器回归（本次状态展示、原有已完成课程重新进入）；已检查桌面及手机截图。
+
+## 2026-11-25 部署记录
+
+- 代码版本：`cd320be7`（完整提交 `cd320be7289b5bb64fa99f255c4e5b232e4fea65`），已推送。
+- 使用 `13.212.15.51` 上仓库原有脚本，依次执行：
+  - `bash -l /home/ubuntu/cftpweb/docker_abc.sh --env test candbff candweb`（dev）。
+  - `bash -l /home/ubuntu/cftpweb/docker_abc.sh --env prod candbff candweb`。
+- 两次发布均成功，四个容器均为 `healthy`；两个 BFF 的 `/health` 返回 `OK`，两套考生端页面均返回 HTTP 200。
+- BFF 构建信息确认源码版本为上述提交且 `vcs.modified=false`。两个环境公开返回的 `CourseDetailPage-CB7nojUh.js` 与构建产物 SHA-256 一致：`26225aa9aa407a4f87f370835e96ee67f946c73f692a4a46d1715ad9f0ece40a`。
+- 分别针对 dev / prod 实际部署的前端资源执行 `pathway-status.spec.ts`，均通过。测试拦截业务 API 使用测试数据，验证中英文、状态与按钮区分、缺数据表现和手机布局；未修改线上考生、学习或考试数据，不代表使用真实账号完成了业务全流程验证。
+- 保留上一版镜像供回退：`localhost/{candbff,candweb}:{dev,prod}-before-pathway-status-20261125`。
+- 本次未发布 Admin 服务，也未修改微服务；“未开始”的接口缺口继续保留。

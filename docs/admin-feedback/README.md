@@ -14,7 +14,7 @@
 | Course Config 1/2、2/2 | [课程配置与编辑器](course-config.md) | `a6c8b0c3`；后续见中文复核 | 已接部分编辑能力；本轮补 PDF 预览；完整统一工作台、迁移及退休规则等用户确认；尚未部署 |
 | 中文补充说明复核 | [逐页复核及大项确认清单](chinese-notes-review.md) | 与本轮小修同次提交 | 移除技术阶段分布，补真实空值／分页输出和 PDF 预览；较大流程改动未做，等用户确定；尚未部署 |
 | 资源授权 / 正式服报名费 | [2026-11-25 线上排查及发布](2026-11-25-resource-access-and-enrollment-fee.md) | 原修复 `c9730bd1`；prod 单独发布 `bbafddfe` | prod 报名费修复已上线；其他 Admin 反馈改动未随之发布；dev 会员记录与 Casdoor 角色不一致，尚未改动授权 |
-| 考生端阶段列表状态 | [学习状态与考试预约](2026-11-25-candidate-pathway-status.md) | 与本轮修改同次提交 | 弱化状态样式、分开展示真实学习及预约数据；“未开始”需 GLMS 提供权威字段；尚未部署 |
+| 考生端阶段列表状态 | [学习状态与考试预约](2026-11-25-candidate-pathway-status.md) | `cd320be7` | 2026-11-25 已部署 dev / prod 的 candbff、candweb，健康及线上页面回归通过；“未开始”仍需 GLMS 提供权威字段 |
 
 ## 维护方式
 
