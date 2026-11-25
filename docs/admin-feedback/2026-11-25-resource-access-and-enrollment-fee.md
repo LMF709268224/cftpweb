@@ -1,6 +1,6 @@
 # 资源授权与正式服报名费排查（2026-11-25）
 
-本次只读核对 dev / prod 实际配置、线上静态资源和已有代码，并运行已有报名费回归测试。未修改会员记录、Casdoor 角色、商品价格或线上部署。
+初次排查只读核对 dev / prod 实际配置、线上静态资源和已有代码。用户随后要求先更新 prod 管理端，现已单独发布报名费修复，详情见本文发布记录。会员记录、Casdoor 角色和商品价格未修改。
 
 ## 1. dev 无会员记录的考生可以打开会员资源
 
@@ -43,9 +43,9 @@
 
 ### 已确认原因
 
-正式服 `adminweb` 仍在运行旧版 `PricingEditor`：编辑器绑定和序列化的是 `pipeline_id`，而同一页面的保存校验读取 `pipeline_gpath`。因此下拉框有选中值，校验依然认为未选择关联认证；报错发生在前端提交前。
+发布前，正式服 `adminweb` 运行旧版 `PricingEditor`：编辑器绑定和序列化的是 `pipeline_id`，而同一页面的保存校验读取 `pipeline_gpath`。因此下拉框有选中值，校验依然认为未选择关联认证；报错发生在前端提交前。
 
-### 线上构建证据
+### 发布前的线上构建证据
 
 | 环境 | 入口脚本 | 商品页面脚本 | 编辑器字段 | 校验字段 |
 | --- | --- | --- | --- | --- |
@@ -57,9 +57,16 @@
 - 已有修复提交：`c9730bd1`（2026-11-04），`Fix admin pipeline enrollment fee GPath binding`，统一编辑器的解析、绑定、去重、新增和序列化字段。
 - 本次运行已有浏览器回归 `pipeline enrollment fee keeps its GPath when saved`：1 项通过，验证保存请求保留所选认证 GPath 及 Stripe Product/Price ID。测试使用本地模拟接口，没有向正式服提交价格配置；这不等于已验证截图中 Stripe 价格的有效性。
 
-### 发布状态
+### 发布记录（2026-11-25）
 
-- dev 已包含该修复；prod 尚未包含。
-- 最近一轮价格区间发布只更新了 `candweb`，不会更新管理端 `adminweb`。
-- 处理方式是将正式服 `adminweb` 更新到包含 `c9730bd1` 的版本；无需改商品数据来绕过报错。
-- 当前主分支还包含 `admin-feedback` 所列未部署的 Admin 改动，发布时必须明确包含范围，不能把这些改动当作此次报名费修复已获整体上线确认。
+- dev 已包含原修复；本次按用户要求单独更新 prod 的 `adminweb`。
+- 从正式服原容器二进制的 Go 构建信息确认原版本为 `7301f50c`，源码未修改。
+- 以该版本建立发布分支 `release/prod-admin-enrollment-fee-20261125`，只摘取 `c9730bd1`；发布提交为 `bbafddfe`。相对原版本，仅修改 `PricingEditor.vue`，并增加对应浏览器回归测试。
+- 使用仓库原有脚本：`bash -l /home/ubuntu/cftpweb-prod-admin-enrollment-fee-20261125/docker_abc.sh --env prod adminweb`。部署脚本及 Compose 定义与主分支一致，复用原 `.env.prod`，未另写部署流程。
+- 之前 `admin-feedback` 中的 Dashboard、用户管理、课程编辑器等改动仍未随此次发布上线。dev、prod 考生端和 prod `adminbff` 的容器 ID / 镜像与发布前一致。
+- 发布前检查：Vue 类型检查、E2E 类型检查、商品配置 6 项浏览器测试均通过。服务端原脚本完成前端生产构建、压缩、Go 编译及镜像构建。
+- 发布后检查：`cftp-prod-adminweb` 为 `running / healthy`，`/bundles` 返回 HTTP 200；线上 HTML、入口及商品页面脚本与本次构建文件逐字节一致。
+- 线上新入口：`/assets/index-LHF3Cwxz.js`；商品页面：`BundlesPage-CvgS06T4.js`；商品脚本 SHA-256：`2af0a6d8d0dc730a57d3df934bfa72463f317ae88de98ccd059ccc02c71a7f22`。
+- 使用正式服真实页面静态资源执行报名费保存回归：1 项通过。所有 `/api/**` 请求均由测试拦截并模拟返回，验证前端提交的 GPath 与价格 ID，未向正式服写入商品价格，也不宣称已验证截图中 Stripe 价格的有效性。
+- 新镜像：`sha256:6d25c00a0cd0dbea3a4223a70d51667f42c18892181a3a30b9f5e1cb4c7f2470`。
+- 原镜像已保留为 `localhost/adminweb:prod-before-enrollment-fee-20261125`，镜像 ID：`sha256:8eb2b7e7ba584298f711c8137e0de2d5c73ff464f1e8b62513ae00df4e2c8080`。
