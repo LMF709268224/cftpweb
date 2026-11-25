@@ -83,7 +83,8 @@ const isMembershipOnlyProduct = computed(() => isMembershipProduct.value && !isP
 const alreadyPurchasedBlockers = computed(() => blockers.value.filter((blocker) => blocker.blocker_type === "ALREADY_PURCHASED"))
 const membershipUpgradeBlocker = computed(() => blockers.value.find((blocker) => blocker.blocker_type === "MEMBERSHIP_UPGRADE_REQUIRED"))
 const membershipOrderInProgressBlocker = computed(() => blockers.value.find((blocker) => blocker.blocker_type === "MEMBERSHIP_ORDER_IN_PROGRESS"))
-const hasPurchasedPipeline = computed(() => alreadyPurchasedBlockers.value.some((blocker) => String(blocker.description || "").toLowerCase().includes("pipeline")))
+const ownedPipelineId = computed(() => String(freshBundle.value?.owned_pipeline_id || props.ownedPipelineId || "").trim())
+const hasPurchasedPipeline = computed(() => Boolean(ownedPipelineId.value) || alreadyPurchasedBlockers.value.some((blocker) => String(blocker.description || "").toLowerCase().includes("pipeline")))
 const hasPurchasedMembership = computed(() =>
   Boolean(currentActiveMembership.value) ||
   alreadyPurchasedBlockers.value.some((blocker) => String(blocker.description || "").toLowerCase().includes("membership")),
@@ -102,8 +103,8 @@ const resolvedStatusLabel = computed(() =>
 )
 const purchasedTarget = computed(() => {
   if (!isPipelineProduct.value) return "/membership"
-  return props.ownedPipelineId
-    ? `/certifications/${encodeURIComponent(props.ownedPipelineId)}`
+  return ownedPipelineId.value
+    ? `/certifications/${encodeURIComponent(ownedPipelineId.value)}`
     : "/my-certifications"
 })
 

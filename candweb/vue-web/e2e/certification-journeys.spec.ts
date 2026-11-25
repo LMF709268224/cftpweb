@@ -226,6 +226,31 @@ test("商城已购认证在管理员发布新版本后进入用户购买的版�
     await expect(page).toHaveURL(new RegExp(`/certifications/${ownedPipelineID}$`))
 })
 
+test("历史订单缺少管线订单时仍按已拥有的认证实例展示卡片", async ({ page }) => {
+    const ownedPipelineID = "pipeline-config-legacy"
+    const legacyBundle = {
+        ...bundle,
+        owned_pipeline_id: ownedPipelineID,
+    }
+
+    await installCandidateApiMocks(page, ({ pathname, method }) => {
+        if (pathname === "/api/mall/bundles" && method === "GET") {
+            return { data: { bundles: [legacyBundle] } }
+        }
+        if (pathname === `/api/mall/pipelines/${ownedPipelineID}/runtime` && method === "GET") {
+            return { data: pipelineRuntime() }
+        }
+        return undefined
+    })
+
+    await page.goto("/certifications", { waitUntil: "domcontentloaded" })
+    const card = page.locator(`[data-testid="certification-card"][data-bundle-id="${bundleID}"]`)
+    await expect(card.getByText("已报名", { exact: true })).toBeVisible()
+    await expect(card.getByText("进入我的认证", { exact: true })).toBeVisible()
+    await card.click()
+    await expect(page).toHaveURL(new RegExp(`/certifications/${ownedPipelineID}$`))
+})
+
 test("已完成阶段可重入课程且补充资料排版正确", async ({ page }) => {
     const completedCourseID = "course-completed-review"
     const unavailableCourseID = "course-without-access"
