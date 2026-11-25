@@ -18,12 +18,9 @@ import {
 import {
   CANDIDATE_APPLICATION_STATUS_ENUM_NAMES,
   CANDIDATE_APPLICATION_STATUS_LABELS,
-  CANDIDATE_COURSE_STATUS_LABELS,
   courseUnitNextStepActionFromStatus,
   stageStatusHintLabel,
   statusLabel,
-  statusBadgeClassForStatusValue,
-  timelineStatusBadgeClassForStatus,
   timelineStatusLabelWithDiagnostics,
   statusEnumNameForStatus,
   COURSE_UNIT_STATUS_ENUM_NAMES,
@@ -42,7 +39,7 @@ import {
 } from "@/lib/stageOrderRecovery"
 import { useTranslation } from "@/lib/language"
 import { usePolling } from "@/lib/polling"
-import { formatBackendDateOnly } from "@/lib/utils"
+import { formatBackendDate, formatBackendDateOnly } from "@/lib/utils"
 
 type PipelineDetail = {
   config?: PipelineConfig
@@ -86,6 +83,10 @@ type UnitConfig = {
   runtime_status?: string | number
   has_learning_access?: boolean
   enrollment_status?: string
+  learning_progress_percentage?: number
+  has_exam?: boolean
+  current_exam_id?: string
+  current_exam?: { status?: string; appointment_start_time?: string }
   allow_retake?: boolean
   allow_exemption?: boolean
   exemption_quals?: Array<string | {
@@ -438,10 +439,6 @@ function stageStatusLabel(status?: string | number | null) {
   return timelineStatusLabelWithDiagnostics(t.value, "STAGE", status)
 }
 
-function unitStatusLabel(status?: string | number | null) {
-  return timelineStatusLabelWithDiagnostics(t.value, "COURSE_UNIT", status)
-}
-
 function stageStateText(index: number) {
   const stage = stages.value[index]
   const status = stage?.runtime_status
@@ -452,31 +449,43 @@ function stageStateText(index: number) {
   return stageStatusLabel(status)
 }
 
-function stageStateClass(index: number) {
-  const stage = stages.value[index]
-  const status = stage?.runtime_status
-  if (!purchased.value || !hasRuntimeStatus(status)) return "border-slate-200 bg-slate-50 text-slate-600"
-  return timelineStatusBadgeClassForStatus("STAGE", status)
-}
-
-function unitStateText(unit: UnitConfig) {
-  if (!purchased.value) return t.value.courses.positionNotPurchased
-  if (hasRuntimeStatus(unit.runtime_status)) return unitStatusLabel(unit.runtime_status)
+function unitLearningText(unit: UnitConfig) {
   const enrollmentStatus = String(unit.enrollment_status || "").trim().toLowerCase()
-  if (enrollmentStatus === "learning" || enrollmentStatus === "completed") {
-    return statusLabel(t.value, CANDIDATE_COURSE_STATUS_LABELS, enrollmentStatus)
+  if (enrollmentStatus === "completed") return t.value.courses.learningCompleted
+  const progress = unit.learning_progress_percentage
+  if (enrollmentStatus === "learning" && typeof progress === "number" && Number.isFinite(progress) && progress >= 0 && progress <= 100) {
+    // GLMS creates enrollments as "learning" even before the first lesson.
+    // Zero completed items does not prove that learning has not started.
+    return progress === 0
+      ? t.value.courses.learningProgress.replace("{progress}", "0")
+      : t.value.courses.learningInProgress.replace("{progress}", String(progress))
   }
-  return unit.has_learning_access ? t.value.courses.purchased : t.value.courses.positionNotPurchased
+  return t.value.courses.learningStatusUnavailable
 }
 
-function unitStateClass(unit: UnitConfig) {
-  if (!purchased.value) return "border-slate-200 bg-slate-50 text-slate-600"
-  if (hasRuntimeStatus(unit.runtime_status)) return timelineStatusBadgeClassForStatus("COURSE_UNIT", unit.runtime_status)
-  if (unit.has_learning_access) return statusBadgeClassForStatusValue(unit.enrollment_status)
-  return "border-slate-200 bg-slate-50 text-slate-600"
+function unitExamText(unit: UnitConfig) {
+  const examStatus = unit.current_exam?.status?.trim().toUpperCase()
+  if (examStatus === "OPEN") return t.value.courses.examNotBooked
+  if (examStatus === "SCHEDULED") return t.value.courses.examBooked
+  if (examStatus === "DONE") return t.value.courses.examCompleted
+  const unitStatus = statusEnumNameForStatus(COURSE_UNIT_STATUS_ENUM_NAMES, unit.runtime_status)
+  if (!unit.current_exam_id && (unitStatus === "COURSE_UNIT_STATUS_WAITING_STUDY" || unitStatus === "COURSE_UNIT_STATUS_WAITING_SIGNUP_EXAM")) {
+    return t.value.courses.examNotBooked
+  }
+  return t.value.courses.examStatusUnavailable
+}
+
+function unitExamDate(unit: UnitConfig) {
+  const date = unit.current_exam?.appointment_start_time
+  return unit.current_exam?.status?.trim().toUpperCase() === "SCHEDULED" && date && Number.isFinite(Date.parse(date))
+    ? formatBackendDate(date, lang.value)
+    : ""
 }
 
 function learningActionText(unit: UnitConfig) {
+  if (unit.enrollment_status === "completed" || (typeof unit.learning_progress_percentage === "number" && unit.learning_progress_percentage > 0 && unit.learning_progress_percentage <= 100)) {
+    return t.value.courses.continueLearning
+  }
   const status = statusEnumNameForStatus(COURSE_UNIT_STATUS_ENUM_NAMES, unit.runtime_status)
   return status === "COURSE_UNIT_STATUS_WAITING_STUDY"
     ? t.value.courses.startLearning
@@ -1454,21 +1463,19 @@ watch(lang, async () => {
               </div>
             </div>
             <div class="flex flex-wrap gap-2">
-              <span :class="['badge', stageStateClass(stageIndex)]">
+              <span class="course-detail-status">
                 {{ stageStateText(stageIndex) }}
               </span>
             </div>
           </div>
 
           <div v-if="visibleStageUnits(stage).length > 0">
-            <component
-              :is="unit.glms_course_id ? RouterLink : 'div'"
+            <div
               v-for="(unit, unitIndex) in visibleStageUnits(stage)"
               :key="unit.unit_id || unit.glms_course_id || `${stageIndex}-${unitIndex}`"
-              :to="learningHref(unit.glms_course_id)"
-              data-testid="course-unit-link"
+              data-testid="course-unit-row"
               :data-course-id="unit.glms_course_id || ''"
-              class="course-detail-unit flex items-center justify-between gap-4 border-t border-slate-50 px-5 py-4 transition-colors first:border-t-0 hover:bg-slate-50"
+              class="course-detail-unit flex items-center justify-between gap-4 border-t border-slate-50 px-5 py-4 first:border-t-0"
             >
               <div class="course-detail-unit-main flex min-w-0 items-center gap-3">
                 <div
@@ -1498,15 +1505,23 @@ watch(lang, async () => {
                 </div>
               </div>
               <div class="course-detail-unit-actions flex flex-wrap items-center justify-end gap-2">
-                <span :class="['badge', unitStateClass(unit)]">{{ unitStateText(unit) }}</span>
-                <span
+                <div class="flex flex-col items-start gap-1.5">
+                  <span v-if="unit.glms_course_id" class="course-detail-status" data-testid="unit-learning-status">{{ unitLearningText(unit) }}</span>
+                  <span v-if="unit.has_exam || unit.current_exam_id" class="course-detail-status" data-testid="unit-exam-status">
+                    {{ unitExamText(unit) }}<span v-if="unitExamDate(unit)"> · {{ unitExamDate(unit) }}</span>
+                  </span>
+                </div>
+                <RouterLink
                   v-if="unit.glms_course_id"
-                  class="badge border-primary bg-primary text-primary-foreground"
+                  :to="learningHref(unit.glms_course_id)"
+                  data-testid="course-unit-link"
+                  :data-course-id="unit.glms_course_id"
+                  class="btn btn-vivid shrink-0 rounded-lg px-3 py-2 text-xs"
                 >
                   {{ learningActionText(unit) }}
-                </span>
+                </RouterLink>
               </div>
-            </component>
+            </div>
           </div>
           <div v-else-if="isStageWaitCandidate(stage)" class="flex justify-center border-t border-slate-100 p-6">
             <button
@@ -1569,6 +1584,20 @@ watch(lang, async () => {
 </template>
 
 <style scoped>
+.course-detail-status {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  border-radius: 4px;
+  background: #f1f5f9;
+  padding: 4px 8px;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  cursor: default;
+}
+
 @media (max-width: 767px) {
   .course-detail-back {
     margin-bottom: 16px;

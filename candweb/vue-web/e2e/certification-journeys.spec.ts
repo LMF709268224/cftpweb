@@ -296,7 +296,7 @@ test("已完成阶段可重入课程且补充资料排版正确", async ({ page 
 
     const completedCourse = page.locator(`[data-testid="course-unit-link"][data-course-id="${completedCourseID}"]`)
     await expect(completedCourse).toBeVisible()
-    await expect(completedCourse.getByText("已完成", { exact: true })).toBeVisible()
+    await expect(page.locator(`[data-testid="course-unit-row"][data-course-id="${completedCourseID}"]`).getByText("学习：已完成", { exact: true })).toBeVisible()
     await expect(page.locator(`[data-testid="course-unit-link"][data-course-id="${unavailableCourseID}"]`)).toHaveCount(0)
 
     await completedCourse.click()

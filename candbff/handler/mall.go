@@ -9,6 +9,7 @@ import (
 
 	gccpb "github.com/afnandelfin620-star/cftptest/cftp/gcc"
 	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
+	gexampb "github.com/afnandelfin620-star/cftptest/cftp/gexam"
 	lmspb "github.com/afnandelfin620-star/cftptest/cftp/glms"
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
 	gmbrpb "github.com/afnandelfin620-star/cftptest/cftp/gmbr"
@@ -259,6 +260,7 @@ func (h *Handler) GetPipelineRuntime(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		mergeRuntimeStatuses(&out.Config, runtimeResp)
+		h.enrichRuntimeExams(ctx, candidateID, &out.Config)
 		if h.Lms != nil {
 			enrollments, enrollmentErr := h.listCandidateEnrollments(ctx, candidateID)
 			if enrollmentErr != nil {
@@ -379,6 +381,7 @@ func mergeRuntimeStatuses(config *PipelineConfig, runtime *gprog.GetPipelineDeta
 			}
 			config.Stages[stageIndex].Units[unitIndex].RuntimeStatus = unit.GetStatus().String()
 			config.Stages[stageIndex].Units[unitIndex].CourseUnitUlid = unit.GetCourseUnitUlid()
+			config.Stages[stageIndex].Units[unitIndex].CurrentExamUlid = unit.GetExamUlid()
 			// The runtime instance owns the physically bound GLMS course ULID.
 			// GCC only provides the logical course GPath for editable config.
 			config.Stages[stageIndex].Units[unitIndex].GlmsCourseUlid = unit.GetGlmsCourseUlid()
@@ -391,16 +394,16 @@ func mergeLearningAccess(config *PipelineConfig, enrollments []*lmspb.CandidateE
 		return
 	}
 
-	enrollmentStatuses := make(map[string]string, len(enrollments))
+	courseEnrollments := make(map[string]*lmspb.CandidateEnrollmentSummary, len(enrollments))
 	for _, enrollment := range enrollments {
 		if enrollment == nil {
 			continue
 		}
 		status := strings.TrimSpace(enrollment.GetStatus())
 		for _, courseID := range candidateEnrollmentCourseIdentifiers(enrollment) {
-			currentStatus, exists := enrollmentStatuses[courseID]
-			if !exists || currentStatus == "" || strings.EqualFold(status, "completed") {
-				enrollmentStatuses[courseID] = status
+			current, exists := courseEnrollments[courseID]
+			if !exists || strings.TrimSpace(current.GetStatus()) == "" || strings.EqualFold(status, "completed") {
+				courseEnrollments[courseID] = enrollment
 			}
 		}
 	}
@@ -408,12 +411,42 @@ func mergeLearningAccess(config *PipelineConfig, enrollments []*lmspb.CandidateE
 	for stageIndex := range config.Stages {
 		for unitIndex := range config.Stages[stageIndex].Units {
 			unit := &config.Stages[stageIndex].Units[unitIndex]
-			status, ok := enrollmentStatuses[strings.TrimSpace(unit.GlmsCourseUlid)]
+			enrollment, ok := courseEnrollments[strings.TrimSpace(unit.GlmsCourseUlid)]
 			if !ok {
 				continue
 			}
 			unit.HasLearningAccess = true
-			unit.EnrollmentStatus = status
+			unit.EnrollmentStatus = strings.TrimSpace(enrollment.GetStatus())
+			progress := enrollment.GetProgressPercentage()
+			unit.LearningProgressPercentage = &progress
+		}
+	}
+}
+
+// Use the runtime's current exam, never the exam configuration ID or a previous attempt.
+func (h *Handler) enrichRuntimeExams(ctx context.Context, candidateID string, config *PipelineConfig) {
+	if h.Gexam == nil || config == nil {
+		return
+	}
+	for stageIndex := range config.Stages {
+		for unitIndex := range config.Stages[stageIndex].Units {
+			unit := &config.Stages[stageIndex].Units[unitIndex]
+			if unit.CurrentExamUlid == "" || unit.CourseUnitUlid == "" {
+				continue
+			}
+			exam, err := h.Gexam.GetExamDetail(ctx, &gexampb.GetExamRequest{ExamUlid: unit.CurrentExamUlid})
+			if err != nil {
+				slog.WarnContext(ctx, "failed to load runtime exam status", "exam_id", unit.CurrentExamUlid, "error", err)
+				continue
+			}
+			if exam.GetExamUlid() != unit.CurrentExamUlid || exam.GetCandidateUlid() != candidateID || exam.GetCourseUnitUlid() != unit.CourseUnitUlid {
+				slog.WarnContext(ctx, "runtime exam identity mismatch", "exam_id", unit.CurrentExamUlid)
+				continue
+			}
+			unit.CurrentExam = &UnitExamSummary{
+				Status:               exam.GetExamStatus(),
+				AppointmentStartTime: exam.GetAppointmentStartTime(),
+			}
 		}
 	}
 }

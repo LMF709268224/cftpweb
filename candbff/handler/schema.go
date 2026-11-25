@@ -192,10 +192,19 @@ type StageConfig struct {
 	SortOrder     int32        `json:"sort_order,omitempty"` // 排序顺序 [required]
 	Units         []UnitConfig `json:"units,omitempty"`      // 单元配置 [required]
 }
+type UnitExamSummary struct {
+	Status               string `json:"status"`
+	AppointmentStartTime string `json:"appointment_start_time,omitempty"`
+}
+
 type UnitConfig struct {
-	RuntimeStatus            string   `json:"runtime_status,omitempty"`
-	HasLearningAccess        bool     `json:"has_learning_access,omitempty"`
-	EnrollmentStatus         string   `json:"enrollment_status,omitempty"`
+	RuntimeStatus              string           `json:"runtime_status,omitempty"`
+	HasLearningAccess          bool             `json:"has_learning_access,omitempty"`
+	EnrollmentStatus           string           `json:"enrollment_status,omitempty"`
+	LearningProgressPercentage *uint32          `json:"learning_progress_percentage,omitempty"`
+	CurrentExamUlid            string           `json:"current_exam_id,omitempty"`
+	CurrentExam                *UnitExamSummary `json:"current_exam,omitempty"`
+
 	StripeProductId          string   `json:"stripe_product_id,omitempty"`
 	StripePriceId            string   `json:"stripe_price_id,omitempty"`
 	ExemptionStripeProductId string   `json:"exemption_stripe_product_id,omitempty"`
