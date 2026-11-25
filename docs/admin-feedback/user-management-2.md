@@ -1,6 +1,6 @@
 # Admin 用户管理反馈（2/3）
 
-2026-11-24：按客户截图补充用户列与操作入口。与[用户管理 1/3](user-management-1.md)及[Dashboard](dashboard.md)一起汇总；本轮未部署。后续矩阵见 [3/3](user-management-3.md)，缺数据处理的修正见[禁止保底方案复查](no-fallback-review.md)。
+2026-11-24：按客户截图补充用户列与操作入口。与[用户管理 1/3](user-management-1.md)及[Dashboard](dashboard.md)一起汇总；已完成项于 2026-11-25 部署 dev / prod，未完成项见下文。后续矩阵见 [3/3](user-management-3.md)，缺数据处理的修正见[禁止保底方案复查](no-fallback-review.md)。
 
 ## 已完成
 

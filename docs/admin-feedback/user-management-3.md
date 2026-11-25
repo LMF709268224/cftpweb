@@ -1,6 +1,6 @@
 # Admin 用户管理反馈（3/3）：权限矩阵与审计
 
-2026-11-24。按截图梳理；没有把缺失的角色、权限或数据补成默认值。关联 [1/3](user-management-1.md)、[2/3](user-management-2.md)、[前期改动复查](no-fallback-review.md)。本轮未部署。
+2026-11-24。按截图梳理；没有把缺失的角色、权限或数据补成默认值。关联 [1/3](user-management-1.md)、[2/3](user-management-2.md)、[前期改动复查](no-fallback-review.md)。已完成的审计补充于 2026-11-25 部署 dev / prod；新角色矩阵未实施。
 
 ## 本次可以完成且已完成
 
