@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
-import { useRouter } from "vue-router"
+import { RouterLink, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
-import { AlertCircle, ArrowRight, BookOpen, Clock, LoaderCircle, Search } from "lucide-vue-next"
+import { AlertCircle, ArrowRight, BookOpen, Clock, Crown, LoaderCircle, Search } from "lucide-vue-next"
 import GfiHeader from "@/components/GfiHeader.vue"
 import { apiClient } from "@/lib/apiClient"
 import { isAuthenticated } from "@/lib/authStorage"
@@ -232,6 +232,10 @@ onBeforeUnmount(() => {
                 {{ option.label }}
               </button>
             </div>
+            <RouterLink v-if="!authenticated" to="/membership" class="catalog-membership-link">
+              <Crown aria-hidden="true" />
+              {{ t.courses.membershipsLink }}
+            </RouterLink>
           </div>
 
           <label class="catalog-search">
@@ -405,6 +409,32 @@ onBeforeUnmount(() => {
   min-width: 0;
   align-items: center;
   gap: 12px;
+}
+
+.catalog-membership-link {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 14px;
+  border: 1px solid var(--marketplace-border);
+  border-radius: 8px;
+  color: var(--marketplace-navy);
+  background: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.catalog-membership-link:hover {
+  color: var(--marketplace-vivid);
+  border-color: var(--marketplace-vivid);
+}
+
+.catalog-membership-link svg {
+  width: 17px;
+  height: 17px;
 }
 
 .category-filter {

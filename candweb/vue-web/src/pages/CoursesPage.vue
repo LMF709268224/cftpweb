@@ -7,6 +7,7 @@ import AppShell from "@/components/AppShell.vue"
 import CourseCard from "@/components/CourseCard.vue"
 import PageFeedback from "@/components/PageFeedback.vue"
 import { apiClient } from "@/lib/apiClient"
+import { isAuthenticated } from "@/lib/authStorage"
 import { bundleDisplayPriceLabel } from "@/lib/bundleDisplayPrice"
 import { useTranslation } from "@/lib/language"
 import { preloadCheckoutWizard } from "@/router"
@@ -277,7 +278,7 @@ onBeforeUnmount(() => {
             </div>
           </div>
 
-          <RouterLink to="/membership" class="inline-flex min-h-9 shrink-0 items-center justify-center gap-2 rounded-md border border-slate-200 px-3 text-sm font-semibold text-[#002a66] hover:bg-slate-50">
+          <RouterLink v-if="!isAuthenticated()" to="/membership" class="inline-flex min-h-9 shrink-0 items-center justify-center gap-2 rounded-md border border-slate-200 px-3 text-sm font-semibold text-[#002a66] hover:bg-slate-50">
             <Crown class="h-4 w-4" aria-hidden="true" />
             {{ t.courses.membershipsLink }}
           </RouterLink>

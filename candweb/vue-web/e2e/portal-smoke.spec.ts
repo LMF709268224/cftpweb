@@ -438,7 +438,7 @@ test("登录后认证目录和会员购买入口分开，购买状态保持可�
   await page.goto("/certifications", { waitUntil: "domcontentloaded" });
 
   await expect(page.getByRole("button", { name: "课程", exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "会员方案" })).toHaveAttribute("href", "/membership");
+  await expect(page.getByRole("link", { name: "会员方案" })).toHaveCount(0);
   const certificationCard = page.locator('[data-bundle-id="candidate-certification"]');
   const membershipCard = page.locator('[data-bundle-id="candidate-membership"]');
   const pendingCertificationCard = page.locator('[data-bundle-id="candidate-certification-pending"]');
@@ -455,7 +455,9 @@ test("登录后认证目录和会员购买入口分开，购买状态保持可�
   await expect(pendingCertificationCard).toContainText("查看报考资格");
 
   await loadingCertificationCard.click();
-  await expect(loadingCertificationCard).toHaveAttribute("aria-busy", "true");
+  await expect.poll(() => loadingCertificationCard.evaluate((card) =>
+    card.getAttribute("aria-busy") === "true" || Boolean(card.querySelector('[aria-busy="true"]')),
+  )).toBe(true);
   await expect(loadingCertificationCard).toContainText("正在确认报考资格...");
   await expect(loadingCertificationCard).toContainText("请稍候...");
   releaseEligibilityCheck?.();
@@ -526,6 +528,44 @@ test("非会员可加入会员并比较方案，会员卡隐藏等级", async ({
   await plan.getByRole("link", { name: "立即加入" }).click();
   await expect(page).toHaveURL(/\/certifications\?category=membership$/);
   await expect(page.locator('[data-bundle-id="membership-offer"]')).toContainText("成为会员");
+});
+
+test("未登录可从公开目录查看同一会员方案，个人标签和私有请求不可见", async ({ page }) => {
+  const requestedPaths: string[] = [];
+  await installCandidateApiMocks(page, ({ pathname }) => {
+    requestedPaths.push(pathname);
+    if (pathname === "/api/membership/plans") return { data: { memberships: [
+      { membership_ulid: "plan-affiliate", name: "附属会员", description: "公开方案介绍", duration_in_months: 12, tier_level: 1 },
+      { membership_ulid: "plan-charterholder", name: "特许会员", description: "特许方案介绍", duration_in_months: 12, tier_level: 3 },
+    ] } };
+    if (pathname === "/api/mall/bundles") return { data: { bundles: [
+      { bundle_id: "bundle-affiliate", membership_id: "plan-affiliate", is_current: true, is_membership_bundle: true, display_amount_min: 4900, display_amount_max: 4900, display_currency: "USD" },
+      { bundle_id: "bundle-charterholder", membership_id: "plan-charterholder", is_current: true, is_membership_bundle: true, display_amount_min: 16900, display_amount_max: 16900, display_currency: "USD" },
+    ] } };
+    return undefined;
+  });
+
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await page.getByRole("link", { name: "会员方案" }).click();
+  await expect(page).toHaveURL(/\/membership$/);
+  await expect(page.locator(".membership-level-card")).toHaveCount(2);
+  await expect(page.locator(".membership-level-card").first()).toContainText("附属会员");
+  await expect(page.locator(".membership-level-card").last()).toContainText("特许会员");
+  await expect(page.getByText("会员对比一览")).toBeVisible();
+  await expect(page.getByText("您的方案", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("会员资格历史", { exact: true })).toHaveCount(0);
+  await expect(page.locator(".membership-level-card").first().getByRole("button", { name: "立即加入" })).toBeVisible();
+  expect(requestedPaths).toContain("/api/membership/plans");
+  expect(requestedPaths).not.toContain("/api/membership/active");
+  expect(requestedPaths).not.toContain("/api/membership/history");
+  await page.evaluate(() => {
+    localStorage.setItem("app_lang", "en");
+    window.dispatchEvent(new Event("lang_change"));
+  });
+  await expect(page.getByRole("heading", { name: "Membership Plans" })).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".membership-level-card")).toHaveCount(2);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);
 });
 
 test("首页仅在接口提供进度时显示进度条", async ({ page }) => {

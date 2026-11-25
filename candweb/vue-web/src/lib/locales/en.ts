@@ -325,6 +325,7 @@ export const en: AppTranslations = {
     membership: {
         title: "Membership",
         subtitle: "Manage your membership qualifications and benefits",
+        publicSubtitle: "Explore membership plans and benefits",
         autoRenew: "Auto-renew",
         tabs: {
             levels: "Membership Plans",

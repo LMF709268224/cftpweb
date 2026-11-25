@@ -4,14 +4,17 @@ import { RouterLink, useRoute } from "vue-router"
 import { AlertCircle, ArrowUpCircle, Check, ChevronDown, Crown, ExternalLink, Loader2, PanelLeft, Percent, RefreshCw, ShoppingBag, Star, X, XCircle } from "lucide-vue-next"
 import { toast } from "vue-sonner"
 import AppShell from "@/components/AppShell.vue"
+import GfiHeader from "@/components/GfiHeader.vue"
 import AppPagination from "@/components/AppPagination.vue"
 import MembershipComparison from "@/components/MembershipComparison.vue"
 import PageFeedback from "@/components/PageFeedback.vue"
 import { apiClient } from "@/lib/apiClient"
+import { isAuthenticated } from "@/lib/authStorage"
 import { useBodyScrollLock } from "@/lib/bodyScrollLock"
 import { bundleDisplayPriceLabel } from "@/lib/bundleDisplayPrice"
 import { useDialogAccessibility } from "@/lib/dialogAccessibility"
 import { formatMinorAmount } from "@/lib/display"
+import { startGfiLogin } from "@/lib/gfiLogin"
 import { useTranslation } from "@/lib/language"
 import { loadStripeFactory } from "@/lib/stripe"
 import { formatBackendDate } from "@/lib/utils"
@@ -20,7 +23,9 @@ type RecordData = Record<string, any>
 
 const { t, lang } = useTranslation()
 const route = useRoute()
-const activeTab = ref("overview")
+const authenticated = ref(isAuthenticated())
+const activeTab = ref(authenticated.value ? "overview" : "levels")
+const guestJoining = ref(false)
 const loading = ref(false)
 const loadError = ref(false)
 const cancelling = ref(false)
@@ -328,6 +333,19 @@ async function loadMembershipPlans(suppressErrorToast = false) {
 }
 
 async function loadMembership() {
+  if (!authenticated.value) {
+    loading.value = true
+    loadError.value = false
+    try {
+      await loadMembershipPlans(true)
+    } catch (err) {
+      console.error(err)
+      loadError.value = true
+    } finally {
+      loading.value = false
+    }
+    return
+  }
   const requestId = ++membershipRequestId
   loading.value = true
   loadError.value = false
@@ -347,6 +365,18 @@ async function loadMembership() {
     loadError.value = true
   } finally {
     if (requestId === membershipRequestId) loading.value = false
+  }
+}
+
+async function joinAsGuest() {
+  if (guestJoining.value) return
+  guestJoining.value = true
+  try {
+    await startGfiLogin("/certifications?category=membership")
+  } catch (error) {
+    console.error("Unable to start GFI login:", error)
+    toast.error(t.value.loginPage.errorTitle)
+    guestJoining.value = false
   }
 }
 
@@ -587,7 +617,7 @@ function handleHistoryPaginationChange() {
 
 onMounted(async () => {
   await loadMembership()
-  await openRequestedUpgrade()
+  if (authenticated.value) await openRequestedUpgrade()
 })
 
 onBeforeUnmount(() => {
@@ -598,6 +628,10 @@ onBeforeUnmount(() => {
 })
 
 watch(lang, () => {
+  if (!authenticated.value) {
+    void loadMembership()
+    return
+  }
   void loadMembershipPlans().catch((error) => {
     console.warn("Failed to refresh localized membership plans", error)
   })
@@ -605,11 +639,12 @@ watch(lang, () => {
 </script>
 
 <template>
-  <AppShell content-class="p-0">
+  <GfiHeader v-if="!authenticated" auth-target="/login" :auth-new-tab="false" />
+  <component :is="authenticated ? AppShell : 'div'" content-class="p-0" :class="authenticated ? undefined : 'public-membership min-h-screen bg-background'">
     <div class="page-panel">
       <header class="flex h-16 items-center border-b border-border bg-white px-5">
-        <PanelLeft class="mr-4 h-4 w-4 text-slate-700" />
-        <span class="text-sm font-medium text-foreground">{{ t.membership.title }}</span>
+        <PanelLeft v-if="authenticated" class="mr-4 h-4 w-4 text-slate-700" />
+        <span class="text-sm font-medium text-foreground">{{ authenticated ? t.membership.title : t.membership.tabs.levels }}</span>
         <button class="membership-refresh-btn ml-auto inline-flex h-9 items-center gap-2 rounded-xl border px-4 text-sm font-semibold" type="button" @click="loadMembership">
           <RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
           {{ t.membership.refresh }}
@@ -619,8 +654,8 @@ watch(lang, () => {
       <main class="px-5 py-8 md:px-8 lg:px-10">
         <div class="membership-page-intro mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.membership.title }}</h1>
-            <p class="mt-2 text-muted-foreground">{{ t.membership.subtitle }}</p>
+            <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ authenticated ? t.membership.title : t.membership.tabs.levels }}</h1>
+            <p class="mt-2 text-muted-foreground">{{ authenticated ? t.membership.subtitle : t.membership.publicSubtitle }}</p>
           </div>
           <span v-if="hasActiveMembership" class="membership-status-badge rounded-full border px-4 py-2 text-sm font-black" :class="badgeClass(currentRecord.status)">
             {{ statusLabel(currentRecord.status) }}
@@ -638,7 +673,7 @@ watch(lang, () => {
         />
 
         <template v-else>
-          <section class="membership-current-card mb-5 overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_10px_28px_rgba(15,74,82,0.06)]">
+          <section v-if="authenticated" class="membership-current-card mb-5 overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_10px_28px_rgba(15,74,82,0.06)]">
             <div class="membership-current-hero relative bg-[#002a66] p-6 text-white">
               <div class="membership-current-crown absolute right-6 top-6 opacity-15">
                 <Crown class="h-24 w-24" />
@@ -673,7 +708,7 @@ watch(lang, () => {
             </div>
           </section>
 
-          <div class="membership-tabs mb-4 rounded-[14px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.04)] md:px-6 md:pt-4 md:pb-0">
+          <div v-if="authenticated" class="membership-tabs mb-4 rounded-[14px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.04)] md:px-6 md:pt-4 md:pb-0">
             <div class="membership-tabs-select relative md:hidden">
               <select
                 v-model="activeTab"
@@ -796,6 +831,11 @@ watch(lang, () => {
                   <Check v-if="isCurrentPlan(plan)" class="h-4 w-4" />
                   <XCircle v-else class="h-4 w-4" />
                   {{ isCurrentPlan(plan) ? t.membership.currentPlan : t.membership.upgradeUnavailable }}
+                </button>
+                <button v-else-if="!authenticated" type="button" class="btn btn-primary w-full rounded-lg" :disabled="guestJoining" @click="joinAsGuest">
+                  <Loader2 v-if="guestJoining" class="h-4 w-4 animate-spin" />
+                  <ShoppingBag v-else class="h-4 w-4" />
+                  {{ t.membership.joinNow }}
                 </button>
                 <RouterLink v-else to="/certifications?category=membership" class="btn btn-primary w-full rounded-lg">
                   <ShoppingBag class="h-4 w-4" />
@@ -998,10 +1038,15 @@ watch(lang, () => {
         </div>
       </div>
     </div>
-  </AppShell>
+  </component>
 </template>
 
 <style scoped>
+.public-membership .page-panel > main {
+  max-width: 1200px;
+  margin-inline: auto;
+}
+
 .membership-refresh-btn {
   border-color: rgba(0, 42, 102, 0.26);
   background: #ffffff;
