@@ -149,6 +149,7 @@ async function fetchData() {
         certificationNamesByGpath,
         title: certificationDisplayName(b.name) || t.value.common.unknownCourse,
         description: String(b.description || "").trim() || firstStageNames || `${stages.length} ${t.value.courses.stages} / ${unitCount} ${t.value.courses.units}`,
+        detailUrl: b.detail_url,
         provider: b.category_tips || t.value.courses.certificationPath,
         isPurchased: false,
         image: typeof b?.thumbnail_url === "string" ? b.thumbnail_url : "",

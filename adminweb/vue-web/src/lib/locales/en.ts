@@ -1477,6 +1477,8 @@ export const en: AdminTranslations = {
         close: "Close",
     },
     bundlesAdmin: {
+        invalidDetailUrl: "Enter a complete HTTP(S) URL of up to 2048 characters, without credentials or spaces, or leave it empty.",
+        detailUrlHint: "Optional. Enter the product's HTTP(S) introduction page. Leave empty to hide Read More.",
         title: "Product Config",
         subtitle: "Configure certification products, certification references, pricing, thumbnails, and publication status.",
         newBundle: "New Product",
@@ -1606,6 +1608,7 @@ export const en: AdminTranslations = {
             bundleUlid: "Bundle ULID",
             bundleGpath: "Product Path",
             name: "Name",
+            detailUrl: "Product Details Link",
             thumbnailObjectKey: "Thumbnail Object Key",
             description: "Description",
             thumbnailFileHash: "Thumbnail File Hash",

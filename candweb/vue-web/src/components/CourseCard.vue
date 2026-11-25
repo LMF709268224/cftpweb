@@ -30,6 +30,7 @@ const props = defineProps<{
   certificationNamesByGpath?: Record<string, string>
   title: string
   description: string
+  detailUrl?: string
   image?: string
   category?: "course" | "column" | "short"
   provider: string
@@ -349,18 +350,30 @@ async function handleCardClick() {
   }
   router.push(`/checkout/${encodeURIComponent(props.id)}`)
 }
+const detailLink = computed(() => {
+  if (!props.detailUrl) return ""
+  try {
+    const url = new URL(props.detailUrl)
+    return ["http:", "https:"].includes(url.protocol) && !url.username && !url.password ? url.href : ""
+  } catch {
+    return ""
+  }
+})
 </script>
 
 <template>
-  <component
-    :is="effectivePurchased ? RouterLink : 'div'"
-    :to="effectivePurchased ? purchasedTarget : undefined"
+  <div
     data-testid="certification-card"
     :data-bundle-id="id"
     :data-pipeline-id="pipelineId || ''"
+    class="group flex h-full flex-col overflow-hidden rounded-lg border border-[#ccd7e8] bg-white transition-colors duration-200 hover:border-primary"
+  >
+  <component
+    :is="effectivePurchased ? RouterLink : 'div'"
+    :to="effectivePurchased ? purchasedTarget : undefined"
     :aria-busy="statusRefreshing"
     :aria-disabled="Boolean(membershipOrderInProgressBlocker)"
-    class="group flex h-full flex-col overflow-hidden rounded-lg border border-[#ccd7e8] bg-white transition-colors duration-200 hover:border-primary"
+    class="flex flex-1 flex-col"
     :class="!effectivePurchased && !membershipOrderInProgressBlocker ? 'cursor-pointer' : 'cursor-default'"
     @click="handleCardClick"
     @pointerenter="!effectivePurchased && preloadCheckoutWizard()"
@@ -461,6 +474,17 @@ async function handleCardClick() {
       </div>
     </div>
   </component>
+  <a
+    v-if="detailLink"
+    :href="detailLink"
+    target="_blank"
+    rel="noopener noreferrer"
+    class="mx-4 mb-4 w-fit text-sm font-semibold text-primary underline underline-offset-4 hover:no-underline sm:mx-5 sm:mb-5"
+    @click.stop
+  >
+    {{ cardCopy.readMore }} <span aria-hidden="true">↗</span>
+  </a>
+  </div>
 </template>
 
 <style scoped>

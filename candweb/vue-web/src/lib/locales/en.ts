@@ -1629,6 +1629,7 @@ export const en: AppTranslations = {
         openNow: "Open now"
     },
     courseCard: {
+        readMore: "Read More",
         enrolled: "Enrolled",
         ready: "Ready to enroll in a certification exam",
         readyMembership: "Eligible for membership",

@@ -1475,6 +1475,8 @@ export const zh = {
         close: "关闭",
     },
     bundlesAdmin: {
+        invalidDetailUrl: "请填写完整的 HTTP(S) 网址，最多 2048 个字符，不能包含账号密码或空格；也可以留空。",
+        detailUrlHint: "可选，填写商品介绍页的 HTTP(S) 链接；留空时隐藏“了解详情”。",
         title: "商品配置",
         subtitle: "配置认证商品、认证引用、价格、封面和发布状态。",
         newBundle: "新建商品",
@@ -1604,6 +1606,7 @@ export const zh = {
             bundleUlid: "Bundle ULID",
             bundleGpath: "商品路径",
             name: "名称",
+            detailUrl: "商品详情链接",
             thumbnailObjectKey: "封面 Object Key",
             description: "描述",
             thumbnailFileHash: "封面文件校验值",

@@ -1481,6 +1481,7 @@ func (h *Handler) enrichBundle(ctx context.Context, b *mallpb.BundleInfo, state 
 		"version":              b.GetVersion(),
 		"name":                 bundleName,
 		"description":          bundleDescription,
+		"detail_url":           b.GetDetailUrl(),
 		"items_json":           b.GetItemsJson(),
 		"thumbnail_object_key": b.GetThumbnailObjectKey(),
 		"thumbnail_file_hash":  b.GetThumbnailFileHash(),

@@ -17,6 +17,7 @@ type BundleForm = {
   bundle_gpath: string
   name: string
   description: string
+  detail_url: string
   items_json: string
   pricing_json: string
   thumbnail_object_key: string
@@ -88,6 +89,7 @@ const emptyForm: BundleForm = {
   bundle_gpath: "",
   name: "",
   description: "",
+  detail_url: "",
   items_json: "[]",
   pricing_json: "{}",
   thumbnail_object_key: "",
@@ -679,6 +681,7 @@ function formFromBundle(bundle: JsonRecord | null): BundleForm {
     bundle_gpath: String(bundle.bundle_gpath || ""),
     name: String(bundle.name || ""),
     description: String(bundle.description || ""),
+    detail_url: typeof bundle.detail_url === "string" ? bundle.detail_url : "",
     items_json: String(bundle.items_json || "[]"),
     pricing_json: String(bundle.pricing_json || "{}"),
     thumbnail_object_key: String(bundle.thumbnail_object_key || ""),
@@ -942,7 +945,24 @@ async function handleThumbnailUpload(event: Event) {
   }
 }
 
+function validateDetailUrl() {
+  const value = form.value.detail_url.trim()
+  if (!value) return true
+  try {
+    const url = new URL(value)
+    if (!/^https?:\/\//i.test(value) || !["http:", "https:"].includes(url.protocol) || !url.hostname ||
+      url.username || url.password || /[\s\\<>]/u.test(value) || Array.from(value).length > 2048) {
+      throw new Error("Invalid detail_url")
+    }
+    return true
+  } catch {
+    toast.error(copy.value.invalidDetailUrl)
+    return false
+  }
+}
+
 async function createBundle() {
+  if (!validateDetailUrl()) return
   form.value.items_json = createItemsJson.value
   if (!form.value.bundle_gpath.trim() || !form.value.name.trim()) {
     toast.error(copy.value.toasts.createRequired)
@@ -962,6 +982,7 @@ async function createBundle() {
         bundle_gpath: form.value.bundle_gpath.trim(),
         name: form.value.name.trim(),
         description: form.value.description.trim(),
+        detail_url: form.value.detail_url.trim(),
         items_json: form.value.items_json.trim(),
         pricing_json: form.value.pricing_json.trim(),
         thumbnail_object_key: form.value.thumbnail_object_key.trim(),
@@ -983,6 +1004,7 @@ async function createBundle() {
 
 async function saveMeta() {
   if (!selectedId.value) return
+  if (!validateDetailUrl()) return
   saving.value = true
   try {
     await apiClient(`/api/mall/bundles/${encodeURIComponent(selectedId.value)}/meta`, {
@@ -990,6 +1012,7 @@ async function saveMeta() {
       body: JSON.stringify({
         name: form.value.name.trim(),
         description: form.value.description.trim(),
+        detail_url: form.value.detail_url.trim(),
         thumbnail_object_key: form.value.thumbnail_object_key.trim(),
         thumbnail_file_hash: form.value.thumbnail_file_hash.trim(),
       }),
@@ -1529,6 +1552,11 @@ onMounted(load)
                   {{ copy.fields.description }}
                   <textarea v-model="form.description" class="min-h-24 rounded-xl border border-slate-200 p-4" maxlength="1200" :placeholder="copy.placeholders.description" />
                 </label>
+                <label class="grid gap-2 text-sm font-bold md:col-span-2">
+                  {{ copy.fields.detailUrl }}
+                  <input v-model="form.detail_url" type="url" maxlength="2048" class="h-11 rounded-xl border border-slate-200 px-4" placeholder="https://" />
+                  <span class="text-xs font-normal text-slate-500">{{ copy.detailUrlHint }}</span>
+                </label>
               </div>
             </section>
 
@@ -1665,6 +1693,11 @@ onMounted(load)
                   <label class="grid gap-2 text-sm font-bold md:col-span-2">
                     {{ copy.fields.description }}
                     <textarea v-model="form.description" class="min-h-28 rounded-xl border border-slate-200 p-4" maxlength="1200" />
+                  </label>
+                  <label class="grid gap-2 text-sm font-bold md:col-span-2">
+                    {{ copy.fields.detailUrl }}
+                    <input v-model="form.detail_url" type="url" maxlength="2048" class="h-11 rounded-xl border border-slate-200 px-4" placeholder="https://" />
+                    <span class="text-xs font-normal text-slate-500">{{ copy.detailUrlHint }}</span>
                   </label>
                   <label class="grid gap-2 text-sm font-bold md:col-span-2">
                     {{ copy.fields.thumbnailFileHash }}

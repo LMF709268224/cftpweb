@@ -1627,6 +1627,7 @@ export const zh = {
         openNow: "立即打开"
     },
     courseCard: {
+        readMore: "了解详情",
         enrolled: "已报名",
         ready: "可报名专业认证考试",
         readyMembership: "可成为会员",

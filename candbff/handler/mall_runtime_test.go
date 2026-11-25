@@ -48,6 +48,17 @@ func TestEnrichBundleResolvesPipelineGpath(t *testing.T) {
 	}
 }
 
+func TestEnrichBundlePreservesDetailURL(t *testing.T) {
+	for _, detailURL := range []string{"", "https://example.com/course"} {
+		bundle := &mallpb.BundleInfo{DetailUrl: detailURL}
+		result := (&Handler{}).enrichBundle(context.Background(), bundle, nil)
+		value, exists := result["detail_url"]
+		if !exists || value != detailURL {
+			t.Fatalf("detail_url = %v, present = %v; want %q", value, exists, detailURL)
+		}
+	}
+}
+
 func (s *mallRuntimeCCClientStub) GetPipeline(
 	_ context.Context,
 	_ *gccpb.GetPipelineRequest,

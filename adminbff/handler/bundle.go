@@ -42,6 +42,7 @@ func (h *Handler) UpdateBundleMeta(w http.ResponseWriter, r *http.Request) {
 		Name               *string `json:"name"`
 		NewName            *string `json:"new_name"`
 		Description        *string `json:"description"`
+		DetailURL          *string `json:"detail_url"`
 		ThumbnailObjectKey *string `json:"thumbnail_object_key"`
 		ThumbnailFileHash  *string `json:"thumbnail_file_hash"`
 	}
@@ -61,6 +62,7 @@ func (h *Handler) UpdateBundleMeta(w http.ResponseWriter, r *http.Request) {
 		TargetUlid:         targetULID,
 		NewName:            newName,
 		Description:        body.Description,
+		DetailUrl:          body.DetailURL,
 		ThumbnailObjectKey: body.ThumbnailObjectKey,
 		ThumbnailFileHash:  body.ThumbnailFileHash,
 	}
