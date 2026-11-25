@@ -4,6 +4,7 @@ import { useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
 import { Loader2, Settings } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
+import IdentityNameNotice from "@/components/IdentityNameNotice.vue"
 import LocalizedDatePicker from "@/components/LocalizedDatePicker.vue"
 import { ApiClientError, apiClient } from "@/lib/apiClient"
 import { clearAuthSession } from "@/lib/authStorage"
@@ -750,6 +751,7 @@ async function confirmEmailChange() {
         <div class="settings-section-header flex flex-col space-y-1.5 p-6">
           <h2 class="text-xl font-semibold leading-none tracking-tight">{{ t.settings.profileTab }}</h2>
           <p class="text-sm text-muted-foreground">{{ t.settings.profileDesc }}</p>
+          <IdentityNameNotice class="mt-4" />
         </div>
     <div class="settings-section-content p-6 pt-0">
         <div class="mb-6 flex flex-wrap items-center gap-4 border-b border-border pb-6">

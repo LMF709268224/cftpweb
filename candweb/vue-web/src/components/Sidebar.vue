@@ -82,6 +82,7 @@ const navItems = computed(() => [
   { href: "/membership", label: t.value.sidebar.membership, group: t.value.sidebar.groupMine },
   { href: "/orders", label: t.value.sidebar.orders, group: t.value.sidebar.groupMine },
   { href: "/messages", label: t.value.sidebar.messages, group: t.value.sidebar.groupMine, badge: unreadCount.value > 0 ? badgeCountLabel(unreadCount.value) : undefined },
+  { href: "/settings", label: t.value.settings.title, group: t.value.sidebar.groupMine },
 ])
 
 const navIconByHref = {
@@ -95,6 +96,7 @@ const navIconByHref = {
   "/membership": Crown,
   "/orders": ShoppingBag,
   "/messages": MessageSquare,
+  "/settings": Settings,
 }
 
 function navIconFor(href: string) {

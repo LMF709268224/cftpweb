@@ -14,12 +14,18 @@ test("profile keeps identity fields read-only and saves the preferred language",
   })
   await page.goto("/settings")
   await expect(page.getByRole("heading", { name: "Profile", exact: true })).toBeVisible()
+  await expect(page.locator("aside nav").last().locator("a").last()).toHaveAttribute("href", "/settings")
+  await expect(page.getByText("Manage your personal information and contact details.")).toBeVisible()
+  await expect(page.getByText("Important Notice", { exact: true })).toBeVisible()
+  await expect(page.getByText("Please confirm that your full name matches the name on your ID document. Your ID will be verified at the exam venue. You will not be admitted if the information does not match.")).toBeVisible()
   await expect(page.getByText("Login ID")).toHaveCount(0)
   await expect(page.getByText("Display Name")).toHaveCount(0)
   await expect(page.getByText("Real Name")).toHaveCount(0)
   await page.getByLabel("Language preference").selectOption("zh")
   await expect.poll(() => languageRequests).toContainEqual({ language: "zh" })
   await expect(page.getByRole("heading", { name: "设置", exact: true }).first()).toBeVisible()
+  await expect(page.getByText("管理您的个人资料和联系方式。")).toBeVisible()
+  await expect(page.getByText("重要提醒", { exact: true })).toBeVisible()
 })
 
 test("Shanghai district options stay aligned across languages and save one stable value", async ({ page }) => {

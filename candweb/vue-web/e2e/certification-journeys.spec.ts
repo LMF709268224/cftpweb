@@ -2952,6 +2952,8 @@ test("购买流程从只读个人资料继续且不回写资料", async ({ page 
     await expect(page.getByTestId("checkout-step-registration").locator("select[required]").first()).toHaveCSS("appearance", "none")
     await expect(page.getByRole("link", { name: /编辑个人资料|Edit in Profile/ })).toBeVisible()
     await expect(page.getByText("个人信息仅可在个人资料页面修改。如需补充或更新信息，请点击“编辑个人资料”。")).toBeVisible()
+    await expect(page.getByTestId("checkout-step-registration").getByText("重要提醒", { exact: true })).toBeVisible()
+    await expect(page.getByTestId("checkout-step-registration").getByText("请确认您填写的姓名与身份证件上的姓名完全一致。考场将核验证件与本人信息，信息不一致将无法参加考试。")).toBeVisible()
     await page.getByTestId("checkout-agreement").check()
     await page.getByTestId("checkout-next").click()
 

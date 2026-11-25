@@ -5,6 +5,7 @@ import { toast } from "vue-sonner"
 import { ArrowLeft, ArrowRight, ChevronDown, ClipboardList, ExternalLink, Eye, FileText, Loader2, RefreshCw, Send, CheckCircle2, CircleAlert, Clock, Trash2, UploadCloud, X } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import CredentialAttachmentList from "@/components/CredentialAttachmentList.vue"
+import IdentityNameNotice from "@/components/IdentityNameNotice.vue"
 import LocalizedDatePicker from "@/components/LocalizedDatePicker.vue"
 import LoadingState from "@/components/LoadingState.vue"
 import CheckoutPaymentPanel from "@/components/CheckoutPaymentPanel.vue"
@@ -2784,6 +2785,7 @@ function closePaymentEditDialog() {
               </a>
               <p class="text-sm leading-6 text-muted-foreground">{{ t.examSignup.profileEditHint }}</p>
             </div>
+            <IdentityNameNotice v-if="!isMembershipBundle" />
             <fieldset disabled class="profile-readonly-fields space-y-6">
             <div class="grid gap-4 sm:grid-cols-2">
               <label class="space-y-2"><span class="text-sm font-medium"><span class="text-red-500">*</span> {{ t.examSignup.formFirstName }}</span><input v-model="formData.first_name" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" required /></label>
