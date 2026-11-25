@@ -254,7 +254,12 @@ func (h *Handler) GetCompleteLmsCourse(w http.ResponseWriter, r *http.Request) {
 		writeLmsError(w, err)
 		return
 	}
-	WriteJSON(w, http.StatusOK, resp)
+	payload, err := completeCoursePayload(resp)
+	if err != nil {
+		WriteError(w, http.StatusBadGateway, ErrInternal, err.Error())
+		return
+	}
+	WriteJSON(w, http.StatusOK, payload)
 }
 
 // UpdateLmsCourse PUT /api/lms/courses/{course_id}
@@ -395,7 +400,12 @@ func (h *Handler) ListLmsCourseEnrollments(w http.ResponseWriter, r *http.Reques
 		writeLmsError(w, err)
 		return
 	}
-	WriteJSON(w, http.StatusOK, resp)
+	payload, err := courseEnrollmentsPayload(resp)
+	if err != nil {
+		WriteError(w, http.StatusBadGateway, ErrInternal, err.Error())
+		return
+	}
+	WriteJSON(w, http.StatusOK, payload)
 }
 
 // GetLmsCourseEnrollmentDetail GET /api/lms/enrollments/{enrollment_id}

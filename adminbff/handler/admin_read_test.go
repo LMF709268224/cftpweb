@@ -175,7 +175,7 @@ func TestOpsDashboardReturnsFilteredReadOnlyOverview(t *testing.T) {
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("status = %d, want %d; body=%s", recorder.Code, http.StatusOK, recorder.Body.String())
 	}
-	if prog.request.GetPageSize() != 100 || pay.orderRequest.GetPageSize() != 100 || pay.orderRequest.GetFilters().GetStatusFilter() != gpaypb.OrderStatus_ORDER_STATUS_COMPLETED {
+	if prog.request != nil || pay.orderRequest.GetPageSize() != 100 || pay.orderRequest.GetFilters().GetStatusFilter() != gpaypb.OrderStatus_ORDER_STATUS_COMPLETED {
 		t.Fatalf("dashboard downstream requests = %+v / %+v", prog.request, pay.orderRequest)
 	}
 	var payload struct {
@@ -183,7 +183,6 @@ func TestOpsDashboardReturnsFilteredReadOnlyOverview(t *testing.T) {
 			CandidateTotal         int  `json:"candidate_total"`
 			UserTotal              int  `json:"user_total"`
 			UserPageSize           int  `json:"user_page_size"`
-			StageBucketsExact      bool `json:"stage_buckets_exact"`
 			TodayRevenueExact      bool `json:"today_revenue_exact"`
 			AggregationSampleLimit int  `json:"aggregation_sample_limit"`
 			Users                  []struct {
@@ -192,10 +191,6 @@ func TestOpsDashboardReturnsFilteredReadOnlyOverview(t *testing.T) {
 				MFAEnabled    bool   `json:"mfa_enabled"`
 				LastLoginAt   string `json:"last_login_at"`
 			} `json:"users"`
-			StageBuckets []struct {
-				StageID string `json:"stage_id"`
-				Count   int    `json:"count"`
-			} `json:"stage_buckets"`
 			TodayRevenue []struct {
 				Currency    string `json:"currency"`
 				AmountMinor int64  `json:"amount_minor"`
@@ -216,13 +211,13 @@ func TestOpsDashboardReturnsFilteredReadOnlyOverview(t *testing.T) {
 			t.Fatal("dashboard exposed MFA secret fields")
 		}
 	}
-	if len(payload.Data.StageBuckets) != 1 || payload.Data.StageBuckets[0].StageID != "stage-regression" || payload.Data.StageBuckets[0].Count != 1 {
-		t.Fatalf("dashboard stages = %+v", payload.Data.StageBuckets)
+	if strings.Contains(recorder.Body.String(), "stage_buckets") {
+		t.Fatal("dashboard still exposes technical stage distribution")
 	}
 	if len(payload.Data.TodayRevenue) != 1 || payload.Data.TodayRevenue[0].Currency != "USD" || payload.Data.TodayRevenue[0].AmountMinor != 12900 {
 		t.Fatalf("dashboard revenue = %+v", payload.Data.TodayRevenue)
 	}
-	if !payload.Data.StageBucketsExact || !payload.Data.TodayRevenueExact || payload.Data.AggregationSampleLimit != adminDashboardSampleLimit {
+	if !payload.Data.TodayRevenueExact || payload.Data.AggregationSampleLimit != adminDashboardSampleLimit {
 		t.Fatalf("dashboard exactness metadata = %+v", payload.Data)
 	}
 }

@@ -217,7 +217,9 @@ test("dashboard labels truncated aggregates instead of presenting them as exact"
 	})
 
 	await page.goto("/dashboard")
-	await expect(page.getByText("数据超过单次扫描上限，当前结果基于最近 500 条记录。")).toHaveCount(2)
+	await expect(page.getByText("数据超过单次扫描上限，当前结果基于最近 500 条记录。")).toHaveCount(1)
+	await expect(page.getByRole("heading", { name: "阶段分布", exact: true })).toHaveCount(0)
+	await expect(page.getByText("stage-regression", { exact: true })).toHaveCount(0)
 })
 
 test("dashboard keeps the latest filter result when an older request finishes late", async ({ page }) => {

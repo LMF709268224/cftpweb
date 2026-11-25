@@ -12,7 +12,6 @@ import (
 
 	"adminbff/config"
 	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
-	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 )
 
@@ -32,19 +31,17 @@ const (
 )
 
 type opsDashboardResponse struct {
-	CandidateTotal         int64                     `json:"candidate_total"`
-	UserStats              opsDashboardUserStats     `json:"user_stats"`
-	UserRoleStats          []opsDashboardRoleStat    `json:"user_role_stats"`
-	Users                  []opsDashboardUser        `json:"users"`
-	UserTotal              int                       `json:"user_total"`
-	UserPage               int                       `json:"user_page"`
-	UserPageSize           int                       `json:"user_page_size"`
-	StageBuckets           []opsDashboardStageBucket `json:"stage_buckets"`
-	StageBucketsExact      bool                      `json:"stage_buckets_exact"`
-	TodayRevenue           []opsDashboardRevenue     `json:"today_revenue"`
-	TodayRevenueExact      bool                      `json:"today_revenue_exact"`
-	AggregationSampleLimit int                       `json:"aggregation_sample_limit"`
-	GeneratedAt            string                    `json:"generated_at"`
+	CandidateTotal         int64                  `json:"candidate_total"`
+	UserStats              opsDashboardUserStats  `json:"user_stats"`
+	UserRoleStats          []opsDashboardRoleStat `json:"user_role_stats"`
+	Users                  []opsDashboardUser     `json:"users"`
+	UserTotal              int                    `json:"user_total"`
+	UserPage               int                    `json:"user_page"`
+	UserPageSize           int                    `json:"user_page_size"`
+	TodayRevenue           []opsDashboardRevenue  `json:"today_revenue"`
+	TodayRevenueExact      bool                   `json:"today_revenue_exact"`
+	AggregationSampleLimit int                    `json:"aggregation_sample_limit"`
+	GeneratedAt            string                 `json:"generated_at"`
 }
 
 type opsDashboardUserStats struct {
@@ -78,12 +75,6 @@ type opsDashboardUser struct {
 	MFAEnabled    bool     `json:"mfa_enabled"`
 	LastLoginAt   string   `json:"last_login_at"`
 	CreatedAt     string   `json:"created_at"`
-}
-
-type opsDashboardStageBucket struct {
-	StageID string `json:"stage_id"`
-	Status  string `json:"status"`
-	Count   int64  `json:"count"`
 }
 
 type opsDashboardRevenue struct {
@@ -126,39 +117,6 @@ func (h *Handler) OpsDashboard(w http.ResponseWriter, r *http.Request) {
 	pageUsers := paginateOpsDashboardUsers(filteredUsers, userPage, userPageSize)
 	userSummary := h.buildOpsUserSummary(cftpUsers, pageUsers, candidateByUserID, roleConfig, roleDefinitions)
 
-	pipelines, stageBucketsExact, err := h.listDashboardPipelines(r.Context())
-	if err != nil {
-		HandleGrpcError(w, err)
-		return
-	}
-
-	stageCounts := make(map[string]int64)
-	for _, pipeline := range pipelines {
-		if pipeline == nil {
-			continue
-		}
-		key := strings.TrimSpace(pipeline.GetCurrentStageUlid())
-		if key == "" {
-			key = "未进入阶段"
-		}
-		status := pipeline.GetStatus().String()
-		stageCounts[key+"|"+status]++
-	}
-
-	stageBuckets := make([]opsDashboardStageBucket, 0, len(stageCounts))
-	for key, count := range stageCounts {
-		parts := strings.SplitN(key, "|", 2)
-		status := ""
-		if len(parts) == 2 {
-			status = parts[1]
-		}
-		stageBuckets = append(stageBuckets, opsDashboardStageBucket{
-			StageID: parts[0],
-			Status:  status,
-			Count:   count,
-		})
-	}
-
 	orders, todayRevenueExact, err := h.listDashboardPaidOrders(r.Context())
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -198,53 +156,11 @@ func (h *Handler) OpsDashboard(w http.ResponseWriter, r *http.Request) {
 		UserTotal:              len(filteredUsers),
 		UserPage:               userPage,
 		UserPageSize:           userPageSize,
-		StageBuckets:           stageBuckets,
-		StageBucketsExact:      stageBucketsExact,
 		TodayRevenue:           revenue,
 		TodayRevenueExact:      todayRevenueExact,
 		AggregationSampleLimit: adminDashboardSampleLimit,
 		GeneratedAt:            now.Format(time.RFC3339),
 	})
-}
-
-func (h *Handler) listDashboardPipelines(ctx context.Context) ([]*gprogpb.PipelineSummary, bool, error) {
-	items := make([]*gprogpb.PipelineSummary, 0, adminDashboardSampleLimit)
-	cursor := ""
-	seen := make(map[string]struct{})
-	exact := false
-
-	for page := 0; page < adminDashboardSampleLimit/adminDashboardPageSize && len(items) < adminDashboardSampleLimit; page++ {
-		pageSize := adminDashboardPageSize
-		if remaining := adminDashboardSampleLimit - len(items); remaining < pageSize {
-			pageSize = remaining
-		}
-		resp, err := h.Gprog.ListPipelines(ctx, &gprogpb.ListPipelinesReq{
-			Cursor:   cursor,
-			PageSize: int32(pageSize),
-		})
-		if err != nil {
-			return nil, false, err
-		}
-		items = append(items, resp.GetPipelines()...)
-		if !resp.GetHasMore() {
-			exact = true
-			break
-		}
-		nextCursor := strings.TrimSpace(resp.GetNextCursor())
-		if nextCursor == "" || nextCursor == cursor {
-			return nil, false, fmt.Errorf("dashboard pipeline cursor did not advance")
-		}
-		if _, ok := seen[nextCursor]; ok {
-			return nil, false, fmt.Errorf("dashboard pipeline cursor loop detected")
-		}
-		seen[nextCursor] = struct{}{}
-		cursor = nextCursor
-	}
-
-	if len(items) > adminDashboardSampleLimit {
-		items = items[:adminDashboardSampleLimit]
-	}
-	return items, exact, nil
 }
 
 func (h *Handler) listDashboardPaidOrders(ctx context.Context) ([]*gpaypb.OrderSummary, bool, error) {

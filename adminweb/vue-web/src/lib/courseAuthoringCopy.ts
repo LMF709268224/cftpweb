@@ -17,6 +17,9 @@ const en = {
   invalidMarkup: "This content cannot be edited visually without changing its structure. Use HTML source to edit it.",
   sourceLabel: "Lesson HTML source", editorLabel: "Lesson body editor", newVersion: "Create draft version",
   versionHint: "Creates a draft in the same course series. Publishing it replaces the current published version; it does not migrate existing enrolments or progress.",
+  pdfPreview: "Saved PDF preview", pdfOpen: "Preview PDF", pdfLoading: "Loading PDF…", pdfRefresh: "Reload PDF",
+  pdfSaved: "Previews the saved lesson file. Save a replacement file before previewing it here.",
+  pdfFailed: "Could not load the PDF preview. Try again.", pdfExpired: "This preview has expired. Reload the PDF to continue.", pdfNewTab: "Open PDF in a new tab",
 }
 const zh: typeof en = {
   outline: "课程目录", outlineUnavailable: "暂时无法获取完整课程目录，请重新加载。",
@@ -34,6 +37,9 @@ const zh: typeof en = {
   invalidMarkup: "此内容无法在保持原结构的情况下进行可视化编辑，请使用 HTML 源码编辑。",
   sourceLabel: "课时 HTML 源码", editorLabel: "课时正文编辑器", newVersion: "创建草稿版本",
   versionHint: "在同一课程系列下创建草稿。发布后替代当前已发布版本，不会迁移已有学员的报名或学习进度。",
+  pdfPreview: "已保存 PDF 预览", pdfOpen: "预览 PDF", pdfLoading: "正在加载 PDF…", pdfRefresh: "重新加载 PDF",
+  pdfSaved: "预览当前课时已保存的文件。替换文件后，请先保存再预览。",
+  pdfFailed: "PDF 预览加载失败，请重试。", pdfExpired: "预览已过期，请重新加载 PDF。", pdfNewTab: "在新窗口打开 PDF",
 }
 
 export function useCourseAuthoringCopy() {

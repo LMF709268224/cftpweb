@@ -79,7 +79,13 @@ func (h *Handler) GetActiveMembership(w http.ResponseWriter, r *http.Request) {
 		HandleGrpcError(w, err)
 		return
 	}
-	WriteJSON(w, http.StatusOK, resp)
+	if resp == nil {
+		WriteError(w, http.StatusBadGateway, ErrInternal, "membership service returned no response")
+		return
+	}
+	// A successful response with no Membership is the service's explicit
+	// no-record result. Preserve it as null instead of losing it to omitempty.
+	WriteJSON(w, http.StatusOK, map[string]interface{}{"membership": resp.Membership})
 }
 
 func (h *Handler) ListUserMemberships(w http.ResponseWriter, r *http.Request) {

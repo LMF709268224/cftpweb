@@ -1,6 +1,9 @@
 import { expect, test, type Page } from "@playwright/test"
 import { installAdminApiMocks, seedAuthenticatedAdmin } from "./support/admin"
 
+// The full Chromium browser includes the PDF viewer; headless shell does not.
+test.use({ channel: "chromium" })
+
 async function setup(page: Page, status: string | undefined = "Active", reorderFails = false) {
   const course = { course_ulid: "course-1", title: "Authoring Course", status, version: 4, course_gpath: "/course/authoring", duration_min: 60 }
   const chapter = { chapter_ulid: "chapter-1", course_ulid: "course-1", title: "Chapter Alpha", sort_order: 1, version: 3 }
@@ -203,3 +206,80 @@ test("creating a draft version opens the actual returned course and does not mig
   await expect(page.getByRole("button", { name: "Publish Course", exact: true })).toBeVisible()
   expect(writes).toEqual([{ method: "POST", path: "/api/lms/courses", body: { from_course_id: "course-1", title: "Authoring Course (Copy)" } }])
 })
+
+for (const lang of ["en", "zh"] as const) {
+  test(`saved PDF preview uses its signed URL and expires without editing the lesson (${lang})`, async ({ page }, testInfo) => {
+    await seedAuthenticatedAdmin(page, lang)
+    if (lang === "zh") await page.setViewportSize({ width: 390, height: 844 })
+    const { writes, lessons } = await setup(page)
+    const objectKey = "courses/course-1/chapters/chapter-1/lessons/lesson-1/reading.pdf"
+    Object.assign(lessons[0]!, { lesson_type: 3, media_object_key: objectKey })
+    const outline = page.getByTestId("course-outline")
+    await Promise.all([page.waitForResponse("**/api/lms/courses/course-1/complete"), outline.getByRole("button", { name: /Reload outline|重新加载目录/ }).click()])
+    const signedUrl = "https://pdf-preview.example.test/reading.pdf?signature=actual-response"
+    await page.route("**/api/lms/view-url", (route) => route.fulfill({ json: { code: 200, data: { object_key: objectKey, view_url: signedUrl, expires_at: new Date(Date.now() + 60_000).toISOString() } } }))
+    await page.route("https://pdf-preview.example.test/**", (route) => route.fulfill({ contentType: "application/pdf", body: minimalPdf() }))
+    await outline.getByRole("button", { name: "Lesson Alpha", exact: true }).click()
+    const dialog = page.getByRole("dialog")
+    const preview = dialog.getByRole("region", { name: lang === "zh" ? "已保存 PDF 预览" : "Saved PDF preview" })
+    await expect(preview.locator("iframe")).toHaveCount(0)
+    await preview.getByRole("button", { name: lang === "zh" ? "预览 PDF" : "Preview PDF", exact: true }).click()
+    await expect(preview.locator("iframe")).toHaveAttribute("src", signedUrl)
+    await expect(preview.getByRole("link")).toHaveAttribute("href", signedUrl)
+    await expect.poll(async () => {
+      const viewer = page.frames().find((frame) => frame.url().startsWith("chrome-extension://"))
+      return viewer?.locator("pdf-viewer").evaluate((element) => (element as HTMLElement & { loadProgress_: number }).loadProgress_)
+    }).toBe(100)
+    expect(writes).toEqual([{ method: "POST", path: "/api/lms/view-url", body: { object_key: objectKey } }])
+    await preview.scrollIntoViewIfNeeded()
+    // Let the browser's native PDF compositor paint before the visual check.
+    await page.waitForTimeout(500)
+    await page.screenshot({ path: testInfo.outputPath(`pdf-preview-${lang}.png`) })
+    await page.clock.install()
+    await preview.getByRole("button", { name: lang === "zh" ? "重新加载 PDF" : "Reload PDF", exact: true }).click()
+    await expect(preview.locator("iframe")).toHaveAttribute("src", signedUrl)
+    await page.clock.fastForward(61_000)
+    await expect(preview.locator("iframe")).toHaveCount(0)
+    await expect(preview.getByRole("status")).toContainText(lang === "zh" ? "预览已过期" : "preview has expired")
+  })
+}
+
+test("incomplete or mismatched PDF preview responses never produce a guessed URL", async ({ page }) => {
+  await seedAuthenticatedAdmin(page, "en")
+  const { writes, lessons } = await setup(page)
+  Object.assign(lessons[0]!, { lesson_type: 3, media_object_key: "saved.pdf" })
+  const outline = page.getByTestId("course-outline")
+  await Promise.all([page.waitForResponse("**/api/lms/courses/course-1/complete"), outline.getByRole("button", { name: "Reload outline" }).click()])
+  await outline.getByRole("button", { name: "Lesson Alpha", exact: true }).click()
+  const dialog = page.getByRole("dialog")
+  const preview = dialog.getByRole("region", { name: "Saved PDF preview" })
+  await page.route("**/api/lms/view-url", (route) => route.fulfill({ json: { code: 200, data: {} } }))
+  await preview.getByRole("button", { name: "Preview PDF", exact: true }).click()
+  await expect(preview.getByRole("alert")).toBeVisible()
+  await expect(preview.locator("iframe, a")).toHaveCount(0)
+  await page.route("**/api/lms/view-url", (route) => route.fulfill({ json: { code: 200, data: { object_key: "different.pdf", view_url: "https://pdf-preview.example.test/wrong.pdf", expires_at: new Date(Date.now() + 60_000).toISOString() } } }))
+  await preview.getByRole("button", { name: "Reload PDF", exact: true }).click()
+  await expect(preview.getByRole("alert")).toBeVisible()
+  await expect(preview.locator("iframe, a")).toHaveCount(0)
+  await dialog.getByTestId("course-outline").getByRole("button", { name: "Lesson Beta", exact: true }).click()
+  await expect(dialog.getByRole("region", { name: "Saved PDF preview" })).toHaveCount(0)
+  expect(writes.every((request) => request.path === "/api/lms/view-url")).toBe(true)
+})
+
+function minimalPdf() {
+  const stream = "BT /F1 24 Tf 40 240 Td (Course reading preview) Tj ET"
+  const objects = [
+    "<< /Type /Catalog /Pages 2 0 R >>",
+    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 400 300] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+    `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`,
+  ]
+  let pdf = "%PDF-1.4\n"
+  const offsets = [0]
+  objects.forEach((object, index) => { offsets.push(pdf.length); pdf += `${index + 1} 0 obj\n${object}\nendobj\n` })
+  const xref = pdf.length
+  pdf += `xref\n0 ${offsets.length}\n0000000000 65535 f \n`
+  pdf += offsets.slice(1).map((offset) => `${String(offset).padStart(10, "0")} 00000 n \n`).join("")
+  return `${pdf}trailer\n<< /Size ${offsets.length} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`
+}

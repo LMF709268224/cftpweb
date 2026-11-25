@@ -9,14 +9,7 @@ import DashboardUserActions from "@/components/DashboardUserActions.vue"
 import { apiClient } from "@/lib/apiClient"
 import { formatMinorAmount } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
-import { badgeClass } from "@/lib/status"
 import { useCandidateMemberships } from "@/lib/useCandidateMemberships"
-
-type StageBucket = {
-  stage_id: string
-  status: string
-  count: number
-}
 
 type RevenueItem = {
   currency: string
@@ -64,8 +57,6 @@ type DashboardData = {
   user_total: number
   user_page: number
   user_page_size: number
-  stage_buckets: StageBucket[]
-  stage_buckets_exact: boolean
   today_revenue: RevenueItem[]
   today_revenue_exact: boolean
   aggregation_sample_limit: number
@@ -95,11 +86,6 @@ const memberships = useCandidateMemberships(() => data.value?.users || [])
 function isCount(value: unknown): value is number {
   return typeof value === "number" && Number.isSafeInteger(value) && value >= 0
 }
-const totalPipelines = computed(() => {
-  const buckets = data.value?.stage_buckets
-  if (!Array.isArray(buckets) || typeof data.value?.stage_buckets_exact !== "boolean" || buckets.some((item) => !isCount(item.count))) return null
-  return buckets.reduce((sum, item) => sum + item.count, 0)
-})
 const totalPaidOrders = computed(() => {
   const items = data.value?.today_revenue
   if (!Array.isArray(items) || items.some((item) => !isCount(item.order_count))) return null
@@ -180,10 +166,6 @@ function membershipLabel(user: DashboardUser) {
   if (membership.state === "error") return copy.value.unavailable
   if (membership.state === "none") return copy.value.noActiveMembership
   return membership.name || copy.value.unavailable
-}
-
-function stageLabel(stageId: string) {
-  return stageId === copy.value.noStage ? copy.value.noStage : stageId
 }
 
 function roleBadgeClass(role: string) {
@@ -557,40 +539,7 @@ onUnmounted(() => {
       </div>
     </section>
 
-    <section class="mt-7 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-      <article class="rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div class="flex items-center justify-between border-b border-slate-100 p-6">
-          <div>
-            <h2 class="text-xl font-black">{{ copy.stageDistribution }}</h2>
-            <p class="mt-1 text-sm text-slate-500">{{ copy.stageDistributionHint }}</p>
-            <p v-if="data?.stage_buckets_exact === false && isCount(data.aggregation_sample_limit)" class="mt-1 text-xs font-bold text-amber-700">{{ copy.sampledAggregation(data.aggregation_sample_limit) }}</p>
-          </div>
-          <span v-if="totalPipelines !== null" class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{{ totalPipelines }} {{ copy.pipelines }}</span>
-        </div>
-        <div v-if="loading" class="flex h-48 items-center justify-center text-slate-400">
-          <Loader2 class="mr-2 h-5 w-5 animate-spin" />
-          {{ copy.loading }}
-        </div>
-        <div v-else-if="totalPipelines === null" class="flex h-48 items-center justify-center text-slate-500">{{ copy.unavailable }}</div>
-        <div v-else-if="data?.stage_buckets.length === 0" class="flex h-48 items-center justify-center text-slate-400">
-          {{ copy.noStageData }}
-        </div>
-        <div v-else class="divide-y divide-slate-100">
-          <div v-for="item in data?.stage_buckets" :key="`${item.stage_id}-${item.status}`" class="flex items-center justify-between gap-4 p-5">
-            <div class="min-w-0">
-              <p class="break-all text-base font-black">{{ stageLabel(item.stage_id) }}</p>
-              <span class="mt-2 inline-flex rounded-full border px-3 py-1 text-xs font-bold" :class="badgeClass(item.status)">
-                {{ item.status || copy.unknownStatus }}
-              </span>
-            </div>
-            <div class="text-right">
-              <p class="text-3xl font-black">{{ item.count }}</p>
-              <p class="text-xs text-slate-500">{{ copy.peoplePipelines }}</p>
-            </div>
-          </div>
-        </div>
-      </article>
-
+    <section class="mt-7">
       <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm" data-testid="dashboard-business">
         <div class="flex items-center justify-between">
           <div>

@@ -4,6 +4,7 @@ import { computed, defineAsyncComponent, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import ReadonlyField from "@/components/ReadonlyField.vue"
 import CourseOutline from "@/components/CourseOutline.vue"
+import CoursePdfPreview from "@/components/CoursePdfPreview.vue"
 import { useCourseAuthoringCopy } from "@/lib/courseAuthoringCopy"
 import { hasCourseBodyContent } from "@/lib/courseContentHtml"
 import LmsPrerequisitesTab from "@/components/LmsPrerequisitesTab.vue"
@@ -4489,6 +4490,7 @@ onMounted(() => {
                 </template>
               </form>
               </div>
+              <CoursePdfPreview v-if="lessonActiveTab === 'basic' && selectedLessonRecord?.lesson_type === 3 && typeof selectedLessonRecord.media_object_key === 'string' && selectedLessonRecord.media_object_key" :key="editingLessonId" :object-key="selectedLessonRecord.media_object_key" class="mt-4" />
               <div v-if="canEditCourseContent && lessonActiveTab === 'prerequisites' && lessonDialogMode !== 'create'" class="mt-2">
                 <LmsPrerequisitesTab :targetEntityType="1" :targetEntityId="editingLessonId" :course="completeCourseRecord" :copy="copy" />
               </div>
