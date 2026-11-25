@@ -1649,7 +1649,7 @@ export const zh = {
         exemptionReviewPending: "免考申请审核中",
         exemptionDocumentsPendingUpload: "免考材料尚未上传。请先前往资格认证申请上传材料，完成审核后再购买专业认证。",
         exemptionUnderReview: "您的免考申请正在审核中。请等待所有相关免考申请审核完成后，再继续完成认证报名及付款流程。",
-        fromPrice: "起价",
+        priceUnavailable: "价格暂不可用",
         free: "免费",
         membershipCenter: "会员资格",
         enterCertification: "进入我的认证",

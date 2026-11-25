@@ -299,7 +299,7 @@ async function loadMembershipPlans(suppressErrorToast = false) {
     const membershipId = String(bundle.membership_id || "").trim()
     if (!membershipId || pricesByMembership.has(membershipId)) continue
     const amount = Number(bundle.display_amount_min || bundle.display_amount_max || 0)
-    const label = bundleDisplayPriceLabel(bundle, t.value.courseCard.fromPrice)
+    const label = bundleDisplayPriceLabel(bundle)
     if (amount > 0 && label) pricesByMembership.set(membershipId, { amount, label })
   }
   const nextPlans = listFrom(planData, ["memberships", "plans", "items"]).map((plan) => ({
@@ -780,7 +780,7 @@ watch(lang, () => {
                 </li>
               </ul>
               <div class="mt-5 space-y-2">
-                <div v-if="plan.display_price" class="text-xl font-bold text-card-foreground">{{ plan.display_price }}</div>
+                <div class="text-xl font-bold text-card-foreground">{{ plan.display_price || t.courseCard.priceUnavailable }}</div>
                 <button
                   v-if="canUpgradeToPlan(plan)"
                   type="button"

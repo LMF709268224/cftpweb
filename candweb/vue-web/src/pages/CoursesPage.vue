@@ -151,7 +151,7 @@ async function fetchData() {
         provider: b.category_tips || t.value.courses.certificationPath,
         isPurchased: false,
         image: typeof b?.thumbnail_url === "string" ? b.thumbnail_url : "",
-        priceLabel: bundleDisplayPriceLabel(b, t.value.courseCard.fromPrice),
+        priceLabel: bundleDisplayPriceLabel(b) || t.value.courseCard.priceUnavailable,
         categoryTips: String(b.category_tips || "").trim(),
         students: typeof b.purchase_count === "number" ? b.purchase_count : undefined,
         versionLabel: `${t.value.courses.version} ${b.version || 0}`,

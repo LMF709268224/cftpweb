@@ -1651,7 +1651,7 @@ export const en: AppTranslations = {
         exemptionReviewPending: "Exemption Application Under Review",
         exemptionDocumentsPendingUpload: "Your exemption documents have not been uploaded. Upload them in Qualification Applications and wait for approval before purchasing this certification.",
         exemptionUnderReview: "Your exemption application is currently under review. Once all applicable exemption reviews are complete, you can proceed with your certification registration and payment.",
-        fromPrice: "From",
+        priceUnavailable: "Price unavailable",
         free: "Free",
         membershipCenter: "Membership",
         enterCertification: "Access My Certification",

@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import {
   candidateUser,
   installCandidateApiMocks,
@@ -282,7 +282,7 @@ test("首页没有姓名时使用通用问候", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "欢迎回来", exact: true })).toBeVisible();
 });
 
-test("公开商城仅展示课程和认证，并显示最低价", async ({ page }) => {
+async function verifyPublicCatalogPricing({ page }: { page: Page }) {
   await seedAuthenticatedCandidate(page);
   await installCandidateApiMocks(page, ({ pathname }) => {
     if (pathname !== "/api/mall/bundles") return undefined;
@@ -295,8 +295,8 @@ test("公开商城仅展示课程和认证，并显示最低价", async ({ page 
             is_pipeline_bundle: true,
             name: "公开认证项目",
             category_tips: "Certification",
-            display_amount_min: 12000,
-            display_amount_max: 18000,
+            display_amount_min: 60000,
+            display_amount_max: 330000,
             display_currency: "USD",
           },
           {
@@ -329,10 +329,8 @@ test("公开商城仅展示课程和认证，并显示最低价", async ({ page 
   await expect(page.getByRole("button", { name: "课程", exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "会员方案" })).toHaveCount(0);
   await expect(certificationCard.getByRole("button")).toContainText("去报名");
-  await expect(certificationCard.locator(".product-price strong")).toContainText("起价");
-  await expect(certificationCard.locator(".product-price strong")).toContainText("120");
-  await expect(courseCard.locator(".product-price strong")).toContainText("50");
-  await expect(courseCard.locator(".product-price strong")).not.toContainText("起价");
+  await expect(certificationCard.locator(".product-price strong")).toHaveText("US$600 - US$3,300");
+  await expect(courseCard.locator(".product-price strong")).toHaveText("US$50");
   await expect(membershipCard).toHaveCount(0);
   await page.getByRole("button", { name: "课程", exact: true }).click();
   await expect(certificationCard).toHaveCount(0);
@@ -346,14 +344,21 @@ test("公开商城仅展示课程和认证，并显示最低价", async ({ page 
   });
   await expect(page.getByRole("button", { name: "Course", exact: true })).toBeVisible();
   await expect(certificationCard.getByRole("button")).toContainText("Enroll Now");
-  await expect(certificationCard.locator(".product-price strong")).toContainText("From");
+  await expect(certificationCard.locator(".product-price strong")).toHaveText("US$600 - US$3,300");
   await expect(page.getByRole("link", { name: "Memberships" })).toHaveCount(0);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.getByRole("button", { name: "Certification", exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Memberships" })).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);
-});
+}
+
+for (const browserLocale of ["en-US", "en-SG", "zh-CN"]) {
+  test.describe(`catalog pricing with browser locale ${browserLocale}`, () => {
+    test.use({ locale: browserLocale });
+    test("公开商城仅展示课程和认证，并显示价格区间", verifyPublicCatalogPricing);
+  });
+}
 
 test("登录后认证目录和会员购买入口分开，购买状态保持可用", async ({ page }) => {
   await seedAuthenticatedCandidate(page);
@@ -389,6 +394,9 @@ test("登录后认证目录和会员购买入口分开，购买状态保持可�
             pipeline_id: "candidate-pipeline",
             is_pipeline_bundle: true,
             name: "登录后认证项目",
+            display_amount_min: 60000,
+            display_amount_max: 330000,
+            display_currency: "USD",
             eligibility: { can_purchase: true, blockers: [] },
           },
           {
@@ -439,6 +447,8 @@ test("登录后认证目录和会员购买入口分开，购买状态保持可�
   const failedCertificationCard = page.locator('[data-bundle-id="candidate-certification-failed"]');
   await expect(certificationCard).toContainText("可报名专业认证考试");
   await expect(certificationCard).toContainText("去报名");
+  await expect(certificationCard).toContainText("US$600 - US$3,300");
+  await expect(pendingCertificationCard).toContainText("价格暂不可用");
   await expect(certificationCard.locator(".course-card-stats")).toBeVisible();
   await expect(membershipCard).toHaveCount(0);
   await expect(pendingCertificationCard).toContainText("待确认报考资格");

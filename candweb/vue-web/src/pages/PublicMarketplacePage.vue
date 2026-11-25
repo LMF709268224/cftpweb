@@ -149,7 +149,7 @@ async function fetchData() {
         description: String(bundle.description || "").trim() || firstStageNames || `${stages.length} ${t.value.courses.stages} / ${unitCount} ${t.value.courses.units}`,
         provider: bundle.category_tips || t.value.courses.certificationPath,
         image: typeof bundle?.thumbnail_url === "string" ? bundle.thumbnail_url : "",
-        priceLabel: bundleDisplayPriceLabel(bundle, t.value.courseCard.fromPrice),
+        priceLabel: bundleDisplayPriceLabel(bundle),
         categoryTips: String(bundle.category_tips || "").trim(),
         isPipelineBundle: pipelineBundle,
       }
@@ -281,7 +281,7 @@ onBeforeUnmount(() => {
                 <p>{{ course.description }}</p>
               </div>
               <div class="product-price">
-                <strong>{{ course.priceLabel || t.courseCard.free }}</strong>
+                <strong>{{ course.priceLabel || t.courseCard.priceUnavailable }}</strong>
               </div>
               <button
                 class="product-action"
