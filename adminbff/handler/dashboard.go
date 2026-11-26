@@ -126,13 +126,13 @@ func (h *Handler) OpsDashboard(w http.ResponseWriter, r *http.Request) {
 	pageUsers := paginateOpsDashboardUsers(filteredUsers, userPage, userPageSize)
 	userSummary := h.buildOpsUserSummary(cftpUsers, pageUsers, candidateByUserID, roleConfig, roleDefinitions)
 
-	orders, todayRevenueExact, err := h.listDashboardPaidOrders(r.Context())
+	now := time.Now().UTC()
+	orders, todayRevenueExact, err := h.listDashboardPaidOrders(r.Context(), now)
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
 	}
 
-	now := time.Now().UTC()
 	revenue, revenue48h := summarizeDashboardRevenue(orders, now)
 	newCandidates48h, unverifiedCandidates := dashboardCandidateActivity(cftpUsers, roleConfig, roleDefinitions, now)
 
@@ -149,7 +149,7 @@ func (h *Handler) OpsDashboard(w http.ResponseWriter, r *http.Request) {
 		Revenue48h:             revenue48h,
 		NewCandidates48h:       newCandidates48h,
 		UnverifiedCandidates:   unverifiedCandidates,
-		AggregationSampleLimit: adminDashboardSampleLimit,
+		AggregationSampleLimit: 0,
 		GeneratedAt:            now.Format(time.RFC3339),
 	})
 }
@@ -230,32 +230,40 @@ func dashboardCandidateActivity(users []*casdoorsdk.User, roleConfig opsDashboar
 	return &newCandidates, unverified
 }
 
-func (h *Handler) listDashboardPaidOrders(ctx context.Context) ([]*gpaypb.OrderSummary, bool, error) {
-	items := make([]*gpaypb.OrderSummary, 0, adminDashboardSampleLimit)
+func (h *Handler) listDashboardPaidOrders(ctx context.Context, now time.Time) ([]*gpaypb.OrderSummary, bool, error) {
+	from := now.Add(-48 * time.Hour).Unix()
+	to := now.Unix() + 1
+	items := make([]*gpaypb.OrderSummary, 0, adminDashboardPageSize)
 	cursor := ""
 	seen := make(map[string]struct{})
-	exact := false
-
-	for page := 0; page < adminDashboardSampleLimit/adminDashboardPageSize && len(items) < adminDashboardSampleLimit; page++ {
-		pageSize := adminDashboardPageSize
-		if remaining := adminDashboardSampleLimit - len(items); remaining < pageSize {
-			pageSize = remaining
-		}
+	for {
 		resp, err := h.Gpay.ListOrders(ctx, &gpaypb.ListOrdersRequest{
 			Filters: &gpaypb.OrderAdminFilters{
 				StatusFilter: gpaypb.OrderStatus_ORDER_STATUS_COMPLETED,
+				PaidAtFrom:   &from,
+				PaidAtTo:     &to,
 			},
 			Cursor:    cursor,
-			PageSize:  uint32(pageSize),
+			PageSize:  adminDashboardPageSize,
 			SortOrder: gpaypb.SortOrder_SORT_ORDER_DESC,
 		})
 		if err != nil {
 			return nil, false, err
 		}
+		if resp == nil {
+			return nil, false, fmt.Errorf("dashboard order response is missing")
+		}
+		if resp.GetHasMore() && len(resp.GetOrders()) == 0 {
+			return nil, false, fmt.Errorf("dashboard order page is empty before the end")
+		}
+		for _, order := range resp.GetOrders() {
+			if order == nil || order.GetPaidAt() < from || order.GetPaidAt() >= to {
+				return nil, false, fmt.Errorf("dashboard order is outside the requested paid_at range")
+			}
+		}
 		items = append(items, resp.GetOrders()...)
 		if !resp.GetHasMore() {
-			exact = true
-			break
+			return items, true, nil
 		}
 		nextCursor := strings.TrimSpace(resp.GetNextCursor())
 		if nextCursor == "" || nextCursor == cursor {
@@ -267,11 +275,6 @@ func (h *Handler) listDashboardPaidOrders(ctx context.Context) ([]*gpaypb.OrderS
 		seen[nextCursor] = struct{}{}
 		cursor = nextCursor
 	}
-
-	if len(items) > adminDashboardSampleLimit {
-		items = items[:adminDashboardSampleLimit]
-	}
-	return items, exact, nil
 }
 
 type opsDashboardUserSummary struct {

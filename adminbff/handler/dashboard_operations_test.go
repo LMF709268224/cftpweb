@@ -145,3 +145,24 @@ func TestDashboardPendingAgeRejectsMissingCreationTime(t *testing.T) {
 		t.Fatal("missing creation time cannot be counted as a fresh application")
 	}
 }
+
+func TestDashboardPendingAgeReadsBeyondFormerSampleLimit(t *testing.T) {
+	now := time.Date(2026, 11, 26, 12, 0, 0, 0, time.UTC)
+	pages := make([]*gcredspb.ListApplicationsResponse, 6)
+	for index := range pages {
+		pageSize := adminDashboardPageSize
+		if index == len(pages)-1 {
+			pageSize = 1
+		}
+		applications := make([]*gcredspb.ApplicationSummary, pageSize)
+		for item := range applications {
+			applications[item] = &gcredspb.ApplicationSummary{Status: "Pending", CreatedAt: now.Add(-49 * time.Hour).Format(time.RFC3339)}
+		}
+		pages[index] = &gcredspb.ListApplicationsResponse{Applications: applications, HasMore: index < len(pages)-1, NextCursor: fmt.Sprintf("pending-%d", index)}
+	}
+	client := &dashboardPendingCredsClient{pages: pages}
+	count, exact, err := (&Handler{Creds: client}).dashboardPendingCreatedOlder48h(context.Background(), now)
+	if err != nil || !exact || count != 501 || client.calls != 6 {
+		t.Fatalf("count=%d exact=%v calls=%d err=%v", count, exact, client.calls, err)
+	}
+}

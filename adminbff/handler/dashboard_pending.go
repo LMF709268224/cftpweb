@@ -25,7 +25,7 @@ func (h *Handler) OpsDashboardPendingAge(w http.ResponseWriter, r *http.Request)
 	WriteJSON(w, http.StatusOK, dashboardPendingAgeResponse{
 		CreatedOlder48h:        count,
 		Exact:                  exact,
-		AggregationSampleLimit: adminDashboardSampleLimit,
+		AggregationSampleLimit: 0,
 	})
 }
 
@@ -34,7 +34,7 @@ func (h *Handler) dashboardPendingCreatedOlder48h(ctx context.Context, now time.
 	cursor := ""
 	seenCursors := make(map[string]struct{})
 	count := 0
-	for page := 0; page < adminDashboardSampleLimit/adminDashboardPageSize; page++ {
+	for {
 		resp, err := h.Creds.ListApplications(ctx, &gcredspb.ListApplicationsRequest{
 			Filters:   &gcredspb.ApplicationFilters{Statuses: []string{"Pending"}},
 			Cursor:    cursor,
@@ -46,6 +46,9 @@ func (h *Handler) dashboardPendingCreatedOlder48h(ctx context.Context, now time.
 		}
 		if resp == nil {
 			return 0, false, fmt.Errorf("dashboard pending applications response is missing")
+		}
+		if resp.GetHasMore() && len(resp.GetApplications()) == 0 {
+			return 0, false, fmt.Errorf("dashboard pending applications page is empty before the end")
 		}
 		for _, application := range resp.GetApplications() {
 			if application == nil || !strings.EqualFold(application.GetStatus(), "Pending") {
@@ -72,5 +75,4 @@ func (h *Handler) dashboardPendingCreatedOlder48h(ctx context.Context, now time.
 		seenCursors[nextCursor] = struct{}{}
 		cursor = nextCursor
 	}
-	return count, false, nil
 }

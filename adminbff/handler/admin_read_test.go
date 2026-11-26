@@ -175,7 +175,7 @@ func TestOpsDashboardReturnsFilteredReadOnlyOverview(t *testing.T) {
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("status = %d, want %d; body=%s", recorder.Code, http.StatusOK, recorder.Body.String())
 	}
-	if prog.request != nil || pay.orderRequest.GetPageSize() != 100 || pay.orderRequest.GetFilters().GetStatusFilter() != gpaypb.OrderStatus_ORDER_STATUS_COMPLETED {
+	if prog.request != nil || pay.orderRequest.GetPageSize() != 100 || pay.orderRequest.GetFilters().GetStatusFilter() != gpaypb.OrderStatus_ORDER_STATUS_COMPLETED || pay.orderRequest.GetFilters().PaidAtFrom == nil || pay.orderRequest.GetFilters().PaidAtTo == nil {
 		t.Fatalf("dashboard downstream requests = %+v / %+v", prog.request, pay.orderRequest)
 	}
 	var payload struct {
@@ -217,7 +217,7 @@ func TestOpsDashboardReturnsFilteredReadOnlyOverview(t *testing.T) {
 	if len(payload.Data.TodayRevenue) != 1 || payload.Data.TodayRevenue[0].Currency != "USD" || payload.Data.TodayRevenue[0].AmountMinor != 12900 {
 		t.Fatalf("dashboard revenue = %+v", payload.Data.TodayRevenue)
 	}
-	if !payload.Data.TodayRevenueExact || payload.Data.AggregationSampleLimit != adminDashboardSampleLimit {
+	if !payload.Data.TodayRevenueExact || payload.Data.AggregationSampleLimit != 0 {
 		t.Fatalf("dashboard exactness metadata = %+v", payload.Data)
 	}
 }
