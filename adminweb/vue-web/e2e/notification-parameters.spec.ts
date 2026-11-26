@@ -74,6 +74,38 @@ test("message parameters validate required fields, formats and types before keep
   expect(JSON.parse(String(bodies[0]!.payload))).toEqual({ Name: "Test User", Email: "test@example.test", Count: 2, SendCopy: false })
 })
 
+test("message preview renders both languages without sending", async ({ page }) => {
+  await setup(page)
+  await page.route("**/api/messages/templates/detail?**", route => route.fulfill({
+    json: { code: 200, data: {
+      ...messageTemplate,
+      title_tpl: "<!-- lang:zh -->\n通知 {{Name}}\n<!-- lang:en -->\nNotice {{Name}}",
+      content_tpl: "<!-- lang:zh -->\n### **你好 {{Name}}**\n<!-- lang:en -->\n### **Hello {{Name}}**",
+    } },
+  }))
+  let sends = 0
+  await page.route("**/api/messages/send", async route => {
+    sends++
+    await route.fulfill({ json: { code: 200, data: { count: 1 } } })
+  })
+  await page.goto("/messages")
+  await page.getByRole("combobox", { name: "模板", exact: true }).selectOption(messageTemplate.path)
+  const preview = page.getByRole("button", { name: "预览站内信" })
+  await preview.click()
+  await expect(page.getByRole("alert")).toContainText("Name")
+  await fillParameters(page)
+  await preview.click()
+  const dialog = page.getByRole("dialog", { name: "站内信预览" })
+  await expect(dialog).toContainText("通知 Test User")
+  await expect(dialog.locator("h5 strong")).toHaveText("你好 Test User")
+  await dialog.getByRole("button", { name: "English" }).click()
+  await expect(dialog).toContainText("Notice Test User")
+  await expect(dialog.locator("h5 strong")).toHaveText("Hello Test User")
+  expect(sends).toBe(0)
+  await page.keyboard.press("Escape")
+  await expect(dialog).toBeHidden()
+})
+
 test("message template variable inserts at the caret and preserves template fields", async ({ page }) => {
   await setup(page)
   const updates: Record<string, unknown>[] = []

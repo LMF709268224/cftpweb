@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { FileText, List, Loader2, Plus, RefreshCw, Send, X } from "lucide-vue-next"
+import { Eye, FileText, List, Loader2, Plus, RefreshCw, Send, X } from "lucide-vue-next"
 import { computed, nextTick, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import ReadonlyField from "@/components/ReadonlyField.vue"
 import NotificationParameters from "@/components/NotificationParameters.vue"
 import TemplateVariableInsert from "@/components/TemplateVariableInsert.vue"
 import { initialTemplatePayload } from "@/lib/notificationTemplate"
+import { previewMessageContent, previewMessageTitle, renderMessageTemplateText, type MessagePreviewLanguage } from "@/lib/messagePreview"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
@@ -33,6 +34,10 @@ const payloadLoadError = ref("")
 const msgType = ref(1)
 const sending = ref(false)
 const sendConfirmOpen = ref(false)
+const previewOpen = ref(false)
+const previewLanguage = ref<MessagePreviewLanguage>("zh")
+const previewTemplate = ref<JsonRecord | null>(null)
+const previewValues = ref<Record<string, unknown>>({})
 
 const messages = ref<JsonRecord[]>([])
 const messagesLoading = ref(false)
@@ -78,6 +83,14 @@ const messageTypeLabel = computed(() => [
   copy.value.send.messageTypes.payment,
   copy.value.send.messageTypes.other,
 ][msgType.value - 1] || String(msgType.value))
+const previewTitle = computed(() => previewMessageTitle(
+  renderMessageTemplateText(String(previewTemplate.value?.title_tpl ?? ""), previewValues.value),
+  previewLanguage.value,
+))
+const previewContent = computed(() => previewMessageContent(
+  renderMessageTemplateText(String(previewTemplate.value?.content_tpl ?? ""), previewValues.value),
+  previewLanguage.value,
+))
 
 const tabs = computed(() => [
   { key: "send" as const, label: copy.value.tabs.send, icon: Send, count: selectedUserIds.value.length },
@@ -416,6 +429,19 @@ function openSendConfirmation() {
   sendConfirmOpen.value = true
 }
 
+function openMessagePreview() {
+  if (!templatePath.value || !sendTemplate.value || payloadLoading.value || payloadLoadError.value) return
+  if (!validatePayload() || !parametersRef.value?.validate()) return
+  previewValues.value = payload.value.trim() ? JSON.parse(payload.value) as Record<string, unknown> : {}
+  previewTemplate.value = { ...sendTemplate.value }
+  previewLanguage.value = isZh.value ? "zh" : "en"
+  previewOpen.value = true
+}
+
+function closeMessagePreview() {
+  previewOpen.value = false
+}
+
 function closeSendConfirmation() {
   if (!sending.value) sendConfirmOpen.value = false
 }
@@ -699,11 +725,17 @@ onMounted(async () => {
               </div>
               <NotificationParameters ref="parametersRef" v-model="payload" :schema="String(sendTemplate?.parameter_schema ?? '')" :texts="[String(sendTemplate?.title_tpl ?? ''), String(sendTemplate?.content_tpl ?? '')]" :raw-label="copy.send.payload" :disabled="payloadLoading || sending || !!payloadLoadError" />
 
-              <button class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50 sm:w-auto" :disabled="sending || payloadLoading || !!payloadLoadError" type="button" @click="openSendConfirmation">
-                <Loader2 v-if="sending" class="h-4 w-4 animate-spin" />
-                <Send v-else class="h-4 w-4" />
-                {{ sending ? copy.send.sending : copy.send.sendButton }}
-              </button>
+              <div class="flex flex-wrap gap-3">
+                <button class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 font-bold text-slate-800 disabled:opacity-50 sm:w-auto" :disabled="!sendTemplate || sending || payloadLoading || !!payloadLoadError" type="button" @click="openMessagePreview">
+                  <Eye class="h-4 w-4" />
+                  {{ isZh ? '预览站内信' : 'Preview message' }}
+                </button>
+                <button class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50 sm:w-auto" :disabled="sending || payloadLoading || !!payloadLoadError" type="button" @click="openSendConfirmation">
+                  <Loader2 v-if="sending" class="h-4 w-4 animate-spin" />
+                  <Send v-else class="h-4 w-4" />
+                  {{ sending ? copy.send.sending : copy.send.sendButton }}
+                </button>
+              </div>
             </div>
           </div>
         </section>
@@ -947,6 +979,25 @@ onMounted(async () => {
             </button>
           </div>
         </form>
+      </div>
+    </Teleport>
+    <Teleport to="body">
+      <div v-if="previewOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-3 sm:p-6">
+        <section v-modal-dialog="closeMessagePreview" role="dialog" aria-modal="true" :aria-label="isZh ? '站内信预览' : 'Message preview'" class="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg bg-white shadow-2xl">
+          <header class="flex items-center justify-between gap-3 border-b border-slate-200 p-4 sm:px-6">
+            <h2 class="text-lg font-bold text-slate-950">{{ isZh ? '站内信预览' : 'Message preview' }}</h2>
+            <button data-dialog-initial-focus type="button" :aria-label="isZh ? '关闭预览' : 'Close preview'" class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-slate-200 text-slate-600" @click="closeMessagePreview"><X class="h-4 w-4" /></button>
+          </header>
+          <div class="min-h-0 overflow-y-auto p-4 sm:p-6">
+            <div class="inline-flex rounded-md border border-slate-200 bg-slate-50 p-1" role="group" :aria-label="isZh ? '预览语言' : 'Preview language'">
+              <button v-for="language in (['zh', 'en'] as const)" :key="language" type="button" class="rounded px-3 py-1.5 text-sm font-semibold" :class="previewLanguage === language ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600'" :aria-pressed="previewLanguage === language" @click="previewLanguage = language">{{ language === 'zh' ? '中文' : 'English' }}</button>
+            </div>
+            <article class="mt-5 min-w-0 break-words rounded-md border border-slate-200 bg-white p-4 sm:p-5">
+              <h3 class="text-lg font-bold text-slate-950">{{ previewTitle }}</h3>
+              <div class="mt-4 border-t border-slate-100 pt-2 text-sm leading-7 text-slate-700 [&_a]:text-blue-700 [&_a]:underline [&_h3]:text-base [&_h4]:text-base [&_h5]:text-base [&_h6]:text-base" v-html="previewContent" @click.prevent />
+            </article>
+          </div>
+        </section>
       </div>
     </Teleport>
     <Teleport to="body">
