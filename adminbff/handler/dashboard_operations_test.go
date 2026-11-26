@@ -8,7 +8,6 @@ import (
 
 	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
 	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
-	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 	"google.golang.org/grpc"
 )
@@ -50,59 +49,19 @@ func TestDashboardCandidateActivityDoesNotInventMissingSignupDates(t *testing.T)
 	}
 }
 
-type dashboardFunnelProgClient struct {
-	gprogpb.ProgServiceClient
-	pages []*gprogpb.ListPipelinesRsp
-	calls int
-}
-
-func (s *dashboardFunnelProgClient) ListPipelines(_ context.Context, request *gprogpb.ListPipelinesReq, _ ...grpc.CallOption) (*gprogpb.ListPipelinesRsp, error) {
-	if request.GetPageSize() != adminDashboardPageSize || request.GetSortOrder() != gprogpb.SortOrder_SORT_ORDER_DESC {
-		return nil, fmt.Errorf("unexpected request: %+v", request)
-	}
-	index := s.calls
-	s.calls++
-	if index >= len(s.pages) {
-		return nil, fmt.Errorf("unexpected extra page")
-	}
-	return s.pages[index], nil
-}
-
-func TestDashboardFunnelDeduplicatesCandidatesAcrossPages(t *testing.T) {
-	client := &dashboardFunnelProgClient{pages: []*gprogpb.ListPipelinesRsp{
-		{Pipelines: []*gprogpb.PipelineSummary{
-			{CandidateUlid: "candidate-a", Status: gprogpb.PipelineStatus_PIPELINE_STATUS_RUNNING},
-			{CandidateUlid: "candidate-b", Status: gprogpb.PipelineStatus_PIPELINE_STATUS_COMPLETED},
-		}, HasMore: true, NextCursor: "next"},
-		{Pipelines: []*gprogpb.PipelineSummary{
-			{CandidateUlid: "candidate-a", Status: gprogpb.PipelineStatus_PIPELINE_STATUS_COMPLETED},
-		}, HasMore: false},
-	}}
-	withPipeline, completed, exact, err := (&Handler{Gprog: client}).dashboardPipelineCandidates(context.Background(), map[string]struct{}{"candidate-a": {}, "candidate-b": {}})
-	if err != nil || !exact || withPipeline != 2 || completed != 2 || client.calls != 2 {
-		t.Fatalf("with=%d completed=%d exact=%v calls=%d err=%v", withPipeline, completed, exact, client.calls, err)
-	}
-}
-
-func TestDashboardFunnelMarksTruncatedCountsAsLowerBounds(t *testing.T) {
-	pages := make([]*gprogpb.ListPipelinesRsp, adminDashboardSampleLimit/adminDashboardPageSize)
-	for index := range pages {
-		items := make([]*gprogpb.PipelineSummary, adminDashboardPageSize)
-		for item := range items {
-			items[item] = &gprogpb.PipelineSummary{CandidateUlid: fmt.Sprintf("candidate-%d-%d", index, item)}
-		}
-		pages[index] = &gprogpb.ListPipelinesRsp{Pipelines: items, HasMore: true, NextCursor: fmt.Sprintf("cursor-%d", index)}
-	}
-	client := &dashboardFunnelProgClient{pages: pages}
-	candidateIDs := make(map[string]struct{}, adminDashboardSampleLimit)
-	for _, page := range pages {
-		for _, pipeline := range page.Pipelines {
-			candidateIDs[pipeline.CandidateUlid] = struct{}{}
-		}
-	}
-	withPipeline, completed, exact, err := (&Handler{Gprog: client}).dashboardPipelineCandidates(context.Background(), candidateIDs)
-	if err != nil || exact || withPipeline != adminDashboardSampleLimit || completed != 0 {
-		t.Fatalf("with=%d completed=%d exact=%v err=%v", withPipeline, completed, exact, err)
+func TestDashboardMembershipDistributionCountsEachCandidateOnce(t *testing.T) {
+	roles := dashboardRoleConfigFromEnv()
+	users := filterCFTPDashboardUsers([]*casdoorsdk.User{
+		{Id: "no-member", Roles: []*casdoorsdk.Role{{Name: roles.student}}},
+		{Id: "affiliate", Roles: []*casdoorsdk.Role{{Name: roles.student}, {Name: roles.memberships[0]}}},
+		{Id: "associate", Roles: []*casdoorsdk.Role{{Name: roles.student}, {Name: roles.memberships[0]}, {Name: roles.memberships[1]}}},
+		{Id: "charterholder", Roles: []*casdoorsdk.Role{{Name: roles.memberships[2]}}},
+		{Id: "associate", Roles: []*casdoorsdk.Role{{Name: roles.student}, {Name: roles.memberships[1]}}},
+		{Id: "staff", Roles: []*casdoorsdk.Role{{Name: roles.admin}, {Name: roles.memberships[2]}}},
+	}, roles, nil)
+	distribution := dashboardMembershipDistribution(users, roles, nil)
+	if distribution.CandidateAccounts != 4 || distribution.NoMembershipRole != 1 || len(distribution.Roles) != 3 || distribution.Roles[0].Count != 1 || distribution.Roles[1].Count != 1 || distribution.Roles[2].Count != 1 {
+		t.Fatalf("membership distribution = %+v", distribution)
 	}
 }
 

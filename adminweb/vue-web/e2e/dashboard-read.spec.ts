@@ -26,6 +26,11 @@ function dashboardData(name: string, overrides: Record<string, unknown> = {}) {
 		stage_buckets_exact: true,
     today_revenue: [{ currency: "USD", amount_minor: 12900, order_count: 1 }],
 		today_revenue_exact: true,
+		membership_distribution: { candidate_accounts: 3, no_membership_role: 1, roles: [
+			{ role: "role_membership_affiliate", count: 1 },
+			{ role: "role_membership_associate", count: 1 },
+			{ role: "role_membership_charterholder", count: 0 },
+		] },
 		aggregation_sample_limit: 500,
     generated_at: "2026-08-11T00:00:00Z",
     ...overrides,

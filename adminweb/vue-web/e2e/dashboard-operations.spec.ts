@@ -14,6 +14,11 @@ const dashboard = {
   today_revenue: [{ currency: "USD", amount_minor: 140000, order_count: 2 }],
   today_revenue_exact: true,
   revenue_48h: [{ currency: "USD", previous_amount_minor: 100000, current_amount_minor: 140000 }],
+  membership_distribution: { candidate_accounts: 3, no_membership_role: 1, roles: [
+    { role: "role_membership_affiliate", count: 1 },
+    { role: "role_membership_associate", count: 1 },
+    { role: "role_membership_charterholder", count: 0 },
+  ] },
   new_candidates_48h: 2,
   unverified_candidates: 1,
   aggregation_sample_limit: 500,
@@ -31,7 +36,6 @@ for (const lang of ["zh", "en"] as const) {
       await installAdminApiMocks(page, ({ method, pathname, url }) => {
         requests.push(`${method} ${pathname}`)
         if (pathname === "/api/dashboard/ops") return { data: dashboard }
-        if (pathname === "/api/dashboard/funnel") return { data: { candidate_accounts: 3, unlinked_accounts: 0, with_pipeline: 2, completed_pipeline: 1, exact: true, aggregation_sample_limit: 500 } }
         if (pathname === "/api/dashboard/pending-age") return { data: { created_older_48h: 3, exact: true, aggregation_sample_limit: 500 } }
         if (pathname === "/api/applications") {
           reviewQueries.push(url.searchParams)
@@ -53,9 +57,11 @@ for (const lang of ["zh", "en"] as const) {
       await expect(metrics.getByTestId("dashboard-revenue")).toHaveAttribute("href", "/orders")
       await expect(metrics.getByText("USD 1400", { exact: true })).toBeVisible()
       await expect(metrics.getByText("+40%", { exact: true })).toBeVisible()
-      const funnel = page.getByTestId("dashboard-funnel")
-      await expect(funnel.getByText(lang === "zh" ? "有认证流程记录" : "With a pathway record", { exact: true })).toBeVisible()
-      await expect(funnel.getByText("2", { exact: true })).toBeVisible()
+      const membershipRoles = page.getByTestId("dashboard-memberships")
+      await expect(membershipRoles.getByText(lang === "zh" ? "会员角色分布" : "Membership Role Distribution", { exact: true })).toBeVisible()
+      await expect(membershipRoles.getByText(lang === "zh" ? "无会员角色" : "No membership role", { exact: true })).toBeVisible()
+      await expect(membershipRoles.getByText(lang === "zh" ? "附属会员" : "Affiliate", { exact: true })).toBeVisible()
+      await expect(membershipRoles.getByText(lang === "zh" ? "3 个考生账号" : "3 candidate accounts", { exact: true })).toBeVisible()
       await expect(reviews.getByTestId("dashboard-pending-age").getByText(lang === "zh" ? /创建超过 48 小时仍待审: 3/ : /Created over 48h ago, still pending: 3/)).toBeVisible()
       await expect(business.getByText(lang === "zh" ? "邮箱未验证的考生" : "Candidate emails unverified")).toBeVisible()
       expect(reviewQueries[0]?.get("status")).toBe("Pending")
@@ -70,6 +76,7 @@ for (const lang of ["zh", "en"] as const) {
       await expect(page).toHaveURL(/\/mails\?tab=sent&status=FAILED$/)
       await expect.poll(() => mailQueries.at(-1)?.get("status")).toBe("FAILED")
       expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
+      expect(requests).not.toContain("GET /api/dashboard/funnel")
     })
   }
 }
@@ -134,11 +141,10 @@ test("dashboard distinguishes a confirmed zero from malformed counts", async ({ 
   await expect(business.getByText("暂时无法获取", { exact: true })).toBeVisible()
 })
 
-test("dashboard marks incomplete operational counts as lower bounds", async ({ page }) => {
+test("dashboard marks incomplete revenue and pending counts as lower bounds", async ({ page }) => {
   await seedAuthenticatedAdmin(page)
   await installAdminApiMocks(page, ({ pathname }) => {
     if (pathname === "/api/dashboard/ops") return { data: { ...dashboard, today_revenue_exact: false } }
-    if (pathname === "/api/dashboard/funnel") return { data: { candidate_accounts: 3, unlinked_accounts: 1, with_pipeline: 2, completed_pipeline: 1, exact: false, aggregation_sample_limit: 500 } }
     if (pathname === "/api/dashboard/pending-age") return { data: { created_older_48h: 4, exact: false, aggregation_sample_limit: 500 } }
     if (pathname === "/api/applications") return { data: { applications: [], total: 5, total_label: "5", total_exact: true } }
     if (pathname === "/api/mails/stats") return { data: { status_counts: { SENT: 1 } } }
@@ -147,6 +153,5 @@ test("dashboard marks incomplete operational counts as lower bounds", async ({ p
   await page.goto("/dashboard")
   await expect(page.getByTestId("dashboard-revenue").getByText("订单扫描未覆盖全部记录，暂不展示 48 小时对比。")).toBeVisible()
   await expect(page.getByTestId("dashboard-pending-age").getByText(/≥4/)).toBeVisible()
-  await expect(page.getByTestId("dashboard-funnel").getByText("≥2", { exact: true })).toBeVisible()
-  await expect(page.getByTestId("dashboard-funnel").getByText(/1 个考生账号未关联业务 ID/)).toBeVisible()
+  await expect(page.getByTestId("dashboard-memberships").getByText("3 个考生账号", { exact: true })).toBeVisible()
 })

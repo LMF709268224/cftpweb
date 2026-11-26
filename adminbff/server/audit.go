@@ -125,7 +125,6 @@ var adminAuditOperations = map[auditRoute]auditSpec{
 	route(http.MethodGet, "/api/user/me"):                 {Action: "view_own_profile", ResourceType: "admin_user", ReadOnly: true, OwnProfile: true},
 	route(http.MethodGet, "/api/user/list"):               readOperation("view_user_list", "user_directory", ""),
 	route(http.MethodGet, "/api/dashboard/ops"):           readOperation("view_user_list", "user_directory", ""),
-	route(http.MethodGet, "/api/dashboard/funnel"):        readOperation("view_user_list", "user_directory", ""),
 	route(http.MethodGet, "/api/dashboard/pending-age"):   readOperation("view_application_list", "credential_application", ""),
 	route(http.MethodGet, "/api/audit/logs"):              readOperation("view_audit_logs", "audit_log", ""),
 	route(http.MethodGet, "/api/audit/logs/{audit_ulid}"): readOperation("view_audit_log", "audit_log", "audit_ulid"),

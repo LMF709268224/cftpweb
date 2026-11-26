@@ -23,13 +23,10 @@ type RevenueWindow = {
   current_amount_minor: number
 }
 
-type FunnelData = {
+type MembershipDistribution = {
   candidate_accounts: number
-  unlinked_accounts: number
-  with_pipeline: number
-  completed_pipeline: number
-  exact: boolean
-  aggregation_sample_limit: number
+  no_membership_role: number
+  roles: { role: string; count: number }[]
 }
 
 type PendingAgeData = {
@@ -81,6 +78,7 @@ type DashboardData = {
   today_revenue: RevenueItem[]
   today_revenue_exact: boolean
   revenue_48h: RevenueWindow[]
+  membership_distribution: MembershipDistribution
   new_candidates_48h: number | null
   unverified_candidates: number
   aggregation_sample_limit: number
@@ -90,13 +88,11 @@ type DashboardData = {
 const loading = ref(false)
 const reviewsLoading = ref(false)
 const mailStatsLoading = ref(false)
-const funnelLoading = ref(false)
 const pendingAgeLoading = ref(false)
 const pendingReviews = ref<{ total: number; total_label: string; total_exact: boolean } | null>(null)
 const mailCounts = ref<Record<string, number> | null>(null)
-const funnel = ref<FunnelData | null>(null)
 const pendingAge = ref<PendingAgeData | null>(null)
-const refreshing = computed(() => loading.value || reviewsLoading.value || mailStatsLoading.value || funnelLoading.value || pendingAgeLoading.value)
+const refreshing = computed(() => loading.value || reviewsLoading.value || mailStatsLoading.value || pendingAgeLoading.value)
 const data = ref<DashboardData | null>(null)
 const selectedUser = ref<DashboardUser | null>(null)
 const enrollmentUser = ref<DashboardUser | null>(null)
@@ -111,9 +107,29 @@ const { lang, t } = useAdminLanguage()
 const copy = computed(() => t.value.dashboard)
 const memberships = useCandidateMemberships(() => data.value?.users || [])
 
+function membershipRoleLabel(role: string) {
+  const name = role.split("/").pop()?.toLowerCase()
+  switch (name) {
+    case "role_membership_affiliate": return copy.value.membershipAffiliate
+    case "role_membership_associate": return copy.value.membershipAssociate
+    case "role_membership_charterholder": return copy.value.membershipCharterholder
+    default: return role
+  }
+}
+
 function isCount(value: unknown): value is number {
   return typeof value === "number" && Number.isSafeInteger(value) && value >= 0
 }
+const membershipSteps = computed(() => {
+  const distribution = data.value?.membership_distribution
+  if (!distribution || !isCount(distribution.candidate_accounts) || !isCount(distribution.no_membership_role) || !Array.isArray(distribution.roles) || distribution.roles.some((item) => typeof item.role !== "string" || !item.role || !isCount(item.count))) return null
+  const total = distribution.no_membership_role + distribution.roles.reduce((sum, item) => sum + item.count, 0)
+  if (total !== distribution.candidate_accounts) return null
+  return [
+    { role: "none", label: copy.value.noMembershipRole, count: distribution.no_membership_role },
+    ...distribution.roles.map((item) => ({ role: item.role, label: membershipRoleLabel(item.role), count: item.count })),
+  ]
+})
 const totalPaidOrders = computed(() => {
   const items = data.value?.today_revenue
   if (!Array.isArray(items) || items.some((item) => !isCount(item.order_count))) return null
@@ -193,22 +209,6 @@ async function loadMailStats() {
   }
 }
 
-async function loadFunnel() {
-  funnelLoading.value = true
-  funnel.value = null
-  try {
-    const result = await apiClient<FunnelData>("/api/dashboard/funnel")
-    if (!result || !isCount(result.candidate_accounts) || !isCount(result.unlinked_accounts) || !isCount(result.with_pipeline) || !isCount(result.completed_pipeline) || typeof result.exact !== "boolean" || !isCount(result.aggregation_sample_limit)) {
-      throw new Error("Invalid dashboard funnel response")
-    }
-    funnel.value = result
-  } catch (err) {
-    console.error(err)
-  } finally {
-    funnelLoading.value = false
-  }
-}
-
 async function loadPendingAge() {
   pendingAgeLoading.value = true
   pendingAge.value = null
@@ -226,7 +226,7 @@ async function loadPendingAge() {
 }
 
 async function refreshDashboard() {
-  await Promise.all([loadDashboard(), loadPendingReviews(), loadMailStats(), loadFunnel(), loadPendingAge()])
+  await Promise.all([loadDashboard(), loadPendingReviews(), loadMailStats(), loadPendingAge()])
 }
 
 function selectUserGroup(group: "staff" | "candidate") {
@@ -627,21 +627,17 @@ onUnmounted(() => {
       </div>
     </section>
 
-    <section class="mt-7 border-t border-slate-200 pt-6" data-testid="dashboard-funnel">
+    <section class="mt-7 border-t border-slate-200 pt-6" data-testid="dashboard-memberships">
       <div class="flex flex-wrap items-start justify-between gap-2">
-        <div><h2 class="text-xl font-black">{{ copy.funnelTitle }}</h2><p class="mt-1 text-sm text-slate-500">{{ copy.funnelHint }}</p></div>
-        <p v-if="funnel && !funnel.exact" class="text-xs font-semibold text-amber-700">{{ copy.funnelPartial(funnel.aggregation_sample_limit, funnel.unlinked_accounts) }}</p>
+        <div><h2 class="text-xl font-black">{{ copy.membershipRoleTitle }}</h2><p class="mt-1 text-sm text-slate-500">{{ copy.membershipRoleHint }}</p></div>
+        <p v-if="membershipSteps" class="text-sm text-slate-500">{{ copy.membershipCandidateTotal(data?.membership_distribution.candidate_accounts ?? 0) }}</p>
       </div>
-      <p v-if="funnelLoading" class="mt-4 text-sm text-slate-500">{{ copy.loading }}</p>
-      <p v-else-if="!funnel" class="mt-4 text-sm text-slate-500">{{ copy.unavailable }}</p>
-      <div v-else class="mt-4 grid gap-3 md:grid-cols-3">
-        <div v-for="(step, index) in [
-          { label: copy.funnelAccounts, count: funnel.candidate_accounts },
-          { label: copy.funnelWithPipeline, count: funnel.with_pipeline },
-          { label: copy.funnelCompleted, count: funnel.completed_pipeline },
-        ]" :key="index" class="border-l-4 border-blue-500 bg-white p-4">
-          <p class="text-sm text-slate-600">{{ step.label }}</p>
-          <p class="mt-2 text-2xl font-black">{{ index > 0 && !funnel.exact ? '≥' : '' }}{{ step.count }}</p>
+      <p v-if="loading" class="mt-4 text-sm text-slate-500">{{ copy.loading }}</p>
+      <p v-else-if="!membershipSteps" class="mt-4 text-sm text-slate-500">{{ copy.unavailable }}</p>
+      <div v-else class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div v-for="step in membershipSteps" :key="step.role" class="border-l-4 border-blue-500 bg-white p-4">
+          <p class="break-words text-sm text-slate-600">{{ step.label }}</p>
+          <p class="mt-2 text-2xl font-black">{{ step.count }}</p>
         </div>
       </div>
     </section>

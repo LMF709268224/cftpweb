@@ -5,7 +5,7 @@ const candidate = { id: "user-a", candidate_ulid: "candidate-a", name: "Candidat
 const staff = { ...candidate, id: "staff", name: "Staff A", candidate_ulid: "staff-candidate-id", user_group: "staff", role_label: "admin", mfa_enabled: true }
 const member = { candidate_ulid: "candidate-a", membership_ulid: "plan-a", started_at: "2000-01-01T00:00:00Z", expires_at: "2999-01-01T00:00:00Z" }
 function overview(users = [candidate]) {
-  return { candidate_total: 2, user_stats: { total: 3, active: 3, admins: 1, members: 1 }, users, user_total: users.length, user_page: 1, user_page_size: 10, stage_buckets: [], stage_buckets_exact: true, today_revenue: [], today_revenue_exact: true }
+  return { candidate_total: 2, user_stats: { total: 3, active: 3, admins: 1, members: 1 }, users, user_total: users.length, user_page: 1, user_page_size: 10, stage_buckets: [], stage_buckets_exact: true, today_revenue: [], today_revenue_exact: true, membership_distribution: { candidate_accounts: 2, no_membership_role: 1, roles: [{ role: "role_membership_affiliate", count: 1 }] } }
 }
 function registration(id: string, status = 1) {
   return { pipeline_ulid: id, pipeline_cc_ulid: "cert-config", status, created_at: "2026-01-01T00:00:00Z" }

@@ -51,7 +51,6 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 
 		// ===== 运营看板 =====
 		r.Get("/dashboard/ops", h.OpsDashboard)
-		r.Get("/dashboard/funnel", h.OpsDashboardFunnel)
 		r.Get("/dashboard/pending-age", h.OpsDashboardPendingAge)
 
 		// ===== System =====

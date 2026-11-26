@@ -43,6 +43,11 @@ function emptyAdminData(pathname: string) {
 			stage_buckets_exact: true,
 			today_revenue: [],
 			today_revenue_exact: true,
+			membership_distribution: { candidate_accounts: 0, no_membership_role: 0, roles: [
+				{ role: "role_membership_affiliate", count: 0 },
+				{ role: "role_membership_associate", count: 0 },
+				{ role: "role_membership_charterholder", count: 0 },
+			] },
 			aggregation_sample_limit: 500,
 			generated_at: "2026-08-12T00:00:00Z",
 		}

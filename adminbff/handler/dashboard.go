@@ -41,6 +41,7 @@ type opsDashboardResponse struct {
 	TodayRevenue           []opsDashboardRevenue       `json:"today_revenue"`
 	TodayRevenueExact      bool                        `json:"today_revenue_exact"`
 	Revenue48h             []opsDashboardRevenueWindow `json:"revenue_48h"`
+	MembershipDistribution opsMembershipDistribution   `json:"membership_distribution"`
 	NewCandidates48h       *int64                      `json:"new_candidates_48h"`
 	UnverifiedCandidates   int64                       `json:"unverified_candidates"`
 	AggregationSampleLimit int                         `json:"aggregation_sample_limit"`
@@ -90,6 +91,17 @@ type opsDashboardRevenueWindow struct {
 	Currency            string `json:"currency"`
 	PreviousAmountMinor int64  `json:"previous_amount_minor"`
 	CurrentAmountMinor  int64  `json:"current_amount_minor"`
+}
+
+type opsMembershipDistribution struct {
+	CandidateAccounts int                      `json:"candidate_accounts"`
+	NoMembershipRole  int                      `json:"no_membership_role"`
+	Roles             []opsMembershipRoleCount `json:"roles"`
+}
+
+type opsMembershipRoleCount struct {
+	Role  string `json:"role"`
+	Count int    `json:"count"`
 }
 
 type opsDashboardRoleConfig struct {
@@ -147,6 +159,7 @@ func (h *Handler) OpsDashboard(w http.ResponseWriter, r *http.Request) {
 		TodayRevenue:           revenue,
 		TodayRevenueExact:      todayRevenueExact,
 		Revenue48h:             revenue48h,
+		MembershipDistribution: dashboardMembershipDistribution(cftpUsers, roleConfig, roleDefinitions),
 		NewCandidates48h:       newCandidates48h,
 		UnverifiedCandidates:   unverifiedCandidates,
 		AggregationSampleLimit: 0,
@@ -228,6 +241,35 @@ func dashboardCandidateActivity(users []*casdoorsdk.User, roleConfig opsDashboar
 		return nil, unverified
 	}
 	return &newCandidates, unverified
+}
+
+func dashboardMembershipDistribution(users []*casdoorsdk.User, roleConfig opsDashboardRoleConfig, roleDefinitions map[string]*casdoorsdk.Role) opsMembershipDistribution {
+	result := opsMembershipDistribution{Roles: make([]opsMembershipRoleCount, len(roleConfig.memberships))}
+	for index, role := range roleConfig.memberships {
+		result.Roles[index].Role = role
+	}
+	for _, user := range users {
+		if user == nil {
+			continue
+		}
+		roles := roleNames(user)
+		if !dashboardRoleFlags(user, roles, roleConfig, roleDefinitions)["candidate"] {
+			continue
+		}
+		result.CandidateAccounts++
+		highestRole := -1
+		for index, role := range roleConfig.memberships {
+			if dashboardUserMatchesRole(user, roles, role, roleDefinitions) {
+				highestRole = index
+			}
+		}
+		if highestRole < 0 {
+			result.NoMembershipRole++
+		} else {
+			result.Roles[highestRole].Count++
+		}
+	}
+	return result
 }
 
 func (h *Handler) listDashboardPaidOrders(ctx context.Context, now time.Time) ([]*gpaypb.OrderSummary, bool, error) {
