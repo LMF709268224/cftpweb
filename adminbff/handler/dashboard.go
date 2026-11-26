@@ -31,17 +31,20 @@ const (
 )
 
 type opsDashboardResponse struct {
-	CandidateTotal         int64                  `json:"candidate_total"`
-	UserStats              opsDashboardUserStats  `json:"user_stats"`
-	UserRoleStats          []opsDashboardRoleStat `json:"user_role_stats"`
-	Users                  []opsDashboardUser     `json:"users"`
-	UserTotal              int                    `json:"user_total"`
-	UserPage               int                    `json:"user_page"`
-	UserPageSize           int                    `json:"user_page_size"`
-	TodayRevenue           []opsDashboardRevenue  `json:"today_revenue"`
-	TodayRevenueExact      bool                   `json:"today_revenue_exact"`
-	AggregationSampleLimit int                    `json:"aggregation_sample_limit"`
-	GeneratedAt            string                 `json:"generated_at"`
+	CandidateTotal         int64                       `json:"candidate_total"`
+	UserStats              opsDashboardUserStats       `json:"user_stats"`
+	UserRoleStats          []opsDashboardRoleStat      `json:"user_role_stats"`
+	Users                  []opsDashboardUser          `json:"users"`
+	UserTotal              int                         `json:"user_total"`
+	UserPage               int                         `json:"user_page"`
+	UserPageSize           int                         `json:"user_page_size"`
+	TodayRevenue           []opsDashboardRevenue       `json:"today_revenue"`
+	TodayRevenueExact      bool                        `json:"today_revenue_exact"`
+	Revenue48h             []opsDashboardRevenueWindow `json:"revenue_48h"`
+	NewCandidates48h       *int64                      `json:"new_candidates_48h"`
+	UnverifiedCandidates   int64                       `json:"unverified_candidates"`
+	AggregationSampleLimit int                         `json:"aggregation_sample_limit"`
+	GeneratedAt            string                      `json:"generated_at"`
 }
 
 type opsDashboardUserStats struct {
@@ -81,6 +84,12 @@ type opsDashboardRevenue struct {
 	Currency    string `json:"currency"`
 	AmountMinor int64  `json:"amount_minor"`
 	OrderCount  int64  `json:"order_count"`
+}
+
+type opsDashboardRevenueWindow struct {
+	Currency            string `json:"currency"`
+	PreviousAmountMinor int64  `json:"previous_amount_minor"`
+	CurrentAmountMinor  int64  `json:"current_amount_minor"`
 }
 
 type opsDashboardRoleConfig struct {
@@ -123,30 +132,9 @@ func (h *Handler) OpsDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	now := time.Now()
-	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	revenueByCurrency := make(map[string]*opsDashboardRevenue)
-	for _, order := range orders {
-		if order == nil || !isSameUnixLocalDay(order.GetPaidAt(), startOfDay) {
-			continue
-		}
-		currency := strings.ToUpper(strings.TrimSpace(order.GetCurrency()))
-		if currency == "" {
-			currency = "UNKNOWN"
-		}
-		item := revenueByCurrency[currency]
-		if item == nil {
-			item = &opsDashboardRevenue{Currency: currency}
-			revenueByCurrency[currency] = item
-		}
-		item.AmountMinor += order.GetAmount()
-		item.OrderCount++
-	}
-
-	revenue := make([]opsDashboardRevenue, 0, len(revenueByCurrency))
-	for _, item := range revenueByCurrency {
-		revenue = append(revenue, *item)
-	}
+	now := time.Now().UTC()
+	revenue, revenue48h := summarizeDashboardRevenue(orders, now)
+	newCandidates48h, unverifiedCandidates := dashboardCandidateActivity(cftpUsers, roleConfig, roleDefinitions, now)
 
 	WriteJSON(w, http.StatusOK, opsDashboardResponse{
 		CandidateTotal:         userSummary.candidateTotal,
@@ -158,9 +146,88 @@ func (h *Handler) OpsDashboard(w http.ResponseWriter, r *http.Request) {
 		UserPageSize:           userPageSize,
 		TodayRevenue:           revenue,
 		TodayRevenueExact:      todayRevenueExact,
+		Revenue48h:             revenue48h,
+		NewCandidates48h:       newCandidates48h,
+		UnverifiedCandidates:   unverifiedCandidates,
 		AggregationSampleLimit: adminDashboardSampleLimit,
 		GeneratedAt:            now.Format(time.RFC3339),
 	})
+}
+
+func summarizeDashboardRevenue(orders []*gpaypb.OrderSummary, now time.Time) ([]opsDashboardRevenue, []opsDashboardRevenueWindow) {
+	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	previousStart := now.Add(-48 * time.Hour)
+	currentStart := now.Add(-24 * time.Hour)
+	today := make(map[string]*opsDashboardRevenue)
+	windows := make(map[string]*opsDashboardRevenueWindow)
+	for _, order := range orders {
+		if order == nil || order.GetPaidAt() <= 0 {
+			continue
+		}
+		paidAt := time.Unix(order.GetPaidAt(), 0).UTC()
+		if paidAt.After(now) || paidAt.Before(previousStart) {
+			continue
+		}
+		currency := strings.ToUpper(strings.TrimSpace(order.GetCurrency()))
+		if currency == "" {
+			currency = "UNKNOWN"
+		}
+		if !paidAt.Before(todayStart) {
+			item := today[currency]
+			if item == nil {
+				item = &opsDashboardRevenue{Currency: currency}
+				today[currency] = item
+			}
+			item.AmountMinor += order.GetAmount()
+			item.OrderCount++
+		}
+		window := windows[currency]
+		if window == nil {
+			window = &opsDashboardRevenueWindow{Currency: currency}
+			windows[currency] = window
+		}
+		if paidAt.Before(currentStart) {
+			window.PreviousAmountMinor += order.GetAmount()
+		} else {
+			window.CurrentAmountMinor += order.GetAmount()
+		}
+	}
+	dayResult := make([]opsDashboardRevenue, 0, len(today))
+	windowResult := make([]opsDashboardRevenueWindow, 0, len(windows))
+	for _, item := range today {
+		dayResult = append(dayResult, *item)
+	}
+	for _, item := range windows {
+		windowResult = append(windowResult, *item)
+	}
+	sort.Slice(dayResult, func(i, j int) bool { return dayResult[i].Currency < dayResult[j].Currency })
+	sort.Slice(windowResult, func(i, j int) bool { return windowResult[i].Currency < windowResult[j].Currency })
+	return dayResult, windowResult
+}
+
+func dashboardCandidateActivity(users []*casdoorsdk.User, roleConfig opsDashboardRoleConfig, roleDefinitions map[string]*casdoorsdk.Role, now time.Time) (*int64, int64) {
+	var newCandidates, unverified int64
+	completeDates := true
+	for _, user := range users {
+		if user == nil || !dashboardRoleFlags(user, roleNames(user), roleConfig, roleDefinitions)["candidate"] {
+			continue
+		}
+		if !user.EmailVerified {
+			unverified++
+		}
+		createdAt, err := time.Parse(time.RFC3339, user.CreatedTime)
+		if err != nil {
+			completeDates = false
+			continue
+		}
+		if !createdAt.After(now) && !createdAt.Before(now.Add(-48*time.Hour)) {
+			newCandidates++
+		}
+	}
+	if !completeDates {
+		return nil, unverified
+	}
+	return &newCandidates, unverified
 }
 
 func (h *Handler) listDashboardPaidOrders(ctx context.Context) ([]*gpaypb.OrderSummary, bool, error) {
@@ -669,12 +736,4 @@ func dashboardUserStatus(user *casdoorsdk.User) string {
 		return "Inactive"
 	}
 	return "Active"
-}
-
-func isSameUnixLocalDay(unixSeconds int64, startOfDay time.Time) bool {
-	if unixSeconds <= 0 {
-		return false
-	}
-	paidAt := time.Unix(unixSeconds, 0).In(startOfDay.Location())
-	return paidAt.Year() == startOfDay.Year() && paidAt.YearDay() == startOfDay.YearDay()
 }

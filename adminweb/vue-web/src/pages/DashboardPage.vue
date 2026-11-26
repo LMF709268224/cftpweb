@@ -17,6 +17,27 @@ type RevenueItem = {
   order_count: number
 }
 
+type RevenueWindow = {
+  currency: string
+  previous_amount_minor: number
+  current_amount_minor: number
+}
+
+type FunnelData = {
+  candidate_accounts: number
+  unlinked_accounts: number
+  with_pipeline: number
+  completed_pipeline: number
+  exact: boolean
+  aggregation_sample_limit: number
+}
+
+type PendingAgeData = {
+  created_older_48h: number
+  exact: boolean
+  aggregation_sample_limit: number
+}
+
 type UserStats = {
   total: number
   active: number
@@ -59,6 +80,9 @@ type DashboardData = {
   user_page_size: number
   today_revenue: RevenueItem[]
   today_revenue_exact: boolean
+  revenue_48h: RevenueWindow[]
+  new_candidates_48h: number | null
+  unverified_candidates: number
   aggregation_sample_limit: number
   generated_at: string
 }
@@ -66,9 +90,13 @@ type DashboardData = {
 const loading = ref(false)
 const reviewsLoading = ref(false)
 const mailStatsLoading = ref(false)
+const funnelLoading = ref(false)
+const pendingAgeLoading = ref(false)
 const pendingReviews = ref<{ total: number; total_label: string; total_exact: boolean } | null>(null)
 const mailCounts = ref<Record<string, number> | null>(null)
-const refreshing = computed(() => loading.value || reviewsLoading.value || mailStatsLoading.value)
+const funnel = ref<FunnelData | null>(null)
+const pendingAge = ref<PendingAgeData | null>(null)
+const refreshing = computed(() => loading.value || reviewsLoading.value || mailStatsLoading.value || funnelLoading.value || pendingAgeLoading.value)
 const data = ref<DashboardData | null>(null)
 const selectedUser = ref<DashboardUser | null>(null)
 const enrollmentUser = ref<DashboardUser | null>(null)
@@ -101,6 +129,21 @@ const revenueText = computed(() => {
   if (!items.length) return copy.value.noRevenue
   return items.map((item) => `${item.currency} ${formatMinorAmount(item.amount_minor) ?? "-"}`).join(" / ")
 })
+const revenueWindows = computed(() => {
+  if (!data.value?.today_revenue_exact || !Array.isArray(data.value.revenue_48h)) return null
+  const windows = data.value.revenue_48h
+  if (windows.some((item) => !item.currency || !Number.isSafeInteger(item.previous_amount_minor) || !Number.isSafeInteger(item.current_amount_minor))) return null
+  return windows
+})
+function revenueChange(item: RevenueWindow) {
+  if (item.previous_amount_minor === 0) return item.current_amount_minor > 0 ? copy.value.newRevenue : "0%"
+  const percent = Math.round((item.current_amount_minor - item.previous_amount_minor) / item.previous_amount_minor * 100)
+  return `${percent > 0 ? "+" : ""}${percent}%`
+}
+function revenueBarWidth(amount: number, item: RevenueWindow) {
+  const max = Math.max(item.previous_amount_minor, item.current_amount_minor, 1)
+  return `${Math.round(amount / max * 100)}%`
+}
 const filteredUsers = computed(() => {
   return data.value?.users || []
 })
@@ -150,8 +193,40 @@ async function loadMailStats() {
   }
 }
 
+async function loadFunnel() {
+  funnelLoading.value = true
+  funnel.value = null
+  try {
+    const result = await apiClient<FunnelData>("/api/dashboard/funnel")
+    if (!result || !isCount(result.candidate_accounts) || !isCount(result.unlinked_accounts) || !isCount(result.with_pipeline) || !isCount(result.completed_pipeline) || typeof result.exact !== "boolean" || !isCount(result.aggregation_sample_limit)) {
+      throw new Error("Invalid dashboard funnel response")
+    }
+    funnel.value = result
+  } catch (err) {
+    console.error(err)
+  } finally {
+    funnelLoading.value = false
+  }
+}
+
+async function loadPendingAge() {
+  pendingAgeLoading.value = true
+  pendingAge.value = null
+  try {
+    const result = await apiClient<PendingAgeData>("/api/dashboard/pending-age")
+    if (!result || !isCount(result.created_older_48h) || typeof result.exact !== "boolean" || !isCount(result.aggregation_sample_limit)) {
+      throw new Error("Invalid dashboard pending age response")
+    }
+    pendingAge.value = result
+  } catch (err) {
+    console.error(err)
+  } finally {
+    pendingAgeLoading.value = false
+  }
+}
+
 async function refreshDashboard() {
-  await Promise.all([loadDashboard(), loadPendingReviews(), loadMailStats()])
+  await Promise.all([loadDashboard(), loadPendingReviews(), loadMailStats(), loadFunnel(), loadPendingAge()])
 }
 
 function selectUserGroup(group: "staff" | "candidate") {
@@ -346,6 +421,15 @@ onUnmounted(() => {
           <p class="mt-4 break-words text-3xl font-black">{{ loading ? copy.loading : revenueText }}</p>
           <p v-if="totalPaidOrders !== null" class="mt-2 text-sm text-slate-500">{{ copy.paidOrders(totalPaidOrders) }}</p>
           <p v-if="data?.today_revenue_exact === false && isCount(data.aggregation_sample_limit)" class="mt-2 text-xs font-bold text-amber-700">{{ copy.sampledAggregation(data.aggregation_sample_limit) }}</p>
+          <div v-if="revenueWindows?.length" class="mt-4 space-y-3 border-t border-slate-100 pt-3">
+            <p class="text-xs font-semibold text-slate-500">{{ copy.revenueTrend48h }}</p>
+            <div v-for="item in revenueWindows" :key="item.currency" class="space-y-1 text-xs">
+              <div class="flex justify-between gap-2 font-semibold"><span>{{ item.currency }}</span><span>{{ revenueChange(item) }}</span></div>
+              <div class="flex items-center gap-2"><span class="w-20 shrink-0 text-slate-500">{{ copy.previous24h }}</span><div class="h-2 flex-1 rounded bg-slate-100"><div class="h-full rounded bg-slate-400" :style="{ width: revenueBarWidth(item.previous_amount_minor, item) }" /></div><span class="w-16 text-right">{{ formatMinorAmount(item.previous_amount_minor) }}</span></div>
+              <div class="flex items-center gap-2"><span class="w-20 shrink-0 text-slate-500">{{ copy.current24h }}</span><div class="h-2 flex-1 rounded bg-slate-100"><div class="h-full rounded bg-blue-500" :style="{ width: revenueBarWidth(item.current_amount_minor, item) }" /></div><span class="w-16 text-right">{{ formatMinorAmount(item.current_amount_minor) }}</span></div>
+            </div>
+          </div>
+          <p v-else-if="data && typeof data.today_revenue_exact === 'boolean'" class="mt-3 text-xs text-slate-500">{{ data.today_revenue_exact === false ? copy.trendUnavailable : revenueWindows ? copy.noRevenue48h : copy.unavailable }}</p>
           <span class="mt-4 inline-flex items-center gap-1 text-sm font-bold text-blue-700">{{ copy.viewOrders }} <ArrowUpRight class="h-4 w-4" /></span>
         </RouterLink>
         <RouterLink to="/applications" :aria-label="copy.viewReviews" class="rounded-2xl border bg-white p-5 shadow-sm transition hover:border-blue-400 hover:shadow-md" :class="pendingReviews && pendingReviews.total > 0 ? 'border-amber-300' : 'border-slate-200'" data-testid="dashboard-reviews">
@@ -356,6 +440,10 @@ onUnmounted(() => {
           <p class="mt-4 text-3xl font-black">{{ reviewsLoading ? copy.loading : pendingReviews?.total_label ?? copy.unavailable }}</p>
           <p v-if="pendingReviews" class="mt-2 text-sm" :class="pendingReviews.total > 0 ? 'text-amber-700' : 'text-slate-500'">{{ pendingReviews.total > 0 ? copy.reviewsWaiting : copy.noPendingReviews }}</p>
           <p v-if="pendingReviews && !pendingReviews.total_exact" class="mt-2 text-xs font-bold text-amber-700">{{ copy.partialReviewCount }}</p>
+          <div v-if="pendingAge" class="mt-3 border-t border-slate-100 pt-3" data-testid="dashboard-pending-age">
+            <p class="text-sm font-bold" :class="pendingAge.created_older_48h > 0 ? 'text-amber-700' : 'text-slate-600'">{{ copy.pendingCreatedOlder48h }}: {{ pendingAge.exact ? '' : '≥' }}{{ pendingAge.created_older_48h }}</p>
+            <p class="mt-1 text-xs text-slate-500">{{ copy.pendingAgeEstimateHint }}</p>
+          </div>
           <span class="mt-4 inline-flex items-center gap-1 text-sm font-bold text-blue-700">{{ copy.viewReviews }} <ArrowUpRight class="h-4 w-4" /></span>
         </RouterLink>
       </div>
@@ -539,8 +627,27 @@ onUnmounted(() => {
       </div>
     </section>
 
-    <section class="mt-7">
-      <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm" data-testid="dashboard-business">
+    <section class="mt-7 border-t border-slate-200 pt-6" data-testid="dashboard-funnel">
+      <div class="flex flex-wrap items-start justify-between gap-2">
+        <div><h2 class="text-xl font-black">{{ copy.funnelTitle }}</h2><p class="mt-1 text-sm text-slate-500">{{ copy.funnelHint }}</p></div>
+        <p v-if="funnel && !funnel.exact" class="text-xs font-semibold text-amber-700">{{ copy.funnelPartial(funnel.aggregation_sample_limit, funnel.unlinked_accounts) }}</p>
+      </div>
+      <p v-if="funnelLoading" class="mt-4 text-sm text-slate-500">{{ copy.loading }}</p>
+      <p v-else-if="!funnel" class="mt-4 text-sm text-slate-500">{{ copy.unavailable }}</p>
+      <div v-else class="mt-4 grid gap-3 md:grid-cols-3">
+        <div v-for="(step, index) in [
+          { label: copy.funnelAccounts, count: funnel.candidate_accounts },
+          { label: copy.funnelWithPipeline, count: funnel.with_pipeline },
+          { label: copy.funnelCompleted, count: funnel.completed_pipeline },
+        ]" :key="index" class="border-l-4 border-blue-500 bg-white p-4">
+          <p class="text-sm text-slate-600">{{ step.label }}</p>
+          <p class="mt-2 text-2xl font-black">{{ index > 0 && !funnel.exact ? '≥' : '' }}{{ step.count }}</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="mt-7 border-t border-slate-200 pt-6">
+      <div data-testid="dashboard-business">
         <div class="flex items-center justify-between">
           <div>
             <h2 class="text-xl font-black">{{ copy.businessOverview }}</h2>
@@ -548,13 +655,23 @@ onUnmounted(() => {
           </div>
           <BarChart3 class="h-6 w-6 text-slate-400" />
         </div>
+        <div class="mt-5 grid gap-3 sm:grid-cols-2">
+          <div class="border-l-4 border-emerald-500 bg-white p-4">
+            <p class="text-sm text-slate-600">{{ copy.newCandidates48h }}</p>
+            <p class="mt-2 text-2xl font-black">{{ loading ? copy.loading : isCount(data?.new_candidates_48h) ? data?.new_candidates_48h : copy.unavailable }}</p>
+          </div>
+          <div class="border-l-4 border-amber-500 bg-white p-4">
+            <p class="text-sm text-slate-600">{{ copy.unverifiedCandidates }}</p>
+            <p class="mt-2 text-2xl font-black">{{ loading ? copy.loading : isCount(data?.unverified_candidates) ? data?.unverified_candidates : copy.unavailable }}</p>
+          </div>
+        </div>
         <div class="mt-6">
           <h3 class="font-bold">{{ copy.emailStatus }}</h3>
           <p class="mt-1 text-xs text-slate-500">{{ copy.emailStatusHint }}</p>
           <p v-if="mailStatsLoading" class="py-8 text-center text-slate-500">{{ copy.loading }}</p>
           <p v-else-if="!mailCounts" class="py-8 text-center text-slate-500">{{ copy.unavailable }}</p>
-          <div v-else class="mt-4 grid grid-cols-2 gap-3">
-            <RouterLink v-for="card in mailCards" :key="card.status" :to="{ path: '/mails', query: { tab: 'sent', status: card.status } }" class="rounded-xl border p-4 transition hover:border-blue-400" :class="card.status === 'FAILED' && card.count !== undefined && card.count > 0 ? 'border-red-200 bg-red-50 text-red-700' : 'border-slate-200 bg-slate-50'">
+          <div v-else class="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+            <RouterLink v-for="card in mailCards" :key="card.status" :to="{ path: '/mails', query: { tab: 'sent', status: card.status } }" class="rounded-lg border p-4 transition hover:border-blue-400" :class="card.status === 'FAILED' && card.count !== undefined && card.count > 0 ? 'border-red-200 bg-red-50 text-red-700' : 'border-slate-200 bg-white'">
               <div class="flex items-center justify-between gap-2 text-sm font-bold">{{ card.label }} <ArrowUpRight class="h-4 w-4 shrink-0" /></div>
               <p class="mt-2 text-2xl font-black">{{ card.count === undefined ? copy.unavailable : card.count }}</p>
             </RouterLink>
@@ -563,7 +680,7 @@ onUnmounted(() => {
             <AlertCircle class="mt-0.5 h-4 w-4 shrink-0" /> {{ copy.failedMailNotice }}
           </p>
         </div>
-      </article>
+      </div>
     </section>
     <CandidateEnrollmentsDialog v-if="enrollmentUser?.candidate_ulid" :key="enrollmentUser.candidate_ulid" :candidate-id="enrollmentUser.candidate_ulid" :candidate-name="enrollmentUser.name" @close="enrollmentUser = null" />
     <Teleport to="body">
