@@ -135,7 +135,7 @@ function userEmail(user: JsonRecord) {
 }
 
 function userName(user: JsonRecord) {
-  return String(pickFirst(user, ["name", "nickname", "email", "id"]) || userEmail(user) || copy.value.defaults.user)
+  return String(pickFirst(user, ["name", "nickname", "email"]) || copy.value.defaults.user)
 }
 
 function resolvedTemplate(template: JsonRecord | null | undefined) {

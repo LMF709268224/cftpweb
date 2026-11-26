@@ -64,6 +64,7 @@ test("message recipients can be filtered by earned certificate", async ({ page }
   const certificateFilter = page.getByRole("combobox", { name: "按已获证书筛选" })
   await certificateFilter.selectOption({ label: "CFtP Level 1（1）" })
   await expect(page.getByText("CFtP Candidate", { exact: true })).toBeVisible()
+  await expect(page.getByText("candidate-1", { exact: true })).toHaveCount(0)
   await expect(page.getByText("CFtA Candidate", { exact: true })).toBeHidden()
   await page.getByRole("button", { name: "全选" }).click()
   await expect(page.getByText("已选择 1 个用户。", { exact: true })).toBeVisible()

@@ -51,6 +51,7 @@ const copy = computed(() => isZh.value ? {
   imported: "成功导入 {count} 条，忽略重复 {duplicates} 条",
   token: "专属访问 URL",
   candidate: "绑定考生",
+  candidateNameUnavailable: "考生姓名暂不可用",
   allocatedAt: "分配时间",
   unallocated: "未分配",
   noTokens: "暂无专属访问 URL 记录",
@@ -92,6 +93,7 @@ const copy = computed(() => isZh.value ? {
   imported: "Imported {count}; ignored {duplicates} duplicates",
   token: "Dedicated Access URL",
   candidate: "Candidate",
+  candidateNameUnavailable: "Candidate name unavailable",
   allocatedAt: "Allocated At",
   unallocated: "Unallocated",
   noTokens: "No dedicated access URL records",
@@ -338,7 +340,7 @@ onMounted(load)
           <section class="border-t border-slate-200 pt-5">
             <div class="flex flex-wrap items-center justify-between gap-3"><h3 class="text-lg font-black">{{ copy.tokens }}</h3><button class="inline-flex h-10 items-center gap-2 rounded-lg bg-blue-700 px-4 font-bold text-white" @click="importOpen = true"><Upload class="h-4 w-4" />{{ copy.importTokens }}</button></div>
             <div class="mt-4 grid grid-cols-3 gap-3"><div class="rounded-lg bg-slate-50 p-4"><div class="text-xs font-bold text-slate-500">{{ copy.total }}</div><div class="mt-1 text-2xl font-black">{{ stats.total_count || 0 }}</div></div><div class="rounded-lg bg-emerald-50 p-4"><div class="text-xs font-bold text-emerald-700">{{ copy.available }}</div><div class="mt-1 text-2xl font-black text-emerald-900">{{ stats.available_count || 0 }}</div></div><div class="rounded-lg bg-blue-50 p-4"><div class="text-xs font-bold text-blue-700">{{ copy.allocated }}</div><div class="mt-1 text-2xl font-black text-blue-900">{{ stats.allocated_count || 0 }}</div></div></div>
-            <div class="mt-4 overflow-x-auto border-t border-slate-200"><table class="w-full text-left text-sm"><thead><tr class="text-slate-500"><th class="py-3">{{ copy.token }}</th><th class="py-3">{{ copy.candidate }}</th><th class="py-3">{{ copy.allocatedAt }}</th></tr></thead><tbody><tr v-for="item in tokens" :key="String(item.token_id)" class="border-t"><td class="py-3 font-mono" :title="String(item.token_url || '')">{{ maskToken(item.token_url) }}</td><td class="py-3 font-mono text-xs">{{ item.candidate_ulid || copy.unallocated }}</td><td class="py-3">{{ formatDate(String(item.allocated_at || '')) || '-' }}</td></tr></tbody></table><div v-if="!detailLoading && !tokens.length" class="py-10 text-center text-slate-500">{{ copy.noTokens }}</div><div v-if="tokenHasMore" class="border-t py-4 text-center"><button class="inline-flex h-10 items-center gap-2 rounded-lg border px-4 font-bold" :disabled="loadingMoreTokens" @click="loadMoreTokens"><Loader2 v-if="loadingMoreTokens" class="h-4 w-4 animate-spin" />{{ copy.loadMore }}</button></div></div>
+            <div class="mt-4 overflow-x-auto border-t border-slate-200"><table class="w-full text-left text-sm"><thead><tr class="text-slate-500"><th class="py-3">{{ copy.token }}</th><th class="py-3">{{ copy.candidate }}</th><th class="py-3">{{ copy.allocatedAt }}</th></tr></thead><tbody><tr v-for="item in tokens" :key="String(item.token_id)" class="border-t"><td class="py-3 font-mono" :title="String(item.token_url || '')">{{ maskToken(item.token_url) }}</td><td class="py-3 font-semibold">{{ item.candidate_ulid ? item.candidate_name || copy.candidateNameUnavailable : copy.unallocated }}</td><td class="py-3">{{ formatDate(String(item.allocated_at || '')) || '-' }}</td></tr></tbody></table><div v-if="!detailLoading && !tokens.length" class="py-10 text-center text-slate-500">{{ copy.noTokens }}</div><div v-if="tokenHasMore" class="border-t py-4 text-center"><button class="inline-flex h-10 items-center gap-2 rounded-lg border px-4 font-bold" :disabled="loadingMoreTokens" @click="loadMoreTokens"><Loader2 v-if="loadingMoreTokens" class="h-4 w-4 animate-spin" />{{ copy.loadMore }}</button></div></div>
           </section>
         </div>
         <div v-else class="flex min-h-[500px] items-center justify-center text-slate-500"><Loader2 v-if="loading" class="h-6 w-6 animate-spin" /><span v-else>{{ copy.empty }}</span></div>

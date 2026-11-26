@@ -970,7 +970,6 @@ onMounted(async () => {
                 <div class="break-words text-lg font-black md:truncate">{{ pipelineDisplayName(pipeline) }}</div>
                 <div class="mt-1 break-all text-sm text-slate-500">
                   <div class="font-semibold text-slate-800">{{ copy.candidatePrefix }}{{ pipeline.candidate_name || "-" }}</div>
-                  <div class="font-mono text-xs text-slate-400">{{ pipeline.candidate_ulid || pipeline.candidate_id || "-" }}</div>
                 </div>
                 <div class="mt-3 grid gap-1 rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-500">
                   <div class="break-all font-semibold">Pipeline: {{ pipelineUlid(pipeline) || "-" }}</div>

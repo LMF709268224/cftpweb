@@ -164,5 +164,5 @@ func (h *Handler) ListExternalCoursewareTokens(w http.ResponseWriter, r *http.Re
 		writeLmsError(w, err)
 		return
 	}
-	WriteJSON(w, http.StatusOK, resp)
+	WriteJSON(w, http.StatusOK, h.candidateAwarePayload(resp, "candidate_ulid"))
 }

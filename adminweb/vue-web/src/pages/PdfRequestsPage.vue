@@ -11,6 +11,7 @@ import { pickFirst } from "@/lib/status"
 const PAGE_SIZE = 10
 
 const requests = ref<JsonRecord[]>([])
+const credentialNames = ref<Record<string, string>>({})
 const selected = ref<JsonRecord | null>(null)
 const loading = ref(false)
 const detailLoading = ref(false)
@@ -26,7 +27,8 @@ const copy = computed(() => t.value.pdfRequests)
 let detailRequestId = 0
 
 
-const primaryFieldKeys = ["degree_no", "cert_no", "candidate_name", "status", "error_msg", "error_message", "issue_date", "created_at", "updated_at"]
+const primaryFieldKeys = ["issue_date", "created_at", "updated_at"]
+const businessFieldKeys = ["request_ulid", "request_id", "id", "pdf_request_ulid", "degree_no", "cert_no", "candidate_name", "status", "error_msg", "error_message", "retry_count", "max_retries", "scheduled_at", ...primaryFieldKeys]
 const primaryFields = computed(() => {
   if (!selected.value) return []
   return primaryFieldKeys
@@ -55,7 +57,7 @@ const templateFields = computed(() => {
 const technicalFields = computed(() => {
   if (!selected.value) return []
   return Object.entries(selected.value)
-    .filter(([key, value]) => isPrimitive(value) && !primaryFieldKeys.includes(key) && (key !== "template_params" || !templateFields.value.length))
+    .filter(([key, value]) => isPrimitive(value) && !businessFieldKeys.includes(key) && (key !== "template_params" || !templateFields.value.length))
     .map(([key, value]) => ({ key, label: fieldLabel(key), value: formatFieldValue(key, value) }))
 })
 
@@ -73,6 +75,22 @@ function certificateNumber(request: JsonRecord) {
 
 function candidateName(request: JsonRecord) {
   return String(request.candidate_name || "").trim()
+}
+
+function credentialName(request: JsonRecord) {
+  const id = String(request.cred_def_ulid || "").trim()
+  return credentialNames.value[id] || ""
+}
+
+function failureReason(request: JsonRecord) {
+  return String(pickFirst(request, ["error_message", "error_msg"]) || "").trim()
+}
+
+function nextScheduledAt(request: JsonRecord) {
+  if (Number(request.status) === 3) return ""
+  const value = String(request.scheduled_at || "").trim()
+  const scheduled = Date.parse(value)
+  return Number.isFinite(scheduled) && scheduled > Date.now() ? formatDate(value) : ""
 }
 
 function isCurrentDetailRequest(requestId: number, id: string) {
@@ -95,6 +113,15 @@ function statusBadgeClass(value: unknown) {
   if (status === 3) return "border-emerald-200 bg-emerald-50 text-emerald-700"
   if (status === 4) return "border-red-200 bg-red-50 text-red-700"
   return "border-slate-200 bg-slate-50 text-slate-600"
+}
+
+function statusNote(value: unknown) {
+  const status = Number(value)
+  if (status === 1) return copy.value.statusNotes.pending
+  if (status === 2) return copy.value.statusNotes.generating
+  if (status === 3) return copy.value.statusNotes.success
+  if (status === 4) return copy.value.statusNotes.failed
+  return copy.value.statusNotes.unknown
 }
 
 function formatFieldValue(key: string, value: unknown) {
@@ -206,7 +233,28 @@ function goPage(nextPage: number) {
   load(nextPage)
 }
 
-onMounted(() => load(1))
+async function loadCredentialNames() {
+  try {
+    const data = await apiClient<JsonRecord>("/api/credentials/definitions")
+    const list = Array.isArray(data.definitions) ? data.definitions : []
+    credentialNames.value = Object.fromEntries(list
+      .filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
+      .map((item) => [String(item.cred_def_ulid || "").trim(), String(item.name || "").trim()])
+      .filter(([id, name]) => id && name))
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+function refresh() {
+  void load(page.value)
+  void loadCredentialNames()
+}
+
+onMounted(() => {
+  void load(1)
+  void loadCredentialNames()
+})
 </script>
 
 <template>
@@ -216,7 +264,7 @@ onMounted(() => load(1))
         <h1 class="text-3xl font-black tracking-tight md:text-4xl">{{ copy.title }}</h1>
         <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
       </div>
-      <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="loading" @click="load()">
+      <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="loading" @click="refresh">
         <RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
         {{ copy.refresh }}
       </button>
@@ -230,11 +278,12 @@ onMounted(() => load(1))
         </div>
         
       </div>
-      <div class="flex flex-wrap gap-x-4 gap-y-2 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-black text-slate-500 md:grid md:grid-cols-[minmax(0,1fr)_160px_180px_112px] md:gap-5 md:px-5">
-        <span>{{ copy.columns.request }}</span>
-        <span class="md:text-center">{{ copy.columns.status }}</span>
-        <span class="md:text-right">{{ copy.columns.createdAt }}</span>
-        <span class="md:text-right">{{ copy.columns.action }}</span>
+      <div class="hidden grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_180px_150px_110px] gap-5 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500 xl:grid">
+        <span>{{ copy.columns.candidate }}</span>
+        <span>{{ copy.columns.certificate }}</span>
+        <span>{{ copy.columns.status }}</span>
+        <span>{{ copy.columns.createdAt }}</span>
+        <span>{{ copy.columns.action }}</span>
       </div>
 
       <div v-if="loading" class="px-4 py-10 text-center text-slate-500 md:p-12">
@@ -246,21 +295,30 @@ onMounted(() => load(1))
         <div
           v-for="request in requests"
           :key="requestUlid(request)"
-          class="grid gap-3 px-4 py-4 md:grid-cols-[minmax(0,1fr)_160px_180px_112px] md:items-center md:gap-5 md:px-5"
+          class="grid gap-4 px-4 py-4 md:grid-cols-2 md:gap-5 md:px-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_180px_150px_110px] xl:items-center"
           :class="detailOpen && requestUlid(selected || {}) === requestUlid(request) ? 'bg-sky-50' : ''"
         >
           <div class="min-w-0">
-            <div class="break-words text-base font-black md:truncate">{{ certificateNumber(request) || requestUlid(request) || "-" }}</div>
-            <div v-if="candidateName(request)" class="mt-1 break-words text-sm font-semibold text-slate-700 md:truncate">{{ candidateName(request) }}</div>
-            <div class="mt-1 break-all text-xs text-slate-500 md:truncate">{{ requestUlid(request) || "-" }}</div>
+            <div class="mb-1 text-xs font-bold text-slate-500 xl:hidden">{{ copy.columns.candidate }}</div>
+            <div class="break-words text-sm font-bold text-slate-900">{{ candidateName(request) || copy.candidateNameUnavailable }}</div>
           </div>
-          <div class="min-w-0 md:text-center">
+          <div class="min-w-0">
+            <div class="mb-1 text-xs font-bold text-slate-500 xl:hidden">{{ copy.columns.certificate }}</div>
+            <div class="break-words text-sm font-bold text-slate-900">{{ credentialName(request) || certificateNumber(request) || copy.certificateNumberUnavailable }}</div>
+            <div v-if="credentialName(request)" class="mt-1 break-words text-xs text-slate-500">{{ copy.certificateNumber }}{{ certificateNumber(request) || copy.certificateNumberUnavailable }}</div>
+          </div>
+          <div class="min-w-0">
+            <div class="mb-1 text-xs font-bold text-slate-500 xl:hidden">{{ copy.columns.status }}</div>
             <span class="inline-flex max-w-full truncate rounded-full border px-3 py-1 text-xs font-black" :class="statusBadgeClass(request.status)">
               {{ statusLabel(request.status) }}
             </span>
+            <div class="mt-1 text-xs text-slate-500">{{ statusNote(request.status) }}</div>
           </div>
-          <div class="text-sm font-semibold text-slate-500 md:text-right">{{ formatDate(request.created_at) || copy.noCreatedAt }}</div>
-          <div class="md:text-right">
+          <div class="min-w-0">
+            <div class="mb-1 text-xs font-bold text-slate-500 xl:hidden">{{ copy.columns.createdAt }}</div>
+            <div class="text-sm text-slate-600">{{ formatDate(request.created_at) || copy.noCreatedAt }}</div>
+          </div>
+          <div class="md:col-span-2 xl:col-span-1">
             <button
               class="inline-flex w-full items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 transition hover:underline md:w-auto md:border-0 md:bg-transparent md:px-0 md:py-0"
               type="button"
@@ -324,15 +382,34 @@ onMounted(() => load(1))
             {{ copy.loading }}
           </div>
           <div v-else class="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 md:p-5">
-            <div class="rounded-2xl border border-blue-100 bg-blue-50 p-4">
-              <div class="text-sm font-black text-blue-700">{{ copy.currentRequest }}</div>
-              <div class="mt-1 break-all text-lg font-black text-slate-950">{{ certificateNumber(selected) || requestUlid(selected) || "-" }}</div>
-              <div v-if="candidateName(selected)" class="mt-1 text-sm font-semibold text-slate-700">{{ candidateName(selected) }}</div>
-              <div class="mt-1 break-all text-xs text-slate-500">{{ requestUlid(selected) || "-" }}</div>
-              <div class="mt-2 inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="statusBadgeClass(selected.status)">
-                {{ statusLabel(selected.status) }}
+            <div class="grid gap-4 border-b border-slate-200 pb-5 md:grid-cols-2">
+              <div>
+                <div class="text-xs font-bold text-slate-500">{{ copy.columns.candidate }}</div>
+                <div class="mt-1 break-words text-lg font-bold text-slate-950">{{ candidateName(selected) || copy.candidateNameUnavailable }}</div>
+              </div>
+              <div>
+                <div class="text-xs font-bold text-slate-500">{{ copy.columns.certificate }}</div>
+                <div class="mt-1 break-words text-lg font-bold text-slate-950">{{ credentialName(selected) || copy.credentialNameUnavailable }}</div>
+                <div class="mt-1 break-words text-sm text-slate-600">{{ copy.certificateNumber }}{{ certificateNumber(selected) || copy.certificateNumberUnavailable }}</div>
+              </div>
+              <div class="md:col-span-2">
+                <div class="text-xs font-bold text-slate-500">{{ copy.columns.status }}</div>
+                <div class="mt-2 flex flex-wrap items-center gap-3">
+                  <span class="inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="statusBadgeClass(selected.status)">{{ statusLabel(selected.status) }}</span>
+                  <span class="text-sm text-slate-600">{{ statusNote(selected.status) }}</span>
+                </div>
               </div>
             </div>
+
+            <section v-if="Number(selected.status) === 4 || failureReason(selected)" class="border-l-4 border-red-400 bg-red-50 px-4 py-3">
+              <h3 class="text-sm font-bold text-red-900">{{ Number(selected.status) === 4 ? copy.failureReason : copy.previousFailureReason }}</h3>
+              <p class="mt-1 whitespace-pre-wrap break-words text-sm text-red-800">{{ failureReason(selected) || copy.failureReasonUnavailable }}</p>
+            </section>
+
+            <section v-if="Number(selected.max_retries) > 0 || nextScheduledAt(selected)" class="space-y-1 text-sm text-slate-600">
+              <p v-if="Number(selected.max_retries) > 0">{{ copy.automaticRetries(Number(selected.retry_count || 0), Number(selected.max_retries)) }}</p>
+              <p v-if="nextScheduledAt(selected)">{{ copy.nextScheduledAt }}{{ nextScheduledAt(selected) }}</p>
+            </section>
 
             <section v-if="primaryFields.length || templateFields.length">
               <h3 class="border-b border-slate-200 pb-2 text-sm font-black text-slate-900">{{ copy.certificateDetails }}</h3>
@@ -343,9 +420,13 @@ onMounted(() => load(1))
                 </div>
               </dl>
             </section>
-            <details v-if="technicalFields.length" class="border-t border-slate-200 pt-3">
+            <details v-if="technicalFields.length || requestUlid(selected)" class="border-t border-slate-200 pt-3">
               <summary class="cursor-pointer text-sm font-bold text-slate-700">{{ copy.technicalDetails }}</summary>
               <dl class="mt-2 divide-y divide-slate-100">
+                <div v-if="requestUlid(selected)" class="grid gap-1 py-3 text-sm md:grid-cols-[180px_minmax(0,1fr)] md:gap-4">
+                  <dt class="font-bold text-slate-500">{{ copy.fieldLabels.request_ulid }}</dt>
+                  <dd class="min-w-0 break-all font-semibold text-slate-700">{{ requestUlid(selected) }}</dd>
+                </div>
                 <div v-for="field in technicalFields" :key="field.key" class="grid gap-1 py-3 text-sm md:grid-cols-[180px_minmax(0,1fr)] md:gap-4">
                   <dt class="font-bold text-slate-500">{{ field.label }}</dt>
                   <dd class="min-w-0 whitespace-pre-wrap break-all font-semibold text-slate-700">{{ field.value }}</dd>

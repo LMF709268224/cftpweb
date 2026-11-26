@@ -286,7 +286,7 @@ onMounted(() => {
           </thead>
           <tbody class="divide-y divide-slate-100">
             <tr v-for="credential in credentials" :key="credentialUlid(credential)" class="cursor-pointer transition hover:bg-sky-50" @click="openDetail(credential)">
-              <td class="max-w-[220px] px-4 py-4"><div class="font-bold">{{ candidateName(credential) || copy.unknownCandidate }}</div><div class="mt-1 break-all text-xs text-slate-500">{{ candidateUlid(credential) || "-" }}</div></td>
+              <td class="max-w-[220px] px-4 py-4"><div class="font-bold">{{ candidateName(credential) || copy.unknownCandidate }}</div></td>
               <td class="max-w-[220px] px-4 py-4"><div class="font-bold">{{ credentialDefinitionName(credential) }}</div><div class="mt-1 break-all text-xs text-slate-500">{{ credentialDefinitionUlid(credential) || "-" }}</div></td>
               <td class="px-4 py-4"><span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-black" :class="credentialStatusClass(credential)">{{ credentialStatusLabel(credential) }}</span><div v-if="auditRemark(credential) !== '-'" class="mt-2 max-w-[210px] truncate text-xs text-slate-500" :title="auditRemark(credential)">{{ auditRemark(credential) }}</div></td>
               <td class="px-4 py-4 font-bold text-slate-700">v{{ credential.version || "-" }}</td>

@@ -193,11 +193,7 @@ function transitionStatusLabel(transition: JsonRecord, value: unknown) {
 
 function candidateDisplay(item: JsonRecord) {
   const name = [item.candidate_first_name, item.candidate_middle_name, item.candidate_last_name].filter(Boolean).join(" ")
-  return name || String(item.candidate_email || item.candidate_ulid || copy.value.defaults.candidate)
-}
-
-function candidateIdentifier(item: JsonRecord) {
-  return String(pickFirst(item, ["candidate_ulid", "candidate_id"]) || "")
+  return name || String(item.candidate_name || item.candidate_email || copy.value.defaults.candidate)
 }
 
 let listRequestId = 0
@@ -546,7 +542,6 @@ onMounted(() => loadExams(1))
             <div class="rounded-2xl bg-slate-50 px-3 py-2">
               <div class="text-xs font-black text-slate-400">{{ copy.columns.candidate }}</div>
               <div class="mt-1 break-words text-sm font-semibold text-slate-800">{{ candidateDisplay(exam) }}</div>
-              <div v-if="candidateIdentifier(exam)" class="mt-1 break-all font-mono text-xs text-slate-500">{{ candidateIdentifier(exam) }}</div>
             </div>
             <div class="grid gap-2">
               <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
@@ -594,7 +589,6 @@ onMounted(() => loadExams(1))
                 </td>
                 <td class="px-5 py-4">
                   <div class="font-semibold text-slate-800">{{ candidateDisplay(exam) }}</div>
-                  <div v-if="candidateIdentifier(exam)" class="mt-1 max-w-[220px] truncate font-mono text-xs text-slate-400">{{ candidateIdentifier(exam) }}</div>
                 </td>
                 <td class="px-5 py-4">
                   <span class="rounded-full px-2.5 py-1 text-xs font-black" :class="resultStatusBadgeClass(exam.result_status)">{{ resultStatusLabel(exam.result_status, exam.is_passed) }}</span>

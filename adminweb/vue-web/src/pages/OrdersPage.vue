@@ -71,6 +71,7 @@ const orderSummaryFields = computed<SummaryField[]>(() => {
     { label: copy.value.fields.currency, value: stringValue(pickFirst(order, ["currency_code", "currencyCode", "currency"])) },
     { label: copy.value.fields.rawAmount, value: stringValue(pickFirst(order, ["amount_minor"])) },
     { label: copy.value.fields.candidate, value: candidate(order) },
+    { label: copy.value.fields.candidateId, value: stringValue(pickFirst(order, ["candidate_ulid", "candidate_id"])) },
     { label: copy.value.fields.orderId, value: orderUlid(order) },
     { label: copy.value.fields.payOrderId, value: stringValue(pickFirst(order, ["pay_order_ulid", "payOrderUlid"])) },
     { label: copy.value.fields.bizRefId, value: bizRef(order) || "-" },
@@ -96,7 +97,7 @@ function orderUlid(order: JsonRecord | null | undefined) {
 }
 
 function candidate(order: JsonRecord | null | undefined) {
-  return String(pickFirst(order || {}, ["candidate_name", "candidate_email", "candidate_ulid", "candidate_id"]) || "-")
+  return String(pickFirst(order || {}, ["candidate_name", "candidate_email"]) || copy.value.unknownCandidate)
 }
 
 function productName(order: JsonRecord | null | undefined) {

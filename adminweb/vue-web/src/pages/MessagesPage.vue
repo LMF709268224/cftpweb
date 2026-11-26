@@ -142,7 +142,7 @@ function userId(user: JsonRecord) {
 }
 
 function userLabel(user: JsonRecord) {
-  return String(pickFirst(user, ["name", "nickname", "email", "phone", "id"]) || userId(user) || copy.value.defaults.user)
+  return String(pickFirst(user, ["name", "nickname", "email", "phone"]) || copy.value.defaults.user)
 }
 
 function userCertificateCategories(user: JsonRecord): CertificateCategory[] {
@@ -688,7 +688,7 @@ onMounted(async () => {
                   <label v-for="user in filteredUsers" :key="userId(user)" class="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 hover:bg-slate-50">
                     <input v-model="selectedUserIds" class="h-4 w-4" type="checkbox" :value="userId(user)" />
                     <span class="font-semibold">{{ userLabel(user) }}</span>
-                    <span class="break-all text-xs text-slate-400">{{ userId(user) }}</span>
+                    <span v-if="user.email && userLabel(user) !== user.email" class="break-all text-xs text-slate-400">{{ user.email }}</span>
                   </label>
                   <div v-if="!filteredUsers.length" class="p-6 text-center text-slate-500">{{ copy.send.noUsersInCategory }}</div>
                 </template>

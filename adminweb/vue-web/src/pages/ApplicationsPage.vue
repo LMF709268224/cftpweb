@@ -143,7 +143,7 @@ function appUlid(app: JsonRecord | null | undefined) {
 }
 
 function candidate(app: JsonRecord | null | undefined) {
-  return String(pickFirst(app || {}, ["candidate_name", "candidate_email", "candidate_ulid", "candidate_id"]) || "-")
+  return String(pickFirst(app || {}, ["candidate_name", "candidate_email"]) || copy.value.unknownCandidate)
 }
 
 function credential(app: JsonRecord | null | undefined) {

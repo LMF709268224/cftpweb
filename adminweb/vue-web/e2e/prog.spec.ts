@@ -5,6 +5,7 @@ const pipelineSummary = {
   pipeline_ulid: "pipeline-1",
   pipeline_cc_ulid: "pipeline-config-1",
   candidate_ulid: "candidate-1",
+  candidate_name: "Regression Candidate",
   current_stage_ulid: "stage-1",
   status: "1",
   started_at: "2026-08-11T00:00:00Z",
@@ -73,7 +74,8 @@ test("Prog list renders the read-only pipeline summary", async ({ page }) => {
 
   const pipelineRow = page.getByRole("button", { name: "查看详情" }).locator("..")
   await expect(pipelineRow.getByText("Regression Pipeline", { exact: true })).toBeVisible()
-  await expect(pipelineRow.getByText("candidate-1", { exact: true })).toBeVisible()
+  await expect(pipelineRow).toContainText("Regression Candidate")
+  await expect(pipelineRow.getByText("candidate-1", { exact: true })).toHaveCount(0)
   await expect(pipelineRow.getByText("运行中", { exact: true })).toBeVisible()
   expect(requests).toContain("GET /api/prog/pipelines")
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)

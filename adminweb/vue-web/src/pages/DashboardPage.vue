@@ -301,6 +301,7 @@ const userDetailFields = computed(() => {
   if (!user) return []
   return [
     { label: copy.value.table.user, value: user.name || "-" },
+    ...(user.user_group === "candidate" ? [{ label: copy.value.candidateId, value: user.candidate_ulid || "-" }] : []),
     { label: copy.value.table.email, value: user.email || "-" },
     { label: copy.value.phone, value: user.phone || "-" },
     { label: copy.value.location, value: user.location || "-" },
@@ -506,7 +507,6 @@ onUnmounted(() => {
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
                 <div class="break-words font-bold text-slate-950">{{ user.name || "-" }}</div>
-                <div class="mt-1 break-all text-xs text-slate-500">{{ user.candidate_ulid || "-" }}</div>
               </div>
             </div>
             <div class="mt-3 grid gap-2 text-sm">
@@ -587,7 +587,6 @@ onUnmounted(() => {
               <tr v-for="user in filteredUsers" :key="user.id" class="transition hover:bg-sky-50/60">
                 <td class="px-6 py-4">
                   <div class="font-bold text-slate-950">{{ user.name || "-" }}</div>
-                  <div class="text-xs text-slate-500">{{ user.candidate_ulid || "-" }}</div>
                 </td>
                 <td class="whitespace-nowrap px-6 py-4 text-slate-700">{{ user.email || "-" }}</td>
                 <td class="w-24 whitespace-nowrap px-6 py-4">

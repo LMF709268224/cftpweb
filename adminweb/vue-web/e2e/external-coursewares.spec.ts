@@ -28,7 +28,7 @@ test("external courseware detail displays and imports dedicated access URLs", as
       return { data: { total_count: 10, available_count: 7, allocated_count: 3 } }
     }
     if (method === "GET" && pathname === "/api/lms/external-coursewares/courseware-1/tokens") {
-      return { data: { items: [{ token_id: "token-1", token_url: "https://partner.example/token/abcd1234secret", candidate_ulid: "candidate-1" }] } }
+      return { data: { items: [{ token_id: "token-1", token_url: "https://partner.example/token/abcd1234secret", candidate_ulid: "candidate-1", candidate_name: "Regression Candidate" }] } }
     }
     if (method === "POST" && pathname === "/api/lms/external-coursewares/courseware-1/tokens/import") {
       return { data: { imported_count: 1, duplicate_count: 0 } }
@@ -40,7 +40,8 @@ test("external courseware detail displays and imports dedicated access URLs", as
   await expect(page.getByRole("heading", { name: "Partner Academy" })).toBeVisible()
   await expect(page.getByText("https://partner.example/learn", { exact: true })).toBeVisible()
   await expect(page.getByText("http...cret", { exact: true })).toBeVisible()
-  await expect(page.getByText("candidate-1", { exact: true })).toBeVisible()
+  await expect(page.getByText("Regression Candidate", { exact: true })).toBeVisible()
+  await expect(page.getByText("candidate-1", { exact: true })).toHaveCount(0)
 
   await page.getByRole("button", { name: "导入专属 URL" }).click()
   await page.locator("textarea[placeholder^='https://partner.example/token/user-001']").fill("https://partner.example/token/new-user")

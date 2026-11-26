@@ -618,8 +618,7 @@ function summary(primary: unknown, secondary?: unknown): RecordSummary {
 function candidateSummary(item: JsonRecord) {
   const name = getField(item, ["candidate_name", "candidateName", "recipient_name", "recipientName"])
   const email = getField(item, ["recipient_email", "recipientEmail", "candidate_email", "candidateEmail"])
-  const id = getField(item, ["candidate_ulid", "candidateUlid", "customer_ulid", "customerUlid"])
-  return summary(name || email || id || copy.value.actors.unknownUser, email || id)
+  return summary(name || email || copy.value.actors.unknownUser, name ? email : undefined)
 }
 
 function whoSummary(item: JsonRecord): RecordSummary {

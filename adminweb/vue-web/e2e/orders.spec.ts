@@ -5,6 +5,7 @@ const orderSummary = {
   order_ulid: "order-1",
   product_name: "Regression Bundle",
   candidate_ulid: "candidate-1",
+  candidate_name: "Regression Candidate",
   biz_type: "BUNDLE_PURCHASE",
   biz_ref_ulid: "bundle-order-1",
   amount_minor: 12900,
@@ -53,7 +54,8 @@ test("order list renders the returned read-only summary", async ({ page }) => {
   await page.goto("/orders")
 
   await expect(page.getByText("Regression Bundle").first()).toBeVisible()
-  await expect(page.getByText(/candidate-1/).first()).toBeVisible()
+  await expect(page.getByText("Regression Candidate", { exact: true }).first()).toBeVisible()
+  await expect(page.getByText("candidate-1", { exact: true })).toHaveCount(0)
   await expect(page.getByText("USD 129", { exact: true }).first()).toBeVisible()
   expect(requests).toContain("GET /api/mall/orders")
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
