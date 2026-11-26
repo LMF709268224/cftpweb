@@ -57,7 +57,7 @@ func (c *certificateRegressionClient) ListCandidateCredentials(
 				Version:       2,
 				Status:        gcredspb.CredentialStatus_CREDENTIAL_STATUS_ACTIVE,
 				ValidUntil:    "2027-08-05T00:00:00Z",
-				Source:        "pdf_cert",
+				Source:        gcredspb.CredentialSource_CREDENTIAL_SOURCE_PDF_CERT,
 			},
 		},
 	}, nil
@@ -146,6 +146,7 @@ func TestListCertificatesUsesCandidateScopeAndEnrichesDetails(t *testing.T) {
 		certificate.Name != "CFtP" ||
 		certificate.CredUlid != "credential-1" ||
 		certificate.CandidateUlid != "candidate-1" ||
+		certificate.Source != gcredspb.CredentialSource_CREDENTIAL_SOURCE_PDF_CERT ||
 		len(certificate.Files) != 1 ||
 		certificate.Files[0].FileName != "certificate.pdf" {
 		t.Fatalf("certificate = %#v", certificate)
@@ -161,14 +162,20 @@ func TestListCertificatesExcludesApplicationCredentials(t *testing.T) {
 					CandidateUlid: "candidate-1",
 					CredDefUlid:   "manual-definition",
 					Status:        gcredspb.CredentialStatus_CREDENTIAL_STATUS_ACTIVE,
-					Source:        "application",
+					Source:        gcredspb.CredentialSource_CREDENTIAL_SOURCE_APPLICATION,
 				},
 				{
 					CredUlid:      "certificate-credential",
 					CandidateUlid: "candidate-1",
 					CredDefUlid:   "certificate-definition",
 					Status:        gcredspb.CredentialStatus_CREDENTIAL_STATUS_ACTIVE,
-					Source:        "pdf_cert",
+					Source:        gcredspb.CredentialSource_CREDENTIAL_SOURCE_PDF_CERT,
+				},
+				{
+					CredUlid:      "unknown-source-credential",
+					CandidateUlid: "candidate-1",
+					CredDefUlid:   "unknown-definition",
+					Status:        gcredspb.CredentialStatus_CREDENTIAL_STATUS_ACTIVE,
 				},
 			},
 		},
@@ -204,13 +211,13 @@ func TestListCertificatesReadsAllCredentialPages(t *testing.T) {
 		listResponses: []*gcredspb.ListCandidateCredentialsResponse{
 			{
 				Credentials: []*gcredspb.CredentialSummary{{
-					CredUlid: "credential-1", CandidateUlid: "candidate-1", CredDefUlid: "definition-1", Source: "pdf_cert",
+					CredUlid: "credential-1", CandidateUlid: "candidate-1", CredDefUlid: "definition-1", Source: gcredspb.CredentialSource_CREDENTIAL_SOURCE_PDF_CERT,
 				}},
 				HasMore: true, NextCursor: "cursor-2",
 			},
 			{
 				Credentials: []*gcredspb.CredentialSummary{{
-					CredUlid: "credential-2", CandidateUlid: "candidate-1", CredDefUlid: "definition-2", Source: "pdf_cert",
+					CredUlid: "credential-2", CandidateUlid: "candidate-1", CredDefUlid: "definition-2", Source: gcredspb.CredentialSource_CREDENTIAL_SOURCE_PDF_CERT,
 				}},
 			},
 		},

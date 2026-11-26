@@ -222,6 +222,23 @@ func (h *Handler) ListCredentials(w http.ResponseWriter, r *http.Request) {
 		CredDefUlid:   strings.TrimSpace(r.URL.Query().Get("cred_def_ulid")),
 		Status:        strings.TrimSpace(r.URL.Query().Get("status")),
 	}
+	if rawValues, ok := r.URL.Query()["source"]; ok {
+		if len(rawValues) != 1 {
+			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "source must be 0, 1, or 2")
+			return
+		}
+		switch strings.TrimSpace(rawValues[0]) {
+		case "0":
+			filters.Source = gcredspb.CredentialSource_CREDENTIAL_SOURCE_UNSPECIFIED
+		case "1":
+			filters.Source = gcredspb.CredentialSource_CREDENTIAL_SOURCE_APPLICATION
+		case "2":
+			filters.Source = gcredspb.CredentialSource_CREDENTIAL_SOURCE_PDF_CERT
+		default:
+			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "source must be 0, 1, or 2")
+			return
+		}
+	}
 	if rawValues, ok := r.URL.Query()["is_current"]; ok {
 		if len(rawValues) != 1 {
 			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "is_current must be true or false")

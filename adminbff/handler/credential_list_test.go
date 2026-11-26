@@ -26,6 +26,7 @@ func (s *credentialListClient) ListCredentials(_ context.Context, request *gcred
 			CandidateUlid: "candidate-current",
 			CredDefUlid:   "definition-current",
 			Status:        gcredspb.CredentialStatus_CREDENTIAL_STATUS_REVOKED,
+			Source:        gcredspb.CredentialSource_CREDENTIAL_SOURCE_PDF_CERT,
 			AuditRemark:   "duplicate record",
 			IsCurrent:     true,
 			AuditTime:     "2026-09-20T08:00:00Z",
@@ -55,6 +56,7 @@ func (s *credentialListClient) GetCredentialDetail(_ context.Context, request *g
 		CredDefUlid:   "definition-current",
 		Status:        gcredspb.CredentialStatus_CREDENTIAL_STATUS_REVOKED,
 		AuditRemark:   "duplicate record",
+		Source:        gcredspb.CredentialSource_CREDENTIAL_SOURCE_APPLICATION,
 		IsCurrent:     true,
 		AuditTime:     "2026-09-20T08:00:00Z",
 	}, nil
@@ -67,7 +69,7 @@ func (s *credentialListClient) GetCredentialDefinitionDetail(_ context.Context, 
 func TestListCredentialsForwardsCurrentFilterAndReturnsLifecycleFields(t *testing.T) {
 	client := &credentialListClient{}
 	recorder := httptest.NewRecorder()
-	request := httptest.NewRequest(http.MethodGet, "/api/credentials?is_current=true&page_size=50", nil)
+	request := httptest.NewRequest(http.MethodGet, "/api/credentials?is_current=true&page_size=50&source=2", nil)
 
 	(&Handler{Creds: client}).ListCredentials(recorder, request)
 
@@ -80,6 +82,9 @@ func TestListCredentialsForwardsCurrentFilterAndReturnsLifecycleFields(t *testin
 	if client.countRequest == nil || client.countRequest.GetFilters() == nil || client.countRequest.GetFilters().IsCurrent == nil || !client.countRequest.GetFilters().GetIsCurrent() {
 		t.Fatalf("count request did not forward is_current=true: %+v", client.countRequest)
 	}
+	if client.listRequest.GetFilters().GetSource() != gcredspb.CredentialSource_CREDENTIAL_SOURCE_PDF_CERT || client.countRequest.GetFilters().GetSource() != gcredspb.CredentialSource_CREDENTIAL_SOURCE_PDF_CERT {
+		t.Fatalf("source filter differs between list and count: list=%v count=%v", client.listRequest.GetFilters().GetSource(), client.countRequest.GetFilters().GetSource())
+	}
 
 	var payload struct {
 		Data struct {
@@ -88,6 +93,7 @@ func TestListCredentialsForwardsCurrentFilterAndReturnsLifecycleFields(t *testin
 				AuditRemark    string `json:"audit_remark"`
 				AuditTime      string `json:"audit_time"`
 				IsCurrent      bool   `json:"is_current"`
+				Source         int    `json:"source"`
 			} `json:"credentials"`
 			NextCursor string `json:"next_cursor"`
 			PrevCursor string `json:"prev_cursor"`
@@ -100,11 +106,34 @@ func TestListCredentialsForwardsCurrentFilterAndReturnsLifecycleFields(t *testin
 		t.Fatalf("credentials = %d, want 1", len(payload.Data.Credentials))
 	}
 	credential := payload.Data.Credentials[0]
-	if credential.CredentialName != "CFtP Certification" || credential.AuditRemark != "duplicate record" || credential.AuditTime != "2026-09-20T08:00:00Z" || !credential.IsCurrent {
+	if credential.CredentialName != "CFtP Certification" || credential.AuditRemark != "duplicate record" || credential.AuditTime != "2026-09-20T08:00:00Z" || !credential.IsCurrent || credential.Source != 2 {
 		t.Fatalf("credential payload = %+v", credential)
 	}
 	if payload.Data.NextCursor != "next-page" || payload.Data.PrevCursor != "previous-page" {
 		t.Fatalf("pagination cursors = next %q, prev %q", payload.Data.NextCursor, payload.Data.PrevCursor)
+	}
+}
+
+func TestListCredentialsForwardsApplicationSource(t *testing.T) {
+	client := &credentialListClient{}
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/api/credentials?source=1", nil)
+
+	(&Handler{Creds: client}).ListCredentials(recorder, request)
+
+	if recorder.Code != http.StatusOK || client.listRequest.GetFilters().GetSource() != gcredspb.CredentialSource_CREDENTIAL_SOURCE_APPLICATION || client.countRequest.GetFilters().GetSource() != gcredspb.CredentialSource_CREDENTIAL_SOURCE_APPLICATION {
+		t.Fatalf("application source filter not forwarded to list and count: status=%d list=%+v count=%+v", recorder.Code, client.listRequest, client.countRequest)
+	}
+}
+
+func TestListCredentialsRejectsInvalidSource(t *testing.T) {
+	for _, source := range []string{"application", "pdf_cert", "3", "", "1&source=2"} {
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequest(http.MethodGet, "/api/credentials?source="+source, nil)
+		(&Handler{}).ListCredentials(recorder, request)
+		if recorder.Code != http.StatusBadRequest {
+			t.Fatalf("source %q: status=%d, want 400", source, recorder.Code)
+		}
 	}
 }
 
@@ -138,12 +167,13 @@ func TestGetCredentialDetailReturnsLifecycleFields(t *testing.T) {
 			AuditRemark    string `json:"audit_remark"`
 			AuditTime      string `json:"audit_time"`
 			IsCurrent      bool   `json:"is_current"`
+			Source         int    `json:"source"`
 		} `json:"data"`
 	}
 	if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
 		t.Fatalf("decode response: %v", err)
 	}
-	if payload.Data.CredentialName != "CFtP Certification" || payload.Data.AuditRemark != "duplicate record" || payload.Data.AuditTime != "2026-09-20T08:00:00Z" || !payload.Data.IsCurrent {
+	if payload.Data.CredentialName != "CFtP Certification" || payload.Data.AuditRemark != "duplicate record" || payload.Data.AuditTime != "2026-09-20T08:00:00Z" || !payload.Data.IsCurrent || payload.Data.Source != 1 {
 		t.Fatalf("credential detail payload = %+v", payload.Data)
 	}
 }

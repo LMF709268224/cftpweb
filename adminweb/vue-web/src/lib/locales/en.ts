@@ -678,7 +678,8 @@ export const en: AdminTranslations = {
         subtitle: "Review current candidate qualifications and revoke active records when necessary.",
         refresh: "Refresh Credentials",
         listTitle: "Candidate Credentials",
-        listDescription: "Shows current qualification versions from applications and issued certificates, including historical status changes.",
+        listDescription: "Browse issued certificates and application-granted qualifications separately.",
+        sourceFilter: "Credential source",
         applicationRecords: "View application records",
         sources: {
             application: "Approved application qualification",

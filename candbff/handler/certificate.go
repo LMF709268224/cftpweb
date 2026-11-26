@@ -49,7 +49,7 @@ func (h *Handler) ListCertificates(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, cred := range credentials {
-		if cred == nil || strings.EqualFold(strings.TrimSpace(cred.GetSource()), "application") {
+		if cred == nil || cred.GetSource() != gcredspb.CredentialSource_CREDENTIAL_SOURCE_PDF_CERT {
 			continue
 		}
 

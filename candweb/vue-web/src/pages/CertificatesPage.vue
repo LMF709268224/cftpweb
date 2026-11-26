@@ -4,6 +4,7 @@ import { RouterLink } from "vue-router"
 import { AlertCircle, Award, Calendar, CheckCircle2, ClipboardCheck, Download, Eye, Loader2, RefreshCw, ShieldCheck, Sparkles, X } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
+import { CREDENTIAL_SOURCE_APPLICATION, CREDENTIAL_SOURCE_PDF_CERT } from "@/lib/credentialSource"
 import { useBodyScrollLock } from "@/lib/bodyScrollLock"
 import { useDialogAccessibility } from "@/lib/dialogAccessibility"
 import { formatBackendDateOnly } from "@/lib/utils"
@@ -68,15 +69,15 @@ function downloadFeaturedCertificate() {
   openCertificate(featuredCertificate.value?.credId)
 }
 
-const SOURCE_CONFIG: Record<string, { labelKey: "sourceApplication" | "sourceSystem"; icon: typeof ClipboardCheck | typeof ShieldCheck; cls: string; iconCls: string; accent: string }> = {
-  application: {
+const SOURCE_CONFIG: Record<number, { labelKey: "sourceApplication" | "sourceSystem"; icon: typeof ClipboardCheck | typeof ShieldCheck; cls: string; iconCls: string; accent: string }> = {
+  [CREDENTIAL_SOURCE_APPLICATION]: {
     labelKey: "sourceApplication",
     icon: ClipboardCheck,
     cls: "border-[#c9962e] text-[#a6600c]",
     iconCls: "bg-[#fdf6ec] text-[#a6600c]",
     accent: "bg-[#c9962e]",
   },
-  pdf_cert: {
+  [CREDENTIAL_SOURCE_PDF_CERT]: {
     labelKey: "sourceSystem",
     icon: ShieldCheck,
     cls: "border-[#c1cef6] text-[#002a66]",
@@ -85,22 +86,22 @@ const SOURCE_CONFIG: Record<string, { labelKey: "sourceApplication" | "sourceSys
   },
 }
 
-function certificateSourceLabel(source?: string) {
-  const cfg = SOURCE_CONFIG[source ?? ""]
+function certificateSourceLabel(source?: number) {
+  const cfg = SOURCE_CONFIG[source ?? 0]
   if (!cfg) return ""
   return t.value.certificatesPage[cfg.labelKey]
 }
-function certificateSourceIcon(source?: string) {
-  return SOURCE_CONFIG[source ?? ""]?.icon ?? ShieldCheck
+function certificateSourceIcon(source?: number) {
+  return SOURCE_CONFIG[source ?? 0]?.icon ?? ShieldCheck
 }
-function certificateSourceClass(source?: string) {
-  return SOURCE_CONFIG[source ?? ""]?.cls ?? "border-slate-200 text-slate-700"
+function certificateSourceClass(source?: number) {
+  return SOURCE_CONFIG[source ?? 0]?.cls ?? "border-slate-200 text-slate-700"
 }
-function certificateSourceIconClass(source?: string) {
-  return SOURCE_CONFIG[source ?? ""]?.iconCls ?? "bg-slate-100 text-slate-600"
+function certificateSourceIconClass(source?: number) {
+  return SOURCE_CONFIG[source ?? 0]?.iconCls ?? "bg-slate-100 text-slate-600"
 }
-function certificateSourceAccentClass(source?: string) {
-  return SOURCE_CONFIG[source ?? ""]?.accent ?? "bg-white/20"
+function certificateSourceAccentClass(source?: number) {
+  return SOURCE_CONFIG[source ?? 0]?.accent ?? "bg-white/20"
 }
 
 function closeCelebrationModal() {
@@ -141,7 +142,7 @@ function normalizeCertificates(list: any[]) {
         name: cert.name,
         description: cert.description || "",
         credentialId: cert.cred_guid || cert.cred_id || t.value.common.na,
-        source: cert.source || "",
+        source: cert.source,
         pdfAvailable: Boolean(pdfFile?.view_url),
       }
     })

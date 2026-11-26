@@ -7,7 +7,7 @@ const credential = {
   candidate_name: "Regression Candidate",
   cred_def_ulid: "definition-regression",
   cred_def_name: "Regression Qualification",
-  source: "application",
+  source: 2,
   status: "ACTIVE",
   version: 1,
   is_current: true,
@@ -31,14 +31,44 @@ test("candidate credential list and detail are displayed without mutation", asyn
   await expect(page.getByText("Regression Qualification", { exact: true }).first()).toBeVisible()
   await expect(page.getByText("Regression Candidate", { exact: true }).first()).toBeVisible()
   await expect(page.getByRole("link", { name: "查看申请记录" })).toHaveAttribute("href", "/applications")
-  await expect(page.getByRole("cell", { name: "申请获批资格" })).toBeVisible()
+  await expect(page.getByRole("cell", { name: "已颁发证书" })).toBeVisible()
   await page.getByRole("button", { name: "查看详情" }).click()
   await expect(page.getByRole("dialog").getByText("Read-only regression detail", { exact: true })).toBeVisible()
   await expect(page.getByRole("button", { name: "标记资格过期" })).toHaveCount(0)
 
-  expect(requests).toContain("GET /api/credentials?is_current=true&page_size=10")
+  expect(requests).toContain("GET /api/credentials?is_current=true&page_size=10&source=2")
   expect(requests).toContain("GET /api/credentials/credential-regression")
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
+})
+
+test("credential source tabs keep their own count and reset pagination", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  const requests: string[] = []
+  const applicationCredential = {
+    ...credential,
+    cred_ulid: "application-credential",
+    cred_def_name: "Application Qualification",
+    source: 1,
+  }
+  await installAdminApiMocks(page, ({ pathname, url }) => {
+    if (pathname !== "/api/credentials") return undefined
+    requests.push(url.search)
+    if (url.searchParams.get("source") === "1") {
+      return { data: { credentials: [applicationCredential], total: 1 } }
+    }
+    return { data: { credentials: [credential], total: 11, next_cursor: "cert-next", prev_cursor: "" } }
+  })
+
+  await page.goto("/permissions")
+  await expect(page.getByRole("cell", { name: "已颁发证书" })).toBeVisible()
+  await page.getByRole("button", { name: "下一页" }).click()
+  await expect.poll(() => requests.some((search) => search.includes("cursor=cert-next"))).toBe(true)
+
+  await page.getByRole("tab", { name: "申请获批资格" }).click()
+  await expect(page.getByRole("cell", { name: "申请获批资格" })).toBeVisible()
+  await expect(page.getByText("Application Qualification", { exact: true }).first()).toBeVisible()
+  expect(requests.at(-1)).toBe("?is_current=true&page_size=10&source=1")
+  await expect(page.getByText("共 1 条 · 第 1 / 1 页")).toBeVisible()
 })
 
 test("a closed credential detail ignores its late response", async ({ page }) => {

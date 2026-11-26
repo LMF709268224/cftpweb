@@ -3,7 +3,7 @@ module adminbff
 go 1.27.1
 
 require (
-	github.com/afnandelfin620-star/cftptest/cftp v0.0.0-20261126041045-f17576242f6c
+	github.com/afnandelfin620-star/cftptest/cftp v0.0.0-20261126104010-b923343f97c9
 	github.com/casdoor/casdoor-go-sdk v1.46.0
 	github.com/go-chi/chi/v5 v5.2.5
 	github.com/nats-io/nats.go v1.53.1

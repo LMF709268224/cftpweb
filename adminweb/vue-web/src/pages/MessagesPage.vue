@@ -9,6 +9,7 @@ import { initialTemplatePayload } from "@/lib/notificationTemplate"
 import { previewMessageContent, previewMessageTitle, renderMessageTemplateText, type MessagePreviewLanguage } from "@/lib/messagePreview"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
+import { CREDENTIAL_SOURCE_PDF_CERT } from "@/lib/credentialSource"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 import { pickFirst } from "@/lib/status"
@@ -213,7 +214,7 @@ async function loadActiveCertificateCredentials() {
   let cursor = ""
 
   while (true) {
-    const params = new URLSearchParams({ page_size: "100", status: "Active" })
+    const params = new URLSearchParams({ page_size: "100", status: "Active", source: String(CREDENTIAL_SOURCE_PDF_CERT) })
     if (cursor) params.set("cursor", cursor)
     const data = await apiClient<JsonRecord>(`/api/credentials?${params}`)
     credentials.push(...recordList(data.credentials))
@@ -248,7 +249,7 @@ async function loadUsers() {
 
     const categoriesByUser = new Map<string, Map<string, CertificateCategory>>()
     for (const credential of credentials) {
-      if (String(credential.source || "").trim().toLowerCase() === "application") continue
+      if (credential.source !== CREDENTIAL_SOURCE_PDF_CERT) continue
       const candidateId = String(pickFirst(credential, ["candidate_ulid", "candidate_id", "user_id"]) || "").trim()
       const definitionId = String(pickFirst(credential, ["cred_def_ulid", "catalog_id", "credential_definition_id"]) || "").trim()
       if (!candidateId || !definitionId) continue

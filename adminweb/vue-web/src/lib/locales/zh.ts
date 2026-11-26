@@ -676,7 +676,8 @@ export const zh = {
         subtitle: "查看考生资格来源与当前状态，并在需要时撤销有效资格。",
         refresh: "刷新资格列表",
         listTitle: "考生资格列表",
-        listDescription: "展示申请获批资格与已颁发证书的当前版本及状态。",
+        listDescription: "按来源分别查看已颁发证书与申请获批资格。",
+        sourceFilter: "资格来源",
         applicationRecords: "查看申请记录",
         sources: {
             application: "申请获批资格",

@@ -36,9 +36,9 @@ async function installMessageReadMocks(page: Page, requests: string[], sentStatu
     }
     if (method === "GET" && pathname === "/api/credentials") {
       return { data: { credentials: [
-        { candidate_ulid: "candidate-1", cred_def_ulid: "cftp-level-1", source: "pdf_cert" },
-        { candidate_ulid: "candidate-2", cred_def_ulid: "cfta", source: "pdf_cert" },
-        { candidate_ulid: "candidate-3", cred_def_ulid: "cftp-level-1", source: "application" },
+        { candidate_ulid: "candidate-1", cred_def_ulid: "cftp-level-1", source: 2 },
+        { candidate_ulid: "candidate-2", cred_def_ulid: "cfta", source: 2 },
+        { candidate_ulid: "candidate-3", cred_def_ulid: "cftp-level-1", source: 1 },
       ], has_more: false, next_cursor: "" } }
     }
     if (method === "GET" && pathname === "/api/messages/templates") {
@@ -58,6 +58,11 @@ async function installMessageReadMocks(page: Page, requests: string[], sentStatu
 test("message recipients can be filtered by earned certificate", async ({ page }) => {
   await seedAuthenticatedAdmin(page)
   const requests: string[] = []
+  const credentialSources: string[] = []
+  page.on("request", (request) => {
+    const url = new URL(request.url())
+    if (url.pathname === "/api/credentials") credentialSources.push(url.searchParams.get("source") || "")
+  })
   await installMessageReadMocks(page, requests)
   await page.goto("/messages")
 
@@ -74,6 +79,7 @@ test("message recipients can be filtered by earned certificate", async ({ page }
   await expect(page.getByText("已选择 0 个用户。", { exact: true })).toBeVisible()
   expect(requests).toContain("GET /api/credentials/definitions")
   expect(requests).toContain("GET /api/credentials")
+  expect(credentialSources).toContain("2")
 })
 
 test("message template detail is read without editing it", async ({ page }) => {

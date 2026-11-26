@@ -5,6 +5,7 @@ import { toast } from "vue-sonner"
 import JsonPreview from "@/components/JsonPreview.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
+import { CREDENTIAL_SOURCE_APPLICATION, CREDENTIAL_SOURCE_PDF_CERT, type CredentialSource } from "@/lib/credentialSource"
 import { type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 import { badgeClass } from "@/lib/status"
@@ -20,6 +21,7 @@ type PendingPermissionAction = PermissionActionItem & {
 
 const credentials = ref<JsonRecord[]>([])
 const selectedCredential = ref<JsonRecord | null>(null)
+const selectedSource = ref<CredentialSource>(CREDENTIAL_SOURCE_PDF_CERT)
 const total = ref(0)
 const nextCursor = ref("")
 const prevCursor = ref("")
@@ -35,6 +37,10 @@ let detailRequestSeq = 0
 
 const { t, isZh } = useAdminLanguage()
 const copy = computed(() => t.value.permissions)
+const sourceOptions = computed<{ value: CredentialSource; label: string }[]>(() => [
+  { value: CREDENTIAL_SOURCE_PDF_CERT, label: copy.value.sources.pdfCert },
+  { value: CREDENTIAL_SOURCE_APPLICATION, label: copy.value.sources.application },
+])
 const pageSize = 10
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)))
 const canPrev = computed(() => Boolean(prevCursor.value) && currentPage.value > 1)
@@ -102,9 +108,9 @@ function credentialStatusClass(credential: JsonRecord | null | undefined) {
 }
 
 function credentialSourceLabel(credential: JsonRecord | null | undefined) {
-  const source = stringValue(credential, ["source"]).toLowerCase()
-  if (source === "application") return copy.value.sources.application
-  if (source === "pdf_cert") return copy.value.sources.pdfCert
+  const source = credential?.source
+  if (source === CREDENTIAL_SOURCE_APPLICATION) return copy.value.sources.application
+  if (source === CREDENTIAL_SOURCE_PDF_CERT) return copy.value.sources.pdfCert
   return copy.value.sources.unknown
 }
 
@@ -158,7 +164,7 @@ async function loadCredentials(cursor = "", requestedPage = 1) {
   const requestSeq = ++credentialsRequestSeq
   listLoading.value = true
   try {
-    const params = new URLSearchParams({ is_current: "true", page_size: String(pageSize) })
+    const params = new URLSearchParams({ is_current: "true", page_size: String(pageSize), source: String(selectedSource.value) })
     if (cursor) params.set("cursor", cursor)
     const data = await apiClient<JsonRecord>(`/api/credentials?${params.toString()}`)
     if (requestSeq !== credentialsRequestSeq) return
@@ -180,6 +186,21 @@ async function loadCredentials(cursor = "", requestedPage = 1) {
 }
 
 function refreshPage() {
+  void loadCredentials("", 1)
+}
+
+function selectSource(source: CredentialSource) {
+  if (selectedSource.value === source || activeAction.value) return
+  selectedSource.value = source
+  credentials.value = []
+  total.value = 0
+  nextCursor.value = ""
+  prevCursor.value = ""
+  currentPage.value = 1
+  pendingAction.value = null
+  detailRequestSeq += 1
+  selectedCredential.value = null
+  detailOpen.value = false
   void loadCredentials("", 1)
 }
 
@@ -275,6 +296,10 @@ onMounted(() => {
           <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }} <RouterLink to="/applications" class="font-bold text-blue-700 underline underline-offset-2">{{ copy.applicationRecords }}</RouterLink></p>
         </div>
         <div class="rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-600">{{ copy.total }}: {{ total }}</div>
+      </div>
+
+      <div class="mt-5 inline-flex max-w-full gap-1 rounded-lg bg-slate-100 p-1" role="tablist" :aria-label="copy.sourceFilter">
+        <button v-for="option in sourceOptions" :key="option.value" class="rounded-md px-3 py-2 text-sm font-bold transition-colors disabled:cursor-not-allowed" :class="selectedSource === option.value ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'" type="button" role="tab" :aria-selected="selectedSource === option.value" :disabled="!!activeAction" @click="selectSource(option.value)">{{ option.label }}</button>
       </div>
 
       <div v-if="listLoading" class="px-4 py-12 text-center text-slate-500"><Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />{{ copy.loading }}</div>
