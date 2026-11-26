@@ -6,7 +6,7 @@
 
 | 反馈 | 清单 | 对应代码提交 | 当前进度 |
 | --- | --- | --- | --- |
-| Dashboard | [工作台](dashboard.md) | `089bd82d`；2026-11-26 简版待发布 | 旧版已部署 dev / prod；UTC 收款趋势、简版漏斗、待审创建时间估算及业务概览补充待发布 |
+| Dashboard | [工作台](dashboard.md) | `089bd82d`；2026-11-26 简版待发布 | 旧版已部署 dev / prod；UTC 收款趋势、简版漏斗、待审创建时间统计及业务概览补充待发布 |
 | User Management 1/3 | [用户管理（1/3）](user-management-1.md) | `46ea9075` | 已完成部分已部署 dev / prod；筛选、操作及权限待办仍在清单 |
 | User Management 2/3 | [用户管理（2/3）](user-management-2.md) | `e0e35940` | 最近登录、员工 MFA、行操作入口已部署 dev / prod；账号操作与业务口径缺口仍在清单 |
 | User Management 3/3 | [权限矩阵与审计](user-management-3.md) | `fd854b99` | 明确的查看行为审计已部署 dev / prod；新角色、矩阵冲突与可靠送达未实施 |

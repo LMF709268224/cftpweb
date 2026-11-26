@@ -56,7 +56,7 @@ for (const lang of ["zh", "en"] as const) {
       const funnel = page.getByTestId("dashboard-funnel")
       await expect(funnel.getByText(lang === "zh" ? "有认证流程记录" : "With a pathway record", { exact: true })).toBeVisible()
       await expect(funnel.getByText("2", { exact: true })).toBeVisible()
-      await expect(reviews.getByTestId("dashboard-pending-age").getByText(lang === "zh" ? /创建超过 48 小时仍待审（估算）: 3/ : /Created over 48h ago, still pending \(estimate\): 3/)).toBeVisible()
+      await expect(reviews.getByTestId("dashboard-pending-age").getByText(lang === "zh" ? /创建超过 48 小时仍待审: 3/ : /Created over 48h ago, still pending: 3/)).toBeVisible()
       await expect(business.getByText(lang === "zh" ? "邮箱未验证的考生" : "Candidate emails unverified")).toBeVisible()
       expect(reviewQueries[0]?.get("status")).toBe("Pending")
       expect(reviewQueries[0]?.get("include_status_subtotals")).toBe("false")

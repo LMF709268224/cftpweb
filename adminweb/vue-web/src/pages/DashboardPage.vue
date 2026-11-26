@@ -442,7 +442,7 @@ onUnmounted(() => {
           <p v-if="pendingReviews && !pendingReviews.total_exact" class="mt-2 text-xs font-bold text-amber-700">{{ copy.partialReviewCount }}</p>
           <div v-if="pendingAge" class="mt-3 border-t border-slate-100 pt-3" data-testid="dashboard-pending-age">
             <p class="text-sm font-bold" :class="pendingAge.created_older_48h > 0 ? 'text-amber-700' : 'text-slate-600'">{{ copy.pendingCreatedOlder48h }}: {{ pendingAge.exact ? '' : '≥' }}{{ pendingAge.created_older_48h }}</p>
-            <p class="mt-1 text-xs text-slate-500">{{ copy.pendingAgeEstimateHint }}</p>
+            <p class="mt-1 text-xs text-slate-500">{{ copy.pendingAgeBasis }}</p>
           </div>
           <span class="mt-4 inline-flex items-center gap-1 text-sm font-bold text-blue-700">{{ copy.viewReviews }} <ArrowUpRight class="h-4 w-4" /></span>
         </RouterLink>
