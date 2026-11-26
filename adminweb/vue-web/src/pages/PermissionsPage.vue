@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Eye, FileWarning, Loader2, RefreshCw, UserX, X } from "lucide-vue-next"
+import { Eye, Loader2, RefreshCw, UserX, X } from "lucide-vue-next"
 import { computed, onMounted, ref, type Component } from "vue"
 import { toast } from "vue-sonner"
 import JsonPreview from "@/components/JsonPreview.vue"
@@ -9,7 +9,7 @@ import { type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 import { badgeClass } from "@/lib/status"
 
-type PermissionAction = "mark-expired" | "revoke-credential"
+type PermissionAction = "revoke-credential"
 type PermissionActionItem = { key: PermissionAction; title: string; desc: string; endpoint: string; icon: Component }
 type PendingPermissionAction = PermissionActionItem & {
   candidateUlid: string
@@ -42,13 +42,6 @@ const canNext = computed(() => Boolean(nextCursor.value) && currentPage.value < 
 const selectedStatus = computed(() => credentialStatus(selectedCredential.value))
 const canOperate = computed(() => Boolean(selectedCredential.value && selectedStatus.value === "active"))
 const actions = computed<PermissionActionItem[]>(() => [
-  {
-    key: "mark-expired",
-    title: copy.value.actions.markExpired.title,
-    desc: copy.value.actions.markExpired.desc,
-    endpoint: "/api/permissions/mark-expired",
-    icon: FileWarning,
-  },
   {
     key: "revoke-credential",
     title: copy.value.actions.revokeCredential.title,
@@ -106,6 +99,13 @@ function credentialStatusClass(credential: JsonRecord | null | undefined) {
   if (status === "revoked") return "border-red-200 bg-red-50 text-red-700"
   if (status === "expired") return "border-amber-200 bg-amber-50 text-amber-700"
   return badgeClass(stringValue(credential, ["status", "credential_status", "state"]))
+}
+
+function credentialSourceLabel(credential: JsonRecord | null | undefined) {
+  const source = stringValue(credential, ["source"]).toLowerCase()
+  if (source === "application") return copy.value.sources.application
+  if (source === "pdf_cert") return copy.value.sources.pdfCert
+  return copy.value.sources.unknown
 }
 
 function formatDate(value: unknown) {
@@ -272,7 +272,7 @@ onMounted(() => {
       <div class="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
-          <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
+          <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }} <RouterLink to="/applications" class="font-bold text-blue-700 underline underline-offset-2">{{ copy.applicationRecords }}</RouterLink></p>
         </div>
         <div class="rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-600">{{ copy.total }}: {{ total }}</div>
       </div>
@@ -280,14 +280,15 @@ onMounted(() => {
       <div v-if="listLoading" class="px-4 py-12 text-center text-slate-500"><Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />{{ copy.loading }}</div>
       <div v-else-if="!credentials.length" class="px-4 py-12 text-center text-slate-500">{{ copy.emptyCredentials }}</div>
       <div v-else class="mt-5 overflow-x-auto rounded-2xl border border-slate-200">
-        <table class="w-full min-w-[850px] text-left text-sm">
+        <table class="w-full min-w-[950px] text-left text-sm">
           <thead class="bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500">
-            <tr><th class="px-4 py-3">{{ copy.columns.candidate }}</th><th class="px-4 py-3">{{ copy.columns.credential }}</th><th class="px-4 py-3">{{ copy.columns.status }}</th><th class="px-4 py-3">{{ copy.columns.version }}</th><th class="px-4 py-3">{{ copy.columns.auditTime }}</th><th class="px-4 py-3 text-right">{{ copy.columns.actions }}</th></tr>
+            <tr><th class="px-4 py-3">{{ copy.columns.candidate }}</th><th class="px-4 py-3">{{ copy.columns.credential }}</th><th class="px-4 py-3">{{ copy.columns.source }}</th><th class="px-4 py-3">{{ copy.columns.status }}</th><th class="px-4 py-3">{{ copy.columns.version }}</th><th class="px-4 py-3">{{ copy.columns.auditTime }}</th><th class="px-4 py-3 text-right">{{ copy.columns.actions }}</th></tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
             <tr v-for="credential in credentials" :key="credentialUlid(credential)" class="cursor-pointer transition hover:bg-sky-50" @click="openDetail(credential)">
               <td class="max-w-[220px] px-4 py-4"><div class="font-bold">{{ candidateName(credential) || copy.unknownCandidate }}</div></td>
               <td class="max-w-[220px] px-4 py-4"><div class="font-bold">{{ credentialDefinitionName(credential) }}</div><div class="mt-1 break-all text-xs text-slate-500">{{ credentialDefinitionUlid(credential) || "-" }}</div></td>
+              <td class="px-4 py-4 text-slate-600">{{ credentialSourceLabel(credential) }}</td>
               <td class="px-4 py-4"><span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-black" :class="credentialStatusClass(credential)">{{ credentialStatusLabel(credential) }}</span><div v-if="auditRemark(credential) !== '-'" class="mt-2 max-w-[210px] truncate text-xs text-slate-500" :title="auditRemark(credential)">{{ auditRemark(credential) }}</div></td>
               <td class="px-4 py-4 font-bold text-slate-700">v{{ credential.version || "-" }}</td>
               <td class="whitespace-nowrap px-4 py-4 text-slate-600">{{ formatDate(credential.audit_time || credential.created_at) }}</td>
@@ -319,9 +320,10 @@ onMounted(() => {
         </div>
         <div v-if="detailLoading" class="p-12 text-center text-slate-500"><Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />{{ copy.loading }}</div>
         <div v-else class="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
-          <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
             <div class="rounded-xl bg-slate-50 p-4"><div class="text-xs font-black text-slate-400">{{ copy.fields.candidate }}</div><div class="mt-2 break-all font-bold">{{ candidateName(selectedCredential) || copy.unknownCandidate }}</div><div class="mt-1 break-all text-xs text-slate-500">{{ candidateUlid(selectedCredential) }}</div></div>
             <div class="rounded-xl bg-slate-50 p-4"><div class="text-xs font-black text-slate-400">{{ copy.fields.credential }}</div><div class="mt-2 font-bold">{{ credentialDefinitionName(selectedCredential) }}</div><div class="mt-1 break-all text-xs text-slate-500">{{ credentialDefinitionUlid(selectedCredential) }}</div></div>
+            <div class="rounded-xl bg-slate-50 p-4"><div class="text-xs font-black text-slate-400">{{ copy.columns.source }}</div><div class="mt-2 font-bold">{{ credentialSourceLabel(selectedCredential) }}</div></div>
             <div class="rounded-xl bg-slate-50 p-4"><div class="text-xs font-black text-slate-400">{{ copy.fields.auditTime }}</div><div class="mt-2 font-bold">{{ formatDate(selectedCredential.audit_time || selectedCredential.created_at) }}</div></div>
             <div class="rounded-xl bg-slate-50 p-4"><div class="text-xs font-black text-slate-400">{{ copy.fields.current }}</div><div class="mt-2 font-bold">{{ selectedCredential.is_current === false ? copy.no : copy.yes }}</div></div>
           </div>
@@ -332,7 +334,7 @@ onMounted(() => {
               <h3 class="text-lg font-black">{{ copy.actionTitle }}</h3>
               <p class="mt-1 text-sm text-slate-500">{{ canOperate ? copy.actionDescription : copy.operationUnavailable }}</p>
               <label class="mt-4 grid gap-2 text-sm font-bold">{{ copy.reason }}<textarea v-model="reason" class="min-h-24 rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100" :disabled="!canOperate" maxlength="500" :placeholder="copy.reasonPlaceholder" /></label>
-              <div class="mt-4 grid gap-3"><button v-for="action in actions" :key="action.key" class="flex items-start gap-3 rounded-xl px-4 py-3 text-left font-bold text-white disabled:cursor-not-allowed disabled:opacity-50" :class="action.key === 'revoke-credential' ? 'bg-red-600' : 'bg-orange-600'" type="button" :disabled="!canOperate || !!activeAction" @click="requestAction(action)"><component :is="action.icon" class="mt-0.5 h-5 w-5 shrink-0" /><span><span class="block">{{ action.title }}</span><span class="mt-1 block text-xs font-normal text-white/80">{{ action.desc }}</span></span></button></div>
+              <div class="mt-4 grid gap-3"><button v-for="action in actions" :key="action.key" class="flex items-start gap-3 rounded-xl bg-red-600 px-4 py-3 text-left font-bold text-white disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="!canOperate || !!activeAction" @click="requestAction(action)"><component :is="action.icon" class="mt-0.5 h-5 w-5 shrink-0" /><span><span class="block">{{ action.title }}</span><span class="mt-1 block text-xs font-normal text-white/80">{{ action.desc }}</span></span></button></div>
             </aside>
           </div>
         </div>

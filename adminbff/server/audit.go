@@ -265,7 +265,6 @@ var adminAuditOperations = map[auditRoute]auditSpec{
 	route(http.MethodPost, "/api/memberships/mails/retry"):                   operation("retry_membership_mail", "membership_mail", "", "mail_id", "mail_ulid"),
 	route(http.MethodPost, "/api/memberships/mails/ignore"):                  operation("ignore_membership_mail", "membership_mail", "", "mail_id", "mail_ulid"),
 	route(http.MethodPost, "/api/audit/webhooks/reprocess"):                  operation("reprocess_webhook", "webhook_message", "", "message_id", "message_ulid"),
-	route(http.MethodPost, "/api/permissions/mark-expired"):                  operation("mark_credential_expired", "credential", "", "credential_id", "credential_ulid"),
 	route(http.MethodPost, "/api/permissions/revoke-credential"):             operation("revoke_credential", "credential", "", "credential_id", "credential_ulid"),
 }
 

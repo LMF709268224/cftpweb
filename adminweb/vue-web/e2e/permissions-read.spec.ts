@@ -7,6 +7,7 @@ const credential = {
   candidate_name: "Regression Candidate",
   cred_def_ulid: "definition-regression",
   cred_def_name: "Regression Qualification",
+  source: "application",
   status: "ACTIVE",
   version: 1,
   is_current: true,
@@ -29,8 +30,11 @@ test("candidate credential list and detail are displayed without mutation", asyn
   await page.goto("/permissions")
   await expect(page.getByText("Regression Qualification", { exact: true }).first()).toBeVisible()
   await expect(page.getByText("Regression Candidate", { exact: true }).first()).toBeVisible()
+  await expect(page.getByRole("link", { name: "查看申请记录" })).toHaveAttribute("href", "/applications")
+  await expect(page.getByRole("cell", { name: "申请获批资格" })).toBeVisible()
   await page.getByRole("button", { name: "查看详情" }).click()
   await expect(page.getByRole("dialog").getByText("Read-only regression detail", { exact: true })).toBeVisible()
+  await expect(page.getByRole("button", { name: "标记资格过期" })).toHaveCount(0)
 
   expect(requests).toContain("GET /api/credentials?is_current=true&page_size=10")
   expect(requests).toContain("GET /api/credentials/credential-regression")

@@ -477,7 +477,6 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 
 		// ===== 权限管理 (Permissions) =====
 		r.Route("/permissions", func(r chi.Router) {
-			r.Post("/mark-expired", h.MarkExpired)
 			r.Post("/revoke-credential", h.RevokeCredential)
 		})
 	}) // <-- /api 路由分组结束

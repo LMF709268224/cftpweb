@@ -675,10 +675,16 @@ export const en: AdminTranslations = {
     },
     permissions: {
         title: "Candidate Permissions",
-        subtitle: "Review every candidate's current credential status and expire or revoke active credentials.",
+        subtitle: "Review current candidate qualifications and revoke active records when necessary.",
         refresh: "Refresh Credentials",
         listTitle: "Candidate Credentials",
-        listDescription: "Shows the current version of every credential, including active, revoked, and expired records.",
+        listDescription: "Shows current qualification versions from applications and issued certificates, including historical status changes.",
+        applicationRecords: "View application records",
+        sources: {
+            application: "Approved application qualification",
+            pdfCert: "Issued certificate",
+            unknown: "Source unavailable",
+        },
         total: "Total",
         prev: "Previous",
         next: "Next",
@@ -692,6 +698,7 @@ export const en: AdminTranslations = {
         columns: {
             candidate: "Candidate",
             credential: "Credential",
+            source: "Source",
             status: "Current Status / Reason",
             version: "Version",
             auditTime: "Effective At",
@@ -722,10 +729,6 @@ export const en: AdminTranslations = {
         reason: "Action Reason",
         reasonPlaceholder: "Required for audit tracking",
         actions: {
-            markExpired: {
-                title: "Mark Credential Expired",
-                desc: "Mark this candidate's existing credential as expired.",
-            },
             revokeCredential: {
                 title: "Revoke Credential",
                 desc: "Revoke and invalidate this candidate's existing credential.",

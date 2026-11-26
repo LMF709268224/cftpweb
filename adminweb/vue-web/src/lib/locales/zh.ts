@@ -673,10 +673,16 @@ export const zh = {
     },
     permissions: {
         title: "考生权限管理",
-        subtitle: "查看所有考生的当前资格状态，并对有效资格执行过期或撤销操作。",
+        subtitle: "查看考生资格来源与当前状态，并在需要时撤销有效资格。",
         refresh: "刷新资格列表",
         listTitle: "考生资格列表",
-        listDescription: "显示每项资格的当前版本，包括有效、已撤销和已过期记录。",
+        listDescription: "展示申请获批资格与已颁发证书的当前版本及状态。",
+        applicationRecords: "查看申请记录",
+        sources: {
+            application: "申请获批资格",
+            pdfCert: "已颁发证书",
+            unknown: "来源未知",
+        },
         total: "共",
         prev: "上一页",
         next: "下一页",
@@ -690,6 +696,7 @@ export const zh = {
         columns: {
             candidate: "考生",
             credential: "资格",
+            source: "来源",
             status: "当前状态 / 原因",
             version: "版本",
             auditTime: "生效时间",
@@ -720,10 +727,6 @@ export const zh = {
         reason: "操作原因",
         reasonPlaceholder: "必填，便于审计追踪",
         actions: {
-            markExpired: {
-                title: "标记资格过期",
-                desc: "将该考生已持有的该资格标记为过期。",
-            },
             revokeCredential: {
                 title: "撤销资格",
                 desc: "将该考生已持有的该资格撤销作废。",
