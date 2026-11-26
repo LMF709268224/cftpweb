@@ -4,6 +4,7 @@ import { computed, nextTick, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import ReadonlyField from "@/components/ReadonlyField.vue"
 import NotificationParameters from "@/components/NotificationParameters.vue"
+import TemplateVariableInsert from "@/components/TemplateVariableInsert.vue"
 import { initialTemplatePayload } from "@/lib/notificationTemplate"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
@@ -31,6 +32,7 @@ const payloadLoading = ref(false)
 const payloadLoadError = ref("")
 const msgType = ref(1)
 const sending = ref(false)
+const sendConfirmOpen = ref(false)
 
 const messages = ref<JsonRecord[]>([])
 const messagesLoading = ref(false)
@@ -63,11 +65,19 @@ const formDescription = ref("")
 const formParameterSchema = ref("{}")
 const formVersion = ref(0)
 const templateTitleInputRef = ref<HTMLInputElement | null>(null)
+const templateContentInputRef = ref<HTMLTextAreaElement | null>(null)
 let templateDetailRequestId = 0
 let templateEditRequestId = 0
 let templatePayloadRequestId = 0
 const { t, isZh } = useAdminLanguage()
 const copy = computed(() => t.value.messagesAdmin)
+const messageTypeLabel = computed(() => [
+  copy.value.send.messageTypes.system,
+  copy.value.send.messageTypes.examReminder,
+  copy.value.send.messageTypes.scoreReport,
+  copy.value.send.messageTypes.payment,
+  copy.value.send.messageTypes.other,
+][msgType.value - 1] || String(msgType.value))
 
 const tabs = computed(() => [
   { key: "send" as const, label: copy.value.tabs.send, icon: Send, count: selectedUserIds.value.length },
@@ -393,7 +403,25 @@ function closeTemplateEdit() {
   resetTemplateForm()
 }
 
+function openSendConfirmation() {
+  if (!selectedUserIds.value.length) {
+    toast.error(copy.value.toasts.recipientsRequired)
+    return
+  }
+  if (!templatePath.value) {
+    toast.error(copy.value.toasts.templateRequired)
+    return
+  }
+  if (payloadLoading.value || payloadLoadError.value || !validatePayload() || !parametersRef.value?.validate()) return
+  sendConfirmOpen.value = true
+}
+
+function closeSendConfirmation() {
+  if (!sending.value) sendConfirmOpen.value = false
+}
+
 async function sendMessage() {
+  if (!sendConfirmOpen.value || sending.value) return
   if (!selectedUserIds.value.length) {
     toast.error(copy.value.toasts.recipientsRequired)
     return
@@ -416,6 +444,7 @@ async function sendMessage() {
       }),
     })
     toast.success(copy.value.toasts.sendSuccess(data.count))
+    sendConfirmOpen.value = false
     selectedUserIds.value = []
     templatePath.value = ""
     payload.value = "{\n}"
@@ -670,7 +699,7 @@ onMounted(async () => {
               </div>
               <NotificationParameters ref="parametersRef" v-model="payload" :schema="String(sendTemplate?.parameter_schema ?? '')" :texts="[String(sendTemplate?.title_tpl ?? ''), String(sendTemplate?.content_tpl ?? '')]" :raw-label="copy.send.payload" :disabled="payloadLoading || sending || !!payloadLoadError" />
 
-              <button class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50 sm:w-auto" :disabled="sending || payloadLoading || !!payloadLoadError" type="button" @click="sendMessage">
+              <button class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50 sm:w-auto" :disabled="sending || payloadLoading || !!payloadLoadError" type="button" @click="openSendConfirmation">
                 <Loader2 v-if="sending" class="h-4 w-4 animate-spin" />
                 <Send v-else class="h-4 w-4" />
                 {{ sending ? copy.send.sending : copy.send.sendButton }}
@@ -891,14 +920,16 @@ onMounted(async () => {
               <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.templates.path }}</span>
               <input v-model="formPath" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-4 disabled:bg-slate-100" :disabled="!!editingTemplatePath" />
             </label>
-            <label class="block">
-              <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.templates.titleTemplate }}</span>
-              <input ref="templateTitleInputRef" v-model="formTitle" data-dialog-initial-focus class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-4" />
-            </label>
-            <label class="block">
-              <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.templates.contentTemplate }}</span>
-              <textarea v-model="formContent" class="mt-2 min-h-56 w-full rounded-xl border border-slate-200 p-4" />
-            </label>
+            <div class="block">
+              <label for="message-template-title" class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.templates.titleTemplate }}</label>
+              <input id="message-template-title" ref="templateTitleInputRef" v-model="formTitle" data-dialog-initial-focus class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-4" />
+              <TemplateVariableInsert v-model="formTitle" :schema="formParameterSchema" :texts="[formTitle, formContent]" :target="templateTitleInputRef" :label="isZh ? '插入变量' : 'Insert variable'" :empty-label="isZh ? '暂无变量' : 'No variables'" syntax="message" />
+            </div>
+            <div class="block">
+              <label for="message-template-content" class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.templates.contentTemplate }}</label>
+              <textarea id="message-template-content" ref="templateContentInputRef" v-model="formContent" class="mt-2 min-h-56 w-full rounded-xl border border-slate-200 p-4" />
+              <TemplateVariableInsert v-model="formContent" :schema="formParameterSchema" :texts="[formTitle, formContent]" :target="templateContentInputRef" :label="isZh ? '插入变量' : 'Insert variable'" :empty-label="isZh ? '暂无变量' : 'No variables'" syntax="message" />
+            </div>
             <label class="block">
               <span class="text-sm font-bold">{{ copy.templates.description }}</span>
               <textarea v-model="formDescription" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 p-4" />
@@ -916,6 +947,24 @@ onMounted(async () => {
             </button>
           </div>
         </form>
+      </div>
+    </Teleport>
+    <Teleport to="body">
+      <div v-if="sendConfirmOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 md:p-6">
+        <section v-modal-dialog="closeSendConfirmation" role="dialog" aria-modal="true" :aria-label="isZh ? '确认发送站内信' : 'Confirm message'" class="w-full max-w-lg rounded-lg bg-white p-5 shadow-2xl">
+          <h2 class="text-lg font-bold text-slate-950">{{ isZh ? '确认发送站内信' : 'Confirm message' }}</h2>
+          <dl class="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+            <dt class="text-slate-500">{{ isZh ? '收件人数' : 'Recipients' }}</dt><dd class="font-semibold text-slate-900">{{ selectedUserIds.length }}</dd>
+            <dt class="text-slate-500">{{ isZh ? '模板' : 'Template' }}</dt><dd class="break-all font-semibold text-slate-900">{{ templatePath }}</dd>
+            <dt class="text-slate-500">{{ isZh ? '消息类型' : 'Message type' }}</dt><dd class="font-semibold text-slate-900">{{ messageTypeLabel }}</dd>
+          </dl>
+          <div class="mt-4 text-sm font-semibold text-slate-700">{{ isZh ? '模板参数' : 'Template parameters' }}</div>
+          <pre class="mt-2 max-h-48 overflow-auto rounded-md bg-slate-50 p-3 text-xs text-slate-800">{{ payload }}</pre>
+          <div class="mt-5 flex justify-end gap-3">
+            <button data-dialog-initial-focus type="button" class="h-10 rounded-md border border-slate-300 px-4 text-sm font-semibold" :disabled="sending" @click="closeSendConfirmation">{{ isZh ? '返回修改' : 'Back to edit' }}</button>
+            <button type="button" class="h-10 rounded-md bg-blue-700 px-4 text-sm font-semibold text-white disabled:opacity-50" :disabled="sending" @click="sendMessage">{{ sending ? copy.send.sending : copy.send.sendButton }}</button>
+          </div>
+        </section>
       </div>
     </Teleport>
   </section>

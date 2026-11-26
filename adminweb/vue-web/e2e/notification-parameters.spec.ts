@@ -61,12 +61,20 @@ test("message parameters validate required fields, formats and types before keep
   expect(bodies).toHaveLength(0)
   await page.getByRole("spinbutton", { name: "Count" }).fill("2")
   await send.click()
+  const confirmation = page.getByRole("dialog", { name: "确认发送站内信" })
+  await expect(confirmation).toContainText("1")
+  await expect(confirmation).toContainText(messageTemplate.path)
+  expect(bodies).toHaveLength(0)
+  await confirmation.getByRole("button", { name: "返回修改" }).click()
+  expect(bodies).toHaveLength(0)
+  await send.click()
+  await confirmation.getByRole("button", { name: "发送站内信" }).click()
   await expect.poll(() => bodies.length).toBe(1)
   expect(bodies[0]).toEqual({ user_ids: ["candidate-1"], template_path: messageTemplate.path, msg_type: 1, payload: expect.any(String) })
   expect(JSON.parse(String(bodies[0]!.payload))).toEqual({ Name: "Test User", Email: "test@example.test", Count: 2, SendCopy: false })
 })
 
-test("message templates retain the original text editor and update fields without variable insertion controls", async ({ page }) => {
+test("message template variable inserts at the caret and preserves template fields", async ({ page }) => {
   await setup(page)
   const updates: Record<string, unknown>[] = []
   await page.route("**/api/messages/templates", async route => {
@@ -79,12 +87,26 @@ test("message templates retain the original text editor and update fields withou
   await page.getByRole("button", { name: "编辑", exact: true }).click()
   const dialog = page.getByRole("dialog", { name: "编辑模板" })
   const content = dialog.getByRole("textbox", { name: /内容模板/ })
-  await expect(dialog.getByRole("combobox", { name: "模板变量" })).toHaveCount(0)
-  await expect(dialog.getByRole("button", { name: "插入变量", exact: true })).toHaveCount(0)
+  await content.fill("Start End")
+  await content.evaluate((element: HTMLTextAreaElement) => element.setSelectionRange(6, 6))
+  await dialog.getByRole("combobox", { name: "插入变量" }).last().selectOption("Name")
+  await expect(content).toHaveValue("Start {{Name}}End")
   await content.fill("{{Name}} ### Keep **Markdown**")
   await dialog.getByRole("button", { name: "保存模板", exact: true }).click()
   await expect.poll(() => updates.length).toBe(1)
   expect(updates[0]).toMatchObject({ path: messageTemplate.path, title_tpl: messageTemplate.title_tpl, content_tpl: "{{Name}} ### Keep **Markdown**", parameter_schema: schema, current_version: 3 })
+})
+
+test("mail template variable uses mail rendering syntax", async ({ page }) => {
+  await setup(page)
+  await page.goto("/mails")
+  await page.getByRole("button", { name: "模板管理" }).click()
+  await page.getByRole("button", { name: "编辑模板" }).click()
+  const dialog = page.getByRole("dialog", { name: "编辑模板" })
+  const subject = dialog.getByRole("textbox", { name: "主题模板" })
+  await subject.fill("Hello ")
+  await dialog.getByRole("combobox", { name: "插入变量" }).first().selectOption("Name")
+  await expect(subject).toHaveValue("Hello {{.Name}}")
 })
 
 for (const lang of ["zh", "en"] as const) {
@@ -163,6 +185,7 @@ test("complex parameters remain editable as JSON without losing nested values", 
   await page.getByRole("textbox", { name: "Payload JSON", exact: true }).fill('{"User":{"Name":"Original"},"Count":0}')
   await page.getByRole("checkbox", { name: /Regression Candidate/ }).check()
   await page.getByRole("button", { name: "发送站内信", exact: true }).last().click()
+  await page.getByRole("dialog", { name: "确认发送站内信" }).getByRole("button", { name: "发送站内信" }).click()
   await expect.poll(() => sent).toBeTruthy()
   expect(JSON.parse(String(sent!.payload))).toEqual({ User: { Name: "Original" }, Count: 0 })
 })
@@ -227,6 +250,7 @@ test("templates without type rules preserve values from the existing JSON editor
   await page.getByRole("textbox", { name: "Payload JSON", exact: true }).fill(JSON.stringify(original))
   await page.getByRole("checkbox", { name: /Regression Candidate/ }).check()
   await page.getByRole("button", { name: "发送站内信", exact: true }).last().click()
+  await page.getByRole("dialog", { name: "确认发送站内信" }).getByRole("button", { name: "发送站内信" }).click()
   await expect.poll(() => sent).toBeTruthy()
   expect(JSON.parse(String(sent!.payload))).toEqual(original)
 })

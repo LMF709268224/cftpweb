@@ -15,6 +15,7 @@ const sentMail = {
   subject: "Regression certificate",
   to_email: "candidate@example.test",
   status: "SENT",
+  error_message: "",
   created_at: "2026-08-11T01:00:00Z",
 }
 
@@ -99,6 +100,7 @@ test("sent mail detail and delivery status are read without cancellation", async
   await page.getByRole("button", { name: "查看详情" }).click()
   const dialog = page.getByRole("dialog", { name: "邮件详情" })
   await expect(dialog).toBeVisible()
+  await expect(dialog.getByText("状态详情: 已发送", { exact: true })).toBeVisible()
   await dialog.getByText("状态详情", { exact: true }).first().click()
   await expect(dialog.getByText(/provider-1/)).toBeVisible()
   await dialog.getByText("原始 JSON", { exact: true }).first().click()
@@ -108,6 +110,17 @@ test("sent mail detail and delivery status are read without cancellation", async
   expect(requests).toContain("GET /api/mails/status")
   expect(requests.some((request) => request.includes("/cancel"))).toBe(false)
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
+})
+
+test("failed mail detail shows the failure reason returned by the service", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  const requests: string[] = []
+  await installMailReadMocks(page, requests, { ...sentMail, status: "FAILED", error_message: "Rejected by provider" })
+  await page.goto("/mails")
+  await page.getByRole("button", { name: "发送记录" }).click()
+  await page.getByRole("button", { name: "查看详情" }).click()
+  const dialog = page.getByRole("dialog", { name: "邮件详情" })
+  await expect(dialog.getByText("失败原因: Rejected by provider", { exact: true })).toBeVisible()
 })
 
 test("cancelling a scheduled mail requires explicit confirmation", async ({ page }) => {

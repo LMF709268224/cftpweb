@@ -4,6 +4,7 @@ import { computed, onMounted, ref, watch } from "vue"
 import { useRoute } from "vue-router"
 import { toast } from "vue-sonner"
 import JsonPreview from "@/components/JsonPreview.vue"
+import TemplateVariableInsert from "@/components/TemplateVariableInsert.vue"
 import ReadonlyField from "@/components/ReadonlyField.vue"
 import NotificationParameters from "@/components/NotificationParameters.vue"
 import { initialTemplatePayload } from "@/lib/notificationTemplate"
@@ -77,6 +78,8 @@ const formSubject = ref("")
 const formContent = ref("")
 const formDescription = ref("")
 const formParameterSchema = ref("{}")
+const templateSubjectInputRef = ref<HTMLInputElement | null>(null)
+const templateBodyInputRef = ref<HTMLTextAreaElement | null>(null)
 let templateDetailRequestId = 0
 let templateEditRequestId = 0
 let templatePayloadRequestId = 0
@@ -102,6 +105,8 @@ const templateTotalPages = computed(() => Math.max(1, Math.ceil((totalTemplates.
 const selectedUsers = computed(() => users.value.filter((user) => selectedUserIds.value.includes(userId(user))))
 const selectedMailHtml = computed(() => String(mailDetail.value?.html_body || mailDetail.value?.plain_body || selectedMail.value?.html_body || selectedMail.value?.plain_body || ""))
 const selectedMailRecord = computed(() => mailDetail.value || selectedMail.value || {})
+const selectedMailStatus = computed(() => mailStatus(mailStatusDetail.value) !== "-" ? mailStatus(mailStatusDetail.value) : mailStatus(selectedMailRecord.value))
+const selectedMailError = computed(() => String(mailDetail.value?.error_message || selectedMail.value?.error_message || "").trim())
 const selectedMailCanCancel = computed(() => isSchedulingMail(mailStatusDetail.value) || isSchedulingMail(mailDetail.value) || isSchedulingMail(selectedMail.value))
 const selectedTemplateFields = computed(() => selectedTemplate.value || {})
 const statsCards = computed(() => {
@@ -987,14 +992,16 @@ onMounted(async () => {
                 <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.name }}</span>
                 <input v-model="formName" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-4" />
               </label>
-              <label class="block">
-                <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.subjectTemplate }}</span>
-                <input v-model="formSubject" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-4" />
-              </label>
-              <label class="block">
-                <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.htmlBody }}</span>
-                <textarea v-model="formContent" class="mt-2 min-h-56 w-full rounded-xl border border-slate-200 p-4" />
-              </label>
+              <div class="block">
+                <label for="mail-template-subject" class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.subjectTemplate }}</label>
+                <input id="mail-template-subject" ref="templateSubjectInputRef" v-model="formSubject" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-4" />
+                <TemplateVariableInsert v-model="formSubject" :schema="formParameterSchema" :texts="[formSubject, formContent]" :target="templateSubjectInputRef" :label="isZh ? '插入变量' : 'Insert variable'" :empty-label="isZh ? '暂无变量' : 'No variables'" syntax="mail" />
+              </div>
+              <div class="block">
+                <label for="mail-template-content" class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.htmlBody }}</label>
+                <textarea id="mail-template-content" ref="templateBodyInputRef" v-model="formContent" class="mt-2 min-h-56 w-full rounded-xl border border-slate-200 p-4" />
+                <TemplateVariableInsert v-model="formContent" :schema="formParameterSchema" :texts="[formSubject, formContent]" :target="templateBodyInputRef" :label="isZh ? '插入变量' : 'Insert variable'" :empty-label="isZh ? '暂无变量' : 'No variables'" syntax="mail" />
+              </div>
               <label class="block">
                 <span class="text-sm font-bold">{{ copy.fields.description }}</span>
                 <textarea v-model="formDescription" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 p-4" />
@@ -1091,6 +1098,10 @@ onMounted(async () => {
               {{ copy.loading }}
             </div>
             <template v-else>
+              <div class="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm">
+                <div class="font-semibold text-slate-900">{{ copy.statusDetail }}: {{ mailStatusLabel(selectedMailStatus) }}</div>
+                <div v-if="selectedMailError" class="mt-2 break-words text-red-700">{{ isZh ? '失败原因' : 'Failure reason' }}: {{ selectedMailError }}</div>
+              </div>
               <JsonPreview
                 v-if="mailStatusDetail"
                 :title="copy.statusDetail"
