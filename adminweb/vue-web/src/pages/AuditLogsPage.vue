@@ -30,6 +30,7 @@ const hasMore = ref(false)
 const nextCursor = ref("")
 const prevCursor = ref("")
 const lastPage = ref(1)
+const observedActionsBySource = ref<Record<string, string[]>>({})
 const filters = ref({
   keyword: "",
   source_service: "",
@@ -42,7 +43,8 @@ const filters = ref({
   end_time: "",
 })
 
-const advancedFilterKeys = ["source_service", "action", "status", "operator_id", "resource_type", "resource_id", "start_time", "end_time"] as const
+const advancedFilterKeys = ["operator_id", "resource_type", "resource_id", "start_time", "end_time"] as const
+const filterKeys = ["source_service", "action", "status", ...advancedFilterKeys] as const
 const filterNames = computed(() => ({
   source_service: copy.value.filters.sourceService,
   action: copy.value.filters.action,
@@ -53,18 +55,16 @@ const filterNames = computed(() => ({
   start_time: copy.value.filters.startTime,
   end_time: copy.value.filters.endTime,
 }))
-const activeAdvancedFilters = computed(() => advancedFilterKeys.flatMap((key) => {
+const activeFilters = computed(() => filterKeys.flatMap((key) => {
   const value = filters.value[key].trim()
   if (!value) return []
   return [{ key, label: filterNames.value[key], value: key === "source_service" ? sourceServiceLabel(value) : value }]
 }))
+const activeAdvancedCount = computed(() => advancedFilterKeys.filter((key) => filters.value[key].trim()).length)
 const actionSuggestions = computed(() => {
   const source = filters.value.source_service
   if (!source) return AUDIT_ACTION_SUGGESTIONS
-  return [...new Set(logs.value
-    .filter((log) => String(log.source_service || "") === source)
-    .map((log) => String(log.action || "").trim())
-    .filter(Boolean))].sort()
+  return observedActionsBySource.value[source] || []
 })
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)))
@@ -95,6 +95,16 @@ function sourceServiceLabel(value: unknown) {
   const source = String(value || "").trim()
   const labels = AUDIT_SOURCE_SERVICE_LABELS[source as keyof typeof AUDIT_SOURCE_SERVICE_LABELS]
   return labels ? labels[isZh.value ? "zh" : "en"] : source || "-"
+}
+
+function rememberActions(items: JsonRecord[]) {
+  for (const item of items) {
+    const source = String(item.source_service || "").trim()
+    const action = String(item.action || "").trim()
+    if (!source || !action) continue
+    const actions = observedActionsBySource.value[source] || []
+    if (!actions.includes(action)) observedActionsBySource.value[source] = [...actions, action].sort()
+  }
 }
 
 function toRFC3339Local(value: string) {
@@ -169,6 +179,7 @@ async function load() {
     const data = await apiClient<JsonRecord>(`/api/audit/logs?${params}`)
     if (requestId !== listRequestId) return
     logs.value = asRecordList(data.items)
+    rememberActions(logs.value)
     total.value = Number(data.total || logs.value.length)
     const isBackward = page.value < lastPage.value
     hasMore.value = isBackward ? true : Boolean(data.has_more)
@@ -210,13 +221,19 @@ function resetAndLoad() {
   void load()
 }
 
-function removeAdvancedFilter(key: (typeof advancedFilterKeys)[number]) {
+function changeSource() {
+  filters.value.action = ""
+  resetAndLoad()
+}
+
+function removeFilter(key: (typeof filterKeys)[number]) {
   filters.value[key] = ""
+  if (key === "source_service") filters.value.action = ""
   resetAndLoad()
 }
 
 function clearFilters() {
-  for (const key of advancedFilterKeys) filters.value[key] = ""
+  for (const key of filterKeys) filters.value[key] = ""
   filters.value.keyword = ""
   resetAndLoad()
 }
@@ -281,16 +298,37 @@ onMounted(load)
     </header>
 
     <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
-      <div class="flex flex-col gap-3 md:flex-row md:items-end">
-        <label class="grid min-w-0 flex-1 gap-2 text-sm font-bold">
+      <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(200px,1.5fr)_minmax(150px,1fr)_minmax(170px,1fr)_minmax(140px,0.8fr)_auto] xl:items-end">
+        <label class="grid min-w-0 gap-2 text-sm font-bold">
           {{ copy.filters.keyword }}
           <input v-model="filters.keyword" class="h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.keyword" @keydown.enter="resetAndLoad" />
         </label>
-        <div class="flex gap-2">
+        <label class="grid min-w-0 gap-2 text-sm font-bold">
+          {{ copy.filters.sourceService }}
+          <select v-model="filters.source_service" class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3" @change="changeSource">
+            <option value="">{{ copy.options.allSources }}</option>
+            <option v-for="source in AUDIT_SOURCE_SERVICE_OPTIONS" :key="source" :value="source">{{ sourceServiceLabel(source) }}</option>
+          </select>
+        </label>
+        <label class="grid min-w-0 gap-2 text-sm font-bold">
+          {{ copy.filters.action }}
+          <input v-model="filters.action" list="audit-action-options" class="h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.action" @keydown.enter="resetAndLoad" />
+          <datalist id="audit-action-options">
+            <option v-for="action in actionSuggestions" :key="action" :value="action" />
+          </datalist>
+        </label>
+        <label class="grid min-w-0 gap-2 text-sm font-bold">
+          {{ copy.filters.status }}
+          <select v-model="filters.status" class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3">
+            <option value="">{{ copy.options.allStatuses }}</option>
+            <option v-for="status in AUDIT_STATUS_OPTIONS" :key="status" :value="status">{{ copy.options.statuses[status] }}</option>
+          </select>
+        </label>
+        <div class="flex gap-2 md:col-span-2 xl:col-span-1">
           <button class="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 text-sm font-bold md:flex-none" type="button" :aria-expanded="advancedOpen" aria-controls="audit-advanced-filters" @click="advancedOpen = !advancedOpen">
             <SlidersHorizontal class="h-4 w-4" />
             {{ copy.advancedFilters }}
-            <span v-if="activeAdvancedFilters.length" class="rounded-full bg-slate-100 px-1.5 text-xs">{{ activeAdvancedFilters.length }}</span>
+            <span v-if="activeAdvancedCount" class="rounded-full bg-slate-100 px-1.5 text-xs">{{ activeAdvancedCount }}</span>
             <ChevronDown class="h-4 w-4 transition-transform" :class="advancedOpen ? 'rotate-180' : ''" />
           </button>
           <button class="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 text-sm font-black text-white md:flex-none" type="button" @click="resetAndLoad">
@@ -299,35 +337,14 @@ onMounted(load)
           </button>
         </div>
       </div>
-      <div v-if="activeAdvancedFilters.length" class="mt-3 flex flex-wrap items-center gap-2">
-        <button v-for="filter in activeAdvancedFilters" :key="filter.key" class="inline-flex max-w-full items-center gap-1.5 rounded border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-700" type="button" :title="copy.removeFilter" @click="removeAdvancedFilter(filter.key)">
+      <div v-if="activeFilters.length" class="mt-3 flex flex-wrap items-center gap-2">
+        <button v-for="filter in activeFilters" :key="filter.key" class="inline-flex max-w-full items-center gap-1.5 rounded border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-700" type="button" :title="copy.removeFilter" @click="removeFilter(filter.key)">
           <span class="truncate">{{ filter.label }}: {{ filter.value }}</span>
           <X class="h-3.5 w-3.5 shrink-0" />
         </button>
         <button class="text-xs font-bold text-blue-700 hover:underline" type="button" @click="clearFilters">{{ copy.clearFilters }}</button>
       </div>
       <div v-if="advancedOpen" id="audit-advanced-filters" class="mt-4 grid gap-4 border-t border-slate-200 pt-4 md:grid-cols-2 xl:grid-cols-4">
-        <label class="grid gap-2 text-sm font-bold">
-          {{ copy.filters.sourceService }}
-          <select v-model="filters.source_service" class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3" @change="filters.action = ''">
-            <option value="">{{ copy.options.allSources }}</option>
-            <option v-for="source in AUDIT_SOURCE_SERVICE_OPTIONS" :key="source" :value="source">{{ sourceServiceLabel(source) }} ({{ source }})</option>
-          </select>
-        </label>
-        <label class="grid gap-2 text-sm font-bold">
-          {{ copy.filters.action }}
-          <input v-model="filters.action" list="audit-action-options" class="h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.action" @keydown.enter="resetAndLoad" />
-          <datalist id="audit-action-options">
-            <option v-for="action in actionSuggestions" :key="action" :value="action" />
-          </datalist>
-        </label>
-        <label class="grid gap-2 text-sm font-bold">
-          {{ copy.filters.status }}
-          <select v-model="filters.status" class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3">
-            <option value="">{{ copy.options.allStatuses }}</option>
-            <option v-for="status in AUDIT_STATUS_OPTIONS" :key="status" :value="status">{{ copy.options.statuses[status] }}</option>
-          </select>
-        </label>
         <label class="grid gap-2 text-sm font-bold">
           {{ copy.filters.operator }}
           <input v-model="filters.operator_id" class="h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.operator" @keydown.enter="resetAndLoad" />

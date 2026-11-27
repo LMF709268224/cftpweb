@@ -16,6 +16,7 @@
 | 资源授权 / 正式服报名费 | [2026-11-25 线上排查及发布](2026-11-25-resource-access-and-enrollment-fee.md) | 原修复 `c9730bd1`；prod 单独发布 `bbafddfe` | 报名费修复已随主分支部署 dev / prod；dev 会员记录与 Casdoor 角色不一致，尚未改动授权 |
 | 考生端阶段列表状态 | [学习状态与考试预约](2026-11-25-candidate-pathway-status.md) | `cd320be7` | 2026-11-25 已部署 dev / prod 的 candbff、candweb，健康及线上页面回归通过；“未开始”仍需 GLMS 提供权威字段 |
 | 统一发布及公开会员入口 | [2026-11-25 发布记录](2026-11-25-admin-release.md) | Admin `d1ab3434`；会员入口 `2a981d01` | 记录 dev / prod 发布与回归，以及旧分支合并的撤回 |
+| Audit Logs | [审计日志](audit-logs.md) | 本次 Web 改动 | 常用筛选与来源名称已调整，待发布；完整操作选项需审计服务接口 |
 
 ## 维护方式
 
