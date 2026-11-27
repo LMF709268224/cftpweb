@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Download, Loader2, Plus, RefreshCw, Trash2, Upload, X } from "lucide-vue-next"
+import { Copy, Download, Loader2, Plus, RefreshCw, Trash2, Upload, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import TranslationsEditor from "@/components/TranslationsEditor.vue"
@@ -37,6 +37,8 @@ const loading = ref(false)
 const detailLoading = ref(false)
 const detailOpen = ref(false)
 const creating = ref(false)
+const copyingId = ref("")
+const copiedFrom = ref("")
 const mode = ref<DetailMode>("detail")
 const name = ref("")
 const category = ref("")
@@ -297,6 +299,38 @@ function startCreate() {
   mode.value = "create"
   detailOpen.value = true
   resetForm()
+  copiedFrom.value = ""
+}
+
+async function copyDefinition(definition: JsonRecord) {
+  const id = definitionUlid(definition)
+  if (!id || copyingId.value) return
+  copyingId.value = id
+  try {
+    const detail = await apiClient<JsonRecord>(`/api/credentials/definitions/${encodeURIComponent(id)}`)
+    invalidateDetailRequest()
+    resetForm()
+    respathEdited = true
+    const sourceName = definitionName({ ...definition, ...detail })
+    name.value = copy.value.copyName(sourceName)
+    category.value = String(detail.category || definition.category || "")
+    description.value = String(detail.description || "")
+    acquisitionMethod.value = definitionAcquisitionMethod(detail)
+    constraints.value = fileConstraints(detail).map((constraint) => ({
+      name: String(constraint.name || ""),
+      type: Number(constraint.type),
+      is_required: Boolean(constraint.is_required),
+    }))
+    respath.value = ""
+    copiedFrom.value = sourceName
+    mode.value = "create"
+    detailOpen.value = true
+  } catch (err) {
+    console.error(err)
+    toast.error(apiErrorMessage(err, copy.value.toasts.copyFailed))
+  } finally {
+    copyingId.value = ""
+  }
 }
 
 function closeDetail() {
@@ -450,7 +484,7 @@ onMounted(load)
       </div>
       <div v-else-if="!definitions.length" class="p-8 text-center text-slate-500 md:p-12">{{ copy.empty }}</div>
       <template v-else>
-        <div class="hidden grid-cols-[minmax(0,1fr)_180px_112px] gap-4 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-500 md:grid">
+        <div class="hidden grid-cols-[minmax(0,1fr)_180px_260px] gap-4 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-500 md:grid">
           <span>{{ copy.columns.credential }}</span>
           <span class="text-center">{{ copy.columns.category }}</span>
           <span class="text-right">{{ copy.columns.action }}</span>
@@ -458,7 +492,7 @@ onMounted(load)
         <div
           v-for="definition in definitions"
           :key="definitionUlid(definition)"
-          class="flex w-full flex-col gap-3 border-b border-slate-100 px-4 py-4 text-left transition last:border-b-0 hover:bg-slate-50 md:grid md:grid-cols-[minmax(0,1fr)_180px_112px] md:gap-4 md:px-5"
+          class="flex w-full flex-col gap-3 border-b border-slate-100 px-4 py-4 text-left transition last:border-b-0 hover:bg-slate-50 md:grid md:grid-cols-[minmax(0,1fr)_180px_260px] md:gap-4 md:px-5"
           :class="mode === 'detail' && definitionUlid(selected) === definitionUlid(definition) ? 'bg-sky-50' : ''"
         >
           <div class="min-w-0">
@@ -469,9 +503,16 @@ onMounted(load)
             <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.category }}</span>
             <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-600">{{ categoryLabel(definition.category) }}</span>
           </span>
-          <button class="inline-flex w-full items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 transition hover:underline md:w-auto md:self-center md:justify-self-end md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click.stop="selectDefinition(definition)">
-            {{ copy.viewDetails }}
-          </button>
+          <div class="flex flex-wrap items-center gap-2 md:justify-self-end">
+            <button class="inline-flex items-center justify-center rounded-lg border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50" type="button" :disabled="Boolean(copyingId) || !definitionUlid(definition)" @click="copyDefinition(definition)">
+              <Loader2 v-if="copyingId === definitionUlid(definition)" class="mr-1.5 h-4 w-4 animate-spin" />
+              <Copy v-else class="mr-1.5 h-4 w-4" />
+              {{ copy.copyToCreate }}
+            </button>
+            <button class="inline-flex items-center justify-center rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 hover:bg-blue-100" type="button" @click="selectDefinition(definition)">
+              {{ copy.viewDetails }}
+            </button>
+          </div>
         </div>
       </template>
     </section>
@@ -482,7 +523,7 @@ onMounted(load)
           <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-3">
-                <h2 class="break-words text-xl font-black md:truncate md:text-2xl">{{ mode === "create" ? copy.createTitle : selected ? definitionName(selected) : copy.detailTitle }}</h2>
+                <h2 class="break-words text-xl font-black md:truncate md:text-2xl">{{ mode === "create" ? copiedFrom ? copy.copyTitle : copy.createTitle : selected ? definitionName(selected) : copy.detailTitle }}</h2>
                 <TranslationsEditor
                   v-if="mode !== 'create' && selected"
                   :endpoint="`/api/credentials/definitions/${encodeURIComponent(definitionUlid(selected))}/translations`"
@@ -491,7 +532,7 @@ onMounted(load)
                 />
               </div>
               <p class="mt-1 break-all text-sm text-slate-500">
-                {{ mode === "create" ? copy.createHint : definitionUlid(selected) || copy.selectCredential }}
+                {{ mode === "create" ? copiedFrom ? copy.copyHint(copiedFrom) : copy.createHint : definitionUlid(selected) || copy.selectCredential }}
               </p>
             </div>
             <div class="flex items-center gap-3">
@@ -545,6 +586,7 @@ onMounted(load)
                   <div v-for="(constraint, index) in constraints" :key="index" class="mb-3 grid gap-3 rounded-xl bg-slate-50 p-3 md:grid-cols-[1fr_170px_100px_auto]">
                     <input v-model="constraint.name" class="rounded-lg border border-slate-200 px-3 py-2" maxlength="120" :placeholder="copy.placeholders.filePurpose" />
                     <select v-model.number="constraint.type" class="rounded-lg border border-slate-200 px-3 py-2">
+                      <option v-if="!selectableFileTypes.some((type) => type.value === constraint.type)" :value="constraint.type" disabled>{{ fileTypeLabel(constraint.type) }}</option>
                       <option v-for="type in selectableFileTypes" :key="type.value" :value="type.value">{{ type.label }}</option>
                     </select>
                     <label class="flex items-center gap-2 text-sm font-bold">

@@ -17,6 +17,7 @@
 | 考生端阶段列表状态 | [学习状态与考试预约](2026-11-25-candidate-pathway-status.md) | `cd320be7` | 2026-11-25 已部署 dev / prod 的 candbff、candweb，健康及线上页面回归通过；“未开始”仍需 GLMS 提供权威字段 |
 | 统一发布及公开会员入口 | [2026-11-25 发布记录](2026-11-25-admin-release.md) | Admin `d1ab3434`；会员入口 `2a981d01` | 记录 dev / prod 发布与回归，以及旧分支合并的撤回 |
 | Audit Logs | [审计日志](audit-logs.md) | 本次 Web 改动 | 常用筛选与来源名称已调整，待发布；完整操作选项需审计服务接口 |
+| Credential Definitions | [资格定义](credential-definitions.md) | 本次 Web 改动 | 复制创建已完成，待发布；生效状态及任意文件类型需接口或业务口径支持 |
 
 ## 维护方式
 

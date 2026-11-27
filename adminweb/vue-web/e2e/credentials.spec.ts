@@ -93,6 +93,50 @@ test("credential creation only submits file types supported by the service", asy
   })
 })
 
+test("copying a credential definition pre-fills requirements without reusing its identity or attachments", async ({ page }) => {
+  await seedAuthenticatedAdmin(page, "en")
+  let createBody: Record<string, unknown> | undefined
+  page.on("request", (request) => {
+    if (request.method() === "POST" && new URL(request.url()).pathname === "/api/credentials/definitions") {
+      createBody = request.postDataJSON()
+    }
+  })
+  await installAdminApiMocks(page, ({ method, pathname }) => {
+    if (method === "GET" && pathname === "/api/credentials/definitions") {
+      return { data: { definitions: [credentialSummary] } }
+    }
+    if (method === "GET" && pathname === "/api/credentials/definitions/credential-1") {
+      return { data: credentialDetail }
+    }
+    if (method === "POST" && pathname === "/api/credentials/definitions") {
+      return { data: { cred_def_ulid: "credential-copy" } }
+    }
+    return undefined
+  })
+
+  await page.goto("/credentials")
+  await page.getByRole("button", { name: "Copy to Create" }).click()
+  const dialog = page.getByRole("dialog", { name: "Copy Credential Definition" })
+  await expect(dialog.getByRole("textbox", { name: "Name" })).toHaveValue("Regression Credential (Copy)")
+  await expect(dialog.getByRole("combobox", { name: "Category" })).toHaveValue("Certification")
+  await expect(dialog.getByRole("textbox", { name: "Description" })).toHaveValue("Read-only regression definition")
+  await expect(dialog.getByRole("textbox", { name: "Acquisition Method" })).toHaveValue("Pass the regression assessment")
+  await expect(dialog.getByPlaceholder("Tell candidates what this file is, e.g., Proof of Employment")).toHaveValue("Evidence PDF")
+  await expect(dialog.getByRole("textbox", { name: "Resource Path" })).toHaveValue("")
+  expect(createBody).toBeUndefined()
+
+  await dialog.getByRole("textbox", { name: "Resource Path" }).fill("/gcc/credential/regression-copy")
+  await dialog.getByRole("button", { name: "Create", exact: true }).click()
+  await expect.poll(() => createBody).toEqual({
+    name: "Regression Credential (Copy)",
+    category: "Certification",
+    description: "Read-only regression definition",
+    respath: "/gcc/credential/regression-copy",
+    acquisition_method: "Pass the regression assessment",
+    file_constraints: [{ name: "Evidence PDF", type: 2, is_required: true }],
+  })
+})
+
 test("credential definition list renders returned read-only data", async ({ page }) => {
   await seedAuthenticatedAdmin(page)
   const requests: string[] = []
