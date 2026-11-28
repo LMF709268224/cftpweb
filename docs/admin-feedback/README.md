@@ -18,7 +18,7 @@
 | 统一发布及公开会员入口 | [2026-11-25 发布记录](2026-11-25-admin-release.md) | Admin `d1ab3434`；会员入口 `2a981d01` | 记录 dev / prod 发布与回归，以及旧分支合并的撤回 |
 | Audit Logs | [审计日志](audit-logs.md) | 本次 Web 改动 | 常用筛选与来源名称已调整，待发布；完整操作选项需审计服务接口 |
 | Credential Definitions | [资格定义](credential-definitions.md) | 本次 Web 改动 | 复制创建已完成，待发布；生效状态及任意文件类型需接口或业务口径支持 |
-| Membership Translations | [会员方案权益翻译](membership-translation-benefits.md) | 本次 Web 改动 | 编辑列表与排版已修复，待发布；历史翻译键需会员微服务按当前权益过滤 |
+| Membership Translations | [会员方案权益翻译](membership-translation-benefits.md) | `1854975b` | 编辑列表与排版已修复并部署 dev / prod；历史翻译键仅在编辑列表隐藏 |
 
 ## 维护方式
 
