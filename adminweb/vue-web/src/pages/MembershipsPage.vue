@@ -63,12 +63,14 @@ const translationFields = computed(() => [
     label: copy.value.fields.featureLabels,
     kind: "map" as const,
     mapEntries: featureEntries.value.labels,
+    configuredMapEntriesOnly: true,
   },
   {
     key: "feature_categories",
     label: copy.value.fields.featureCategories,
     kind: "map" as const,
     mapEntries: featureEntries.value.categories,
+    configuredMapEntriesOnly: true,
   },
 ])
 const translationDefaultValues = computed(() => ({

@@ -154,6 +154,64 @@ test("membership detail reads configuration fields without editing", async ({ pa
   expect(requests.every((request) => request.startsWith("GET "))).toBe(true)
 })
 
+test("membership translation editor shows current benefits without overlapping long labels", async ({ page }) => {
+  await seedAuthenticatedAdmin(page)
+  const currentLabel = "Invitation to join FLEX International Hub (talent and company investor matchmaking platform)"
+  const secondLabel = "20% off short courses on the GFI Learning Portal"
+  let savedTranslations: Record<string, unknown> | undefined
+  page.on("request", (request) => {
+    if (request.method() === "PUT" && new URL(request.url()).pathname === "/api/memberships/membership-1/translations") {
+      savedTranslations = request.postDataJSON()
+    }
+  })
+  await installAdminApiMocks(page, ({ method, pathname }) => {
+    if (method === "GET" && pathname === "/api/memberships/configs") {
+      return { data: { memberships: [membershipSummary] } }
+    }
+    if (method === "GET" && pathname === "/api/memberships/membership-1") {
+      return {
+        data: {
+          ...membershipSummary,
+          features_json: JSON.stringify([{ category: "Benefits", items: [
+            { label: currentLabel, included: true },
+            { label: secondLabel, included: true },
+          ] }]),
+        },
+      }
+    }
+    if (method === "GET" && pathname === "/api/memberships/membership-1/translations") {
+      return { data: { translations: { "zh-CN": { feature_labels: {
+        invitation_to_join_flex_international_hub_talent_and_company_investor_matchmaking_platform: "加入 FLEX",
+        access_to_curated_webinars_and_foundational_whitepapers: "旧权益",
+      }, feature_categories: { benefits: "权益" } } } } }
+    }
+    if (method === "PUT" && pathname === "/api/memberships/membership-1/translations") {
+      return { data: { success: true } }
+    }
+    return undefined
+  })
+
+  await page.goto("/memberships")
+  await page.getByRole("button", { name: "查看详情" }).click()
+  await page.getByRole("button", { name: "设置多语言" }).click()
+  const dialog = page.getByRole("dialog", { name: "多语言内容" })
+  await expect(dialog.getByText(currentLabel, { exact: false })).toBeVisible()
+  await expect(dialog.getByText(secondLabel, { exact: false })).toBeVisible()
+  await expect(dialog.getByText("access_to_curated_webinars_and_foundational_whitepapers")).toHaveCount(0)
+  for (const label of [currentLabel, secondLabel]) {
+    await expect.poll(() => dialog.locator("label > span").filter({ hasText: label }).evaluate((element) => element.scrollWidth - element.clientWidth)).toBe(0)
+  }
+  await expect.poll(() => dialog.locator("main").evaluate((element) => element.scrollWidth - element.clientWidth)).toBe(0)
+
+  await page.setViewportSize({ width: 390, height: 844 })
+  await expect.poll(() => dialog.locator("main").evaluate((element) => element.scrollWidth - element.clientWidth)).toBe(0)
+
+  await dialog.getByRole("button", { name: "保存多语言" }).click()
+  await expect.poll(() => savedTranslations).toMatchObject({ translations: { "zh-CN": { feature_labels: {
+    access_to_curated_webinars_and_foundational_whitepapers: "旧权益",
+  } } } })
+})
+
 test("membership deprecation targets only the selected physical plan", async ({ page }) => {
   await seedAuthenticatedAdmin(page)
   await installMembershipStatusMocks(page)

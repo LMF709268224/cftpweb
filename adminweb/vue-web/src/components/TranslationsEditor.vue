@@ -19,6 +19,7 @@ type FieldSpec = {
   maxLength?: number
   rows?: number
   mapEntries?: MapEntry[]
+  configuredMapEntriesOnly?: boolean
 }
 
 const props = withDefaults(defineProps<{
@@ -140,6 +141,7 @@ function updateMapField(locale: string, fieldKey: string, mapKey: string, value:
 
 function mapEntries(field: FieldSpec) {
   const entries = new Map((field.mapEntries || []).map((entry) => [entry.key, entry]))
+  if (field.configuredMapEntriesOnly) return Array.from(entries.values())
   for (const translation of Object.values(translations.value)) {
     const raw = translation[field.key]
     if (!raw || typeof raw !== "object" || Array.isArray(raw)) continue
@@ -395,15 +397,15 @@ watch(
                           />
                         </label>
 
-                        <div v-else class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div v-else class="min-w-0 rounded-xl border border-slate-200 bg-slate-50 p-4">
                           <div class="mb-3 text-sm font-black text-slate-800">{{ field.label }}</div>
                           <div v-if="!mapEntries(field).length" class="text-sm font-semibold text-slate-500">{{ copy.noMapEntries }}</div>
-                          <div v-else class="grid gap-3 md:grid-cols-2">
-                            <label v-for="entry in mapEntries(field)" :key="entry.key" class="grid gap-2 text-sm font-bold">
-                              <span>{{ entry.label }} <span class="font-mono text-xs text-slate-400">({{ entry.key }})</span></span>
+                          <div v-else class="grid min-w-0 gap-3 md:grid-cols-2">
+                            <label v-for="entry in mapEntries(field)" :key="entry.key" class="grid min-w-0 gap-2 text-sm font-bold">
+                              <span class="min-w-0 [overflow-wrap:anywhere]">{{ entry.label }} <span class="font-mono text-xs text-slate-400">({{ entry.key }})</span></span>
                               <input
                                 :value="mapValue(locale, field.key, entry.key)"
-                                class="h-10 rounded-lg border border-slate-200 bg-white px-3 font-normal"
+                                class="h-10 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 font-normal"
                                 @input="updateMapField(locale, field.key, entry.key, inputValue($event))"
                               />
                             </label>
